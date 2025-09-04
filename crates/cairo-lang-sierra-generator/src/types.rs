@@ -124,7 +124,7 @@ pub fn get_concrete_long_type_id<'db>(
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")
                                 }
-                                semantic::GenericArgumentId::NegImpl => panic!(
+                                semantic::GenericArgumentId::NegImpl(_) => panic!(
                                     "Extern function with neg impl generics are not supported."
                                 ),
                             })

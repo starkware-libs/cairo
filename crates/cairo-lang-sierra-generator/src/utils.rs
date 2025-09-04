@@ -402,7 +402,7 @@ pub fn get_concrete_libfunc_id<'db>(
                     value_id.long(db).to_int().expect("Expected ConstValue::Int for size").clone(),
                 ));
             }
-            semantic::GenericArgumentId::Impl(_) | semantic::GenericArgumentId::NegImpl => {
+            semantic::GenericArgumentId::Impl(_) | semantic::GenericArgumentId::NegImpl(_) => {
                 // Everything after an impl generic is ignored as it does not exist in Sierra.
                 // This may still be used in high level code for getting type information that is
                 // otherwise concluded by the sierra-to-casm compiler, or addition of `where` clause

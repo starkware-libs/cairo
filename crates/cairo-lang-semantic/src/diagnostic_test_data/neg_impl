@@ -46,6 +46,11 @@ error: Only `_` is valid as a negative impl argument.
     Bad::<u128, core::NegImpl>::bad();
                 ^^^^^^^^^^^^^
 
+error: Trait has no implementation in context: test::Bad::<core::integer::u128, _>.
+ --> lib.cairo:21:21
+    Bad::<u128, _>::bad();
+                    ^^^
+
 //! > ==========================================================================
 
 //! > Test cycles

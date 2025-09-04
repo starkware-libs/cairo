@@ -359,7 +359,14 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
             GenericParam::Const(GenericParamConst { ty, .. }) => {
                 Ok(GenericArgumentId::Constant(self.new_const_var(stable_ptr, *ty)))
             }
-            GenericParam::NegImpl(_) => Ok(GenericArgumentId::NegImpl),
+            GenericParam::NegImpl(param) => {
+                let concrete_trait_id = param
+                    .concrete_trait
+                    .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+                let impl_id =
+                    self.new_negative_impl_var(concrete_trait_id, stable_ptr, lookup_context);
+                Ok(GenericArgumentId::NegImpl(impl_id))
+            }
         }
     }
 

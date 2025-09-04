@@ -75,6 +75,10 @@ pub enum Ambiguity<'db> {
         impl_id: ImplId<'db>,
         ty: TypeId<'db>,
     },
+    NegativeImplWithUnresolvedGenericArgs2 {
+        concrete_trait_id: ConcreteTraitId<'db>,
+        ty: TypeId<'db>,
+    },
 }
 impl<'db> Ambiguity<'db> {
     pub fn format(&self, db: &dyn Database) -> String {
@@ -100,6 +104,13 @@ impl<'db> Ambiguity<'db> {
                 impl_id.format(db),
                 ty.format(db)
             ),
+            Ambiguity::NegativeImplWithUnresolvedGenericArgs2 { concrete_trait_id, ty } => {
+                format!(
+                    "Cannot infer negative impl in `{:?}` as it contains the unresolved type `{}`",
+                    concrete_trait_id.debug(db),
+                    ty.format(db)
+                )
+            }
         }
     }
 }
@@ -372,9 +383,7 @@ fn solve_candidate<'db>(
         SolutionSet::Unique(_) => {
             let candidate_impl = inference.rewrite(candidate_impl).no_err();
             match CanonicalImpl::canonicalize(db, candidate_impl, &canonical_embedding) {
-                Ok(canonical_impl) => {
-                    inference.validate_neg_impls(lookup_context, canonical_impl)?
-                }
+                Ok(canonical_impl) => SolutionSet::Unique(canonical_impl),
                 Err(MapperError(var)) => {
                     return Ok(SolutionSet::Ambiguous(Ambiguity::FreeVariable {
                         impl_id: candidate_impl,
@@ -538,7 +547,7 @@ impl<'db> LiteInference<'db> {
             (GenericArgumentId::Impl(candidate), GenericArgumentId::Impl(target)) => {
                 self.can_conform_impl((candidate, candidate_final), (target, target_final))
             }
-            (GenericArgumentId::NegImpl, GenericArgumentId::NegImpl) => {
+            (GenericArgumentId::NegImpl(_), GenericArgumentId::NegImpl(_)) => {
                 CanConformResult::InferenceRequired
             }
             _ => CanConformResult::Rejected,

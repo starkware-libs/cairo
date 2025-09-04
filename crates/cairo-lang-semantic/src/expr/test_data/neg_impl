@@ -31,3 +31,108 @@ impl DowncastableTryInto<
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test negative impl with unresolved generic args.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait TypeEq<S, T> {}
+
+trait MyTrait<T> {
+    fn foo(self: T);
+}
+impl MyImpl<T, -TypeEq<T, u32>> of MyTrait<T> {
+    fn foo(self: T) {}
+}
+
+fn bar<T>(a: T) {
+    MyTrait::foo(a)
+}
+
+//! > expected_diagnostics
+error: Cannot infer negative impl in `test::TypeEq::<T, core::integer::u32>` as it contains the unresolved type `T`
+ --> lib.cairo:11:14
+    MyTrait::foo(a)
+             ^^^
+
+//! > ==========================================================================
+
+//! > Test negative impls infer impl with existing negative impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> u32 {
+    MyTrait2::foo(5_u32)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait MyTrait<T> {}
+
+impl I of MyTrait<u32> {}
+
+pub trait MyTrait2<T> {
+    fn foo(self: T) -> T;
+}
+
+impl I2<T, -MyTrait<T>> of MyTrait2<T> {
+    fn foo(self: T) -> T {
+        self
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::MyTrait2::<core::integer::u32>.
+ --> lib.cairo:15:15
+    MyTrait2::foo(5_u32)
+              ^^^
+
+//! > ==========================================================================
+
+//! > Test negative impls use impl with existing negative impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() -> u32 {
+    I2::foo(5_u32)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait MyTrait<T> {}
+
+impl I of MyTrait<u32> {}
+
+pub trait MyTrait2<T> {
+    fn foo(self: T) -> T;
+}
+
+impl I2<T, -MyTrait<T>> of MyTrait2<T> {
+    fn foo(self: T) -> T {
+        self
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has implementation in context: test::MyTrait::<core::integer::u32>.
+ --> lib.cairo:15:5
+    I2::foo(5_u32)
+    ^^
