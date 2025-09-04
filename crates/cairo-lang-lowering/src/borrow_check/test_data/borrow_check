@@ -995,41 +995,21 @@ End:
 
 blk1:
 Statements:
-  (v2: core::option::Option::<test::NonDrop>) <- Option::Some(v1{`maybe_consume(x)`})
+  (v3: ()) <- test::foo(v1{`x`})
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v3 -> v4})
 
 blk2:
 Statements:
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<test::NonDrop>) <- Option::None(v3{`maybe_consume(x)`})
+  (v2: ()) <- struct_construct()
+  (v5: ()) <- struct_construct()
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v5 -> v4})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v5{`maybe_consume(x)`}) {
-    Option::Some(v6) => blk4,
-    Option::None(v7) => blk5,
-  })
-
-blk4:
-Statements:
-  (v8: ()) <- test::foo(v6{`x`})
-End:
-  Goto(blk6, {v8 -> v9})
-
-blk5:
-Statements:
-  (v10: ()) <- struct_construct()
-End:
-  Goto(blk6, {v10 -> v9})
-
-blk6:
-Statements:
-End:
-  Return(v9)
+  Return(v4)
 
 //! > lowering_diagnostics
 error: Variable not dropped.
