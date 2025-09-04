@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::CompilerConfig;
@@ -130,13 +129,13 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
 ) -> Result<ContractClass> {
     let SemanticEntryPoints { external, l1_handler, constructor } =
         extract_semantic_entrypoints(db, contract)?;
-    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program_for_functions(
+    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = db
+        .get_sierra_program_for_functions(
             chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
         )
         .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?,
-    );
+        .context("Compilation failed without any diagnostics.")?
+        .clone();
 
     if compiler_config.replace_ids {
         sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
