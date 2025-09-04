@@ -12,8 +12,8 @@ use cairo_lang_filesystem::ids::{
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
     FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr, ItemExternFunctionPtr,
-    ItemExternTypePtr, ItemImplAliasPtr, ItemImplPtr, ItemMacroDeclarationPtr, ItemModulePtr,
-    ItemStructPtr, ItemTraitPtr, ItemTypeAliasPtr, UsePathLeafPtr, UsePathStarPtr,
+    ItemExternTypePtr, ItemImplAliasPtr, ItemImplPtr, ItemInlineMacroPtr, ItemMacroDeclarationPtr,
+    ItemModulePtr, ItemStructPtr, ItemTraitPtr, ItemTypeAliasPtr, UsePathLeafPtr, UsePathStarPtr,
 };
 use cairo_lang_syntax::node::green::{GreenNode, GreenNodeDetails};
 use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
@@ -31,10 +31,10 @@ use crate::ids::{
     ConstantId, ConstantLongId, EnumId, EnumLongId, ExternFunctionId, ExternFunctionLongId,
     ExternTypeId, ExternTypeLongId, FileIndex, FreeFunctionId, FreeFunctionLongId, GenericParamId,
     GenericParamLongId, GlobalUseId, GlobalUseLongId, ImplAliasId, ImplAliasLongId, ImplDefId,
-    ImplDefLongId, LanguageElementId, MacroDeclarationId, MacroDeclarationLongId, ModuleFileId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, ModuleTypeAliasLongId, PluginGeneratedFileId,
-    PluginGeneratedFileLongId, StructId, StructLongId, SubmoduleId, SubmoduleLongId, TraitId,
-    TraitLongId, UseId, UseLongId,
+    ImplDefLongId, LanguageElementId, MacroCallId, MacroCallLongId, MacroDeclarationId,
+    MacroDeclarationLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId,
+    ModuleTypeAliasLongId, PluginGeneratedFileId, PluginGeneratedFileLongId, StructId,
+    StructLongId, SubmoduleId, SubmoduleLongId, TraitId, TraitLongId, UseId, UseLongId,
 };
 use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 
@@ -83,8 +83,7 @@ fn validate_metadata(crate_id: CrateId<'_>, metadata: &CachedCrateMetadata, db: 
     }
 }
 
-type DefCache<'db> =
-    (CachedCrateMetadata, Vec<(ModuleIdCached, ModuleDataCached<'db>)>, DefCacheLookups);
+type DefCache<'db> = (CachedCrateMetadata, CrateDefCache<'db>, DefCacheLookups);
 
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_modules<'db>(
@@ -114,6 +113,7 @@ pub fn load_cached_crate_modules<'db>(
     let mut ctx = DefCacheLoadingContext::new(db, defs_lookups, crate_id);
     Some((
         module_data
+            .0
             .into_iter()
             .map(|(module_id, module_data)| {
                 let module_id = module_id.embed(&mut ctx);
@@ -127,23 +127,26 @@ pub fn load_cached_crate_modules<'db>(
     ))
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct CrateDefCache<'db>(Vec<(ModuleIdCached, ModuleDataCached<'db>)>);
+
 /// Cache the module_data of each module in the crate and returns the cache and the context.
 pub fn generate_crate_def_cache<'db>(
     db: &'db dyn Database,
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
     ctx: &mut DefCacheSavingContext<'db>,
-) -> Maybe<Vec<(ModuleIdCached, ModuleDataCached<'db>)>> {
+) -> Maybe<CrateDefCache<'db>> {
     let modules = db.crate_modules(crate_id);
 
-    let cached: Vec<(ModuleIdCached, ModuleDataCached<'_>)> = modules
-        .iter()
-        .map(|id| {
-            let module_data = id.module_data(db)?;
-            Ok((ModuleIdCached::new(*id, ctx), ModuleDataCached::new(db, module_data, ctx)))
-        })
-        .collect::<Maybe<Vec<_>>>()?;
-
-    Ok(cached)
+    Ok(CrateDefCache(
+        modules
+            .iter()
+            .map(|id| {
+                let module_data = id.module_data(db)?;
+                Ok((ModuleIdCached::new(*id, ctx), ModuleDataCached::new(db, module_data, ctx)))
+            })
+            .collect::<Maybe<Vec<_>>>()?,
+    ))
 }
 
 /// Context for loading cache into the database.
@@ -253,6 +256,7 @@ pub struct DefCacheLoadingData<'db> {
     extern_type_ids: OrderedHashMap<ExternTypeIdCached, ExternTypeId<'db>>,
     extern_function_ids: OrderedHashMap<ExternFunctionIdCached, ExternFunctionId<'db>>,
     macro_declaration_ids: OrderedHashMap<MacroDeclarationIdCached, MacroDeclarationId<'db>>,
+    macro_call_ids: OrderedHashMap<MacroCallIdCached, MacroCallId<'db>>,
     global_use_ids: OrderedHashMap<GlobalUseIdCached, GlobalUseId<'db>>,
 
     file_ids: OrderedHashMap<FileIdCached, FileId<'db>>,
@@ -279,6 +283,7 @@ impl<'db> DefCacheLoadingData<'db> {
             extern_type_ids: OrderedHashMap::default(),
             extern_function_ids: OrderedHashMap::default(),
             macro_declaration_ids: OrderedHashMap::default(),
+            macro_call_ids: OrderedHashMap::default(),
             global_use_ids: OrderedHashMap::default(),
 
             file_ids: OrderedHashMap::default(),
@@ -350,6 +355,7 @@ pub struct DefCacheSavingData<'db> {
     extern_function_ids: OrderedHashMap<ExternFunctionId<'db>, ExternFunctionIdCached>,
     global_use_ids: OrderedHashMap<GlobalUseId<'db>, GlobalUseIdCached>,
     macro_declaration_ids: OrderedHashMap<MacroDeclarationId<'db>, MacroDeclarationIdCached>,
+    macro_call_ids: OrderedHashMap<MacroCallId<'db>, MacroCallIdCached>,
 
     syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrId<'db>, SyntaxStablePtrIdCached>,
     file_ids: OrderedHashMap<FileId<'db>, FileIdCached>,
@@ -626,6 +632,7 @@ pub struct DefCacheLookups {
     extern_function_ids_lookup: Vec<ExternFunctionCached>,
     global_use_ids_lookup: Vec<GlobalUseCached>,
     macro_declaration_ids_lookup: Vec<MacroDeclarationCached>,
+    macro_call_ids_lookup: Vec<MacroCallCached>,
 
     file_ids_lookup: Vec<FileCached>,
 }
@@ -687,9 +694,10 @@ impl ModuleFileCached {
 }
 
 #[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
-pub enum ModuleIdCached {
+enum ModuleIdCached {
     CrateRoot(CrateIdCached),
     Submodule(SubmoduleIdCached),
+    MacroCall { id: MacroCallIdCached, generated_file_id: FileIdCached, is_expose: bool },
 }
 impl ModuleIdCached {
     fn new<'db>(module_id: ModuleId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -700,17 +708,22 @@ impl ModuleIdCached {
             ModuleId::Submodule(submodule_id) => {
                 ModuleIdCached::Submodule(SubmoduleIdCached::new(submodule_id, ctx))
             }
-            ModuleId::MacroCall { .. } => todo!(
-                "Caching for macro-generated modules is not supported yet. If you encounter this \
-                 error, it means the crate contains macro-generated modules that cannot currently \
-                 be cached."
-            ),
+            ModuleId::MacroCall { id, generated_file_id, is_expose } => ModuleIdCached::MacroCall {
+                id: MacroCallIdCached::new(id, ctx),
+                generated_file_id: FileIdCached::new(generated_file_id, ctx),
+                is_expose,
+            },
         }
     }
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleId<'db> {
         match self {
             ModuleIdCached::CrateRoot(crate_id) => ModuleId::CrateRoot(crate_id.embed(ctx)),
             ModuleIdCached::Submodule(submodule_id) => ModuleId::Submodule(submodule_id.embed(ctx)),
+            ModuleIdCached::MacroCall { id, generated_file_id, is_expose } => ModuleId::MacroCall {
+                id: id.embed(ctx),
+                generated_file_id: generated_file_id.embed(ctx),
+                is_expose: *is_expose,
+            },
         }
     }
     fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleId<'db> {
@@ -719,6 +732,11 @@ impl ModuleIdCached {
             ModuleIdCached::Submodule(submodule_id) => {
                 ModuleId::Submodule(submodule_id.get_embedded(data))
             }
+            ModuleIdCached::MacroCall { id, generated_file_id, is_expose } => ModuleId::MacroCall {
+                id: id.get_embedded(data),
+                generated_file_id: generated_file_id.get_embedded(data),
+                is_expose,
+            },
         }
     }
 }
@@ -1451,6 +1469,52 @@ impl MacroDeclarationIdCached {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+struct MacroCallCached {
+    language_element: LanguageElementCached,
+}
+impl MacroCallCached {
+    pub fn new<'db>(
+        macro_call: MacroCallLongId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
+        Self { language_element: LanguageElementCached::new(macro_call.intern(ctx.db), ctx) }
+    }
+
+    pub fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> MacroCallLongId<'db> {
+        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        MacroCallLongId(module_file_id, ItemInlineMacroPtr(stable_ptr))
+    }
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
+struct MacroCallIdCached(usize);
+impl MacroCallIdCached {
+    fn new<'db>(id: MacroCallId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+        if let Some(cached_id) = ctx.macro_call_ids.get(&id) {
+            return *cached_id;
+        }
+        let cached = MacroCallCached::new(id.long(ctx.db).clone(), ctx);
+        let id_cached = MacroCallIdCached(ctx.macro_call_ids_lookup.len());
+        ctx.macro_call_ids_lookup.push(cached);
+        ctx.macro_call_ids.insert(id, id_cached);
+        id_cached
+    }
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> MacroCallId<'db> {
+        if let Some(id) = ctx.macro_call_ids.get(&self) {
+            return *id;
+        }
+        let cached = ctx.macro_call_ids_lookup[self.0].clone();
+        let long_id = cached.embed(ctx);
+        let id = long_id.intern(ctx.db);
+        ctx.macro_call_ids.insert(self, id);
+        id
+    }
+    fn get_embedded<'db>(&self, data: &Arc<DefCacheLoadingData<'db>>) -> MacroCallId<'db> {
+        data.macro_call_ids[self]
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct GlobalUseCached {
     language_element: LanguageElementCached,
 }
@@ -1776,6 +1840,9 @@ impl FileIdCached {
         let file_id = file.intern(ctx.db);
         ctx.file_ids.insert(self, file_id);
         file_id
+    }
+    fn get_embedded<'db>(&self, data: &Arc<DefCacheLoadingData<'db>>) -> FileId<'db> {
+        data.file_ids[self]
     }
 }
 
