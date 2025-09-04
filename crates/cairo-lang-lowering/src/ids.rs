@@ -66,7 +66,7 @@ impl<'db> FunctionWithBodyId<'db> {
         self.long(db).base_semantic_function(db)
     }
     pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
-        Ok(db.priv_function_with_body_lowering(*self)?.signature.clone())
+        Ok(db.function_with_body_lowering(*self)?.signature.clone())
     }
     pub fn to_concrete(&self, db: &'db dyn Database) -> Maybe<ConcreteFunctionWithBodyId<'db>> {
         Ok(self.long(db).to_concrete(db)?.intern(db))

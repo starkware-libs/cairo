@@ -90,7 +90,7 @@ fn test_function_lowering(
         outputs: OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), formatted_lowering_diagnostics),
-            ("lowering_flat".into(), formatted_lowered(db, lowered.ok().as_deref())),
+            ("lowering_flat".into(), formatted_lowered(db, lowered.ok())),
         ]),
         error,
     }
