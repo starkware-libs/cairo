@@ -18,6 +18,7 @@ use crate::corelib::{self, core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceId;
 use crate::items::functions::GenericFunctionId;
+use crate::items::macro_call::module_macro_modules;
 use crate::items::us::SemanticUseEx;
 use crate::keyword::SELF_PARAM_KW;
 use crate::resolve::{ResolvedGenericItem, Resolver};
@@ -170,6 +171,7 @@ fn visible_importables_in_module_ex<'db>(
         let Ok(resolved_item) = db.use_resolved_item(use_id) else {
             continue;
         };
+
         let (resolved_item, name) = match resolved_item {
             ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)) => {
                 result.extend_from_slice(
@@ -187,7 +189,7 @@ fn visible_importables_in_module_ex<'db>(
                 (ImportableId::Submodule(module), module.name(db))
             }
             ResolvedGenericItem::Module(ModuleId::MacroCall { .. }) => {
-                todo!("Handle macro calls in visible_importables_in_module_ex");
+                continue;
             }
             ResolvedGenericItem::GenericConstant(item_id) => {
                 (ImportableId::Constant(item_id), item_id.name(db))
@@ -233,6 +235,10 @@ fn visible_importables_in_module_ex<'db>(
         };
 
         result.push((resolved_item, name.into()));
+    }
+
+    if !matches!(module_id, ModuleId::MacroCall { .. }) {
+        modules_to_visit.extend(module_macro_modules(db, false, module_id).iter().copied());
     }
 
     for submodule_id in db.module_submodules_ids(module_id).unwrap_or_default().iter().copied() {
