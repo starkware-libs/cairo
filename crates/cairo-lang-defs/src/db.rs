@@ -2,7 +2,9 @@ use std::any::Any;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{DiagnosticNote, Maybe, PluginFileDiagnosticNotes, ToMaybe};
+use cairo_lang_diagnostics::{
+    DiagnosticNote, Maybe, MaybeAsRef, PluginFileDiagnosticNotes, ToMaybe,
+};
 use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, TryExtAsVirtual};
 use cairo_lang_filesystem::ids::{
     CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, Tracked, VirtualFile,
@@ -594,7 +596,7 @@ fn module_dir_helper<'db>(
 }
 
 fn module_dir<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>> {
-    module_dir_helper(db, (), module_id).as_ref().map_err(|x| *x)
+    module_dir_helper(db, (), module_id).maybe_as_ref()
 }
 
 /// Appends all the modules under the given module, including nested modules.
@@ -651,7 +653,7 @@ fn file_modules_helper<'db>(
 }
 
 fn file_modules<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
-    file_modules_helper(db, file_id).as_ref().map(|x| x.as_slice()).map_err(|x| *x)
+    file_modules_helper(db, file_id).maybe_as_ref().map(|x| x.as_slice())
 }
 
 #[salsa::tracked]
