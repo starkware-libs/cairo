@@ -15,7 +15,7 @@ use cairo_lang_defs::ids::{
     TraitId, TraitImplId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, skip_diagnostic,
+    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef, ToMaybe, skip_diagnostic,
 };
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, StrRef, Tracked, UnstableSalsaId};
@@ -628,10 +628,7 @@ pub fn impl_def_shallow_trait_generic_args<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
-    impl_def_shallow_trait_generic_args_helper(db, impl_def_id)
-        .as_ref()
-        .map(|res| res.as_slice())
-        .map_err(|e| *e)
+    Ok(impl_def_shallow_trait_generic_args_helper(db, impl_def_id).maybe_as_ref()?)
 }
 
 /// Helper for [SemanticGroup::impl_def_shallow_trait_generic_args].
@@ -719,10 +716,7 @@ pub fn impl_alias_trait_generic_args<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
-    impl_alias_trait_generic_args_helper(db, impl_alias_id)
-        .as_ref()
-        .map(|res| res.as_slice())
-        .map_err(|e| *e)
+    Ok(impl_alias_trait_generic_args_helper(db, impl_alias_id).maybe_as_ref()?)
 }
 
 #[salsa::tracked(returns(ref))]

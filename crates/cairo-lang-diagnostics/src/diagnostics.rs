@@ -178,6 +178,17 @@ pub fn skip_diagnostic() -> DiagnosticAdded {
 /// reported.
 pub type Maybe<T> = Result<T, DiagnosticAdded>;
 
+/// Trait to convert a `Maybe<T>` to a `Maybe<&T>`.
+pub trait MaybeAsRef<T> {
+    fn maybe_as_ref(&self) -> Maybe<&T>;
+}
+
+impl<T> MaybeAsRef<T> for Maybe<T> {
+    fn maybe_as_ref(&self) -> Maybe<&T> {
+        self.as_ref().map_err(|e| *e)
+    }
+}
+
 /// Temporary trait to allow conversions from the old `Option<T>` mechanism to `Maybe<T>`.
 // TODO(lior): Remove this trait after converting all the functions.
 pub trait ToMaybe<T> {
