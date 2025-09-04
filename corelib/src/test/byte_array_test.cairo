@@ -442,12 +442,12 @@ fn test_serde() {
     let mut serialized = array![];
     let ba: ByteArray = "";
     ba.serialize(ref serialized);
-    compare_spans(serialized.span(), [0, 0, 0].span());
+    assert_eq!(serialized.span(), [0, 0, 0].span());
 
     let mut serialized = array![];
     let ba: ByteArray = "hello";
     ba.serialize(ref serialized);
-    compare_spans(
+    assert_eq!(
         serialized.span(),
         [0, // data len
         0x68656c6c6f, // pending_word
@@ -458,7 +458,7 @@ fn test_serde() {
     let mut serialized = array![];
     let ba: ByteArray = "Long string, more than 31 characters.";
     ba.serialize(ref serialized);
-    compare_spans(
+    assert_eq!(
         serialized.span(),
         [
             1, // data len
@@ -494,23 +494,6 @@ fn test_from_collect() {
 }
 
 // ========= Test helper functions =========
-
-fn compare_spans<T, +crate::fmt::Debug<T>, +PartialEq<T>, +Copy<T>, +Drop<T>>(
-    mut a: Span<T>, mut b: Span<T>,
-) {
-    assert_eq!(a.len(), b.len());
-    let mut index = 0;
-    loop {
-        match a.pop_front() {
-            Some(current_a) => {
-                let current_b = b.pop_front().unwrap();
-                assert_eq!(*current_a, *current_b, "wrong data for index: {index}");
-            },
-            None(_) => { break; },
-        }
-        index += 1;
-    }
-}
 
 fn test_byte_array_1() -> ByteArray {
     let mut ba1 = Default::default();
