@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
     GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericParamLongId,
     LanguageElementId, LookupItemId, ModuleFileId, TraitId, TraitTypeId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -333,10 +333,7 @@ pub fn generic_impl_param_shallow_trait_generic_args<'db>(
     db: &'db dyn Database,
     impl_def_id: GenericParamId<'db>,
 ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
-    generic_impl_param_shallow_trait_generic_args_helper(db, impl_def_id)
-        .as_ref()
-        .map(|res| res.as_slice())
-        .map_err(|e| *e)
+    Ok(generic_impl_param_shallow_trait_generic_args_helper(db, impl_def_id).maybe_as_ref()?)
 }
 
 /// Helper for [generic_impl_param_shallow_trait_generic_args]
