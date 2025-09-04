@@ -2173,6 +2173,7 @@ pub struct ImplLookupContext<'db> {
     pub crate_id: CrateId<'db>,
     pub generic_params: Vec<GenericParamId<'db>>,
     pub inner_impls: BTreeSet<UninferredImplById<'db>>,
+    pub negative_impls: Vec<GenericParamId<'db>>,
 }
 
 define_short_id!(ImplLookupContextId, ImplLookupContext<'db>, Database);
@@ -2180,7 +2181,12 @@ define_short_id!(ImplLookupContextId, ImplLookupContext<'db>, Database);
 impl<'db> ImplLookupContext<'db> {
     /// Creates a new [ImplLookupContext] from a [CrateId].
     pub fn new_from_crate(crate_id: CrateId<'db>) -> Self {
-        Self { crate_id, generic_params: Default::default(), inner_impls: Default::default() }
+        Self {
+            crate_id,
+            generic_params: Default::default(),
+            inner_impls: Default::default(),
+            negative_impls: Default::default(),
+        }
     }
     /// Creates a new [ImplLookupContext] from a [TypeId] with the crate being the crate of the
     /// type's module.
@@ -2199,6 +2205,11 @@ impl<'db> ImplLookupContext<'db> {
         db: &'db dyn Database,
     ) -> ImplLookupContext<'db> {
         let crate_id = module_id.owning_crate(db);
+        let negative_impls = generic_params
+            .iter()
+            .filter(|generic_param_id| matches!(generic_param_id.kind(db), GenericKind::NegImpl))
+            .copied()
+            .collect_vec();
         let generic_params = generic_params
             .iter()
             .filter(|generic_param_id| {
@@ -2235,6 +2246,7 @@ impl<'db> ImplLookupContext<'db> {
             inner_impls: BTreeSet::from_iter(
                 generic_params.into_iter().map(|id| UninferredImpl::GenericParam(id).into()),
             ),
+            negative_impls,
         };
         res.insert_module(module_id, db);
         res
