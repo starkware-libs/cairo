@@ -136,3 +136,92 @@ error: Trait has implementation in context: test::MyTrait::<core::integer::u32>.
  --> lib.cairo:15:5
     I2::foo(5_u32)
     ^^
+
+//! > ==========================================================================
+
+//! > Test negative impls infer impl with generic param.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait Consumer<T> {
+    fn consume(self: T, input: u32);
+    fn bar(x: T);
+}
+
+pub trait Producer<T> {
+    fn produce(self: T) -> u32;
+}
+
+pub struct ProducerType {}
+
+impl ProducerImpl of Producer<ProducerType> {
+    fn produce(self: ProducerType) -> u32 {
+        3_u32
+    }
+}
+
+impl TConsumerImpl<T, +core::fmt::Debug<T>, +Drop<T>, -Producer<T>> of Consumer<T> {
+    fn consume(self: T, input: u32) {
+        println!("{:?} consumed value: {}", self, input);
+    }
+    fn bar(x: T) {
+        let producer = ProducerType {};
+
+        let production = producer.produce();
+        Consumer::consume(x, production);
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test negative impls infer negative impl 
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    Trait3::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Trait<T> {}
+
+impl I of Trait<u32> {}
+
+trait Trait2 {
+    fn foo();
+}
+
+impl Unusable<-Trait<u32>> of Trait2 {
+    fn foo() {}
+}
+
+trait Trait3 {
+    fn bar();
+}
+
+impl I3<-Trait<u32>> of Trait3 {
+    fn bar() {
+        Trait2::foo(); // works because of generic param
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::Trait3.
+ --> lib.cairo:23:13
+    Trait3::bar();
+            ^^^
