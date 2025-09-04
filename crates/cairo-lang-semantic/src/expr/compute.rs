@@ -4503,8 +4503,10 @@ pub fn compute_and_append_statement_semantic<'db>(
                 ast::ModuleItem::TypeAlias(_) => unreachable!("TypeAlias type not supported."),
                 ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
                 ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
+                ast::ModuleItem::MacroDeclaration(_) => {
+                    unreachable!("MacroDeclaration type not supported.")
+                }
                 ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
-                ast::ModuleItem::MacroDeclaration(_) => todo!(),
             }
             statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
                 semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },

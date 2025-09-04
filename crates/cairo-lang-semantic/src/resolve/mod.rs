@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::iter::Peekable;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
@@ -738,13 +737,11 @@ impl<'db> Resolver<'db> {
         let mut other_containing_modules = vec![];
         for (item_module_id, info) in self.db.module_imported_modules((), module_id).iter() {
             // Not checking the main module to prevent cycles.
-            // Additionally if the module isn't exposed skipping items within it, as we do not see
-            // them.
-            if *item_module_id == module_id || !info.exposed {
+            if *item_module_id == module_id {
                 continue;
             }
             if let Some(inner_item_info) =
-                self.resolve_item_in_imported_module(*item_module_id, ident)
+                self.resolve_item_in_module_or_expanded_macro(*item_module_id, ident)
             {
                 if info.user_modules.iter().any(|user_module_id| {
                     self.is_item_visible(*item_module_id, &inner_item_info, *user_module_id)
@@ -764,7 +761,7 @@ impl<'db> Resolver<'db> {
             None => {
                 for item_module_id in &other_containing_modules {
                     if let Some(inner_item_info) =
-                        self.resolve_item_in_imported_module(*item_module_id, ident)
+                        self.resolve_item_in_module_or_expanded_macro(*item_module_id, ident)
                     {
                         item_info = Some(inner_item_info.clone());
                         module_items_found.insert(inner_item_info.item_id);
@@ -783,18 +780,37 @@ impl<'db> Resolver<'db> {
         }
     }
 
-    /// Resolves an item in an imported module.
-    fn resolve_item_in_imported_module(
+    /// Resolves an item in a module and falls back to the expanded macro code of the module.
+    fn resolve_item_in_module_or_expanded_macro(
         &mut self,
         module_id: ModuleId<'db>,
         ident: &'db str,
     ) -> Option<ModuleItemInfo<'db>> {
-        let inner_item_info = self.db.module_item_info_by_name(module_id, ident.into());
-        if let Ok(Some(inner_item_info)) = inner_item_info {
-            self.insert_used_use(inner_item_info.item_id);
-            return Some(inner_item_info);
+        let ident = ident.into();
+        if let Ok(Some(info)) = self.db.module_item_info_by_name(module_id, ident) {
+            self.insert_used_use(info.item_id);
+            return Some(info);
         }
-        None
+        let mut stack = vec![(module_id, false)];
+        loop {
+            let (module_id, expose) = stack.pop()?;
+            if expose && let Ok(Some(info)) = self.db.module_item_info_by_name(module_id, ident) {
+                self.insert_used_use(info.item_id);
+                return Some(info);
+            }
+            if let Ok(macro_calls) = self.db.module_macro_calls_ids(module_id) {
+                for macro_call in macro_calls {
+                    if let Ok(macro_module_id) = self.db.macro_call_module_id(*macro_call) {
+                        let expose = expose
+                            || matches!(
+                                macro_module_id,
+                                ModuleId::MacroCall { is_expose: true, .. }
+                            );
+                        stack.push((macro_module_id, expose));
+                    }
+                }
+            }
+        }
     }
 
     /// Determines whether the first identifier of a path is a local item.
@@ -828,38 +844,6 @@ impl<'db> Resolver<'db> {
 
     pub fn prelude_submodule(&self) -> ModuleId<'db> {
         self.prelude_submodule_ex(&MacroResolutionInfo::from_resolver(self))
-    }
-
-    /// Trying to find an item in a module's item level macro calls expansions.
-    fn resolve_item_in_macro_calls(
-        &mut self,
-        module_id: ModuleId<'db>,
-        identifier: &ast::TerminalIdentifier<'db>,
-    ) -> Option<(ModuleItemInfo<'db>, ModuleId<'db>)> {
-        let db = self.db;
-        let ident = identifier.text(db);
-        let mut queue: VecDeque<_> =
-            self.db.module_macro_calls_ids(module_id).ok()?.iter().map(|id| (*id, false)).collect();
-        while let Some((macro_call_id, exposed)) = queue.pop_front() {
-            let Ok(macro_call_module_id) = self.db.macro_call_module_id(macro_call_id) else {
-                continue;
-            };
-            let exposed = exposed
-                || matches!(
-                    macro_call_module_id,
-                    ModuleId::MacroCall { is_expose, .. } if is_expose
-                );
-            if exposed
-                && let Ok(Some(inner_item_info)) =
-                    self.db.module_item_info_by_name(macro_call_module_id, ident.into())
-            {
-                return Some((inner_item_info, macro_call_module_id));
-            }
-            if let Ok(calls) = db.module_macro_calls_ids(macro_call_module_id) {
-                queue.extend(calls.iter().map(|id| (*id, exposed)));
-            }
-        }
-        None
     }
 
     /// Returns the crate's `prelude` submodule.
@@ -2130,36 +2114,29 @@ impl<'db, 'a> Resolution<'db, 'a> {
         identifier: &TerminalIdentifier<'db>,
     ) -> Maybe<ModuleItemInfo<'db>> {
         let db = self.resolver.db;
-        match db.module_item_info_by_name(*module_id, ident.into())? {
-            Some(info) => Ok(info),
-            None => {
-                if let Some((info, _macro_mod)) =
-                    self.resolver.resolve_item_in_macro_calls(*module_id, identifier)
-                {
-                    return Ok(info);
-                }
-                match self.resolver.resolve_path_using_use_star(*module_id, ident) {
-                    UseStarResult::UniquePathFound(item_info) => Ok(item_info),
-                    UseStarResult::AmbiguousPath(module_items) => Err(self
-                        .diagnostics
-                        .report(identifier.stable_ptr(db), AmbiguousPath(module_items))),
-                    UseStarResult::PathNotFound => {
-                        let item_type = if self.segments.len() == 0 {
-                            self.expected_item_type
-                        } else {
-                            NotFoundItemType::Identifier
-                        };
-                        Err(self
-                            .diagnostics
-                            .report(identifier.stable_ptr(db), PathNotFound(item_type)))
-                    }
-                    UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                        Err(self.diagnostics.report(
-                            identifier.stable_ptr(db),
-                            ItemNotVisible(module_item_id, containing_modules),
-                        ))
-                    }
-                }
+        if let Some(info) =
+            self.resolver.resolve_item_in_module_or_expanded_macro(*module_id, ident)
+        {
+            return Ok(info);
+        }
+        match self.resolver.resolve_path_using_use_star(*module_id, ident) {
+            UseStarResult::UniquePathFound(item_info) => Ok(item_info),
+            UseStarResult::AmbiguousPath(module_items) => {
+                Err(self.diagnostics.report(identifier.stable_ptr(db), AmbiguousPath(module_items)))
+            }
+            UseStarResult::PathNotFound => {
+                let item_type = if self.segments.len() == 0 {
+                    self.expected_item_type
+                } else {
+                    NotFoundItemType::Identifier
+                };
+                Err(self.diagnostics.report(identifier.stable_ptr(db), PathNotFound(item_type)))
+            }
+            UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
+                Err(self.diagnostics.report(
+                    identifier.stable_ptr(db),
+                    ItemNotVisible(module_item_id, containing_modules),
+                ))
             }
         }
     }
@@ -2522,8 +2499,8 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 .report(identifier.stable_ptr(db), PathNotFound(item_type)));
         };
         // If an item with this name is found inside the current module, use the current module.
-        if let Ok(Some(item_id)) = db.module_item_by_name(module_id, ident.into())
-            && !matches!(self.resolution_context, ResolutionContext::ModuleItem(id) if id == item_id)
+        if let Some(info) = self.resolver.resolve_item_in_module_or_expanded_macro(module_id, ident)
+            && !matches!(self.resolution_context, ResolutionContext::ModuleItem(id) if id == info.item_id)
         {
             return Ok(ResolvedBase::Module(module_id));
         }
@@ -2558,14 +2535,6 @@ impl<'db, 'a> Resolution<'db, 'a> {
         if ident == STARKNET_CRATE_NAME {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
             return Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)));
-        }
-        if let Some((item_info, module_id)) =
-            self.resolver.resolve_item_in_macro_calls(module_id, identifier)
-        {
-            return Ok(ResolvedBase::FoundThroughGlobalUse {
-                item_info,
-                containing_module: module_id,
-            });
         }
         // Finding whether the item is an imported module.
         match self.resolver.resolve_path_using_use_star(module_id, ident) {

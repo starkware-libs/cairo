@@ -269,3 +269,33 @@ pub fn macro_call_module_id_cycle<'db>(
 ) -> Maybe<ModuleId<'db>> {
     Err(skip_diagnostic())
 }
+
+/// Returns the modules that are considered a part of this module.
+///
+/// If `include_all` is true, all modules are returned, regardless if exposed, or are the main
+/// module.
+#[salsa::tracked(returns(ref))]
+pub fn module_macro_modules<'db>(
+    db: &'db dyn Database,
+    include_all: bool,
+    module_id: ModuleId<'db>,
+) -> Vec<ModuleId<'db>> {
+    let mut modules = vec![];
+    let mut stack = vec![(module_id, include_all)];
+    while let Some((module_id, expose)) = stack.pop() {
+        if expose {
+            modules.push(module_id);
+        }
+        if let Ok(macro_calls) = db.module_macro_calls_ids(module_id) {
+            for macro_call in macro_calls.iter().rev() {
+                let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) else {
+                    continue;
+                };
+                let expose = expose
+                    || matches!(macro_module_id, ModuleId::MacroCall { is_expose: true, .. });
+                stack.push((macro_module_id, expose));
+            }
+        }
+    }
+    modules
+}

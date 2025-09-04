@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
@@ -38,6 +38,7 @@ use crate::items::imp::{
     GenericsHeadFilter, ImplId, ImplImplId, ImplItemInfo, ImplLookupContextId,
     ImplicitImplImplData, ModuleImpls, UninferredImplById,
 };
+use crate::items::macro_call::module_macro_modules;
 use crate::items::macro_declaration::{MacroDeclarationData, MacroRuleData};
 use crate::items::module::{ModuleItemInfo, ModuleSemanticData};
 use crate::items::trt::{
@@ -2759,31 +2760,17 @@ fn add_duplicated_names_from_macro_expansions_diagnostics<'db>(
         return;
     }
     let mut names = UnorderedHashSet::<StrRef<'_>>::default();
-    let Ok(data) = db.priv_module_semantic_data(module_id) else {
-        return;
-    };
-    names.extend(data.items.keys().copied());
-    let mut queue = VecDeque::new();
-    queue.push_back((module_id, false));
-    while let Some((module_id, expose)) = queue.pop_front() {
-        let expose = expose || matches!(module_id, ModuleId::MacroCall { is_expose: true, .. });
-        if let Ok(macro_calls) = db.module_macro_calls_ids(module_id) {
-            for macro_call in macro_calls.iter() {
-                if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call) {
-                    queue.push_back((macro_module_id, expose));
-                }
-            }
-        }
-        if expose && let Ok(data) = db.priv_module_semantic_data(module_id) {
-            for (name, info) in data.items.iter() {
-                if !names.insert(*name)
-                    && let Ok(stable_ptr) = db.module_item_name_stable_ptr(module_id, info.item_id)
-                {
-                    diagnostics.report(
-                        stable_ptr,
-                        SemanticDiagnosticKind::NameDefinedMultipleTimes(*name),
-                    );
-                }
+    for defined_module in chain!([&module_id], module_macro_modules(db, false, module_id)) {
+        let Ok(data) = db.priv_module_semantic_data(*defined_module) else {
+            continue;
+        };
+        for (name, info) in data.items.iter() {
+            if !names.insert(*name)
+                && let Ok(stable_ptr) =
+                    db.module_item_name_stable_ptr(*defined_module, info.item_id)
+            {
+                diagnostics
+                    .report(stable_ptr, SemanticDiagnosticKind::NameDefinedMultipleTimes(*name));
             }
         }
     }
