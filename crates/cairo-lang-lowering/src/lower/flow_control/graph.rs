@@ -25,9 +25,10 @@ use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_semantic::{self as semantic, ConcreteVariant, PatternVariable};
 use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use num_bigint::BigInt;
+use num_integer::Integer;
 
 use crate::diagnostic::{
     LoweringDiagnosticKind, LoweringDiagnostics, LoweringDiagnosticsBuilder, MatchKind,
@@ -38,15 +39,22 @@ use crate::lower::context::LoweringContext;
 /// Represents a variable in the flow control graph.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FlowControlVar(usize);
-impl FlowControlVar {
+impl<'db> FlowControlVar {
     /// Returns the type of the variable.
-    pub fn ty<'db>(&self, graph: &FlowControlGraph<'db>) -> semantic::TypeId<'db> {
+    pub fn ty(&self, graph: &FlowControlGraph<'db>) -> semantic::TypeId<'db> {
         graph.var_types[self.0]
     }
 
     /// Returns the location of the variable.
-    pub fn location<'db>(&self, graph: &FlowControlGraph<'db>) -> LocationId<'db> {
+    pub fn location(&self, graph: &FlowControlGraph<'db>) -> LocationId<'db> {
         graph.var_locations[self.0]
+    }
+
+    /// Returns the number of times the variable is used in the graph as an input variable
+    /// (see [FlowControlNode::input_var]).
+    #[expect(dead_code)]
+    pub fn times_used(&self, graph: &FlowControlGraph<'db>) -> usize {
+        graph.times_used[self]
     }
 }
 impl Debug for FlowControlVar {
@@ -292,6 +300,9 @@ pub struct FlowControlGraph<'db> {
     /// The kind of the expression being lowered.
     /// This is used for diagnostic reporting.
     kind: MatchKind<'db>,
+    /// A map from used [FlowControlVar] to the number of times they are used as input variables
+    /// (see [FlowControlNode::input_var]).
+    times_used: UnorderedHashMap<FlowControlVar, usize>,
 }
 impl<'db> FlowControlGraph<'db> {
     /// Returns the root node of the graph.
@@ -328,7 +339,6 @@ impl<'db> Debug for FlowControlGraph<'db> {
 /// Builder for [FlowControlGraph].
 pub struct FlowControlGraphBuilder<'db> {
     graph: FlowControlGraph<'db>,
-    used_vars: UnorderedHashSet<FlowControlVar>,
     /// Diagnostics emitted during the construction of the flow control graph.
     diagnostics: LoweringDiagnostics<'db>,
 }
@@ -342,19 +352,16 @@ impl<'db> FlowControlGraphBuilder<'db> {
             var_locations: Vec::new(),
             pattern_vars: Vec::new(),
             kind,
+            times_used: UnorderedHashMap::default(),
         };
-        Self {
-            graph,
-            used_vars: UnorderedHashSet::default(),
-            diagnostics: LoweringDiagnostics::default(),
-        }
+        Self { graph, diagnostics: LoweringDiagnostics::default() }
     }
 
     /// Adds a new node to the graph. Returns the new node's id.
     pub fn add_node(&mut self, node: FlowControlNode<'db>) -> NodeId {
         // Mark the input variable (if exists) as used.
         if let Some(input_var) = node.input_var() {
-            self.used_vars.insert(input_var);
+            self.graph.times_used.entry(input_var).or_insert(0).inc();
         }
         let id = NodeId(self.graph.size());
         self.graph.nodes.push(node);
@@ -363,7 +370,7 @@ impl<'db> FlowControlGraphBuilder<'db> {
 
     /// Returns `true` if the given [FlowControlVar] is used in the graph.
     pub fn is_var_used(&self, var: FlowControlVar) -> bool {
-        self.used_vars.contains(&var)
+        self.graph.times_used.contains_key(&var)
     }
 
     /// Finalizes the graph and returns the final [FlowControlGraph].
