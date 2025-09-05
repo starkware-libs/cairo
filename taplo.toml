@@ -1,5 +1,5 @@
 # Don’t format Taplo’s own config files
-exclude = ["taplo.toml", ".taplo.toml"]
+exclude = ["taplo.toml", ".taplo.toml", "target/*"]
 
 # Dependencies tables: alphabetical
 [formatting]
