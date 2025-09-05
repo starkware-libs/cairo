@@ -5,6 +5,7 @@ mod test;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
+use bincode::error::EncodeError;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::cache::{
     CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
@@ -19,7 +20,7 @@ use cairo_lang_defs::ids::{
     TraitConstantLongId, TraitFunctionLongId, TraitImplId, TraitImplLongId, TraitLongId,
     TraitTypeId, TraitTypeLongId, VariantLongId,
 };
-use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -55,6 +56,7 @@ use id_arena::Arena;
 use num_bigint::BigInt;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::blocks::BlocksBuilder;
@@ -118,11 +120,25 @@ pub fn load_cached_crate_functions<'db>(
     )
 }
 
+#[derive(Debug, Error)]
+pub enum CrateCacheError {
+    #[error("Failed compilation of crate.")]
+    CompilationFailed,
+    #[error("Cache encoding failed: {0}")]
+    EncodingError(#[from] EncodeError),
+}
+
+impl From<DiagnosticAdded> for CrateCacheError {
+    fn from(_e: DiagnosticAdded) -> Self {
+        Self::CompilationFailed
+    }
+}
+
 /// Cache the lowering of each function in the crate into a blob.
 pub fn generate_crate_cache<'db>(
     db: &'db dyn Database,
-    crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
-) -> Maybe<Vec<u8>> {
+    crate_id: CrateId<'db>,
+) -> Result<Vec<u8>, CrateCacheError> {
     let modules = db.crate_modules(crate_id);
     let mut function_ids = Vec::new();
     for module_id in modules.iter() {
@@ -168,21 +184,20 @@ pub fn generate_crate_cache<'db>(
 
     let mut artifact = Vec::<u8>::new();
 
-    if let Ok(def) = bincode::serde::encode_to_vec(
+    let def = bincode::serde::encode_to_vec(
         &(CachedCrateMetadata::new(crate_id, db), def_cache, &ctx.semantic_ctx.defs_ctx.lookups),
         bincode::config::standard(),
-    ) {
-        artifact.extend(def.len().to_be_bytes());
-        artifact.extend(def);
-    }
+    )?;
+    artifact.extend(def.len().to_be_bytes());
+    artifact.extend(def);
 
-    if let Ok(lowered) = bincode::serde::encode_to_vec(
+    let lowered = bincode::serde::encode_to_vec(
         &(&ctx.lookups, &ctx.semantic_ctx.lookups, cached),
         bincode::config::standard(),
-    ) {
-        artifact.extend(lowered.len().to_be_bytes());
-        artifact.extend(lowered);
-    }
+    )?;
+    artifact.extend(lowered.len().to_be_bytes());
+    artifact.extend(lowered);
+
     Ok(artifact)
 }
 
