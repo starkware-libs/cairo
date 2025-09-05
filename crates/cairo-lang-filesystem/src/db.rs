@@ -458,7 +458,7 @@ fn crate_input(db: &dyn Database, crt: CrateId<'_>) -> CrateInput {
     crt.long(db).clone().into_crate_input(db)
 }
 
-// TODO(eytan-starkware): Remove the id argument. It is used to to CrateConfiguration not being in
+// TODO(eytan-starkware): Remove the id argument. It is used to CrateConfiguration not being in
 // Db.
 #[salsa::tracked(returns(ref))]
 fn crate_configuration_input_helper(
