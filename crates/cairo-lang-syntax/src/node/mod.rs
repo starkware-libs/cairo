@@ -3,9 +3,9 @@ use core::hash::Hash;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, define_short_id, require};
 use salsa::Database;
+use vector_map::VecMap;
 
 use self::ast::TriviaGreen;
 use self::green::GreenNode;
@@ -142,17 +142,18 @@ impl<'a> SyntaxNode<'a> {
         let self_green = self_long_id.green.long(db);
         let children = self_green.children();
         let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
-        let mut key_map = UnorderedHashMap::<_, usize>::default();
+        let mut key_map = VecMap::<_, usize>::new();
         for green_id in children {
             let green = green_id.long(db);
             let width = green.width();
             let kind = green.kind;
-            let key_fields = key_fields::get_key_fields(kind, green.children());
-            let key_count = key_map.entry((kind, key_fields.clone())).or_default();
+            let rng = key_fields::key_fields_range(kind);
+            let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
+            let key_count = key_map.entry((kind, key_fields)).or_insert(0);
             let stable_ptr = SyntaxStablePtr::Child {
                 parent: self_long_id.stable_ptr,
                 kind,
-                key_fields,
+                key_fields: key_fields.into(),
                 index: *key_count,
             }
             .intern(db);

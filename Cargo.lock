@@ -1075,6 +1075,7 @@ dependencies = [
  "serde",
  "tracing",
  "unescaper",
+ "vector-map",
 ]
 
 [[package]]
