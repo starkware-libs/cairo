@@ -716,6 +716,7 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "serde",
+ "thiserror",
 ]
 
 [[package]]
