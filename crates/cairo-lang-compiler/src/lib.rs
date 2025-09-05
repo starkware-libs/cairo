@@ -179,10 +179,6 @@ pub enum DbWarmupContext {
     NoWarmup,
 }
 
-/// A special hack. Calling this function runs salsa's hooks, which is needed to register views.
-#[salsa::tracked]
-fn empty_func(_db: &dyn Database) {}
-
 impl DbWarmupContext {
     /// Creates a new thread pool.
     pub fn new() -> Self {
@@ -216,12 +212,6 @@ impl DbWarmupContext {
             Self::Warmup { pool } => {
                 let crates = diagnostic_reporter.crates_of_interest(db);
                 let db_fork = Box::new(db.clone());
-
-                // Hack to make the views register. When we clone the database, the views are not
-                // registered anymore, so we need to call any tracked function to register them.
-                // TODO(eytan-starkware): Remove this hack once we move to dyn Database only.
-                empty_func(db_fork.as_ref());
-
                 pool.spawn(move || {
                     warmup_diagnostics_blocking(db_fork.as_ref(), crates);
                 });

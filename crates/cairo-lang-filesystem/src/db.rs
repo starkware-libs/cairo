@@ -13,7 +13,7 @@ use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
     BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId, Directory,
-    DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, StrId, VirtualFile,
+    DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, StrId, Tracked, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -458,12 +458,10 @@ fn crate_input(db: &dyn Database, crt: CrateId<'_>) -> CrateInput {
     crt.long(db).clone().into_crate_input(db)
 }
 
-// TODO(eytan-starkware): Remove the id argument. It is used to to CrateConfiguration not being in
-// Db.
 #[salsa::tracked(returns(ref))]
 fn crate_configuration_input_helper(
     db: &dyn Database,
-    _id: BlobId<'_>,
+    _tracked: Tracked,
     config: CrateConfiguration<'_>,
 ) -> CrateConfigurationInput {
     config.clone().into_crate_configuration_input(db)
@@ -473,7 +471,7 @@ fn crate_configuration_input<'db>(
     db: &'db dyn Database,
     config: CrateConfiguration<'db>,
 ) -> &'db CrateConfigurationInput {
-    crate_configuration_input_helper(db, BlobId::new(db, BlobLongId::Virtual(vec![])), config)
+    crate_configuration_input_helper(db, (), config)
 }
 
 pub fn init_dev_corelib(db: &mut dyn salsa::Database, core_lib_dir: PathBuf) {

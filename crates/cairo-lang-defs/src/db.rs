@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -1026,9 +1025,7 @@ fn cached_crate_modules<'db>(
 pub fn init_external_files<T: DefsGroup>(db: &mut T) {
     let try_ext_as_virtual_impl: TryExtAsVirtual =
         Arc::new(|db: &dyn Database, external_id: salsa::Id| {
-            // TODO(eytan-starkware): Once everything is &dyn Database, remove the unsafe cast.
-            let defs_db = (db as &dyn Any).downcast_ref::<T>().unwrap();
-            try_ext_as_virtual_impl(defs_db, external_id)
+            try_ext_as_virtual_impl(db, external_id)
         });
     ExternalFiles::replace_existing(db, try_ext_as_virtual_impl);
 }
