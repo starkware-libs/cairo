@@ -113,7 +113,7 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
         })
     }
 
-    /// Converts a statement to a cononic statement.
+    /// Converts a statement to a canonic statement.
     fn handle_statement(&mut self, statement: &Statement<'db>) -> CanonicStatement<'db> {
         match statement {
             Statement::Const(StatementConst { value, boxed, output }) => CanonicStatement::Const {
