@@ -352,7 +352,7 @@ pub trait LoweringGroup: Database {
         crate::inline::priv_never_inline(self.as_dyn_database(), function_id)
     }
 
-    /// Returns whether a function should be specalized.
+    /// Returns whether a function should be specialized.
     fn priv_should_specialize<'db>(
         &'db self,
         function_id: ids::ConcreteFunctionWithBodyId<'db>,
