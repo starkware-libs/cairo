@@ -19,7 +19,6 @@ normal = ["cairo-lang-debug"]
 # This is used only for docs.
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.2" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.2" }
-proc-macro2.workspace = true
 quote.workspace = true
 salsa.workspace = true
 syn.workspace = true
