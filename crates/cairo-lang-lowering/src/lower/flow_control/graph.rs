@@ -419,8 +419,8 @@ impl<'db> FlowControlGraphBuilder<'db> {
         &mut self,
         stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
         kind: LoweringDiagnosticKind<'db>,
-    ) {
-        self.diagnostics.report(stable_ptr, kind);
+    ) -> DiagnosticAdded {
+        self.diagnostics.report(stable_ptr, kind)
     }
 
     /// Reports a diagnostic, and returns a new [FlowControlNode::Missing] node.
