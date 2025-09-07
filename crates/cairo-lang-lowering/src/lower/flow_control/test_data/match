@@ -1978,3 +1978,142 @@ Statements:
   (v5: core::felt252) <- 0
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Match u256
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true, skip_lowering: true)
+
+//! > function_code
+fn foo(x: u256) -> felt252 {
+    match x {
+        0 => 1,
+        1 => 2,
+        0x300000000000000000000000000000004 => 3,
+        0x500000000000000000000000000000004 => 4,
+        u256 { low: 4, high: _ } => 5,
+        _ => 6,
+        // Value out of range.
+        0x10000000000000000000000000000000000000000000000000000000000000000 => 7,
+    }
+}
+
+//! > graph
+Root: 19
+19 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(18) }
+18 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(17) }
+17 Upcast { input: v1, output: v3, next: NodeId(16) }
+16 EqualsLiteral { input: v3, literal: 0, true_branch: NodeId(15), false_branch: NodeId(13) }
+15 Upcast { input: v2, output: v6, next: NodeId(14) }
+14 EqualsLiteral { input: v6, literal: 0, true_branch: NodeId(0), false_branch: NodeId(5) }
+13 EqualsLiteral { input: v3, literal: 1, true_branch: NodeId(12), false_branch: NodeId(10) }
+12 Upcast { input: v2, output: v5, next: NodeId(11) }
+11 EqualsLiteral { input: v5, literal: 0, true_branch: NodeId(1), false_branch: NodeId(5) }
+10 EqualsLiteral { input: v3, literal: 4, true_branch: NodeId(9), false_branch: NodeId(5) }
+9 Upcast { input: v2, output: v4, next: NodeId(8) }
+8 EqualsLiteral { input: v4, literal: 3, true_branch: NodeId(2), false_branch: NodeId(7) }
+7 EqualsLiteral { input: v4, literal: 5, true_branch: NodeId(3), false_branch: NodeId(4) }
+6 ArmExpr { expr: ExprId(7) }
+5 ArmExpr { expr: ExprId(6) }
+4 ArmExpr { expr: ExprId(5) }
+3 ArmExpr { expr: ExprId(4) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: The value does not fit within the range of type core::integer::u256.
+ --> lib.cairo:10:9
+        0x10000000000000000000000000000000000000000000000000000000000000000 => 7,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Match u256 with optimized numeric match on low
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+// TODO(lior): Consider optimizing to avoid the multiple `EqualsLiteral` nodes.
+fn foo(x: u256) -> u256 {
+    match x {
+        0 | 2 | 4 | 5 | 6 | 7 => x,
+        1 | 3 => 1,
+        _ => 2,
+    }
+}
+
+//! > graph
+Root: 22
+22 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(21) }
+21 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(20) }
+20 Downcast { input: v1, output: v3, in_range: NodeId(19), out_of_range: NodeId(2) }
+19 ValueMatch { matched_var: v3, nodes: [NodeId(4), NodeId(6), NodeId(8), NodeId(10), NodeId(12), NodeId(14), NodeId(16), NodeId(18)] }
+18 Upcast { input: v2, output: v11, next: NodeId(17) }
+17 EqualsLiteral { input: v11, literal: 0, true_branch: NodeId(0), false_branch: NodeId(2) }
+16 Upcast { input: v2, output: v10, next: NodeId(15) }
+15 EqualsLiteral { input: v10, literal: 0, true_branch: NodeId(0), false_branch: NodeId(2) }
+14 Upcast { input: v2, output: v9, next: NodeId(13) }
+13 EqualsLiteral { input: v9, literal: 0, true_branch: NodeId(0), false_branch: NodeId(2) }
+12 Upcast { input: v2, output: v8, next: NodeId(11) }
+11 EqualsLiteral { input: v8, literal: 0, true_branch: NodeId(0), false_branch: NodeId(2) }
+10 Upcast { input: v2, output: v7, next: NodeId(9) }
+9 EqualsLiteral { input: v7, literal: 0, true_branch: NodeId(1), false_branch: NodeId(2) }
+8 Upcast { input: v2, output: v6, next: NodeId(7) }
+7 EqualsLiteral { input: v6, literal: 0, true_branch: NodeId(0), false_branch: NodeId(2) }
+6 Upcast { input: v2, output: v5, next: NodeId(5) }
+5 EqualsLiteral { input: v5, literal: 0, true_branch: NodeId(1), false_branch: NodeId(2) }
+4 Upcast { input: v2, output: v4, next: NodeId(3) }
+3 EqualsLiteral { input: v4, literal: 0, true_branch: NodeId(0), false_branch: NodeId(2) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Match u256 with optimized numeric match on high
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: true)
+
+//! > function_code
+fn foo(x: u256) -> u256 {
+    match x {
+        0x000000000000000000000000000000004 | 0x200000000000000000000000000000004 |
+        0x400000000000000000000000000000004 | 0x500000000000000000000000000000004 |
+        0x600000000000000000000000000000004 | 0x700000000000000000000000000000004 => x,
+        0x100000000000000000000000000000004 | 0x300000000000000000000000000000004 => 1,
+        _ => 2,
+    }
+}
+
+//! > graph
+Root: 8
+8 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(7) }
+7 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(6) }
+6 Upcast { input: v1, output: v3, next: NodeId(5) }
+5 EqualsLiteral { input: v3, literal: 4, true_branch: NodeId(4), false_branch: NodeId(2) }
+4 Downcast { input: v2, output: v4, in_range: NodeId(3), out_of_range: NodeId(2) }
+3 ValueMatch { matched_var: v4, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
