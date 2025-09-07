@@ -151,13 +151,9 @@ impl<'db> MatchError<'db> {
             (MatchDiagnostic::UnsupportedMatchArmNonSequential, MatchKind::Match) => {
                 "Unsupported match - numbers must be sequential starting from 0.".into()
             }
-            (MatchDiagnostic::NonExhaustiveMatchValue, MatchKind::Match) => {
-                "Match is non exhaustive - add a wildcard pattern (`_`).".into()
-            }
             (
                 MatchDiagnostic::UnsupportedMatchArmNotALiteral
-                | MatchDiagnostic::UnsupportedMatchArmNonSequential
-                | MatchDiagnostic::NonExhaustiveMatchValue,
+                | MatchDiagnostic::UnsupportedMatchArmNonSequential,
                 MatchKind::IfLet | MatchKind::WhileLet(_, _),
             ) => unreachable!("Numeric values are not supported in if/while-let conditions."),
             (MatchDiagnostic::MissingMatchArm(variant), MatchKind::Match) => {
@@ -263,6 +259,5 @@ pub enum MatchDiagnostic {
 
     UnsupportedMatchArmNotALiteral,
     UnsupportedMatchArmNonSequential,
-    NonExhaustiveMatchValue,
     UnsupportedNumericInLetCondition,
 }
