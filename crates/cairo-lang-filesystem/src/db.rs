@@ -202,54 +202,9 @@ pub struct ExperimentalFeaturesConfig {
     pub user_defined_inline_macros: bool,
 }
 
-/// Function to try get a virtual file from an external id.
-pub type TryExtAsVirtual =
-    Arc<dyn for<'a> Fn(&'a dyn Database, salsa::Id) -> Option<VirtualFile<'a>> + Send + Sync>;
-
-/// Function object implementing the `try_ext_as_virtual` method.
-#[salsa::input]
-pub struct ExternalFiles {
-    /// Returns the virtual file matching the external id if found.
-    try_ext_as_virtual_obj: TryExtAsVirtual,
-}
-
-impl ExternalFiles {
-    /// Returns a default external files object. Takes a db to initiate it as input.
-    pub fn default(db: &dyn Database) -> Self {
-        let try_ext_as_virtual_obj: for<'a> fn(
-            &'a dyn Database,
-            salsa::Id,
-        ) -> Option<VirtualFile<'a>> =
-            |_, _| panic!("Should not be called, unless specifically implemented!");
-        ExternalFiles::new(db, Arc::new(try_ext_as_virtual_obj))
-    }
-
-    /// Replaces the existing external files object held in the db with a new one.
-    pub fn replace_existing(db: &mut dyn salsa::Database, try_ext_as_virtual_obj: TryExtAsVirtual) {
-        let external_files = get_external_files(db);
-        external_files.set_try_ext_as_virtual_obj(db).to(try_ext_as_virtual_obj);
-    }
-
-    /// Returns the virtual file matching the external id if found.
-    pub fn try_ext_as_virtual<'db>(
-        &self,
-        db: &'db dyn Database,
-        id: salsa::Id,
-    ) -> Option<VirtualFile<'db>> {
-        self.try_ext_as_virtual_obj(db)(db, id)
-    }
-
-    /// Returns the virtual file matching the external id. Panics if the id is not found.
-    pub fn ext_as_virtual<'db>(&self, db: &'db dyn Database, id: salsa::Id) -> VirtualFile<'db> {
-        self.try_ext_as_virtual(db, id).unwrap()
-    }
-}
-
-/// Returns the external files object held in the db.
-#[salsa::tracked]
-pub fn get_external_files(db: &dyn Database) -> ExternalFiles {
-    ExternalFiles::default(db)
-}
+/// Function to get a virtual file from an external id.
+pub type ExtAsVirtual =
+    Arc<dyn for<'a> Fn(&'a dyn Database, salsa::Id) -> &'a VirtualFile<'a> + Send + Sync>;
 
 #[salsa::input]
 // TODO(eytan-starkware): Change this mechanism to hold input handles on the db struct outside
@@ -268,11 +223,13 @@ pub struct FilesGroupInput {
     /// The `#[cfg(...)]` options.
     #[returns(ref)]
     pub cfg_set: Option<CfgSet>,
+    #[returns(ref)]
+    pub ext_as_virtual_obj: Option<ExtAsVirtual>,
 }
 
 #[salsa::tracked]
 pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
-    FilesGroupInput::new(db, None, None, None, None)
+    FilesGroupInput::new(db, None, None, None, None, None)
 }
 
 // Salsa database interface.
@@ -610,7 +567,7 @@ fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Optio
         }
         FileLongId::Virtual(virt) => Some(virt.content.clone().intern(db)),
         FileLongId::External(external_id) => {
-            Some(get_external_files(db).ext_as_virtual(db, *external_id).content.intern(db))
+            Some(ext_as_virtual(db, *external_id).content.clone().intern(db))
         }
     }
 }
@@ -678,7 +635,7 @@ pub fn get_originating_location<'db>(
         parent_files.push(file_id);
     }
     while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
-        if let Some(origin) = translate_location(&code_mappings, span) {
+        if let Some(origin) = translate_location(code_mappings, span) {
             span = origin;
             file_id = parent;
             if let Some(ref mut parent_files) = parent_files {
@@ -784,11 +741,19 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
 pub fn get_parent_and_mapping<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
-) -> Option<(FileId<'db>, Arc<[CodeMapping]>)> {
-    let vf = match file_id.long(db).clone() {
+) -> Option<(FileId<'db>, &'db [CodeMapping])> {
+    let vf = match file_id.long(db) {
         FileLongId::OnDisk(_) => return None,
         FileLongId::Virtual(vf) => vf,
-        FileLongId::External(id) => get_external_files(db).ext_as_virtual(db, id),
+        FileLongId::External(id) => ext_as_virtual(db, *id),
     };
-    Some((vf.parent?, vf.code_mappings))
+    Some((vf.parent?, &vf.code_mappings))
+}
+
+/// Returns the virtual file matching the external id. Panics if the id is not found.
+pub fn ext_as_virtual<'db>(db: &'db dyn Database, id: salsa::Id) -> &'db VirtualFile<'db> {
+    files_group_input(db)
+        .ext_as_virtual_obj(db)
+        .as_ref()
+        .expect("`ext_as_virtual` was not set as input.")(db, id)
 }
