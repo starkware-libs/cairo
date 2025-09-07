@@ -8,7 +8,7 @@ use salsa::Database;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::db::{CORELIB_CRATE_NAME, FilesGroup, get_external_files};
+use crate::db::{CORELIB_CRATE_NAME, FilesGroup, ext_as_virtual};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -277,18 +277,14 @@ impl<'db> FileLongId<'db> {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
             }
             FileLongId::Virtual(vf) => vf.name.to_string(),
-            FileLongId::External(external_id) => {
-                get_external_files(db).ext_as_virtual(db, *external_id).name.to_string()
-            }
+            FileLongId::External(external_id) => ext_as_virtual(db, *external_id).name.to_string(),
         }
     }
     pub fn full_path(&self, db: &'db dyn Database) -> String {
         match self {
             FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
             FileLongId::Virtual(vf) => vf.full_path(db),
-            FileLongId::External(external_id) => {
-                get_external_files(db).ext_as_virtual(db, *external_id).full_path(db)
-            }
+            FileLongId::External(external_id) => ext_as_virtual(db, *external_id).full_path(db),
         }
     }
     pub fn kind(&self) -> FileKind {
