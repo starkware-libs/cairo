@@ -1,7 +1,6 @@
 use std::default::Default;
 
 use anyhow::{Result, ensure};
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::DebugWithDb;
@@ -89,7 +88,7 @@ pub struct TestsCompilationConfig<'db> {
 /// * `Ok(TestCompilation)` - The compiled test cases with metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     tests_compilation_config: TestsCompilationConfig<'db>,
     test_crate_ids: Vec<CrateInput>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,

@@ -23,6 +23,7 @@ cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = ["tracing"] }
 cairo-vm.workspace = true
 itertools = { workspace = true, default-features = true }
+salsa.workspace = true
 serde.workspace = true
 
 [dev-dependencies]

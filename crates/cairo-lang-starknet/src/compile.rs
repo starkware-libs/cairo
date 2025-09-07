@@ -57,7 +57,7 @@ pub fn compile_path(
 /// If no contract was specified, verify that there is only one.
 /// Otherwise, return an error.
 pub fn compile_contract_in_prepared_db<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
@@ -103,7 +103,7 @@ pub fn compile_contract_in_prepared_db<'db>(
 /// * `Ok(Vec<ContractClass>)` - List of all compiled contract classes found in main crates.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     contracts: &[&ContractDeclaration<'db>],
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<Vec<ContractClass>> {
@@ -123,7 +123,7 @@ pub fn compile_prepared_db<'db>(
 /// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by caller
 /// of this function.
 fn compile_contract_with_prepared_and_checked_db<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
     compiler_config: &CompilerConfig<'_>,
 ) -> Result<ContractClass> {
@@ -208,7 +208,7 @@ pub fn extract_semantic_entrypoints<'db>(
 
 /// Returns the entry points given their IDs sorted by selectors.
 fn get_entry_points<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     entry_point_functions: &[Aliased<ConcreteFunctionWithBodyId<'db>>],
     replacer: &CanonicalReplacer,
 ) -> Result<Vec<ContractEntryPoint>> {

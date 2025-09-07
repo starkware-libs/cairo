@@ -23,6 +23,7 @@ use cairo_lang_sierra_generator::program_generator::{
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::write_comma_separated;
 use itertools::Itertools;
+use salsa::Database;
 
 /// The CASM compilation result.
 pub struct CompiledFunction {
@@ -96,7 +97,7 @@ pub fn prepare_db(config: &ExecutableConfig) -> Result<RootDatabase> {
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
 pub fn compile_executable<'db>(
-    db: &'db mut RootDatabase,
+    db: &'db mut dyn Database,
     path: &Path,
     executable_path: Option<&str>,
     diagnostics_reporter: DiagnosticsReporter<'_>,
@@ -121,7 +122,7 @@ pub fn compile_executable<'db>(
 /// If no executable was specified, verify that there is only one.
 /// Otherwise, return an error.
 pub fn compile_executable_in_prepared_db<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     executable_path: Option<&str>,
     main_crate_ids: Vec<CrateId<'db>>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
@@ -157,7 +158,7 @@ pub fn compile_executable_in_prepared_db<'db>(
 /// Search crates identified by `main_crate_ids` for executable functions.
 /// If `executable_path` is provided, only functions with exactly the same path will be returned.
 pub fn find_executable_functions<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
     executable_path: Option<&str>,
 ) -> Vec<ConcreteFunctionWithBodyId<'db>> {
@@ -179,7 +180,7 @@ pub fn find_executable_functions<'db>(
 ///
 /// If the executable is not wrapping a function, returns the full path of the executable.
 pub fn originating_function_path<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     wrapper: ConcreteFunctionWithBodyId<'db>,
 ) -> String {
     let semantic = wrapper.base_semantic_function(db);
@@ -205,7 +206,7 @@ pub fn originating_function_path<'db>(
 /// * `Ok(Vec<String>)` - The result artifact of the compilation.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_executable_function_in_prepared_db<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     executable: ConcreteFunctionWithBodyId<'db>,
     config: ExecutableConfig,
     context: DbWarmupContext,

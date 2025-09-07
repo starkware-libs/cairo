@@ -36,6 +36,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use clap::Parser;
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 /// Compiles a Cairo project and analyzes the size-related costs of its components.
 /// Exits with a status code of 1 if compilation or analysis fails, and 0 otherwise.
@@ -214,7 +215,7 @@ fn main() -> anyhow::Result<()> {
 /// Tries to extract a relevant name from the provided syntax node.
 /// Used to reconstruct function paths.
 fn try_extract_path_segment_name<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     node: cairo_lang_syntax::node::SyntaxNode<'db>,
 ) -> Option<ast::TerminalIdentifier<'db>> {
     match node.kind(db) {
