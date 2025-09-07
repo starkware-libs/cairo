@@ -945,6 +945,38 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         success_ty.format(db)
                     ),
                 });
+            } else if self.nz_fns.contains(&extern_fn) {
+                let [arg] = args else { return None };
+                let (ty, is_zero) = match arg.long(db) {
+                    ConstValue::Int(val, ty) => (ty, val.is_zero()),
+                    ConstValue::Struct(members, ty) => (
+                        ty,
+                        // For u256 struct with (low, high), check if both are zero
+                        members.iter().all(|member| match member.long(db) {
+                            ConstValue::Int(val, _) => val.is_zero(),
+                            _ => false,
+                        }),
+                    ),
+                    _ => unreachable!(
+                        "`is_zero` is only allowed for integers got `{}`",
+                        arg.ty(db).unwrap().format(db)
+                    ),
+                };
+
+                return Some(
+                    if is_zero {
+                        ConstValue::Enum(
+                            crate::corelib::jump_nz_zero_variant(db, *ty),
+                            self.unit_const,
+                        )
+                    } else {
+                        ConstValue::Enum(
+                            crate::corelib::jump_nz_nonzero_variant(db, *ty),
+                            ConstValue::NonZero(*arg).intern(db),
+                        )
+                    }
+                    .intern(db),
+                );
             } else {
                 unreachable!(
                     "Unexpected extern function in constant lowering: `{}`",
@@ -1245,6 +1277,8 @@ pub struct ConstCalcInfo<'db> {
     pub downcast_fns: UnorderedHashMap<ExternFunctionId<'db>, bool>,
     /// The `unwrap_non_zero` function.
     unwrap_non_zero: ExternFunctionId<'db>,
+    /// The `is_zero` style functions.
+    pub nz_fns: UnorderedHashSet<ExternFunctionId<'db>>,
 
     core_info: Arc<CoreInfo<'db>>,
 }
@@ -1323,6 +1357,16 @@ impl<'db> ConstCalcInfo<'db> {
                 ),
             ]),
             unwrap_non_zero: zeroable.extern_function_id("unwrap_non_zero"),
+            nz_fns: FromIterator::from_iter([
+                core.extern_function_id("felt252_is_zero"),
+                bounded_int.extern_function_id("bounded_int_is_zero"),
+                integer.extern_function_id("u8_is_zero"),
+                integer.extern_function_id("u16_is_zero"),
+                integer.extern_function_id("u32_is_zero"),
+                integer.extern_function_id("u64_is_zero"),
+                integer.extern_function_id("u128_is_zero"),
+                integer.extern_function_id("u256_is_zero"),
+            ]),
             core_info,
         }
     }

@@ -21,6 +21,9 @@ const FELT_FIXED_SIZE_ARRAY: [felt252; 3] = [1, 2, 3];
 
 const OTHER_CONST_REF: felt252 = my_module::CONST_IN_MODULE;
 
+const FIVE: u32 = 5;
+const NON_ZERO_FIVE: NonZero<u32> = FIVE.try_into().unwrap();
+
 mod my_module {
     const CONST_IN_MODULE: felt252 = 1;
 }
@@ -105,6 +108,17 @@ const fn call_myself() -> felt252 {
     call_myself()
 }
 
+const ZERO: u64 = 0;
+const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
+
+// To avoid getting corelib filesystem paths.
+const fn my_unwrap<T>(v: Option<T>) -> T {
+    match v {
+        Some(v) => v,
+        None => core::panic_with_felt252('bad value'),
+    }
+}
+
 //! > expected_diagnostics
 error[E0006]: Type not found.
  --> lib.cairo:1:17
@@ -149,6 +163,15 @@ error: Constant calculation depth exceeded.
  --> lib.cairo:59:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
+
+error: Failed to calculate constant.
+ --> lib.cairo:66:37
+const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
+  --> lib.cairo:72:17
+        None => core::panic_with_felt252('bad value'),
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
