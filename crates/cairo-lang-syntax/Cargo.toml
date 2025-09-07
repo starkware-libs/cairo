@@ -16,6 +16,7 @@ num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
 unescaper.workspace = true
+vector-map.workspace = true
 
 [dev-dependencies]
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
