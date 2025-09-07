@@ -1162,8 +1162,6 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     unbox: ExternFunctionId<'db>,
     /// The `box_forward_snapshot` libfunc.
     box_forward_snapshot: GenericFunctionId<'db>,
-    /// The set of functions that check if a number is zero.
-    nz_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions that check if numbers are equal.
     eq_fns: OrderedHashSet<ExternFunctionId<'db>>,
     /// The set of functions to add unsigned ints.
@@ -1226,14 +1224,6 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
         let array_module = core.submodule("array");
         let starknet_module = core.submodule("starknet");
         let storage_access_module = starknet_module.submodule("storage_access");
-        let nz_fns = OrderedHashSet::<_>::from_iter(chain!(
-            [
-                core.extern_function_id("felt252_is_zero"),
-                bounded_int_module.extern_function_id("bounded_int_is_zero")
-            ],
-            ["u8", "u16", "u32", "u64", "u128", "u256"]
-                .map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_is_zero"))))
-        ));
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
         let itypes = ["i8", "i16", "i32", "i64", "i128"];
         let eq_fns = OrderedHashSet::<_>::from_iter(
@@ -1322,7 +1312,6 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             into_box: box_module.extern_function_id("into_box"),
             unbox: box_module.extern_function_id("unbox"),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),
-            nz_fns,
             eq_fns,
             uadd_fns,
             usub_fns,

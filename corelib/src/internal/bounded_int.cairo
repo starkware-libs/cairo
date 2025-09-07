@@ -246,7 +246,9 @@ extern fn bounded_int_trim_max<T, impl H: TrimMaxHelper<T>>(
     value: T,
 ) -> core::internal::OptionRev<H::Target> nopanic;
 
-extern fn bounded_int_is_zero<T>(value: T) -> crate::zeroable::IsZeroResult<T> implicits() nopanic;
+extern const fn bounded_int_is_zero<T>(
+    value: T,
+) -> crate::zeroable::IsZeroResult<T> implicits() nopanic;
 
 /// Returns the negation of the given `felt252` value.
 trait NegFelt252<const NUM: felt252> {
