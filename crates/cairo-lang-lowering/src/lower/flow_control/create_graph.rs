@@ -75,14 +75,15 @@ pub fn create_graph_expr_if<'db>(
                             .iter()
                             .map(|pattern| Some(get_pattern(ctx, *pattern)))
                             .collect_vec(),
-                        build_node_callback: &mut |graph, pattern_indices| {
+                        build_node_callback: &mut |graph, pattern_indices, path| {
                             if let Some(index_and_bindings) = pattern_indices.first() {
                                 cache.get_or_compute(
-                                    &mut |graph, index_and_bindings: IndexAndBindings| {
+                                    &mut |graph, index_and_bindings: IndexAndBindings, _path| {
                                         index_and_bindings.wrap_node(graph, current_node)
                                     },
                                     graph,
                                     index_and_bindings,
+                                    path,
                                 )
                             } else {
                                 false_branch
@@ -141,24 +142,25 @@ pub fn create_graph_expr_match<'db>(
                 .iter()
                 .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
                 .collect_vec(),
-            build_node_callback: &mut |graph, pattern_indices| {
+            build_node_callback: &mut |graph, pattern_indices, path| {
                 // Get the first arm that matches.
                 let Some(index_and_bindings) = pattern_indices.first() else {
                     // If no arm is available, report a non-exhaustive match error.
                     let kind = LoweringDiagnosticKind::MatchError(MatchError {
                         kind: MatchKind::Match,
-                        error: MatchDiagnostic::NonExhaustiveMatchValue,
+                        error: MatchDiagnostic::MissingMatchArm(path),
                     });
                     return graph.report_with_missing_node(expr.stable_ptr.untyped(), kind);
                 };
 
                 cache.get_or_compute(
-                    &mut |graph, index_and_bindings: IndexAndBindings| {
+                    &mut |graph, index_and_bindings: IndexAndBindings, _path| {
                         let index = index_and_bindings.index();
                         index_and_bindings.wrap_node(graph, pattern_and_nodes[index].1)
                     },
                     graph,
                     index_and_bindings,
+                    path,
                 )
             },
             location: matched_expr_location,

@@ -1384,27 +1384,37 @@ End:
 test_create_graph(expect_diagnostics: true)
 
 //! > function_code
-fn foo(x: Option<Option<felt252>>) -> felt252 {
+fn foo(x: MyStruct) -> felt252 {
     match x {
-        Some(Some(_)) => 1,
-        None => 2,
+        MyStruct { a: Some(Some(_)), .. } => 1,
+        MyStruct { b: (None, _, _), .. } => 1,
     }
 }
 
+//! > module_code
+struct MyStruct {
+    a: Option<Option<felt252>>,
+    b: (Option<felt252>, felt252, felt252),
+}
+
 //! > graph
-Root: 5
-5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
-4 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(1), v4)}
-3 EnumMatch { matched_var: v1, variants: (NodeId(0), v2), (NodeId(2), v3)}
-2 Missing
+Root: 9
+9 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(8) }
+8 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(7) }
+7 EnumMatch { matched_var: v1, variants: (NodeId(6), v3), (NodeId(5), v16)}
+6 EnumMatch { matched_var: v3, variants: (NodeId(2), v4), (NodeId(5), v10)}
+5 Deconstruct { input: v2, outputs: [v11, v12, v13], next: NodeId(4) }
+4 EnumMatch { matched_var: v11, variants: (NodeId(3), v14), (NodeId(1), v15)}
+3 Missing
+2 Deconstruct { input: v2, outputs: [v5, v6, v7], next: NodeId(0) }
 1 ArmExpr { expr: ExprId(2) }
 0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non exhaustive - add a wildcard pattern (`_`).
- --> lib.cairo:2:5-5:5
+error: Missing match arm: `MyStruct{a: Some(None(_)), b: (Some(_), _, _)}` not covered.
+ --> lib.cairo:6:5-9:5
       match x {
  _____^
 | ...
@@ -1412,7 +1422,7 @@ error: Match is non exhaustive - add a wildcard pattern (`_`).
 |_____^
 
 //! > lowered
-Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+Parameters: v0: test::MyStruct
 
 //! > ==========================================================================
 
@@ -1532,7 +1542,7 @@ Root: 1
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non exhaustive - add a wildcard pattern (`_`).
+error: Missing match arm: `_` not covered.
  --> lib.cairo:2:5
     match x {}
     ^^^^^^^^^^
@@ -1594,7 +1604,7 @@ Root: 1
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non exhaustive - add a wildcard pattern (`_`).
+error: Missing match arm: `_` not covered.
  --> lib.cairo:5:5
     match x {}
     ^^^^^^^^^^
