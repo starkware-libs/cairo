@@ -222,7 +222,7 @@ impl U128Mul of Mul<u128> {
 }
 
 #[panic_with('u128 is 0', u128_as_non_zero)]
-fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
+const fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
     match u128_is_zero(a) {
         IsZeroResult::Zero => None,
         IsZeroResult::NonZero(x) => Some(x),
@@ -230,7 +230,7 @@ fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
 }
 
 pub(crate) impl U128TryIntoNonZero of TryInto<u128, NonZero<u128>> {
-    fn try_into(self: u128) -> Option<NonZero<u128>> {
+    const fn try_into(self: u128) -> Option<NonZero<u128>> {
         u128_try_as_non_zero(self)
     }
 }
@@ -300,7 +300,7 @@ impl U128BitSize of crate::num::traits::BitSize<u128> {
     }
 }
 
-pub(crate) extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
+pub(crate) extern const fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
 pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
@@ -404,12 +404,12 @@ impl U8Mul of Mul<u8> {
     }
 }
 
-extern fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
+extern const fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
 
 pub extern fn u8_safe_divmod(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
 #[panic_with('u8 is 0', u8_as_non_zero)]
-fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
+const fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
     match u8_is_zero(a) {
         IsZeroResult::Zero => None,
         IsZeroResult::NonZero(x) => Some(x),
@@ -417,7 +417,7 @@ fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
 }
 
 impl U8TryIntoNonZero of TryInto<u8, NonZero<u8>> {
-    fn try_into(self: u8) -> Option<NonZero<u8>> {
+    const fn try_into(self: u8) -> Option<NonZero<u8>> {
         u8_try_as_non_zero(self)
     }
 }
@@ -564,14 +564,14 @@ impl U16Mul of Mul<u16> {
     }
 }
 
-extern fn u16_is_zero(a: u16) -> IsZeroResult<u16> implicits() nopanic;
+extern const fn u16_is_zero(a: u16) -> IsZeroResult<u16> implicits() nopanic;
 
 pub extern fn u16_safe_divmod(
     lhs: u16, rhs: NonZero<u16>,
 ) -> (u16, u16) implicits(RangeCheck) nopanic;
 
 #[panic_with('u16 is 0', u16_as_non_zero)]
-fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
+const fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
     match u16_is_zero(a) {
         IsZeroResult::Zero => None,
         IsZeroResult::NonZero(x) => Some(x),
@@ -579,7 +579,7 @@ fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
 }
 
 impl U16TryIntoNonZero of TryInto<u16, NonZero<u16>> {
-    fn try_into(self: u16) -> Option<NonZero<u16>> {
+    const fn try_into(self: u16) -> Option<NonZero<u16>> {
         u16_try_as_non_zero(self)
     }
 }
@@ -726,14 +726,14 @@ impl U32Mul of Mul<u32> {
     }
 }
 
-extern fn u32_is_zero(a: u32) -> IsZeroResult<u32> implicits() nopanic;
+extern const fn u32_is_zero(a: u32) -> IsZeroResult<u32> implicits() nopanic;
 
 pub extern fn u32_safe_divmod(
     lhs: u32, rhs: NonZero<u32>,
 ) -> (u32, u32) implicits(RangeCheck) nopanic;
 
 #[panic_with('u32 is 0', u32_as_non_zero)]
-fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
+const fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
     match u32_is_zero(a) {
         IsZeroResult::Zero => None,
         IsZeroResult::NonZero(x) => Some(x),
@@ -741,7 +741,7 @@ fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
 }
 
 pub(crate) impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
-    fn try_into(self: u32) -> Option<NonZero<u32>> {
+    const fn try_into(self: u32) -> Option<NonZero<u32>> {
         u32_try_as_non_zero(self)
     }
 }
@@ -888,14 +888,14 @@ impl U64Mul of Mul<u64> {
     }
 }
 
-extern fn u64_is_zero(a: u64) -> IsZeroResult<u64> implicits() nopanic;
+extern const fn u64_is_zero(a: u64) -> IsZeroResult<u64> implicits() nopanic;
 
 pub extern fn u64_safe_divmod(
     lhs: u64, rhs: NonZero<u64>,
 ) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 #[panic_with('u64 is 0', u64_as_non_zero)]
-fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
+const fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
     match u64_is_zero(a) {
         IsZeroResult::Zero => None,
         IsZeroResult::NonZero(x) => Some(x),
@@ -903,7 +903,7 @@ fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
 }
 
 impl U64TryIntoNonZero of TryInto<u64, NonZero<u64>> {
-    fn try_into(self: u64) -> Option<NonZero<u64>> {
+    const fn try_into(self: u64) -> Option<NonZero<u64>> {
         u64_try_as_non_zero(self)
     }
 }
@@ -1118,7 +1118,7 @@ fn u256_from_felt252(lhs: felt252) -> u256 implicits(RangeCheck) nopanic {
     }
 }
 
-extern fn u256_is_zero(a: u256) -> IsZeroResult<u256> implicits() nopanic;
+extern const fn u256_is_zero(a: u256) -> IsZeroResult<u256> implicits() nopanic;
 
 /// Calculates division with remainder of a u256 by a non-zero u256.
 /// Additionally returns a `U128MulGuarantee` that is required for validating the calculation.
@@ -1137,7 +1137,7 @@ fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(Ra
 pub extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
 #[panic_with('u256 is 0', u256_as_non_zero)]
-fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
+const fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
     match u256_is_zero(a) {
         IsZeroResult::Zero => None,
         IsZeroResult::NonZero(x) => Some(x),
@@ -1145,7 +1145,7 @@ fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
 }
 
 pub(crate) impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
-    fn try_into(self: u256) -> Option<NonZero<u256>> {
+    const fn try_into(self: u256) -> Option<NonZero<u256>> {
         u256_try_as_non_zero(self)
     }
 }
@@ -2517,7 +2517,7 @@ mod signed_div_rem {
     pub impl I128DivRem = DivRemImpl<i128>;
 
     pub impl TryIntoNonZero<T> of TryInto<T, NonZero<T>> {
-        fn try_into(self: T) -> Option<NonZero<T>> {
+        const fn try_into(self: T) -> Option<NonZero<T>> {
             match is_zero(self) {
                 super::IsZeroResult::Zero => None,
                 super::IsZeroResult::NonZero(x) => Some(x),
@@ -2683,12 +2683,12 @@ impl U8Zero of crate::num::traits::Zero<u8> {
     }
 
     #[inline]
-    fn is_zero(self: @u8) -> bool {
+    const fn is_zero(self: @u8) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @u8) -> bool {
+    const fn is_non_zero(self: @u8) -> bool {
         !self.is_zero()
     }
 }
@@ -2699,12 +2699,12 @@ impl U16Zero of crate::num::traits::Zero<u16> {
     }
 
     #[inline]
-    fn is_zero(self: @u16) -> bool {
+    const fn is_zero(self: @u16) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @u16) -> bool {
+    const fn is_non_zero(self: @u16) -> bool {
         !self.is_zero()
     }
 }
@@ -2715,12 +2715,12 @@ impl U32Zero of crate::num::traits::Zero<u32> {
     }
 
     #[inline]
-    fn is_zero(self: @u32) -> bool {
+    const fn is_zero(self: @u32) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @u32) -> bool {
+    const fn is_non_zero(self: @u32) -> bool {
         !self.is_zero()
     }
 }
@@ -2731,12 +2731,12 @@ impl U64Zero of crate::num::traits::Zero<u64> {
     }
 
     #[inline]
-    fn is_zero(self: @u64) -> bool {
+    const fn is_zero(self: @u64) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @u64) -> bool {
+    const fn is_non_zero(self: @u64) -> bool {
         !self.is_zero()
     }
 }
@@ -2747,12 +2747,12 @@ impl U128Zero of crate::num::traits::Zero<u128> {
     }
 
     #[inline]
-    fn is_zero(self: @u128) -> bool {
+    const fn is_zero(self: @u128) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @u128) -> bool {
+    const fn is_non_zero(self: @u128) -> bool {
         !self.is_zero()
     }
 }
@@ -2763,12 +2763,12 @@ impl U256Zero of crate::num::traits::Zero<u256> {
     }
 
     #[inline]
-    fn is_zero(self: @u256) -> bool {
+    const fn is_zero(self: @u256) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @u256) -> bool {
+    const fn is_non_zero(self: @u256) -> bool {
         !self.is_zero()
     }
 }
@@ -2779,12 +2779,12 @@ impl I8Zero of crate::num::traits::Zero<i8> {
     }
 
     #[inline]
-    fn is_zero(self: @i8) -> bool {
+    const fn is_zero(self: @i8) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @i8) -> bool {
+    const fn is_non_zero(self: @i8) -> bool {
         !self.is_zero()
     }
 }
@@ -2795,12 +2795,12 @@ impl I16Zero of crate::num::traits::Zero<i16> {
     }
 
     #[inline]
-    fn is_zero(self: @i16) -> bool {
+    const fn is_zero(self: @i16) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @i16) -> bool {
+    const fn is_non_zero(self: @i16) -> bool {
         !self.is_zero()
     }
 }
@@ -2811,12 +2811,12 @@ impl I32Zero of crate::num::traits::Zero<i32> {
     }
 
     #[inline]
-    fn is_zero(self: @i32) -> bool {
+    const fn is_zero(self: @i32) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @i32) -> bool {
+    const fn is_non_zero(self: @i32) -> bool {
         !self.is_zero()
     }
 }
@@ -2827,12 +2827,12 @@ impl I64Zero of crate::num::traits::Zero<i64> {
     }
 
     #[inline]
-    fn is_zero(self: @i64) -> bool {
+    const fn is_zero(self: @i64) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @i64) -> bool {
+    const fn is_non_zero(self: @i64) -> bool {
         !self.is_zero()
     }
 }
@@ -2843,12 +2843,12 @@ impl I128Zero of crate::num::traits::Zero<i128> {
     }
 
     #[inline]
-    fn is_zero(self: @i128) -> bool {
+    const fn is_zero(self: @i128) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @i128) -> bool {
+    const fn is_non_zero(self: @i128) -> bool {
         !self.is_zero()
     }
 }

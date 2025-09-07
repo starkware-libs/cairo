@@ -10,6 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, skip_diagnostic,
 };
+use cairo_lang_filesystem::ids::db_str;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -18,7 +19,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, require, try_extract_matches};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::{Num, ToPrimitive, Zero};
 use salsa::Database;
@@ -945,6 +946,36 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         success_ty.format(db)
                     ),
                 });
+            } else if self.nz_fns.contains(&extern_fn) {
+                let [arg] = args else { return None };
+                let arg_ty = arg.ty(db).ok()?;
+                let value = arg.long(db);
+                let is_zero = match value {
+                    ConstValue::Int(val, _) => val.is_zero(),
+                    ConstValue::Struct(members, _) if members.is_empty() => true, /* unit type is zero */
+                    ConstValue::Struct(members, _) => {
+                        // For u256 struct with (low, high), check if both are zero
+                        members.iter().all(|member| match member.long(db) {
+                            ConstValue::Int(val, _) => val.is_zero(),
+                            _ => false,
+                        })
+                    }
+                    _ => false,
+                };
+                return Some(if is_zero {
+                    ConstValue::Enum(
+                        crate::corelib::jump_nz_zero_variant(db, arg_ty),
+                        self.unit_const,
+                    )
+                    .intern(db)
+                } else {
+                    let arg_value = *arg;
+                    ConstValue::Enum(
+                        crate::corelib::jump_nz_nonzero_variant(db, arg_ty),
+                        ConstValue::NonZero(arg_value).intern(db),
+                    )
+                    .intern(db)
+                });
             } else {
                 unreachable!(
                     "Unexpected extern function in constant lowering: `{}`",
@@ -1245,6 +1276,8 @@ pub struct ConstCalcInfo<'db> {
     pub downcast_fns: UnorderedHashMap<ExternFunctionId<'db>, bool>,
     /// The `unwrap_non_zero` function.
     unwrap_non_zero: ExternFunctionId<'db>,
+    /// The `is_zero` style functions.
+    pub nz_fns: UnorderedHashSet<ExternFunctionId<'db>>,
 
     core_info: Arc<CoreInfo<'db>>,
 }
@@ -1323,6 +1356,14 @@ impl<'db> ConstCalcInfo<'db> {
                 ),
             ]),
             unwrap_non_zero: zeroable.extern_function_id("unwrap_non_zero"),
+            nz_fns: UnorderedHashSet::<_>::from_iter(chain!(
+                [
+                    core.extern_function_id("felt252_is_zero"),
+                    bounded_int.extern_function_id("bounded_int_is_zero")
+                ],
+                ["u8", "u16", "u32", "u64", "u128", "u256"]
+                    .map(|ty| integer.extern_function_id(db_str(db, format!("{ty}_is_zero"))))
+            )),
             core_info,
         }
     }

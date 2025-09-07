@@ -8,12 +8,12 @@ pub(crate) impl Felt252Zero of crate::num::traits::Zero<felt252> {
     }
 
     #[inline]
-    fn is_zero(self: @felt252) -> bool {
+    const fn is_zero(self: @felt252) -> bool {
         *self == Self::zero()
     }
 
     #[inline]
-    fn is_non_zero(self: @felt252) -> bool {
+    const fn is_non_zero(self: @felt252) -> bool {
         !self.is_zero()
     }
 }
