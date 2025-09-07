@@ -1978,3 +1978,57 @@ Statements:
   (v5: core::felt252) <- 0
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Match u256
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true, skip_lowering: true)
+
+//! > function_code
+fn foo(x: u256) -> felt252 {
+    match x {
+        0 => 1,
+        1 => 2,
+        0x300000000000000000000000000000004 => 3,
+        0x500000000000000000000000000000004 => 4,
+        u256 { low: 4, high: _ } => 5,
+        _ => 6,
+        // Value out of range.
+        0x10000000000000000000000000000000000000000000000000000000000000000 => 7,
+    }
+}
+
+//! > graph
+Root: 19
+19 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(18) }
+18 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(17) }
+17 Upcast { input: v1, output: v3, next: NodeId(16) }
+16 EqualsLiteral { input: v3, literal: 0, true_branch: NodeId(15), false_branch: NodeId(13) }
+15 Upcast { input: v2, output: v6, next: NodeId(14) }
+14 EqualsLiteral { input: v6, literal: 0, true_branch: NodeId(0), false_branch: NodeId(5) }
+13 EqualsLiteral { input: v3, literal: 1, true_branch: NodeId(12), false_branch: NodeId(10) }
+12 Upcast { input: v2, output: v5, next: NodeId(11) }
+11 EqualsLiteral { input: v5, literal: 0, true_branch: NodeId(1), false_branch: NodeId(5) }
+10 EqualsLiteral { input: v3, literal: 4, true_branch: NodeId(9), false_branch: NodeId(5) }
+9 Upcast { input: v2, output: v4, next: NodeId(8) }
+8 EqualsLiteral { input: v4, literal: 3, true_branch: NodeId(2), false_branch: NodeId(7) }
+7 EqualsLiteral { input: v4, literal: 5, true_branch: NodeId(3), false_branch: NodeId(4) }
+6 ArmExpr { expr: ExprId(7) }
+5 ArmExpr { expr: ExprId(6) }
+4 ArmExpr { expr: ExprId(5) }
+3 ArmExpr { expr: ExprId(4) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: The value does not fit within the range of type core::integer::u256.
+ --> lib.cairo:10:9
+        0x10000000000000000000000000000000000000000000000000000000000000000 => 7,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > lowered
