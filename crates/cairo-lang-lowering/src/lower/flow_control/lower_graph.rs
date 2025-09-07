@@ -106,6 +106,29 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
         }
     }
 
+    /// Creates a new [BlockBuilder] for a child node.
+    ///
+    /// In most cases, [Self::assign_child_block_id] should be used instead.
+    /// Use [Self::create_child_builder] if statements need to be added to the block before
+    /// registering it in the [Self::parent_builders] map (see [Self::register_child_builder]).
+    fn create_child_builder(
+        &mut self,
+        parent_block_builder: &BlockBuilder<'db>,
+    ) -> BlockBuilder<'db> {
+        parent_block_builder.child_block_builder(self.ctx.blocks.alloc_empty())
+    }
+
+    /// Registers a [BlockBuilder] created by [Self::create_child_builder] to the given [NodeId].
+    fn register_child_builder(
+        &mut self,
+        child_id: NodeId,
+        child_builder: BlockBuilder<'db>,
+    ) -> BlockId {
+        let block_id = child_builder.block_id;
+        self.parent_builders.entry(child_id).or_default().push(child_builder);
+        block_id
+    }
+
     /// Assigns a new [BlockBuilder] and [BlockId] to the given child node.
     /// Registers the [BlockBuilder] in the [Self::parent_builders] map, under the child node's id.
     fn assign_child_block_id(
@@ -113,10 +136,8 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
         child_id: NodeId,
         parent_block_builder: &BlockBuilder<'db>,
     ) -> BlockId {
-        let block_id = self.ctx.blocks.alloc_empty();
-        let child_builder = parent_block_builder.child_block_builder(block_id);
-        self.parent_builders.entry(child_id).or_default().push(child_builder);
-        block_id
+        let child_builder = self.create_child_builder(parent_block_builder);
+        self.register_child_builder(child_id, child_builder)
     }
 
     /// Passes the parent block builder to the child node.

@@ -7,7 +7,7 @@ use cairo_lang_semantic::{
     self as semantic, GenericArgumentId, MatchArmSelector, ValueSelectorArm, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
-use itertools::zip_eq;
+use itertools::{Itertools, zip_eq};
 use num_bigint::BigInt;
 
 use super::LowerGraphContext;
@@ -16,13 +16,15 @@ use crate::diagnostic::{
 };
 use crate::ids::SemanticFunctionIdEx;
 use crate::lower::block_builder::BlockBuilder;
-use crate::lower::context::{LoweredExpr, VarRequest};
+use crate::lower::context::{LoweredExpr, LoweredExprExternEnum, VarRequest};
+use crate::lower::external::extern_facade_expr;
 use crate::lower::flow_control::graph::{
     ArmExpr, BindVar, BooleanIf, Deconstruct, Downcast, EnumMatch, EqualsLiteral, EvaluateExpr,
     FlowControlNode, NodeId, Upcast, ValueMatch,
 };
 use crate::lower::{
-    generators, lower_expr, lower_expr_literal_to_var_usage, lower_expr_to_var_usage,
+    generators, lower_expr, lower_expr_literal_to_var_usage, match_extern_arm_ref_args_bind,
+    match_extern_variant_arm_input_types,
 };
 use crate::{MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo, VarUsage};
 
@@ -66,10 +68,27 @@ fn lower_evaluate_expr<'db>(
     node: &EvaluateExpr,
     mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let lowered_expr = lower_expr_to_var_usage(ctx.ctx, &mut builder, node.expr);
-    match lowered_expr {
+    let lowered_expr = match lower_expr(ctx.ctx, &mut builder, node.expr) {
+        Ok(lowered_expr) => lowered_expr,
+        Err(err) => return ctx.block_doesnt_continue(id, builder, err),
+    };
+
+    let var = node.var_id;
+
+    // Check if the extern match optimization is applicable.
+    if let LoweredExpr::ExternEnum(lowered_extern_enum) = &lowered_expr
+        && let FlowControlNode::EnumMatch(next_node) = ctx.graph.node(node.next)
+        // The input variable is *only* used in the next node.
+        && next_node.matched_var == var
+        && var.times_used(ctx.graph) == 1
+    {
+        // Skip the child node, and run the extern-match code instead.
+        return handle_extern_match(ctx, id, next_node, builder, lowered_extern_enum);
+    }
+
+    match lowered_expr.as_var_usage(ctx.ctx, &mut builder) {
         Ok(lowered_var) => {
-            ctx.register_var(node.var_id, lowered_var);
+            ctx.register_var(var, lowered_var);
             ctx.pass_builder_to_child(id, node.next, builder);
             Ok(())
         }
@@ -176,6 +195,72 @@ fn lower_enum_match<'db>(
         input: ctx.vars[&node.matched_var],
         arms,
         location: match_location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
+/// Handles a match where the matched expression is an extern function call.
+///
+/// In this case, skip constructing the enum value, and instead match on the function call directly
+/// using [MatchInfo::Extern].
+fn handle_extern_match<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &EnumMatch<'db>,
+    builder: BlockBuilder<'db>,
+    lowered_extern_enum: &LoweredExprExternEnum<'db>,
+) -> Maybe<()> {
+    let function = lowered_extern_enum.function.lowered(ctx.ctx.db);
+    let location = lowered_extern_enum.location;
+
+    let arms: Vec<MatchArm<'db>> = node
+        .variants
+        .iter()
+        .map(|(concrete_variant, variant_node, flow_control_var)| {
+            let mut child_builder = ctx.create_child_builder(&builder);
+            let ty = flow_control_var.ty(ctx.graph);
+
+            let input_tys = match_extern_variant_arm_input_types(ctx.ctx, ty, lowered_extern_enum);
+            let mut input_vars = input_tys
+                .into_iter()
+                .map(|ty| ctx.ctx.new_var(VarRequest { ty, location }))
+                .collect_vec();
+
+            let input_vars_to_report = input_vars.clone();
+            // Bind the variant inner values to semantic variables.
+            match_extern_arm_ref_args_bind(
+                ctx.ctx,
+                &mut input_vars,
+                lowered_extern_enum,
+                &mut child_builder,
+            );
+
+            let variant_expr = extern_facade_expr(ctx.ctx, ty, input_vars, location);
+
+            // Since `extern_facade_expr` returns either
+            // (a) `LoweredExpr::AtVariable` or
+            // (b) `LoweredExpr::Tuple` of `LoweredExpr::AtVariable`,
+            // we can safely unwrap the `as_var_usage` result.
+            let var_usage = variant_expr.as_var_usage(ctx.ctx, &mut child_builder).unwrap();
+            ctx.register_var(*flow_control_var, var_usage);
+
+            let block_id = ctx.register_child_builder(*variant_node, child_builder);
+
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(*concrete_variant),
+                block_id,
+                var_ids: input_vars_to_report,
+            }
+        })
+        .collect();
+
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function,
+        inputs: lowered_extern_enum.inputs.clone(),
+        arms,
+        location,
     });
 
     ctx.finalize_with_match(id, builder, match_info);
