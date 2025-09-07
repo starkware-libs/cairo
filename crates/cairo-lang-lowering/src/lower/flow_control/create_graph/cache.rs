@@ -15,15 +15,16 @@ impl<Input: std::hash::Hash + Eq + Clone> Cache<Input> {
     /// Returns the previous result, otherwise.
     pub fn get_or_compute<'db>(
         &mut self,
-        callback: &mut dyn FnMut(&mut FlowControlGraphBuilder<'db>, Input) -> NodeId,
+        callback: &mut dyn FnMut(&mut FlowControlGraphBuilder<'db>, Input, String) -> NodeId,
         graph: &mut FlowControlGraphBuilder<'db>,
         input: Input,
+        path: String,
     ) -> NodeId {
         if let Some(node_id) = self.cache.get(&input) {
             return *node_id;
         }
 
-        let node_id = callback(graph, input.clone());
+        let node_id = callback(graph, input.clone(), path);
         assert!(!self.cache.contains_key(&input));
         self.cache.insert(input, node_id);
         node_id
