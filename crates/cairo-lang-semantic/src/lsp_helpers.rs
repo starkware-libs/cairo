@@ -79,11 +79,15 @@ pub fn methods_in_module_tracked<'db>(
 
 /// Checks if a type head can fit for a method.
 fn fit_for_method(head: &TypeHead<'_>, type_head: &TypeHead<'_>) -> bool {
+    // Allow generics so we can filter them later with resolver.
+    if let TypeHead::Generic(_) = head {
+        return true;
+    }
     if head == type_head {
         return true;
     }
     if let TypeHead::Snapshot(snapshot_head) = head {
-        return snapshot_head.as_ref() == type_head;
+        return fit_for_method(snapshot_head.as_ref(), type_head);
     }
     false
 }
