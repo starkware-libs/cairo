@@ -15,8 +15,6 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use salsa::Database;
 use thiserror::Error;
 
-use crate::db::RootDatabase;
-
 #[cfg(test)]
 #[path = "diagnostics_test.rs"]
 mod test;
@@ -279,7 +277,7 @@ impl Default for DiagnosticsReporter<'_> {
 /// If `crates_to_check` is `Some`, only diagnostics for these crates will be checked.
 /// If `crates_to_check` is `None`, diagnostics for all crates in the db will be checked.
 pub fn get_diagnostics_as_string(
-    db: &RootDatabase,
+    db: &dyn Database,
     crates_to_check: Option<Vec<CrateId<'_>>>,
 ) -> String {
     let mut diagnostics = String::default();

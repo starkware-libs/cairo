@@ -122,7 +122,7 @@ pub fn compile(
 /// * `Ok(Program)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db_program<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
@@ -144,7 +144,7 @@ pub fn compile_prepared_db_program<'db>(
 /// * `Ok(SierraProgramWithDebug)` - The compiled program with debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<SierraProgramWithDebug<'db>> {
@@ -204,14 +204,14 @@ impl DbWarmupContext {
     /// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
     pub fn ensure_diagnostics(
         &self,
-        db: &RootDatabase,
+        db: &dyn Database,
         diagnostic_reporter: &mut DiagnosticsReporter<'_>,
     ) -> std::result::Result<(), DiagnosticsError> {
         match self {
             Self::NoWarmup => {}
             Self::Warmup { pool } => {
                 let crates = diagnostic_reporter.crates_of_interest(db);
-                let db_fork = Box::new(db.clone());
+                let db_fork = db.fork_db();
                 pool.spawn(move || {
                     warmup_diagnostics_blocking(db_fork.as_ref(), crates);
                 });
@@ -316,7 +316,7 @@ pub fn get_sierra_program_for_functions<'db>(
 /// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db_program_artifact<'db>(
-    db: &'db RootDatabase,
+    db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {

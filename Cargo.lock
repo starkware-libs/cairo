@@ -457,6 +457,7 @@ dependencies = [
  "cairo-vm",
  "clap",
  "num-bigint",
+ "salsa",
  "serde_json",
 ]
 
@@ -617,6 +618,7 @@ dependencies = [
  "cairo-lang-utils",
  "cairo-vm",
  "itertools 0.14.0",
+ "salsa",
  "serde",
 ]
 
@@ -1210,6 +1212,7 @@ dependencies = [
  "cairo-lang-utils",
  "clap",
  "itertools 0.14.0",
+ "salsa",
 ]
 
 [[package]]

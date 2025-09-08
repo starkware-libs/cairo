@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use bincode::enc::write::Writer;
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
@@ -29,6 +28,7 @@ use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use clap::Parser;
 use num_bigint::BigInt;
+use salsa::Database;
 
 /// Compiles a Cairo project and runs a function marked `#[executable]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
@@ -398,7 +398,7 @@ fn try_get_error_location(
 /// Data required for profiling and debugging the executable.
 struct DebugData<'a> {
     /// The salsa database.
-    db: &'a RootDatabase,
+    db: &'a dyn Database,
     /// The builder for the runnable program.
     builder: RunnableBuilder,
     /// Debug information for the Sierra program.
