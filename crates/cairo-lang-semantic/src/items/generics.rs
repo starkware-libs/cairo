@@ -22,7 +22,7 @@ use salsa::Database;
 use syntax::node::TypedStablePtr;
 
 use super::constant::{ConstValue, ConstValueId};
-use super::imp::{ImplHead, ImplId, ImplLongId};
+use super::imp::{ImplHead, ImplId, ImplLongId, NegativeImplId};
 use super::resolve_trait_path;
 use super::trt::ConcreteTraitTypeId;
 use crate::db::SemanticGroup;
@@ -32,6 +32,7 @@ use crate::diagnostic::{
 use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::items::imp::NegativeImplLongId;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{
     ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData,
@@ -50,7 +51,7 @@ pub enum GenericArgumentId<'db> {
     Type(TypeId<'db>),
     Constant(ConstValueId<'db>),
     Impl(ImplId<'db>),
-    NegImpl,
+    NegImpl(NegativeImplId<'db>),
 }
 impl<'db> GenericArgumentId<'db> {
     pub fn kind(&self) -> GenericKind {
@@ -58,7 +59,7 @@ impl<'db> GenericArgumentId<'db> {
             GenericArgumentId::Type(_) => GenericKind::Type,
             GenericArgumentId::Constant(_) => GenericKind::Const,
             GenericArgumentId::Impl(_) => GenericKind::Impl,
-            GenericArgumentId::NegImpl => GenericKind::NegImpl,
+            GenericArgumentId::NegImpl(_) => GenericKind::NegImpl,
         }
     }
     pub fn format(&self, db: &dyn Database) -> String {
@@ -66,7 +67,7 @@ impl<'db> GenericArgumentId<'db> {
             GenericArgumentId::Type(ty) => ty.format(db),
             GenericArgumentId::Constant(value) => value.format(db),
             GenericArgumentId::Impl(imp) => imp.format(db),
-            GenericArgumentId::NegImpl => "_".into(),
+            GenericArgumentId::NegImpl(_) => "_".into(),
         }
     }
     /// Returns the [GenericArgumentHead] for a generic argument if available.
@@ -75,25 +76,25 @@ impl<'db> GenericArgumentId<'db> {
             GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
             GenericArgumentId::Constant(_) => GenericArgumentHead::Const,
             GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
-            GenericArgumentId::NegImpl => GenericArgumentHead::NegImpl,
+            GenericArgumentId::NegImpl(_) => GenericArgumentHead::NegImpl,
         })
     }
     /// Returns true if the generic argument does not depend on any generics.
     pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         match self {
-            GenericArgumentId::Type(type_id) => type_id.is_fully_concrete(db),
-            GenericArgumentId::Constant(const_value_id) => const_value_id.is_fully_concrete(db),
-            GenericArgumentId::Impl(impl_id) => impl_id.is_fully_concrete(db),
-            GenericArgumentId::NegImpl => true,
+            GenericArgumentId::Type(id) => id.is_fully_concrete(db),
+            GenericArgumentId::Constant(id) => id.is_fully_concrete(db),
+            GenericArgumentId::Impl(id) => id.is_fully_concrete(db),
+            GenericArgumentId::NegImpl(id) => id.is_fully_concrete(db),
         }
     }
     /// Returns true if the generic argument does not depend on impl or type variables.
     pub fn is_var_free(&self, db: &dyn Database) -> bool {
         match self {
-            GenericArgumentId::Type(type_id) => type_id.is_var_free(db),
-            GenericArgumentId::Constant(const_value_id) => const_value_id.is_var_free(db),
-            GenericArgumentId::Impl(impl_id) => impl_id.is_var_free(db),
-            GenericArgumentId::NegImpl => true,
+            GenericArgumentId::Type(id) => id.is_var_free(db),
+            GenericArgumentId::Constant(id) => id.is_var_free(db),
+            GenericArgumentId::Impl(id) => id.is_var_free(db),
+            GenericArgumentId::NegImpl(id) => id.is_var_free(db),
         }
     }
     /// Short name of the generic argument.
@@ -109,7 +110,7 @@ impl<'db> DebugWithDb<'db> for GenericArgumentId<'db> {
             GenericArgumentId::Type(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Constant(id) => write!(f, "{:?}", id.debug(db)),
             GenericArgumentId::Impl(id) => write!(f, "{:?}", id.debug(db)),
-            GenericArgumentId::NegImpl => write!(f, "_"),
+            GenericArgumentId::NegImpl(_) => write!(f, "_"),
         }
     }
 }
@@ -168,7 +169,9 @@ impl<'db> GenericParam<'db> {
             GenericParam::Impl(param_impl) => {
                 GenericArgumentId::Impl(ImplLongId::GenericParameter(param_impl.id).intern(db))
             }
-            GenericParam::NegImpl(_) => GenericArgumentId::NegImpl,
+            GenericParam::NegImpl(param_neg_impl) => GenericArgumentId::NegImpl(
+                NegativeImplLongId::GenericParameter(param_neg_impl.id).intern(db),
+            ),
         }
     }
 }
