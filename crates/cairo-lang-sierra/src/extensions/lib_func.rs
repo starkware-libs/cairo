@@ -295,7 +295,7 @@ impl<T: NoGenericArgsGenericLibfunc> SignatureOnlyGenericLibfunc for T {
 }
 
 /// Information regarding a parameter of the libfunc.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct ParamSignature {
     /// The type of the parameter.
     pub ty: ConcreteTypeId,
@@ -349,7 +349,7 @@ impl From<ConcreteTypeId> for ParamSignature {
 ///
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
@@ -390,7 +390,7 @@ pub enum DeferredOutputKind {
 }
 
 /// Contains information regarding an output variable in a single branch.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct OutputVarInfo {
     pub ty: ConcreteTypeId,
     pub ref_info: OutputVarReferenceInfo,
@@ -409,7 +409,7 @@ impl OutputVarInfo {
 /// for all the output variables in an output branch.
 ///
 /// See [OutputVarInfo].
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct BranchSignature {
     /// Information about the new variables created in the branch.
     pub vars: Vec<OutputVarInfo>,
@@ -457,6 +457,7 @@ pub trait ConcreteLibfunc {
 }
 
 /// Represents the signature of a library function.
+#[derive(Clone, PartialEq, Eq)]
 pub struct LibfuncSignature {
     /// The parameter types and other information for the parameters for calling a library
     /// function.

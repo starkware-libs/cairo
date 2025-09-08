@@ -202,13 +202,13 @@ impl<'db> Analyzer<'db, '_> for FindLocalsContext<'db, '_> {
         // Revoke if needed.
         let libfunc_signature = self.get_match_libfunc_signature(match_info)?;
         for (arm, (info, branch_signature)) in
-            zip_eq(match_info.arms(), zip_eq(infos, libfunc_signature.branch_signatures))
+            zip_eq(match_info.arms(), zip_eq(infos, &libfunc_signature.branch_signatures))
         {
             let mut info = info?;
             info.demand.variables_introduced(self, &arm.var_ids, ());
             let branch_info = self.analyze_branch(
                 &libfunc_signature.param_signatures,
-                &branch_signature,
+                branch_signature,
                 inputs,
                 &arm.var_ids,
             );
@@ -283,7 +283,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         input_vars: &[VarUsage<'db>],
         output_vars: &[VariableId],
     ) -> BranchInfo {
-        let libfunc_signature = get_libfunc_signature(self.db, concrete_function_id.clone());
+        let libfunc_signature = get_libfunc_signature(self.db, &concrete_function_id);
         assert_eq!(
             libfunc_signature.branch_signatures.len(),
             1,
@@ -410,26 +410,23 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         }
     }
 
-    fn get_match_libfunc_signature(&self, match_info: &MatchInfo<'db>) -> Maybe<LibfuncSignature> {
-        Ok(match match_info {
-            MatchInfo::Extern(s) => {
-                let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function, false);
-                get_libfunc_signature(self.db, concrete_function_id)
-            }
+    fn get_match_libfunc_signature(
+        &self,
+        match_info: &MatchInfo<'db>,
+    ) -> Maybe<&'db LibfuncSignature> {
+        let db = self.db;
+        let concrete_libfunc_id = match match_info {
+            MatchInfo::Extern(s) => get_concrete_libfunc_id(db, s.function, false).1,
             MatchInfo::Enum(s) => {
-                let concrete_enum_type = self
-                    .db
-                    .get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
-                let concrete_function_id =
-                    match_enum_libfunc_id(self.db, concrete_enum_type.clone())?;
-                get_libfunc_signature(self.db, concrete_function_id)
+                let enum_ty =
+                    db.get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
+                match_enum_libfunc_id(db, enum_ty.clone())?
             }
             MatchInfo::Value(s) => {
-                let concrete_enum_type = self.db.get_index_enum_type_id(s.num_of_arms)?;
-                let concrete_function_id =
-                    match_enum_libfunc_id(self.db, concrete_enum_type.clone())?;
-                get_libfunc_signature(self.db, concrete_function_id)
+                let enum_ty = db.get_index_enum_type_id(s.num_of_arms)?;
+                match_enum_libfunc_id(db, enum_ty.clone())?
             }
-        })
+        };
+        Ok(get_libfunc_signature(db, &concrete_libfunc_id))
     }
 }
