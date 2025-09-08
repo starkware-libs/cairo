@@ -125,15 +125,15 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
         Ok(match var.into() {
             SierraGenVar::LoweringVar(lowering_var) => {
-                self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?
+                self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?.clone()
             }
             SierraGenVar::UninitializedLocal(lowering_var) => {
                 let inner_type =
-                    self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?;
+                    self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?.clone();
                 self.db.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
                     ConcreteTypeLongId {
                         generic_id: UninitializedType::ID,
-                        generic_args: vec![GenericArg::Type(inner_type)],
+                        generic_args: vec![GenericArg::Type(inner_type.clone())],
                     }
                     .into(),
                 ))
