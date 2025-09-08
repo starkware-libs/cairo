@@ -9,6 +9,8 @@ use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use lowering::ids::ConcreteFunctionWithBodyId;
+use salsa::plumbing::FromId;
+use salsa::{Database, Id};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self, SierraProgramWithDebug};
@@ -34,60 +36,53 @@ pub enum SierraGeneratorTypeLongId<'db> {
 struct ConcreteLibfuncIdLongWrapper {
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 }
+struct ConcreteLibfuncHandle(u64);
 
 #[salsa::interned(revisions = usize::MAX)]
 struct SierraGeneratorTypeLongIdWrapper<'db> {
     id: SierraGeneratorTypeLongId<'db>,
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+struct ConcreteTypeHandle(u64);
 
 #[salsa::interned(revisions = usize::MAX)]
 struct LoweringFunctionIdWrapper<'db> {
     id: lowering::ids::FunctionId<'db>,
 }
+struct FunctionHandle(u64);
 
-#[salsa::tracked]
 fn intern_concrete_lib_func(
     db: &dyn Database,
-    _tracked: Tracked,
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     let interned = ConcreteLibfuncIdLongWrapper::new(db, id);
     cairo_lang_sierra::ids::ConcreteLibfuncId::from(interned.0.as_bits())
 }
 
-use salsa::plumbing::FromId;
-use salsa::{Database, Id};
-
-#[salsa::tracked]
 fn lookup_concrete_lib_func(
     db: &dyn Database,
-    _tracked: Tracked,
-    id: cairo_lang_sierra::ids::ConcreteLibfuncId,
+    id: ConcreteLibfuncHandle,
 ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
-    let interned = ConcreteLibfuncIdLongWrapper::from_id(unsafe { Id::from_bits(id.id) });
+    let interned = ConcreteLibfuncIdLongWrapper::from_id(unsafe { Id::from_bits(id.0) });
     interned.id(db)
 }
 
-#[salsa::tracked]
 fn intern_concrete_type<'db>(
     db: &'db dyn Database,
-    _tracked: Tracked,
     id: SierraGeneratorTypeLongId<'db>,
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
     let interned = SierraGeneratorTypeLongIdWrapper::new(db, id);
     cairo_lang_sierra::ids::ConcreteTypeId::from(interned.0.as_bits())
 }
 
-#[salsa::tracked]
 fn lookup_concrete_type<'db>(
     db: &'db dyn Database,
-    _tracked: Tracked,
-    id: cairo_lang_sierra::ids::ConcreteTypeId,
+    id: ConcreteTypeHandle,
 ) -> SierraGeneratorTypeLongId<'db> {
-    let interned = SierraGeneratorTypeLongIdWrapper::from_id(unsafe { Id::from_bits(id.id) });
+    let interned = SierraGeneratorTypeLongIdWrapper::from_id(unsafe { Id::from_bits(id.0) });
     interned.id(db)
 }
-#[salsa::tracked]
+
 fn intern_sierra_function<'db>(
     db: &'db dyn Database,
     id: lowering::ids::FunctionId<'db>,
@@ -96,13 +91,11 @@ fn intern_sierra_function<'db>(
     cairo_lang_sierra::ids::FunctionId::from(interned.0.as_bits())
 }
 
-#[salsa::tracked]
 fn lookup_sierra_function<'db>(
     db: &'db dyn Database,
-    _tracked: Tracked,
-    id: cairo_lang_sierra::ids::FunctionId,
+    id: FunctionHandle,
 ) -> lowering::ids::FunctionId<'db> {
-    let interned = LoweringFunctionIdWrapper::from_id(unsafe { Id::from_bits(id.id) });
+    let interned = LoweringFunctionIdWrapper::from_id(unsafe { Id::from_bits(id.0) });
     interned.id(db)
 }
 
@@ -111,28 +104,28 @@ pub trait SierraGenGroup: Database {
         &self,
         id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
     ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-        intern_concrete_lib_func(self.as_dyn_database(), (), id)
+        intern_concrete_lib_func(self.as_dyn_database(), id)
     }
 
     fn lookup_concrete_lib_func(
         &self,
-        id: cairo_lang_sierra::ids::ConcreteLibfuncId,
+        id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
     ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
-        lookup_concrete_lib_func(self.as_dyn_database(), (), id)
+        lookup_concrete_lib_func(self.as_dyn_database(), ConcreteLibfuncHandle(id.id))
     }
 
     fn intern_concrete_type<'db>(
         &'db self,
         id: SierraGeneratorTypeLongId<'db>,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-        intern_concrete_type(self.as_dyn_database(), (), id)
+        intern_concrete_type(self.as_dyn_database(), id)
     }
 
     fn lookup_concrete_type<'db>(
         &'db self,
-        id: cairo_lang_sierra::ids::ConcreteTypeId,
+        id: &cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> SierraGeneratorTypeLongId<'db> {
-        lookup_concrete_type(self.as_dyn_database(), (), id)
+        lookup_concrete_type(self.as_dyn_database(), ConcreteTypeHandle(id.id))
     }
 
     /// Creates a Sierra function id for a lowering function id.
@@ -147,25 +140,25 @@ pub trait SierraGenGroup: Database {
 
     fn lookup_sierra_function<'db>(
         &'db self,
-        id: cairo_lang_sierra::ids::FunctionId,
+        id: &cairo_lang_sierra::ids::FunctionId,
     ) -> lowering::ids::FunctionId<'db> {
-        lookup_sierra_function(self.as_dyn_database(), (), id)
+        lookup_sierra_function(self.as_dyn_database(), FunctionHandle(id.id))
     }
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
     fn get_concrete_type_id<'db>(
         &'db self,
         type_id: semantic::TypeId<'db>,
-    ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-        crate::types::get_concrete_type_id(self.as_dyn_database(), type_id)
+    ) -> Maybe<&'db cairo_lang_sierra::ids::ConcreteTypeId> {
+        crate::types::get_concrete_type_id(self.as_dyn_database(), type_id).maybe_as_ref()
     }
 
     /// Returns the ConcreteTypeId of the index enum type with the given index count.
     fn get_index_enum_type_id(
         &self,
         index_count: usize,
-    ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-        crate::types::get_index_enum_type_id(self.as_dyn_database(), (), index_count)
+    ) -> Maybe<&cairo_lang_sierra::ids::ConcreteTypeId> {
+        crate::types::get_index_enum_type_id(self.as_dyn_database(), (), index_count).maybe_as_ref()
     }
 
     /// Returns the matching sierra concrete type long id for a given semantic type id.
@@ -214,7 +207,8 @@ pub trait SierraGenGroup: Database {
         &self,
         concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> Maybe<&cairo_lang_sierra::extensions::types::TypeInfo> {
-        get_type_info(self.as_dyn_database(), (), concrete_type_id).maybe_as_ref()
+        get_type_info(self.as_dyn_database(), (), ConcreteTypeHandle(concrete_type_id.id))
+            .maybe_as_ref()
     }
 
     /// Private query to compute Sierra data about a function with body.
@@ -294,13 +288,13 @@ fn get_function_signature(
     // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
-    let lowered_function_id = db.lookup_sierra_function(function_id);
+    let lowered_function_id = db.lookup_sierra_function(&function_id);
     let signature = lowered_function_id.signature(db)?;
 
     let implicits = db
         .function_implicits(lowered_function_id)?
         .iter()
-        .map(|ty| db.get_concrete_type_id(*ty))
+        .map(|ty| db.get_concrete_type_id(*ty).cloned())
         .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
 
     // TODO(spapini): Handle ret_types in lowering.
@@ -312,7 +306,7 @@ fn get_function_signature(
     }
     for var in &signature.extra_rets {
         let concrete_type_id = db.get_concrete_type_id(var.ty())?;
-        extra_rets.push(concrete_type_id);
+        extra_rets.push(concrete_type_id.clone());
     }
 
     let mut ret_types = implicits;
@@ -320,12 +314,12 @@ fn get_function_signature(
     let may_panic = !flag_unsafe_panic(db) && db.function_may_panic(lowered_function_id)?;
     if may_panic {
         let panic_info = PanicSignatureInfo::new(db, &signature);
-        ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?);
+        ret_types.push(db.get_concrete_type_id(panic_info.actual_return_ty)?.clone());
     } else {
         ret_types.extend(extra_rets);
         // Functions that return the unit type don't have a return type in the signature.
         if !signature.return_type.is_unit(db) {
-            ret_types.push(db.get_concrete_type_id(signature.return_type)?);
+            ret_types.push(db.get_concrete_type_id(signature.return_type)?.clone());
         }
     }
 
@@ -342,9 +336,9 @@ pub fn init_sierra_gen_group(db: &mut dyn Database) {
 fn get_type_info(
     db: &dyn Database,
     _tracked: Tracked,
-    concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
+    id: ConcreteTypeHandle,
 ) -> Maybe<cairo_lang_sierra::extensions::types::TypeInfo> {
-    let long_id = match db.lookup_concrete_type(concrete_type_id) {
+    let long_id = match lookup_concrete_type(db, id) {
         SierraGeneratorTypeLongId::Regular(long_id) => long_id,
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
             let info = cycle_breaker_info(db, ty)?;
@@ -385,7 +379,7 @@ pub fn sierra_concrete_long_id(
     db: &dyn Database,
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
-    match db.lookup_concrete_type(concrete_type_id) {
+    match db.lookup_concrete_type(&concrete_type_id) {
         SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id),
         SierraGeneratorTypeLongId::Phantom(type_id)
         | SierraGeneratorTypeLongId::CycleBreaker(type_id) => {

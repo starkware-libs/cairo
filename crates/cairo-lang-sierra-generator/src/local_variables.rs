@@ -56,7 +56,7 @@ pub fn analyze_ap_changes<'db>(
             lowered_function.parameters.iter().cloned(),
             // All empty variables are not ap based.
             lowered_function.variables.iter().filter_map(|(id, var)| {
-                let info = db.get_type_info(db.get_concrete_type_id(var.ty).ok()?).ok()?;
+                let info = db.get_type_info(db.get_concrete_type_id(var.ty).ok()?.clone()).ok()?;
                 if info.zero_sized { Some(id) } else { None }
             })
         )),
@@ -364,20 +364,24 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 let ty = self.db.get_concrete_type_id(
                     self.lowered_function.variables[statement_struct_construct.output].ty,
                 )?;
-                self.analyze_call(struct_construct_libfunc_id(self.db, ty), inputs, outputs)
+                self.analyze_call(struct_construct_libfunc_id(self.db, ty.clone()), inputs, outputs)
             }
             lowering::Statement::StructDestructure(statement_struct_destructure) => {
                 let ty = self.db.get_concrete_type_id(
                     self.lowered_function.variables[statement_struct_destructure.input.var_id].ty,
                 )?;
-                self.analyze_call(struct_deconstruct_libfunc_id(self.db, ty)?, inputs, outputs)
+                self.analyze_call(
+                    struct_deconstruct_libfunc_id(self.db, ty.clone())?,
+                    inputs,
+                    outputs,
+                )
             }
             lowering::Statement::EnumConstruct(statement_enum_construct) => {
                 let ty = self.db.get_concrete_type_id(
                     self.lowered_function.variables[statement_enum_construct.output].ty,
                 )?;
                 self.analyze_call(
-                    enum_init_libfunc_id(self.db, ty, statement_enum_construct.variant.idx),
+                    enum_init_libfunc_id(self.db, ty.clone(), statement_enum_construct.variant.idx),
                     inputs,
                     outputs,
                 )
@@ -416,12 +420,14 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 let concrete_enum_type = self
                     .db
                     .get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
-                let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
+                let concrete_function_id =
+                    match_enum_libfunc_id(self.db, concrete_enum_type.clone())?;
                 get_libfunc_signature(self.db, concrete_function_id)
             }
             MatchInfo::Value(s) => {
                 let concrete_enum_type = self.db.get_index_enum_type_id(s.num_of_arms)?;
-                let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
+                let concrete_function_id =
+                    match_enum_libfunc_id(self.db, concrete_enum_type.clone())?;
                 get_libfunc_signature(self.db, concrete_function_id)
             }
         })

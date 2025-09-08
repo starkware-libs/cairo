@@ -94,7 +94,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteLibfuncId,
     ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-        let mut long_id = self.db.lookup_concrete_lib_func(id.clone());
+        let mut long_id = self.db.lookup_concrete_lib_func(id);
         self.replace_generic_args(&mut long_id.generic_args);
         cairo_lang_sierra::ids::ConcreteLibfuncId {
             id: id.id,
@@ -106,7 +106,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-        match self.db.lookup_concrete_type(id.clone()) {
+        match self.db.lookup_concrete_type(id) {
             SierraGeneratorTypeLongId::Phantom(ty)
             | SierraGeneratorTypeLongId::CycleBreaker(ty) => ty.format(self.db).into(),
             SierraGeneratorTypeLongId::Regular(long_id) => {
@@ -139,7 +139,7 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         sierra_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> cairo_lang_sierra::ids::FunctionId {
-        let lowering_id = self.db.lookup_sierra_function(sierra_id.clone());
+        let lowering_id = self.db.lookup_sierra_function(sierra_id);
         cairo_lang_sierra::ids::FunctionId {
             id: sierra_id.id,
             debug_name: Some(format!("{:?}", lowering_id.long(self.db).debug(self.db)).into()),

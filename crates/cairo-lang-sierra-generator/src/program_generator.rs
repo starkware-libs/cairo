@@ -42,7 +42,7 @@ fn collect_and_generate_libfunc_declarations<'db>(
                 declared_libfuncs.insert(invocation.libfunc_id.clone()).then(|| {
                     program::LibfuncDeclaration {
                         id: invocation.libfunc_id.clone(),
-                        long_id: db.lookup_concrete_lib_func(invocation.libfunc_id.clone()),
+                        long_id: db.lookup_concrete_lib_func(&invocation.libfunc_id),
                     }
                 })
             }
@@ -163,7 +163,7 @@ pub fn priv_libfunc_dependencies(
     _tracked: Tracked,
     libfunc_id: ConcreteLibfuncId,
 ) -> Vec<ConcreteTypeId> {
-    let long_id = db.lookup_concrete_lib_func(libfunc_id.clone());
+    let long_id = db.lookup_concrete_lib_func(&libfunc_id);
     let signature = CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &long_id.generic_id,
@@ -341,7 +341,7 @@ pub fn try_get_function_with_body_id<'db>(
         try_extract_matches!(&statement.statement, pre_sierra::Statement::Sierra)?,
         program::GenStatement::Invocation
     )?;
-    let libfunc = db.lookup_concrete_lib_func(invc.libfunc_id.clone());
+    let libfunc = db.lookup_concrete_lib_func(&invc.libfunc_id);
     let inner_function = if libfunc.generic_id == "function_call".into()
         || libfunc.generic_id == "coupon_call".into()
     {
@@ -363,7 +363,7 @@ pub fn try_get_function_with_body_id<'db>(
         return None;
     };
 
-    db.lookup_sierra_function(try_extract_matches!(
+    db.lookup_sierra_function(&try_extract_matches!(
         inner_function,
         cairo_lang_sierra::program::GenericArg::UserFunc
     )?)
