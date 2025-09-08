@@ -8,8 +8,6 @@
 //! 1. There is no flow that uses the "value" of `dest` after the convergence.
 //! 2. All the `src_i` variables get the same "value".
 
-use std::collections::{HashMap, HashSet};
-
 use itertools::Itertools;
 
 use crate::utils::{Rebuilder, RebuilderEx};
@@ -45,53 +43,88 @@ pub(crate) fn visit_remappings<'db, F: FnMut(&VarRemapping<'db>)>(
 }
 
 /// Context for the optimize remappings optimization.
-#[derive(Default)]
 pub(crate) struct Context {
     /// Maps a destination variable to the source variables that are remapped to it.
-    pub dest_to_srcs: HashMap<VariableId, Vec<VariableId>>,
+    pub dest_to_srcs: Vec<Vec<VariableId>>,
     /// Cache of a mapping from variable id in the old lowering to variable id in the new lowering.
     /// This mapping is built on demand.
-    var_representatives: HashMap<VariableId, VariableId>,
+    var_representatives: Vec<Option<VariableId>>,
     /// The set of variables that is used by a reachable blocks.
-    variable_used: HashSet<VariableId>,
+    variable_used: Vec<bool>,
 }
 impl Context {
-    /// Find the `canonical` variable that `var` maps to and mark it as used.
-    pub fn set_used(&mut self, var: VariableId) {
-        let var = self.map_var_id(var);
-        if self.variable_used.insert(var) {
-            for src in self.dest_to_srcs.get(&var).cloned().unwrap_or_default() {
-                self.set_used(src);
-            }
+    pub fn new(count: usize) -> Self {
+        Self {
+            dest_to_srcs: vec![Default::default(); count],
+            var_representatives: vec![None; count],
+            variable_used: vec![false; count],
         }
     }
+    /// Find the `canonical` variable that `var` maps to and mark it as used.
+    pub fn set_used(&mut self, var: VariableId) {
+        set_used_impl(
+            &self.dest_to_srcs,
+            &mut self.var_representatives,
+            &mut self.variable_used,
+            var,
+        );
+    }
 }
-
 impl<'db> Rebuilder<'db> for Context {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        if let Some(res) = self.var_representatives.get(&var) {
-            *res
-        } else {
-            let srcs = self.dest_to_srcs.get(&var).cloned().unwrap_or_default();
-            let src_representatives: HashSet<_> =
-                srcs.iter().map(|src| self.map_var_id(*src)).collect();
-            let src_representatives = src_representatives.into_iter().collect_vec();
-            let new_var =
-                if let [single_var] = &src_representatives[..] { *single_var } else { var };
-            self.var_representatives.insert(var, new_var);
-            new_var
-        }
+        map_var_id_impl(&self.dest_to_srcs, &mut self.var_representatives, var)
     }
 
     fn transform_remapping(&mut self, remapping: &mut VarRemapping<'db>) {
         let mut new_remapping = VarRemapping::default();
         for (dst, src) in remapping.iter() {
-            if dst != &src.var_id && self.variable_used.contains(dst) {
+            if dst != &src.var_id && self.variable_used[dst.index()] {
                 new_remapping.insert(*dst, *src);
             }
         }
         *remapping = new_remapping;
     }
+}
+
+/// Implementation of the [Context::set_used] method, used directly on the members, so can be
+/// partially mutable.
+fn set_used_impl(
+    dest_to_srcs: &Vec<Vec<VariableId>>,
+    var_representatives: &mut Vec<Option<VariableId>>,
+    variable_used: &mut Vec<bool>,
+    var: VariableId,
+) {
+    let var = map_var_id_impl(dest_to_srcs, var_representatives, var);
+    if !variable_used[var.index()] {
+        variable_used[var.index()] = true;
+        for src in dest_to_srcs[var.index()].iter() {
+            set_used_impl(dest_to_srcs, var_representatives, variable_used, *src);
+        }
+    }
+}
+
+/// Implementation of the [Context::map_var_id] method, used directly on the members, so can be
+/// partially mutable.
+fn map_var_id_impl(
+    dest_to_srcs: &Vec<Vec<VariableId>>,
+    var_representatives: &mut Vec<Option<VariableId>>,
+    var: VariableId,
+) -> VariableId {
+    if let Some(res) = var_representatives[var.index()] {
+        return res;
+    }
+    let new_var = if let Some([single_var]) = dest_to_srcs[var.index()]
+        .iter()
+        .map(|src| map_var_id_impl(dest_to_srcs, var_representatives, *src))
+        .unique()
+        .collect_array()
+    {
+        single_var
+    } else {
+        var
+    };
+    var_representatives[var.index()] = Some(new_var);
+    new_var
 }
 
 pub fn optimize_remappings<'db>(lowered: &mut Lowered<'db>) {
@@ -100,10 +133,10 @@ pub fn optimize_remappings<'db>(lowered: &mut Lowered<'db>) {
     }
 
     // Find condition 1 (see module doc).
-    let mut ctx = Context::default();
+    let mut ctx = Context::new(lowered.variables.len());
     let reachable = visit_remappings(lowered, |remapping| {
         for (dst, src) in remapping.iter() {
-            ctx.dest_to_srcs.entry(*dst).or_default().push(src.var_id);
+            ctx.dest_to_srcs[dst.index()].push(src.var_id);
         }
     });
 

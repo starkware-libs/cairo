@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::blocks::BlocksBuilder;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::optimizations::remappings;
+use crate::optimizations::remappings::{self, Context};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableArena,
@@ -25,12 +25,12 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
         old_block_rev_order: Default::default(),
         incoming_gotos: vec![0; lowered.blocks.len()],
         can_be_merged: vec![true; lowered.blocks.len()],
-        remappings_ctx: Default::default(),
+        remappings_ctx: Context::new(lowered.variables.len()),
     };
 
     remappings::visit_remappings(lowered, |remapping| {
         for (dst, src) in remapping.iter() {
-            ctx.remappings_ctx.dest_to_srcs.entry(*dst).or_default().push(src.var_id);
+            ctx.remappings_ctx.dest_to_srcs[dst.index()].push(src.var_id);
         }
     });
 
