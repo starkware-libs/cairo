@@ -420,7 +420,7 @@ fn test_first_plugin_removes() {
 }
 
 // Verify that if the first plugin generates new code, the later plugins don't act on the
-// original // item.
+// original item.
 #[test]
 fn test_first_plugin_generates() {
     let mut db_val = DatabaseForTesting::default();
