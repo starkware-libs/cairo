@@ -1,10 +1,11 @@
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::validate_literal;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, PatternEnumVariant,
-    PatternStruct, PatternTuple, TypeId, TypeLongId, corelib,
+    self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, ExprLiteral,
+    PatternEnumVariant, PatternLiteral, PatternStruct, PatternTuple, TypeId, TypeLongId, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::ExprPtr;
@@ -340,13 +341,14 @@ fn create_node_for_tuple_inner<'db>(
     let current_member = struct_members.map(|members| members[item_idx]);
 
     // Collect the patterns on the current item.
-    let mut patterns_on_current_item = Vec::<_>::default();
+    let mut patterns_on_current_item = Vec::<Option<semantic::Pattern<'db>>>::default();
     for pattern in patterns {
         match pattern {
             Some(semantic::Pattern::Tuple(PatternTuple { field_patterns, .. }))
                 if current_member.is_none() =>
             {
-                patterns_on_current_item.push(Some(get_pattern(ctx, field_patterns[item_idx])));
+                patterns_on_current_item
+                    .push(Some(get_pattern(ctx, field_patterns[item_idx]).clone()));
             }
             Some(semantic::Pattern::Struct(PatternStruct { field_patterns, .. }))
                 if current_member.is_some() =>
@@ -357,12 +359,21 @@ fn create_node_for_tuple_inner<'db>(
                     .iter()
                     .find(|(_, member)| member.id == current_member.unwrap().id)
                     .map(|(pattern, _)| get_pattern(ctx, *pattern));
-                patterns_on_current_item.push(item_pattern);
+                patterns_on_current_item.push(item_pattern.cloned());
             }
             Some(semantic::Pattern::Otherwise(..)) | None => {
                 patterns_on_current_item.push(None);
             }
             Some(semantic::Pattern::Variable(..)) => unreachable!(),
+            Some(semantic::Pattern::Literal(pattern_literal))
+                if pattern_literal.literal.ty == ctx.db.core_info().u256 =>
+            {
+                if let Ok(inner_pattern) =
+                    handle_u256_literal(ctx, graph, pattern_literal, item_idx)
+                {
+                    patterns_on_current_item.push(Some(inner_pattern))
+                }
+            }
             Some(
                 pattern @ (semantic::Pattern::StringLiteral(..)
                 | semantic::Pattern::EnumVariant(..)
@@ -382,11 +393,12 @@ fn create_node_for_tuple_inner<'db>(
     }
 
     // Create a node to handle the current item. The callback will handle the rest of the tuple.
+    let patterns_ref: Vec<_> = patterns_on_current_item.iter().map(|x| x.as_ref()).collect();
     create_node_for_patterns(
         CreateNodeParams {
             ctx,
             graph,
-            patterns: &patterns_on_current_item,
+            patterns: &patterns_ref,
             build_node_callback: &mut |graph, pattern_indices| {
                 // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
                 create_node_for_tuple_inner(
@@ -409,6 +421,42 @@ fn create_node_for_tuple_inner<'db>(
         },
         inner_vars[item_idx],
     )
+}
+
+/// Handles the u256 literal as if it was a pattern of the form `u256 { low: ..., high: ... }`.
+///
+/// According to `item_idx`, returns the low or the high part of the value as a u128 literal
+/// pattern.
+fn handle_u256_literal<'db>(
+    ctx: &LoweringContext<'db, '_>,
+    graph: &mut FlowControlGraphBuilder<'db>,
+    pattern_literal: &semantic::PatternLiteral<'db>,
+    item_idx: usize,
+) -> Maybe<semantic::Pattern<'db>> {
+    let PatternLiteral {
+        literal: ExprLiteral { value, ty, stable_ptr: expr_stable_ptr },
+        stable_ptr,
+    } = pattern_literal;
+    if let Err(err) = validate_literal(ctx.db, *ty, value) {
+        return Err(graph.report(*stable_ptr, LoweringDiagnosticKind::LiteralError(err)));
+    }
+
+    let inner_value = if item_idx == 0 {
+        value.clone() & ((BigInt::from(1) << 128) - 1)
+    } else if item_idx == 1 {
+        value.clone() >> 128
+    } else {
+        unreachable!("Unexpected number of members for u256.")
+    };
+
+    Ok(semantic::Pattern::Literal(semantic::PatternLiteral {
+        literal: semantic::ExprLiteral {
+            value: inner_value,
+            ty: ctx.db.core_info().u128,
+            stable_ptr: *expr_stable_ptr,
+        },
+        stable_ptr: *stable_ptr,
+    }))
 }
 
 /// Creates a node for matching over numeric values, using a combination of [EnumMatch] and
