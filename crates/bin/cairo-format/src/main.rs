@@ -198,7 +198,7 @@ fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
 }
 
 fn main() -> ExitCode {
-    init_logging(log::LevelFilter::Off);
+    init_logging(tracing::Level::ERROR);
     log::info!("Starting formatting.");
 
     let args = FormatterArgs::parse();

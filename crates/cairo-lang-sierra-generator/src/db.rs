@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Maybe, MaybeAsRef};
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::{CrateId, Tracked};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -31,98 +30,110 @@ pub enum SierraGeneratorTypeLongId<'db> {
     Phantom(semantic::TypeId<'db>),
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct ConcreteLibfuncIdLongWrapper {
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct SierraGeneratorTypeLongIdWrapper<'db> {
     id: SierraGeneratorTypeLongId<'db>,
 }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 struct LoweringFunctionIdWrapper<'db> {
     id: lowering::ids::FunctionId<'db>,
 }
 
+#[salsa::tracked]
 fn intern_concrete_lib_func(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
+    _tracked: Tracked,
     id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     let interned = ConcreteLibfuncIdLongWrapper::new(db, id);
     cairo_lang_sierra::ids::ConcreteLibfuncId::from(interned.0.as_bits())
 }
 
-use salsa::Id;
 use salsa::plumbing::FromId;
+use salsa::{Database, Id};
 
+#[salsa::tracked]
 fn lookup_concrete_lib_func(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
+    _tracked: Tracked,
     id: cairo_lang_sierra::ids::ConcreteLibfuncId,
 ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
     let interned = ConcreteLibfuncIdLongWrapper::from_id(unsafe { Id::from_bits(id.id) });
     interned.id(db)
 }
 
+#[salsa::tracked]
 fn intern_concrete_type<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
+    _tracked: Tracked,
     id: SierraGeneratorTypeLongId<'db>,
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
     let interned = SierraGeneratorTypeLongIdWrapper::new(db, id);
     cairo_lang_sierra::ids::ConcreteTypeId::from(interned.0.as_bits())
 }
 
+#[salsa::tracked]
 fn lookup_concrete_type<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
+    _tracked: Tracked,
     id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> SierraGeneratorTypeLongId<'db> {
     let interned = SierraGeneratorTypeLongIdWrapper::from_id(unsafe { Id::from_bits(id.id) });
     interned.id(db)
 }
+#[salsa::tracked]
 fn intern_sierra_function<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     id: lowering::ids::FunctionId<'db>,
 ) -> cairo_lang_sierra::ids::FunctionId {
     let interned = LoweringFunctionIdWrapper::new(db, id);
     cairo_lang_sierra::ids::FunctionId::from(interned.0.as_bits())
 }
 
+#[salsa::tracked]
 fn lookup_sierra_function<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
+    _tracked: Tracked,
     id: cairo_lang_sierra::ids::FunctionId,
 ) -> lowering::ids::FunctionId<'db> {
     let interned = LoweringFunctionIdWrapper::from_id(unsafe { Id::from_bits(id.id) });
     interned.id(db)
 }
 
-#[cairo_lang_proc_macros::query_group]
-pub trait SierraGenGroup: LoweringGroup + for<'db> Upcast<'db, dyn LoweringGroup> {
-    #[salsa::interned]
-    fn intern_label_id<'db>(
-        &'db self,
-        id: pre_sierra::LabelLongId<'db>,
-    ) -> pre_sierra::LabelId<'db>;
-
+pub trait SierraGenGroup: Database {
     fn intern_concrete_lib_func(
         &self,
         id: cairo_lang_sierra::program::ConcreteLibfuncLongId,
-    ) -> cairo_lang_sierra::ids::ConcreteLibfuncId;
+    ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+        intern_concrete_lib_func(self.as_dyn_database(), (), id)
+    }
 
     fn lookup_concrete_lib_func(
         &self,
         id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-    ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId;
+    ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        lookup_concrete_lib_func(self.as_dyn_database(), (), id)
+    }
 
     fn intern_concrete_type<'db>(
         &'db self,
         id: SierraGeneratorTypeLongId<'db>,
-    ) -> cairo_lang_sierra::ids::ConcreteTypeId;
+    ) -> cairo_lang_sierra::ids::ConcreteTypeId {
+        intern_concrete_type(self.as_dyn_database(), (), id)
+    }
 
     fn lookup_concrete_type<'db>(
         &'db self,
         id: cairo_lang_sierra::ids::ConcreteTypeId,
-    ) -> SierraGeneratorTypeLongId<'db>;
+    ) -> SierraGeneratorTypeLongId<'db> {
+        lookup_concrete_type(self.as_dyn_database(), (), id)
+    }
 
     /// Creates a Sierra function id for a lowering function id.
     // TODO(lior): Can we have the short and long ids in the same place? Currently, the short
@@ -130,123 +141,154 @@ pub trait SierraGenGroup: LoweringGroup + for<'db> Upcast<'db, dyn LoweringGroup
     fn intern_sierra_function<'db>(
         &'db self,
         id: lowering::ids::FunctionId<'db>,
-    ) -> cairo_lang_sierra::ids::FunctionId;
+    ) -> cairo_lang_sierra::ids::FunctionId {
+        intern_sierra_function(self.as_dyn_database(), id)
+    }
 
     fn lookup_sierra_function<'db>(
         &'db self,
         id: cairo_lang_sierra::ids::FunctionId,
-    ) -> lowering::ids::FunctionId<'db>;
+    ) -> lowering::ids::FunctionId<'db> {
+        lookup_sierra_function(self.as_dyn_database(), (), id)
+    }
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
-    #[salsa::invoke(crate::types::get_concrete_type_id)]
     fn get_concrete_type_id<'db>(
         &'db self,
         type_id: semantic::TypeId<'db>,
-    ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId>;
+    ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
+        crate::types::get_concrete_type_id(self.as_dyn_database(), type_id)
+    }
 
     /// Returns the ConcreteTypeId of the index enum type with the given index count.
-    #[salsa::invoke(crate::types::get_index_enum_type_id)]
     fn get_index_enum_type_id(
         &self,
         index_count: usize,
-    ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId>;
+    ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
+        crate::types::get_index_enum_type_id(self.as_dyn_database(), (), index_count)
+    }
 
     /// Returns the matching sierra concrete type long id for a given semantic type id.
-    #[salsa::invoke(crate::types::get_concrete_long_type_id)]
     fn get_concrete_long_type_id<'db>(
-        &self,
+        &'db self,
         type_id: semantic::TypeId<'db>,
-    ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>>;
+    ) -> Maybe<&'db Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
+        crate::types::get_concrete_long_type_id(self.as_dyn_database(), type_id).maybe_as_ref()
+    }
 
     /// Returns if the semantic id has a circular definition.
-    #[salsa::invoke(crate::types::is_self_referential)]
-    fn is_self_referential<'db>(&self, type_id: semantic::TypeId<'db>) -> Maybe<bool>;
+    fn is_self_referential<'db>(&self, type_id: semantic::TypeId<'db>) -> Maybe<bool> {
+        crate::types::is_self_referential(self.as_dyn_database(), type_id)
+    }
 
     /// Returns the semantic type ids the type is directly dependent on.
     ///
     /// A type depends on another type if it contains or may contain it, as a field or by holding a
     /// reference to it.
-    #[salsa::invoke(crate::types::type_dependencies)]
     fn type_dependencies<'db>(
         &'db self,
         type_id: semantic::TypeId<'db>,
-    ) -> Maybe<Arc<Vec<semantic::TypeId<'db>>>>;
+    ) -> Maybe<&'db [semantic::TypeId<'db>]> {
+        Ok(crate::types::type_dependencies(self.as_dyn_database(), type_id).maybe_as_ref()?)
+    }
 
-    #[salsa::invoke(crate::types::has_in_deps)]
-    #[salsa::cycle(crate::types::has_in_deps_cycle)]
     fn has_in_deps<'db>(
         &self,
         type_id: semantic::TypeId<'db>,
         needle: semantic::TypeId<'db>,
-    ) -> Maybe<bool>;
+    ) -> Maybe<bool> {
+        crate::types::has_in_deps(self.as_dyn_database(), type_id, needle)
+    }
 
     /// Returns the [cairo_lang_sierra::program::FunctionSignature] object for the given function
     /// id.
     fn get_function_signature(
         &self,
         function_id: cairo_lang_sierra::ids::FunctionId,
-    ) -> Maybe<Arc<cairo_lang_sierra::program::FunctionSignature>>;
+    ) -> Maybe<&cairo_lang_sierra::program::FunctionSignature> {
+        get_function_signature(self.as_dyn_database(), (), function_id).maybe_as_ref()
+    }
 
     /// Returns the [cairo_lang_sierra::extensions::types::TypeInfo] object for the given type id.
     fn get_type_info(
         &self,
         concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
-    ) -> Maybe<Arc<cairo_lang_sierra::extensions::types::TypeInfo>>;
+    ) -> Maybe<&cairo_lang_sierra::extensions::types::TypeInfo> {
+        get_type_info(self.as_dyn_database(), (), concrete_type_id).maybe_as_ref()
+    }
 
     /// Private query to compute Sierra data about a function with body.
-    #[salsa::invoke(function_generator::priv_function_with_body_sierra_data)]
     fn priv_function_with_body_sierra_data<'db>(
         &'db self,
         function_id: ConcreteFunctionWithBodyId<'db>,
-    ) -> Maybe<function_generator::SierraFunctionWithBodyData<'db>>;
+    ) -> Maybe<&'db function_generator::SierraFunctionWithBodyData<'db>> {
+        function_generator::priv_function_with_body_sierra_data(self.as_dyn_database(), function_id)
+            .maybe_as_ref()
+    }
     /// Returns the Sierra code (as [pre_sierra::Function]) for a given function with body.
-    #[salsa::invoke(function_generator::function_with_body_sierra)]
     fn function_with_body_sierra<'db>(
         &'db self,
         function_id: ConcreteFunctionWithBodyId<'db>,
-    ) -> Maybe<Arc<pre_sierra::Function<'db>>>;
+    ) -> Maybe<&'db pre_sierra::Function<'db>> {
+        self.priv_function_with_body_sierra_data(function_id)?.function.maybe_as_ref()
+    }
 
     /// Private query to generate a dummy function for a given function with body.
-    #[salsa::invoke(function_generator::priv_get_dummy_function)]
     fn priv_get_dummy_function<'db>(
         &'db self,
         function_id: ConcreteFunctionWithBodyId<'db>,
-    ) -> Maybe<Arc<pre_sierra::Function<'db>>>;
+    ) -> Maybe<&'db pre_sierra::Function<'db>> {
+        function_generator::priv_get_dummy_function(self.as_dyn_database(), function_id)
+            .maybe_as_ref()
+    }
 
     /// Returns the ap change of a given function if it is known at compile time or
     /// [SierraApChange::Unknown] otherwise.
-    #[salsa::invoke(ap_change::get_ap_change)]
     fn get_ap_change<'db>(
         &self,
         function_id: ConcreteFunctionWithBodyId<'db>,
-    ) -> Maybe<SierraApChange>;
+    ) -> Maybe<SierraApChange> {
+        ap_change::get_ap_change(self.as_dyn_database(), function_id)
+    }
 
     /// Private query to returns the type dependencies of a given libfunc.
-    #[salsa::invoke(program_generator::priv_libfunc_dependencies)]
     fn priv_libfunc_dependencies(
         &self,
         libfunc_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-    ) -> Arc<[ConcreteTypeId]>;
+    ) -> &[ConcreteTypeId] {
+        program_generator::priv_libfunc_dependencies(self.as_dyn_database(), (), libfunc_id)
+    }
 
     /// Returns the [SierraProgramWithDebug] object of the requested functions.
-    #[salsa::invoke(program_generator::get_sierra_program_for_functions)]
     fn get_sierra_program_for_functions<'db>(
         &'db self,
         requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
-    ) -> Maybe<Arc<SierraProgramWithDebug<'db>>>;
+    ) -> Maybe<&'db SierraProgramWithDebug<'db>> {
+        program_generator::get_sierra_program_for_functions(
+            self.as_dyn_database(),
+            (),
+            requested_function_ids,
+        )
+        .maybe_as_ref()
+    }
 
     /// Returns the [SierraProgramWithDebug] object of the requested crates.
-    #[salsa::invoke(program_generator::get_sierra_program)]
     fn get_sierra_program<'db>(
         &'db self,
         requested_crate_ids: Vec<CrateId<'db>>,
-    ) -> Maybe<Arc<SierraProgramWithDebug<'db>>>;
+    ) -> Maybe<&'db SierraProgramWithDebug<'db>> {
+        program_generator::get_sierra_program(self.as_dyn_database(), (), requested_crate_ids)
+            .maybe_as_ref()
+    }
 }
+impl<T: Database + ?Sized> SierraGenGroup for T {}
 
+#[salsa::tracked(returns(ref))]
 fn get_function_signature(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
+    _tracked: Tracked,
     function_id: cairo_lang_sierra::ids::FunctionId,
-) -> Maybe<Arc<cairo_lang_sierra::program::FunctionSignature>> {
+) -> Maybe<cairo_lang_sierra::program::FunctionSignature> {
     // TODO(yuval): add another version of this function that directly received semantic FunctionId.
     // Call it from function_generators::get_function_code. Take ret_types from the result instead
     // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
@@ -287,43 +329,42 @@ fn get_function_signature(
         }
     }
 
-    Ok(Arc::new(cairo_lang_sierra::program::FunctionSignature {
-        param_types: all_params,
-        ret_types,
-    }))
+    Ok(cairo_lang_sierra::program::FunctionSignature { param_types: all_params, ret_types })
 }
 
-/// Initializes the [`SierraGenGroup`] database to a proper state.
+/// Initializes the [`Database`] database to a proper state.
 /// Currently does nothing, but is required to initialize the downcaster.
-pub fn init_sierra_gen_group(db: &mut dyn SierraGenGroup) {
-    SierraGenGroup::zalsa_register_downcaster(db);
+pub fn init_sierra_gen_group(db: &mut dyn Database) {
+    Database::zalsa_register_downcaster(db);
 }
 
+#[salsa::tracked(returns(ref))]
 fn get_type_info(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
+    _tracked: Tracked,
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
-) -> Maybe<Arc<cairo_lang_sierra::extensions::types::TypeInfo>> {
+) -> Maybe<cairo_lang_sierra::extensions::types::TypeInfo> {
     let long_id = match db.lookup_concrete_type(concrete_type_id) {
         SierraGeneratorTypeLongId::Regular(long_id) => long_id,
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
             let info = cycle_breaker_info(db, ty)?;
-            return Ok(Arc::new(cairo_lang_sierra::extensions::types::TypeInfo {
+            return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
                 long_id: db.get_concrete_long_type_id(ty)?.as_ref().clone(),
                 storable: true,
                 droppable: info.droppable,
                 duplicatable: info.duplicatable,
                 zero_sized: false,
-            }));
+            });
         }
         SierraGeneratorTypeLongId::Phantom(ty) => {
             let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
-            return Ok(Arc::new(cairo_lang_sierra::extensions::types::TypeInfo {
+            return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
                 long_id,
                 storable: false,
                 droppable: false,
                 duplicatable: false,
                 zero_sized: true,
-            }));
+            });
         }
     };
     let concrete_ty = cairo_lang_sierra::extensions::core::CoreType::specialize_by_id(
@@ -336,17 +377,19 @@ fn get_type_info(
         replace_ids::DebugReplacer { db }.replace_generic_args(&mut long_id.generic_args);
         panic!("Got failure while specializing type `{long_id}`: {err}")
     });
-    Ok(Arc::new(concrete_ty.info().clone()))
+    Ok(concrete_ty.info().clone())
 }
 
 /// Returns the concrete Sierra long type id given the concrete id.
 pub fn sierra_concrete_long_id(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
     match db.lookup_concrete_type(concrete_type_id) {
         SierraGeneratorTypeLongId::Regular(long_id) => Ok(long_id),
         SierraGeneratorTypeLongId::Phantom(type_id)
-        | SierraGeneratorTypeLongId::CycleBreaker(type_id) => db.get_concrete_long_type_id(type_id),
+        | SierraGeneratorTypeLongId::CycleBreaker(type_id) => {
+            db.get_concrete_long_type_id(type_id).cloned()
+        }
     }
 }

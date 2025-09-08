@@ -5,9 +5,9 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use salsa::Database;
 
 use super::generics::{GenericParamsData, semantic_generic_params};
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::TypeAliasCycle;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
@@ -18,7 +18,7 @@ use crate::types::resolve_type;
 use crate::{GenericParam, TypeId};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct TypeAliasData<'db> {
     pub resolved_type: Maybe<TypeId<'db>>,
     pub generic_params: Vec<GenericParam<'db>>,
@@ -28,7 +28,7 @@ pub struct TypeAliasData<'db> {
 
 /// Computes data about the generic parameters of a type-alias item.
 pub fn type_alias_generic_params_data_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
     type_alias_ast: &ast::ItemTypeAlias<'db>,
     lookup_item_id: LookupItemId<'db>,
@@ -62,7 +62,7 @@ pub fn type_alias_generic_params_data_helper<'db>(
 
 /// Computes data about a type-alias item.
 pub fn type_alias_semantic_data_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     type_alias_ast: &ast::ItemTypeAlias<'db>,
     lookup_item_id: LookupItemId<'db>,
@@ -90,7 +90,7 @@ pub fn type_alias_semantic_data_helper<'db>(
 
 /// Cycle handling for a type-alias item.
 pub fn type_alias_semantic_data_cycle_helper<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     type_alias_ast: &ast::ItemTypeAlias<'db>,
     lookup_item_id: LookupItemId<'db>,

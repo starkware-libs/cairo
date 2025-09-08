@@ -1,6 +1,6 @@
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use pretty_assertions::assert_eq;
-use test_log::test;
 
 use super::KnownStack;
 

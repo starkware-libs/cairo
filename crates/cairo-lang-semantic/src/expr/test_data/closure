@@ -845,3 +845,29 @@ error: Type mismatch: `()` and `(core::integer::i32,)`.
  --> lib.cairo:5:15
     call_with(|| {})
               ^^^^^
+
+//! > ==========================================================================
+
+//! > Closures with named arguments.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let c = |a, b| {
+        a + b
+    };
+    c(b: 2_u32, a: 1_u32);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Named arguments are not supported in this context.
+ --> lib.cairo:5:7
+    c(b: 2_u32, a: 1_u32);
+      ^^^^^^^^

@@ -1,22 +1,21 @@
 use std::sync::{LazyLock, Mutex};
 
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    CrateSettings, Edition, ExperimentalFeaturesConfig, ExternalFiles, FilesGroup,
-    init_dev_corelib, init_files_group,
+    CrateSettings, Edition, ExperimentalFeaturesConfig, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{BlobId, CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, OptionFrom, Upcast, extract_matches};
+use salsa::Database;
 
-use crate::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
+use crate::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
 use crate::inline_macros::get_default_plugin_suite;
 use crate::items::functions::GenericFunctionId;
 use crate::plugin::PluginSuite;
@@ -30,11 +29,7 @@ pub struct SemanticDatabaseForTesting {
 
 #[salsa::db]
 impl salsa::Database for SemanticDatabaseForTesting {}
-impl ExternalFiles for SemanticDatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
-    }
-}
+
 impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
         let suite = get_default_plugin_suite();
@@ -43,6 +38,7 @@ impl SemanticDatabaseForTesting {
 
     pub fn with_plugin_suite(suite: PluginSuite) -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
@@ -61,33 +57,8 @@ impl Default for SemanticDatabaseForTesting {
         SHARED_DB.lock().unwrap().clone()
     }
 }
-impl Elongate for SemanticDatabaseForTesting {
-    fn elongate(&self) -> &dyn SemanticGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn FilesGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn DefsGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn DefsGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SemanticGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn SemanticGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn ParserGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for SemanticDatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }
@@ -122,7 +93,7 @@ pub struct TestModule<'a> {
 
 /// Sets up a crate with given content, and returns its crate id.
 pub fn setup_test_crate_ex<'a>(
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     content: &str,
     crate_settings: Option<&str>,
     cache_file: Option<BlobId<'a>>,
@@ -164,13 +135,13 @@ pub fn setup_test_crate_ex<'a>(
 }
 
 /// See [setup_test_crate_ex].
-pub fn setup_test_crate<'a>(db: &'a dyn SemanticGroup, content: &str) -> CrateId<'a> {
+pub fn setup_test_crate<'a>(db: &'a dyn Database, content: &str) -> CrateId<'a> {
     setup_test_crate_ex(db, content, None, None)
 }
 
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module_ex<'a>(
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     content: &str,
     crate_settings: Option<&str>,
     cached_crate: Option<BlobId<'a>>,
@@ -179,7 +150,7 @@ pub fn setup_test_module_ex<'a>(
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
 
-    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db);
     let semantic_diagnostics = get_recursive_module_semantic_diagnostics(db, module_id).format(db);
 
     WithStringDiagnostics {
@@ -190,7 +161,7 @@ pub fn setup_test_module_ex<'a>(
 
 /// See [setup_test_module_ex].
 pub fn setup_test_module<'a>(
-    db: &'a (dyn SemanticGroup + 'static),
+    db: &'a dyn Database,
     content: &str,
 ) -> WithStringDiagnostics<TestModule<'a>> {
     setup_test_module_ex(db, content, None, None)
@@ -209,7 +180,7 @@ pub struct TestFunction<'a> {
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
 pub fn setup_test_function_ex<'a>(
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     function_code: &str,
     function_name: &'a str,
     module_code: &str,
@@ -248,7 +219,7 @@ pub fn setup_test_function_ex<'a>(
 
 /// See [setup_test_function_ex].
 pub fn setup_test_function<'a>(
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     function_code: &str,
     function_name: &'a str,
     module_code: &str,
@@ -269,7 +240,7 @@ pub struct TestExpr<'a> {
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
 pub fn setup_test_expr<'a>(
-    db: &'a (dyn SemanticGroup + 'static),
+    db: &'a dyn Database,
     expr_code: &str,
     module_code: &str,
     function_body: &str,
@@ -311,7 +282,7 @@ pub fn setup_test_expr<'a>(
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
 pub fn setup_test_block<'a>(
-    db: &'a (dyn SemanticGroup + 'static),
+    db: &'a dyn Database,
     expr_code: &str,
     module_code: &str,
     function_body: &str,
@@ -366,7 +337,7 @@ pub fn test_function_diagnostics(
 
 /// Gets the diagnostics for all the modules (including nested) in the given crate.
 pub fn get_crate_semantic_diagnostics<'a>(
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     crate_id: CrateId<'a>,
 ) -> Diagnostics<'a, SemanticDiagnostic<'a>> {
     let submodules = db.crate_modules(crate_id);
@@ -379,7 +350,7 @@ pub fn get_crate_semantic_diagnostics<'a>(
 
 /// Gets the diagnostics for all the modules (including nested) in the given module.
 fn get_recursive_module_semantic_diagnostics<'a>(
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     module_id: ModuleId<'a>,
 ) -> Diagnostics<'a, SemanticDiagnostic<'a>> {
     let mut diagnostics: DiagnosticsBuilder<'_, _> =

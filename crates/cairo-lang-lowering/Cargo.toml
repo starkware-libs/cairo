@@ -7,16 +7,16 @@ license-file.workspace = true
 description = "Cairo lowering phase."
 
 [dependencies]
+assert_matches.workspace = true
+bincode.workspace = true
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.0" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.12.0" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.0" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.0" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.0" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.12.0" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.12.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0" }
-assert_matches.workspace = true
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.0", features = ["tracing"] }
 id-arena.workspace = true
 indent.workspace = true
 itertools = { workspace = true, default-features = true }
@@ -26,15 +26,11 @@ num-integer = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
-bincode.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
-    "testing",
-] }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
-test-log.workspace = true

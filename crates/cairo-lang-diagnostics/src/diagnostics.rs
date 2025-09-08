@@ -3,12 +3,12 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::db::{FilesGroup, get_originating_location};
+use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use salsa::{AsDynDatabase, Database};
 
 use crate::error_code::{ErrorCode, OptionErrorCodeExt};
 use crate::location_marks::get_location_marks;
@@ -35,7 +35,7 @@ impl fmt::Display for Severity {
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
 pub trait DiagnosticEntry<'db>: Clone + fmt::Debug + Eq + Hash {
-    type DbType: Upcast<'db, dyn FilesGroup> + ?Sized;
+    type DbType: Database + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &'db Self::DbType) -> DiagnosticLocation<'db>;
     fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote<'_>] {
@@ -71,7 +71,7 @@ impl<'a> DiagnosticLocation<'a> {
     }
 
     /// Get the location of the originating user code.
-    pub fn user_location(&self, db: &'a dyn FilesGroup) -> Self {
+    pub fn user_location(&self, db: &'a dyn Database) -> Self {
         let (file_id, span) = get_originating_location(db, self.file_id, self.span, None);
         Self { file_id, span }
     }
@@ -81,7 +81,7 @@ impl<'a> DiagnosticLocation<'a> {
     /// The notes are collected from the parent files of the originating location.
     pub fn user_location_with_plugin_notes(
         &self,
-        db: &'a dyn FilesGroup,
+        db: &'a dyn Database,
         file_notes: &PluginFileDiagnosticNotes<'a>,
     ) -> (Self, Vec<DiagnosticNote<'_>>) {
         let mut parent_files = Vec::new();
@@ -96,7 +96,7 @@ impl<'a> DiagnosticLocation<'a> {
     }
 
     /// Helper function to format the location of a diagnostic.
-    pub fn fmt_location(&self, f: &mut fmt::Formatter<'_>, db: &dyn FilesGroup) -> fmt::Result {
+    pub fn fmt_location(&self, f: &mut fmt::Formatter<'_>, db: &dyn Database) -> fmt::Result {
         let file_path = self.file_id.long(db).full_path(db);
         let start = match self.span.start.position_in_file(db, self.file_id) {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
@@ -112,18 +112,17 @@ impl<'a> DiagnosticLocation<'a> {
 }
 
 impl<'a> DebugWithDb<'a> for DiagnosticLocation<'a> {
-    type Db = dyn FilesGroup;
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn FilesGroup) -> fmt::Result {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn Database) -> fmt::Result {
         let file_path = self.file_id.long(db).full_path(db);
         let mut marks = String::new();
         let mut ending_pos = String::new();
         let starting_pos = match self.span.start.position_in_file(db, self.file_id) {
             Some(starting_text_pos) => {
-                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id) {
-                    if starting_text_pos.line != ending_text_pos.line {
-                        ending_pos =
-                            format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
-                    }
+                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id)
+                    && starting_text_pos.line != ending_text_pos.line
+                {
+                    ending_pos = format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
                 }
                 marks = get_location_marks(db, self, true);
                 format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
@@ -152,8 +151,8 @@ impl<'a> DiagnosticNote<'a> {
 }
 
 impl<'a> DebugWithDb<'a> for DiagnosticNote<'a> {
-    type Db = dyn FilesGroup;
-    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn FilesGroup) -> fmt::Result {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn Database) -> fmt::Result {
         write!(f, "{}", self.text)?;
         if let Some(location) = &self.location {
             write!(f, ":\n  --> ")?;
@@ -178,6 +177,17 @@ pub fn skip_diagnostic() -> DiagnosticAdded {
 /// Represents an arbitrary type T or a missing output due to an error whose diagnostic was properly
 /// reported.
 pub type Maybe<T> = Result<T, DiagnosticAdded>;
+
+/// Trait to convert a `Maybe<T>` to a `Maybe<&T>`.
+pub trait MaybeAsRef<T> {
+    fn maybe_as_ref(&self) -> Maybe<&T>;
+}
+
+impl<T> MaybeAsRef<T> for Maybe<T> {
+    fn maybe_as_ref(&self) -> Maybe<&T> {
+        self.as_ref().map_err(|e| *e)
+    }
+}
 
 /// Temporary trait to allow conversions from the old `Option<T>` mechanism to `Maybe<T>`.
 // TODO(lior): Remove this trait after converting all the functions.
@@ -254,7 +264,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Default
 }
 
 pub fn format_diagnostics(
-    db: &dyn FilesGroup,
+    db: &dyn Database,
     message: &str,
     location: DiagnosticLocation<'_>,
 ) -> String {
@@ -312,9 +322,14 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         Self(DiagnosticsBuilder::default().into())
     }
 
-    /// Returns Ok if there are no errors, or DiagnosticAdded if there are.
+    /// Returns `true` if there are errors, or `false` otherwise.
+    pub fn has_errors(&self) -> bool {
+        self.0.error_count > 0
+    }
+
+    /// Returns `Ok` if there are no errors, or `DiagnosticAdded` if there are.
     pub fn check_error_free(&self) -> Maybe<()> {
-        if self.0.error_count == 0 { Ok(()) } else { Err(DiagnosticAdded) }
+        if self.has_errors() { Err(DiagnosticAdded) } else { Ok(()) }
     }
 
     /// Checks if there are no entries inside `Diagnostics`
@@ -330,7 +345,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
     ) -> Vec<FormattedDiagnosticEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
-        let files_db = db.upcast();
+        let files_db = db.as_dyn_database();
         for entry in &self.get_diagnostics_without_duplicates(db) {
             let mut msg = String::new();
             let diag_location = entry.location(db);
@@ -397,7 +412,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         if diagnostic_with_dup.is_empty() {
             return diagnostic_with_dup;
         }
-        let files_db = db.upcast();
+        let files_db = db.as_dyn_database();
         let mut indexed_dup_diagnostic =
             diagnostic_with_dup.iter().enumerate().sorted_by_cached_key(|(idx, diag)| {
                 (diag.location(db).user_location(files_db).span, diag.format(db), *idx)
@@ -417,6 +432,14 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         }
         diagnostic_without_dup.sort_by_key(|(idx, _)| *idx);
         diagnostic_without_dup.into_iter().map(|(_, diag)| diag.clone()).collect()
+    }
+
+    /// Merges two sets of diagnostics.
+    pub fn merge(self, other: Self) -> Self {
+        let mut builder = DiagnosticsBuilder::default();
+        builder.extend(self);
+        builder.extend(other);
+        builder.build()
     }
 }
 impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Default for Diagnostics<'db, TEntry> {

@@ -1,4 +1,4 @@
-use test_log::test;
+use cairo_lang_test_utils::test;
 
 use super::Expr;
 

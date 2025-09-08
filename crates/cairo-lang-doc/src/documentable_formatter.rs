@@ -7,10 +7,12 @@ use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericImplItemId,
     GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericTraitItemId,
     ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
-    LanguageElementId, LookupItemId, MemberId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
-    TraitId, TraitItemId, TraitTypeId, VariantId,
+    LanguageElementId, LookupItemId, MacroDeclarationId, MemberId, ModuleId, ModuleItemId,
+    ModuleTypeAliasId, NamedLanguageElementId, StructId, TopLevelLanguageElementId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, VariantId,
 };
+use cairo_lang_filesystem::ids::Tracked;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
@@ -20,11 +22,12 @@ use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::types::TypeId;
 use cairo_lang_semantic::{ConcreteTypeId, Expr, GenericParam, TypeLongId};
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::node::ast::WrappedMacro;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedStablePtr, TypedSyntaxNode, green};
 use itertools::Itertools;
+use salsa::Database;
 
-use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
 use crate::location_links::{LocationLink, format_signature};
 use crate::signature_data::{
@@ -44,18 +47,12 @@ const INDENT: &str = "    ";
 /// Returned when item's signature could not be determined.
 const MISSING: &str = "<missing>";
 
-/// Gets the signature of an item (i.e., item without its body).
-pub fn get_item_signature<'db>(
-    db: &'db dyn DocGroup,
-    item_id: DocumentableItemId<'db>,
-) -> Option<String> {
-    get_item_signature_with_links(db, item_id).0
-}
-
 /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
 /// signature slices on documentable items.
+#[salsa::tracked]
 pub fn get_item_signature_with_links<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
+    _tracked: Tracked,
     item_id: DocumentableItemId<'db>,
 ) -> (Option<String>, Vec<LocationLink<'db>>) {
     let mut f = HirFormatter::new(db);
@@ -74,7 +71,7 @@ pub fn get_item_signature_with_links<'db>(
                 ModuleItemId::ExternFunction(item_id) => item_id.get_signature_with_links(&mut f),
                 ModuleItemId::Submodule(_) => (None, vec![]),
                 ModuleItemId::Use(_) => (None, vec![]),
-                ModuleItemId::MacroDeclaration(_) => (None, vec![]),
+                ModuleItemId::MacroDeclaration(item_id) => item_id.get_signature_with_links(&mut f),
             },
             LookupItemId::TraitItem(item_id) => match item_id {
                 TraitItemId::Function(item_id) => item_id.get_signature_with_links(&mut f),
@@ -121,7 +118,7 @@ pub trait HirDisplay<'db> {
 /// Documentable items signature formatter.
 pub struct HirFormatter<'db> {
     /// The database handle.
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     /// A buffer to intercept writes with.
     buf: String,
     /// Linkable signature items.
@@ -138,7 +135,7 @@ impl<'db> fmt::Write for HirFormatter<'db> {
 /// [`HirFormatter`] implementation.
 impl<'db> HirFormatter<'db> {
     /// Creates new instance of [`HirFormatter`].
-    pub fn new(db: &'db dyn DocGroup) -> Self {
+    pub fn new(db: &'db dyn Database) -> Self {
         Self { db, buf: String::new(), location_links: Vec::new() }
     }
 
@@ -405,7 +402,7 @@ impl<'db> HirDisplay<'db> for ConstantId<'db> {
                             constant_full_signature.full_path.clone(),
                         )
                     })?;
-                    let constant_value = f.db.lookup_intern_const_value(const_value_id);
+                    let constant_value = const_value_id.long(f.db);
                     if let ConstValue::Int(value, _) = constant_value {
                         write_syntactic_evaluation(f, constant_full_signature.item_id).map_err(
                             |_| {
@@ -651,6 +648,39 @@ impl<'db> HirDisplay<'db> for ExternFunctionId<'db> {
     }
 }
 
+impl<'db> HirDisplay<'db> for MacroDeclarationId<'db> {
+    fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
+        let module_item_id = ModuleItemId::MacroDeclaration(*self);
+        f.write_str(&format!("macro {} {{", module_item_id.name(f.db)))
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        let macro_rules_data =
+            f.db.macro_declaration_rules(*self)
+                .map_err(|_| SignatureError::FailedRetrievingSemanticData(self.full_path(f.db)))?;
+
+        for rule_data in macro_rules_data {
+            let (left_bracket, elements, right_bracket) = match rule_data.pattern {
+                WrappedMacro::Braced(m) => ("{", m.elements(f.db), "}"),
+                WrappedMacro::Bracketed(m) => ("[", m.elements(f.db), "]"),
+                WrappedMacro::Parenthesized(m) => ("(", m.elements(f.db), ")"),
+            };
+            let macro_match = elements
+                .elements_vec(f.db)
+                .iter()
+                .map(|element| element.as_syntax_node().get_text(f.db))
+                .join("")
+                .split_whitespace()
+                .join(" ");
+            f.write_str(
+                format!("\n    {}{}{} => {{ ... }};", left_bracket, macro_match, right_bracket)
+                    .as_str(),
+            )
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
+        }
+        f.write_str("\n} => { ... }")
+            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+    }
+}
+
 /// Formats the text of the [`Visibility`] to a relevant string slice.
 pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
     match semantic_visibility {
@@ -714,7 +744,7 @@ fn format_final_part(slice: &str) -> String {
 /// Takes a list of [`GenericParamId`]s and formats it into a String representation used for
 /// signature documentation.
 fn format_resolver_generic_params<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     params: Vec<GenericParamId<'db>>,
 ) -> String {
     if !params.is_empty() {
@@ -815,16 +845,16 @@ fn write_function_signature<'db>(
     }
     f.write_str(")")?;
 
-    if let Some(return_type) = documentable_signature.return_type {
-        if !return_type.is_unit(f.db) {
-            f.write_type(Some(" -> "), return_type, None, &documentable_signature.full_path)?;
-        }
+    if let Some(return_type) = documentable_signature.return_type
+        && !return_type.is_unit(f.db)
+    {
+        f.write_type(Some(" -> "), return_type, None, &documentable_signature.full_path)?;
     }
     Ok(())
 }
 
 /// Retrieves [`SyntaxKind::TypeClause`] text from [`SyntaxNode`].
-fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn DocGroup) -> Option<String> {
+fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn Database) -> Option<String> {
     for child in syntax_node.get_children(db).iter() {
         if child.kind(db) == SyntaxKind::TypeClause {
             return Some(child.get_text_without_all_comment_trivia(db));
@@ -991,7 +1021,7 @@ fn write_type_signature<'db>(
 /// Returns relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
 fn resolve_generic_item<'db>(
     generic_item_id: GenericItemId<'db>,
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
 ) -> Option<DocumentableItemId<'db>> {
     match generic_item_id {
         GenericItemId::ModuleItem(module_item_id) => {
@@ -1054,7 +1084,7 @@ fn resolve_generic_module_item<'db>(
 /// Returns relevant [`DocumentableItemId`] for [`GenericArgumentId`] if one can be retrieved.
 fn resolve_generic_arg<'db>(
     generic_arg_id: GenericArgumentId<'db>,
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
 ) -> Option<DocumentableItemId<'db>> {
     match generic_arg_id {
         GenericArgumentId::Type(type_id) => resolve_type(db, type_id),
@@ -1077,7 +1107,7 @@ fn resolve_generic_arg<'db>(
 
 /// Returns relevant [`DocumentableItemId`] for [`TypeId`] if one can be retrieved.
 fn resolve_type<'db>(
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
     type_id: TypeId<'db>,
 ) -> Option<DocumentableItemId<'db>> {
     let intern = type_id.long(db);
@@ -1126,7 +1156,7 @@ fn resolve_type<'db>(
                         ModuleId::Submodule(submodule_id) => Some(DocumentableItemId::from(
                             LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
                         )),
-                        ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
+                        ModuleId::MacroCall { .. } => None,
                     },
                     Err(_) => None,
                 }

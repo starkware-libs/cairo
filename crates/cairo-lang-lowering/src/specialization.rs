@@ -2,11 +2,13 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
-use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use itertools::{Itertools, chain, zip_eq};
+use salsa::Database;
 
 use crate::blocks::BlocksBuilder;
 use crate::db::LoweringGroup;
@@ -20,16 +22,22 @@ use crate::{
 // A const argument for a specialized function.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SpecializationArg<'db> {
-    Const(ConstValue<'db>),
+    Const { value: ConstValueId<'db>, boxed: bool },
     EmptyArray(TypeId<'db>),
     Struct(Vec<SpecializationArg<'db>>),
 }
 
 impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
-    type Db = dyn LoweringGroup;
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn LoweringGroup) -> std::fmt::Result {
+    type Db = dyn Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
         match self {
-            SpecializationArg::Const(value) => write!(f, "{:?}", value.debug(db)),
+            SpecializationArg::Const { value, boxed } => {
+                write!(f, "{:?}", value.debug(db))?;
+                if *boxed {
+                    write!(f, ".into_box()")?;
+                }
+                Ok(())
+            }
             SpecializationArg::Struct(inner) => {
                 write!(f, "{{")?;
                 let mut inner = inner.iter().peekable();
@@ -59,7 +67,7 @@ enum SpecializationArgBuildingState<'db, 'a> {
 
 /// Returns the lowering of a specialized function.
 pub fn specialized_function_lowered<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     specialized: SpecializedFunction<'db>,
 ) -> Maybe<Lowered<'db>> {
     let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
@@ -94,11 +102,8 @@ pub fn specialized_function_lowered<'db>(
     while let Some((var_id, state)) = stack.pop() {
         match state {
             SpecializationArgBuildingState::Initial(c) => match c {
-                SpecializationArg::Const(value) => {
-                    statements.push(Statement::Const(StatementConst {
-                        value: value.clone(),
-                        output: var_id,
-                    }));
+                SpecializationArg::Const { value, boxed } => {
+                    statements.push(Statement::Const(StatementConst::new(*value, var_id, *boxed)));
                 }
                 SpecializationArg::EmptyArray(ty) => {
                     statements.push(Statement::Call(StatementCall {
@@ -174,8 +179,9 @@ pub fn specialized_function_lowered<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_should_specialize].
+#[salsa::tracked]
 pub fn priv_should_specialize<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     let ids::ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, .. }) =

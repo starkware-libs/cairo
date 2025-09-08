@@ -5,11 +5,11 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::TextSpan;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::inline_macros::get_default_plugin_suite;
@@ -28,13 +28,10 @@ fn test_resolve() {
     .split();
 
     let module_id = test_module.module_id;
-    let db: &dyn SemanticGroup = &db_val;
+    let db: &dyn Database = &db_val;
     assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).unwrap().is_none());
     let felt252_add = db.module_item_by_name(module_id, "felt252_add".into()).unwrap();
-    assert_eq!(
-        format!("{:?}", felt252_add.debug(db.upcast())),
-        "Some(ExternFunctionId(test::felt252_add))"
-    );
+    assert_eq!(format!("{:?}", felt252_add.debug(db)), "Some(ExternFunctionId(test::felt252_add))");
     match db.module_item_by_name(module_id, "felt252_add".into()).unwrap().unwrap() {
         ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),
@@ -80,7 +77,7 @@ struct MappingsPlugin;
 impl MacroPlugin for MappingsPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {

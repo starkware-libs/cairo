@@ -81,7 +81,7 @@ impl QM31PartialEq of PartialEq<qm31> {
 
 impl QM31Zero of crate::num::traits::Zero<qm31> {
     fn zero() -> qm31 {
-        qm31_const::<1, 0, 0, 0>()
+        qm31_const::<0, 0, 0, 0>()
     }
 
     #[inline]

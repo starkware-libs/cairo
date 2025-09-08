@@ -2,11 +2,12 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
-use cairo_lang_utils::Upcast;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{Itertools, chain, zip_eq};
+use salsa::Database;
 use semantic::TypeId;
 
 use crate::blocks::Blocks;
@@ -18,7 +19,7 @@ use crate::{
 };
 
 struct Context<'db, 'a> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &'a mut Lowered<'db>,
     implicit_index: UnorderedHashMap<TypeId<'db>, usize>,
     implicits_tys: Vec<TypeId<'db>>,
@@ -29,7 +30,7 @@ struct Context<'db, 'a> {
 
 /// Lowering phase that adds implicits.
 pub fn lower_implicits<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) {
@@ -40,7 +41,7 @@ pub fn lower_implicits<'db>(
 
 /// Similar to lower_implicits, but uses Maybe<> for convenience.
 pub fn inner_lower_implicits<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) -> Maybe<()> {
@@ -78,7 +79,7 @@ pub fn inner_lower_implicits<'db>(
 /// Allocates and returns new variables with usage location for each of the current function's
 /// implicits.
 fn alloc_implicits<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     variables: &mut VariableArena<'db>,
     implicits_tys: &[TypeId<'db>],
     location: LocationId<'db>,
@@ -251,8 +252,9 @@ fn lower_function_blocks_implicits<'db>(
 // =========== Query implementations ===========
 
 /// Query implementation of [crate::db::LoweringGroup::function_implicits].
+#[salsa::tracked]
 pub fn function_implicits<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function: FunctionId<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
     if let Some(body) = function.body(db)? {
@@ -262,19 +264,19 @@ pub fn function_implicits<'db>(
 }
 
 /// A trait to add helper methods in [LoweringGroup].
-pub trait FunctionImplicitsTrait<'db>: Upcast<'db, dyn LoweringGroup> {
+pub trait FunctionImplicitsTrait<'db>: Database {
     /// Returns all the implicits used by a [ConcreteFunctionWithBodyId].
     fn function_with_body_implicits(
         &'db self,
         function: ConcreteFunctionWithBodyId<'db>,
     ) -> Maybe<Vec<TypeId<'db>>> {
-        let db = self.upcast();
+        let db: &'db dyn Database = self.as_dyn_database();
         let scc_representative = db.lowered_scc_representative(
             function,
             DependencyType::Call,
             LoweringStage::PostBaseline,
         );
-        let mut implicits = db.scc_implicits(scc_representative)?;
+        let mut implicits = scc_implicits(db, scc_representative)?;
 
         let precedence = db.function_declaration_implicit_precedence(
             function.base_semantic_function(db).function_with_body_id(db),
@@ -284,14 +286,23 @@ pub trait FunctionImplicitsTrait<'db>: Upcast<'db, dyn LoweringGroup> {
         Ok(implicits)
     }
 }
-impl<'db, T: Upcast<'db, dyn LoweringGroup> + ?Sized> FunctionImplicitsTrait<'db> for T {}
+impl<'db, T: Database + ?Sized> FunctionImplicitsTrait<'db> for T {}
 
-/// Query implementation of [LoweringGroup::scc_implicits].
-pub fn scc_implicits<'db>(
-    db: &'db dyn LoweringGroup,
+/// Returns all the implicits used by a strongly connected component of functions.
+fn scc_implicits<'db>(
+    db: &'db dyn Database,
     scc: ConcreteSCCRepresentative<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
-    let scc_functions = db.lowered_scc(scc.0, DependencyType::Call, LoweringStage::PostBaseline);
+    scc_implicits_tracked(db, scc.0)
+}
+
+/// Tracked implementation of [scc_implicits].
+#[salsa::tracked]
+fn scc_implicits_tracked<'db>(
+    db: &'db dyn Database,
+    rep: ConcreteFunctionWithBodyId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
+    let scc_functions = db.lowered_scc(rep, DependencyType::Call, LoweringStage::PostBaseline);
     let mut all_implicits = OrderedHashSet::<_>::default();
     for function in scc_functions {
         // Add the function's explicit implicits.
@@ -306,8 +317,8 @@ pub fn scc_implicits<'db>(
                     DependencyType::Call,
                     LoweringStage::PostBaseline,
                 );
-                if callee_scc != scc {
-                    all_implicits.extend(db.scc_implicits(callee_scc)?);
+                if callee_scc.0 != rep {
+                    all_implicits.extend(scc_implicits(db, callee_scc)?);
                 }
             } else {
                 all_implicits.extend(direct_callee.signature(db)?.implicits);

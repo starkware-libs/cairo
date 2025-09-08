@@ -1,5 +1,4 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumId, ImplDefId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitId,
     TraitItemId,
@@ -78,7 +77,7 @@ impl<'a> ResultDocBuilder<'a> {
                     ModuleItemId::Submodule(submodule_id),
                 )))
             }
-            ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
+            ModuleId::MacroCall { .. } => None,
         };
 
         let doc_tokens = match module_id {
@@ -90,12 +89,12 @@ impl<'a> ResultDocBuilder<'a> {
                     LookupItemId::ModuleItem(ModuleItemId::Submodule(submodule_id)),
                 ))
             }
-            ModuleId::MacroCall { id: _, generated_file_id: _ } => None,
+            ModuleId::MacroCall { .. } => None,
         };
 
         self.insert_doc_to_test_output(module_doc, Some("".to_owned()), doc_tokens);
 
-        let submodule_items = self.db.module_items(module_id).unwrap();
+        let submodule_items = module_id.module_data(self.db).unwrap().items(self.db);
 
         for submodule_item_id in submodule_items.iter() {
             match submodule_item_id {

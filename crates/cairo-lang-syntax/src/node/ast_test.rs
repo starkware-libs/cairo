@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
 use pretty_assertions::assert_eq;
-use test_log::test;
 
 use super::ast::{
     ExprBinary, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen, TerminalIdentifier,

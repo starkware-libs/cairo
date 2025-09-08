@@ -1,5 +1,6 @@
 use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
+use salsa::Database;
 
 use super::concrete_function_node::ConcreteFunctionWithBodyNode;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
@@ -8,8 +9,9 @@ use crate::{DependencyType, LoweringStage};
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::lowered_scc_representative].
+#[salsa::tracked]
 pub fn lowered_scc_representative<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function: ConcreteFunctionWithBodyId<'db>,
     dependency_type: DependencyType,
     stage: LoweringStage,
@@ -23,8 +25,9 @@ pub fn lowered_scc_representative<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::lowered_scc].
+#[salsa::tracked]
 pub fn lowered_scc<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     dependency_type: DependencyType,
     stage: LoweringStage,

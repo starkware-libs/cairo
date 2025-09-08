@@ -1,23 +1,24 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::{MacroElement, MacroParam};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use salsa::Database;
 
 use crate::SemanticDiagnostic;
-use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
 use crate::keyword::{MACRO_CALL_SITE, MACRO_DEF_SITE};
@@ -103,9 +104,9 @@ pub struct CapturedValue<'db> {
     pub stable_ptr: SyntaxStablePtrId<'db>,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
+/// Implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
 pub fn priv_macro_declaration_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<MacroDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -171,9 +172,18 @@ pub fn priv_macro_declaration_data<'db>(
     Ok(MacroDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data, rules })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
+#[salsa::tracked]
+pub fn priv_macro_declaration_data_tracked<'db>(
+    db: &'db dyn Database,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<MacroDeclarationData<'db>> {
+    priv_macro_declaration_data(db, macro_declaration_id)
+}
+
 /// Helper function to extract pattern elements from a WrappedMacro.
 fn get_macro_elements<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     pattern: ast::WrappedMacro<'db>,
 ) -> ast::MacroElements<'db> {
     match pattern {
@@ -186,7 +196,7 @@ fn get_macro_elements<'db>(
 /// Helper function to extract a placeholder name from an ExprPath node, if it represents a macro
 /// placeholder. Returns None if the path is not a valid macro placeholder.
 fn extract_placeholder<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     path_node: &MacroParam<'db>,
 ) -> Option<&'db str> {
     let placeholder_name = path_node.name(db).as_syntax_node().get_text_without_trivia(db);
@@ -198,7 +208,7 @@ fn extract_placeholder<'db>(
 
 /// Helper function to collect all placeholder names used in a macro expansion.
 fn collect_expansion_placeholders<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     node: SyntaxNode<'db>,
 ) -> Vec<(SyntaxStablePtrId<'db>, &'db str)> {
     let mut placeholders = Vec::new();
@@ -227,7 +237,7 @@ fn collect_expansion_placeholders<'db>(
 /// Given a macro declaration and an input token tree, checks if the input the given rule, and
 /// returns the captured params if it does.
 pub fn is_macro_rule_match<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     rule: &MacroRuleData<'db>,
     input: &ast::TokenTreeNode<'db>,
 ) -> Option<(Captures<'db>, OrderedHashMap<&'db str, RepetitionId>)> {
@@ -253,7 +263,7 @@ pub fn is_macro_rule_match<'db>(
 /// Traverses the macro expansion and replaces the placeholders with the provided values,
 /// while collecting the result in `res_buffer`.
 fn is_macro_rule_match_ex<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     matcher_elements: ast::MacroElements<'db>,
     input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree<'db>>>,
     ctx: &mut MatcherContext<'db>,
@@ -474,7 +484,7 @@ pub struct MacroExpansionResult {
 /// Returns an error if any used placeholder in the expansion is not found in the captures.
 /// When an error is returned, appropriate diagnostics will already have been reported.
 pub fn expand_macro_rule(
-    db: &dyn SyntaxGroup,
+    db: &dyn Database,
     rule: &MacroRuleData<'_>,
     matcher_ctx: &mut MatcherContext<'_>,
 ) -> Maybe<MacroExpansionResult> {
@@ -491,7 +501,7 @@ pub fn expand_macro_rule(
 /// Returns an error if a placeholder is not found in captures.
 /// When an error is returned, appropriate diagnostics will already have been reported.
 fn expand_macro_rule_ex(
-    db: &dyn SyntaxGroup,
+    db: &dyn Database,
     node: SyntaxNode<'_>,
     matcher_ctx: &mut MatcherContext<'_>,
     res_buffer: &mut String,
@@ -545,10 +555,10 @@ fn expand_macro_rule_ex(
                     )?;
                 }
 
-                if i + 1 < repetition_len {
-                    if let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db) {
-                        res_buffer.push_str(sep.as_syntax_node().get_text(db));
-                    }
+                if i + 1 < repetition_len
+                    && let ast::OptionTerminalComma::TerminalComma(sep) = repetition.separator(db)
+                {
+                    res_buffer.push_str(sep.as_syntax_node().get_text(db));
                 }
             }
 
@@ -579,7 +589,7 @@ fn expand_macro_rule_ex(
 
 /// Gets a Vec of MacroElement, and returns a vec of the params within it.
 fn get_repetition_params<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     elements: impl IntoIterator<Item = MacroElement<'db>>,
 ) -> Vec<MacroParam<'db>> {
     let mut params = vec![];
@@ -589,7 +599,7 @@ fn get_repetition_params<'db>(
 
 /// Recursively extends the provided params vector with all params within the given macro elements.
 fn repetition_params_extend<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     elements: impl IntoIterator<Item = MacroElement<'db>>,
     params: &mut Vec<MacroParam<'db>>,
 ) {
@@ -611,9 +621,9 @@ fn repetition_params_extend<'db>(
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
 pub fn macro_declaration_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     priv_macro_declaration_data(db, macro_declaration_id)
@@ -621,33 +631,69 @@ pub fn macro_declaration_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
+#[salsa::tracked]
+pub fn macro_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    macro_declaration_diagnostics(db, macro_declaration_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
 pub fn macro_declaration_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
+#[salsa::tracked]
+pub fn macro_declaration_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    macro_declaration_attributes(db, macro_declaration_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
 pub fn macro_declaration_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
+#[salsa::tracked]
+pub fn macro_declaration_resolver_data_tracked<'db>(
+    db: &'db dyn Database,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    macro_declaration_resolver_data(db, macro_declaration_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::macro_declaration_rules].
 pub fn macro_declaration_rules<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<MacroRuleData<'db>>> {
     priv_macro_declaration_data(db, macro_declaration_id).map(|data| data.rules)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
+#[salsa::tracked]
+pub fn macro_declaration_rules_tracked<'db>(
+    db: &'db dyn Database,
+    macro_declaration_id: MacroDeclarationId<'db>,
+) -> Maybe<Vec<MacroRuleData<'db>>> {
+    macro_declaration_rules(db, macro_declaration_id)
+}
+
 /// Returns true if user defined user macros are enabled for the given module.
 fn are_user_defined_inline_macros_enabled<'db>(
-    db: &dyn SemanticGroup,
+    db: &dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> bool {
     let owning_crate = module_file_id.0.owning_crate(db);

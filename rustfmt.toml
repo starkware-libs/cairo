@@ -1,22 +1,22 @@
-edition = "2021"
+edition = "2024"
+max_width = 100
 newline_style = "unix"
 use_field_init_shorthand = true
 use_small_heuristics = "Max"
 use_try_shorthand = true
-max_width = 100
 
 # Unstable features below
-unstable_features = true
-style_edition = "2024"
 comment_width = 100
 format_code_in_doc_comments = true
 format_macro_bodies = true
 format_macro_matchers = true
 format_strings = true
-imports_granularity = "Module"
 group_imports = "StdExternalCrate"
+imports_granularity = "Module"
 normalize_comments = true
 normalize_doc_attributes = true
+style_edition = "2024"
+unstable_features = true
 wrap_comments = true
 
 # To use these settings in vscode, add the following line to your settings:

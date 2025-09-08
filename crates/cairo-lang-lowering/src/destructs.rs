@@ -8,16 +8,17 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{core_array_felt252_ty, core_module, get_ty_by_name, unit_ty};
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_utils::Intern;
 use itertools::{Itertools, chain, zip_eq};
+use salsa::Database;
 use semantic::{TypeId, TypeLongId};
 
 use crate::borrow_check::Demand;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::{AuxCombine, DemandReporter};
-use crate::db::LoweringGroup;
 use crate::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,
     SemanticFunctionIdEx,
@@ -43,7 +44,7 @@ enum AddDestructFlowType {
 
 /// Context for the destructor call addition phase,
 pub struct DestructAdder<'db, 'a> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
     destructions: Vec<DestructionEntry<'db>>,
     panic_ty: TypeId<'db>,
@@ -148,17 +149,17 @@ impl<'db> DemandReporter<VariableId, PanicState> for DestructAdder<'db, '_> {
             return;
         }
         // If a non destructible variable gets out of scope, add a panic_destruct call for it.
-        if let Ok(impl_id) = var.info.panic_destruct_impl.clone() {
-            if let PanicState::EndsWithPanic(panic_locations) = panic_state {
-                for panic_location in panic_locations {
-                    self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
-                        panic_location,
-                        var_id,
-                        impl_id,
-                    }));
-                }
-                return;
+        if let Ok(impl_id) = var.info.panic_destruct_impl.clone()
+            && let PanicState::EndsWithPanic(panic_locations) = panic_state
+        {
+            for panic_location in panic_locations {
+                self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
+                    panic_location,
+                    var_id,
+                    impl_id,
+                }));
             }
+            return;
         }
 
         panic!("Borrow checker should have caught this.")
@@ -275,7 +276,7 @@ impl<'db> Analyzer<'db, '_> for DestructAdder<'db, '_> {
     }
 }
 
-fn panic_ty<'db>(db: &'db dyn LoweringGroup) -> semantic::TypeId<'db> {
+fn panic_ty<'db>(db: &'db dyn Database) -> semantic::TypeId<'db> {
     get_ty_by_name(db, core_module(db), "Panic", vec![])
 }
 
@@ -285,7 +286,7 @@ fn panic_ty<'db>(db: &'db dyn LoweringGroup) -> semantic::TypeId<'db> {
 /// the concrete type. This is performed here instead of in `concretize_lowered` to support custom
 /// destructors for droppable types.
 pub fn add_destructs<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) {

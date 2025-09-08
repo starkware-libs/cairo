@@ -4,11 +4,12 @@ use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::{Arena, ArenaBehavior};
 use num_bigint::BigInt;
+use salsa::Database;
 
 use super::fmt::ExprFormatter;
-use crate::db::SemanticGroup;
 use crate::items::constant::ConstValueId;
 use crate::{ConcreteStructId, FunctionId, TypeId, semantic};
 
@@ -218,11 +219,26 @@ impl<'db> Expr<'db> {
         }
     }
 
+    /// Returns the member path of the expression, if it is a variable or a member access.
     pub fn as_member_path(&self) -> Option<ExprVarMemberPath<'db>> {
         match self {
             Expr::Var(expr) => Some(ExprVarMemberPath::Var(expr.clone())),
             Expr::MemberAccess(expr) => expr.member_path.clone(),
             _ => None,
+        }
+    }
+
+    /// Returns true if the expression is a variable or a member access of a mutable variable.
+    pub fn is_mutable_var(
+        &self,
+        semantic_defs: &UnorderedHashMap<semantic::VarId<'db>, semantic::Binding<'db>>,
+    ) -> bool {
+        if let Some(base_var) = self.as_member_path().map(|path| path.base_var())
+            && let Some(var_def) = semantic_defs.get(&base_var)
+        {
+            var_def.is_mut()
+        } else {
+            false
         }
     }
 }
@@ -368,9 +384,9 @@ impl<'db> ExprVarMemberPath<'db> {
     }
 }
 impl<'db> DebugWithDb<'db> for ExprVarMemberPath<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             ExprVarMemberPath::Var(var) => var.fmt(f, db),
             ExprVarMemberPath::Member { parent, member_id, .. } => {
@@ -489,9 +505,9 @@ pub struct ExprVar<'db> {
     pub stable_ptr: ast::ExprPtr<'db>,
 }
 impl<'db> DebugWithDb<'db> for ExprVar<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         self.var.fmt(f, db)
     }
 }
@@ -607,7 +623,7 @@ pub struct ExprMissing<'db> {
 
 /// Arena for semantic expressions, patterns, and statements.
 #[derive(Clone, Debug, Default, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct Arenas<'db> {
     pub exprs: ExprArena<'db>,
     pub patterns: PatternArena<'db>,

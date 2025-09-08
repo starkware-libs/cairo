@@ -1,10 +1,12 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
 };
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -21,6 +23,7 @@ use pulldown_cmark::{
     Alignment, BrokenLink, CodeBlockKind, Event, HeadingLevel, LinkType, Options,
     Parser as MarkdownParser, Tag, TagEnd,
 };
+use salsa::Database;
 
 use crate::db::DocGroup;
 use crate::documentable_item::DocumentableItemId;
@@ -67,11 +70,11 @@ struct DocCommentListItem {
 
 /// Parses plain documentation comments into [DocumentationCommentToken]s.
 pub struct DocumentationCommentParser<'db> {
-    db: &'db dyn DocGroup,
+    db: &'db dyn Database,
 }
 
 impl<'db> DocumentationCommentParser<'db> {
-    pub fn new(db: &'db dyn DocGroup) -> Self {
+    pub fn new(db: &'db dyn Database) -> Self {
         Self { db }
     }
 
@@ -163,11 +166,10 @@ impl<'db> DocumentationCommentParser<'db> {
                 Event::Start(tag_start) => {
                     match tag_start {
                         Tag::Heading { level, .. } => {
-                            if let Some(last_token) = tokens.last_mut() {
-                                if !last_token.clone().ends_with_newline() {
-                                    tokens
-                                        .push(DocumentationCommentToken::Content("\n".to_string()));
-                                }
+                            if let Some(last_token) = tokens.last_mut()
+                                && !last_token.clone().ends_with_newline()
+                            {
+                                tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                             }
                             tokens.push(DocumentationCommentToken::Content(format!(
                                 "{} ",
@@ -315,10 +317,10 @@ impl<'db> DocumentationCommentParser<'db> {
             last_two_events = [last_two_events[1].clone(), Some(event)];
         }
 
-        if let Some(DocumentationCommentToken::Content(token)) = tokens.first() {
-            if token == "\n" {
-                tokens.remove(0);
-            }
+        if let Some(DocumentationCommentToken::Content(token)) = tokens.first()
+            && token == "\n"
+        {
+            tokens.remove(0);
         }
         if let Some(DocumentationCommentToken::Content(token)) = tokens.last_mut() {
             *token = token.trim_end().to_string();
@@ -438,18 +440,14 @@ impl<'db> DocumentationCommentParser<'db> {
 }
 
 trait ToDocumentableItemId<'db, T> {
-    fn to_documentable_item_id(self, db: &'db dyn SemanticGroup)
-    -> Option<DocumentableItemId<'db>>;
+    fn to_documentable_item_id(self, db: &'db dyn Database) -> Option<DocumentableItemId<'db>>;
 }
 
 impl<'db> ToDocumentableItemId<'db, DocumentableItemId<'db>> for ResolvedGenericItem<'db> {
     /// Converts the [ResolvedGenericItem] to [DocumentableItemId].
     /// As for now, returns None only for a common Variable, as those are not a supported
     /// documentable item.
-    fn to_documentable_item_id(
-        self,
-        db: &'db dyn SemanticGroup,
-    ) -> Option<DocumentableItemId<'db>> {
+    fn to_documentable_item_id(self, db: &'db dyn Database) -> Option<DocumentableItemId<'db>> {
         match self {
             ResolvedGenericItem::GenericConstant(id) => Some(DocumentableItemId::LookupItem(
                 LookupItemId::ModuleItem(ModuleItemId::Constant(id)),
@@ -498,9 +496,7 @@ impl<'db> ToDocumentableItemId<'db, DocumentableItemId<'db>> for ResolvedGeneric
             ResolvedGenericItem::Module(ModuleId::CrateRoot(id)) => {
                 Some(DocumentableItemId::Crate(id))
             }
-            ResolvedGenericItem::Module(ModuleId::MacroCall { id: _, generated_file_id: _ }) => {
-                None
-            }
+            ResolvedGenericItem::Module(ModuleId::MacroCall { .. }) => None,
 
             ResolvedGenericItem::Variant(variant) => Some(DocumentableItemId::Variant(variant.id)),
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(generic_impl_func)) => {
@@ -534,10 +530,10 @@ impl fmt::Display for CommentLinkToken<'_> {
 impl fmt::Display for DocumentationCommentToken<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DocumentationCommentToken::Content(ref content) => {
+            DocumentationCommentToken::Content(content) => {
                 write!(f, "{content}")
             }
-            DocumentationCommentToken::Link(ref link_token) => {
+            DocumentationCommentToken::Link(link_token) => {
                 write!(f, "{link_token}")
             }
         }

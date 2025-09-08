@@ -1,12 +1,13 @@
 use std::ops::{Deref, DerefMut, Index};
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
+use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::ConcreteVariant;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
+use cairo_lang_semantic::items::imp::{ImplLookupContext, ImplLookupContextId};
 use cairo_lang_semantic::usage::{MemberPath, Usages};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
@@ -14,6 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use defs::diagnostic_utils::StableLocation;
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::types::wrap_in_snapshots;
 use semantic::{ExprVarMemberPath, MatchArmSelector, TypeLongId};
@@ -22,7 +24,6 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 use super::block_builder::BlockBuilder;
 use super::generators;
 use crate::blocks::BlocksBuilder;
-use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
     ConcreteFunctionWithBodyId, FunctionWithBodyId, GeneratedFunctionKey, LocationId,
@@ -33,17 +34,15 @@ use crate::objects::Variable;
 use crate::{Lowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableArena, VariableId};
 
 pub struct VariableAllocator<'db> {
-    pub db: &'db dyn LoweringGroup,
+    pub db: &'db dyn Database,
     /// Arena of allocated lowered variables.
     pub variables: VariableArena<'db>,
-    /// Module and file of the declared function.
-    pub module_file_id: ModuleFileId<'db>,
     // Lookup context for impls.
-    pub lookup_context: ImplLookupContext<'db>,
+    pub lookup_context: ImplLookupContextId<'db>,
 }
 impl<'db> VariableAllocator<'db> {
     pub fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         function_id: defs::ids::FunctionWithBodyId<'db>,
         variables: VariableArena<'db>,
     ) -> Maybe<Self> {
@@ -52,22 +51,18 @@ impl<'db> VariableAllocator<'db> {
         Ok(Self {
             db,
             variables,
-            module_file_id: function_id.module_file_id(db),
             lookup_context: ImplLookupContext::new(
                 function_id.parent_module(db),
                 generic_param_ids,
-            ),
+                db,
+            )
+            .intern(db),
         })
     }
 
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest<'db>) -> VariableId {
-        self.variables.alloc(Variable::new(
-            self.db,
-            self.lookup_context.clone(),
-            req.ty,
-            req.location,
-        ))
+        self.variables.alloc(Variable::new(self.db, self.lookup_context, req.ty, req.location))
     }
 
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
@@ -88,7 +83,7 @@ impl<'db> Index<VariableId> for VariableAllocator<'db> {
 /// Each semantic function may generate multiple lowered functions. This context is common to all
 /// the generated lowered functions of an encapsulating semantic function.
 pub struct EncapsulatingLoweringContext<'db> {
-    pub db: &'db dyn LoweringGroup,
+    pub db: &'db dyn Database,
     /// Id for the current function being lowered.
     pub semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     /// Semantic model for current function body.
@@ -106,7 +101,7 @@ pub struct EncapsulatingLoweringContext<'db> {
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Self> {
         let function_body = db.function_body(semantic_function_id)?;
@@ -116,7 +111,7 @@ impl<'db> EncapsulatingLoweringContext<'db> {
             semantic_function_id,
             function_body,
             semantic_defs: Default::default(),
-            expr_formatter: ExprFormatter { db: db.upcast(), function_id: semantic_function_id },
+            expr_formatter: ExprFormatter { db, function_id: semantic_function_id },
             usages,
             lowerings: Default::default(),
         })
@@ -254,11 +249,26 @@ pub enum LoweredExpr<'db> {
     },
 }
 impl<'db> LoweredExpr<'db> {
-    // Returns a VarUsage corresponding to the lowered expression.
+    /// Returns a [VarUsage] corresponding to the lowered expression.
     pub fn as_var_usage(
         self,
         ctx: &mut LoweringContext<'db, '_>,
         builder: &mut BlockBuilder<'db>,
+    ) -> LoweringResult<'db, VarUsage<'db>> {
+        self.as_var_usage_ex(ctx, builder, false)
+    }
+
+    /// Returns a [VarUsage] corresponding to the lowered expression.
+    ///
+    /// Pass `dont_mark_as_used=true` to avoid marking the variable as used.
+    /// For backward compatibility, when we encounter a statement of the form `let x = y`,
+    /// we don't mark `y` as used.
+    // TODO(lior): Remove this special case.
+    pub fn as_var_usage_ex(
+        self,
+        ctx: &mut LoweringContext<'db, '_>,
+        builder: &mut BlockBuilder<'db>,
+        dont_mark_as_used: bool,
     ) -> LoweringResult<'db, VarUsage<'db>> {
         match self {
             LoweredExpr::AtVariable(var_usage) => Ok(var_usage),
@@ -275,13 +285,13 @@ impl<'db> LoweredExpr<'db> {
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.as_var_usage(ctx, builder),
             LoweredExpr::MemberPath(member_path, _location) => {
-                Ok(builder.get_ref(ctx, &member_path).unwrap())
+                Ok(builder.get_ref(ctx, &member_path, dont_mark_as_used).unwrap())
             }
             LoweredExpr::Snapshot { expr, location } => {
-                if let LoweredExpr::MemberPath(member_path, _location) = &*expr {
-                    if let Some(var_usage) = builder.get_snap_ref(ctx, member_path) {
-                        return Ok(VarUsage { var_id: var_usage.var_id, location });
-                    }
+                if let LoweredExpr::MemberPath(member_path, _location) = &*expr
+                    && let Some(var_usage) = builder.get_snap_ref(ctx, member_path)
+                {
+                    return Ok(VarUsage { var_id: var_usage.var_id, location });
                 }
 
                 let input = expr.clone().as_var_usage(ctx, builder)?;

@@ -1,11 +1,11 @@
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use colored::{ColoredString, Colorize};
+use salsa::Database;
 
 struct ColoredPrinter<'a> {
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn Database,
     /// Whether to also print empty and missing tokens/nodes
     verbose: bool,
     result: String,
@@ -133,7 +133,7 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
     }
 }
 
-pub fn print_colored(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode<'_>, verbose: bool) -> String {
+pub fn print_colored(db: &dyn Database, syntax_root: &SyntaxNode<'_>, verbose: bool) -> String {
     let mut printer = ColoredPrinter { db, verbose, result: Default::default() };
     printer.print(syntax_root);
     printer.result

@@ -41,7 +41,6 @@ pub fn get_spec() -> Vec<Node> {
         .node("Indexed")
         .node("InlineMacro")
         .node("FixedSizeArray")
-        .node("Placeholder")
     )
     .add_separated_list("ExprList", "Expr", "TerminalComma")
     .add_struct(StructBuilder::new("Arg")
@@ -257,10 +256,6 @@ pub fn get_spec() -> Vec<Node> {
         .node("leftor","TerminalOr")
         .node("params", "ParamList")
         .node("rightor", "TerminalOr")
-    )
-    .add_struct(StructBuilder::new("ExprPlaceholder")
-        .node("dollar", "TerminalDollar")
-        .node("path", "ExprPath")
     )
     // --- Struct ctor ---
     .add_struct(StructBuilder::new("StructArgExpr")

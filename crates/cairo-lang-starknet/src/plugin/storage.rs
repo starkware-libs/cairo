@@ -1,10 +1,10 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::zip_eq;
+use salsa::Database;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::{StarknetModuleKind, backwards_compatible_storage};
@@ -17,7 +17,7 @@ use crate::plugin::SUBSTORAGE_ATTR;
 
 /// Generate getters and setters for the members of the storage struct.
 pub fn handle_storage_struct<'db, 'a>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     struct_ast: ast::ItemStruct<'db>,
     starknet_module_kind: StarknetModuleKind,
@@ -85,7 +85,7 @@ pub fn handle_storage_struct<'db, 'a>(
             }}
 
             impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> {{}}
-             
+
             impl {state_struct_name}Deref{generic_arg_str} of \
              core::ops::Deref<@{full_state_struct_name}> {{
                 type Target = starknet::storage::FlattenedStorage<Storage>;
@@ -143,7 +143,7 @@ pub fn handle_storage_struct<'db, 'a>(
 
 /// Returns the relevant code for a substorage storage member.
 fn get_substorage_member_code<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     member: &ast::Member<'db>,
     metadata: &MacroPluginMetadata<'_>,
 ) -> Option<(RewriteNode<'db>, RewriteNode<'db>)> {
@@ -215,7 +215,7 @@ struct SimpleMemberGeneratedCode<'db> {
 
 /// Returns the relevant code for a substorage storage member.
 fn get_simple_member_code<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     member: &ast::Member<'db>,
     config: &StorageMemberConfig,
     metadata: &MacroPluginMetadata<'_>,

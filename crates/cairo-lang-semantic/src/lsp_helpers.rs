@@ -1,21 +1,24 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FileIndex, GenericTypeId, ImportableId, LanguageElementId, ModuleFileId, ModuleId,
     NamedLanguageElementId, TraitFunctionId, TraitId,
 };
-use cairo_lang_filesystem::db::CORELIB_CRATE_NAME;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
+use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup, default_crate_settings};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Tracked};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
+use salsa::Database;
 
 use crate::Variant;
 use crate::corelib::{self, core_submodule, get_submodule};
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceId;
 use crate::items::functions::GenericFunctionId;
+use crate::items::macro_call::module_macro_modules;
 use crate::items::us::SemanticUseEx;
 use crate::keyword::SELF_PARAM_KW;
 use crate::resolve::{ResolvedGenericItem, Resolver};
@@ -30,9 +33,9 @@ pub enum TypeFilter<'db> {
     TypeHead(TypeHead<'db>),
 }
 
-/// Query implementation of [crate::db::SemanticGroup::methods_in_module].
+/// Implementation of [crate::db::SemanticGroup::methods_in_module].
 pub fn methods_in_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     type_filter: TypeFilter<'db>,
 ) -> Arc<Vec<TraitFunctionId<'db>>> {
@@ -51,18 +54,27 @@ pub fn methods_in_module<'db>(
             if first_param.name != SELF_PARAM_KW {
                 continue;
             }
-            if let TypeFilter::TypeHead(type_head) = &type_filter {
-                if let Some(head) = first_param.ty.head(db) {
-                    if !fit_for_method(&head, type_head) {
-                        continue;
-                    }
-                }
+            if let TypeFilter::TypeHead(type_head) = &type_filter
+                && let Some(head) = first_param.ty.head(db)
+                && !fit_for_method(&head, type_head)
+            {
+                continue;
             }
 
             result.push(trait_function)
         }
     }
     Arc::new(result)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::methods_in_module].
+#[salsa::tracked]
+pub fn methods_in_module_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+    type_filter: TypeFilter<'db>,
+) -> Arc<Vec<TraitFunctionId<'db>>> {
+    methods_in_module(db, module_id, type_filter)
 }
 
 /// Checks if a type head can fit for a method.
@@ -76,9 +88,9 @@ fn fit_for_method(head: &TypeHead<'_>, type_head: &TypeHead<'_>) -> bool {
     false
 }
 
-/// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
+/// Implementation of [crate::db::SemanticGroup::methods_in_crate].
 pub fn methods_in_crate<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     type_filter: TypeFilter<'db>,
 ) -> Arc<Vec<TraitFunctionId<'db>>> {
@@ -89,9 +101,19 @@ pub fn methods_in_crate<'db>(
     Arc::new(result)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_importables_in_module].
+/// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
+#[salsa::tracked]
+pub fn methods_in_crate_tracked<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+    type_filter: TypeFilter<'db>,
+) -> Arc<Vec<TraitFunctionId<'db>>> {
+    methods_in_crate(db, crate_id, type_filter)
+}
+
+/// Implementation of [crate::db::SemanticGroup::visible_importables_in_module].
 pub fn visible_importables_in_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
@@ -107,10 +129,21 @@ pub fn visible_importables_in_module<'db>(
     .unwrap_or_else(|| Arc::new(Vec::new()))
 }
 
+/// Query implementation of [crate::db::SemanticGroup::visible_importables_in_module].
+#[salsa::tracked]
+pub fn visible_importables_in_module_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
+    include_parent: bool,
+) -> Arc<Vec<(ImportableId<'db>, String)>> {
+    visible_importables_in_module(db, module_id, user_module_file_id, include_parent)
+}
+
 /// Returns the visible importables in a module, including the importables in the parent module if
 /// needed. The visibility is relative to the module `user_module_id`.
 fn visible_importables_in_module_ex<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     user_module_file_id: ModuleFileId<'db>,
     include_parent: bool,
@@ -138,6 +171,7 @@ fn visible_importables_in_module_ex<'db>(
         let Ok(resolved_item) = db.use_resolved_item(use_id) else {
             continue;
         };
+
         let (resolved_item, name) = match resolved_item {
             ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)) => {
                 result.extend_from_slice(
@@ -154,8 +188,8 @@ fn visible_importables_in_module_ex<'db>(
 
                 (ImportableId::Submodule(module), module.name(db))
             }
-            ResolvedGenericItem::Module(ModuleId::MacroCall { id: _, generated_file_id: _ }) => {
-                todo!("Handle macro calls in visible_importables_in_module_ex");
+            ResolvedGenericItem::Module(ModuleId::MacroCall { .. }) => {
+                continue;
             }
             ResolvedGenericItem::GenericConstant(item_id) => {
                 (ImportableId::Constant(item_id), item_id.name(db))
@@ -201,6 +235,10 @@ fn visible_importables_in_module_ex<'db>(
         };
 
         result.push((resolved_item, name.into()));
+    }
+
+    if !matches!(module_id, ModuleId::MacroCall { .. }) {
+        modules_to_visit.extend(module_macro_modules(db, false, module_id).iter().copied());
     }
 
     for submodule_id in db.module_submodules_ids(module_id).unwrap_or_default().iter().copied() {
@@ -278,15 +316,15 @@ fn visible_importables_in_module_ex<'db>(
                     result.push((*item_id, format!("super::{path}")));
                 }
             }
-            ModuleId::MacroCall { id: _, generated_file_id: _ } => todo!(),
+            ModuleId::MacroCall { .. } => {}
         }
     }
     Some(Arc::new(result))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
+/// Implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
 pub fn visible_importables_in_crate<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     user_module_file_id: ModuleFileId<'db>,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
@@ -301,9 +339,19 @@ pub fn visible_importables_in_crate<'db>(
         .into()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_importables_from_module].
+/// Query implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
+#[salsa::tracked]
+pub fn visible_importables_in_crate_tracked<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+    user_module_file_id: ModuleFileId<'db>,
+) -> Arc<Vec<(ImportableId<'db>, String)>> {
+    visible_importables_in_crate(db, crate_id, user_module_file_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::visible_importables_from_module].
 pub fn visible_importables_from_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
     let module_id = module_file_id.0;
@@ -321,7 +369,10 @@ pub fn visible_importables_from_module<'db>(
         &db.visible_importables_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
     );
     // Collect importables from all dependency crates, including the current crate and corelib.
-    let settings = db.crate_config(current_crate_id).map(|c| c.settings).unwrap_or_default();
+    let settings = db
+        .crate_config(current_crate_id)
+        .map(|c| &c.settings)
+        .unwrap_or_else(|| default_crate_settings(db));
     for crate_id in chain!(
         [current_crate_id],
         (!settings.dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| corelib::core_crate(db)),
@@ -360,9 +411,26 @@ pub fn visible_importables_from_module<'db>(
     Some(Arc::new(result))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
+/// Query implementation of [crate::db::SemanticGroup::visible_importables_from_module].
+pub fn visible_importables_from_module_tracked<'db>(
+    db: &'db dyn Database,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
+    visible_importables_from_module_helper(db, (), module_file_id)
+}
+
+#[salsa::tracked]
+fn visible_importables_from_module_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
+    visible_importables_from_module(db, module_file_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::visible_traits_from_module].
 pub fn visible_traits_from_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
     let importables = db.visible_importables_from_module(module_file_id)?;
@@ -380,4 +448,21 @@ pub fn visible_traits_from_module<'db>(
         .into();
 
     Some(traits)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
+pub fn visible_traits_from_module_tracked<'db>(
+    db: &'db dyn Database,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
+    visible_traits_from_module_helper(db, (), module_file_id)
+}
+
+#[salsa::tracked]
+fn visible_traits_from_module_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_file_id: ModuleFileId<'db>,
+) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
+    visible_traits_from_module(db, module_file_id)
 }

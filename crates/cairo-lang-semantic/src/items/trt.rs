@@ -2,15 +2,17 @@ use std::fmt::Write;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, NamedLanguageElementId,
-    NamedLanguageElementLongId, TopLevelLanguageElementId, TraitConstantId, TraitConstantLongId,
-    TraitFunctionId, TraitFunctionLongId, TraitId, TraitImplId, TraitImplLongId, TraitItemId,
-    TraitTypeId, TraitTypeLongId, UseId,
+    FunctionTitleId, GenericParamId, GenericParamLongId, LanguageElementId, LookupItemId,
+    ModuleItemId, NamedLanguageElementId, NamedLanguageElementLongId, TopLevelLanguageElementId,
+    TraitConstantId, TraitConstantLongId, TraitFunctionId, TraitFunctionLongId, TraitId,
+    TraitImplId, TraitImplLongId, TraitItemId, TraitTypeId, TraitTypeLongId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -18,6 +20,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, define_short_id};
+use salsa::Database;
 
 use super::TraitOrImplContext;
 use super::feature_kind::FeatureKind;
@@ -31,7 +34,7 @@ use super::generics::{
     semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
-use crate::db::{SemanticGroup, SemanticGroupData, get_resolver_data_options};
+use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
@@ -57,42 +60,31 @@ pub struct ConcreteTraitLongId<'db> {
     pub generic_args: Vec<GenericArgumentId<'db>>,
 }
 impl<'db> DebugWithDb<'db> for ConcreteTraitLongId<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         let mut f = CountingWriter::new(f);
         write!(f, "{}", self.trait_id.full_path(db))?;
         fmt_generic_args(&self.generic_args, &mut f, db)
     }
 }
 
-define_short_id!(
-    ConcreteTraitId,
-    ConcreteTraitLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait,
-    intern_concrete_trait
-);
-semantic_object_for_id!(
-    ConcreteTraitId<'a>,
-    lookup_intern_concrete_trait,
-    intern_concrete_trait,
-    ConcreteTraitLongId<'a>
-);
+define_short_id!(ConcreteTraitId, ConcreteTraitLongId<'db>, Database);
+semantic_object_for_id!(ConcreteTraitId, ConcreteTraitLongId<'a>);
 impl<'db> ConcreteTraitId<'db> {
-    pub fn trait_id(&self, db: &'db dyn SemanticGroup) -> TraitId<'db> {
+    pub fn trait_id(&self, db: &'db dyn Database) -> TraitId<'db> {
         self.long(db).trait_id
     }
-    pub fn generic_args(&self, db: &'db dyn SemanticGroup) -> Vec<GenericArgumentId<'db>> {
+    pub fn generic_args(&self, db: &'db dyn Database) -> Vec<GenericArgumentId<'db>> {
         self.long(db).generic_args.clone()
     }
-    pub fn name(&self, db: &'db dyn SemanticGroup) -> &'db str {
+    pub fn name(&self, db: &'db dyn Database) -> &'db str {
         self.trait_id(db).name(db)
     }
-    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
-        format!("{:?}", self.debug(db.elongate()))
+    pub fn full_path(&self, db: &dyn Database) -> String {
+        format!("{:?}", self.debug(db))
     }
-    pub fn filter(&self, db: &'db dyn SemanticGroup) -> TraitFilter<'db> {
+    pub fn filter(&self, db: &'db dyn Database) -> TraitFilter<'db> {
         let generics_filter = match self.generic_args(db).first() {
             Some(first_generic) => match first_generic.head(db) {
                 Some(head) => GenericsHeadFilter::FirstGenericFilter(head),
@@ -104,14 +96,14 @@ impl<'db> ConcreteTraitId<'db> {
     }
 
     /// Returns true if the `trait` does not depend on any generics.
-    pub fn is_fully_concrete(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_fully_concrete(&self, db: &dyn Database) -> bool {
         self.long(db)
             .generic_args
             .iter()
             .all(|generic_argument_id| generic_argument_id.is_fully_concrete(db))
     }
     /// Returns true if the `trait` does not depend on impl or type variables.
-    pub fn is_var_free(&self, db: &dyn SemanticGroup) -> bool {
+    pub fn is_var_free(&self, db: &dyn Database) -> bool {
         self.long(db)
             .generic_args
             .iter()
@@ -121,7 +113,7 @@ impl<'db> ConcreteTraitId<'db> {
 
 /// The ID of a generic function in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ConcreteTraitGenericFunctionLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
     concrete_trait: ConcreteTraitId<'db>,
@@ -129,7 +121,7 @@ pub struct ConcreteTraitGenericFunctionLongId<'db> {
 }
 impl<'db> ConcreteTraitGenericFunctionLongId<'db> {
     pub fn new(
-        db: &dyn SemanticGroup,
+        db: &dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_function: TraitFunctionId<'db>,
     ) -> Self {
@@ -144,37 +136,30 @@ impl<'db> ConcreteTraitGenericFunctionLongId<'db> {
 define_short_id!(
     ConcreteTraitGenericFunctionId,
     ConcreteTraitGenericFunctionLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_function,
-    intern_concrete_trait_function
+    SemanticGroup
 );
-semantic_object_for_id!(
-    ConcreteTraitGenericFunctionId<'a>,
-    lookup_intern_concrete_trait_function,
-    intern_concrete_trait_function,
-    ConcreteTraitGenericFunctionLongId<'a>
-);
+semantic_object_for_id!(ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId<'a>);
 impl<'db> ConcreteTraitGenericFunctionId<'db> {
     pub fn new_from_data(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_function: TraitFunctionId<'db>,
     ) -> Self {
         ConcreteTraitGenericFunctionLongId::new(db, concrete_trait, trait_function).intern(db)
     }
 
-    pub fn trait_function(&self, db: &'db dyn SemanticGroup) -> TraitFunctionId<'db> {
+    pub fn trait_function(&self, db: &'db dyn Database) -> TraitFunctionId<'db> {
         self.long(db).trait_function
     }
 
-    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+    pub fn concrete_trait(&self, db: &'db dyn Database) -> ConcreteTraitId<'db> {
         self.long(db).concrete_trait
     }
 }
 
 /// The ID of a type item in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ConcreteTraitTypeLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
     concrete_trait: ConcreteTraitId<'db>,
@@ -182,7 +167,7 @@ pub struct ConcreteTraitTypeLongId<'db> {
 }
 impl<'db> ConcreteTraitTypeLongId<'db> {
     pub fn new(
-        db: &dyn SemanticGroup,
+        db: &dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_type: TraitTypeId<'db>,
     ) -> Self {
@@ -194,40 +179,29 @@ impl<'db> ConcreteTraitTypeLongId<'db> {
         Self { concrete_trait, trait_type }
     }
 }
-define_short_id!(
-    ConcreteTraitTypeId,
-    ConcreteTraitTypeLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_type,
-    intern_concrete_trait_type
-);
-semantic_object_for_id!(
-    ConcreteTraitTypeId<'a>,
-    lookup_intern_concrete_trait_type,
-    intern_concrete_trait_type,
-    ConcreteTraitTypeLongId<'a>
-);
+define_short_id!(ConcreteTraitTypeId, ConcreteTraitTypeLongId<'db>, Database);
+semantic_object_for_id!(ConcreteTraitTypeId, ConcreteTraitTypeLongId<'a>);
 impl<'db> ConcreteTraitTypeId<'db> {
     pub fn new_from_data(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_type: TraitTypeId<'db>,
     ) -> Self {
         ConcreteTraitTypeLongId::new(db, concrete_trait, trait_type).intern(db)
     }
 
-    pub fn trait_type(&self, db: &'db dyn SemanticGroup) -> TraitTypeId<'db> {
+    pub fn trait_type(&self, db: &'db dyn Database) -> TraitTypeId<'db> {
         self.long(db).trait_type
     }
 
-    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+    pub fn concrete_trait(&self, db: &'db dyn Database) -> ConcreteTraitId<'db> {
         self.long(db).concrete_trait
     }
 }
 
 /// The ID of a constant item in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ConcreteTraitConstantLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
     concrete_trait: ConcreteTraitId<'db>,
@@ -235,7 +209,7 @@ pub struct ConcreteTraitConstantLongId<'db> {
 }
 impl<'db> ConcreteTraitConstantLongId<'db> {
     pub fn new(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_constant: TraitConstantId<'db>,
     ) -> Self {
@@ -247,40 +221,29 @@ impl<'db> ConcreteTraitConstantLongId<'db> {
         Self { concrete_trait, trait_constant }
     }
 }
-define_short_id!(
-    ConcreteTraitConstantId,
-    ConcreteTraitConstantLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_constant,
-    intern_concrete_trait_constant
-);
-semantic_object_for_id!(
-    ConcreteTraitConstantId<'a>,
-    lookup_intern_concrete_trait_constant,
-    intern_concrete_trait_constant,
-    ConcreteTraitConstantLongId<'a>
-);
+define_short_id!(ConcreteTraitConstantId, ConcreteTraitConstantLongId<'db>, Database);
+semantic_object_for_id!(ConcreteTraitConstantId, ConcreteTraitConstantLongId<'a>);
 impl<'db> ConcreteTraitConstantId<'db> {
     pub fn new_from_data(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_constant: TraitConstantId<'db>,
     ) -> Self {
         ConcreteTraitConstantLongId::new(db, concrete_trait, trait_constant).intern(db)
     }
 
-    pub fn trait_constant(&self, db: &'db dyn SemanticGroup) -> TraitConstantId<'db> {
+    pub fn trait_constant(&self, db: &'db dyn Database) -> TraitConstantId<'db> {
         self.long(db).trait_constant
     }
 
-    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+    pub fn concrete_trait(&self, db: &'db dyn Database) -> ConcreteTraitId<'db> {
         self.long(db).concrete_trait
     }
 }
 
 /// The ID of a impl item in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ConcreteTraitImplLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
     concrete_trait: ConcreteTraitId<'db>,
@@ -288,7 +251,7 @@ pub struct ConcreteTraitImplLongId<'db> {
 }
 impl<'db> ConcreteTraitImplLongId<'db> {
     pub fn new_from_data(
-        db: &dyn SemanticGroup,
+        db: &dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_impl: TraitImplId<'db>,
     ) -> Self {
@@ -300,33 +263,22 @@ impl<'db> ConcreteTraitImplLongId<'db> {
         Self { concrete_trait, trait_impl }
     }
 }
-define_short_id!(
-    ConcreteTraitImplId,
-    ConcreteTraitImplLongId<'db>,
-    SemanticGroup,
-    lookup_intern_concrete_trait_impl,
-    intern_concrete_trait_impl
-);
-semantic_object_for_id!(
-    ConcreteTraitImplId<'a>,
-    lookup_intern_concrete_trait_impl,
-    intern_concrete_trait_impl,
-    ConcreteTraitImplLongId<'a>
-);
+define_short_id!(ConcreteTraitImplId, ConcreteTraitImplLongId<'db>, Database);
+semantic_object_for_id!(ConcreteTraitImplId, ConcreteTraitImplLongId<'a>);
 impl<'db> ConcreteTraitImplId<'db> {
     pub fn new_from_data(
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         concrete_trait: ConcreteTraitId<'db>,
         trait_impl: TraitImplId<'db>,
     ) -> Self {
         ConcreteTraitImplLongId::new_from_data(db, concrete_trait, trait_impl).intern(db)
     }
 
-    pub fn trait_impl(&self, db: &'db dyn SemanticGroup) -> TraitImplId<'db> {
+    pub fn trait_impl(&self, db: &'db dyn Database) -> TraitImplId<'db> {
         self.long(db).trait_impl
     }
 
-    pub fn concrete_trait(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+    pub fn concrete_trait(&self, db: &'db dyn Database) -> ConcreteTraitId<'db> {
         self.long(db).concrete_trait
     }
 }
@@ -334,7 +286,7 @@ impl<'db> ConcreteTraitImplId<'db> {
 // === Trait Declaration ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct TraitDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     generic_params: Vec<GenericParam<'db>>,
@@ -344,34 +296,51 @@ pub struct TraitDeclarationData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::trait_semantic_declaration_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::trait_semantic_declaration_diagnostics].
 pub fn trait_semantic_declaration_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_declaration_data(trait_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
+/// Query implementation of [crate::db::SemanticGroup::trait_semantic_declaration_diagnostics].
+#[salsa::tracked]
+pub fn trait_semantic_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    trait_semantic_declaration_diagnostics(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_generic_params].
 pub fn trait_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.trait_generic_params_data(trait_id, false)?.generic_params)
 }
+
+/// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
+#[salsa::tracked(cycle_result=trait_generic_params_cycle)]
+pub fn trait_generic_params_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
+    trait_generic_params(db, trait_id)
+}
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params].
 pub fn trait_generic_params_cycle<'db>(
-    db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
     Ok(db.trait_generic_params_data(trait_id, true)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_generic_params_data].
+/// Implementation of [crate::db::SemanticGroup::trait_generic_params_data].
 pub fn trait_generic_params_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -400,37 +369,99 @@ pub fn trait_generic_params_data<'db>(
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
+
+/// Query implementation of [crate::db::SemanticGroup::trait_generic_params_data].
+#[salsa::tracked(cycle_result=trait_generic_params_data_cycle)]
+pub fn trait_generic_params_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+    in_cycle: bool,
+) -> Maybe<GenericParamsData<'db>> {
+    trait_generic_params_data(db, trait_id, in_cycle)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::trait_generic_params_data].
 pub fn trait_generic_params_data_cycle<'db>(
-    db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     _in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
     // Forwarding cycle handling to `priv_generic_param_data` handler.
     trait_generic_params_data(db, trait_id, true)
 }
-/// Query implementation of [crate::db::SemanticGroup::trait_attributes].
+
+/// Implementation of [crate::db::SemanticGroup::trait_generic_params_ids].
+pub fn trait_generic_params_ids<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<GenericParamId<'db>>> {
+    let module_file_id = trait_id.module_file_id(db);
+    let trait_ast = db.module_trait_by_id(trait_id)?;
+
+    let generic_params = &trait_ast.generic_params(db);
+
+    let syntax_db = db;
+    Ok(match generic_params {
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
+        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
+            .generic_params(syntax_db)
+            .elements(syntax_db)
+            .map(|param_syntax| {
+                GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
+            })
+            .collect(),
+    })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_generic_params_ids].
+#[salsa::tracked]
+pub fn trait_generic_params_ids_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<GenericParamId<'db>>> {
+    trait_generic_params_ids(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_attributes].
 pub fn trait_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_declaration_data(trait_id)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::trait_attributes].
+#[salsa::tracked]
+pub fn trait_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    trait_attributes(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_resolver_data].
 pub fn trait_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_declaration_data(trait_id)?.resolver_data)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
+#[salsa::tracked]
+pub fn trait_resolver_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    trait_resolver_data(db, trait_id)
+}
+
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_declaration_data].
+#[salsa::tracked]
 pub fn priv_trait_declaration_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<TraitDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -468,10 +499,19 @@ pub fn priv_trait_declaration_data<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_declaration_data].
+#[salsa::tracked]
+pub fn priv_trait_declaration_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<TraitDeclarationData<'db>> {
+    priv_trait_declaration_data(db, trait_id)
+}
+
 // === Trait Definition ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct TraitDefinitionData<'db> {
     /// The diagnostics here are "flat" - that is, only the diagnostics found on the trait level
     /// itself, and don't include the diagnostics of its items. The reason it's this way is that
@@ -513,9 +553,9 @@ impl<'db> HasFeatureKind<'db> for TraitItemInfo<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::trait_semantic_definition_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::trait_semantic_definition_diagnostics].
 pub fn trait_semantic_definition_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     let mut diagnostics = DiagnosticsBuilder::default();
@@ -544,9 +584,18 @@ pub fn trait_semantic_definition_diagnostics<'db>(
     diagnostics.build()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_required_item_names].
+/// Query implementation of [crate::db::SemanticGroup::trait_semantic_definition_diagnostics].
+#[salsa::tracked]
+pub fn trait_semantic_definition_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    trait_semantic_definition_diagnostics(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_required_item_names].
 pub fn trait_required_item_names<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<OrderedHashSet<StrRef<'db>>> {
     let mut required_items = OrderedHashSet::<_>::default();
@@ -565,18 +614,37 @@ pub fn trait_required_item_names<'db>(
     Ok(required_items)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_item_by_name].
+/// Query implementation of [crate::db::SemanticGroup::trait_required_item_names].
+#[salsa::tracked]
+pub fn trait_required_item_names_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashSet<StrRef<'db>>> {
+    trait_required_item_names(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_item_by_name].
 pub fn trait_item_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<TraitItemId<'db>>> {
     Ok(db.priv_trait_definition_data(trait_id)?.item_id_by_name.get(&name).map(|info| info.id))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_item_info_by_name].
+/// Query implementation of [crate::db::SemanticGroup::trait_item_by_name].
+#[salsa::tracked]
+pub fn trait_item_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<TraitItemId<'db>>> {
+    trait_item_by_name(db, trait_id, name)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_item_info_by_name].
 pub fn trait_item_info_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<TraitItemInfo<'db>>> {
@@ -584,9 +652,19 @@ pub fn trait_item_info_by_name<'db>(
     Ok(trait_definition_data.get_trait_item_info(name))
 }
 
-/// Query implementation of [SemanticGroup::trait_all_used_uses].
+/// Query implementation of [crate::db::SemanticGroup::trait_item_info_by_name].
+#[salsa::tracked]
+pub fn trait_item_info_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<TraitItemInfo<'db>>> {
+    trait_item_info_by_name(db, trait_id, name)
+}
+
+/// Implementation of [SemanticGroup::trait_all_used_uses].
 pub fn trait_all_used_uses<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
     let mut all_used_uses = db.trait_resolver_data(trait_id)?.used_uses.clone();
@@ -599,9 +677,18 @@ pub fn trait_all_used_uses<'db>(
     Ok(all_used_uses.into())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_functions].
+/// Query implementation of [SemanticGroup::trait_all_used_uses].
+#[salsa::tracked]
+pub fn trait_all_used_uses_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+    trait_all_used_uses(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_functions].
 pub fn trait_functions<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitFunctionId<'db>>> {
     Ok(db
@@ -615,18 +702,37 @@ pub fn trait_functions<'db>(
         .collect())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
+/// Query implementation of [crate::db::SemanticGroup::trait_functions].
+#[salsa::tracked]
+pub fn trait_functions_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitFunctionId<'db>>> {
+    trait_functions(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_by_name].
 pub fn trait_function_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<TraitFunctionId<'db>>> {
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_types].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
+#[salsa::tracked]
+pub fn trait_function_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<TraitFunctionId<'db>>> {
+    trait_function_by_name(db, trait_id, name)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_types].
 pub fn trait_types<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitTypeId<'db>>> {
     Ok(db
@@ -640,18 +746,37 @@ pub fn trait_types<'db>(
         .collect())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_type_by_name].
+/// Query implementation of [crate::db::SemanticGroup::trait_types].
+#[salsa::tracked]
+pub fn trait_types_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitTypeId<'db>>> {
+    trait_types(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_type_by_name].
 pub fn trait_type_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<TraitTypeId<'db>>> {
     Ok(db.trait_types(trait_id)?.get(&name).copied())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_constants].
+/// Query implementation of [crate::db::SemanticGroup::trait_type_by_name].
+#[salsa::tracked]
+pub fn trait_type_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<TraitTypeId<'db>>> {
+    trait_type_by_name(db, trait_id, name)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_constants].
 pub fn trait_constants<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitConstantId<'db>>> {
     Ok(db
@@ -665,18 +790,37 @@ pub fn trait_constants<'db>(
         .collect())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_constant_by_name].
+/// Query implementation of [crate::db::SemanticGroup::trait_constants].
+#[salsa::tracked]
+pub fn trait_constants_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitConstantId<'db>>> {
+    trait_constants(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_constant_by_name].
 pub fn trait_constant_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<TraitConstantId<'db>>> {
     Ok(db.trait_constants(trait_id)?.get(&name).copied())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_impls].
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_by_name].
+#[salsa::tracked]
+pub fn trait_constant_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<TraitConstantId<'db>>> {
+    trait_constant_by_name(db, trait_id, name)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_impls].
 pub fn trait_impls<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<OrderedHashMap<StrRef<'db>, TraitImplId<'db>>> {
     Ok(db
@@ -690,20 +834,39 @@ pub fn trait_impls<'db>(
         .collect())
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_impl_by_name].
+/// Query implementation of [crate::db::SemanticGroup::trait_impls].
+#[salsa::tracked]
+pub fn trait_impls_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<OrderedHashMap<StrRef<'db>, TraitImplId<'db>>> {
+    trait_impls(db, trait_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_impl_by_name].
 pub fn trait_impl_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<TraitImplId<'db>>> {
     Ok(db.trait_impls(trait_id)?.get(&name).copied())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_impl_by_name].
+#[salsa::tracked]
+pub fn trait_impl_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<TraitImplId<'db>>> {
+    trait_impl_by_name(db, trait_id, name)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
+/// Implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
 pub fn priv_trait_definition_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<TraitDefinitionData<'db>> {
     let module_file_id = trait_id.module_file_id(db);
@@ -830,10 +993,19 @@ pub fn priv_trait_definition_data<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_definition_data].
+#[salsa::tracked]
+pub fn priv_trait_definition_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_id: TraitId<'db>,
+) -> Maybe<TraitDefinitionData<'db>> {
+    priv_trait_definition_data(db, trait_id)
+}
+
 // === Trait item type ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct TraitItemTypeData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     pub generic_params: Vec<semantic::GenericParam<'db>>,
@@ -843,43 +1015,79 @@ pub struct TraitItemTypeData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::trait_type_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::trait_type_diagnostics].
 pub fn trait_type_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_type_data(trait_type_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_type_generic_params].
+/// Query implementation of [crate::db::SemanticGroup::trait_type_diagnostics].
+#[salsa::tracked]
+pub fn trait_type_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    trait_type_id: TraitTypeId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    trait_type_diagnostics(db, trait_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_type_generic_params].
 pub fn trait_type_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.priv_trait_type_generic_params_data(trait_type_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_type_attributes].
+/// Query implementation of [crate::db::SemanticGroup::trait_type_generic_params].
+#[salsa::tracked]
+pub fn trait_type_generic_params_tracked<'db>(
+    db: &'db dyn Database,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
+    trait_type_generic_params(db, trait_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_type_attributes].
 pub fn trait_type_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_type_data(trait_type_id)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_type_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::trait_type_attributes].
+#[salsa::tracked]
+pub fn trait_type_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    trait_type_attributes(db, trait_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_type_resolver_data].
 pub fn trait_type_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_type_data(trait_type_id)?.resolver_data)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_type_resolver_data].
+#[salsa::tracked]
+pub fn trait_type_resolver_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    trait_type_resolver_data(db, trait_type_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_type_generic_params_data].
+/// Implementation of [crate::db::SemanticGroup::priv_trait_type_generic_params_data].
 pub fn priv_trait_type_generic_params_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = trait_type_id.module_file_id(db);
@@ -922,9 +1130,18 @@ pub fn priv_trait_type_generic_params_data<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_type_data].
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_type_generic_params_data].
+#[salsa::tracked]
+pub fn priv_trait_type_generic_params_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    priv_trait_type_generic_params_data(db, trait_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_trait_type_data].
 pub fn priv_trait_type_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<TraitItemTypeData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -954,10 +1171,19 @@ pub fn priv_trait_type_data<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_type_data].
+#[salsa::tracked]
+pub fn priv_trait_type_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_type_id: TraitTypeId<'db>,
+) -> Maybe<TraitItemTypeData<'db>> {
+    priv_trait_type_data(db, trait_type_id)
+}
+
 // === Trait item constant ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct TraitItemConstantData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     pub ty: TypeId<'db>,
@@ -967,43 +1193,79 @@ pub struct TraitItemConstantData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::trait_constant_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::trait_constant_diagnostics].
 pub fn trait_constant_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_constant_data(trait_constant).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_constant_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_diagnostics].
+#[salsa::tracked]
+pub fn trait_constant_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    trait_constant: TraitConstantId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    trait_constant_diagnostics(db, trait_constant)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_constant_resolver_data].
 pub fn trait_constant_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_constant_data(trait_constant)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_constant_attributes].
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_resolver_data].
+#[salsa::tracked]
+pub fn trait_constant_resolver_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_constant: TraitConstantId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    trait_constant_resolver_data(db, trait_constant)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_constant_attributes].
 pub fn trait_constant_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_constant_data(trait_constant)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_constant_type].
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_attributes].
+#[salsa::tracked]
+pub fn trait_constant_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    trait_constant: TraitConstantId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    trait_constant_attributes(db, trait_constant)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_constant_type].
 pub fn trait_constant_type<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_constant_id: TraitConstantId<'db>,
 ) -> Maybe<TypeId<'db>> {
     Ok(db.priv_trait_constant_data(trait_constant_id)?.ty)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_constant_type].
+#[salsa::tracked]
+pub fn trait_constant_type_tracked<'db>(
+    db: &'db dyn Database,
+    trait_constant_id: TraitConstantId<'db>,
+) -> Maybe<TypeId<'db>> {
+    trait_constant_type(db, trait_constant_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_constant_data].
+/// Implementation of [crate::db::SemanticGroup::priv_trait_constant_data].
 pub fn priv_trait_constant_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
 ) -> Maybe<TraitItemConstantData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -1025,9 +1287,18 @@ pub fn priv_trait_constant_data<'db>(
     Ok(TraitItemConstantData { diagnostics: diagnostics.build(), ty, attributes, resolver_data })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_trait_constant_type].
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_constant_data].
+#[salsa::tracked]
+pub fn priv_trait_constant_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_constant: TraitConstantId<'db>,
+) -> Maybe<TraitItemConstantData<'db>> {
+    priv_trait_constant_data(db, trait_constant)
+}
+
+/// Implementation of [crate::db::SemanticGroup::concrete_trait_constant_type].
 pub fn concrete_trait_constant_type<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     concrete_trait_constant_id: ConcreteTraitConstantId<'db>,
 ) -> Maybe<TypeId<'db>> {
     let concrete_trait_id = concrete_trait_constant_id.concrete_trait(db);
@@ -1039,10 +1310,19 @@ pub fn concrete_trait_constant_type<'db>(
     substitution.substitute(db, generic_ty)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_constant_type].
+#[salsa::tracked]
+pub fn concrete_trait_constant_type_tracked<'db>(
+    db: &'db dyn Database,
+    concrete_trait_constant_id: ConcreteTraitConstantId<'db>,
+) -> Maybe<TypeId<'db>> {
+    concrete_trait_constant_type(db, concrete_trait_constant_id)
+}
+
 // === Trait item impl ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct TraitItemImplData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     pub concrete_trait: Maybe<ConcreteTraitId<'db>>,
@@ -1052,43 +1332,79 @@ pub struct TraitItemImplData<'db> {
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::trait_impl_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::trait_impl_diagnostics].
 pub fn trait_impl_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_impl_data(trait_impl).map(|data| data.diagnostics).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_impl_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::trait_impl_diagnostics].
+#[salsa::tracked]
+pub fn trait_impl_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    trait_impl: TraitImplId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    trait_impl_diagnostics(db, trait_impl)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_impl_resolver_data].
 pub fn trait_impl_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_impl_data(trait_impl)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_impl_attributes].
+/// Query implementation of [crate::db::SemanticGroup::trait_impl_resolver_data].
+#[salsa::tracked]
+pub fn trait_impl_resolver_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_impl: TraitImplId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    trait_impl_resolver_data(db, trait_impl)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_impl_attributes].
 pub fn trait_impl_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_impl_data(trait_impl)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_impl_concrete_trait].
+/// Query implementation of [crate::db::SemanticGroup::trait_impl_attributes].
+#[salsa::tracked]
+pub fn trait_impl_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    trait_impl: TraitImplId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    trait_impl_attributes(db, trait_impl)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_impl_concrete_trait].
 pub fn trait_impl_concrete_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_impl_id: TraitImplId<'db>,
 ) -> Maybe<ConcreteTraitId<'db>> {
     db.priv_trait_impl_data(trait_impl_id)?.concrete_trait
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_impl_concrete_trait].
+#[salsa::tracked]
+pub fn trait_impl_concrete_trait_tracked<'db>(
+    db: &'db dyn Database,
+    trait_impl_id: TraitImplId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
+    trait_impl_concrete_trait(db, trait_impl_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_impl_data].
+/// Implementation of [crate::db::SemanticGroup::priv_trait_impl_data].
 pub fn priv_trait_impl_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
 ) -> Maybe<TraitItemImplData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -1121,9 +1437,18 @@ pub fn priv_trait_impl_data<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_trait_impl_concrete_trait].
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_impl_data].
+#[salsa::tracked]
+pub fn priv_trait_impl_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_impl: TraitImplId<'db>,
+) -> Maybe<TraitItemImplData<'db>> {
+    priv_trait_impl_data(db, trait_impl)
+}
+
+/// Implementation of [crate::db::SemanticGroup::concrete_trait_impl_concrete_trait].
 pub fn concrete_trait_impl_concrete_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     concrete_trait_impl_id: ConcreteTraitImplId<'db>,
 ) -> Maybe<ConcreteTraitId<'db>> {
     let concrete_trait_id = concrete_trait_impl_id.concrete_trait(db);
@@ -1134,13 +1459,22 @@ pub fn concrete_trait_impl_concrete_trait<'db>(
     .substitute(db, db.trait_impl_concrete_trait(concrete_trait_impl_id.trait_impl(db))?)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_impl_concrete_trait].
+#[salsa::tracked]
+pub fn concrete_trait_impl_concrete_trait_tracked<'db>(
+    db: &'db dyn Database,
+    concrete_trait_impl_id: ConcreteTraitImplId<'db>,
+) -> Maybe<ConcreteTraitId<'db>> {
+    concrete_trait_impl_concrete_trait(db, concrete_trait_impl_id)
+}
+
 // === Trait function Declaration ===
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::trait_function_declaration_diagnostics].
 pub fn trait_function_declaration_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_function_declaration_data(trait_function_id)
@@ -1148,25 +1482,52 @@ pub fn trait_function_declaration_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_signature].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_diagnostics].
+#[salsa::tracked]
+pub fn trait_function_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    trait_function_declaration_diagnostics(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_signature].
 pub fn trait_function_signature<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.signature)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_signature].
+#[salsa::tracked]
+pub fn trait_function_signature_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<semantic::Signature<'db>> {
+    trait_function_signature(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_generic_params].
 pub fn trait_function_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.priv_trait_function_generic_params_data(trait_function_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_generic_params_data].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params].
+#[salsa::tracked]
+pub fn trait_function_generic_params_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
+    trait_function_generic_params(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_trait_function_generic_params_data].
 pub fn priv_trait_function_generic_params_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = trait_function_id.module_file_id(db);
@@ -1201,51 +1562,105 @@ pub fn priv_trait_function_generic_params_data<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_generic_params_data].
+#[salsa::tracked]
+pub fn priv_trait_function_generic_params_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    priv_trait_function_generic_params_data(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_attributes].
 pub fn trait_function_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
+#[salsa::tracked]
+pub fn trait_function_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    trait_function_attributes(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_resolver_data].
 pub fn trait_function_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_inline_config].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_resolver_data].
+#[salsa::tracked]
+pub fn trait_function_resolver_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    trait_function_resolver_data(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_declaration_inline_config].
 pub fn trait_function_declaration_inline_config<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.inline_config)
 }
 
-/// Query implementation of [SemanticGroup::trait_function_declaration_implicit_precedence].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_inline_config].
+#[salsa::tracked]
+pub fn trait_function_declaration_inline_config_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<InlineConfiguration<'db>> {
+    trait_function_declaration_inline_config(db, trait_function_id)
+}
+
+/// Implementation of [SemanticGroup::trait_function_declaration_implicit_precedence].
 pub fn trait_function_declaration_implicit_precedence<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<ImplicitPrecedence<'db>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.implicit_precedence)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_implicits].
+/// Query implementation of [SemanticGroup::trait_function_declaration_implicit_precedence].
+#[salsa::tracked]
+pub fn trait_function_declaration_implicit_precedence_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<ImplicitPrecedence<'db>> {
+    trait_function_declaration_implicit_precedence(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_declaration_implicits].
 pub fn trait_function_declaration_implicits<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
     Ok(db.priv_trait_function_declaration_data(trait_function_id)?.signature.implicits)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_implicits].
+#[salsa::tracked]
+pub fn trait_function_declaration_implicits_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Vec<TypeId<'db>>> {
+    trait_function_declaration_implicits(db, trait_function_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_declaration_data].
+/// Implementation of [crate::db::SemanticGroup::priv_trait_function_declaration_data].
 pub fn priv_trait_function_declaration_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -1307,8 +1722,17 @@ pub fn priv_trait_function_declaration_data<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_declaration_data].
+#[salsa::tracked]
+pub fn priv_trait_function_declaration_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<FunctionDeclarationData<'db>> {
+    priv_trait_function_declaration_data(db, trait_function_id)
+}
+
 fn validate_trait_function_signature<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     trait_id: TraitId<'db>,
     function_id: TraitFunctionId<'db>,
@@ -1329,9 +1753,9 @@ fn validate_trait_function_signature<'db>(
 
 // === Concrete Trait Function ===
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
+/// Implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
 pub fn concrete_trait_function_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
@@ -1345,9 +1769,18 @@ pub fn concrete_trait_function_generic_params<'db>(
     )
 }
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
+#[salsa::tracked]
+pub fn concrete_trait_function_generic_params_tracked<'db>(
+    db: &'db dyn Database,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
+    concrete_trait_function_generic_params(db, concrete_trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
 pub fn concrete_trait_function_signature<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
@@ -1358,13 +1791,22 @@ pub fn concrete_trait_function_signature<'db>(
     .substitute(db, db.trait_function_signature(concrete_trait_function_id.trait_function(db))?)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
+#[salsa::tracked]
+pub fn concrete_trait_function_signature_tracked<'db>(
+    db: &'db dyn Database,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
+) -> Maybe<semantic::Signature<'db>> {
+    concrete_trait_function_signature(db, concrete_trait_function_id)
+}
+
 // === Body ===
 
 // --- Selectors ---
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_body_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::trait_function_body_diagnostics].
 pub fn trait_function_body_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_function_body_data(trait_function_id)
@@ -1375,9 +1817,18 @@ pub fn trait_function_body_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_body].
+/// Query implementation of [crate::db::SemanticGroup::trait_function_body_diagnostics].
+#[salsa::tracked]
+pub fn trait_function_body_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    trait_function_body_diagnostics(db, trait_function_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::trait_function_body].
 pub fn trait_function_body<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Option<Arc<FunctionBody<'db>>>> {
     Ok(match db.priv_trait_function_body_data(trait_function_id)? {
@@ -1386,11 +1837,20 @@ pub fn trait_function_body<'db>(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_function_body].
+#[salsa::tracked]
+pub fn trait_function_body_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Option<Arc<FunctionBody<'db>>>> {
+    trait_function_body(db, trait_function_id)
+}
+
 // --- Computation ---
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_body_data].
+/// Implementation of [crate::db::SemanticGroup::priv_trait_function_body_data].
 pub fn priv_trait_function_body_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Option<FunctionBodyData<'db>>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -1453,4 +1913,13 @@ pub fn priv_trait_function_body_data<'db>(
         resolver_data,
         body: Arc::new(FunctionBody { arenas, body_expr }),
     }))
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_body_data].
+#[salsa::tracked]
+pub fn priv_trait_function_body_data_tracked<'db>(
+    db: &'db dyn Database,
+    trait_function_id: TraitFunctionId<'db>,
+) -> Maybe<Option<FunctionBodyData<'db>>> {
+    priv_trait_function_body_data(db, trait_function_id)
 }

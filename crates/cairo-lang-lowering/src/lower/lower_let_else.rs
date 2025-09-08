@@ -106,7 +106,13 @@ pub fn lower_success_arm_body<'db>(
         .iter()
         .map(|(var_id, stable_ptr)| {
             builder
-                .get_ref_raw(ctx, &MemberPath::Var(*var_id), ctx.get_location(*stable_ptr))
+                .get_ref_raw(
+                    ctx,
+                    &MemberPath::Var(*var_id),
+                    ctx.get_location(*stable_ptr),
+                    None,
+                    false,
+                )
                 .unwrap()
         })
         .collect();

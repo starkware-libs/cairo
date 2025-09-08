@@ -11,6 +11,7 @@ use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 use crate::ProfilingInfoCollectionConfig;
 
@@ -427,7 +428,7 @@ impl ProfilingInfoProcessorParams {
 /// A processor for profiling info. Used to process the raw profiling info (basic info collected
 /// during the run) into a more detailed profiling info that can also be formatted.
 pub struct ProfilingInfoProcessor<'a> {
-    db: Option<&'a dyn SierraGenGroup>,
+    db: Option<&'a dyn Database>,
     sierra_program: &'a Program,
     /// A map between sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
@@ -436,7 +437,7 @@ pub struct ProfilingInfoProcessor<'a> {
 }
 impl<'a> ProfilingInfoProcessor<'a> {
     pub fn new(
-        db: Option<&'a dyn SierraGenGroup>,
+        db: Option<&'a dyn Database>,
         sierra_program: &'a Program,
         statements_functions: UnorderedHashMap<StatementIdx, String>,
     ) -> Self {
@@ -555,7 +556,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         }
 
         let generic_libfunc_weights = params.process_by_generic_libfunc.then(|| {
-            let db: &dyn SierraGenGroup =
+            let db: &dyn Database =
                 self.db.expect("DB must be set with `process_by_generic_libfunc=true`.");
             libfunc_weights
                 .aggregate_by(
@@ -606,14 +607,14 @@ impl<'a> ProfilingInfoProcessor<'a> {
         }
 
         let original_user_function_weights = params.process_by_original_user_function.then(|| {
-            let db: &dyn SierraGenGroup =
+            let db: &dyn Database =
                 self.db.expect("DB must be set with `process_by_original_user_function=true`.");
             user_functions
                 .aggregate_by(
                     |idx| {
                         let lowering_function_id =
                             db.lookup_sierra_function(self.sierra_program.funcs[*idx].id.clone());
-                        lowering_function_id.semantic_full_path(db.upcast())
+                        lowering_function_id.semantic_full_path(db)
                     },
                     |x, y| x + y,
                     &0,
@@ -718,11 +719,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
 
 /// Checks if the given stack trace is fully semantic (so it is equivalent to a Cairo trace). That
 /// is, none of the trace components is generated.
-fn is_cairo_trace(
-    db: &dyn SierraGenGroup,
-    sierra_program: &Program,
-    sierra_trace: &[usize],
-) -> bool {
+fn is_cairo_trace(db: &dyn Database, sierra_program: &Program, sierra_trace: &[usize]) -> bool {
     sierra_trace.iter().all(|sierra_function_idx| {
         let sierra_function = &sierra_program.funcs[*sierra_function_idx];
         let lowering_function_id = db.lookup_sierra_function(sierra_function.id.clone());

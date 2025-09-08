@@ -1,9 +1,8 @@
-use std::sync::Arc;
-
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::ids::db_str;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use salsa::Database;
 
 use crate::db::LoweringGroup;
 use crate::utils::InliningStrategy;
@@ -51,9 +50,10 @@ impl Default for OptimizationConfig {
     }
 }
 
+#[salsa::tracked(returns(ref))]
 pub fn priv_movable_function_ids<'db>(
-    db: &'db dyn LoweringGroup,
-) -> Arc<UnorderedHashSet<ExternFunctionId<'db>>> {
+    db: &'db dyn Database,
+) -> UnorderedHashSet<ExternFunctionId<'db>> {
     let libfunc_by_name = |name: &String| {
         let mut path_iter = name.split("::");
 
@@ -73,5 +73,5 @@ pub fn priv_movable_function_ids<'db>(
         panic!("Got empty string as movable_function");
     };
 
-    Arc::new(db.optimization_config().moveable_functions.iter().map(libfunc_by_name).collect())
+    db.optimization_config().moveable_functions.iter().map(libfunc_by_name).collect()
 }

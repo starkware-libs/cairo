@@ -1,26 +1,47 @@
 //! Functions for lowering nodes of a [super::FlowControlGraph].
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::{self as semantic, MatchArmSelector, corelib};
+use cairo_lang_semantic::corelib::unit_ty;
+use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::{
+    self as semantic, GenericArgumentId, MatchArmSelector, ValueSelectorArm, corelib,
+};
 use cairo_lang_syntax::node::TypedStablePtr;
-use itertools::zip_eq;
+use itertools::{Itertools, zip_eq};
+use num_bigint::BigInt;
 
 use super::LowerGraphContext;
+use crate::diagnostic::{
+    LoweringDiagnosticKind, LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError,
+};
 use crate::ids::SemanticFunctionIdEx;
 use crate::lower::block_builder::BlockBuilder;
-use crate::lower::context::{LoweredExpr, VarRequest};
+use crate::lower::context::{LoweredExpr, LoweredExprExternEnum, VarRequest};
+use crate::lower::external::extern_facade_expr;
 use crate::lower::flow_control::graph::{
-    ArmExpr, BindVar, BooleanIf, Deconstruct, EnumMatch, EqualsLiteral, EvaluateExpr,
-    FlowControlNode, NodeId,
+    ArmExpr, BindVar, BooleanIf, Deconstruct, Downcast, EnumMatch, EqualsLiteral, EvaluateExpr,
+    FlowControlNode, NodeId, Upcast, ValueMatch,
 };
 use crate::lower::{
-    generators, lower_expr, lower_expr_literal_to_var_usage, lower_expr_to_var_usage,
+    generators, lower_expr, lower_expr_literal_to_var_usage, match_extern_arm_ref_args_bind,
+    match_extern_variant_arm_input_types,
 };
-use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
+use crate::{MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo, VarUsage};
 
 /// Lowers the node with the given [NodeId].
 pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<()> {
     let Some(builder) = ctx.get_builder_if_reachable(id) else {
+        // If an [ArmExpr] node is unreachable, report an error.
+        if let FlowControlNode::ArmExpr(node) = ctx.graph.node(id) {
+            let stable_ptr = ctx.ctx.function_body.arenas.exprs[node.expr].stable_ptr();
+
+            let match_error = LoweringDiagnosticKind::MatchError(MatchError {
+                kind: ctx.graph.kind(),
+                error: MatchDiagnostic::UnreachableMatchArm,
+            });
+            ctx.ctx.diagnostics.report(stable_ptr, match_error);
+        }
+
         return Ok(());
     };
 
@@ -30,9 +51,13 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, id, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
+        FlowControlNode::ValueMatch(node) => lower_value_match(ctx, id, node, builder),
         FlowControlNode::EqualsLiteral(node) => lower_equals_literal(ctx, id, node, builder),
         FlowControlNode::BindVar(node) => lower_bind_var(ctx, id, node, builder),
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
+        FlowControlNode::Upcast(node) => lower_upcast(ctx, id, node, builder),
+        FlowControlNode::Downcast(node) => lower_downcast(ctx, id, node, builder),
+        FlowControlNode::Missing(diag_added) => Err(*diag_added),
     }
 }
 
@@ -43,10 +68,27 @@ fn lower_evaluate_expr<'db>(
     node: &EvaluateExpr,
     mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
-    let lowered_expr = lower_expr_to_var_usage(ctx.ctx, &mut builder, node.expr);
-    match lowered_expr {
+    let lowered_expr = match lower_expr(ctx.ctx, &mut builder, node.expr) {
+        Ok(lowered_expr) => lowered_expr,
+        Err(err) => return ctx.block_doesnt_continue(id, builder, err),
+    };
+
+    let var = node.var_id;
+
+    // Check if the extern match optimization is applicable.
+    if let LoweredExpr::ExternEnum(lowered_extern_enum) = &lowered_expr
+        && let FlowControlNode::EnumMatch(next_node) = ctx.graph.node(node.next)
+        // The input variable is *only* used in the next node.
+        && next_node.matched_var == var
+        && var.times_used(ctx.graph) == 1
+    {
+        // Skip the child node, and run the extern-match code instead.
+        return handle_extern_match(ctx, id, next_node, builder, lowered_extern_enum);
+    }
+
+    match lowered_expr.as_var_usage(ctx.ctx, &mut builder) {
         Ok(lowered_var) => {
-            ctx.register_var(node.var_id, lowered_var);
+            ctx.register_var(var, lowered_var);
             ctx.pass_builder_to_child(id, node.next, builder);
             Ok(())
         }
@@ -159,6 +201,104 @@ fn lower_enum_match<'db>(
     Ok(())
 }
 
+/// Handles a match where the matched expression is an extern function call.
+///
+/// In this case, skip constructing the enum value, and instead match on the function call directly
+/// using [MatchInfo::Extern].
+fn handle_extern_match<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &EnumMatch<'db>,
+    builder: BlockBuilder<'db>,
+    lowered_extern_enum: &LoweredExprExternEnum<'db>,
+) -> Maybe<()> {
+    let function = lowered_extern_enum.function.lowered(ctx.ctx.db);
+    let location = lowered_extern_enum.location;
+
+    let arms: Vec<MatchArm<'db>> = node
+        .variants
+        .iter()
+        .map(|(concrete_variant, variant_node, flow_control_var)| {
+            let mut child_builder = ctx.create_child_builder(&builder);
+            let ty = flow_control_var.ty(ctx.graph);
+
+            let input_tys = match_extern_variant_arm_input_types(ctx.ctx, ty, lowered_extern_enum);
+            let mut input_vars = input_tys
+                .into_iter()
+                .map(|ty| ctx.ctx.new_var(VarRequest { ty, location }))
+                .collect_vec();
+
+            let input_vars_to_report = input_vars.clone();
+            // Bind the variant inner values to semantic variables.
+            match_extern_arm_ref_args_bind(
+                ctx.ctx,
+                &mut input_vars,
+                lowered_extern_enum,
+                &mut child_builder,
+            );
+
+            let variant_expr = extern_facade_expr(ctx.ctx, ty, input_vars, location);
+
+            // Since `extern_facade_expr` returns either
+            // (a) `LoweredExpr::AtVariable` or
+            // (b) `LoweredExpr::Tuple` of `LoweredExpr::AtVariable`,
+            // we can safely unwrap the `as_var_usage` result.
+            let var_usage = variant_expr.as_var_usage(ctx.ctx, &mut child_builder).unwrap();
+            ctx.register_var(*flow_control_var, var_usage);
+
+            let block_id = ctx.register_child_builder(*variant_node, child_builder);
+
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(*concrete_variant),
+                block_id,
+                var_ids: input_vars_to_report,
+            }
+        })
+        .collect();
+
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function,
+        inputs: lowered_extern_enum.inputs.clone(),
+        arms,
+        location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
+/// Lowers an [ValueMatch] node.
+fn lower_value_match<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &ValueMatch,
+    builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let db = ctx.ctx.db;
+    let unit_type = unit_ty(db);
+
+    let arms = node
+        .nodes
+        .iter()
+        .enumerate()
+        .map(|(value, variant_node)| MatchArm {
+            arm_selector: MatchArmSelector::Value(ValueSelectorArm { value }),
+            block_id: ctx.assign_child_block_id(*variant_node, &builder),
+            var_ids: vec![ctx.ctx.new_var(VarRequest { ty: unit_type, location: ctx.location })],
+        })
+        .collect();
+
+    let match_info = MatchInfo::Value(MatchEnumValue {
+        num_of_arms: node.nodes.len(),
+        arms,
+        input: ctx.vars[&node.matched_var],
+        location: ctx.location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
 /// Lowers an [EqualsLiteral] node.
 fn lower_equals_literal<'db>(
     ctx: &mut LowerGraphContext<'db, '_, '_>,
@@ -169,14 +309,12 @@ fn lower_equals_literal<'db>(
     let db = ctx.ctx.db;
     let felt252_ty = db.core_info().felt252;
 
-    // TODO(TomerStarkware): Use the same type of literal as the input, without the cast to
-    //   felt252.
     let literal_stable_ptr = node.stable_ptr.untyped();
     let literal_location = ctx.ctx.get_location(literal_stable_ptr);
     let input_var = ctx.vars[&node.input];
 
     // Lower the expression `input_var - literal`.
-    let is_equal: VarUsage<'db> = if node.literal == 0 {
+    let is_equal: VarUsage<'db> = if node.literal == BigInt::from(0) {
         // If the literal is 0, simply use the input variable.
         input_var
     } else {
@@ -185,7 +323,7 @@ fn lower_equals_literal<'db>(
             ctx.ctx,
             literal_stable_ptr,
             felt252_ty,
-            &node.literal.into(),
+            &node.literal,
             &mut builder,
         );
 
@@ -289,5 +427,85 @@ fn lower_deconstruct<'db>(
     }
 
     ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(())
+}
+
+/// Lowers an [Upcast] node.
+fn lower_upcast<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &Upcast,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let db = ctx.ctx.db;
+    let input_ty = node.input.ty(ctx.graph);
+    let output_ty = node.output.ty(ctx.graph);
+
+    let generic_args = vec![GenericArgumentId::Type(input_ty), GenericArgumentId::Type(output_ty)];
+    let function = db.core_info().upcast_fn.concretize(db, generic_args).lowered(db);
+
+    let call_result = generators::Call {
+        function,
+        inputs: vec![ctx.vars[&node.input]],
+        coupon_input: None,
+        extra_ret_tys: vec![],
+        ret_tys: vec![output_ty],
+        location: node.input.location(ctx.graph),
+    }
+    .add(ctx.ctx, &mut builder.statements);
+
+    ctx.register_var(node.output, call_result.returns.into_iter().next().unwrap());
+    ctx.pass_builder_to_child(id, node.next, builder);
+    Ok(())
+}
+
+/// Lowers a [Downcast] node.
+fn lower_downcast<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &Downcast,
+    builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let db = ctx.ctx.db;
+    let input_ty = node.input.ty(ctx.graph);
+    let output_ty = node.output.ty(ctx.graph);
+
+    let generic_args = vec![GenericArgumentId::Type(input_ty), GenericArgumentId::Type(output_ty)];
+
+    let function_id = db.core_info().downcast_fn.concretize(db, generic_args).lowered(db);
+
+    // Allocate block ids for the two branches.
+    let in_range_block_id = ctx.assign_child_block_id(node.in_range, &builder);
+    let out_of_range_block_id = ctx.assign_child_block_id(node.out_of_range, &builder);
+
+    // Create the output variable.
+    let output_location = node.output.location(ctx.graph);
+    let output_var = ctx.ctx.new_var(VarRequest { ty: output_ty, location: output_location });
+    let var_usage = VarUsage { var_id: output_var, location: output_location };
+    ctx.register_var(node.output, var_usage);
+
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: function_id,
+        inputs: vec![ctx.vars[&node.input]],
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
+                    db, output_ty,
+                )),
+                block_id: in_range_block_id,
+                var_ids: vec![output_var],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_none_variant(
+                    db, output_ty,
+                )),
+                block_id: out_of_range_block_id,
+                var_ids: vec![],
+            },
+        ],
+        location: ctx.location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
     Ok(())
 }

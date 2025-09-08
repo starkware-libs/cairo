@@ -1,11 +1,11 @@
 use std::default::Default;
-use std::sync::Arc;
 
 use anyhow::{Result, ensure};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
@@ -34,6 +34,7 @@ use cairo_lang_utils::ordered_hash_map::{
 };
 use itertools::{Itertools, chain};
 pub use plugin::TestPlugin;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
 pub use test_config::{TestConfig, try_extract_test_config};
@@ -61,7 +62,7 @@ pub struct TestsCompilationConfig<'db> {
 
     /// Crates to be searched for contracts.
     /// If not defined, all crates will be searched.
-    pub contract_crate_ids: Option<Vec<CrateId<'db>>>,
+    pub contract_crate_ids: Option<&'db [CrateId<'db>]>,
 
     /// Crates to be searched for executable attributes.
     /// If not defined, test crates will be searched.
@@ -109,7 +110,7 @@ pub fn compile_test_prepared_db<'db>(
     let contracts = tests_compilation_config.contract_declarations.unwrap_or_else(|| {
         find_contracts(
             db,
-            &tests_compilation_config.contract_crate_ids.unwrap_or_else(|| db.crates()),
+            tests_compilation_config.contract_crate_ids.unwrap_or_else(|| db.crates()),
         )
     });
     let all_entry_points = if tests_compilation_config.starknet {
@@ -146,8 +147,8 @@ pub fn compile_test_prepared_db<'db>(
     )
     .collect();
 
-    let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
-        Arc::unwrap_or_clone(get_sierra_program_for_functions(db, func_ids, context)?);
+    let SierraProgramWithDebug { program: sierra_program, debug_info } =
+        get_sierra_program_for_functions(db, func_ids, context)?;
 
     let function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>> = all_entry_points
         .iter()
@@ -160,6 +161,7 @@ pub fn compile_test_prepared_db<'db>(
         .collect();
 
     let replacer = DebugReplacer { db };
+    let mut sierra_program = sierra_program.clone();
     replacer.enrich_function_names(&mut sierra_program);
 
     let mut annotations = Annotations::default();
@@ -206,7 +208,7 @@ pub fn compile_test_prepared_db<'db>(
             named_tests,
             function_set_costs,
             contracts_info,
-            statements_locations: Some(debug_info.statements_locations),
+            statements_locations: Some(debug_info.statements_locations.clone()),
         },
     })
 }
@@ -249,17 +251,17 @@ pub struct TestCompilationMetadata<'db> {
 
 /// Finds the tests in the requested crates.
 fn find_all_tests<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     main_crates: Vec<CrateId<'db>>,
 ) -> Vec<(FreeFunctionId<'db>, TestConfig)> {
     let mut tests = vec![];
     for crate_id in main_crates {
         let modules = db.crate_modules(crate_id);
         for module_id in modules.iter() {
-            let Ok(module_items) = db.module_items(*module_id) else {
+            let Ok(module_data) = module_id.module_data(db) else {
                 continue;
             };
-            tests.extend(module_items.iter().filter_map(|item| {
+            tests.extend(module_data.items(db).iter().filter_map(|item| {
                 let ModuleItemId::FreeFunction(func_id) = item else { return None };
                 let Ok(attrs) =
                     db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))

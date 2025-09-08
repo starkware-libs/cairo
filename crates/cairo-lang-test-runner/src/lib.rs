@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 use std::sync::mpsc::channel;
 
 use anyhow::{Context, Result, bail};
@@ -8,15 +9,14 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateInput;
-use cairo_lang_runner::casm_run::format_for_panic;
+use cairo_lang_runner::casm_run::{StarknetHintProcessor, format_for_panic};
 use cairo_lang_runner::profiling::{
     ProfilerConfig, ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{
-    ProfilingInfoCollectionConfig, RunResultValue, RunnerError, SierraCasmRunner,
-    StarknetExecutionResources,
+    CairoHintProcessor, ProfilingInfoCollectionConfig, RunResultValue, RunnerError,
+    SierraCasmRunner, StarknetExecutionResources,
 };
-use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::starknet_plugin_suite;
@@ -26,7 +26,6 @@ use cairo_lang_test_plugin::{
     compile_test_prepared_db, test_plugin_suite,
 };
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -35,10 +34,15 @@ use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 #[cfg(test)]
 mod test;
 
+type ArcCustomHintProcessorFactory = Arc<
+    dyn (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>) + Send + Sync,
+>;
+
 /// Compile and run tests.
 pub struct TestRunner<'db> {
     compiler: TestCompiler<'db>,
     config: TestRunConfig,
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
 }
 
 impl<'db> TestRunner<'db> {
@@ -73,19 +77,36 @@ impl<'db> TestRunner<'db> {
                 executable_crate_ids: None,
             },
         )?;
-        Ok(Self { compiler, config })
+        Ok(Self { compiler, config, custom_hint_processor_factory: None })
+    }
+
+    /// Make this runner run tests using a custom hint processor.
+    pub fn with_custom_hint_processor(
+        &mut self,
+        factory: impl (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>)
+        + Send
+        + Sync
+        + 'static,
+    ) -> &mut Self {
+        self.custom_hint_processor_factory = Some(Arc::new(factory));
+        self
     }
 
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
-        let runner = CompiledTestRunner::new(self.compiler.build()?, self.config.clone());
+        let runner = CompiledTestRunner {
+            compiled: self.compiler.build()?,
+            config: self.config.clone(),
+            custom_hint_processor_factory: self.custom_hint_processor_factory.clone(),
+        };
         runner.run(Some(&self.compiler.db))
     }
 }
 
 pub struct CompiledTestRunner<'db> {
-    pub compiled: TestCompilation<'db>,
-    pub config: TestRunConfig,
+    compiled: TestCompilation<'db>,
+    config: TestRunConfig,
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
 }
 
 impl<'db> CompiledTestRunner<'db> {
@@ -96,7 +117,19 @@ impl<'db> CompiledTestRunner<'db> {
     /// * `compiled` - The compiled tests to run
     /// * `config` - Test run configuration
     pub fn new(compiled: TestCompilation<'db>, config: TestRunConfig) -> Self {
-        Self { compiled, config }
+        Self { compiled, config, custom_hint_processor_factory: None }
+    }
+
+    /// Make this runner run tests using a custom hint processor.
+    pub fn with_custom_hint_processor(
+        &mut self,
+        factory: impl (for<'a> Fn(CairoHintProcessor<'a>) -> Box<dyn StarknetHintProcessor + 'a>)
+        + Send
+        + Sync
+        + 'static,
+    ) -> &mut Self {
+        self.custom_hint_processor_factory = Some(Arc::new(factory));
+        self
     }
 
     /// Execute preconfigured test execution.
@@ -108,8 +141,12 @@ impl<'db> CompiledTestRunner<'db> {
             &self.config.filter,
         );
 
-        let TestsSummary { passed, failed, ignored, failed_run_results } =
-            run_tests(opt_db.map(|db| db as &dyn SierraGenGroup), compiled, &self.config)?;
+        let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
+            opt_db.map(|db| db as &dyn SierraGenGroup),
+            compiled,
+            &self.config,
+            self.custom_hint_processor_factory,
+        )?;
 
         if failed.is_empty() {
             println!(
@@ -261,7 +298,7 @@ pub fn filter_test_cases<'db>(
     let filtered_out = total_tests_count - named_tests.len();
     let tests = TestCompilation {
         sierra_program: compiled.sierra_program,
-        metadata: TestCompilationMetadata { named_tests, ..(compiled.metadata) },
+        metadata: TestCompilationMetadata { named_tests, ..compiled.metadata },
     };
     (tests, filtered_out)
 }
@@ -289,13 +326,7 @@ pub struct TestsSummary {
     passed: Vec<String>,
     failed: Vec<String>,
     ignored: Vec<String>,
-    failed_run_results: Vec<anyhow::Result<RunResultValue>>,
-}
-
-/// Auxiliary data that is required when running tests with profiling.
-pub struct PorfilingAuxData<'a> {
-    pub db: &'a dyn SierraGenGroup,
-    pub statements_functions: UnorderedHashMap<StatementIdx, String>,
+    failed_run_results: Vec<Result<RunResultValue>>,
 }
 
 /// Runs the tests and process the results for a summary.
@@ -303,6 +334,7 @@ pub fn run_tests(
     opt_db: Option<&dyn SierraGenGroup>,
     compiled: TestCompilation<'_>,
     config: &TestRunConfig,
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
 ) -> Result<TestsSummary> {
     let TestCompilation {
         sierra_program: sierra_program_with_debug_info,
@@ -340,7 +372,7 @@ pub fn run_tests(
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
             if let Some(loc) = statements_locations.statement_diagnostic_location(db, stmt_idx) {
-                locs.push(format!("#{stmt_idx} {:?}", loc.debug(db.elongate())))
+                locs.push(format!("#{stmt_idx} {:?}", loc.debug(db)))
             }
         }
         anyhow::anyhow!("{err}\n{}", locs.join("\n"))
@@ -352,7 +384,8 @@ pub fn run_tests(
     let (tx, rx) = channel::<_>();
     rayon::spawn(move || {
         named_tests.into_par_iter().for_each(|(name, test)| {
-            let result = run_single_test(test, &name, &runner);
+            let result =
+                run_single_test(test, &name, &runner, custom_hint_processor_factory.clone());
             tx.send((name, result)).unwrap();
         })
     });
@@ -395,17 +428,24 @@ fn run_single_test(
     test: TestConfig,
     name: &str,
     runner: &SierraCasmRunner,
-) -> anyhow::Result<Option<TestResult>> {
+    custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,
+) -> Result<Option<TestResult>> {
     if test.ignored {
         return Ok(None);
     }
     let func = runner.find_function(name)?;
-    let result = runner.run_function_with_starknet_context(
-        func,
-        vec![],
-        test.available_gas,
-        Default::default(),
-    )?;
+
+    let (hint_processor, ctx) =
+        runner.prepare_starknet_context(func, vec![], test.available_gas, Default::default())?;
+
+    let mut hint_processor = match custom_hint_processor_factory {
+        Some(f) => f(hint_processor),
+        None => Box::new(hint_processor),
+    };
+
+    let result =
+        runner.run_function_with_prepared_starknet_context(func, &mut *hint_processor, ctx)?;
+
     Ok(Some(TestResult {
         status: match &result.value {
             RunResultValue::Success(_) => match test.expectation {
@@ -438,7 +478,7 @@ fn run_single_test(
 fn update_summary(
     summary: &mut TestsSummary,
     name: String,
-    test_result: anyhow::Result<Option<TestResult>>,
+    test_result: Result<Option<TestResult>>,
     profiler_data: &Option<(ProfilingInfoProcessor<'_>, ProfilingInfoProcessorParams)>,
     print_resource_usage: bool,
 ) {

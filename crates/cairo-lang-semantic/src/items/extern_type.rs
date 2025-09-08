@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ExternTypeId, GenericKind, LanguageElementId, LookupItemId, ModuleItemId,
 };
@@ -7,6 +8,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use salsa::Database;
 
 use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::db::SemanticGroup;
@@ -24,7 +26,7 @@ mod test;
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct ExternTypeDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     generic_params: Vec<GenericParam<'db>>,
@@ -32,27 +34,45 @@ pub struct ExternTypeDeclarationData<'db> {
 }
 
 // Selectors.
-/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
 pub fn extern_type_declaration_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_extern_type_declaration_data(extern_type_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
-/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
+
+/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
+#[salsa::tracked]
+pub fn extern_type_declaration_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    extern_type_id: ExternTypeId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    extern_type_declaration_diagnostics(db, extern_type_id)
+}
+/// Implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
 pub fn extern_type_declaration_generic_params<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
     Ok(db.extern_type_declaration_generic_params_data(extern_type_id)?.generic_params)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
+#[salsa::tracked]
+pub fn extern_type_declaration_generic_params_tracked<'db>(
+    db: &'db dyn Database,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<Vec<GenericParam<'db>>> {
+    extern_type_declaration_generic_params(db, extern_type_id)
+}
+
 // Computation.
-/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
+/// Implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
 pub fn extern_type_declaration_generic_params_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_file_id = extern_type_id.module_file_id(db);
@@ -82,9 +102,18 @@ pub fn extern_type_declaration_generic_params_data<'db>(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
+/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
+#[salsa::tracked]
+pub fn extern_type_declaration_generic_params_data_tracked<'db>(
+    db: &'db dyn Database,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<GenericParamsData<'db>> {
+    extern_type_declaration_generic_params_data(db, extern_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
 pub fn priv_extern_type_declaration_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ExternTypeDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -112,10 +141,28 @@ pub fn priv_extern_type_declaration_data<'db>(
     Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params, attributes })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
+/// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
+#[salsa::tracked]
+pub fn priv_extern_type_declaration_data_tracked<'db>(
+    db: &'db dyn Database,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<ExternTypeDeclarationData<'db>> {
+    priv_extern_type_declaration_data(db, extern_type_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::extern_type_attributes].
 pub fn extern_type_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(db.priv_extern_type_declaration_data(extern_type_id)?.attributes)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
+#[salsa::tracked]
+pub fn extern_type_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    extern_type_id: ExternTypeId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    extern_type_attributes(db, extern_type_id)
 }

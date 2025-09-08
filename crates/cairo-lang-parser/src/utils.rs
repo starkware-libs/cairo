@@ -1,12 +1,11 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{ExternalFiles, FilesGroup, init_files_group};
+use cairo_lang_filesystem::db::{FilesGroup, init_files_group};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ast::SyntaxFile;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::{Intern, Upcast};
 use itertools::chain;
@@ -22,7 +21,6 @@ pub struct SimpleParserDatabase {
 }
 #[salsa::db]
 impl salsa::Database for SimpleParserDatabase {}
-impl ExternalFiles for SimpleParserDatabase {}
 impl Default for SimpleParserDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
@@ -31,13 +29,8 @@ impl Default for SimpleParserDatabase {
     }
 }
 
-impl<'db> Upcast<'db, dyn SyntaxGroup> for SimpleParserDatabase {
-    fn upcast(&'db self) -> &'db dyn SyntaxGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn FilesGroup> for SimpleParserDatabase {
-    fn upcast(&'db self) -> &'db dyn FilesGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for SimpleParserDatabase {
+    fn upcast(&'db self) -> &'db dyn salsa::Database {
         self
     }
 }

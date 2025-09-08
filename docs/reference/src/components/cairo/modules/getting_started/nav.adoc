@@ -1,5 +1,6 @@
 // Getting Started
 * Getting Started
 ** xref:pages/prerequisites.adoc[Prerequisites]
+** xref:pages/development.adoc[Development]
 ** xref:pages/compiling-and-running-cairo-files.adoc[Compiling & running Cairo files]
 ** xref:pages/compiling-starknet-contracts.adoc[Compiling Starknet contracts]

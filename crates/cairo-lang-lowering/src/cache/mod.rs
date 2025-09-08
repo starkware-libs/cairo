@@ -5,11 +5,13 @@ mod test;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
+use bincode::error::EncodeError;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::cache::{
     CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
     ImplDefIdCached, LanguageElementCached, SyntaxStablePtrIdCached, generate_crate_def_cache,
 };
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId, FunctionWithBodyId,
@@ -18,11 +20,12 @@ use cairo_lang_defs::ids::{
     TraitConstantLongId, TraitFunctionLongId, TraitImplId, TraitImplLongId, TraitLongId,
     TraitTypeId, TraitTypeLongId, VariantLongId,
 };
-use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
-use cairo_lang_semantic::items::constant::{ConstValue, ImplConstantId};
+use cairo_lang_semantic::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -51,11 +54,12 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::Arena;
 use num_bigint::BigInt;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::blocks::BlocksBuilder;
-use crate::db::LoweringGroup;
 use crate::ids::{
     FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, Signature,
 };
@@ -75,9 +79,9 @@ type LookupCache =
 
 /// Load the cached lowering of a crate if it has a cache file configuration.
 pub fn load_cached_crate_functions<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
-) -> Option<Arc<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>>> {
+) -> Option<OrderedHashMap<defs::ids::FunctionWithBodyId<'db>, MultiLowering<'db>>> {
     let blob_id = db.crate_config(crate_id)?.cache_file?;
     let Some(content) = db.blob_content(blob_id) else {
         return Default::default();
@@ -112,16 +116,29 @@ pub fn load_cached_crate_functions<'db>(
                 let lowering = lowering.embed(&mut ctx);
                 (function_id, lowering)
             })
-            .collect::<OrderedHashMap<_, _>>()
-            .into(),
+            .collect::<OrderedHashMap<_, _>>(),
     )
+}
+
+#[derive(Debug, Error)]
+pub enum CrateCacheError {
+    #[error("Failed compilation of crate.")]
+    CompilationFailed,
+    #[error("Cache encoding failed: {0}")]
+    EncodingError(#[from] EncodeError),
+}
+
+impl From<DiagnosticAdded> for CrateCacheError {
+    fn from(_e: DiagnosticAdded) -> Self {
+        Self::CompilationFailed
+    }
 }
 
 /// Cache the lowering of each function in the crate into a blob.
 pub fn generate_crate_cache<'db>(
-    db: &'db dyn LoweringGroup,
-    crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
-) -> Maybe<Arc<[u8]>> {
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+) -> Result<Vec<u8>, CrateCacheError> {
     let modules = db.crate_modules(crate_id);
     let mut function_ids = Vec::new();
     for module_id in modules.iter() {
@@ -167,29 +184,28 @@ pub fn generate_crate_cache<'db>(
 
     let mut artifact = Vec::<u8>::new();
 
-    if let Ok(def) = bincode::serde::encode_to_vec(
+    let def = bincode::serde::encode_to_vec(
         &(CachedCrateMetadata::new(crate_id, db), def_cache, &ctx.semantic_ctx.defs_ctx.lookups),
         bincode::config::standard(),
-    ) {
-        artifact.extend(def.len().to_be_bytes());
-        artifact.extend(def);
-    }
+    )?;
+    artifact.extend(def.len().to_be_bytes());
+    artifact.extend(def);
 
-    if let Ok(lowered) = bincode::serde::encode_to_vec(
+    let lowered = bincode::serde::encode_to_vec(
         &(&ctx.lookups, &ctx.semantic_ctx.lookups, cached),
         bincode::config::standard(),
-    ) {
-        artifact.extend(lowered.len().to_be_bytes());
-        artifact.extend(lowered);
-    }
-    Ok(Arc::from(artifact.as_slice()))
+    )?;
+    artifact.extend(lowered.len().to_be_bytes());
+    artifact.extend(lowered);
+
+    Ok(artifact)
 }
 
 /// Context for loading cache into the database.
 struct CacheLoadingContext<'db> {
     /// The variable ids of the flat lowered that is currently being loaded.
     lowered_variables_id: Vec<VariableId>,
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
 
     /// data for loading the entire cache into the database.
     data: CacheLoadingData<'db>,
@@ -199,7 +215,7 @@ struct CacheLoadingContext<'db> {
 
 impl<'db> CacheLoadingContext<'db> {
     fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         lookups: CacheLookups,
         semantic_lookups: SemanticCacheLookups,
         defs_loading_data: Arc<DefCacheLoadingData<'db>>,
@@ -255,7 +271,7 @@ impl DerefMut for CacheLoadingData<'_> {
 
 /// Context for saving cache from the database.
 struct CacheSavingContext<'db> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     data: CacheSavingData<'db>,
     semantic_ctx: SemanticCacheSavingContext<'db>,
 }
@@ -272,7 +288,7 @@ impl DerefMut for CacheSavingContext<'_> {
     }
 }
 impl<'db> CacheSavingContext<'db> {
-    fn new(db: &'db dyn LoweringGroup, self_crate_id: CrateId<'db>) -> Self {
+    fn new(db: &'db dyn Database, self_crate_id: CrateId<'db>) -> Self {
         Self {
             db,
             data: CacheSavingData::default(),
@@ -314,7 +330,7 @@ struct CacheLookups {
 
 /// Context for loading cache into the database.
 struct SemanticCacheLoadingContext<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     data: SemanticCacheLoadingData<'db>,
     defs_loading_data: Arc<DefCacheLoadingData<'db>>,
 }
@@ -337,6 +353,7 @@ struct SemanticCacheLoadingData<'db> {
     function_ids: OrderedHashMap<SemanticFunctionIdCached, semantic::FunctionId<'db>>,
     type_ids: OrderedHashMap<TypeIdCached, TypeId<'db>>,
     impl_ids: OrderedHashMap<ImplIdCached, ImplId<'db>>,
+    const_value_ids: OrderedHashMap<ConstValueIdCached, ConstValueId<'db>>,
     lookups: SemanticCacheLookups,
 }
 
@@ -346,6 +363,7 @@ impl<'db> SemanticCacheLoadingData<'db> {
             function_ids: OrderedHashMap::default(),
             type_ids: OrderedHashMap::default(),
             impl_ids: OrderedHashMap::default(),
+            const_value_ids: OrderedHashMap::default(),
             lookups,
         }
     }
@@ -366,7 +384,7 @@ impl<'db> DerefMut for SemanticCacheLoadingData<'db> {
 
 /// Context for saving cache from the database.
 struct SemanticCacheSavingContext<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     data: SemanticCacheSavingData<'db>,
     defs_ctx: DefCacheSavingContext<'db>,
 }
@@ -387,11 +405,9 @@ impl<'db> DerefMut for SemanticCacheSavingContext<'db> {
 #[derive(Default)]
 struct SemanticCacheSavingData<'db> {
     function_ids: OrderedHashMap<semantic::FunctionId<'db>, SemanticFunctionIdCached>,
-
     type_ids: OrderedHashMap<TypeId<'db>, TypeIdCached>,
-
     impl_ids: OrderedHashMap<ImplId<'db>, ImplIdCached>,
-
+    const_value_ids: OrderedHashMap<ConstValueId<'db>, ConstValueIdCached>,
     lookups: SemanticCacheLookups,
 }
 
@@ -414,6 +430,7 @@ struct SemanticCacheLookups {
     function_ids_lookup: Vec<SemanticFunctionCached>,
     type_ids_lookup: Vec<TypeCached>,
     impl_ids_lookup: Vec<ImplCached>,
+    const_value_ids_lookup: Vec<ConstValueCached>,
 }
 
 /// Cached version of [defs::ids::FunctionWithBodyId]
@@ -1245,55 +1262,52 @@ impl StatementCached {
 #[derive(Serialize, Deserialize)]
 struct StatementConstCached {
     /// The value of the const.
-    value: ConstValueCached,
+    value: ConstValueIdCached,
     /// The variable to bind the value to.
     output: usize,
+    /// Is the const boxed.
+    boxed: bool,
 }
 impl StatementConstCached {
     fn new<'db>(stmt: StatementConst<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
         Self {
-            value: ConstValueCached::new(stmt.value, &mut ctx.semantic_ctx),
+            value: ConstValueIdCached::new(stmt.value, &mut ctx.semantic_ctx),
             output: stmt.output.index(),
+            boxed: stmt.boxed,
         }
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> StatementConst<'db> {
-        StatementConst {
-            value: self.value.embed(&mut ctx.semantic_ctx),
-            output: ctx.lowered_variables_id[self.output],
-        }
+        StatementConst::new(
+            self.value.embed(&mut ctx.semantic_ctx),
+            ctx.lowered_variables_id[self.output],
+            self.boxed,
+        )
     }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 enum ConstValueCached {
     Int(BigInt, TypeIdCached),
-    Struct(Vec<ConstValueCached>, TypeIdCached),
-    Enum(ConcreteVariantCached, Box<ConstValueCached>),
-    NonZero(Box<ConstValueCached>),
-    Boxed(Box<ConstValueCached>),
+    Struct(Vec<ConstValueIdCached>, TypeIdCached),
+    Enum(ConcreteVariantCached, ConstValueIdCached),
+    NonZero(ConstValueIdCached),
     Generic(GenericParamCached),
     ImplConstant(ImplConstantCached),
 }
 impl ConstValueCached {
-    fn new<'db>(
-        const_value_id: ConstValue<'db>,
-        ctx: &mut SemanticCacheSavingContext<'db>,
-    ) -> Self {
-        match const_value_id {
+    fn new<'db>(const_value: ConstValue<'db>, ctx: &mut SemanticCacheSavingContext<'db>) -> Self {
+        match const_value {
             ConstValue::Int(value, ty) => ConstValueCached::Int(value, TypeIdCached::new(ty, ctx)),
             ConstValue::Struct(values, ty) => ConstValueCached::Struct(
-                values.into_iter().map(|v| ConstValueCached::new(v, ctx)).collect(),
+                values.into_iter().map(|v| ConstValueIdCached::new(v, ctx)).collect(),
                 TypeIdCached::new(ty, ctx),
             ),
             ConstValue::Enum(variant, value) => ConstValueCached::Enum(
                 ConcreteVariantCached::new(variant, ctx),
-                Box::new(ConstValueCached::new(*value, ctx)),
+                ConstValueIdCached::new(value, ctx),
             ),
             ConstValue::NonZero(value) => {
-                ConstValueCached::NonZero(Box::new(ConstValueCached::new(*value, ctx)))
-            }
-            ConstValue::Boxed(value) => {
-                ConstValueCached::Boxed(Box::new(ConstValueCached::new(*value, ctx)))
+                ConstValueCached::NonZero(ConstValueIdCached::new(value, ctx))
             }
             ConstValue::Generic(generic_param) => {
                 ConstValueCached::Generic(GenericParamCached::new(generic_param, &mut ctx.defs_ctx))
@@ -1302,10 +1316,7 @@ impl ConstValueCached {
                 ConstValueCached::ImplConstant(ImplConstantCached::new(impl_constant_id, ctx))
             }
             ConstValue::Var(_, _) | ConstValue::Missing(_) => {
-                unreachable!(
-                    "Const {:#?} is not supported for caching",
-                    const_value_id.debug(ctx.db.elongate())
-                )
+                unreachable!("Const {:#?} is not supported for caching", const_value.debug(ctx.db))
             }
         }
     }
@@ -1317,10 +1328,9 @@ impl ConstValueCached {
                 ty.embed(ctx),
             ),
             ConstValueCached::Enum(variant, value) => {
-                ConstValue::Enum(variant.embed(ctx), Box::new(value.embed(ctx)))
+                ConstValue::Enum(variant.embed(ctx), value.embed(ctx))
             }
-            ConstValueCached::NonZero(value) => ConstValue::NonZero(Box::new(value.embed(ctx))),
-            ConstValueCached::Boxed(value) => ConstValue::Boxed(Box::new(value.embed(ctx))),
+            ConstValueCached::NonZero(value) => ConstValue::NonZero(value.embed(ctx)),
             ConstValueCached::Generic(generic_param) => {
                 ConstValue::Generic(generic_param.get_embedded(&ctx.defs_loading_data, ctx.db))
             }
@@ -1328,6 +1338,35 @@ impl ConstValueCached {
                 ConstValue::ImplConstant(impl_constant_id.embed(ctx))
             }
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash)]
+struct ConstValueIdCached(usize);
+
+impl ConstValueIdCached {
+    fn new<'db>(
+        const_value_id: ConstValueId<'db>,
+        ctx: &mut SemanticCacheSavingContext<'db>,
+    ) -> Self {
+        if let Some(id) = ctx.const_value_ids.get(&const_value_id) {
+            return *id;
+        }
+        let cached = ConstValueCached::new(const_value_id.long(ctx.db).clone(), ctx);
+        let id = Self(ctx.const_value_ids_lookup.len());
+        ctx.const_value_ids_lookup.push(cached);
+        ctx.const_value_ids.insert(const_value_id, id);
+        id
+    }
+    fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ConstValueId<'db> {
+        if let Some(const_value_id) = ctx.const_value_ids.get(&self) {
+            return *const_value_id;
+        }
+
+        let cached = ctx.const_value_ids_lookup[self.0].clone();
+        let id = cached.embed(ctx).intern(ctx.db);
+        ctx.const_value_ids.insert(self, id);
+        id
     }
 }
 
@@ -1983,10 +2022,7 @@ impl TypeCached {
                 TypeCached::ClosureType(ClosureTypeCached::new(closure_ty, ctx))
             }
             TypeLongId::Var(_) | TypeLongId::Missing(_) | TypeLongId::Coupon(_) => {
-                unreachable!(
-                    "type {:?} is not supported for caching",
-                    type_id.debug(ctx.db.elongate())
-                )
+                unreachable!("type {:?} is not supported for caching", type_id.debug(ctx.db))
             }
         }
     }
@@ -2184,10 +2220,7 @@ impl ImplCached {
                 ImplCached::SelfImpl(ConcreteTraitCached::new(concrete_trait, ctx))
             }
             ImplLongId::ImplVar(_) => {
-                unreachable!(
-                    "impl {:?} is not supported for caching",
-                    impl_id.debug(ctx.db.elongate())
-                )
+                unreachable!("impl {:?} is not supported for caching", impl_id.debug(ctx.db))
             }
         }
     }

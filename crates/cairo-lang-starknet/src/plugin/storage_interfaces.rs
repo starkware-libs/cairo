@@ -9,11 +9,11 @@ use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::ast::OptionArgListParenthesized;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 
 use super::starknet_module::backwards_compatible_storage;
 use super::utils::{has_derive, validate_v0};
@@ -62,7 +62,7 @@ pub struct StorageInterfacesPlugin;
 impl MacroPlugin for StorageInterfacesPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -182,7 +182,7 @@ enum StorageInterfaceType {
 
 /// Helper enum to generate the code snippets for the different types of storage interfaces.
 struct StorageInterfaceInfo<'db> {
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     node_type: StorageInterfaceType,
     is_mutable: bool,
 }
@@ -191,22 +191,20 @@ struct StorageInterfaceInfo<'db> {
 impl<'db> StorageInterfaceInfo<'db> {
     /// Initializes the storage node info from en enum AST. Only supports sub pointers.
     fn from_enum_ast(
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         enum_ast: &ast::ItemEnum<'db>,
         is_mutable: bool,
     ) -> Option<Self> {
-        if let Some(attr) = enum_ast.find_attr(db, STORAGE_SUB_POINTERS_ATTR) {
-            if let OptionArgListParenthesized::ArgListParenthesized(arguments) = attr.arguments(db)
-            {
-                if let Some(arg) = extract_single_unnamed_arg(db, arguments.arguments(db)) {
-                    let target_name = arg.as_syntax_node().get_text_without_trivia(db).to_string();
-                    return Some(Self {
-                        db,
-                        node_type: StorageInterfaceType::EnumSubPointers { target_name },
-                        is_mutable,
-                    });
-                }
-            }
+        if let Some(attr) = enum_ast.find_attr(db, STORAGE_SUB_POINTERS_ATTR)
+            && let OptionArgListParenthesized::ArgListParenthesized(arguments) = attr.arguments(db)
+            && let Some(arg) = extract_single_unnamed_arg(db, arguments.arguments(db))
+        {
+            let target_name = arg.as_syntax_node().get_text_without_trivia(db).to_string();
+            return Some(Self {
+                db,
+                node_type: StorageInterfaceType::EnumSubPointers { target_name },
+                is_mutable,
+            });
         }
         None
     }
@@ -440,7 +438,7 @@ impl<'db> StorageInterfaceInfo<'db> {
 
 /// Generate the code for a single interface type.
 fn handle_storage_interface_for_interface_type<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     struct_ast: &ast::ItemStruct<'db>,
     generics: &GenericParamsInfo<'db>,
     configs: &[StorageMemberConfig],
@@ -503,7 +501,7 @@ fn handle_storage_interface_for_interface_type<'db>(
 ///  - From the derive plugin of the `Store` trait which also generates a sub-pointers interface.
 ///  - From the contract storage plugin, which generates storage base trait.
 pub fn handle_storage_interface_struct<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     struct_ast: &ast::ItemStruct<'db>,
     configs: &[StorageMemberConfig],
     metadata: &MacroPluginMetadata<'_>,
@@ -540,7 +538,7 @@ pub fn handle_storage_interface_struct<'db>(
 
 /// Adds the storage interface enum and its constructor impl, for enums with sub-pointers.
 pub fn handle_storage_interface_enum<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     enum_ast: &ast::ItemEnum<'db>,
 ) -> (String, Vec<CodeMapping>) {
     let mut builder = PatchBuilder::new(db, enum_ast);
@@ -564,7 +562,7 @@ pub fn handle_storage_interface_enum<'db>(
 
 /// Generates the struct definition for the storage interface.
 fn add_interface_struct_definition<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     builder: &mut PatchBuilder<'db>,
     struct_ast: &ast::ItemStruct<'db>,
     params: RewriteNode<'db>,
@@ -630,7 +628,7 @@ fn add_interface_struct_definition<'db>(
 
 /// Generates the impl for the storage interface.
 fn add_interface_impl<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     builder: &mut PatchBuilder<'db>,
     struct_ast: &ast::ItemStruct<'db>,
     (args, params): (RewriteNode<'db>, RewriteNode<'db>),
@@ -700,7 +698,7 @@ fn add_interface_impl<'db>(
 
 /// Generates the enum definition for an enum with sub pointers.
 fn add_node_enum_definition<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     builder: &mut PatchBuilder<'db>,
     enum_ast: &ast::ItemEnum<'db>,
     args: RewriteNode<'db>,
@@ -743,7 +741,7 @@ fn add_node_enum_definition<'db>(
 
 /// Generates the impl for the storage node for an enum with sub pointers.
 fn add_node_enum_impl<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     builder: &mut PatchBuilder<'db>,
     enum_ast: &ast::ItemEnum<'db>,
     (args, params): (RewriteNode<'db>, RewriteNode<'db>),
@@ -831,7 +829,7 @@ pub enum StorageMemberKind {
 
 /// Gets the storage configuration for members of a struct.
 pub fn struct_members_storage_configs<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     struct_ast: &ast::ItemStruct<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Vec<StorageMemberConfig> {
@@ -844,7 +842,7 @@ pub fn struct_members_storage_configs<'db>(
 
 /// Gets the storage configuration of a struct member.
 pub fn get_member_storage_config<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     member: &ast::Member<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> StorageMemberConfig {

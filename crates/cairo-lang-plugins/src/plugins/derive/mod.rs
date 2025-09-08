@@ -5,9 +5,9 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
+use salsa::Database;
 
 use super::utils::PluginTypeInfo;
 use crate::plugins::DOC_ATTR;
@@ -30,7 +30,7 @@ const DERIVE_ATTR: &str = "derive";
 impl MacroPlugin for DerivePlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -78,7 +78,7 @@ impl MacroPlugin for DerivePlugin {
 
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     metadata: &MacroPluginMetadata<'_>,
     info: PluginTypeInfo<'db>,
 ) -> PluginResult<'db> {

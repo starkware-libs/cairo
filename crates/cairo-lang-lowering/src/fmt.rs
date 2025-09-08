@@ -2,10 +2,10 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_debug::debug::DebugWithDbOverride;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
+use salsa::Database;
 
-use crate::db::LoweringGroup;
 use crate::objects::{
-    BlockId, MatchExternInfo, Statement, StatementCall, StatementConst, StatementStructDestructure,
+    MatchExternInfo, Statement, StatementCall, StatementConst, StatementStructDestructure,
     VariableId,
 };
 use crate::{
@@ -17,12 +17,12 @@ use crate::{
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
 pub struct LoweredFormatter<'db> {
-    pub db: &'db dyn LoweringGroup,
+    pub db: &'db dyn Database,
     pub variables: &'db VariableArena<'db>,
     pub include_usage_location: bool,
 }
 impl<'db> LoweredFormatter<'db> {
-    pub fn new(db: &'db dyn LoweringGroup, variables: &'db VariableArena<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, variables: &'db VariableArena<'db>) -> Self {
         Self { db, variables, include_usage_location: false }
     }
 }
@@ -59,13 +59,13 @@ impl<'db> DebugWithDb<'db> for Lowered<'db> {
         writeln!(f)?;
         let mut blocks = self.blocks.iter();
         if let Some((root_block_id, root_block)) = blocks.next() {
-            root_block_id.fmt(f, ctx)?;
+            write!(f, "{root_block_id:?}")?;
             writeln!(f, " (root):")?;
             root_block.fmt(f, ctx)?;
             writeln!(f)?;
         }
         for (block_id, block) in blocks {
-            block_id.fmt(f, ctx)?;
+            write!(f, "{block_id:?}")?;
             writeln!(f, ":")?;
             block.fmt(f, ctx)?;
             writeln!(f)?;
@@ -105,7 +105,7 @@ impl<'db> DebugWithDb<'db> for BlockEnd<'db> {
                 vec![data.var_id]
             }
             BlockEnd::Goto(block_id, remapping) => {
-                return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
+                return write!(f, "  Goto({block_id:?}, {:?})", remapping.debug(ctx));
             }
             BlockEnd::NotSet => return write!(f, "  Not set"),
             BlockEnd::Match { info } => {
@@ -131,18 +131,6 @@ fn format_var_with_ty(
     write!(f, "v{:?}", var_id.index())?;
     let var = &ctx.variables[var_id];
     write!(f, ": {}", var.ty.format(ctx.db))
-}
-
-impl<'db> DebugWithDb<'db> for BlockId {
-    type Db = LoweredFormatter<'db>;
-
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        _lowered: &LoweredFormatter<'_>,
-    ) -> std::fmt::Result {
-        write!(f, "blk{:?}", self.0)
-    }
 }
 
 impl<'db> DebugWithDb<'db> for VarUsage<'db> {
@@ -219,7 +207,11 @@ impl<'db> DebugWithDb<'db> for StatementConst<'db> {
     type Db = LoweredFormatter<'db>;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &Self::Db) -> std::fmt::Result {
-        self.value.fmt(f, ctx.db)
+        self.value.fmt(f, ctx.db)?;
+        if self.boxed {
+            write!(f, ".into_box()")?
+        }
+        Ok(())
     }
 }
 
@@ -281,7 +273,7 @@ impl<'db> DebugWithDb<'db> for MatchArm<'db> {
             write!(f, ")")?;
         }
 
-        write!(f, " => {:?},", self.block_id.debug(ctx))
+        write!(f, " => {:?},", self.block_id)
     }
 }
 

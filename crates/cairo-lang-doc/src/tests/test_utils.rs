@@ -2,16 +2,16 @@ use anyhow::{Result, anyhow};
 use cairo_lang_defs::db::{DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
+    CrateConfiguration, FilesGroup, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::{Intern, Upcast};
+use salsa::Database;
 
 use crate::db::DocGroup;
 
@@ -22,7 +22,6 @@ pub struct TestDatabase {
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
-impl ExternalFiles for TestDatabase {}
 
 impl Default for TestDatabase {
     fn default() -> Self {
@@ -48,44 +47,18 @@ impl TestDatabase {
     }
 }
 
-impl Elongate for TestDatabase {
-    fn elongate(&self) -> &dyn SemanticGroup {
-        self
-    }
-}
-
 impl<'db> Upcast<'db, dyn DocGroup> for TestDatabase {
     fn upcast(&self) -> &dyn DocGroup {
         self
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn DefsGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn FilesGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn ParserGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SemanticGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn SemanticGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn SyntaxGroup {
+impl<'db> Upcast<'db, dyn Database> for TestDatabase {
+    fn upcast(&self) -> &dyn Database {
         self
     }
 }
 
-pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
+pub fn setup_test_module(db: &mut dyn Database, content: &str) {
     let crate_id = test_crate_id(db);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));
@@ -94,15 +67,15 @@ pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
     override_file_content!(db, file, Some(content.into()));
     let crate_id = test_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
     assert_eq!(syntax_diagnostics, "");
 }
 
-pub fn test_crate_id<'db>(db: &'db dyn DefsGroup) -> CrateId<'db> {
+pub fn test_crate_id<'db>(db: &'db dyn Database) -> CrateId<'db> {
     CrateId::plain(db, "test")
 }
 
-pub fn setup_test_module_without_syntax_diagnostics(db: &mut dyn DefsGroup, content: &str) {
+pub fn setup_test_module_without_syntax_diagnostics(db: &mut dyn Database, content: &str) {
     let crate_id = test_crate_id(db);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));

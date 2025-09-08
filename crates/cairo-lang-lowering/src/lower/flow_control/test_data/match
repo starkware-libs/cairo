@@ -1,14 +1,15 @@
 //! > Simple match
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false)
+test_create_graph(expect_diagnostics: true)
 
 //! > function_code
 fn foo(color: Color) -> felt252 {
     match color {
         Color::Red | Color::Green(_) => 1,
         Color::Red(_) | Color::Blue => 2,
-        _ => 3,
+        Color::Blue | Color::Green => 3,
+        _ => 4,
     }
 }
 
@@ -22,14 +23,21 @@ enum Color {
 }
 
 //! > graph
-Root: 4
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(3), v4), (NodeId(3), v5)}
+3 ArmExpr { expr: ExprId(4) }
 2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v0, variants: (NodeId(0), v1), (NodeId(0), v2), (NodeId(1), v3), (NodeId(2), v4), (NodeId(2), v5)}
-4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning: Unreachable pattern arm.
+ --> lib.cairo:12:39
+        Color::Blue | Color::Green => 3,
+                                      ^
 
 //! > lowered
 Parameters: v0: test::Color
@@ -72,7 +80,7 @@ End:
 
 blk6:
 Statements:
-  (v6: core::felt252) <- 3
+  (v6: core::felt252) <- 4
 End:
   Goto(blk8, {v6 -> v9})
 
@@ -113,16 +121,18 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(3) }
-1 ArmExpr { expr: ExprId(4) }
-2 ArmExpr { expr: ExprId(5) }
-3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
-4 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
-5 BindVar { input: v3, output: PatternVarId(2), next: NodeId(1) }
-6 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(4), v2), (NodeId(5), v3), (NodeId(2), v4)}
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(4), v2), (NodeId(5), v3), (NodeId(2), v4)}
+5 BindVar { input: v3, output: PatternVarId(2), next: NodeId(1) }
+4 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
+2 ArmExpr { expr: ExprId(5) }
+1 ArmExpr { expr: ExprId(4) }
+0 ArmExpr { expr: ExprId(3) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: test::Color
@@ -194,15 +204,17 @@ enum Color {
 
 //! > graph
 Root: 6
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
-4 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(3), v11)}
-5 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(4) }
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
+5 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(4) }
+4 EnumMatch { matched_var: v1, variants: (NodeId(0), v3), (NodeId(3), v7), (NodeId(3), v11)}
+3 EnumMatch { matched_var: v2, variants: (NodeId(1), v8), (NodeId(2), v9), (NodeId(2), v10)}
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: (test::Color, test::Color)
@@ -292,16 +304,18 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v3, variants: (NodeId(1), v8), (NodeId(2), v9)}
-4 EnumMatch { matched_var: v2, variants: (NodeId(0), v4), (NodeId(3), v7)}
-5 Deconstruct { input: v1, outputs: [v2, v3], next: NodeId(4) }
-6 EnumMatch { matched_var: v0, variants: (NodeId(5), v1), (NodeId(0), v10)}
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 EnumMatch { matched_var: v0, variants: (NodeId(5), v1), (NodeId(0), v10)}
+5 Deconstruct { input: v1, outputs: [v2, v3], next: NodeId(4) }
+4 EnumMatch { matched_var: v2, variants: (NodeId(0), v4), (NodeId(3), v7)}
+3 EnumMatch { matched_var: v3, variants: (NodeId(1), v8), (NodeId(2), v9)}
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::option::Option::<(test::Color, test::Color)>
@@ -388,19 +402,21 @@ enum Color {
 
 //! > graph
 Root: 10
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EnumMatch { matched_var: v2, variants: (NodeId(0), v5), (NodeId(1), v6), (NodeId(2), v7)}
-4 EnumMatch { matched_var: v2, variants: (NodeId(0), v9), (NodeId(1), v10), (NodeId(2), v11)}
-5 EnumMatch { matched_var: v2, variants: (NodeId(2), v13), (NodeId(1), v14), (NodeId(2), v15)}
-6 EnumMatch { matched_var: v3, variants: (NodeId(3), v4), (NodeId(4), v8), (NodeId(5), v12)}
-7 EnumMatch { matched_var: v2, variants: (NodeId(0), v17), (NodeId(1), v18), (NodeId(2), v19)}
-8 EnumMatch { matched_var: v1, variants: (NodeId(6), v3), (NodeId(7), v16)}
-9 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(8) }
 10 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(9) }
+9 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(8) }
+8 EnumMatch { matched_var: v1, variants: (NodeId(6), v3), (NodeId(7), v16)}
+7 EnumMatch { matched_var: v2, variants: (NodeId(0), v17), (NodeId(1), v18), (NodeId(2), v19)}
+6 EnumMatch { matched_var: v3, variants: (NodeId(3), v4), (NodeId(4), v8), (NodeId(5), v12)}
+5 EnumMatch { matched_var: v2, variants: (NodeId(2), v13), (NodeId(1), v14), (NodeId(2), v15)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(0), v9), (NodeId(1), v10), (NodeId(2), v11)}
+3 EnumMatch { matched_var: v2, variants: (NodeId(0), v5), (NodeId(1), v6), (NodeId(2), v7)}
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 
@@ -431,13 +447,15 @@ enum Enum2 {
 
 //! > graph
 Root: 4
-0 ArmExpr { expr: ExprId(1) }
-1 BindVar { input: v2, output: PatternVarId(0), next: NodeId(0) }
-2 EnumMatch { matched_var: v1, variants: (NodeId(1), v2)}
-3 EnumMatch { matched_var: v0, variants: (NodeId(2), v1)}
 4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
+3 EnumMatch { matched_var: v0, variants: (NodeId(2), v1)}
+2 EnumMatch { matched_var: v1, variants: (NodeId(1), v2)}
+1 BindVar { input: v2, output: PatternVarId(0), next: NodeId(0) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 
@@ -459,15 +477,17 @@ fn foo(x: felt252) -> felt252 {
 
 //! > graph
 Root: 6
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(2) }
-2 ArmExpr { expr: ExprId(3) }
-3 EqualsLiteral { input: v0, literal: 0, true_branch: NodeId(1), false_branch: NodeId(2) }
-4 EqualsLiteral { input: v0, literal: 4, true_branch: NodeId(0), false_branch: NodeId(3) }
-5 EqualsLiteral { input: v0, literal: 2, true_branch: NodeId(0), false_branch: NodeId(4) }
 6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
+5 EqualsLiteral { input: v0, literal: 2, true_branch: NodeId(0), false_branch: NodeId(4) }
+4 EqualsLiteral { input: v0, literal: 4, true_branch: NodeId(0), false_branch: NodeId(3) }
+3 EqualsLiteral { input: v0, literal: 0, true_branch: NodeId(1), false_branch: NodeId(2) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252
@@ -533,6 +553,363 @@ End:
 
 //! > ==========================================================================
 
+//! > Numeric match u16
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: u16) -> u16 {
+    match x {
+        2 | 4 => x,
+        _ => 1,
+    }
+}
+
+//! > graph
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 Upcast { input: v0, output: v1, next: NodeId(3) }
+3 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(0), false_branch: NodeId(2) }
+2 EqualsLiteral { input: v1, literal: 4, true_branch: NodeId(0), false_branch: NodeId(1) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::integer::u16
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- core::internal::bounded_int::upcast::<core::integer::u16, core::felt252>(v0)
+  (v2: core::felt252) <- 2
+  (v3: core::felt252) <- core::Felt252Sub::sub(v1, v2)
+End:
+  Match(match core::felt252_is_zero(v3) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 4
+  (v6: core::felt252) <- core::Felt252Sub::sub(v1, v5)
+End:
+  Match(match core::felt252_is_zero(v6) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v7) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk4:
+Statements:
+  (v8: core::integer::u16) <- 1
+End:
+  Goto(blk6, {v8 -> v9})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {v0 -> v9})
+
+blk6:
+Statements:
+End:
+  Return(v9)
+
+//! > ==========================================================================
+
+//! > Optimized numeric match u16
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, skip_lowering: false)
+
+//! > function_code
+fn foo(x: u16) -> u16 {
+    match x {
+        0 | 2 | 4 | 5 | 6 | 7 => x,
+        1 | 3 => 1,
+        _ => 2,
+    }
+}
+
+//! > graph
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 Downcast { input: v0, output: v1, in_range: NodeId(3), out_of_range: NodeId(2) }
+3 ValueMatch { matched_var: v1, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::integer::u16
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::downcast::<core::integer::u16, core::internal::bounded_int::BoundedInt::<0, 7>>(v0) {
+    Option::Some(v1) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum.(v1) {
+    0(v2) => blk3,
+    1(v3) => blk4,
+    2(v4) => blk5,
+    3(v5) => blk6,
+    4(v6) => blk7,
+    5(v7) => blk8,
+    6(v8) => blk9,
+    7(v9) => blk10,
+  })
+
+blk2:
+Statements:
+  (v10: core::integer::u16) <- 2
+End:
+  Goto(blk13, {v10 -> v12})
+
+blk3:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk9:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk11:
+Statements:
+  (v11: core::integer::u16) <- 1
+End:
+  Goto(blk13, {v11 -> v12})
+
+blk12:
+Statements:
+End:
+  Goto(blk13, {v0 -> v12})
+
+blk13:
+Statements:
+End:
+  Return(v12)
+
+//! > ==========================================================================
+
+//! > Optimized numeric match u16 with unoptimized literals
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: u128) -> u128 {
+    match x {
+        0 | 2 | 4 | 5 | 6 | 7 | 100000000000000000000 => x,
+        1 | 3 | 13 | 20 => 1,
+        _ => 2,
+    }
+}
+
+//! > graph
+Root: 9
+9 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(8) }
+8 Downcast { input: v0, output: v2, in_range: NodeId(7), out_of_range: NodeId(6) }
+7 ValueMatch { matched_var: v2, nodes: [NodeId(0), NodeId(1), NodeId(0), NodeId(1), NodeId(0), NodeId(0), NodeId(0), NodeId(0)] }
+6 Upcast { input: v0, output: v1, next: NodeId(5) }
+5 EqualsLiteral { input: v1, literal: 100000000000000000000, true_branch: NodeId(0), false_branch: NodeId(4) }
+4 EqualsLiteral { input: v1, literal: 13, true_branch: NodeId(1), false_branch: NodeId(3) }
+3 EqualsLiteral { input: v1, literal: 20, true_branch: NodeId(1), false_branch: NodeId(2) }
+2 ArmExpr { expr: ExprId(3) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::integer::u128
+blk0 (root):
+Statements:
+End:
+  Match(match core::internal::bounded_int::downcast::<core::integer::u128, core::internal::bounded_int::BoundedInt::<0, 7>>(v0) {
+    Option::Some(v1) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum.(v1) {
+    0(v2) => blk3,
+    1(v3) => blk4,
+    2(v4) => blk5,
+    3(v5) => blk6,
+    4(v6) => blk7,
+    5(v7) => blk8,
+    6(v8) => blk9,
+    7(v9) => blk10,
+  })
+
+blk2:
+Statements:
+  (v10: core::felt252) <- core::internal::bounded_int::upcast::<core::integer::u128, core::felt252>(v0)
+  (v11: core::felt252) <- 100000000000000000000
+  (v12: core::felt252) <- core::Felt252Sub::sub(v10, v11)
+End:
+  Match(match core::felt252_is_zero(v12) {
+    IsZeroResult::Zero => blk11,
+    IsZeroResult::NonZero(v13) => blk12,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk5:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk6:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk9:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk11:
+Statements:
+End:
+  Goto(blk18, {})
+
+blk12:
+Statements:
+  (v14: core::felt252) <- 13
+  (v15: core::felt252) <- core::Felt252Sub::sub(v10, v14)
+End:
+  Match(match core::felt252_is_zero(v15) {
+    IsZeroResult::Zero => blk13,
+    IsZeroResult::NonZero(v16) => blk14,
+  })
+
+blk13:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk14:
+Statements:
+  (v17: core::felt252) <- 20
+  (v18: core::felt252) <- core::Felt252Sub::sub(v10, v17)
+End:
+  Match(match core::felt252_is_zero(v18) {
+    IsZeroResult::Zero => blk15,
+    IsZeroResult::NonZero(v19) => blk16,
+  })
+
+blk15:
+Statements:
+End:
+  Goto(blk17, {})
+
+blk16:
+Statements:
+  (v20: core::integer::u128) <- 2
+End:
+  Goto(blk19, {v20 -> v22})
+
+blk17:
+Statements:
+  (v21: core::integer::u128) <- 1
+End:
+  Goto(blk19, {v21 -> v22})
+
+blk18:
+Statements:
+End:
+  Goto(blk19, {v0 -> v22})
+
+blk19:
+Statements:
+End:
+  Return(v22)
+
+//! > ==========================================================================
+
 //! > Numeric match with tuples and bindings
 
 //! > test_runner_name
@@ -552,27 +929,29 @@ fn foo(x: felt252, y: felt252) -> felt252 {
 
 //! > graph
 Root: 18
-0 ArmExpr { expr: ExprId(3) }
-1 ArmExpr { expr: ExprId(4) }
-2 ArmExpr { expr: ExprId(5) }
-3 ArmExpr { expr: ExprId(6) }
-4 ArmExpr { expr: ExprId(7) }
-5 ArmExpr { expr: ExprId(8) }
-6 BindVar { input: v1, output: PatternVarId(0), next: NodeId(4) }
-7 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
-8 EqualsLiteral { input: v1, literal: 3, true_branch: NodeId(3), false_branch: NodeId(7) }
-9 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
-10 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(1), false_branch: NodeId(9) }
-11 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(10), false_branch: NodeId(8) }
-12 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
-13 EqualsLiteral { input: v2, literal: 5, true_branch: NodeId(2), false_branch: NodeId(12) }
-14 EqualsLiteral { input: v2, literal: 4, true_branch: NodeId(1), false_branch: NodeId(13) }
-15 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(0), false_branch: NodeId(14) }
-16 EqualsLiteral { input: v1, literal: 1, true_branch: NodeId(15), false_branch: NodeId(11) }
-17 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(16) }
 18 EvaluateExpr { expr: ExprId(2), var_id: v0, next: NodeId(17) }
+17 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(16) }
+16 EqualsLiteral { input: v1, literal: 1, true_branch: NodeId(15), false_branch: NodeId(11) }
+15 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(0), false_branch: NodeId(14) }
+14 EqualsLiteral { input: v2, literal: 4, true_branch: NodeId(1), false_branch: NodeId(13) }
+13 EqualsLiteral { input: v2, literal: 5, true_branch: NodeId(2), false_branch: NodeId(12) }
+12 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+11 EqualsLiteral { input: v1, literal: 2, true_branch: NodeId(10), false_branch: NodeId(8) }
+10 EqualsLiteral { input: v2, literal: 3, true_branch: NodeId(1), false_branch: NodeId(9) }
+9 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+8 EqualsLiteral { input: v1, literal: 3, true_branch: NodeId(3), false_branch: NodeId(7) }
+7 EqualsLiteral { input: v2, literal: 0, true_branch: NodeId(6), false_branch: NodeId(5) }
+6 BindVar { input: v1, output: PatternVarId(0), next: NodeId(4) }
+5 ArmExpr { expr: ExprId(8) }
+4 ArmExpr { expr: ExprId(7) }
+3 ArmExpr { expr: ExprId(6) }
+2 ArmExpr { expr: ExprId(5) }
+1 ArmExpr { expr: ExprId(4) }
+0 ArmExpr { expr: ExprId(3) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::felt252, v1: core::felt252
@@ -770,10 +1149,12 @@ fn foo(x: Option<felt252>) -> felt252 {
 
 //! > graph
 Root: 1
-0 ArmExpr { expr: ExprId(1) }
 1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: core::option::Option::<core::felt252>
@@ -808,16 +1189,18 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(2) }
-1 ArmExpr { expr: ExprId(3) }
-2 BindVar { input: v3, output: PatternVarId(0), next: NodeId(0) }
-3 BindVar { input: v8, output: PatternVarId(2), next: NodeId(0) }
-4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
-5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
-6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
+3 BindVar { input: v8, output: PatternVarId(2), next: NodeId(0) }
+2 BindVar { input: v3, output: PatternVarId(0), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(3) }
+0 ArmExpr { expr: ExprId(2) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: @(test::Color, test::Color)
@@ -912,16 +1295,18 @@ enum Color {
 
 //! > graph
 Root: 7
-0 ArmExpr { expr: ExprId(1) }
-1 ArmExpr { expr: ExprId(3) }
-2 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
-3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
-4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
-5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
-6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
 7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+5 EnumMatch { matched_var: v1, variants: (NodeId(2), v3), (NodeId(4), v7), (NodeId(4), v11)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(3), v8), (NodeId(1), v9), (NodeId(1), v10)}
+3 BindVar { input: v1, output: PatternVarId(0), next: NodeId(0) }
+2 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(3) }
+0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > lowered
 Parameters: v0: (test::Color, test::Color)
@@ -990,3 +1375,606 @@ blk10:
 Statements:
 End:
   Return(v12)
+
+//! > ==========================================================================
+
+//! > Incomplete match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<Option<felt252>>) -> felt252 {
+    match x {
+        Some(Some(_)) => 1,
+        None => 2,
+    }
+}
+
+//! > graph
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(3), v1), (NodeId(1), v4)}
+3 EnumMatch { matched_var: v1, variants: (NodeId(0), v2), (NodeId(2), v3)}
+2 Missing
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Match is non exhaustive - add a wildcard pattern (`_`).
+ --> lib.cairo:2:5-5:5
+      match x {
+ _____^
+| ...
+|     }
+|_____^
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::option::Option::<core::felt252>>
+
+//! > ==========================================================================
+
+//! > Unsupported pattern
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: (Option<(felt252, felt252)>, felt252)) -> felt252 {
+    match x {
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+    }
+}
+
+//! > graph
+Root: 7
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(5) }
+5 EnumMatch { matched_var: v1, variants: (NodeId(3), v3), (NodeId(4), v6)}
+4 Missing
+3 Deconstruct { input: v3, outputs: [v4, v5], next: NodeId(2) }
+2 Missing
+1 Missing
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+error: Unexpected type for tuple pattern. "core::felt252" is not a tuple.
+ --> lib.cairo:3:13
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+            ^^
+
+error: Unexpected type for tuple pattern. "core::option::Option::<(core::felt252, core::felt252)>" is not a tuple.
+ --> lib.cairo:3:20
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                   ^^
+
+error: Unexpected type for enum pattern. "(core::felt252, core::felt252)" is not an enum.
+ --> lib.cairo:3:35
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                                  ^^^^
+
+//! > lowering_diagnostics
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:20
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                   ^^
+
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:35
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+                                  ^^^^
+
+error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+ --> lib.cairo:3:13
+        (_, ()) | ((), _) | (Some(None), _) | _ => 0,
+            ^^
+
+//! > lowered
+Parameters: v0: (core::option::Option::<(core::felt252, core::felt252)>, core::felt252)
+
+//! > ==========================================================================
+
+//! > Match with numeric literal out of range
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true, skip_lowering: true)
+
+//! > function_code
+fn foo(a: u8) -> bool {
+    match a {
+        255 | 256 | 257 => false,
+        _ => true,
+    }
+}
+
+//! > graph
+Root: 4
+4 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(3) }
+3 Upcast { input: v0, output: v1, next: NodeId(2) }
+2 EqualsLiteral { input: v1, literal: 255, true_branch: NodeId(0), false_branch: NodeId(1) }
+1 ArmExpr { expr: ExprId(4) }
+0 ArmExpr { expr: ExprId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:3:15
+        255 | 256 | 257 => false,
+              ^^^
+
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:3:21
+        255 | 256 | 257 => false,
+                    ^^^
+
+//! > lowered
+
+//! > ==========================================================================
+
+//! > Match with no arms
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: Option<felt252>) -> felt252 {
+    match x {}
+}
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 Missing
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Match is non exhaustive - add a wildcard pattern (`_`).
+ --> lib.cairo:2:5
+    match x {}
+    ^^^^^^^^^^
+
+//! > lowered
+Parameters: v0: core::option::Option::<core::felt252>
+
+//! > ==========================================================================
+
+//! > Match on never type
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: never) -> felt252 {
+    match x {}
+}
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 EnumMatch { matched_var: v0, variants: }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::never
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+  })
+
+//! > ==========================================================================
+
+//! > Match on never type wrapped in single-variant enum
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(x: NeverEnum) -> felt252 {
+    match x {}
+}
+
+//! > module_code
+enum NeverEnum {
+    Never: never,
+}
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 Missing
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Match is non exhaustive - add a wildcard pattern (`_`).
+ --> lib.cairo:5:5
+    match x {}
+    ^^^^^^^^^^
+
+//! > lowered
+Parameters: v0: test::NeverEnum
+
+//! > ==========================================================================
+
+//! > Structs
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(x: MyStruct) -> felt252 {
+    match x {
+        MyStruct { b: (None, 0), a: Some(x), .. } => x,
+        _ => 0,
+    }
+}
+
+//! > module_code
+struct MyStruct {
+    a: Option<felt252>,
+    b: (Option<felt252>, felt252),
+    c: Option<felt252>,
+}
+
+//! > graph
+Root: 8
+8 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(7) }
+7 Deconstruct { input: v0, outputs: [v1, v2, v3], next: NodeId(6) }
+6 EnumMatch { matched_var: v1, variants: (NodeId(5), v4), (NodeId(1), v9)}
+5 Deconstruct { input: v2, outputs: [v5, v6], next: NodeId(4) }
+4 EnumMatch { matched_var: v5, variants: (NodeId(1), v7), (NodeId(3), v8)}
+3 EqualsLiteral { input: v6, literal: 0, true_branch: NodeId(2), false_branch: NodeId(1) }
+2 BindVar { input: v4, output: PatternVarId(0), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::felt252>, v2: (core::option::Option::<core::felt252>, core::felt252), v3: core::option::Option::<core::felt252>) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v4) => blk1,
+    Option::None(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::option::Option::<core::felt252>, v7: core::felt252) <- struct_destructure(v2)
+End:
+  Match(match_enum(v6) {
+    Option::Some(v8) => blk3,
+    Option::None(v9) => blk4,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v7) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v10) => blk6,
+  })
+
+blk5:
+Statements:
+End:
+  Goto(blk8, {v4 -> v12})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
+Statements:
+  (v11: core::felt252) <- 0
+End:
+  Goto(blk8, {v11 -> v12})
+
+blk8:
+Statements:
+End:
+  Return(v12)
+
+//! > ==========================================================================
+
+//! > Optimized extern match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(mut x: felt252) -> felt252 {
+    match bar(ref x) {
+        MyEnum::Pair1(a) => {
+            let (b, _c) = a;
+            b.into() + x
+        },
+        MyEnum::Pair2((_, c)) => { c.into() + x },
+        MyEnum::Struct(MyStruct { c, .. }) => { c.into() + x },
+        MyEnum::Single(a) => { a.into() + x },
+        MyEnum::Opt(Some(a)) => { a.into() + x },
+        _ => x + 1,
+    }
+}
+
+//! > module_code
+enum MyEnum {
+    Single: u8,
+    Pair1: (u8, u8),
+    Pair2: (u8, u8),
+    Pair3: (u8, u8),
+    Struct: MyStruct,
+    Opt: Option<u8>,
+}
+
+struct MyStruct {
+    b: u8,
+    c: u8,
+}
+
+extern fn bar(ref x: felt252) -> MyEnum nopanic;
+
+//! > graph
+Root: 15
+15 EvaluateExpr { expr: ExprId(1), var_id: v0, next: NodeId(14) }
+14 EnumMatch { matched_var: v0, variants: (NodeId(6), v1), (NodeId(7), v2), (NodeId(9), v3), (NodeId(5), v6), (NodeId(11), v7), (NodeId(13), v10)}
+13 EnumMatch { matched_var: v10, variants: (NodeId(12), v11), (NodeId(5), v12)}
+12 BindVar { input: v11, output: PatternVarId(4), next: NodeId(4) }
+11 Deconstruct { input: v7, outputs: [v8, v9], next: NodeId(10) }
+10 BindVar { input: v9, output: PatternVarId(3), next: NodeId(2) }
+9 Deconstruct { input: v3, outputs: [v4, v5], next: NodeId(8) }
+8 BindVar { input: v5, output: PatternVarId(2), next: NodeId(1) }
+7 BindVar { input: v2, output: PatternVarId(1), next: NodeId(0) }
+6 BindVar { input: v1, output: PatternVarId(0), next: NodeId(3) }
+5 ArmExpr { expr: ExprId(30) }
+4 ArmExpr { expr: ExprId(27) }
+3 ArmExpr { expr: ExprId(22) }
+2 ArmExpr { expr: ExprId(17) }
+1 ArmExpr { expr: ExprId(12) }
+0 ArmExpr { expr: ExprId(7) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match test::bar(v0) {
+    MyEnum::Single(v1, v2) => blk1,
+    MyEnum::Pair1(v3, v4, v5) => blk2,
+    MyEnum::Pair2(v7, v8, v9) => blk3,
+    MyEnum::Pair3(v11, v12, v13) => blk4,
+    MyEnum::Struct(v15, v16) => blk5,
+    MyEnum::Opt(v17, v18) => blk6,
+  })
+
+blk1:
+Statements:
+  (v30: core::felt252) <- core::integer::U8IntoFelt252::into(v2)
+  (v31: core::felt252) <- core::Felt252Add::add(v30, v1)
+End:
+  Goto(blk10, {v1 -> v41, v31 -> v40})
+
+blk2:
+Statements:
+  (v6: (core::integer::u8, core::integer::u8)) <- struct_construct(v4, v5)
+  (v36: core::integer::u8, v37: core::integer::u8) <- struct_destructure(v6)
+  (v38: core::felt252) <- core::integer::U8IntoFelt252::into(v36)
+  (v39: core::felt252) <- core::Felt252Add::add(v38, v3)
+End:
+  Goto(blk10, {v3 -> v41, v39 -> v40})
+
+blk3:
+Statements:
+  (v10: (core::integer::u8, core::integer::u8)) <- struct_construct(v8, v9)
+  (v23: core::integer::u8, v24: core::integer::u8) <- struct_destructure(v10)
+  (v34: core::felt252) <- core::integer::U8IntoFelt252::into(v24)
+  (v35: core::felt252) <- core::Felt252Add::add(v34, v7)
+End:
+  Goto(blk10, {v7 -> v41, v35 -> v40})
+
+blk4:
+Statements:
+  (v14: (core::integer::u8, core::integer::u8)) <- struct_construct(v12, v13)
+End:
+  Goto(blk9, {v11 -> v25})
+
+blk5:
+Statements:
+  (v21: core::integer::u8, v22: core::integer::u8) <- struct_destructure(v16)
+  (v32: core::felt252) <- core::integer::U8IntoFelt252::into(v22)
+  (v33: core::felt252) <- core::Felt252Add::add(v32, v15)
+End:
+  Goto(blk10, {v15 -> v41, v33 -> v40})
+
+blk6:
+Statements:
+End:
+  Match(match_enum(v18) {
+    Option::Some(v19) => blk7,
+    Option::None(v20) => blk8,
+  })
+
+blk7:
+Statements:
+  (v28: core::felt252) <- core::integer::U8IntoFelt252::into(v19)
+  (v29: core::felt252) <- core::Felt252Add::add(v28, v17)
+End:
+  Goto(blk10, {v17 -> v41, v29 -> v40})
+
+blk8:
+Statements:
+End:
+  Goto(blk9, {v17 -> v25})
+
+blk9:
+Statements:
+  (v26: core::felt252) <- 1
+  (v27: core::felt252) <- core::Felt252Add::add(v25, v26)
+End:
+  Goto(blk10, {v25 -> v41, v27 -> v40})
+
+blk10:
+Statements:
+End:
+  Return(v40)
+
+//! > ==========================================================================
+
+//! > No extern match optimization if the value is bound.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    match bar() {
+        Some(a) => a,
+        _x => 0,
+    }
+}
+
+//! > module_code
+extern fn bar() -> Option<felt252> nopanic;
+
+//! > graph
+Root: 5
+5 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(4) }
+4 EnumMatch { matched_var: v0, variants: (NodeId(2), v1), (NodeId(3), v2)}
+3 BindVar { input: v0, output: PatternVarId(0), next: NodeId(1) }
+2 BindVar { input: v1, output: PatternVarId(1), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::bar() {
+    Option::Some(v0) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Goto(blk3, {v1 -> v4})
+
+blk2:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::option::Option::<core::felt252>) <- Option::None(v2)
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v4) {
+    Option::Some(v5) => blk4,
+    Option::None(v6) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v5 -> v8})
+
+blk5:
+Statements:
+  (v7: core::felt252) <- 0
+End:
+  Goto(blk6, {v7 -> v8})
+
+blk6:
+Statements:
+End:
+  Return(v8)
+
+//! > ==========================================================================
+
+//! > No extern match optimization when the match is skipped.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    match bar() {
+        _ => 0,
+    }
+}
+
+//! > module_code
+extern fn bar() -> Option<felt252> nopanic;
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Match(match test::bar() {
+    Option::Some(v0) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Goto(blk3, {v1 -> v4})
+
+blk2:
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::option::Option::<core::felt252>) <- Option::None(v2)
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+  (v5: core::felt252) <- 0
+End:
+  Return(v5)

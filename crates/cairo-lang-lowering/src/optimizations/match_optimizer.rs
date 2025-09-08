@@ -441,7 +441,7 @@ impl<'db: 'a, 'a> Analyzer<'db, 'a> for MatchOptimizerContext<'db> {
             remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))),
         );
 
-        let Some(ref mut candidate) = &mut info.candidate else {
+        let Some(candidate) = &mut info.candidate else {
             return;
         };
 

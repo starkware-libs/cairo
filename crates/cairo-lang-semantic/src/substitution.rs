@@ -11,6 +11,7 @@ use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::expr::inference::canonic::CanonicalTrait;
@@ -85,7 +86,7 @@ impl<'db> GenericSubstitution<'db> {
     pub fn is_empty(&self) -> bool {
         self.param_to_arg.is_empty() && self.self_impl.is_none()
     }
-    pub fn substitute<'a, 'r, Obj>(&'r self, db: &'a dyn SemanticGroup, obj: Obj) -> Maybe<Obj>
+    pub fn substitute<'a, 'r, Obj>(&'r self, db: &'a dyn Database, obj: Obj) -> Maybe<Obj>
     where
         'a: 'r,
         'db: 'a,
@@ -109,26 +110,26 @@ impl<'db> DerefMut for GenericSubstitution<'db> {
 
 #[macro_export]
 macro_rules! semantic_object_for_id {
-    ($name:path, $lookup:ident, $intern:ident, $long_ty:path) => {
+    ($name:ident, $long_ty:path) => {
         impl<
             'a,
             Error,
-            TRewriter: $crate::substitution::HasDb<&'a dyn $crate::db::SemanticGroup>
+            TRewriter: $crate::substitution::HasDb<&'a dyn Database>
                 + $crate::substitution::SemanticRewriter<$long_ty, Error>,
-        > $crate::substitution::SemanticObject<TRewriter, Error> for $name
+        > $crate::substitution::SemanticObject<TRewriter, Error> for $name<'a>
         {
             fn default_rewrite(
                 &mut self,
                 rewriter: &mut TRewriter,
             ) -> Result<$crate::substitution::RewriteResult, Error> where {
                 let db = $crate::substitution::HasDb::get_db(rewriter);
-                let mut val = db.$lookup(*self);
+                let mut val = self.long(db).clone();
                 Ok(
                     match $crate::substitution::SemanticRewriter::internal_rewrite(
                         rewriter, &mut val,
                     )? {
                         $crate::substitution::RewriteResult::Modified => {
-                            *self = db.$intern(val);
+                            *self = $name::new(db, val);
                             $crate::substitution::RewriteResult::Modified
                         }
                         $crate::substitution::RewriteResult::NoChange => {
@@ -459,11 +460,11 @@ macro_rules! add_expr_rewrites {
 }
 
 pub struct SubstitutionRewriter<'a, 'r> {
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn Database,
     substitution: &'r GenericSubstitution<'a>,
 }
-impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a, '_> {
-    fn get_db(&self) -> &'a dyn SemanticGroup {
+impl<'a> HasDb<&'a dyn Database> for SubstitutionRewriter<'a, '_> {
+    fn get_db(&self) -> &'a dyn Database {
         self.db
     }
 }
@@ -593,20 +594,16 @@ impl<'db> SemanticRewriter<GenericFunctionWithBodyId<'db>, DiagnosticAdded>
         &mut self,
         value: &mut GenericFunctionWithBodyId<'db>,
     ) -> Maybe<RewriteResult> {
-        if let GenericFunctionWithBodyId::Trait(id) = value {
-            if let Some(self_impl) = &self.substitution.self_impl {
-                if let ImplLongId::Concrete(concrete_impl_id) = self_impl.long(self.db) {
-                    if self.rewrite(id.concrete_trait(self.db))?
-                        == self_impl.concrete_trait(self.db)?
-                    {
-                        *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
-                            concrete_impl_id: *concrete_impl_id,
-                            function_body: ImplFunctionBodyId::Trait(id.trait_function(self.db)),
-                        });
-                        return Ok(RewriteResult::Modified);
-                    }
-                }
-            }
+        if let GenericFunctionWithBodyId::Trait(id) = value
+            && let Some(self_impl) = &self.substitution.self_impl
+            && let ImplLongId::Concrete(concrete_impl_id) = self_impl.long(self.db)
+            && self.rewrite(id.concrete_trait(self.db))? == self_impl.concrete_trait(self.db)?
+        {
+            *value = GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
+                concrete_impl_id: *concrete_impl_id,
+                function_body: ImplFunctionBodyId::Trait(id.trait_function(self.db)),
+            });
+            return Ok(RewriteResult::Modified);
         }
         value.default_rewrite(self)
     }

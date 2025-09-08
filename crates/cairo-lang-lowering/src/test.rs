@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, DiagnosticsBuilder};
@@ -91,7 +90,7 @@ fn test_function_lowering(
         outputs: OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), formatted_lowering_diagnostics),
-            ("lowering_flat".into(), formatted_lowered(db, lowered.ok().as_deref())),
+            ("lowering_flat".into(), formatted_lowered(db, lowered.ok())),
         ]),
         error,
     }
@@ -204,7 +203,7 @@ fn test_sizes() {
     )
     .unwrap();
     let db: &LoweringDatabaseForTesting = db;
-    let type_aliases = db.module_type_aliases(test_module.module_id).unwrap();
+    let type_aliases = test_module.module_id.module_data(db).unwrap().type_aliases(db);
     assert_eq!(type_aliases.len(), type_to_size.len());
     let alias_expected_size = HashMap::<_, _>::from_iter(
         type_to_size.iter().enumerate().map(|(i, (_, size))| (format!("T{i}"), *size)),

@@ -1,4 +1,5 @@
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId};
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::items::functions::GenericFunctionId;
@@ -7,13 +8,13 @@ use crate::{FunctionId, GenericArgumentId, TypeId, corelib};
 /// Helper for getting functions in the corelib.
 pub struct ModuleHelper<'a> {
     /// The db.
-    pub db: &'a dyn SemanticGroup,
+    pub db: &'a dyn Database,
     /// The current module id.
     pub id: ModuleId<'a>,
 }
 impl<'a> ModuleHelper<'a> {
     /// Returns a helper for the core module.
-    pub fn core(db: &'a dyn SemanticGroup) -> Self {
+    pub fn core(db: &'a dyn Database) -> Self {
         Self { db, id: db.core_module() }
     }
     /// Returns a helper for a submodule named `name` of the current module.

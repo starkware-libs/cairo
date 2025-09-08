@@ -1,10 +1,10 @@
 #[cfg(not(feature = "std"))]
 use alloc::string::ToString;
 
+use cairo_lang_test_utils::test;
 use indoc::indoc;
 use itertools::join;
 use pretty_assertions::assert_eq;
-use test_log::test;
 
 use crate::instructions::Instruction;
 use crate::{casm, deref};

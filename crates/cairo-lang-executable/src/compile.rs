@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
@@ -7,6 +6,9 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
 use cairo_lang_debug::debug::DebugWithDb;
+use cairo_lang_executable_plugin::{
+    EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite,
+};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -21,8 +23,6 @@ use cairo_lang_sierra_generator::program_generator::{
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::write_comma_separated;
 use itertools::Itertools;
-
-use crate::plugin::{EXECUTABLE_PREFIX, EXECUTABLE_RAW_ATTR, executable_plugin_suite};
 
 /// The CASM compilation result.
 pub struct CompiledFunction {
@@ -210,11 +210,9 @@ pub fn compile_executable_function_in_prepared_db<'db>(
     config: ExecutableConfig,
     context: DbWarmupContext,
 ) -> Result<CompileExecutableResult<'db>> {
-    let SierraProgramWithDebug { program: sierra_program, debug_info } = Arc::unwrap_or_clone(
+    let SierraProgramWithDebug { program: sierra_program, debug_info } =
         get_sierra_program_for_functions(db, vec![executable], context)
-            .ok()
-            .with_context(|| "Compilation failed without any diagnostics.")?,
-    );
+            .with_context(|| "Compilation failed without any diagnostics.")?;
     if !config.allow_syscalls {
         // Finding if any syscall libfuncs are used in the program.
         // If any are found, the compilation will fail, as syscalls are not proved in executables.
@@ -233,7 +231,7 @@ pub fn compile_executable_function_in_prepared_db<'db>(
     // that it will be available.
     let executable_func = sierra_program.funcs[0].clone();
     assert_eq!(executable_func.id, db.intern_sierra_function(executable.function_id(db).unwrap()));
-    let builder = RunnableBuilder::new(sierra_program, None).map_err(|err| {
+    let builder = RunnableBuilder::new(sierra_program.clone(), None).map_err(|err| {
         let mut locs = vec![];
         for stmt_idx in err.stmt_indices() {
             if let Some(loc) =
@@ -250,5 +248,5 @@ pub fn compile_executable_function_in_prepared_db<'db>(
     let wrapper = builder
         .create_wrapper_info(&executable_func, EntryCodeConfig::executable(allow_unsound))?;
     let compiled_function = CompiledFunction { program: builder.casm_program().clone(), wrapper };
-    Ok(CompileExecutableResult { compiled_function, builder, debug_info })
+    Ok(CompileExecutableResult { compiled_function, builder, debug_info: debug_info.clone() })
 }

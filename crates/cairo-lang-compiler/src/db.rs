@@ -1,71 +1,69 @@
 use std::sync::Arc;
 
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::{
-    CORELIB_VERSION, ExternalFiles, FilesGroup, FilesGroupEx, init_dev_corelib, init_files_group,
-};
+use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{CrateId, FlagLongId, VirtualFile};
-use cairo_lang_lowering::db::{ExternalCodeSizeEstimator, LoweringGroup, init_lowering_group};
+use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
+use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
-use cairo_lang_semantic::db::{Elongate, PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_sierra_generator::db::{SierraGenGroup, init_sierra_gen_group};
+use cairo_lang_sierra_generator::db::init_sierra_gen_group;
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::Upcast;
+use salsa::Database;
 
 use crate::InliningStrategy;
 use crate::project::update_crate_roots_from_project_config;
 
-impl ExternalCodeSizeEstimator for RootDatabase {
-    /// Estimates the size of a function by compiling it to CASM.
-    /// Note that the size is not accurate since we don't use the real costs for the dummy
-    /// functions.
-    fn estimate_size(&self, function_id: ConcreteFunctionWithBodyId<'_>) -> Maybe<isize> {
-        let program = get_dummy_program_for_size_estimation(self, function_id)?;
+/// Estimates the size of a function by compiling it to CASM.
+/// Note that the size is not accurate since we don't use the real costs for the dummy functions.
+fn estimate_code_size(
+    db: &dyn Database,
+    function_id: ConcreteFunctionWithBodyId<'_>,
+) -> Maybe<isize> {
+    let db = db.as_view();
+    let program = get_dummy_program_for_size_estimation(db, function_id)?;
 
-        // All the functions except the first one are dummy functions.
-        let n_dummy_functions = program.funcs.len() - 1;
+    // All the functions except the first one are dummy functions.
+    let n_dummy_functions = program.funcs.len() - 1;
 
-        // TODO(ilya): Consider adding set costs to dummy functions.
-        let builder = match RunnableBuilder::new(program, Default::default()) {
-            Ok(builder) => builder,
-            Err(err) => {
-                if err.is_ap_overflow_error() {
-                    // If the compilation failed due to an AP overflow, we don't want to panic as it
-                    // can happen for valid code. In this case, the function is
-                    // probably too large for inline so we can just return the max size.
-                    return Ok(isize::MAX);
-                }
-                if std::env::var("CAIRO_DEBUG_SIERRA_GEN").is_ok() {
-                    // If we are debugging sierra generation, we want to finish the compilation
-                    // rather than panic.
-                    return Ok(isize::MAX);
-                }
-
-                panic!(
-                    "Internal compiler error: Failed to compile program to casm. You can set the \
-                     CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation and \
-                     debug the sierra program."
-                );
+    // TODO(ilya): Consider adding set costs to dummy functions.
+    let builder = match RunnableBuilder::new(program, Default::default()) {
+        Ok(builder) => builder,
+        Err(err) => {
+            if err.is_ap_overflow_error() {
+                // If the compilation failed due to an AP overflow, we don't want to panic as it can
+                // happen for valid code. In this case, the function is probably too large for
+                // inline so we can just return the max size.
+                return Ok(isize::MAX);
             }
-        };
-        let casm = builder.casm_program();
-        let total_size = casm.instructions.iter().map(|inst| inst.body.op_size()).sum::<usize>();
+            if std::env::var("CAIRO_DEBUG_SIERRA_GEN").is_ok() {
+                // If we are debugging sierra generation, we want to finish the compilation rather
+                // than panic.
+                return Ok(isize::MAX);
+            }
 
-        // The size of a dummy function is currently 3 felts. call (2) + ret (1).
-        const DUMMY_FUNCTION_SIZE: usize = 3;
-        Ok((total_size - (n_dummy_functions * DUMMY_FUNCTION_SIZE)).try_into().unwrap_or(0))
-    }
+            panic!(
+                "Internal compiler error: Failed to compile program to casm. You can set the \
+                 CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation and \
+                 debug the sierra program."
+            );
+        }
+    };
+    let casm = builder.casm_program();
+    let total_size = casm.instructions.iter().map(|inst| inst.body.op_size()).sum::<usize>();
+
+    // The size of a dummy function is currently 3 felts. call (2) + ret (1).
+    const DUMMY_FUNCTION_SIZE: usize = 3;
+    Ok((total_size - (n_dummy_functions * DUMMY_FUNCTION_SIZE)).try_into().unwrap_or(0))
 }
 
 #[salsa::db]
@@ -75,16 +73,13 @@ pub struct RootDatabase {
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
-impl ExternalFiles for RootDatabase {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self, external_id)
-    }
-}
+
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, inlining_strategy: InliningStrategy) -> Self {
         let mut res = Self { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
-        init_lowering_group(&mut res, inlining_strategy);
+        init_lowering_group(&mut res, inlining_strategy, Some(estimate_code_size));
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
         init_sierra_gen_group(&mut res);
@@ -226,20 +221,20 @@ impl RootDatabaseBuilder {
 }
 
 /// Validates that the corelib version matches the expected one.
-pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
+pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
     let Some(config) = db.crate_config(CrateId::core(db)) else {
         return Ok(());
     };
-    let Some(found) = config.settings.version else {
+    let Some(found) = &config.settings.version else {
         return Ok(());
     };
     let Ok(expected) = semver::Version::parse(CORELIB_VERSION) else {
         return Ok(());
     };
-    if found == expected {
+    if found == &expected {
         return Ok(());
     }
-    let path_part = match config.root {
+    let path_part = match &config.root {
         cairo_lang_filesystem::ids::Directory::Real(path) => {
             format!(" for `{}`", path.to_string_lossy())
         }
@@ -248,44 +243,8 @@ pub fn validate_corelib(db: &(dyn FilesGroup + 'static)) -> Result<()> {
     bail!("Corelib version mismatch: expected `{expected}`, found `{found}`{path_part}.");
 }
 
-impl<'db> Upcast<'db, dyn FilesGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn SyntaxGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn DefsGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn DefsGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SemanticGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn SemanticGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn LoweringGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn LoweringGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SierraGenGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn SierraGenGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn ParserGroup> for RootDatabase {
-    fn upcast(&self) -> &dyn ParserGroup {
-        self
-    }
-}
-
-impl Elongate for RootDatabase {
-    fn elongate(&self) -> &dyn SemanticGroup {
+impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
+    fn upcast(&self) -> &dyn salsa::Database {
         self
     }
 }

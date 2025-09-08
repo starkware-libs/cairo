@@ -8,6 +8,7 @@ use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
+use salsa::Database;
 
 use crate::statements_code_locations::{
     SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsSourceCodeLocations,
@@ -23,7 +24,7 @@ mod test;
 /// - fully qualified path to the file module,
 /// - relative path to the function in the file module.
 pub fn maybe_containing_function_identifier(
-    db: &dyn DefsGroup,
+    db: &dyn Database,
     location: StableLocation<'_>,
 ) -> Option<String> {
     let file_id = location.file_id(db);
@@ -48,7 +49,7 @@ pub fn maybe_containing_function_identifier(
 /// In case the fully qualified path to the file module cannot be found
 /// it is replaced in the fully qualified function path by the file name.
 pub fn maybe_containing_function_identifier_for_tests(
-    db: &dyn DefsGroup,
+    db: &dyn Database,
     location: StableLocation<'_>,
 ) -> Option<String> {
     let file_id = location.file_id(db);
@@ -70,7 +71,7 @@ pub fn maybe_containing_function_identifier_for_tests(
 /// Returns the path (modules and impls) to the function in the file.
 /// The path is relative to the file module.
 pub fn function_identifier_relative_to_file_module(
-    db: &dyn DefsGroup,
+    db: &dyn Database,
     location: StableLocation<'_>,
 ) -> String {
     let mut relative_semantic_path_segments: Vec<String> = vec![];
@@ -135,7 +136,7 @@ pub fn function_identifier_relative_to_file_module(
 /// It consists of a full path to the file, a text span in the file and a boolean indicating
 /// if the location is a part of a macro expansion.
 pub fn maybe_code_location<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     location: StableLocation<'db>,
 ) -> Option<(SourceFileFullPath, SourceCodeSpan, bool)> {
     let is_macro =
@@ -155,7 +156,7 @@ pub fn maybe_code_location<'db>(
 /// `None` should be returned only for compiler tests where files of type `VirtualFile` may be non
 /// generated files.
 pub fn file_module_absolute_identifier<'db>(
-    db: &'db dyn DefsGroup,
+    db: &'db dyn Database,
     mut file_id: FileId<'db>,
 ) -> Option<String> {
     // `VirtualFile` is a generated file (e.g., by macros like `#[starknet::contract]`)
@@ -194,7 +195,7 @@ impl<'db> StatementsLocations<'db> {
     // TODO(Gil): Add a db access to the profiler and remove this function.
     pub fn get_statements_functions_map_for_tests(
         &self,
-        db: &dyn DefsGroup,
+        db: &dyn Database,
     ) -> UnorderedHashMap<StatementIdx, String> {
         self.locations
             .iter_sorted()
@@ -209,7 +210,7 @@ impl<'db> StatementsLocations<'db> {
     }
 
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
-    pub fn extract_statements_functions(&self, db: &dyn DefsGroup) -> StatementsFunctions {
+    pub fn extract_statements_functions(&self, db: &dyn Database) -> StatementsFunctions {
         StatementsFunctions {
             statements_to_functions_map: self
                 .locations
@@ -231,7 +232,7 @@ impl<'db> StatementsLocations<'db> {
     /// [DefsGroup].
     pub fn extract_statements_source_code_locations(
         &self,
-        db: &dyn DefsGroup,
+        db: &dyn Database,
     ) -> StatementsSourceCodeLocations {
         StatementsSourceCodeLocations {
             statements_to_code_location_map: self
@@ -254,7 +255,7 @@ impl<'db> StatementsLocations<'db> {
     /// index.
     pub fn statement_diagnostic_location(
         &self,
-        db: &'db dyn DefsGroup,
+        db: &'db dyn Database,
         stmt_idx: StatementIdx,
     ) -> Option<DiagnosticLocation<'db>> {
         // Note that the `last` is used here as the call site is the most relevant location.

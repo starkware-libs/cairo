@@ -1,19 +1,21 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, StrRef};
 use cairo_lang_syntax::attribute::consts::{
-    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR,
+    ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED,
+    UNUSED_IMPORTS, UNUSED_VARIABLES,
 };
 use cairo_lang_syntax::attribute::structured::{
     self, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
+use salsa::Database;
 
 use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
@@ -34,7 +36,7 @@ pub enum FeatureKind<'db> {
 }
 impl<'db> FeatureKind<'db> {
     pub fn from_ast(
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
         attrs: &ast::AttributeList<'db>,
     ) -> Self {
@@ -93,7 +95,7 @@ pub enum FeatureMarkerDiagnostic {
 
 /// Parses the feature attribute.
 fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
     attr: &structured::Attribute<'db>,
     allowed_args: [&str; EXTRA_ALLOWED],
@@ -135,10 +137,8 @@ fn add_diag<'db>(
 pub struct FeatureConfig<'db> {
     /// The current set of allowed features.
     pub allowed_features: OrderedHashSet<StrRef<'db>>,
-    /// Whether to allow all deprecated features.
-    pub allow_deprecated: bool,
-    /// Whether to allow unused imports.
-    pub allow_unused_imports: bool,
+    /// Which lints are allowed.
+    pub allowed_lints: OrderedHashSet<StrRef<'db>>,
 }
 
 impl<'db> FeatureConfig<'db> {
@@ -146,18 +146,17 @@ impl<'db> FeatureConfig<'db> {
     ///
     /// Returns the data required to restore the configuration.
     pub fn override_with(&mut self, other: Self) -> FeatureConfigRestore<'db> {
-        let mut restore = FeatureConfigRestore {
-            features_to_remove: vec![],
-            allow_deprecated: self.allow_deprecated,
-            allow_unused_imports: self.allow_unused_imports,
-        };
+        let mut restore = FeatureConfigRestore::empty();
         for feature_name in other.allowed_features {
             if self.allowed_features.insert(feature_name) {
                 restore.features_to_remove.push(feature_name);
             }
         }
-        self.allow_deprecated |= other.allow_deprecated;
-        self.allow_unused_imports |= other.allow_unused_imports;
+        for allow_lint in other.allowed_lints {
+            if self.allowed_lints.insert(allow_lint) {
+                restore.allowed_lints_to_remove.push(allow_lint);
+            }
+        }
         restore
     }
 
@@ -166,24 +165,30 @@ impl<'db> FeatureConfig<'db> {
         for feature_name in restore.features_to_remove {
             self.allowed_features.swap_remove(&feature_name);
         }
-        self.allow_deprecated = restore.allow_deprecated;
-        self.allow_unused_imports = restore.allow_unused_imports;
+        for allow_lint in restore.allowed_lints_to_remove {
+            self.allowed_lints.swap_remove(&allow_lint);
+        }
     }
 }
 
 /// The data required to restore the feature configuration after an override.
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct FeatureConfigRestore<'db> {
     /// The features to remove from the configuration after the override.
     features_to_remove: Vec<StrRef<'db>>,
-    /// The previous state of the allow deprecated flag.
-    allow_deprecated: bool,
-    /// The previous state of the allow unused imports flag.
-    allow_unused_imports: bool,
+    /// The previous state of the allowed lints.
+    allowed_lints_to_remove: Vec<StrRef<'db>>,
+}
+
+impl FeatureConfigRestore<'_> {
+    pub fn empty() -> Self {
+        Self::default()
+    }
 }
 
 /// Returns the allowed features of an object which supports attributes.
-pub fn extract_item_feature_config<'db>(
-    db: &'db dyn SemanticGroup,
+pub fn feature_config_from_ast_item<'db>(
+    db: &'db dyn Database,
     crate_id: CrateId<'db>,
     syntax: &impl QueryAttrs<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
@@ -210,16 +215,19 @@ pub fn extract_item_feature_config<'db>(
         ALLOW_ATTR,
         || SemanticDiagnosticKind::UnsupportedAllowAttrArguments,
         diagnostics,
-        |value| match value.as_syntax_node().get_text_without_trivia(db) {
-            "deprecated" => {
-                config.allow_deprecated = true;
-                true
+        |value| {
+            let allowed = value.as_syntax_node().get_text_without_trivia(db);
+            // Expand lint group UNUSED to include all `unused` lints.
+            if allowed == UNUSED {
+                let all_unused_lints = [UNUSED_VARIABLES, UNUSED_IMPORTS];
+                return all_unused_lints.iter().all(|&lint| {
+                    let _already_allowed = config.allowed_lints.insert(lint.into());
+                    db.declared_allows(crate_id).contains(lint)
+                });
             }
-            "unused_imports" => {
-                config.allow_unused_imports = true;
-                true
-            }
-            other => db.declared_allows(crate_id).contains(other),
+
+            let _already_allowed = config.allowed_lints.insert(allowed.into());
+            db.declared_allows(crate_id).contains(allowed)
         },
     );
     config
@@ -227,7 +235,7 @@ pub fn extract_item_feature_config<'db>(
 
 /// Processes the feature attribute kind.
 fn process_feature_attr_kind<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     syntax: &impl QueryAttrs<'db>,
     attr: &'db str,
     diagnostic_kind: impl Fn() -> SemanticDiagnosticKind<'db>,
@@ -252,36 +260,37 @@ fn process_feature_attr_kind<'db>(
 
 /// Extracts the allowed features of an element, considering its parent modules as well as its
 /// attributes.
-pub fn extract_feature_config<'db>(
-    db: &'db dyn SemanticGroup,
+pub fn feature_config_from_item_and_parent_modules<'db>(
+    db: &'db dyn Database,
     element_id: &impl LanguageElementId<'db>,
     syntax: &impl QueryAttrs<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) -> FeatureConfig<'db> {
-    let defs_db = db;
-    let mut current_module_id = element_id.parent_module(defs_db);
-    let crate_id = current_module_id.owning_crate(defs_db);
-    let mut config_stack = vec![extract_item_feature_config(db, crate_id, syntax, diagnostics)];
+    let mut current_module_id = element_id.parent_module(db);
+    let crate_id = current_module_id.owning_crate(db);
+    let mut config_stack = vec![feature_config_from_ast_item(db, crate_id, syntax, diagnostics)];
     let mut config = loop {
         match current_module_id {
             ModuleId::CrateRoot(crate_id) => {
-                let settings =
-                    db.crate_config(crate_id).map(|config| config.settings).unwrap_or_default();
-                break FeatureConfig {
-                    allowed_features: OrderedHashSet::default(),
-                    allow_deprecated: false,
-                    allow_unused_imports: settings.edition.ignore_visibility(),
-                };
+                let all_declarations_pub = db
+                    .crate_config(crate_id)
+                    .map(|config| config.settings.edition.ignore_visibility())
+                    .unwrap_or_else(|| default_crate_settings(db).edition.ignore_visibility());
+                let mut allowed_lints = OrderedHashSet::default();
+                if all_declarations_pub {
+                    let _already_allowed = allowed_lints.insert(UNUSED_IMPORTS.into());
+                }
+                break FeatureConfig { allowed_features: OrderedHashSet::default(), allowed_lints };
             }
             ModuleId::Submodule(id) => {
-                current_module_id = id.parent_module(defs_db);
-                let module = &db.module_submodules(current_module_id).unwrap()[&id];
+                current_module_id = id.parent_module(db);
+                let module = &current_module_id.module_data(db).unwrap().submodules(db)[&id];
                 // TODO(orizi): Add parent module diagnostics.
                 let ignored = &mut SemanticDiagnostics::default();
-                config_stack.push(extract_item_feature_config(db, crate_id, module, ignored));
+                config_stack.push(feature_config_from_ast_item(db, crate_id, module, ignored));
             }
-            ModuleId::MacroCall { id: macro_call_id, generated_file_id: _ } => {
-                current_module_id = macro_call_id.module_file_id(db).0;
+            ModuleId::MacroCall { id, .. } => {
+                current_module_id = id.parent_module(db);
             }
         }
     };

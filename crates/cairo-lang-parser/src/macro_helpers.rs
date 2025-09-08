@@ -1,4 +1,5 @@
 use cairo_lang_diagnostics::DiagnosticsBuilder;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ast::{
@@ -6,9 +7,9 @@ use cairo_lang_syntax::node::ast::{
     LegacyExprInlineMacro, LegacyItemInlineMacro, TerminalNotGreen, TerminalSemicolonGreen,
     TokenTree, TokenTreeNode, WrappedArgListGreen,
 };
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use salsa::Database;
 
 use crate::ParserDiagnostic;
 use crate::diagnostic::ParserDiagnosticKind;
@@ -19,7 +20,7 @@ use crate::recovery::is_of_kind;
 /// to parse it as such and return the result.
 pub fn token_tree_as_wrapped_arg_list<'a>(
     token_tree: TokenTreeNode<'a>,
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn Database,
 ) -> Option<WrappedArgListGreen<'a>> {
     let mut diagnostics: DiagnosticsBuilder<'_, ParserDiagnostic<'a>> =
         DiagnosticsBuilder::default();
@@ -47,7 +48,7 @@ pub fn token_tree_as_wrapped_arg_list<'a>(
 pub fn as_expr_macro_token_tree<'a>(
     mut token_tree: impl DoubleEndedIterator<Item = TokenTree<'a>>,
     file_id: FileId<'a>,
-    db: &'a dyn SyntaxGroup,
+    db: &'a dyn Database,
 ) -> Option<ast::Expr<'a>> {
     let mut diagnostics: DiagnosticsBuilder<'_, ParserDiagnostic<'_>> =
         DiagnosticsBuilder::default();
@@ -73,13 +74,13 @@ pub trait AsLegacyInlineMacro<'a> {
     /// The corresponding legacy inline macro type.
     type LegacyType;
     /// Converts the inline macro to the legacy inline macro.
-    fn as_legacy_inline_macro(&self, db: &'a dyn SyntaxGroup) -> Option<Self::LegacyType>;
+    fn as_legacy_inline_macro(&self, db: &'a dyn Database) -> Option<Self::LegacyType>;
 }
 
 impl<'a> AsLegacyInlineMacro<'a> for ExprInlineMacro<'a> {
     type LegacyType = LegacyExprInlineMacro<'a>;
 
-    fn as_legacy_inline_macro(&self, db: &'a dyn SyntaxGroup) -> Option<Self::LegacyType> {
+    fn as_legacy_inline_macro(&self, db: &'a dyn Database) -> Option<Self::LegacyType> {
         let green_node = self.as_syntax_node().green_node(db);
         let [macro_name, bang, _arguments] = green_node.children() else {
             return None;
@@ -100,7 +101,7 @@ impl<'a> AsLegacyInlineMacro<'a> for ExprInlineMacro<'a> {
 impl<'a> AsLegacyInlineMacro<'a> for ItemInlineMacro<'a> {
     type LegacyType = LegacyItemInlineMacro<'a>;
 
-    fn as_legacy_inline_macro(&self, db: &'a dyn SyntaxGroup) -> Option<Self::LegacyType> {
+    fn as_legacy_inline_macro(&self, db: &'a dyn Database) -> Option<Self::LegacyType> {
         let green_node = self.as_syntax_node().green_node(db);
         let [attributes, macro_name, bang, _arguments, semicolon] = green_node.children() else {
             return None;

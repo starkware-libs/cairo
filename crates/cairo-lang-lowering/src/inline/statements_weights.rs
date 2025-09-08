@@ -1,5 +1,6 @@
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
+use salsa::Database;
 
 use crate::db::LoweringGroup;
 use crate::{BlockEnd, Lowered, Statement, VarUsage, VariableId};
@@ -49,12 +50,12 @@ impl<'db> InlineWeight<'db> for SimpleInlineWeight {
 /// Try to approximate the weight of a lowered function by counting the number of casm statements it
 /// will add to the code.
 pub struct ApproxCasmInlineWeight<'db> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &'db Lowered<'db>,
 }
 impl<'db> ApproxCasmInlineWeight<'db> {
     /// Create a new `ApproxCasmInlineWeight` for the given lowered function.
-    pub fn new(db: &'db dyn LoweringGroup, lowered: &'db Lowered<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, lowered: &'db Lowered<'db>) -> Self {
         Self { db, lowered }
     }
     /// Calculate the total size of the given types.

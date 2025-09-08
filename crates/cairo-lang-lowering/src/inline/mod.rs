@@ -6,11 +6,13 @@ pub mod statements_weights;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
+use salsa::Database;
 
 use crate::blocks::{Blocks, BlocksBuilder};
 use crate::db::LoweringGroup;
@@ -29,7 +31,7 @@ use crate::{
 };
 
 pub fn get_inline_diagnostics<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
     let inline_config = match function_id.long(db) {
@@ -38,21 +40,22 @@ pub fn get_inline_diagnostics<'db>(
     };
     let mut diagnostics = LoweringDiagnostics::default();
 
-    if let InlineConfiguration::Always(_) = inline_config {
-        if db.in_cycle(function_id, crate::DependencyType::Call)? {
-            diagnostics.report(
-                function_id.base_semantic_function(db).untyped_stable_ptr(db),
-                LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
-            );
-        }
+    if let InlineConfiguration::Always(_) = inline_config
+        && db.in_cycle(function_id, crate::DependencyType::Call)?
+    {
+        diagnostics.report(
+            function_id.base_semantic_function(db).untyped_stable_ptr(db),
+            LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
+        );
     }
 
     Ok(diagnostics.build())
 }
 
 /// Query implementation of [LoweringGroup::priv_should_inline].
+#[salsa::tracked]
 pub fn priv_should_inline<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     if db.priv_never_inline(function_id)? {
@@ -81,8 +84,9 @@ pub fn priv_should_inline<'db>(
 }
 
 /// Query implementation of [LoweringGroup::priv_never_inline].
+#[salsa::tracked]
 pub fn priv_never_inline<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     Ok(matches!(function_inline_config(db, function_id)?, InlineConfiguration::Never(_)))
@@ -90,7 +94,7 @@ pub fn priv_never_inline<'db>(
 
 /// Query implementation of [LoweringGroup::priv_never_inline].
 pub fn function_inline_config<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
     match function_id.long(db) {
@@ -106,7 +110,7 @@ pub fn function_inline_config<'db>(
 
 // A heuristic to decide if a function without an inline attribute should be inlined.
 fn should_inline_lowered(
-    db: &dyn LoweringGroup,
+    db: &dyn Database,
     function_id: ConcreteFunctionWithBodyId<'_>,
     inline_small_functions_threshold: usize,
 ) -> Maybe<bool> {
@@ -115,7 +119,7 @@ fn should_inline_lowered(
 }
 /// Context for mapping ids from `lowered` to a new `Lowered` object.
 pub struct Mapper<'db, 'mt, 'l> {
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     variables: &'mt mut VariableArena<'db>,
     lowered: &'l Lowered<'db>,
     renamed_vars: UnorderedHashMap<VariableId, VariableId>,
@@ -133,7 +137,7 @@ pub struct Mapper<'db, 'mt, 'l> {
 
 impl<'db, 'mt, 'l> Mapper<'db, 'mt, 'l> {
     pub fn new(
-        db: &'db dyn LoweringGroup,
+        db: &'db dyn Database,
         variables: &'mt mut VariableArena<'db>,
         lowered: &'l Lowered<'db>,
         call_stmt: StatementCall<'db>,
@@ -207,7 +211,7 @@ impl<'db, 'mt> Rebuilder<'db> for Mapper<'db, 'mt, '_> {
 /// This function should be called through `apply_inlining` to remove all the lowered blocks in the
 /// error case.
 fn inner_apply_inlining<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &mut Lowered<'db>,
     calling_function_id: ConcreteFunctionWithBodyId<'db>,
     mut enable_const_folding: bool,
@@ -284,7 +288,7 @@ fn inner_apply_inlining<'db>(
             let mut inline_mapper = Mapper::new(
                 db,
                 const_folding_ctx.variables,
-                &inlined_lowered,
+                inlined_lowered,
                 call_stmt,
                 next_block_id,
             );
@@ -322,7 +326,7 @@ fn inner_apply_inlining<'db>(
 /// Rewrites a statement and either appends it to self.statements or adds new statements to
 /// self.statements_rewrite_stack.
 fn should_inline<'db, 'r>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     calling_function_id: ConcreteFunctionWithBodyId<'db>,
     statement: &'r Statement<'db>,
 ) -> Maybe<Option<(&'r StatementCall<'db>, ConcreteFunctionWithBodyId<'db>)>>
@@ -337,11 +341,10 @@ where
         if let Some(called_func) = stmt.function.body(db)? {
             if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
                 calling_function_id.long(db)
+                && specialized.base == called_func
             {
-                if specialized.base == called_func {
-                    // A specialized function should always inline its base.
-                    return Ok(Some((stmt, called_func)));
-                }
+                // A specialized function should always inline its base.
+                return Ok(Some((stmt, called_func)));
             }
 
             // TODO: Implement better logic to avoid inlining of destructors that call
@@ -359,7 +362,7 @@ where
 ///
 /// Note that if const folding is enabled, the blocks must be topologically sorted.
 pub fn apply_inlining<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
     enable_const_folding: bool,

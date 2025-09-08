@@ -1,4 +1,3 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LocalVarId, StatementItemId};
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
@@ -6,9 +5,9 @@ use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
+use salsa::Database;
 
 pub use super::expr::objects::*;
-use crate::db::SemanticGroup;
 pub use crate::expr::pattern::{
     Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternOtherwise,
     PatternStringLiteral, PatternStruct, PatternTuple, PatternVariable,
@@ -29,22 +28,24 @@ pub use crate::types::{
 
 /// Semantic model of a variable.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct LocalVariable<'db> {
     pub id: LocalVarId<'db>,
     pub ty: TypeId<'db>,
     #[dont_rewrite]
     pub is_mut: bool,
+    #[dont_rewrite]
+    pub allow_unused: bool,
 }
 impl<'db> LocalVariable<'db> {
-    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> ast::TerminalIdentifierPtr<'db> {
+    pub fn stable_ptr(&self, db: &'db dyn Database) -> ast::TerminalIdentifierPtr<'db> {
         self.id.stable_ptr(db)
     }
 }
 
 /// Semantic model of a local item.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct LocalItem<'db> {
     pub id: StatementItemId<'db>,
     pub kind: StatementItemKind<'db>,
@@ -52,13 +53,13 @@ pub struct LocalItem<'db> {
 
 /// Semantic model of statement item kind.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub enum StatementItemKind<'db> {
     Constant(ConstValueId<'db>, TypeId<'db>),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct Parameter<'db> {
     pub id: ParamId<'db>,
     #[dont_rewrite]
@@ -71,7 +72,7 @@ pub struct Parameter<'db> {
     pub stable_ptr: ast::TerminalIdentifierPtr<'db>,
 }
 impl<'db> Parameter<'db> {
-    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> ast::ParamPtr<'db> {
+    pub fn stable_ptr(&self, db: &'db dyn Database) -> ast::ParamPtr<'db> {
         self.id.stable_ptr(db)
     }
 }
@@ -89,7 +90,7 @@ pub enum Mutability {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub enum Binding<'db> {
     LocalVar(LocalVariable<'db>),
     Param(Parameter<'db>),
@@ -119,7 +120,7 @@ impl<'db> Binding<'db> {
             Binding::LocalItem(_) => false,
         }
     }
-    pub fn stable_ptr(&self, db: &'db dyn DefsGroup) -> SyntaxStablePtrId<'db> {
+    pub fn stable_ptr(&self, db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
         match self {
             Binding::LocalVar(local) => local.stable_ptr(db).untyped(),
             Binding::Param(param) => param.stable_ptr(db).untyped(),

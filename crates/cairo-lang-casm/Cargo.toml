@@ -13,20 +13,26 @@ num-bigint = { workspace = true }
 num-traits = { workspace = true }
 
 # Optional
-serde = { workspace = true, optional = true }
-schemars = { workspace = true, features = ["preserve_order"], optional = true }
 parity-scale-codec = { workspace = true, optional = true }
+schemars = { workspace = true, features = ["preserve_order"], optional = true }
+serde = { workspace = true, optional = true }
 
 [dev-dependencies]
-env_logger.workspace = true
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 itertools = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
 test-case.workspace = true
-test-log.workspace = true
+tracing.workspace = true
 
 [features]
 default = ["std"]
-std = ["cairo-lang-utils/std", "num-bigint/std", "num-traits/std", "serde?/std", "parity-scale-codec?/std"]
-serde = ["dep:serde", "cairo-lang-utils/serde" ]
-schemars = [ "std", "dep:schemars", "cairo-lang-utils/schemars"]
-parity-scale-codec = ["dep:parity-scale-codec", "cairo-lang-utils/parity-scale-codec"]
+parity-scale-codec = ["cairo-lang-utils/parity-scale-codec", "dep:parity-scale-codec"]
+schemars = ["cairo-lang-utils/schemars", "dep:schemars", "std"]
+serde = ["cairo-lang-utils/serde", "dep:serde"]
+std = [
+  "cairo-lang-utils/std",
+  "num-bigint/std",
+  "num-traits/std",
+  "parity-scale-codec?/std",
+  "serde?/std",
+]

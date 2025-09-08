@@ -11,18 +11,19 @@ use cairo_lang_semantic::types::get_impl_at_context;
 use cairo_lang_semantic::{
     ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId,
 };
-use cairo_lang_syntax::attribute::consts::{ALLOW_ATTR, STARKNET_INTERFACE_ATTR};
+use cairo_lang_syntax::attribute::consts::ALLOW_ATTR;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use salsa::Database;
 
 use crate::abi::{ABIError, AbiBuilder, BuilderConfig};
 use crate::contract::module_contract;
 use crate::plugin::consts::{
-    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, STORAGE_ATTR, STORAGE_NODE_ATTR,
-    STORAGE_STRUCT_NAME, STORE_TRAIT,
+    COMPONENT_ATTR, CONTRACT_ATTR, EMBEDDABLE_ATTR, INTERFACE_ATTR, STORAGE_ATTR,
+    STORAGE_NODE_ATTR, STORAGE_STRUCT_NAME, STORE_TRAIT,
 };
 use crate::plugin::storage_interfaces::{StorageMemberKind, get_member_storage_config};
 use crate::plugin::utils::has_derive;
@@ -38,7 +39,7 @@ pub struct ABIAnalyzer;
 impl AnalyzerPlugin for ABIAnalyzer {
     fn diagnostics<'db>(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
@@ -50,19 +51,19 @@ impl AnalyzerPlugin for ABIAnalyzer {
 
 /// Add diagnostics for embeddable impls that do not implement a starknet interface.
 fn add_non_starknet_interface_embeddable_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
-    let Ok(impls) = db.module_impls(module_id) else {
+    let Ok(module_data) = module_id.module_data(db) else {
         return;
     };
-    for (id, item) in impls.iter() {
+    for (id, item) in module_data.impls(db).iter() {
         if !item.has_attr(db, EMBEDDABLE_ATTR) {
             continue;
         }
         let Ok(impl_trait) = db.impl_def_trait(*id) else { continue };
-        if !impl_trait.has_attr(db, STARKNET_INTERFACE_ATTR).unwrap_or(true) {
+        if !impl_trait.has_attr(db, INTERFACE_ATTR).unwrap_or(true) {
             diagnostics.push(PluginDiagnostic::warning(
                 item.stable_ptr(db).untyped(),
                 "Impls with the embeddable attribute must implement a starknet interface trait."
@@ -74,7 +75,7 @@ fn add_non_starknet_interface_embeddable_diagnostics<'db>(
 
 /// Add diagnostics for ABI generation.
 fn add_abi_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -113,14 +114,14 @@ pub struct StorageAnalyzer;
 impl AnalyzerPlugin for StorageAnalyzer {
     fn diagnostics<'db>(
         &self,
-        db: &'db dyn SemanticGroup,
+        db: &'db dyn Database,
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
 
         // Analyze all the structs in the module.
-        if let Ok(module_structs) = db.module_structs(module_id) {
-            for (id, item) in module_structs.iter() {
+        if let Ok(module_data) = module_id.module_data(db) {
+            for (id, item) in module_data.structs(db).iter() {
                 // Only run the analysis on storage structs or structs with the storage attribute.
                 if item.has_attr(db, STORAGE_NODE_ATTR)
                     || item.has_attr(db, STORAGE_ATTR)
@@ -133,8 +134,8 @@ impl AnalyzerPlugin for StorageAnalyzer {
             }
         }
         // Analyze all the enums in the module.
-        if let Ok(module_enums) = db.module_enums(module_id) {
-            for (id, item) in module_enums.iter() {
+        if let Ok(module_data) = module_id.module_data(db) {
+            for (id, item) in module_data.enums(db).iter() {
                 if has_derive(item, db, STORE_TRAIT).is_some()
                     && !item.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_NO_DEFAULT_VARIANT_ATTR)
                 {
@@ -158,7 +159,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
 /// - Ensures all members implement `ValidStorageTypeTrait`.
 /// - Checks for multiple paths to the same location in storage.
 fn analyze_storage_struct<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     struct_id: StructId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -171,25 +172,26 @@ fn analyze_storage_struct<'db>(
         struct_id.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_COLLIDING_PATHS_ATTR) == Ok(true);
 
     let lookup_context = ImplLookupContext::new(
-        struct_id.module_file_id(db).0,
+        struct_id.parent_module(db),
         match db.struct_generic_params(struct_id) {
             Ok(params) => params.into_iter().map(|p| p.id()).collect(),
             Err(_) => return,
         },
-    );
+        db,
+    )
+    .intern(db);
     let paths_data = &mut StorageStructMembers { name_to_paths: OrderedHashMap::default() };
 
     for (member_name, member) in members.iter() {
         let member_ast = member.id.stable_ptr(db).lookup(db);
         let member_type = member.ty.long(db).clone();
-        let concrete_trait_id = concrete_valid_storage_trait(db, db.intern_type(member_type));
+        let concrete_trait_id = concrete_valid_storage_trait(db, TypeId::new(db, member_type));
 
         let member_allows_invalid =
             member_ast.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_INVALID_STORAGE_MEMBERS_ATTR);
 
         if !(allow_invalid_members || member_allows_invalid) {
-            let inference_result =
-                get_impl_at_context(db, lookup_context.clone(), concrete_trait_id, None);
+            let inference_result = get_impl_at_context(db, lookup_context, concrete_trait_id, None);
 
             if let Err(inference_error) = inference_result {
                 let type_pointer = member_ast.type_clause(db).ty(db);
@@ -201,7 +203,7 @@ fn analyze_storage_struct<'db>(
                          `#[storage_node]`, or use valid args for `Vec` or `Map` library types. \
                          To suppress this warning, use \
                          `#[allow(starknet::invalid_storage_member_types)]`.",
-                        inference_error.format(db.elongate())
+                        inference_error.format(db)
                     ),
                 ));
             }
@@ -266,7 +268,7 @@ impl<'db> StorageStructMembers<'db> {
 /// flat, The function will iterate until it reaches member3 and add the path
 /// member1.member2.member3 to the `StorageStructMembers` struct.
 fn member_analyze<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     member: &Member<'db>,
     member_name: StrRef<'db>,
     paths_data: &mut StorageStructMembers<'db>,
@@ -309,7 +311,7 @@ fn member_analyze<'db>(
 ///
 /// Specifically finds cases missing a `#[default]` variant.
 fn add_derive_store_enum_diags<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     id: EnumId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -330,7 +332,7 @@ fn add_derive_store_enum_diags<'db>(
 
 /// Resolves the concrete `ValidStorageTypeTrait` for a given type.
 fn concrete_valid_storage_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> ConcreteTraitId<'db> {
     let module_id = ModuleHelper::core(db).submodule("starknet").submodule("storage").id;

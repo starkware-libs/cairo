@@ -4,10 +4,11 @@ use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, define_short_id};
 use path_clean::PathClean;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::db::{CORELIB_CRATE_NAME, FilesGroup};
+use crate::db::{CORELIB_CRATE_NAME, FilesGroup, ext_as_virtual};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -29,7 +30,7 @@ pub enum CrateInput {
 }
 
 impl CrateInput {
-    pub fn into_crate_long_id(self, db: &dyn FilesGroup) -> CrateLongId<'_> {
+    pub fn into_crate_long_id(self, db: &dyn Database) -> CrateLongId<'_> {
         match self {
             CrateInput::Real { name, discriminator } => CrateLongId::Real { name, discriminator },
             CrateInput::Virtual { name, file_long_id, settings, cache_file } => {
@@ -44,7 +45,7 @@ impl CrateInput {
     }
 
     pub fn into_crate_ids(
-        db: &dyn FilesGroup,
+        db: &dyn Database,
         inputs: impl IntoIterator<Item = CrateInput>,
     ) -> Vec<CrateId<'_>> {
         inputs.into_iter().map(|input| input.into_crate_long_id(db).intern(db)).collect()
@@ -71,7 +72,7 @@ impl<'db> CrateLongId<'db> {
         }
     }
 
-    pub fn into_crate_input(self, db: &'db dyn FilesGroup) -> CrateInput {
+    pub fn into_crate_input(self, db: &'db dyn Database) -> CrateInput {
         match self {
             CrateLongId::Real { name, discriminator } => CrateInput::Real { name, discriminator },
             CrateLongId::Virtual { name, file_id, settings, cache_file } => CrateInput::Virtual {
@@ -91,15 +92,15 @@ impl<'db> CrateLongId<'db> {
         CrateLongId::Real { name: name.into(), discriminator: None }
     }
 }
-define_short_id!(CrateId, CrateLongId<'db>, FilesGroup, lookup_intern_crate, intern_crate);
+define_short_id!(CrateId, CrateLongId<'db>, FilesGroup);
 impl<'db> CrateId<'db> {
     /// Gets the crate id for a real crate by name, without a discriminator.
-    pub fn plain(db: &'db dyn FilesGroup, name: &str) -> Self {
+    pub fn plain(db: &'db dyn Database, name: &str) -> Self {
         CrateId::new(db, CrateLongId::plain(name))
     }
 
     /// Gets the crate id for `core`.
-    pub fn core(db: &'db dyn FilesGroup) -> Self {
+    pub fn core(db: &'db dyn Database) -> Self {
         CrateId::new(db, CrateLongId::core())
     }
 }
@@ -120,7 +121,7 @@ impl UnstableSalsaId for CrateId<'_> {
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FlagLongId(pub String);
-define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag, intern_flag);
+define_short_id!(FlagId, FlagLongId, FilesGroup);
 
 /// Same as `FileLongId`, but without the interning inside virtual files.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
@@ -132,7 +133,7 @@ pub enum FileInput {
 }
 
 impl FileInput {
-    pub fn into_file_long_id(self, db: &dyn FilesGroup) -> FileLongId<'_> {
+    pub fn into_file_long_id(self, db: &dyn Database) -> FileLongId<'_> {
         match self {
             FileInput::OnDisk(path) => FileLongId::OnDisk(path),
             FileInput::Virtual(vf) => FileLongId::Virtual(vf.into_virtual_file(db)),
@@ -223,7 +224,7 @@ pub struct VirtualFileInput {
 }
 
 impl VirtualFileInput {
-    fn into_virtual_file(self, db: &dyn FilesGroup) -> VirtualFile<'_> {
+    fn into_virtual_file(self, db: &dyn Database) -> VirtualFile<'_> {
         VirtualFile {
             parent: self.parent.map(|id| id.as_ref().clone().into_file_long_id(db).intern(db)),
             name: self.name,
@@ -248,7 +249,7 @@ pub struct VirtualFile<'db> {
     pub original_item_removed: bool,
 }
 impl<'db> VirtualFile<'db> {
-    fn full_path(&self, db: &'db dyn FilesGroup) -> String {
+    fn full_path(&self, db: &'db dyn Database) -> String {
         if let Some(parent) = self.parent {
             // TODO(yuval): consider a different path format for virtual files.
             format!("{}[{}]", parent.full_path(db), self.name)
@@ -257,7 +258,7 @@ impl<'db> VirtualFile<'db> {
         }
     }
 
-    fn into_virtual_file_input(self, db: &dyn FilesGroup) -> VirtualFileInput {
+    fn into_virtual_file_input(self, db: &dyn Database) -> VirtualFileInput {
         VirtualFileInput {
             parent: self.parent.map(|id| Arc::new(id.long(db).clone().into_file_input(db))),
             name: self.name,
@@ -270,20 +271,20 @@ impl<'db> VirtualFile<'db> {
 }
 
 impl<'db> FileLongId<'db> {
-    pub fn file_name(&self, db: &'db dyn FilesGroup) -> String {
+    pub fn file_name(&self, db: &'db dyn Database) -> String {
         match self {
             FileLongId::OnDisk(path) => {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
             }
             FileLongId::Virtual(vf) => vf.name.to_string(),
-            FileLongId::External(external_id) => db.ext_as_virtual(*external_id).name.to_string(),
+            FileLongId::External(external_id) => ext_as_virtual(db, *external_id).name.to_string(),
         }
     }
-    pub fn full_path(&self, db: &'db dyn FilesGroup) -> String {
+    pub fn full_path(&self, db: &'db dyn Database) -> String {
         match self {
             FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
             FileLongId::Virtual(vf) => vf.full_path(db),
-            FileLongId::External(external_id) => db.ext_as_virtual(*external_id).full_path(db),
+            FileLongId::External(external_id) => ext_as_virtual(db, *external_id).full_path(db),
         }
     }
     pub fn kind(&self) -> FileKind {
@@ -294,7 +295,7 @@ impl<'db> FileLongId<'db> {
         }
     }
 
-    pub fn into_file_input(&self, db: &dyn FilesGroup) -> FileInput {
+    pub fn into_file_input(&self, db: &dyn Database) -> FileInput {
         match self {
             FileLongId::OnDisk(path) => FileInput::OnDisk(path.clone()),
             FileLongId::Virtual(vf) => FileInput::Virtual(vf.clone().into_virtual_file_input(db)),
@@ -303,26 +304,26 @@ impl<'db> FileLongId<'db> {
     }
 }
 
-define_short_id!(FileId, FileLongId<'db>, FilesGroup, lookup_intern_file, intern_file);
+define_short_id!(FileId, FileLongId<'db>, FilesGroup);
 impl<'db> FileId<'db> {
-    pub fn new_on_disk(db: &'db dyn FilesGroup, path: PathBuf) -> FileId<'db> {
+    pub fn new_on_disk(db: &'db dyn Database, path: PathBuf) -> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
 
-    pub fn file_name(self, db: &dyn FilesGroup) -> String {
+    pub fn file_name(self, db: &dyn Database) -> String {
         self.long(db).file_name(db)
     }
 
-    pub fn full_path(self, db: &dyn FilesGroup) -> String {
+    pub fn full_path(self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
     }
 
-    pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
+    pub fn kind(self, db: &dyn Database) -> FileKind {
         self.long(db).kind()
     }
 }
 
-define_short_id!(StrId, Arc<str>, FilesGroup, lookup_intern_str, intern_str);
+define_short_id!(StrId, Arc<str>, FilesGroup);
 
 /// Same as `Directory`, but without the interning inside virtual directories.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
@@ -334,7 +335,7 @@ pub enum DirectoryInput {
 
 impl DirectoryInput {
     /// Converts the input into a [`Directory`].
-    pub fn into_directory(self, db: &dyn FilesGroup) -> Directory<'_> {
+    pub fn into_directory(self, db: &dyn Database) -> Directory<'_> {
         match self {
             DirectoryInput::Real(path) => Directory::Real(path),
             DirectoryInput::Virtual { files, dirs } => Directory::Virtual {
@@ -351,11 +352,12 @@ impl DirectoryInput {
     }
 }
 
-define_short_id!(SmolStrId, SmolStr, FilesGroup, lookup_intern_smol_str, intern_smol_str);
+define_short_id!(SmolStrId, SmolStr, FilesGroup);
 
 /// Returns a string with a lifetime that is valid on the database's lifetime.
-pub fn db_str(db: &dyn FilesGroup, str: impl Into<SmolStr>) -> &str {
-    str.into().intern(db).long(db)
+pub fn db_str(db: &dyn Database, str: impl Into<SmolStr>) -> &str {
+    let smol: SmolStr = str.into();
+    SmolStrId::new(db, smol).long(db)
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
@@ -398,7 +400,7 @@ impl<'db> core::fmt::Debug for StrRef<'db> {
 }
 unsafe impl<'db> salsa::Update for StrRef<'db> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = &mut *old_pointer;
+        let old_value = unsafe { &mut *old_pointer };
         let changed = old_value != &new_value;
         *old_value = new_value;
         changed
@@ -416,7 +418,7 @@ pub enum Directory<'db> {
 impl<'db> Directory<'db> {
     /// Returns a file inside this directory. The file and directory don't necessarily exist on
     /// the file system. These are ids/paths to them.
-    pub fn file(&self, db: &'db dyn FilesGroup, name: &str) -> FileId<'db> {
+    pub fn file(&self, db: &'db dyn Database, name: &str) -> FileId<'db> {
         match self {
             Directory::Real(path) => FileId::new_on_disk(db, path.join(name)),
             Directory::Virtual { files, dirs: _ } => files
@@ -442,7 +444,7 @@ impl<'db> Directory<'db> {
     }
 
     /// Converts the directory into an [`DirectoryInput`].
-    pub fn into_directory_input(self, db: &dyn FilesGroup) -> DirectoryInput {
+    pub fn into_directory_input(self, db: &dyn Database) -> DirectoryInput {
         match self {
             Directory::Real(path) => DirectoryInput::Real(path),
             Directory::Virtual { files, dirs } => DirectoryInput::Virtual {
@@ -463,25 +465,28 @@ impl<'db> Directory<'db> {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum BlobLongId {
     OnDisk(PathBuf),
-    Virtual(Arc<[u8]>),
+    Virtual(Vec<u8>),
 }
 
 impl BlobLongId {
-    pub fn content(self) -> Option<Arc<[u8]>> {
+    pub fn content(&self) -> Option<Vec<u8>> {
         match self {
-            BlobLongId::OnDisk(path) => match std::fs::read(path) {
-                Ok(content) => Some(content.into()),
-                Err(_) => None,
-            },
+            BlobLongId::OnDisk(path) => std::fs::read(path).ok(),
             BlobLongId::Virtual(content) => Some(content.clone()),
         }
     }
 }
 
-define_short_id!(BlobId, BlobLongId, FilesGroup, lookup_intern_blob, intern_blob);
+define_short_id!(BlobId, BlobLongId, FilesGroup);
 
 impl<'db> BlobId<'db> {
-    pub fn new_on_disk(db: &'db (dyn FilesGroup + 'db), path: PathBuf) -> Self {
+    pub fn new_on_disk(db: &'db (dyn salsa::Database + 'db), path: PathBuf) -> Self {
         BlobId::new(db, BlobLongId::OnDisk(path.clean()))
     }
 }
+
+/// A dummy type to be used as a tracked input.
+/// Used to avoid errors on StructInSalsaDB.
+/// Salsa expects the first parameter of a tracked function to be a Tracked type for performance
+/// reasons.
+pub type Tracked = ();

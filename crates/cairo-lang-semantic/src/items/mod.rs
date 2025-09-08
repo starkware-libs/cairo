@@ -3,10 +3,9 @@ use cairo_lang_defs::ids::{ImplDefId, TraitId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::ExprPath;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::try_extract_matches;
+use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::NotATrait;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver};
@@ -41,7 +40,7 @@ mod test;
 
 /// Tries to resolve a trait path. Reports a diagnostic if the path doesn't point to a trait.
 fn resolve_trait_path<'db>(
-    syntax_db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
     trait_path_syntax: &ExprPath<'db>,
@@ -55,7 +54,7 @@ fn resolve_trait_path<'db>(
         )?,
         ResolvedGenericItem::Trait
     )
-    .ok_or_else(|| diagnostics.report(trait_path_syntax.stable_ptr(syntax_db), NotATrait))
+    .ok_or_else(|| diagnostics.report(trait_path_syntax.stable_ptr(db), NotATrait))
 }
 
 /// A context of a trait or an impl, if in any of those. This is used in the resolver to resolve
@@ -71,9 +70,9 @@ pub enum TraitOrImplContext<'db> {
 }
 
 impl<'db> DebugWithDb<'db> for TraitOrImplContext<'db> {
-    type Db = dyn SemanticGroup;
+    type Db = dyn Database;
 
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn SemanticGroup) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
         match self {
             TraitOrImplContext::None => write!(f, "None"),
             TraitOrImplContext::Trait(trait_ctx) => {

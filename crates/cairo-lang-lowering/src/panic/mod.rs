@@ -2,16 +2,19 @@ use std::collections::VecDeque;
 
 use assert_matches::assert_matches;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::corelib::{
     core_submodule, get_core_enum_concrete_variant, get_function_id, get_panic_ty, never_ty,
 };
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{self as semantic, GenericArgumentId};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use itertools::{Itertools, chain, zip_eq};
+use salsa::Database;
 use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 
 use crate::blocks::BlocksBuilder;
@@ -33,7 +36,7 @@ use crate::{
 /// Lowering phase that converts `BlockEnd::Panic` into `BlockEnd::Return`, and wraps necessary
 /// types with `PanicResult<>`.
 pub fn lower_panics<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
     lowered: &mut Lowered<'db>,
 ) -> Maybe<()> {
@@ -114,7 +117,7 @@ pub fn lower_panics<'db>(
 /// Lowering phase that converts BlockEnd::Panic into BlockEnd::Match { function: unsafe_panic }.
 /// 'opt_trace_fn' is an optional function to call before the panic.
 fn lower_unsafe_panic<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     lowered: &mut Lowered<'db>,
     opt_trace_fn: Option<FunctionId<'db>>,
 ) {
@@ -203,7 +206,7 @@ pub struct PanicSignatureInfo<'db> {
     pub always_panic: bool,
 }
 impl<'db> PanicSignatureInfo<'db> {
-    pub fn new(db: &'db dyn LoweringGroup, signature: &Signature<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, signature: &Signature<'db>) -> Self {
         let extra_rets = signature.extra_rets.iter().map(|param| param.ty());
         let original_return_ty = signature.return_type;
 
@@ -242,7 +245,7 @@ struct PanicLoweringContext<'db> {
     panic_info: PanicSignatureInfo<'db>,
 }
 impl<'db> PanicLoweringContext<'db> {
-    pub fn db(&self) -> &'db dyn LoweringGroup {
+    pub fn db(&self) -> &'db dyn Database {
         self.variables.db
     }
 
@@ -257,7 +260,7 @@ struct PanicBlockLoweringContext<'db> {
     statements: Vec<Statement<'db>>,
 }
 impl<'db> PanicBlockLoweringContext<'db> {
-    pub fn db(&self) -> &'db dyn LoweringGroup {
+    pub fn db(&self) -> &'db dyn Database {
         self.ctx.db()
     }
 
@@ -275,12 +278,11 @@ impl<'db> PanicBlockLoweringContext<'db> {
         &mut self,
         stmt: &Statement<'db>,
     ) -> Maybe<Option<(BlockEnd<'db>, Option<BlockId>)>> {
-        if let Statement::Call(call) = &stmt {
-            if let Some(with_body) = call.function.body(self.db())? {
-                if self.db().function_with_body_may_panic(with_body)? {
-                    return Ok(Some(self.handle_call_panic(call)?));
-                }
-            }
+        if let Statement::Call(call) = &stmt
+            && let Some(with_body) = call.function.body(self.db())?
+            && self.db().function_with_body_may_panic(with_body)?
+        {
+            return Ok(Some(self.handle_call_panic(call)?));
         }
         self.statements.push(stmt.clone());
         Ok(None)
@@ -442,10 +444,8 @@ impl<'db> PanicBlockLoweringContext<'db> {
 // ============= Query implementations =============
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-pub fn function_may_panic<'db>(
-    db: &'db dyn LoweringGroup,
-    function: FunctionId<'db>,
-) -> Maybe<bool> {
+#[salsa::tracked]
+pub fn function_may_panic<'db>(db: &'db dyn Database, function: FunctionId<'db>) -> Maybe<bool> {
     if let Some(body) = function.body(db)? {
         return db.function_with_body_may_panic(body);
     }
@@ -453,29 +453,36 @@ pub fn function_may_panic<'db>(
 }
 
 /// A trait to add helper methods in [LoweringGroup].
-pub trait MayPanicTrait<'db>: Upcast<'db, dyn LoweringGroup> {
+pub trait MayPanicTrait<'db>: Database {
     /// Returns whether a [ConcreteFunctionWithBodyId] may panic.
     fn function_with_body_may_panic(
         &'db self,
         function: ConcreteFunctionWithBodyId<'db>,
     ) -> Maybe<bool> {
-        let scc_representative = self.upcast().lowered_scc_representative(
+        let db: &'db dyn Database = self.as_dyn_database();
+        let scc_representative = db.lowered_scc_representative(
             function,
             DependencyType::Call,
             LoweringStage::Monomorphized,
         );
-        self.upcast().scc_may_panic(scc_representative)
+        scc_may_panic(db, scc_representative)
     }
 }
-impl<'db, T: Upcast<'db, dyn LoweringGroup> + ?Sized> MayPanicTrait<'db> for T {}
+impl<'db, T: Database + ?Sized> MayPanicTrait<'db> for T {}
 
-/// Query implementation of [crate::db::LoweringGroup::scc_may_panic].
-pub fn scc_may_panic<'db>(
-    db: &'db dyn LoweringGroup,
-    scc: ConcreteSCCRepresentative<'db>,
+/// Returns whether any function in the strongly connected component may panic.
+fn scc_may_panic<'db>(db: &'db dyn Database, scc: ConcreteSCCRepresentative<'db>) -> Maybe<bool> {
+    scc_may_panic_tracked(db, scc.0)
+}
+
+/// Tracked implementation of [scc_may_panic].
+#[salsa::tracked]
+fn scc_may_panic_tracked<'db>(
+    db: &'db dyn Database,
+    rep: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     // Find the SCC representative.
-    let scc_functions = db.lowered_scc(scc.0, DependencyType::Call, LoweringStage::Monomorphized);
+    let scc_functions = db.lowered_scc(rep, DependencyType::Call, LoweringStage::Monomorphized);
     for function in scc_functions {
         if db.needs_withdraw_gas(function)? {
             return Ok(true);
@@ -496,7 +503,7 @@ pub fn scc_may_panic<'db>(
                     DependencyType::Call,
                     LoweringStage::Monomorphized,
                 );
-                if callee_scc != scc && db.scc_may_panic(callee_scc)? {
+                if callee_scc.0 != rep && scc_may_panic(db, callee_scc)? {
                     return Ok(true);
                 }
             } else if direct_callee.signature(db)?.panicable {
@@ -508,8 +515,9 @@ pub fn scc_may_panic<'db>(
 }
 
 /// Query implementation of [crate::db::LoweringGroup::has_direct_panic].
+#[salsa::tracked]
 pub fn has_direct_panic<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     let lowered_function = db.lowered_body(function_id, LoweringStage::Monomorphized)?;

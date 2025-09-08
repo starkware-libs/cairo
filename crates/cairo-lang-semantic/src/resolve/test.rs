@@ -1,13 +1,14 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroupEx};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
+use cairo_lang_test_utils::test;
 use cairo_lang_utils::{Intern, extract_matches};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use test_log::test;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
@@ -16,7 +17,7 @@ use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 #[test]
 fn test_resolve_path() {
     let db_val = SemanticDatabaseForTesting::default();
-    let db: &dyn SemanticGroup = &db_val;
+    let db: &dyn Database = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"
@@ -49,7 +50,7 @@ fn test_resolve_path() {
     );
 }
 
-fn set_file_content(db: &mut dyn SemanticGroup, path: &str, content: &str) {
+fn set_file_content(db: &mut dyn Database, path: &str, content: &str) {
     let file_id = FileLongId::OnDisk(path.into()).intern(db);
     override_file_content!(db, file_id, Some(content.into()));
 }
@@ -57,7 +58,7 @@ fn set_file_content(db: &mut dyn SemanticGroup, path: &str, content: &str) {
 #[test]
 fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
-    let db: &mut dyn SemanticGroup = &mut db_val;
+    let db: &mut dyn Database = &mut db_val;
 
     let crate_id = CrateId::plain(db, "test");
     let root = Directory::Real("src".into());
@@ -109,7 +110,7 @@ fn test_resolve_path_super() {
 #[test]
 fn test_resolve_path_trait_impl() {
     let db_val = SemanticDatabaseForTesting::default();
-    let db: &dyn SemanticGroup = &db_val;
+    let db: &dyn Database = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"

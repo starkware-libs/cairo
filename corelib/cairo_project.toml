@@ -2,11 +2,11 @@
 core = "src"
 
 [config.global]
-version = "2.12.0"
 edition = "2024_07"
+version = "2.12.0"
 
 [config.global.experimental_features]
-negative_impls = true
 associated_item_constraints = true
 coupons = true
+negative_impls = true
 user_defined_inline_macros = true

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -7,6 +8,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use salsa::Database;
 
 use crate::db::SierraGenGroup;
 
@@ -20,7 +22,7 @@ use crate::db::SierraGenGroup;
 /// Note, that a single function can be marked with more than one executable attribute.
 /// Only crates declared as _main_crate_ids_ are considered.
 pub fn find_executable_function_ids<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
 ) -> HashMap<ConcreteFunctionWithBodyId<'db>, Vec<String>> {
     let mut executable_function_ids = HashMap::new();
@@ -29,7 +31,7 @@ pub fn find_executable_function_ids<'db>(
         let executable_attributes = db
             .crate_macro_plugins(crate_id)
             .iter()
-            .flat_map(|plugin| db.lookup_intern_macro_plugin(*plugin).executable_attributes())
+            .flat_map(|plugin| plugin.long(db).executable_attributes())
             .collect::<Vec<_>>();
 
         if executable_attributes.is_empty() {
@@ -37,7 +39,9 @@ pub fn find_executable_function_ids<'db>(
         }
 
         for module in db.crate_modules(crate_id).iter() {
-            if let Some(free_functions) = db.module_free_functions(*module).to_option() {
+            if let Some(free_functions) =
+                module.module_data(db).map(|data| data.free_functions(db)).to_option()
+            {
                 for (free_func_id, body) in free_functions.iter() {
                     let found_attrs = executable_attributes
                         .clone()
@@ -69,7 +73,7 @@ pub fn find_executable_function_ids<'db>(
 /// and finds their corresponding Sierra ids in a Sierra program.
 /// The returned function ids are grouped by the executable attribute name, and sorted by full path.
 pub fn collect_executables(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
     mut executable_function_ids: HashMap<ConcreteFunctionWithBodyId<'_>, Vec<String>>,
     sierra_program: &Program,
 ) -> HashMap<String, Vec<FunctionId>> {

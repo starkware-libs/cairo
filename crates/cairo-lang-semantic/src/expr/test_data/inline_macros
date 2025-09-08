@@ -1776,13 +1776,15 @@ foo
 //! > module_code
 macro define_items {
     () => {
-        fn fn_item() {}
-        struct StructItem {
-            a: felt252,
-        }
-        enum EnumItem {
-            A,
-            B,
+        expose! {
+            fn fn_item() {}
+            struct StructItem {
+                a: felt252,
+            }
+            enum EnumItem {
+                A,
+                B,
+            }
         }
     };
 }
@@ -1809,23 +1811,25 @@ foo
 //! > module_code
 macro macro_item_level {
     () => {
-        fn item_level() -> felt252 { "100" }
+        expose! {
+            fn item_level() -> felt252 { "100" }
+        }
     };
 }
 macro_item_level!();
 
 //! > expected_diagnostics
 error: Mismatched types. The type `core::felt252` cannot be created from a string literal.
- --> lib.cairo[macro_item_level]:1:38
-        fn item_level() -> felt252 { "100" }
-                                     ^^^^^
+ --> lib.cairo[macro_item_level]:2:42
+            fn item_level() -> felt252 { "100" }
+                                         ^^^^^
 
 //! > ==========================================================================
 
 //! > Test macro with use-star resolution.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > crate_settings
 edition = "2024_07"
@@ -1850,17 +1854,15 @@ mod with_bar {
 
 macro import_with_bar {
     () => {
-        use $callsite::with_bar::*;
+        expose! {
+            use $callsite::with_bar::*;
+        }
     };
 }
 
 import_with_bar!();
 
 //! > expected_diagnostics
-error[E0006]: Function not found.
- --> lib.cairo:13:5
-    bar();
-    ^^^
 
 //! > ==========================================================================
 
@@ -1911,7 +1913,7 @@ error: Expected path after modifier.
 //! > Test macro context resolution through use-star.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > crate_settings
 edition = "2024_07"
@@ -1931,9 +1933,9 @@ foo
 
 //! > module_code
 mod a {
-    pub macro define_bar {
+    macro define_bar {
         () => {
-            pub fn bar() {}
+            expose!(pub fn bar() {});
         };
     }
 
@@ -1942,10 +1944,78 @@ mod a {
 use a::*;
 
 //! > expected_diagnostics
-error[E0006]: Function not found.
- --> lib.cairo:12:5
+
+//! > ==========================================================================
+
+//! > Test use-star inside macro context resolution.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function
+fn foo() {
     bar();
-    ^^^
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub fn bar() {}
+}
+
+macro import_a_star {
+    () => {
+        expose! {
+            use $callsite::a::*;
+        }
+    };
+}
+
+import_a_star!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test use-path as placeholder.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub fn bar() {}
+}
+
+macro import {
+    ($path:expr) => {
+        expose! {
+            use $path;
+        }
+    };
+}
+
+import!(a::bar);
+
+//! > expected_diagnostics
 
 //! > ==========================================================================
 
@@ -1966,10 +2036,338 @@ foo
 mod a {
     macro define_bar {
         () => {
-            pub fn bar() {}
+            expose! {
+                pub fn bar() {}
+            }
         };
     }
     define_bar!();
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impls in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub struct Bar {}
+    macro impl_bar_trait {
+        ($ty: ident) => {
+            impl BarImpl of $defsite::super::BarTrait<$ty> {
+                fn bar() {}
+            }
+        };
+    }
+    impl_bar_trait!(Bar);
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impls of types in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    macro define_ty {
+        ($ty: ident) => {
+            expose! {
+                pub struct $ty {}
+            }
+        };
+    }
+    define_ty!(Bar);
+    impl BarImpl of super::BarTrait<Bar> {
+        fn bar() {}
+    }
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro finding impl in generated code of types in generated code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    BarTrait::<a::Bar>::bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    macro define_ty {
+        ($ty: ident) => {
+            expose! {
+                pub struct $ty {}
+            }
+        };
+    }
+    define_ty!(Bar);
+    macro impl_bar_trait {
+        ($ty: ident) => {
+            impl BarImpl of $defsite::super::BarTrait<$ty> {
+                fn bar() {}
+            }
+        };
+    }
+    impl_bar_trait!(Bar);
+}
+trait BarTrait<T> {
+    fn bar() {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test collision: two macro-generated items with the same name.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        expose!(fn bar() {});
+    };
+}
+define_bar!();
+define_bar!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar]:1:20
+        expose!(fn bar() {});
+                   ^^^
+
+//! > ==========================================================================
+
+//! > Test duplicate diagnostics for macro-generated module and expanding module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        expose!(fn bar() {});
+    };
+}
+macro define_bar_twice {
+    () => {
+        $defsite::define_bar!();
+        expose!(fn bar() {});
+    };
+}
+define_bar_twice!();
+fn bar() {}
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar_twice][$defsite::define_bar]:1:20
+        expose!(fn bar() {});
+                   ^^^
+
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar_twice]:2:20
+        expose!(fn bar() {});
+                   ^^^
+
+//! > ==========================================================================
+
+//! > Test collision un-exposed ignored for collisions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        fn bar() {}
+    };
+}
+macro define_bar_twice {
+    () => {
+        $defsite::define_bar!();
+        fn bar() {}
+    };
+}
+define_bar_twice!();
+fn bar() {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test collision: macro-generated item vs existing item.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar() {}
+
+macro define_bar {
+    () => {
+        expose!(fn bar() {});
+    };
+}
+define_bar!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[define_bar]:1:20
+        expose!(fn bar() {});
+                   ^^^
+
+//! > ==========================================================================
+
+//! > Test duplicate definitions from expansion within expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro inner_macro {
+    () => {
+        expose!(fn bar() {});
+    };
+}
+
+macro outer_macro {
+    () => {
+        $defsite::inner_macro!();
+    };
+}
+
+fn bar() {}
+
+outer_macro!();
+
+//! > expected_diagnostics
+error: The name `bar` is defined multiple times.
+ --> lib.cairo[outer_macro][$defsite::inner_macro]:1:20
+        expose!(fn bar() {});
+                   ^^^
+
+//! > ==========================================================================
+
+//! > Test handling expose! calls in items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        expose! (
+            fn bar() {}
+        );
+    };
+}
+define_bar!();
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test not finding non-expose! macro called items.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro define_bar {
+    () => {
+        fn bar() {}
+    };
+}
+define_bar!();
+
+//! > expected_diagnostics
+error[E0006]: Function not found.
+ --> lib.cairo:8:5
+    bar();
+    ^^^

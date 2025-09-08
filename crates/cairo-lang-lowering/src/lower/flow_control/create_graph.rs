@@ -9,6 +9,7 @@ use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
     NodeId,
 };
+use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError, MatchKind};
 use crate::lower::context::LoweringContext;
 
 mod cache;
@@ -17,10 +18,10 @@ mod patterns;
 
 /// Creates a graph node for [semantic::ExprIf].
 pub fn create_graph_expr_if<'db>(
-    ctx: &LoweringContext<'db, '_>,
+    ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprIf<'db>,
 ) -> FlowControlGraph<'db> {
-    let mut graph = FlowControlGraphBuilder::default();
+    let mut graph = FlowControlGraphBuilder::new(MatchKind::IfLet);
 
     // Add the `true` branch (the `if` block).
     let true_branch = graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: expr.if_block }));
@@ -102,16 +103,16 @@ pub fn create_graph_expr_if<'db>(
         }
     }
 
-    graph.finalize(current_node)
+    graph.finalize(current_node, ctx)
 }
 
 /// Creates a graph node for [semantic::ExprMatch].
 #[allow(dead_code)]
 pub fn create_graph_expr_match<'db>(
-    ctx: &LoweringContext<'db, '_>,
+    ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprMatch<'db>,
 ) -> FlowControlGraph<'db> {
-    let mut graph = FlowControlGraphBuilder::default();
+    let mut graph = FlowControlGraphBuilder::new(MatchKind::Match);
 
     let matched_expr = &ctx.function_body.arenas.exprs[expr.matched_expr];
     let matched_expr_location = ctx.get_location(matched_expr.stable_ptr().untyped());
@@ -132,7 +133,6 @@ pub fn create_graph_expr_match<'db>(
 
     let mut cache = Cache::default();
 
-    // TODO(lior): add diagnostics if there is an unreachable arm.
     let match_node_id = create_node_for_patterns(
         CreateNodeParams {
             ctx,
@@ -142,8 +142,16 @@ pub fn create_graph_expr_match<'db>(
                 .map(|(pattern, _)| Some(get_pattern(ctx, *pattern)))
                 .collect_vec(),
             build_node_callback: &mut |graph, pattern_indices| {
-                // TODO(lior): add diagnostics if pattern_indices is empty (instead of `unwrap`).
-                let index_and_bindings = pattern_indices.first().unwrap();
+                // Get the first arm that matches.
+                let Some(index_and_bindings) = pattern_indices.first() else {
+                    // If no arm is available, report a non-exhaustive match error.
+                    let kind = LoweringDiagnosticKind::MatchError(MatchError {
+                        kind: MatchKind::Match,
+                        error: MatchDiagnostic::NonExhaustiveMatchValue,
+                    });
+                    return graph.report_with_missing_node(expr.stable_ptr.untyped(), kind);
+                };
+
                 cache.get_or_compute(
                     &mut |graph, index_and_bindings: IndexAndBindings| {
                         let index = index_and_bindings.index();
@@ -164,5 +172,5 @@ pub fn create_graph_expr_match<'db>(
         next: match_node_id,
     }));
 
-    graph.finalize(root)
+    graph.finalize(root, ctx)
 }

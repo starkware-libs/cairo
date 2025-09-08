@@ -1,14 +1,18 @@
 use std::fmt::Write;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_diagnostics::{
     DiagnosticEntry, Diagnostics, FormattedDiagnosticEntry, PluginFileDiagnosticNotes, Severity,
 };
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use salsa::par_map;
+use salsa::Database;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -137,17 +141,17 @@ impl<'a> DiagnosticsReporter<'a> {
     }
 
     /// Returns the crate ids for which the diagnostics will be checked.
-    fn crates_of_interest(&self, db: &dyn LoweringGroup) -> Vec<CrateInput> {
+    pub(crate) fn crates_of_interest(&self, db: &dyn Database) -> Vec<CrateInput> {
         if let Some(crates) = self.crates.as_ref() {
             crates.clone()
         } else {
-            db.crates().into_iter().map(|id| id.long(db).clone().into_crate_input(db)).collect()
+            db.crates().iter().map(|id| id.long(db).clone().into_crate_input(db)).collect()
         }
     }
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `true` if diagnostics were found.
-    pub fn check(&mut self, db: &dyn LoweringGroup) -> bool {
+    pub fn check(&mut self, db: &dyn Database) -> bool {
         let mut found_diagnostics = false;
 
         let crates = self.crates_of_interest(db);
@@ -183,17 +187,20 @@ impl<'a> DiagnosticsReporter<'a> {
             let modules = db.crate_modules(crate_id);
             let mut processed_file_ids = UnorderedHashSet::<_>::default();
             for module_id in modules.iter() {
-                let diagnostic_notes =
-                    db.module_plugin_diagnostics_notes(*module_id).unwrap_or_default();
+                let default = Default::default();
+                let diagnostic_notes = module_id
+                    .module_data(db)
+                    .map(|data| data.diagnostics_notes(db))
+                    .unwrap_or(&default);
 
                 if let Ok(module_files) = db.module_files(*module_id) {
                     for file_id in module_files.iter().copied() {
                         if processed_file_ids.insert(file_id) {
                             found_diagnostics |= self.check_diag_group(
-                                db.upcast(),
-                                db.file_syntax_diagnostics(file_id),
+                                db.as_dyn_database(),
+                                db.file_syntax_diagnostics(file_id).clone(),
                                 ignore_warnings_in_crate,
-                                &diagnostic_notes,
+                                diagnostic_notes,
                             );
                         }
                     }
@@ -201,10 +208,10 @@ impl<'a> DiagnosticsReporter<'a> {
 
                 if let Ok(group) = db.module_semantic_diagnostics(*module_id) {
                     found_diagnostics |= self.check_diag_group(
-                        db.upcast(),
+                        db.as_dyn_database(),
                         group,
                         ignore_warnings_in_crate,
-                        &diagnostic_notes,
+                        diagnostic_notes,
                     );
                 }
 
@@ -214,10 +221,10 @@ impl<'a> DiagnosticsReporter<'a> {
 
                 if let Ok(group) = db.module_lowering_diagnostics(*module_id) {
                     found_diagnostics |= self.check_diag_group(
-                        db.upcast(),
+                        db.as_dyn_database(),
                         group,
                         ignore_warnings_in_crate,
-                        &diagnostic_notes,
+                        diagnostic_notes,
                     );
                 }
             }
@@ -249,28 +256,8 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
-    pub fn ensure(&mut self, db: &dyn LoweringGroup) -> Result<(), DiagnosticsError> {
+    pub fn ensure(&mut self, db: &dyn Database) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
-    }
-
-    /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
-    /// would be faster as the queries were already computed.
-    // TODO(eytan-starkware): This is now blocking and should be made non-blocking.
-    pub(crate) fn warm_up_diagnostics(&self, db: Box<dyn LoweringGroup>) {
-        let crates = self.crates_of_interest(db.as_ref());
-        let _: () = par_map(db.as_ref(), crates, |db, crate_input| {
-            let crate_id = crate_input.clone().into_crate_long_id(db).intern(db);
-            let crate_modules = db.crate_modules(crate_id);
-            let _: () = par_map(db, (*crate_modules).clone(), |db, module_id| {
-                for file_id in db.module_files(module_id).unwrap_or_default().iter().copied() {
-                    db.file_syntax_diagnostics(file_id);
-                }
-
-                let _ = db.module_semantic_diagnostics(module_id);
-
-                let _ = db.module_lowering_diagnostics(module_id);
-            });
-        });
     }
 
     pub fn skip_lowering_diagnostics(mut self) -> Self {

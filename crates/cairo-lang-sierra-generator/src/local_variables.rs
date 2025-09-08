@@ -19,6 +19,7 @@ use lowering::borrow_check::Demand;
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::{Lowered, MatchInfo, Statement, VarRemapping, VarUsage};
+use salsa::Database;
 
 use crate::ap_tracking::{ApTrackingConfiguration, get_ap_tracking_configuration};
 use crate::db::SierraGenGroup;
@@ -41,7 +42,7 @@ pub struct AnalyzeApChangesResult {
 /// Does ap change related analysis for a given function.
 /// See [AnalyzeApChangesResult].
 pub fn analyze_ap_changes<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     lowered_function: &Lowered<'db>,
 ) -> Maybe<AnalyzeApChangesResult> {
     lowered_function.blocks.has_root()?;
@@ -116,7 +117,7 @@ struct CalledBlockInfo {
 
 /// Context for the find_local_variables logic.
 struct FindLocalsContext<'db, 'a> {
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     lowered_function: &'a Lowered<'db>,
     used_after_revoke: OrderedHashSet<VariableId>,
     block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
@@ -337,13 +338,15 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         let outputs = statement.outputs();
         let branch_info = match statement {
             lowering::Statement::Const(statement_literal) => {
-                if matches!(
-                    statement_literal.value,
-                    ConstValue::Int(..)
-                        | ConstValue::Struct(..)
-                        | ConstValue::Enum(..)
-                        | ConstValue::NonZero(..)
-                ) {
+                if !statement_literal.boxed
+                    && matches!(
+                        statement_literal.value.long(self.db),
+                        ConstValue::Int(..)
+                            | ConstValue::Struct(..)
+                            | ConstValue::Enum(..)
+                            | ConstValue::NonZero(..)
+                    )
+                {
                     self.constants.insert(statement_literal.output);
                 }
                 BranchInfo { known_ap_change: true }

@@ -1,8 +1,7 @@
-use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -43,8 +42,7 @@ fn test_early_unsafe_panic(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let before =
-        db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().deref().clone();
+    let before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let mut after = before.clone();

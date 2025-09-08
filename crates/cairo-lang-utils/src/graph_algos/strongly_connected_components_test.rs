@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
+use cairo_lang_test_utils::test;
 use itertools::chain;
 use test_case::test_case;
-use test_log::test;
 
 use super::GraphNode;
 use crate::graph_algos::strongly_connected_components::compute_scc;

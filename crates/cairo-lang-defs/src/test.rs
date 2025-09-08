@@ -2,13 +2,10 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::db::{
-    CrateConfiguration, ExternalFiles, FilesGroup, FilesGroupEx, init_files_group,
-};
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, VirtualFile};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, init_files_group};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
@@ -16,8 +13,9 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{Intern, Upcast, extract_matches, try_extract_matches};
 use indoc::indoc;
+use salsa::{Database, Setter};
 
-use crate::db::{DefsGroup, init_defs_group, try_ext_as_virtual_impl};
+use crate::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
 use crate::ids::{
     FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleLongId,
@@ -33,17 +31,14 @@ pub struct DatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
-impl ExternalFiles for DatabaseForTesting {
-    fn try_ext_as_virtual(&self, external_id: salsa::Id) -> Option<VirtualFile<'_>> {
-        try_ext_as_virtual_impl(self.upcast(), external_id)
-    }
-}
+
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
+        init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
-        res.set_default_macro_plugins_input(Arc::new([
+        defs_group_input(&res).set_default_macro_plugins(&mut res).to(Some(vec![
             MacroPluginLongId(Arc::new(FooToBarPlugin)),
             MacroPluginLongId(Arc::new(RemoveOrigPlugin)),
             MacroPluginLongId(Arc::new(DummyPlugin)),
@@ -51,18 +46,8 @@ impl Default for DatabaseForTesting {
         res
     }
 }
-impl<'db> Upcast<'db, dyn DefsGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &dyn DefsGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn FilesGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &dyn FilesGroup {
-        self
-    }
-}
-impl<'db> Upcast<'db, dyn SyntaxGroup> for DatabaseForTesting {
-    fn upcast(&self) -> &dyn SyntaxGroup {
+impl<'db> Upcast<'db, dyn Database> for DatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn Database {
         self
     }
 }
@@ -85,11 +70,11 @@ fn test_generic_item_id(
 
     let module_file_id = ModuleFileId(module_id, FileIndex(0));
     let file_id = db_val.module_main_file(module_id).unwrap();
-    let node = db_val.file_syntax(file_id).unwrap();
+    let file_syntax = db_val.file_module_syntax(file_id).unwrap();
     let mut output = String::new();
 
     fn find_generics<'db>(
-        db: &'db DatabaseForTesting,
+        db: &'db dyn Database,
         mut module_file_id: ModuleFileId<'db>,
         node: &SyntaxNode<'db>,
         output: &mut String,
@@ -105,18 +90,12 @@ fn test_generic_item_id(
             | SyntaxKind::GenericParamConst
             | SyntaxKind::GenericParamImplNamed
             | SyntaxKind::GenericParamImplAnonymous => {
-                let db_ref: &dyn DefsGroup = db;
                 let param_id =
                     GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
-                writeln!(
-                    output,
-                    "{:?} -> {:?}",
-                    param_id.debug(db_ref),
-                    generic_item.debug(db_ref)
-                )
-                .unwrap();
+                writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
+                    .unwrap();
             }
             _ => {}
         }
@@ -124,16 +103,16 @@ fn test_generic_item_id(
             find_generics(db, module_file_id, child, output);
         }
     }
-    find_generics(&db_val, module_file_id, &node, &mut output);
+    find_generics(&db_val, module_file_id, &file_syntax.as_syntax_node(), &mut output);
 
     TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }
 
-pub fn get_crate_id<'db>(db: &'db dyn DefsGroup) -> CrateId<'db> {
+pub fn get_crate_id<'db>(db: &'db dyn Database) -> CrateId<'db> {
     CrateId::plain(db, "test")
 }
 
-pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
+pub fn setup_test_module(db: &mut dyn Database, content: &str) {
     let crate_id = get_crate_id(db);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));
@@ -142,7 +121,7 @@ pub fn setup_test_module(db: &mut dyn DefsGroup, content: &str) {
     override_file_content!(db, file, Some(content.into()));
     let crate_id = get_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
     assert_eq!(syntax_diagnostics, "");
 }
 
@@ -157,8 +136,10 @@ fn test_module_file() {
     );
     let module_id = ModuleId::CrateRoot(get_crate_id(&db_val));
     let db = &db_val;
-    let item_id =
-        extract_matches!(db.module_items(module_id).ok().unwrap()[0], ModuleItemId::Submodule);
+    let item_id = extract_matches!(
+        module_id.module_data(db).ok().unwrap().items(db)[0],
+        ModuleItemId::Submodule
+    );
     assert_eq!(item_id.name(db), "mysubmodule");
 
     let submodule_id = ModuleId::Submodule(item_id);
@@ -201,23 +182,20 @@ fn test_submodules() {
     let subsubmodule_id =
         ModuleId::Submodule(*db.module_submodules_ids(submodule_id).unwrap().first().unwrap());
 
-    let db_ref: &dyn DefsGroup = &*db;
+    let db_ref: &dyn Database = &*db;
     assert_eq!(
-        format!("{:?}", db.module_items(subsubmodule_id).unwrap().debug(db_ref)),
+        format!("{:?}", subsubmodule_id.module_data(db).unwrap().items(db).debug(db_ref)),
         "[FreeFunctionId(test::submod::subsubmod::foo), ExternTypeId(test::submod::subsubmod::B)]"
     );
 
     // Test file mappings.
+    assert_eq!(db.file_modules(db.module_main_file(module_id).unwrap()).unwrap(), vec![module_id]);
     assert_eq!(
-        &db.file_modules(db.module_main_file(module_id).unwrap()).unwrap()[..],
-        vec![module_id]
-    );
-    assert_eq!(
-        &db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap()[..],
+        db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap(),
         vec![submodule_id]
     );
     assert_eq!(
-        &db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap()[..],
+        db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap(),
         vec![subsubmodule_id]
     );
 }
@@ -227,7 +205,7 @@ struct DummyPlugin;
 impl MacroPlugin for DummyPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -289,9 +267,9 @@ fn test_plugin() {
     // Verify that:
     // 1. The original struct still exists.
     // 2. The expected items were generated.
-    let db_ref: &dyn DefsGroup = &*db;
+    let db_ref: &dyn Database = &*db;
     assert_eq!(
-        format!("{:?}", db.module_items(module_id).unwrap().debug(db_ref)),
+        format!("{:?}", module_id.module_data(db).unwrap().items(db).debug(db_ref)),
         "[StructId(test::A), FreeFunctionId(test::f), ExternTypeId(test::B)]"
     );
 }
@@ -315,9 +293,9 @@ fn test_plugin_remove_original() {
     // Verify that:
     // 1. The original struct was removed.
     // 2. The expected items were generated.
-    let db_ref: &dyn DefsGroup = &*db;
+    let db_ref: &dyn Database = &*db;
     assert_eq!(
-        format!("{:?}", db.module_items(module_id).unwrap().debug(db_ref)),
+        format!("{:?}", module_id.module_data(db).unwrap().items(db).debug(db_ref)),
         "[FreeFunctionId(test::f), ExternTypeId(test::B)]"
     );
 }
@@ -329,7 +307,7 @@ struct RemoveOrigPlugin;
 impl MacroPlugin for RemoveOrigPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -355,7 +333,7 @@ struct FooToBarPlugin;
 impl MacroPlugin for FooToBarPlugin {
     fn generate_code<'db>(
         &self,
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         item_ast: ast::ModuleItem<'db>,
         _metadata: &MacroPluginMetadata<'_>,
     ) -> PluginResult<'db> {
@@ -407,9 +385,9 @@ fn test_foo_to_bar() {
     // Verify that:
     // 1. The original function remained.
     // 2. The expected items were generated.
-    let db_ref: &dyn DefsGroup = &*db;
+    let db_ref: &dyn Database = &*db;
     assert_eq!(
-        format!("{:?}", db.module_items(module_id).unwrap().debug(db_ref)),
+        format!("{:?}", module_id.module_data(db).unwrap().items(db).debug(db_ref)),
         "[FreeFunctionId(test::foo), FreeFunctionId(test::bar), ExternTypeId(test::B), \
          ExternTypeId(test::B)]"
     );
@@ -437,8 +415,8 @@ fn test_first_plugin_removes() {
     // 2. No 'B' was generated by DummyPlugin.
     // Note RemoveOrigPlugin is before DummyPlugin in the plugins order. RemoveOrigPlugin already
     // acted on 'foo', so DummyPlugin shouldn't.
-    let db_ref: &dyn DefsGroup = &*db;
-    assert_eq!(format!("{:?}", db.module_items(module_id).unwrap().debug(db_ref)), "[]");
+    let db_ref: &dyn Database = &*db;
+    assert_eq!(format!("{:?}", module_id.module_data(db).unwrap().items(db).debug(db_ref)), "[]");
 }
 
 // Verify that if the first plugin generates new code, the later plugins don't act on the
@@ -461,9 +439,9 @@ fn test_first_plugin_generates() {
     // Verify that:
     // 1. 'bar' was generated by FooToBarPlugin.
     // 2. the original function was removed.
-    let db_ref: &dyn DefsGroup = &*db;
+    let db_ref: &dyn Database = &*db;
     assert_eq!(
-        format!("{:?}", db.module_items(module_id).unwrap().debug(db_ref)),
+        format!("{:?}", module_id.module_data(db).unwrap().items(db).debug(db_ref)),
         "[FreeFunctionId(test::bar), ExternTypeId(test::B)]"
     );
 }
@@ -488,9 +466,9 @@ fn test_plugin_chain() {
     // 1. The original function remained.
     // 2. 'bar' was generated by FooToBarPlugin.
     // 3. 'B' were generated by DummyPlugin for foo and bar.
-    let db_ref: &dyn DefsGroup = &*db;
+    let db_ref: &dyn Database = &*db;
     assert_eq!(
-        format!("{:?}", db.module_items(module_id).unwrap().debug(db_ref)),
+        format!("{:?}", module_id.module_data(db).unwrap().items(db).debug(db_ref)),
         "[FreeFunctionId(test::foo), FreeFunctionId(test::bar), ExternTypeId(test::B), \
          ExternTypeId(test::B)]"
     )

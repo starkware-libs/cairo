@@ -3,8 +3,10 @@ use std::vec;
 
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_lowering::ids::SemanticFunctionIdEx;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_sierra::extensions::snapshot::snapshot_ty;
 use cairo_lang_sierra::ids::UserTypeId;
@@ -12,15 +14,15 @@ use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGeneric
 use cairo_lang_utils::{Intern, try_extract_matches};
 use itertools::chain;
 use num_traits::ToPrimitive;
+use salsa::Database;
 
-use crate::db::{
-    SierraGenGroup, SierraGenGroupData, SierraGeneratorTypeLongId, sierra_concrete_long_id,
-};
+use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId, sierra_concrete_long_id};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
 /// See [SierraGenGroup::get_concrete_type_id] for documentation.
+#[salsa::tracked]
 pub fn get_concrete_type_id<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
     match type_id.long(db) {
@@ -45,13 +47,15 @@ pub fn get_concrete_type_id<'db>(
         }
     }
     Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
-        db.get_concrete_long_type_id(type_id)?,
+        db.get_concrete_long_type_id(type_id)?.clone(),
     )))
 }
 
 /// See [SierraGenGroup::get_index_enum_type_id] for documentation.
+#[salsa::tracked]
 pub fn get_index_enum_type_id(
-    db: &dyn SierraGenGroup,
+    db: &dyn Database,
+    _tracked: Tracked,
     index_count: usize,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
     let unit_ty_arg = db
@@ -70,8 +74,9 @@ pub fn get_index_enum_type_id(
 }
 
 /// See [SierraGenGroup::get_concrete_long_type_id] for documentation.
+#[salsa::tracked(returns(ref))]
 pub fn get_concrete_long_type_id<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
 ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>> {
     let user_type_long_id = |generic_id: &str, user_type: UserTypeId| {
@@ -108,13 +113,13 @@ pub fn get_concrete_long_type_id<'db>(
                                     SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
                                 }
                                 semantic::GenericArgumentId::Constant(value_id) => {
-                                    let value = value_id
-                                        .long(db)
-                                        .clone()
-                                        .into_int()
-                                        .expect("Expected ConstValue::Int for size");
-
-                                    SierraGenericArg::Value(value)
+                                    SierraGenericArg::Value(
+                                        value_id
+                                            .long(db)
+                                            .to_int()
+                                            .expect("Expected ConstValue::Int for size")
+                                            .clone(),
+                                    )
                                 }
                                 semantic::GenericArgumentId::Impl(_) => {
                                     panic!("Extern function with impl generics are not supported.")
@@ -166,19 +171,21 @@ pub fn get_concrete_long_type_id<'db>(
 }
 
 /// See [SierraGenGroup::is_self_referential] for documentation.
+#[salsa::tracked]
 pub fn is_self_referential<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
 ) -> Maybe<bool> {
     db.has_in_deps(type_id, type_id)
 }
 
 /// See [SierraGenGroup::type_dependencies] for documentation.
+#[salsa::tracked(returns(ref))]
 pub fn type_dependencies<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
-) -> Maybe<Arc<Vec<semantic::TypeId<'db>>>> {
-    Ok(Arc::new(match type_id.long(db) {
+) -> Maybe<Vec<semantic::TypeId<'db>>> {
+    Ok(match type_id.long(db) {
         semantic::TypeLongId::Concrete(ty) => match ty {
             semantic::ConcreteTypeId::Struct(structure) => db
                 .concrete_struct_members(*structure)?
@@ -201,8 +208,7 @@ pub fn type_dependencies<'db>(
         semantic::TypeLongId::FixedSizeArray { type_id, size } => {
             let size = size
                 .long(db)
-                .clone()
-                .into_int()
+                .to_int()
                 .expect("Expected ConstValue::Int for size")
                 .to_usize()
                 .unwrap();
@@ -214,16 +220,17 @@ pub fn type_dependencies<'db>(
         | semantic::TypeLongId::Missing(_) => {
             panic!("Types should be fully resolved at this point. Got: `{}`.", type_id.format(db))
         }
-    }))
+    })
 }
 
 /// See [SierraGenGroup::has_in_deps] for documentation.
+#[salsa::tracked(cycle_result=has_in_deps_cycle)]
 pub fn has_in_deps<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
     needle: semantic::TypeId<'db>,
 ) -> Maybe<bool> {
-    let deps = type_dependencies(db, type_id)?;
+    let deps = db.type_dependencies(type_id)?;
     if deps.contains(&needle) {
         return Ok(true);
     }
@@ -237,8 +244,7 @@ pub fn has_in_deps<'db>(
 
 /// See [SierraGenGroup::has_in_deps] for documentation.
 pub fn has_in_deps_cycle<'db>(
-    _db: &dyn SierraGenGroup,
-    _cycle: SierraGenGroupData,
+    _db: &'db dyn Database,
     _type_id: semantic::TypeId<'db>,
     _needle: semantic::TypeId<'db>,
 ) -> Maybe<bool> {
@@ -259,7 +265,7 @@ pub struct CycleBreakerTypeInfo {
 ///
 /// Assumes the type is a cycle breaker.
 pub fn cycle_breaker_info<'db>(
-    db: &'db dyn SierraGenGroup,
+    db: &dyn Database,
     ty: semantic::TypeId<'db>,
 ) -> Maybe<CycleBreakerTypeInfo> {
     let mut duplicatable = db.copyable(ty).is_ok();

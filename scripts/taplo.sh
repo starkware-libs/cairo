@@ -1,0 +1,1 @@
+taplo format --check

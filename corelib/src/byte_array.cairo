@@ -65,6 +65,7 @@ pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
+const BYTES_IN_BYTES31_NONZERO: NonZero<usize> = 31;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 /// Byte array type.
@@ -242,7 +243,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// ```
     #[must_use]
     fn len(self: @ByteArray) -> usize {
-        self.data.len() * BYTES_IN_BYTES31.into() + (*self.pending_word_len).into()
+        self.data.len() * BYTES_IN_BYTES31 + *self.pending_word_len
     }
 
     /// Returns an option of the byte at the given index of `self`
@@ -256,7 +257,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// assert!(byte == 98);
     /// ```
     fn at(self: @ByteArray, index: usize) -> Option<u8> {
-        let (word_index, index_in_word) = DivRem::div_rem(index, 31);
+        let (word_index, index_in_word) = DivRem::div_rem(index, BYTES_IN_BYTES31_NONZERO);
         if word_index == self.data.len() {
             // Index is in pending word.
             if index_in_word >= *self.pending_word_len {

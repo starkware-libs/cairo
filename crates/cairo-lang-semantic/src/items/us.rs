@@ -1,27 +1,30 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
-use cairo_lang_utils::Upcast;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use itertools::{Itertools, chain};
+use salsa::Database;
 
 use super::module::get_module_global_uses;
 use super::visibility::peek_visible_in;
 use crate::SemanticDiagnostic;
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
+use crate::items::macro_call::module_macro_modules;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
@@ -46,9 +49,9 @@ pub enum UsePathOrDollar<'db> {
     None,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
+/// Implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_file_id = use_id.module_file_id(db);
@@ -72,6 +75,15 @@ pub fn priv_use_semantic_data<'db>(
     Ok(Arc::new(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data }))
 }
 
+/// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
+#[salsa::tracked(cycle_result=priv_use_semantic_data_cycle)]
+pub fn priv_use_semantic_data_tracked<'db>(
+    db: &'db dyn Database,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<UseData<'db>>> {
+    priv_use_semantic_data(db, use_id)
+}
+
 /// Returns the segments that are the parts of the use path.
 ///
 /// The segments are returned in the order they appear in the use path.
@@ -81,7 +93,7 @@ pub fn priv_use_semantic_data<'db>(
 /// Given the `c` of `use a::b::{c, d};` will return `[a, b, c]`.
 /// Given the `b` of `use a::b::{c, d};` will return `[a, b]`.
 pub fn get_use_path_segments<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     use_path: ast::UsePath<'db>,
 ) -> Maybe<UseAsPathSegments<'db>> {
     let mut rev_segments = vec![];
@@ -117,7 +129,7 @@ pub fn get_use_path_segments<'db>(
 
 /// Returns the parent `UsePathSingle` of a use path if it exists.
 fn get_parent_single_use_path<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     use_path: &ast::UsePath<'db>,
 ) -> Maybe<UsePathOrDollar<'db>> {
     let node = use_path.as_syntax_node();
@@ -166,8 +178,7 @@ fn get_parent_single_use_path<'db>(
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data_cycle<'db>(
-    db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_file_id = use_id.module_file_id(db);
@@ -183,54 +194,71 @@ pub fn priv_use_semantic_data_cycle<'db>(
     }))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
+/// Implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
 pub fn use_semantic_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_use_semantic_data(use_id).map(|data| data.diagnostics.clone()).unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
+/// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
+#[salsa::tracked]
+pub fn use_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    use_id: UseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    use_semantic_diagnostics(db, use_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_use_semantic_data(use_id)?.resolver_data.clone())
 }
 
+/// Query implementation of [crate::db::SemanticGroup::use_resolver_data].
+#[salsa::tracked(cycle_result=use_resolver_data_cycle)]
+pub fn use_resolver_data_tracked<'db>(
+    db: &'db dyn Database,
+    use_id: UseId<'db>,
+) -> Maybe<Arc<ResolverData<'db>>> {
+    use_resolver_data(db, use_id)
+}
+
 /// Trivial cycle handler for [crate::db::SemanticGroup::use_resolver_data].
 pub fn use_resolver_data_cycle<'db>(
-    db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.
     use_resolver_data(db, use_id)
 }
 
-pub trait SemanticUseEx<'a>: Upcast<'a, dyn SemanticGroup> {
+pub trait SemanticUseEx<'a>: Database {
     /// Returns the resolved item or an error if it can't be resolved.
     ///
     /// This is not a query as the cycle handling is done in priv_use_semantic_data.
     fn use_resolved_item(&'a self, use_id: UseId<'a>) -> Maybe<ResolvedGenericItem<'a>> {
-        let db = self.upcast();
+        let db = self.as_dyn_database();
         db.priv_use_semantic_data(use_id)?.resolved_item.clone()
     }
 }
 
-impl<'a, T: Upcast<'a, dyn SemanticGroup> + ?Sized> SemanticUseEx<'a> for T {}
+impl<'a, T: Database + ?Sized> SemanticUseEx<'a> for T {}
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct UseGlobalData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     imported_module: Maybe<ModuleId<'db>>,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
+/// Implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
 pub fn priv_global_use_semantic_data<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let module_file_id = global_use_id.module_file_id(db);
@@ -269,26 +297,52 @@ pub fn priv_global_use_semantic_data<'db>(
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
+/// Query implementation of [crate::db::SemanticGroup::priv_global_use_semantic_data].
+#[salsa::tracked(cycle_result=priv_global_use_semantic_data_cycle)]
+pub fn priv_global_use_semantic_data_tracked<'db>(
+    db: &'db dyn Database,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<UseGlobalData<'db>> {
+    priv_global_use_semantic_data(db, global_use_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
 pub fn priv_global_use_imported_module<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<ModuleId<'db>> {
     db.priv_global_use_semantic_data(global_use_id)?.imported_module
 }
 
-/// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
+/// Query implementation of [crate::db::SemanticGroup::priv_global_use_imported_module].
+#[salsa::tracked]
+pub fn priv_global_use_imported_module_tracked<'db>(
+    db: &'db dyn Database,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<ModuleId<'db>> {
+    priv_global_use_imported_module(db, global_use_id)
+}
+
+/// Implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
 pub fn global_use_semantic_diagnostics<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_global_use_semantic_data(global_use_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
+/// Query implementation of [crate::db::SemanticGroup::global_use_semantic_diagnostics].
+#[salsa::tracked]
+pub fn global_use_semantic_diagnostics_tracked<'db>(
+    db: &'db dyn Database,
+    global_use_id: GlobalUseId<'db>,
+) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+    global_use_semantic_diagnostics(db, global_use_id)
+}
+
 /// Cycle handling for [crate::db::SemanticGroup::priv_global_use_semantic_data].
 pub fn priv_global_use_semantic_data_cycle<'db>(
-    db: &'db dyn SemanticGroup,
-    _input: SemanticGroupData,
+    db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -308,62 +362,70 @@ pub fn priv_global_use_semantic_data_cycle<'db>(
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
 }
 
-/// The modules that are imported by a module, using global uses.
-#[derive(Debug, Clone, PartialEq, Eq, salsa::Update)]
-pub struct ImportedModules<'db> {
-    /// The imported modules that have a path where each step is visible by the previous module.
-    pub accessible: OrderedHashSet<(ModuleId<'db>, ModuleId<'db>)>,
-    // TODO(Tomer-StarkWare): consider changing from all_modules to inaccessible_modules
-    /// All the imported modules.
-    pub all: OrderedHashSet<ModuleId<'db>>,
+/// The modules that are imported by a module, using global uses and macro calls.
+pub type ImportedModules<'db> = OrderedHashMap<ModuleId<'db>, ImportInfo<'db>>;
+
+/// Information about a module that is imported by a module, using global uses and macro calls.
+#[derive(Debug, Default, Clone, PartialEq, Eq, salsa::Update)]
+pub struct ImportInfo<'db> {
+    /// The modules that directly imported this module.
+    pub user_modules: Vec<ModuleId<'db>>,
 }
-/// Returns the modules that are imported with `use *` in the current module.
-/// Query implementation of [crate::db::SemanticGroup::priv_module_use_star_modules].
-pub fn priv_module_use_star_modules<'db>(
-    db: &'db dyn SemanticGroup,
+
+/// Returns the modules that are imported with `use *` and macro calls in the current module.
+/// Query implementation of [crate::db::SemanticGroup::module_imported_modules].
+#[salsa::tracked(returns(ref))]
+pub fn module_imported_modules<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
-) -> Arc<ImportedModules<'db>> {
+) -> ImportedModules<'db> {
     let mut visited = UnorderedHashSet::<_>::default();
     let mut stack = vec![(module_id, module_id)];
-    let mut accessible_modules = OrderedHashSet::default();
+    let mut modules = OrderedHashMap::<ModuleId<'db>, ImportInfo<'db>>::default();
+    modules.insert(module_id, ImportInfo { user_modules: vec![module_id] });
     // Iterate over all modules that are imported through `use *`, and are accessible from the
     // current module.
     while let Some((user_module, containing_module)) = stack.pop() {
         if !visited.insert((user_module, containing_module)) {
             continue;
         }
-        let Ok(glob_uses) = get_module_global_uses(db, containing_module) else {
-            continue;
-        };
-        for (glob_use, item_visibility) in glob_uses.iter() {
-            let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
+        for defined_module in
+            chain!([&containing_module], module_macro_modules(db, false, containing_module))
+        {
+            let Ok(glob_uses) = get_module_global_uses(db, *defined_module) else {
                 continue;
             };
-            if peek_visible_in(db, *item_visibility, containing_module, user_module) {
-                stack.push((containing_module, module_id_found));
-                accessible_modules.insert((containing_module, module_id_found));
+            for (glob_use, item_visibility) in glob_uses.iter() {
+                let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
+                    continue;
+                };
+                // Add the module to the map to find all reachable modules.
+                let entry = modules.entry(module_id_found).or_default();
+                if peek_visible_in(db, *item_visibility, containing_module, user_module) {
+                    stack.push((containing_module, module_id_found));
+                    entry.user_modules.push(containing_module);
+                }
             }
         }
     }
-    let mut visited = UnorderedHashSet::<_>::default();
-    let mut stack = vec![module_id];
-    let mut all_modules = OrderedHashSet::default();
+    let mut stack =
+        modules.iter().filter(|(_, v)| v.user_modules.is_empty()).map(|(k, _)| *k).collect_vec();
     // Iterate over all modules that are imported through `use *`.
     while let Some(curr_module_id) = stack.pop() {
-        if !visited.insert(curr_module_id) {
-            continue;
-        }
-        all_modules.insert(curr_module_id);
-        let Ok(glob_uses) = get_module_global_uses(db, curr_module_id) else { continue };
-        for glob_use in glob_uses.keys() {
-            let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use) else {
-                continue;
-            };
-            stack.push(module_id_found);
+        for defined_module in
+            chain!([&curr_module_id], module_macro_modules(db, false, curr_module_id))
+        {
+            let Ok(glob_uses) = get_module_global_uses(db, *defined_module) else { continue };
+            for glob_use in glob_uses.keys() {
+                if let Ok(module_id_found) = db.priv_global_use_imported_module(*glob_use)
+                    && let Entry::Vacant(entry) = modules.entry(module_id_found)
+                {
+                    entry.insert(ImportInfo::default());
+                    stack.push(module_id_found);
+                }
+            }
         }
     }
-    // Remove the current module from the list of all modules, as if items in the module not found
-    // previously, it was explicitly ignored.
-    all_modules.swap_remove(&module_id);
-    Arc::new(ImportedModules { accessible: accessible_modules, all: all_modules })
+    modules
 }

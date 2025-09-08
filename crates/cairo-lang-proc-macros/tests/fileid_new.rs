@@ -7,7 +7,7 @@ use std::sync::Arc;
 use cairo_lang_proc_macros::query_group;
 use logger_db::LoggerDb;
 
-#[salsa::interned(no_lifetime)]
+#[salsa::interned(no_lifetime, revisions = usize::MAX)]
 pub struct LongFile {
     data: u32,
 }
@@ -30,7 +30,7 @@ pub struct LongFile {
 //     }
 // }
 
-#[salsa::interned]
+#[salsa::interned(revisions = usize::MAX)]
 pub struct I {
     val: u32,
 }
@@ -42,7 +42,7 @@ pub trait B: salsa::Database {
 
     fn inner_val(&self, id: LongFile) -> u32;
 
-    #[salsa::interned]
+    #[salsa::interned(revisions = usize::MAX)]
     fn create_file_id(&self, val: u32) -> LongFile;
 
     fn do_something<'db>(&self, i: I<'db>) -> u32;

@@ -49,10 +49,11 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
     /// Rebuilds the statement with renamed var and block ids.
     fn rebuild_statement(&mut self, statement: &Statement<'db>) -> Statement<'db> {
         let mut statement = match statement {
-            Statement::Const(stmt) => Statement::Const(StatementConst {
-                value: stmt.value.clone(),
-                output: self.map_var_id(stmt.output),
-            }),
+            Statement::Const(stmt) => Statement::Const(StatementConst::new(
+                stmt.value,
+                self.map_var_id(stmt.output),
+                stmt.boxed,
+            )),
             Statement::Call(stmt) => Statement::Call(StatementCall {
                 function: stmt.function,
                 inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),

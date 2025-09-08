@@ -6,7 +6,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateInput, FlagLongId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -76,7 +76,8 @@ fn checked_compile_to_sierra(
             if module_id.full_path(&db) != format!("examples::{name}") {
                 continue;
             }
-            for (free_func_id, _) in db.module_free_functions(*module_id).unwrap().iter() {
+            for (free_func_id, _) in module_id.module_data(&db).unwrap().free_functions(&db).iter()
+            {
                 if let Some(function) =
                     ConcreteFunctionWithBodyId::from_no_generics_free(&db, *free_func_id)
                 {
@@ -86,8 +87,8 @@ fn checked_compile_to_sierra(
         }
     }
     let SierraProgramWithDebug { program: sierra_program, .. } =
-        Arc::unwrap_or_clone(db.get_sierra_program_for_functions(requested_function_ids).unwrap());
-    replace_sierra_ids_in_program(&db, &sierra_program)
+        db.get_sierra_program_for_functions(requested_function_ids).unwrap();
+    replace_sierra_ids_in_program(&db, sierra_program)
 }
 
 /// Tests lowering from Cairo to Sierra.

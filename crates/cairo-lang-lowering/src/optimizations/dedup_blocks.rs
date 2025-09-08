@@ -2,7 +2,7 @@
 #[path = "dedup_blocks_test.rs"]
 mod test;
 
-use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::{ConcreteVariant, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{self, UnorderedHashMap};
@@ -36,8 +36,9 @@ struct CanonicVar(usize);
 #[derive(Hash, PartialEq, Eq)]
 enum CanonicStatement<'db> {
     Const {
-        value: ConstValue<'db>,
+        value: ConstValueId<'db>,
         output: CanonicVar,
+        boxed: bool,
     },
     Call {
         function: FunctionId<'db>,
@@ -112,12 +113,14 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
         })
     }
 
-    /// Converts a statement to a cononic statement.
+    /// Converts a statement to a canonic statement.
     fn handle_statement(&mut self, statement: &Statement<'db>) -> CanonicStatement<'db> {
         match statement {
-            Statement::Const(StatementConst { value, output }) => {
-                CanonicStatement::Const { value: value.clone(), output: self.handle_output(output) }
-            }
+            Statement::Const(StatementConst { value, boxed, output }) => CanonicStatement::Const {
+                value: *value,
+                output: self.handle_output(output),
+                boxed: *boxed,
+            },
             Statement::Call(StatementCall {
                 function,
                 inputs,

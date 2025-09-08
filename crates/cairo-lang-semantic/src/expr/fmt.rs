@@ -1,8 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_utils::Upcast;
+use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::{ExprId, PatternId, StatementId};
@@ -10,23 +9,12 @@ use crate::{ExprId, PatternId, StatementId};
 /// Holds all the information needed for formatting expressions.
 /// Acts like a "db" for DebugWithDb.
 pub struct ExprFormatter<'db> {
-    pub db: &'db dyn SemanticGroup,
+    pub db: &'db dyn Database,
     pub function_id: FunctionWithBodyId<'db>,
 }
 
-impl<'db> Upcast<'db, dyn SemanticGroup> for ExprFormatter<'db> {
-    fn upcast(&'db self) -> &'db dyn SemanticGroup {
-        self.db
-    }
-}
-impl<'db> Upcast<'db, dyn DefsGroup> for ExprFormatter<'db> {
-    fn upcast(&'db self) -> &'db dyn DefsGroup {
-        self.db.upcast()
-    }
-}
-
-impl<'db> Upcast<'db, dyn ParserGroup> for ExprFormatter<'db> {
-    fn upcast(&'db self) -> &'db dyn ParserGroup {
+impl<'db> Upcast<'db, dyn Database> for ExprFormatter<'db> {
+    fn upcast(&'db self) -> &'db dyn Database {
         self.db.upcast()
     }
 }

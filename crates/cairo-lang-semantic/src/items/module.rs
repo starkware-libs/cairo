@@ -1,16 +1,19 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
     TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::{StrRef, Tracked};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::UsePathEx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::chain;
+use salsa::Database;
 
 use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
@@ -19,6 +22,8 @@ use crate::SemanticDiagnostic;
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
+use crate::items::macro_call::module_macro_modules;
+use crate::items::us::ImportInfo;
 use crate::resolve::ResolvedGenericItem;
 
 /// Information per item in a module.
@@ -37,66 +42,83 @@ pub struct ModuleSemanticData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-pub fn priv_module_semantic_data<'db>(
-    db: &'db dyn SemanticGroup,
+pub fn priv_module_semantic_data_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<ModuleSemanticData<'db>>> {
+    priv_module_semantic_data_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn priv_module_semantic_data_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<ModuleSemanticData<'db>>> {
+    priv_module_semantic_data(db, module_id)
+}
+
+fn priv_module_semantic_data<'db>(
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<ModuleSemanticData<'db>>> {
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
-    for item_id in db.module_items(module_id)?.iter().copied() {
+    let module_data = module_id.module_data(db)?;
+    for item_id in module_data.items(db).iter().copied() {
         let (name, attributes, visibility) = match &item_id {
             ModuleItemId::Constant(item_id) => {
-                let item = &db.module_constants(module_id)?[item_id];
+                let item = &module_data.constants(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Submodule(item_id) => {
-                let item = &db.module_submodules(module_id)?[item_id];
+                let item = &module_data.submodules(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Use(item_id) => {
-                let use_ast = &db.module_uses(module_id)?[item_id];
+                let use_ast = &module_data.uses(db)[item_id];
                 let item = ast::UsePath::Leaf(use_ast.clone()).get_item(db);
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::FreeFunction(item_id) => {
-                let item = &db.module_free_functions(module_id)?[item_id];
+                let item = &module_data.free_functions(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Struct(item_id) => {
-                let item = &db.module_structs(module_id)?[item_id];
+                let item = &module_data.structs(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Enum(item_id) => {
-                let item = &db.module_enums(module_id)?[item_id];
+                let item = &module_data.enums(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::TypeAlias(item_id) => {
-                let item = &db.module_type_aliases(module_id)?[item_id];
+                let item = &module_data.type_aliases(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ImplAlias(item_id) => {
-                let item = &db.module_impl_aliases(module_id)?[item_id];
+                let item = &module_data.impl_aliases(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Trait(item_id) => {
-                let item = &db.module_traits(module_id)?[item_id];
+                let item = &module_data.traits(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::Impl(item_id) => {
-                let item = &db.module_impls(module_id)?[item_id];
+                let item = &module_data.impls(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ExternType(item_id) => {
-                let item = &db.module_extern_types(module_id)?[item_id];
+                let item = &module_data.extern_types(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::ExternFunction(item_id) => {
-                let item = &db.module_extern_functions(module_id)?[item_id];
+                let item = &module_data.extern_functions(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
             ModuleItemId::MacroDeclaration(item_id) => {
-                let item = &db.module_macro_declarations(module_id)?[item_id];
+                let item = &module_data.macro_declarations(db)[item_id];
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
         };
@@ -113,8 +135,8 @@ pub fn priv_module_semantic_data<'db>(
         }
     }
 
-    let global_uses = db
-        .module_global_uses(module_id)?
+    let global_uses = module_data
+        .global_uses(db)
         .iter()
         .map(|(global_use_id, use_path_star)| {
             let item = ast::UsePath::Star(use_path_star.clone()).get_item(db);
@@ -126,7 +148,7 @@ pub fn priv_module_semantic_data<'db>(
 }
 
 pub fn module_item_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<ModuleItemId<'db>>> {
@@ -134,8 +156,26 @@ pub fn module_item_by_name<'db>(
     Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
+pub fn module_item_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemId<'db>>> {
+    module_item_by_name_helper(db, (), module_id, name)
+}
+
+#[salsa::tracked]
+fn module_item_by_name_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemId<'db>>> {
+    module_item_by_name(db, module_id, name)
+}
+
 pub fn module_item_info_by_name<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
     name: StrRef<'db>,
 ) -> Maybe<Option<ModuleItemInfo<'db>>> {
@@ -143,22 +183,40 @@ pub fn module_item_info_by_name<'db>(
     Ok(module_data.items.get(&name).cloned())
 }
 
+pub fn module_item_info_by_name_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemInfo<'db>>> {
+    module_item_info_by_name_helper(db, (), module_id, name)
+}
+
+#[salsa::tracked]
+fn module_item_info_by_name_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+    name: StrRef<'db>,
+) -> Maybe<Option<ModuleItemInfo<'db>>> {
+    module_item_info_by_name(db, module_id, name)
+}
+
 /// Get the imported global uses of a module, and their visibility.
 pub fn get_module_global_uses<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<OrderedHashMap<GlobalUseId<'db>, Visibility>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.global_uses.clone())
 }
 
-/// Query implementation of [SemanticGroup::module_all_used_uses].
+/// Implementation of [SemanticGroup::module_all_used_uses].
 pub fn module_all_used_uses<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
     let mut all_used_uses = OrderedHashSet::default();
-    let module_items = db.module_items(module_id)?;
+    let module_items = module_id.module_data(db)?.items(db);
     for item in module_items.iter() {
         if let Some(items) = match *item {
             ModuleItemId::Submodule(submodule_id) => {
@@ -178,44 +236,99 @@ pub fn module_all_used_uses<'db>(
     Ok(all_used_uses.into())
 }
 
-/// Query implementation of [SemanticGroup::module_attributes].
+/// Query implementation of [SemanticGroup::module_all_used_uses].
+pub fn module_all_used_uses_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+    module_all_used_uses_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn module_all_used_uses_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+    module_all_used_uses(db, module_id)
+}
+
+/// Implementation of [SemanticGroup::module_attributes].
 pub fn module_attributes<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(match &module_id {
-        ModuleId::CrateRoot(_) | ModuleId::MacroCall { id: _, generated_file_id: _ } => vec![],
+        ModuleId::CrateRoot(_) | ModuleId::MacroCall { .. } => vec![],
         ModuleId::Submodule(submodule_id) => {
-            let module_ast = &db.module_submodules(submodule_id.parent_module(db))?[submodule_id];
+            let module_ast = &submodule_id.module_data(db)?.submodules(db)[submodule_id];
 
             module_ast.attributes(db).structurize(db)
         }
     })
 }
 
+/// Query implementation of [SemanticGroup::module_attributes].
+pub fn module_attributes_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    module_attributes_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn module_attributes_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Vec<Attribute<'db>>> {
+    module_attributes(db, module_id)
+}
+
 /// Finds all the trait ids usable in the current context, using `global use` imports.
+/// Implementation of [SemanticGroup::module_usable_trait_ids].
 pub fn module_usable_trait_ids<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
-    // Get the traits first from the module, do not change this order.
-    let mut module_traits = specific_module_usable_trait_ids(db, module_id, module_id)?;
-    for (user_module, containing_module) in &db.priv_module_use_star_modules(module_id).accessible {
-        if let Ok(star_module_traits) =
-            specific_module_usable_trait_ids(db, *user_module, *containing_module)
+    let mut module_traits = OrderedHashMap::<TraitId<'db>, LookupItemId<'db>>::default();
+    for (containing_module, info) in db.module_imported_modules((), module_id).iter() {
+        for defined_module in
+            chain!([containing_module], module_macro_modules(db, false, *containing_module))
         {
-            for (trait_id, local_item_id) in star_module_traits {
-                module_traits.entry(trait_id).or_insert(local_item_id);
+            if let Ok(star_module_traits) =
+                specific_module_usable_trait_ids(db, info, *defined_module)
+            {
+                for (trait_id, local_item_id) in star_module_traits {
+                    module_traits.entry(trait_id).or_insert(local_item_id);
+                }
             }
         }
     }
     Ok(module_traits.into())
 }
 
+/// Query implementation of [SemanticGroup::module_usable_trait_ids].
+pub fn module_usable_trait_ids_tracked<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
+    module_usable_trait_ids_helper(db, (), module_id)
+}
+
+#[salsa::tracked]
+fn module_usable_trait_ids_helper<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    module_id: ModuleId<'db>,
+) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
+    module_usable_trait_ids(db, module_id)
+}
+
 /// Finds all the trait ids usable in the current context, not using `global use` imports.
 fn specific_module_usable_trait_ids<'db>(
-    db: &'db dyn SemanticGroup,
-    user_module: ModuleId<'db>,
+    db: &'db dyn Database,
+    info: &ImportInfo<'db>,
     containing_module: ModuleId<'db>,
 ) -> Maybe<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>> {
     let mut module_traits: OrderedHashMap<TraitId<'_>, LookupItemId<'_>> =
@@ -230,7 +343,9 @@ fn specific_module_usable_trait_ids<'db>(
         ) {
             continue;
         }
-        if !peek_visible_in(db, item.visibility, containing_module, user_module) {
+        if !info.user_modules.iter().any(|user_module_id| {
+            peek_visible_in(db, item.visibility, containing_module, *user_module_id)
+        }) {
             continue;
         }
         match item.item_id {

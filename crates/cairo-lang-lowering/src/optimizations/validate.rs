@@ -90,13 +90,13 @@ pub fn validate(lowered: &Lowered<'_>) -> Result<(), ValidationError> {
                         return Err(ValidationError::UnknownUsageInEnd(old_var.var_id, block_id));
                     }
                     let intro = Introduction::Remapping(block_id, *target_block_id);
-                    if let Some(prev) = introductions.insert(*new_var, intro) {
-                        if !matches!(
+                    if let Some(prev) = introductions.insert(*new_var, intro)
+                        && !matches!(
                             prev,
                             Introduction::Remapping(_, target) if target == *target_block_id,
-                        ) {
-                            return Err(ValidationError::DoubleIntroduction(*new_var, prev, intro));
-                        }
+                        )
+                    {
+                        return Err(ValidationError::DoubleIntroduction(*new_var, prev, intro));
                     }
                 }
                 stack.push(*target_block_id);

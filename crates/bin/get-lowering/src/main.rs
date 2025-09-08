@@ -8,8 +8,9 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{NamedLanguageElementId, TopLevelLanguageElementId};
-use cairo_lang_executable::plugin::executable_plugin_suite;
+use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::add_withdraw_gas::add_withdraw_gas;
@@ -24,6 +25,7 @@ use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::{Lowered, LoweringStage};
 use cairo_lang_semantic::ConcreteImplLongId;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionWithBodyId,
@@ -35,6 +37,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
+use salsa::Database;
 
 /// Tests that `PhasesFormatter` is consistent with the lowering phases.
 #[test]
@@ -45,7 +48,7 @@ fn test_lowering_consistency() {
         .build()
         .unwrap();
 
-    let db: &dyn LoweringGroup = &db_val;
+    let db: &dyn Database = &db_val;
 
     let function_id = get_func_id_by_name(
         db,
@@ -95,7 +98,7 @@ struct Args {
 
 /// Helper class for formatting the lowering phases of a concrete function.
 struct PhasesDisplay<'a> {
-    db: &'a dyn LoweringGroup,
+    db: &'a dyn Database,
     function_id: ConcreteFunctionWithBodyId<'a>,
 }
 
@@ -132,7 +135,7 @@ impl<'a> fmt::Display for PhasesDisplay<'a> {
         let final_state = db.lowered_body(self.function_id, LoweringStage::Final).unwrap();
         assert_eq!(
             LoweredDisplay::new(db, &curr_state).to_string(),
-            LoweredDisplay::new(db, &pre_opts).to_string()
+            LoweredDisplay::new(db, pre_opts).to_string()
         );
         for (strategy, expected) in [
             (db.baseline_optimization_strategy(), post_base_opts),
@@ -145,7 +148,7 @@ impl<'a> fmt::Display for PhasesDisplay<'a> {
             }
             assert_eq!(
                 LoweredDisplay::new(db, &curr_state).to_string(),
-                LoweredDisplay::new(db, &expected).to_string()
+                LoweredDisplay::new(db, expected).to_string()
             );
         }
 
@@ -155,11 +158,11 @@ impl<'a> fmt::Display for PhasesDisplay<'a> {
 
 /// Helper for displaying the lowered representation of a concrete function.
 struct LoweredDisplay<'a> {
-    db: &'a dyn LoweringGroup,
+    db: &'a dyn Database,
     lowered: &'a Lowered<'a>,
 }
 impl<'a> LoweredDisplay<'a> {
-    fn new(db: &'a dyn LoweringGroup, lowered: &'a Lowered<'_>) -> Self {
+    fn new(db: &'a dyn Database, lowered: &'a Lowered<'_>) -> Self {
         Self { db, lowered }
     }
 }
@@ -175,7 +178,7 @@ impl fmt::Display for LoweredDisplay<'_> {
 // Returns a dictionary mapping function names to their ids for all the functions in the given
 // crate.
 fn get_all_funcs<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     crate_ids: &[CrateId<'db>],
 ) -> anyhow::Result<OrderedHashMap<String, GenericFunctionWithBodyId<'db>>> {
     let mut res: OrderedHashMap<String, GenericFunctionWithBodyId<'db>> = Default::default();
@@ -212,7 +215,7 @@ fn get_all_funcs<'db>(
 
 /// Given a function name and list of crates, returns the Concrete id of the function.
 fn get_func_id_by_name<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     crate_ids: &[CrateId<'db>],
     function_path: String,
 ) -> anyhow::Result<ConcreteFunctionWithBodyId<'db>> {
@@ -282,7 +285,8 @@ fn main() -> anyhow::Result<()> {
                 )
             })?;
 
-            function_id = db.intern_lowering_concrete_function_with_body(
+            function_id = ConcreteFunctionWithBodyId::new(
+                db,
                 ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
                     parent: function_id.base_semantic_function(db),
                     key,
@@ -302,7 +306,7 @@ fn main() -> anyhow::Result<()> {
         if args.all {
             PhasesDisplay { db, function_id }.to_string()
         } else {
-            LoweredDisplay::new(db, &lowered).to_string()
+            LoweredDisplay::new(db, lowered).to_string()
         }
     } else {
         get_all_funcs(db, &main_crate_ids)?.keys().join("\n")

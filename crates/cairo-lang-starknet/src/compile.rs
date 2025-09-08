@@ -1,5 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::CompilerConfig;
@@ -8,7 +7,6 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
-use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
@@ -20,6 +18,7 @@ use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
 use itertools::{Itertools, chain};
+use salsa::Database;
 
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
@@ -130,13 +129,13 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
 ) -> Result<ContractClass> {
     let SemanticEntryPoints { external, l1_handler, constructor } =
         extract_semantic_entrypoints(db, contract)?;
-    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = Arc::unwrap_or_clone(
-        db.get_sierra_program_for_functions(
+    let SierraProgramWithDebug { program: mut sierra_program, debug_info } = db
+        .get_sierra_program_for_functions(
             chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
         )
         .to_option()
-        .with_context(|| "Compilation failed without any diagnostics.")?,
-    );
+        .context("Compilation failed without any diagnostics.")?
+        .clone();
 
     if compiler_config.replace_ids {
         sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
@@ -186,7 +185,7 @@ pub struct SemanticEntryPoints<'db> {
 
 /// Extracts functions from the contract.
 pub fn extract_semantic_entrypoints<'db>(
-    db: &'db dyn LoweringGroup,
+    db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
 ) -> core::result::Result<SemanticEntryPoints<'db>, anyhow::Error> {
     let external: Vec<_> = get_contract_abi_functions(db, contract, EXTERNAL_MODULE)?

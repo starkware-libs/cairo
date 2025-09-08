@@ -7,6 +7,7 @@ use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::Entry;
 use itertools::{Itertools, chain, zip_eq};
+use salsa::Database;
 
 use super::canonic::{CanonicalImpl, CanonicalTrait, MapperError, ResultNoErrEx};
 use super::conform::InferenceConform;
@@ -15,11 +16,11 @@ use super::{
     ImplVarTraitItemMappings, InferenceData, InferenceError, InferenceId, InferenceResult,
     InferenceVar, LocalImplVarId,
 };
-use crate::db::{SemanticGroup, SemanticGroupData};
+use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplLongId, ImplLookupContext, UninferredImpl, find_candidates_at_context,
-    find_closure_generated_candidate,
+    ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplLookupContextId, UninferredImpl,
+    UninferredImplById, find_candidates_at_context, find_closure_generated_candidate,
 };
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeById, ImplTypeId};
@@ -41,14 +42,14 @@ unsafe impl<'db, T: salsa::Update> salsa::Update for SolutionSet<'db, T> {
         let old_pointer = unsafe { &mut *old_pointer };
         match (old_pointer, new_value) {
             (SolutionSet::None, SolutionSet::None) => false,
-            (SolutionSet::Unique(u1), SolutionSet::Unique(u2)) => {
+            (SolutionSet::Unique(u1), SolutionSet::Unique(u2)) => unsafe {
                 salsa::plumbing::UpdateDispatch::<T>::maybe_update(u1, u2)
-            }
-            (SolutionSet::Ambiguous(ambiguity), SolutionSet::Ambiguous(ambiguity2)) => {
+            },
+            (SolutionSet::Ambiguous(ambiguity), SolutionSet::Ambiguous(ambiguity2)) => unsafe {
                 salsa::plumbing::UpdateDispatch::<Ambiguity<'db>>::maybe_update(
                     ambiguity, ambiguity2,
                 )
-            }
+            },
             (old_pointer, new_value) => {
                 *old_pointer = new_value;
                 true
@@ -76,7 +77,7 @@ pub enum Ambiguity<'db> {
     },
 }
 impl<'db> Ambiguity<'db> {
-    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+    pub fn format(&self, db: &dyn Database) -> String {
         match self {
             Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
                 let impls_str = impls.iter().map(|imp| format!("`{}`", imp.format(db))).join(", ");
@@ -103,12 +104,12 @@ impl<'db> Ambiguity<'db> {
     }
 }
 
-/// Query implementation of [SemanticGroup::canonic_trait_solutions].
+/// Implementation of [SemanticGroup::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
 pub fn canonic_trait_solutions<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
-    lookup_context: ImplLookupContext<'db>,
+    lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     let mut concrete_trait_id = canonical_trait.id;
@@ -116,12 +117,7 @@ pub fn canonic_trait_solutions<'db>(
     // If the trait is not fully concrete, we might be able to use the trait's items to find a
     // more concrete trait.
     if !concrete_trait_id.is_fully_concrete(db) && !canonical_trait.mappings.is_empty() {
-        match solve_canonical_trait(
-            db,
-            canonical_trait,
-            lookup_context.clone(),
-            impl_type_bounds.clone(),
-        ) {
+        match solve_canonical_trait(db, canonical_trait, lookup_context, impl_type_bounds.clone()) {
             SolutionSet::None => {}
             SolutionSet::Unique(imp) => {
                 concrete_trait_id =
@@ -141,12 +137,23 @@ pub fn canonic_trait_solutions<'db>(
     ))
 }
 
+/// Query implementation of [SemanticGroup::canonic_trait_solutions].
+/// Assumes the lookup context is already enriched by [enrich_lookup_context].
+#[salsa::tracked(cycle_result=canonic_trait_solutions_cycle)]
+pub fn canonic_trait_solutions_tracked<'db>(
+    db: &'db dyn Database,
+    canonical_trait: CanonicalTrait<'db>,
+    lookup_context: ImplLookupContextId<'db>,
+    impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
+    canonic_trait_solutions(db, canonical_trait, lookup_context, impl_type_bounds)
+}
+
 /// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle<'db>(
-    _db: &dyn SemanticGroup,
-    _input: SemanticGroupData,
+    _db: &dyn Database,
     _canonical_trait: CanonicalTrait<'db>,
-    _lookup_context: ImplLookupContext<'db>,
+    _lookup_context: ImplLookupContextId<'db>,
     _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
 ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
     Err(InferenceError::Cycle(InferenceVar::Impl(LocalImplVarId(0))))
@@ -154,11 +161,11 @@ pub fn canonic_trait_solutions_cycle<'db>(
 
 /// Adds the defining module of the trait and the generic arguments to the lookup context.
 pub fn enrich_lookup_context<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     concrete_trait_id: ConcreteTraitId<'db>,
     lookup_context: &mut ImplLookupContext<'db>,
 ) {
-    lookup_context.insert_module(concrete_trait_id.trait_id(db).module_file_id(db).0);
+    lookup_context.insert_module(concrete_trait_id.trait_id(db).parent_module(db), db);
     let generic_args = concrete_trait_id.generic_args(db);
     // Add the defining module of the generic args to the lookup.
     for generic_arg in &generic_args {
@@ -166,21 +173,22 @@ pub fn enrich_lookup_context<'db>(
             enrich_lookup_context_with_ty(db, *ty, lookup_context);
         }
     }
+    lookup_context.strip_for_trait_id(db, concrete_trait_id.trait_id(db));
 }
 
 /// Adds the defining module of the type to the lookup context.
 pub fn enrich_lookup_context_with_ty<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     ty: TypeId<'db>,
     lookup_context: &mut ImplLookupContext<'db>,
 ) {
     match ty.long(db) {
         TypeLongId::ImplType(impl_type_id) => {
-            lookup_context.insert_impl(impl_type_id.impl_id());
+            lookup_context.insert_impl(impl_type_id.impl_id(), db);
         }
         long_ty => {
             if let Some(module_id) = long_ty.module_id(db) {
-                lookup_context.insert_module(module_id);
+                lookup_context.insert_module(module_id, db);
             }
         }
     }
@@ -189,24 +197,23 @@ pub fn enrich_lookup_context_with_ty<'db>(
 /// Attempts to solve a `canonical_trait`. Will try to find candidates in the given
 /// `lookup_context`.
 fn solve_canonical_trait<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     canonical_trait: CanonicalTrait<'db>,
-    lookup_context: ImplLookupContext<'db>,
+    lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 ) -> SolutionSet<'db, CanonicalImpl<'db>> {
     let filter = canonical_trait.id.filter(db);
-    let mut candidates =
-        find_candidates_at_context(db, &lookup_context, &filter).unwrap_or_default();
+    let mut candidates = find_candidates_at_context(db, lookup_context, filter).unwrap_or_default();
     find_closure_generated_candidate(db, canonical_trait.id)
-        .map(|candidate| candidates.insert(candidate));
+        .map(|candidate| candidates.insert(UninferredImplById(candidate)));
 
     let mut unique_solution: Option<CanonicalImpl<'_>> = None;
     for candidate in candidates.into_iter() {
         let Ok(candidate_solution_set) = solve_candidate(
             db,
             &canonical_trait,
-            candidate,
-            &lookup_context,
+            candidate.0,
+            lookup_context,
             impl_type_bounds.clone(),
         ) else {
             continue;
@@ -235,13 +242,15 @@ fn solve_canonical_trait<'db>(
 
 /// Attempts to solve `candidate` as the requested `canonical_trait`.
 fn solve_candidate<'db>(
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     canonical_trait: &CanonicalTrait<'db>,
     candidate: UninferredImpl<'db>,
-    lookup_context: &ImplLookupContext<'db>,
+    lookup_context: ImplLookupContextId<'db>,
     impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
 ) -> InferenceResult<SolutionSet<'db, CanonicalImpl<'db>>> {
-    let candidate_concrete_trait = candidate.concrete_trait(db).unwrap();
+    let Ok(candidate_concrete_trait) = candidate.concrete_trait(db) else {
+        return Err(super::ErrorSet);
+    };
     // If the candidate is fully concrete, or its a generic which is var free, there is nothing
     // to substitute. A generic param may not be var free, if it contains impl types.
     let candidate_final = matches!(candidate, UninferredImpl::GenericParam(_))
@@ -276,8 +285,9 @@ fn solve_candidate<'db>(
     }
 
     // Add the defining module of the candidate to the lookup.
-    let mut lookup_context = lookup_context.clone();
+    let mut lookup_context = lookup_context.long(db).clone();
     lookup_context.insert_lookup_scope(db, &candidate);
+    let lookup_context = lookup_context.intern(db);
     if res == CanConformResult::Rejected {
         return Err(super::ErrorSet);
     } else if CanConformResult::Accepted == res {
@@ -288,7 +298,7 @@ fn solve_candidate<'db>(
 
                 match lite_inference.infer_generic_assignment(
                     imp_generic_params,
-                    &lookup_context,
+                    lookup_context,
                     impl_type_bounds.clone(),
                 ) {
                     Ok(SolutionSet::None) => {
@@ -329,7 +339,7 @@ fn solve_candidate<'db>(
 
     // Instantiate the candidate in the inference table.
     let candidate_impl =
-        inference.infer_impl(candidate, canonical_trait.id, &lookup_context, None)?;
+        inference.infer_impl(candidate, canonical_trait.id, lookup_context, None)?;
     for (trait_type, ty) in canonical_trait.mappings.types.iter() {
         let mapped_ty =
             inference.reduce_impl_ty(ImplTypeId::new(candidate_impl, *trait_type, db))?;
@@ -363,7 +373,7 @@ fn solve_candidate<'db>(
             let candidate_impl = inference.rewrite(candidate_impl).no_err();
             match CanonicalImpl::canonicalize(db, candidate_impl, &canonical_embedding) {
                 Ok(canonical_impl) => {
-                    inference.validate_neg_impls(&lookup_context, canonical_impl)?
+                    inference.validate_neg_impls(lookup_context, canonical_impl)?
                 }
                 Err(MapperError(var)) => {
                     return Ok(SolutionSet::Ambiguous(Ambiguity::FreeVariable {
@@ -402,12 +412,12 @@ impl CanConformResult {
 /// An inference without 'vars' that can be used to solve canonical traits which do not contains
 /// 'vars' or associated items.
 struct LiteInference<'db> {
-    db: &'db dyn SemanticGroup,
+    db: &'db dyn Database,
     substitution: GenericSubstitution<'db>,
 }
 
 impl<'db> LiteInference<'db> {
-    fn new(db: &'db dyn SemanticGroup) -> Self {
+    fn new(db: &'db dyn Database) -> Self {
         LiteInference { db, substitution: GenericSubstitution::default() }
     }
 
@@ -416,7 +426,7 @@ impl<'db> LiteInference<'db> {
     fn infer_generic_assignment(
         &mut self,
         params: Vec<GenericParam<'db>>,
-        lookup_context: &ImplLookupContext<'db>,
+        lookup_context: ImplLookupContextId<'db>,
         impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
     ) -> InferenceResult<SolutionSet<'db, Vec<GenericArgumentId<'db>>>> {
         let mut generic_args = Vec::with_capacity(params.len());
@@ -458,11 +468,11 @@ impl<'db> LiteInference<'db> {
                         id: imp_concrete_trait_id,
                         mappings: ImplVarTraitItemMappings::default(),
                     };
-                    let mut inner_context = lookup_context.clone();
+                    let mut inner_context = lookup_context.long(self.db).clone();
                     enrich_lookup_context(self.db, imp_concrete_trait_id, &mut inner_context);
                     let Ok(solution) = self.db.canonic_trait_solutions(
                         canonical_trait,
-                        inner_context,
+                        inner_context.intern(self.db),
                         (*impl_type_bounds).clone(),
                     ) else {
                         return Err(super::ErrorSet);
@@ -806,8 +816,8 @@ impl<'db> LiteInference<'db> {
                     zip_eq(const_values, target_const_values).map(
                         |(const_value, target_const_value)| {
                             self.can_conform_const(
-                                (const_value.clone().intern(self.db), candidate_final),
-                                (target_const_value.clone().intern(self.db), target_final),
+                                (*const_value, candidate_final),
+                                (*target_const_value, target_final),
                             )
                         }
                     )
@@ -824,23 +834,17 @@ impl<'db> LiteInference<'db> {
                     (target_concrete_variant.ty, target_final),
                 ),
                 self.can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             ]),
             (ConstValue::Enum(_, _), _) => CanConformResult::Rejected,
             (ConstValue::NonZero(const_value), ConstValue::NonZero(target_const_value)) => self
                 .can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
+                    (*const_value, candidate_final),
+                    (*target_const_value, target_final),
                 ),
             (ConstValue::NonZero(_), _) => CanConformResult::Rejected,
-            (ConstValue::Boxed(const_value), ConstValue::Boxed(target_const_value)) => self
-                .can_conform_const(
-                    (const_value.clone().intern(self.db), candidate_final),
-                    (target_const_value.clone().intern(self.db), target_final),
-                ),
-            (ConstValue::Boxed(_), _) => CanConformResult::Rejected,
             (ConstValue::Generic(param), _) => {
                 let mut res = CanConformResult::Accepted;
                 match self.substitution.entry(*param) {

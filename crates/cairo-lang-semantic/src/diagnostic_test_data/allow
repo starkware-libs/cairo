@@ -24,3 +24,166 @@ warning: `allow` attribute argument not supported.
  --> lib.cairo:6:8
 #[allow(invalid_lint)] // Invalid allow arg.
        ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test allow(unused_variables)
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{
+}
+
+//! > module_code
+fn without_allow() {
+    let warn_without_allow = 1;
+}
+
+#[allow(unused_variables)]
+fn allow_on_function() {
+    let function_allows_x = 2;
+    let function_allows_y = 3;
+}
+
+fn with_underscore() {
+    let _undescroe_no_warn = 4;
+}
+
+fn allow_on_statements() {
+    #[allow(unused_variables)]
+    let unused_works_on_statements = 5;
+    let warn_since_allow_only_on_prev_statement = 6;
+}
+
+#[allow(unused)]
+fn allow_unused_covers_variables() {
+    let covered_by_unused_x = 7;
+    let covered_by_unused_y = 8;
+}
+
+fn allow_unused_on_statement() {
+    #[allow(unused)]
+    let covered_by_unused = 9;
+    // Doesn't inherit from prev statement or other function.
+    let warn_not_covered = 10;
+}
+
+//! > generated_cairo_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:9
+    let warn_without_allow = 1;
+        ^^^^^^^^^^^^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:18:9
+    let warn_since_allow_only_on_prev_statement = 6;
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:31:9
+    let warn_not_covered = 10;
+        ^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test allow(unused_imports)
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > expr_code
+{}
+
+//! > module_code
+#[allow(unused_imports)]
+mod allowed_imports {
+    use core::array::ArrayTrait;
+}
+#[allow(unused_imports)]
+use core::option::OptionTrait;
+
+#[allow(unused)]
+mod all_unused {
+    use core::traits::Into; // Covered by mod unused.
+    fn func() {
+        let covered_by_mod_unused = 1;
+    }
+}
+mod no_allow_unused {
+    use core::array::ArrayTrait; // Not covered by allow on prev module.
+    fn func() {
+        let not_covered_by_unused_on_other_module = 1;
+    }
+}
+
+use core::array::ArrayTrait; // Not covered by prev item's unused.
+#[allow(unused)]
+use core::traits::Into;
+
+//! > generated_cairo_code
+
+//! > function_body
+
+//! > expected_diagnostics
+warning: Unused import: `test::ArrayTrait`
+ --> lib.cairo:22:18
+use core::array::ArrayTrait; // Not covered by prev item's unused.
+                 ^^^^^^^^^^
+
+warning: Unused import: `test::no_allow_unused::ArrayTrait`
+ --> lib.cairo:16:22
+    use core::array::ArrayTrait; // Not covered by allow on prev module.
+                     ^^^^^^^^^^
+
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:18:13
+        let not_covered_by_unused_on_other_module = 1;
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test combined allow attributes (nested and multiple)
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > expr_code
+{}
+
+//! > module_code
+#[allow(unused_imports)]
+#[allow(unused_variables)] // Doesn't do anything here, just checking the combo.
+fn multiple_allows() {
+    let covered_by_unused_variables = 1;
+}
+
+#[allow(unused)]
+mod broad_parent {
+    use core::traits::Into;
+
+    #[allow(unused_variables)]
+    mod specific_child {
+        use core::box::BoxTrait; // Covered by parent's allow(unused)
+        fn func() {
+            let covered_by_both = 4;
+        }
+    }
+}
+
+//! > generated_cairo_code
+
+//! > function_body
+
+//! > expected_diagnostics

@@ -1,7 +1,7 @@
-use std::sync::Arc;
-
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::span::{FileSummary, TextPosition, TextSpan, TextWidth};
 use itertools::repeat_n;
+use salsa::Database;
 
 use crate::DiagnosticLocation;
 
@@ -11,7 +11,7 @@ mod test;
 
 /// Given a diagnostic location, returns a string with the location marks.
 pub fn get_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
+    db: &dyn Database,
     location: &DiagnosticLocation<'_>,
     skip_middle_lines: bool,
 ) -> String {
@@ -34,10 +34,7 @@ pub fn get_location_marks(
 }
 
 /// Given a single line diagnostic location, returns a string with the location marks.
-fn get_single_line_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
-    location: &DiagnosticLocation<'_>,
-) -> String {
+fn get_single_line_location_marks(db: &dyn Database, location: &DiagnosticLocation<'_>) -> String {
     // TODO(ilya, 10/10/2023): Handle locations which spread over a few lines.
     let content =
         db.file_content(location.file_id).expect("File missing from DB.").long(db).as_ref();
@@ -67,7 +64,7 @@ fn get_single_line_location_marks(
 
 /// Given a multiple lines diagnostic location, returns a string with the location marks.
 fn get_multiple_lines_location_marks(
-    db: &dyn cairo_lang_filesystem::db::FilesGroup,
+    db: &dyn Database,
     location: &DiagnosticLocation<'_>,
     skip_middle_lines: bool,
 ) -> String {
@@ -80,7 +77,7 @@ fn get_multiple_lines_location_marks(
         .start
         .position_in_file(db, location.file_id)
         .expect("Failed to find location in file.");
-    let mut res = get_line_content(summary.clone(), first_line_idx, content, true);
+    let mut res = get_line_content(summary, first_line_idx, content, true);
     res += " _";
     res.extend(repeat_n('_', col));
     res += "^\n";
@@ -90,7 +87,7 @@ fn get_multiple_lines_location_marks(
     const LINES_TO_REPLACE_MIDDLE: usize = 3;
     if !skip_middle_lines || first_line_idx + LINES_TO_REPLACE_MIDDLE > last_line_idx {
         for row_index in first_line_idx + 1..=last_line_idx - 1 {
-            res += &get_line_content(summary.clone(), row_index, content, false);
+            res += &get_line_content(summary, row_index, content, false);
         }
     } else {
         res += "| ...\n";
@@ -105,7 +102,7 @@ fn get_multiple_lines_location_marks(
 }
 
 fn get_line_content(
-    summary: Arc<FileSummary>,
+    summary: &FileSummary,
     row_index: usize,
     content: &str,
     first_line: bool,

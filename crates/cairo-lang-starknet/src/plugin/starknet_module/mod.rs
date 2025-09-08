@@ -8,10 +8,10 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{BodyItems, QueryAttrs};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
+use salsa::Database;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
@@ -36,7 +36,7 @@ pub enum StarknetModuleKind {
 impl StarknetModuleKind {
     /// Returns the starknet module kind according to the module's attributes, if any.
     fn from_module<'db>(
-        db: &'db dyn SyntaxGroup,
+        db: &'db dyn Database,
         module_ast: &ast::ItemModule<'db>,
     ) -> Option<(Self, ast::Attribute<'db>)> {
         for (attr_str, kind) in [
@@ -100,7 +100,7 @@ impl StarknetModuleKind {
 
 /// Handles a contract/component module item.
 pub(super) fn handle_module<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     module_ast: ast::ItemModule<'db>,
 ) -> PluginResult<'db> {
     if module_ast.has_attr(db, DEPRECATED_CONTRACT_ATTR) {
@@ -125,7 +125,7 @@ pub(super) fn handle_module<'db>(
 
 /// Validates the contract/component module (has body with storage named 'Storage').
 fn validate_module<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     module_ast: ast::ItemModule<'db>,
     module_kind_str: &str,
 ) -> PluginResult<'db> {
@@ -169,7 +169,7 @@ fn validate_module<'db>(
 /// If the module is annotated with CONTRACT_ATTR or COMPONENT_ATTR, generate the relevant
 /// contract/component logic.
 pub(super) fn handle_module_by_storage<'db>(
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
     struct_ast: ast::ItemStruct<'db>,
     metadata: &MacroPluginMetadata<'_>,
 ) -> Option<PluginResult<'db>> {
@@ -242,7 +242,7 @@ pub(super) fn handle_module_by_storage<'db>(
 /// (contract/component) and its ast.
 fn grand_grand_parent_starknet_module<'db>(
     item_node: SyntaxNode<'db>,
-    db: &'db dyn SyntaxGroup,
+    db: &'db dyn Database,
 ) -> Option<(ast::ItemModule<'db>, StarknetModuleKind, ast::Attribute<'db>)> {
     // Get the containing module node. The parent is the item list, the grand parent is the module
     // body, and the grand grand parent is the module.

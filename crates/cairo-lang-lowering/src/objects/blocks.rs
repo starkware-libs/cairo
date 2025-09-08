@@ -5,7 +5,7 @@ use cairo_lang_utils::require;
 
 use crate::Block;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct BlockId(pub usize);
 impl BlockId {
     pub fn root() -> Self {
@@ -18,6 +18,11 @@ impl BlockId {
 
     pub fn next_block_id(&self) -> BlockId {
         BlockId(self.0 + 1)
+    }
+}
+impl core::fmt::Debug for BlockId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "blk{}", self.0)
     }
 }
 

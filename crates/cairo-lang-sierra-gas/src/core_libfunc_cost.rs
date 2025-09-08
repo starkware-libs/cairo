@@ -29,12 +29,13 @@ impl CostOperations for Ops<'_> {
         function: &cairo_lang_sierra::program::Function,
         token_type: CostTokenType,
     ) -> Self::CostType {
-        if let Some(function_cost) = self.gas_info.function_costs.get(&function.id) {
-            if let Some(v) = function_cost.get(&token_type) {
-                return CostTokenMap::from_iter([(token_type, *v)]);
-            }
+        if let Some(function_cost) = self.gas_info.function_costs.get(&function.id)
+            && let Some(v) = function_cost.get(&token_type)
+        {
+            CostTokenMap::from_iter([(token_type, *v)])
+        } else {
+            CostTokenMap::default()
         }
-        CostTokenMap::default()
     }
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {

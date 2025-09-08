@@ -144,7 +144,7 @@ End:
 blk3:
 Statements:
 End:
-  Return(v1)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -360,12 +360,12 @@ blk1:
 Statements:
   () <- test::use_a_drop(v1{`y`})
 End:
-  Goto(blk3, {v1 -> v6})
+  Goto(blk3, {})
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v0 -> v6})
+  Goto(blk3, {})
 
 blk3:
 Statements:
@@ -462,28 +462,28 @@ blk0 (root):
 Statements:
   () <- test::use_non_copy(v0{`x`})
 End:
-  Match(match test::do_match_extern(v0{`x`}) {
-    Option::Some(v1) => blk1,
+  Match(match test::do_match_extern(v1{`x`}) {
+    Option::Some(v2) => blk1,
     Option::None => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::option::Option::<test::NonCopy>) <- Option::Some(v1{`do_match_extern(x)`})
+  (v3: core::option::Option::<test::NonCopy>) <- Option::Some(v2{`do_match_extern(x)`})
 End:
-  Goto(blk3, {v2 -> v5})
+  Goto(blk3, {v3 -> v6})
 
 blk2:
 Statements:
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<test::NonCopy>) <- Option::None(v3{`do_match_extern(x)`})
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<test::NonCopy>) <- Option::None(v4{`do_match_extern(x)`})
 End:
-  Goto(blk3, {v4 -> v5})
+  Goto(blk3, {v5 -> v6})
 
 blk3:
 Statements:
 End:
-  Return(v5)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -532,7 +532,6 @@ Statements:
   (v1: core::integer::u32) <- 17
   (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x.a`})
   () <- test::use_non_copy(v3{`x.b`})
-  (v4: test::MyStruct) <- struct_construct(v1{`x`}, v3{`x`})
 End:
   Return(v4)
 
@@ -565,22 +564,22 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:8:30
-fn foo(ref s1: MyStruct, ref s2: MyStruct) {
-                             ^^
-note: variable was previously used here:
-  --> lib.cairo:10:16
-    invalidate(s2.a);
-               ^^^^
-note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
-
-error: Variable was previously moved.
  --> lib.cairo:8:12
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
            ^^
 note: variable was previously used here:
   --> lib.cairo:9:16
     invalidate(s1.a);
+               ^^^^
+note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
+
+error: Variable was previously moved.
+ --> lib.cairo:8:30
+fn foo(ref s1: MyStruct, ref s2: MyStruct) {
+                             ^^
+note: variable was previously used here:
+  --> lib.cairo:10:16
+    invalidate(s2.a);
                ^^^^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
@@ -593,8 +592,6 @@ Statements:
   (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1{`s2.a`})
   () <- test::invalidate(v4{`s2.a`})
   (v6: ()) <- struct_construct()
-  (v7: test::MyStruct) <- struct_construct(v2{`s1`}, v3{`s1`})
-  (v8: test::MyStruct) <- struct_construct(v4{`s2`}, v5{`s2`})
 End:
   Return(v7, v8, v6)
 
@@ -658,19 +655,18 @@ Statements:
   (v11: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
   () <- test::invalidate(v11{`self.a`})
 End:
-  Goto(blk3, {v11 -> v12})
+  Goto(blk3, {})
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v1 -> v12})
+  Goto(blk3, {})
 
 blk3:
 Statements:
-  (v13: ()) <- struct_construct()
-  (v14: test::MyStruct) <- struct_construct(v12{`self`}, v3{`self`})
+  (v12: ()) <- struct_construct()
 End:
-  Return(v14, v13)
+  Return(v13, v12)
 
 //! > ==========================================================================
 
@@ -724,12 +720,12 @@ Statements:
   (v11: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
   () <- test::invalidate(v11{`v.a`})
 End:
-  Goto(blk3, {v11 -> v12})
+  Goto(blk3, {})
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {v1 -> v12})
+  Goto(blk3, {})
 
 blk3:
 Statements:
@@ -995,20 +991,21 @@ End:
 
 blk1:
 Statements:
-  (v2: ()) <- test::foo(v1{`x`})
+  (v3: ()) <- test::foo(v1{`x`})
 End:
-  Goto(blk3, {v2 -> v3})
+  Goto(blk3, {v3 -> v4})
 
 blk2:
 Statements:
-  (v4: ()) <- struct_construct()
+  (v2: ()) <- struct_construct()
+  (v5: ()) <- struct_construct()
 End:
-  Goto(blk3, {v4 -> v3})
+  Goto(blk3, {v5 -> v4})
 
 blk3:
 Statements:
 End:
-  Return(v3)
+  Return(v4)
 
 //! > lowering_diagnostics
 error: Variable not dropped.
@@ -1026,3 +1023,208 @@ note: this error originates in auto-generated withdraw_gas logic.
 note: Trait has no implementation in context: core::traits::Drop::<test::NonDrop>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonDrop>.
 note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonDrop>.
+
+//! > ==========================================================================
+
+//! > Move variable after deconstruct.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(x: Wrapper) {
+    if x.inner.is_zero() {
+        use_x(x);
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// Non-copyable struct.
+struct Wrapper {
+    inner: u16,
+}
+
+extern fn use_x(x: Wrapper) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Parameters: v0: test::Wrapper
+blk0 (root):
+Statements:
+  (v1: core::integer::u16) <- struct_destructure(v0{`x.inner`})
+  (v2: core::bool) <- core::zeroable::zero_based::ZeroableImpl::<core::integer::u16, core::integer::U16Zero, core::integer::u16Drop, core::integer::u16Copy>::is_zero(v1{`x.inner`})
+End:
+  Match(match_enum(v2{`x.inner.is_zero()`}) {
+    bool::False(v4) => blk2,
+    bool::True(v3) => blk1,
+  })
+
+blk1:
+Statements:
+  (v5: test::Wrapper) <- struct_construct(v1{`x`})
+  () <- test::use_x(v5{`x`})
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Move non-copyable variable after deconstruct and try to use it later
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(x: Wrapper) {
+    if x.inner.is_zero() {
+        use_x(x); // First use.
+    }
+
+    use_x(x); // Second use.
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// Non-copyable struct.
+struct Wrapper {
+    inner: u16,
+}
+
+extern fn use_x(x: Wrapper) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved.
+ --> lib.cairo:12:11
+    use_x(x); // Second use.
+          ^
+note: variable was previously used here:
+  --> lib.cairo:9:15
+        use_x(x); // First use.
+              ^
+note: Trait has no implementation in context: core::traits::Copy::<test::Wrapper>.
+
+error: Variable not dropped.
+ --> lib.cairo:12:11
+    use_x(x); // Second use.
+          ^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo:8:8
+    if x.inner.is_zero() {
+       ^^^^^^^^^^^^^^^^^
+note: Trait has no implementation in context: core::traits::Drop::<test::Wrapper>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::Wrapper>.
+note: Trait has no implementation in context: core::traits::PanicDestruct::<test::Wrapper>.
+
+//! > lowering
+Parameters: v0: test::Wrapper
+blk0 (root):
+Statements:
+  (v1: core::integer::u16) <- struct_destructure(v0{`x.inner`})
+  (v2: core::bool) <- core::zeroable::zero_based::ZeroableImpl::<core::integer::u16, core::integer::U16Zero, core::integer::u16Drop, core::integer::u16Copy>::is_zero(v1{`x.inner`})
+End:
+  Match(match_enum(v2{`x.inner.is_zero()`}) {
+    bool::False(v4) => blk2,
+    bool::True(v3) => blk1,
+  })
+
+blk1:
+Statements:
+  (v5: test::Wrapper) <- struct_construct(v1{`x`})
+  () <- test::use_x(v5{`x`})
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  () <- test::use_x(v6{`x`})
+  (v7: ()) <- struct_construct()
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Use after deconstruction
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(x: Wrapper) -> u16 {
+    let w = if x.inner.is_zero() {
+        Wrapper { inner: 6 }
+    } else {
+        x
+    };
+
+    w.inner
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// Non-copyable struct.
+#[derive(Drop)]
+pub struct Wrapper {
+    pub inner: u16,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Parameters: v0: test::Wrapper
+blk0 (root):
+Statements:
+  (v1: core::integer::u16) <- struct_destructure(v0{`x.inner`})
+  (v2: core::bool) <- core::zeroable::zero_based::ZeroableImpl::<core::integer::u16, core::integer::U16Zero, core::integer::u16Drop, core::integer::u16Copy>::is_zero(v1{`x.inner`})
+End:
+  Match(match_enum(v2{`x.inner.is_zero()`}) {
+    bool::False(v4) => blk2,
+    bool::True(v3) => blk1,
+  })
+
+blk1:
+Statements:
+  (v6: core::integer::u16) <- 6
+  (v7: test::Wrapper) <- struct_construct(v6{`6`})
+End:
+  Goto(blk3, {v7 -> v8})
+
+blk2:
+Statements:
+  (v5: test::Wrapper) <- struct_construct(v1{`x`})
+End:
+  Goto(blk3, {v5 -> v8})
+
+blk3:
+Statements:
+  (v9: core::integer::u16) <- struct_destructure(v8{`w.inner`})
+End:
+  Return(v9)
