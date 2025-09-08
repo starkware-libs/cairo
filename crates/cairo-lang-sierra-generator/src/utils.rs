@@ -189,7 +189,7 @@ fn const_type_id(
     value: ConstValueId<'_>,
 ) -> cairo_lang_sierra::ids::ConcreteTypeId {
     let ty = value.ty(db).unwrap();
-    let first_arg = GenericArg::Type(db.get_concrete_type_id(ty).unwrap());
+    let first_arg = GenericArg::Type(db.get_concrete_type_id(ty).unwrap().clone());
     db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
         cairo_lang_sierra::program::ConcreteTypeLongId {
             generic_id: ConstType::ID,
@@ -302,7 +302,7 @@ pub fn get_libfunc_signature(
     db: &dyn Database,
     concrete_lib_func_id: ConcreteLibfuncId,
 ) -> LibfuncSignature {
-    let libfunc_long_id = db.lookup_concrete_lib_func(concrete_lib_func_id.clone());
+    let libfunc_long_id = db.lookup_concrete_lib_func(&concrete_lib_func_id);
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
@@ -314,7 +314,7 @@ pub fn get_libfunc_signature(
             ..
         } = err
         {
-            let function = db.lookup_sierra_function(function.clone());
+            let function = db.lookup_sierra_function(&function);
             panic!("Missing function {:?}", function.debug(db));
         }
         // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
@@ -389,13 +389,16 @@ pub fn get_concrete_libfunc_id<'db>(
         match generic_arg {
             semantic::GenericArgumentId::Type(ty) => {
                 // TODO(lior): How should the following unwrap() be handled?
-                generic_args.push(GenericArg::Type(db.get_concrete_type_id(*ty).unwrap_or_else(
-                    |_| {
-                        panic!(
-                            "Failed to obtain concrete type id for generic type argument: {ty:?}"
-                        )
-                    },
-                )))
+                generic_args.push(GenericArg::Type(
+                    db.get_concrete_type_id(*ty)
+                        .unwrap_or_else(|_| {
+                            panic!(
+                                "Failed to obtain concrete type id for generic type argument: \
+                                 {ty:?}"
+                            )
+                        })
+                        .clone(),
+                ))
             }
             semantic::GenericArgumentId::Constant(value_id) => {
                 generic_args.push(GenericArg::Value(
@@ -422,7 +425,7 @@ pub fn dummy_call_libfunc_id(
     sierra_signature: &FunctionSignature,
 ) -> ConcreteLibfuncId {
     let ap_change = db
-        .get_ap_change(db.lookup_sierra_function(function_id.clone()).body(db).unwrap().unwrap())
+        .get_ap_change(db.lookup_sierra_function(&function_id).body(db).unwrap().unwrap())
         .unwrap();
 
     let mut gargs = vec![];

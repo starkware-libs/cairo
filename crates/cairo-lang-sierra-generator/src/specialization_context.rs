@@ -45,12 +45,8 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         &self,
         function_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> Option<SierraApChange> {
-        let function = self
-            .0
-            .lookup_sierra_function(function_id.clone())
-            .body(self.0)
-            .unwrap_or_default()
-            .expect(
+        let function =
+            self.0.lookup_sierra_function(function_id).body(self.0).unwrap_or_default().expect(
                 "Internal compiler error: get_function_ap_change() should only be used for user \
                  defined functions.",
             );

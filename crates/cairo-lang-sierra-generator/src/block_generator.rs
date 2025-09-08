@@ -594,7 +594,7 @@ fn generate_match_value_code<'db>(
         std::slice::from_ref(&enum_var),
     ));
 
-    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
+    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type.clone())?;
 
     let args = vec![enum_var];
     generate_match_code(context, block_gen_stack, libfunc_id, args, &match_info.arms)

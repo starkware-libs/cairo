@@ -20,7 +20,7 @@ use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId, sierra_concrete_long_
 use crate::specialization_context::SierraSignatureSpecializationContext;
 
 /// See [SierraGenGroup::get_concrete_type_id] for documentation.
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn get_concrete_type_id<'db>(
     db: &'db dyn Database,
     type_id: semantic::TypeId<'db>,
@@ -29,10 +29,10 @@ pub fn get_concrete_type_id<'db>(
         semantic::TypeLongId::Snapshot(inner_ty) => {
             let inner = db.get_concrete_type_id(*inner_ty)?;
             if matches!(
-                db.lookup_concrete_type(inner.clone()),
+                db.lookup_concrete_type(inner),
                 SierraGeneratorTypeLongId::CycleBreaker(ty) if cycle_breaker_info(db, ty)?.duplicatable
             ) {
-                return Ok(inner);
+                return Ok(inner.clone());
             }
         }
         semantic::TypeLongId::Concrete(
@@ -52,15 +52,15 @@ pub fn get_concrete_type_id<'db>(
 }
 
 /// See [SierraGenGroup::get_index_enum_type_id] for documentation.
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 pub fn get_index_enum_type_id(
     db: &dyn Database,
     _tracked: Tracked,
     index_count: usize,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    let unit_ty_arg = db
-        .get_concrete_type_id(semantic::TypeLongId::Tuple(vec![]).intern(db))
-        .map(SierraGenericArg::Type)?;
+    let unit_ty_arg = SierraGenericArg::Type(
+        db.get_concrete_type_id(semantic::TypeLongId::Tuple(vec![]).intern(db))?.clone(),
+    );
     let generic_args = chain!(
         [SierraGenericArg::UserType(format!("index_enum_type<{index_count}>").into())],
         itertools::repeat_n(unit_ty_arg, index_count)
@@ -87,6 +87,7 @@ pub fn get_concrete_long_type_id<'db>(
                 [Ok(SierraGenericArg::UserType(user_type))],
                 deps.iter().map(|generic_arg_ty| db
                     .get_concrete_type_id(*generic_arg_ty)
+                    .cloned()
                     .map(SierraGenericArg::Type))
             )
             .collect::<Maybe<_>>()?,
@@ -109,9 +110,9 @@ pub fn get_concrete_long_type_id<'db>(
                             .generic_args(db)
                             .into_iter()
                             .map(|arg| match arg {
-                                semantic::GenericArgumentId::Type(ty) => {
-                                    SierraGenericArg::Type(db.get_concrete_type_id(ty).unwrap())
-                                }
+                                semantic::GenericArgumentId::Type(ty) => SierraGenericArg::Type(
+                                    db.get_concrete_type_id(ty).unwrap().clone(),
+                                ),
                                 semantic::GenericArgumentId::Constant(value_id) => {
                                     SierraGenericArg::Value(
                                         value_id
@@ -141,12 +142,12 @@ pub fn get_concrete_long_type_id<'db>(
             let inner_ty = db.get_concrete_type_id(*ty).unwrap();
             let ty =
                 snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty.clone()).unwrap();
-            if ty == inner_ty {
+            if ty == *inner_ty {
                 return sierra_concrete_long_id(db, ty.clone());
             } else {
                 ConcreteTypeLongId {
                     generic_id: "Snapshot".into(),
-                    generic_args: vec![SierraGenericArg::Type(inner_ty)],
+                    generic_args: vec![SierraGenericArg::Type(inner_ty.clone())],
                 }
                 .into()
             }

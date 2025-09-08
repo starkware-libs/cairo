@@ -61,7 +61,7 @@ where
     for stmt in &statements {
         match &stmt.statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                if db.lookup_concrete_lib_func(invocation.libfunc_id.clone()).generic_id.0
+                if db.lookup_concrete_lib_func(&invocation.libfunc_id).generic_id.0
                     == DupLibfunc::STR_ID
                 {
                     for arg in &invocation.args {
@@ -155,7 +155,7 @@ impl<'db> AddStoreVariableStatements<'db> {
                 let signature = libfunc_info.signature;
                 let mut state = state_opt.unwrap_or_default();
 
-                let libfunc_long_id = self.db.lookup_concrete_lib_func(libfunc_id.clone());
+                let libfunc_long_id = self.db.lookup_concrete_lib_func(&libfunc_id);
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
                     FunctionCallLibfunc::STR_ID | CouponCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.

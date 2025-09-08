@@ -27,7 +27,7 @@ use crate::test_utils::{
 /// All libfuncs inputs and outputs are felt252s, since [dummy_push_values] is currently with
 /// felt252s.
 fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
-    let libfunc_long_id = db.lookup_concrete_lib_func(libfunc);
+    let libfunc_long_id = db.lookup_concrete_lib_func(&libfunc);
     let felt252_ty =
         db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");
     let array_ty = db
@@ -47,7 +47,7 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
             LibfuncSignature {
                 param_signatures: vec![
                     ParamSignature::new(felt252_ty.clone()),
-                    ParamSignature::new(felt252_ty).with_allow_const(),
+                    ParamSignature::new(felt252_ty.clone()).with_allow_const(),
                 ],
                 branch_signatures: vec![BranchSignature {
                     vars,
@@ -60,7 +60,7 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
             param_signatures: vec![ParamSignature::new(felt252_ty.clone()).with_allow_add_const()],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: felt252_ty,
+                    ty: felt252_ty.clone(),
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
@@ -73,7 +73,7 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: felt252_ty,
+                    ty: felt252_ty.clone(),
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
@@ -83,11 +83,11 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
         "array_append" => LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(array_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(felt252_ty),
+                ParamSignature::new(felt252_ty.clone()),
             ],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: array_ty,
+                    ty: array_ty.clone(),
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
@@ -151,7 +151,7 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
             fallthrough: Some(1),
         },
         "branch_with_param" => LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(felt252_ty)],
+            param_signatures: vec![ParamSignature::new(felt252_ty.clone())],
             branch_signatures: vec![
                 BranchSignature {
                     vars: vec![],
@@ -173,7 +173,7 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
             }],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: felt252_ty,
+                    ty: felt252_ty.clone(),
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
@@ -183,7 +183,7 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
         "temp_not_on_top" => LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: felt252_ty,
+                ty: felt252_ty.clone(),
                 // Simulate the case where the returned value is not on the top of the stack.
                 ref_info: OutputVarReferenceInfo::SimpleDerefs,
             }],
@@ -202,7 +202,7 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
                 OutputVarInfo {
-                    ty: felt252_ty,
+                    ty: felt252_ty.clone(),
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],
@@ -210,7 +210,10 @@ fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> Libf
         ),
         "make_local" => LibfuncSignature::new_non_branch(
             vec![felt252_ty.clone()],
-            vec![OutputVarInfo { ty: felt252_ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
+            vec![OutputVarInfo {
+                ty: felt252_ty.clone(),
+                ref_info: OutputVarReferenceInfo::NewLocalVar,
+            }],
             SierraApChange::Known { new_vars_only: true },
         ),
         _ => panic!("get_branch_signatures() is not implemented for '{name}'."),
