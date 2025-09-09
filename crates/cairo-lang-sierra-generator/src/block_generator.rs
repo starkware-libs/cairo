@@ -332,7 +332,7 @@ fn generate_statement_call_code<'db>(
     let (body, libfunc_id) =
         get_concrete_libfunc_id(context.get_db(), statement.function, statement.with_coupon);
     // Checks if the call invalidates ap tracking.
-    let libfunc_signature = get_libfunc_signature(context.get_db(), libfunc_id.clone());
+    let libfunc_signature = get_libfunc_signature(context.get_db(), &libfunc_id);
     let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
         panic!(
             "Unexpected branches in '{}'.",

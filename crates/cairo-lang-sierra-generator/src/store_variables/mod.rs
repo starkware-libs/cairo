@@ -34,11 +34,6 @@ use crate::utils::{
 /// space.
 pub type LocalVariables = OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>;
 
-/// Information about a libfunc, required by the `store_variables` module.
-pub struct LibfuncInfo {
-    pub signature: LibfuncSignature,
-}
-
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
 /// For example, a deferred reference (e.g., `[ap] + [fp - 3]`) needs to be stored as a temporary
 /// or local variable before being included in additional computation.
@@ -50,12 +45,12 @@ pub struct LibfuncInfo {
 pub fn add_store_statements<'db, GetLibfuncSignature>(
     db: &'db dyn Database,
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
-    get_lib_func_signature: &GetLibfuncSignature,
+    get_libfunc_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
     params: &[sierra::program::Param],
 ) -> Vec<pre_sierra::StatementWithLocation<'db>>
 where
-    GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
+    GetLibfuncSignature: Fn(ConcreteLibfuncId) -> &'db LibfuncSignature,
 {
     let mut duplicated_vars: OrderedHashSet<cairo_lang_sierra::ids::VarId> = Default::default();
     for stmt in &statements {
@@ -98,7 +93,7 @@ where
     for statement in statements {
         let prev_len = handler.result.len();
         let location = statement.location.clone();
-        state_opt = handler.handle_statement(state_opt, statement, get_lib_func_signature);
+        state_opt = handler.handle_statement(state_opt, statement, get_libfunc_signature);
         for statement in &mut handler.result[prev_len..] {
             statement.set_location(location.clone())
         }
@@ -138,21 +133,20 @@ impl<'db> AddStoreVariableStatements<'db> {
 
     /// Handles a single statement, including adding required store statements and the statement
     /// itself.
-    fn handle_statement<GetLibfuncInfo>(
+    fn handle_statement<GetLibfuncSignature>(
         &mut self,
         state_opt: Option<VariablesState>,
         statement: pre_sierra::StatementWithLocation<'db>,
-        get_lib_func_signature: &GetLibfuncInfo,
+        get_libfunc_signature: &GetLibfuncSignature,
     ) -> Option<VariablesState>
     where
-        GetLibfuncInfo: Fn(ConcreteLibfuncId) -> LibfuncInfo,
+        GetLibfuncSignature: Fn(ConcreteLibfuncId) -> &'db LibfuncSignature,
     {
         let mut state_opt = state_opt;
         match &statement.statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let libfunc_id = invocation.libfunc_id.clone();
-                let libfunc_info = get_lib_func_signature(libfunc_id.clone());
-                let signature = libfunc_info.signature;
+                let signature = get_libfunc_signature(libfunc_id.clone());
                 let mut state = state_opt.unwrap_or_default();
 
                 let libfunc_long_id = self.db.lookup_concrete_lib_func(&libfunc_id);
@@ -203,12 +197,12 @@ impl<'db> AddStoreVariableStatements<'db> {
                         // is merged into `fallthrough_state`.
                         let mut fallthrough_state: Option<VariablesState> = None;
                         for (branch, branch_signature) in
-                            zip_eq(&invocation.branches, signature.branch_signatures)
+                            zip_eq(&invocation.branches, &signature.branch_signatures)
                         {
                             let mut state_at_branch = state.clone();
                             state_at_branch.register_outputs(
                                 &branch.results,
-                                &branch_signature,
+                                branch_signature,
                                 &invocation.args,
                                 &arg_states,
                             );

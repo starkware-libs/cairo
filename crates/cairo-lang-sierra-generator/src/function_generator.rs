@@ -19,7 +19,7 @@ use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{SierraGenVar, find_variable_lifetime};
 use crate::local_variables::{AnalyzeApChangesResult, analyze_ap_changes};
 use crate::pre_sierra;
-use crate::store_variables::{LibfuncInfo, LocalVariables, add_store_statements};
+use crate::store_variables::{LocalVariables, add_store_statements};
 use crate::utils::{
     alloc_local_libfunc_id, disable_ap_tracking_libfunc_id, dummy_call_libfunc_id,
     finalize_locals_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, return_statement,
@@ -125,9 +125,7 @@ fn get_function_ap_change_and_code<'db>(
     let statements = add_store_statements(
         db,
         statements,
-        &|concrete_lib_func_id: ConcreteLibfuncId| -> LibfuncInfo {
-            LibfuncInfo { signature: get_libfunc_signature(db, concrete_lib_func_id) }
-        },
+        &|id: ConcreteLibfuncId| get_libfunc_signature(db, &id),
         sierra_local_variables,
         &parameters,
     );

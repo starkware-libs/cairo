@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -12,7 +13,7 @@ use itertools::Itertools;
 use pretty_assertions::assert_eq;
 use salsa::Database;
 
-use super::{LibfuncInfo, LocalVariables};
+use super::LocalVariables;
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::replace_ids::replace_sierra_ids;
@@ -26,7 +27,12 @@ use crate::test_utils::{
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
 /// All libfuncs inputs and outputs are felt252s, since [dummy_push_values] is currently with
 /// felt252s.
-fn get_lib_func_signature(db: &dyn Database, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
+#[salsa::tracked(returns(ref))]
+fn get_libfunc_signature(
+    db: &dyn Database,
+    _tracked: Tracked,
+    libfunc: ConcreteLibfuncId,
+) -> LibfuncSignature {
     let libfunc_long_id = db.lookup_concrete_lib_func(&libfunc);
     let felt252_ty =
         db.get_concrete_type_id(db.core_info().felt252).expect("Can't find core::felt252.");
@@ -235,7 +241,7 @@ fn test_add_store_statements(
     add_store_statements(
         db,
         statements,
-        &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc) }),
+        &(|libfunc| get_libfunc_signature(db, (), libfunc)),
         local_variables,
         &as_var_id_vec(params)
             .into_iter()

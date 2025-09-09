@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra::extensions::const_type::{
     ConstAsBoxLibfunc, ConstAsImmediateLibfunc, ConstType,
@@ -298,11 +299,21 @@ pub fn finalize_locals_libfunc_id(db: &dyn Database) -> cairo_lang_sierra::ids::
 }
 
 /// Returns the [LibfuncSignature] of the given function.
-pub fn get_libfunc_signature(
+pub fn get_libfunc_signature<'db>(
+    db: &'db dyn Database,
+    concrete_lib_func_id: &ConcreteLibfuncId,
+) -> &'db LibfuncSignature {
+    get_libfunc_signature_tracked(db, (), concrete_lib_func_id.id)
+}
+
+/// Implementation of [get_libfunc_signature] that is tracked.
+#[salsa::tracked(returns(ref))]
+fn get_libfunc_signature_tracked(
     db: &dyn Database,
-    concrete_lib_func_id: ConcreteLibfuncId,
+    _tracked: Tracked,
+    concrete_lib_func_id: u64,
 ) -> LibfuncSignature {
-    let libfunc_long_id = db.lookup_concrete_lib_func(&concrete_lib_func_id);
+    let libfunc_long_id = db.lookup_concrete_lib_func(&concrete_lib_func_id.into());
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
@@ -321,7 +332,7 @@ pub fn get_libfunc_signature(
         // the libfuncs in the [`CoreLibfunc`] structured enum.
         panic!(
             "Failed to specialize: `{}`. Error: {err}",
-            DebugReplacer { db }.replace_libfunc_id(&concrete_lib_func_id)
+            DebugReplacer { db }.replace_libfunc_id(&concrete_lib_func_id.into())
         )
     })
 }
