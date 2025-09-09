@@ -171,9 +171,9 @@ impl NamedLibfunc for DummyFunctionCallLibfunc {
 fn try_extract_dummy_func_info<'a>(
     mut args: impl Iterator<Item = &'a GenericArg>,
 ) -> Option<(FunctionSignature, SierraApChange)> {
-    let _user_func_id = args.next()?;
-
-    let GenericArg::Value(ap_change) = args.next()? else {
+    let [_user_func_id, GenericArg::Value(ap_change), GenericArg::Value(n_params)] =
+        args.next_array()?
+    else {
         return None;
     };
     let ap_change = if ap_change.is_zero() {
@@ -181,22 +181,12 @@ fn try_extract_dummy_func_info<'a>(
     } else {
         SierraApChange::Unknown
     };
-    let GenericArg::Value(n_params) = args.next()? else {
-        return None;
-    };
-    let param_types = args
-        .by_ref()
-        .take(n_params.try_into().ok()?)
-        .map(|garg| extract_matches!(garg, GenericArg::Type).clone())
-        .collect_vec();
+    let extract_ty = |garg: &GenericArg| extract_matches!(garg, GenericArg::Type).clone();
+    let param_types = args.by_ref().take(n_params.try_into().ok()?).map(extract_ty).collect();
 
     let GenericArg::Value(n_ret) = args.next()? else {
         return None;
     };
-    let ret_types = args
-        .by_ref()
-        .take(n_ret.try_into().ok()?)
-        .map(|garg| extract_matches!(garg, GenericArg::Type).clone())
-        .collect_vec();
+    let ret_types = args.by_ref().take(n_ret.try_into().ok()?).map(extract_ty).collect();
     Some((FunctionSignature { param_types, ret_types }, ap_change))
 }
