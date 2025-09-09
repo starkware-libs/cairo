@@ -95,7 +95,7 @@ pub fn collect_executables(
             let Some(found_attrs) = executable_function_ids.get(&function.id) else {
                 continue;
             };
-            let full_path = db.lookup_sierra_function(function.id.clone()).semantic_full_path(db);
+            let full_path = db.lookup_sierra_function(&function.id).semantic_full_path(db);
             for attr in found_attrs {
                 result
                     .entry(attr.clone())

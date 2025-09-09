@@ -99,7 +99,7 @@ fn get_function_ap_change_and_code<'db>(
         .map(|param_id| {
             Ok(cairo_lang_sierra::program::Param {
                 id: context.get_sierra_variable(*param_id),
-                ty: db.get_concrete_type_id(lowered_function.variables[*param_id].ty)?,
+                ty: db.get_concrete_type_id(lowered_function.variables[*param_id].ty)?.clone(),
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
