@@ -67,7 +67,7 @@ pub enum AnnotationError {
     ApTrackingAlreadyEnabled { statement_idx: StatementIdx },
     #[error(
         "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
-         {var_id} introduced at {} .", {introduction_point}
+         {var_id} introduced at {introduction_point}."
     )]
     ApChangeError {
         var_id: VarId,

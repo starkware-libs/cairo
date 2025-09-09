@@ -352,7 +352,7 @@ return ([2]); // The failed merge statement #13.
 test_program@0([1]: felt252) -> (felt252);
 
 //! > error
-#13: Inconsistent references annotations: Variable [2] introduction point mismatch. Expected `#4->#5[0]`, got `#10->#11[0]`.
+#13: Inconsistent references annotations: Variable [2] introduction point mismatch. Expected `#4->#5 output #0`, got `#10->#11 output #0`.
 
 //! > ==========================================================================
 
@@ -462,7 +462,7 @@ return();
 foo@0([1]: felt252) -> ();
 
 //! > error
-#2->#3: Got 'Unknown ap change' error while moving [1] introduced at #0->#1[0] .
+#2->#3: Got 'Unknown ap change' error while moving [1] introduced at #0->#1 output #0.
 
 //! > ==========================================================================
 
