@@ -13,5 +13,17 @@ ignore.workspace = true
 log.workspace = true
 tracing.workspace = true
 
+<<<<<<< HEAD
 cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.12.0" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.0", features = ["tracing"] }
+||||||| c9743105f
+cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.12.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.0", features = [
+    "env_logger",
+] }
+=======
+cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.12.1" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.1", features = [
+    "env_logger",
+] }
+>>>>>>> origin/dev-v2.12.1

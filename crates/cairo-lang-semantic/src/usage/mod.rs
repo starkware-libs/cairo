@@ -10,10 +10,19 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use crate::expr::fmt::ExprFormatter;
 use crate::expr::objects::Arenas;
 use crate::{
+<<<<<<< HEAD
     ConcreteStructId, Condition, Expr, ExprClosure, ExprFor, ExprFunctionCall, ExprFunctionCallArg,
     ExprId, ExprLoop, ExprVarMemberPath, ExprWhile, FixedSizeArrayItems, FunctionBody, Parameter,
     Pattern, PatternArena, PatternId, Statement, StatementBreak, StatementExpr, StatementLet,
     StatementReturn, VarId,
+||||||| c9743105f
+    ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
+    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternId, Statement, VarId,
+=======
+    ConcreteStructId, Condition, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath,
+    FixedSizeArrayItems, FunctionBody, Parameter, Pattern, PatternId, Statement, StatementLet,
+    VarId,
+>>>>>>> origin/dev-v2.12.1
 };
 
 #[cfg(test)]
@@ -243,6 +252,7 @@ impl<'db> Usages<'db> {
                 let mut usage = Default::default();
                 for stmt in &expr.statements {
                     match &arenas.statements[*stmt] {
+<<<<<<< HEAD
                         Statement::Let(StatementLet {
                             pattern,
                             expr,
@@ -258,6 +268,24 @@ impl<'db> Usages<'db> {
                         }
                         Statement::Expr(StatementExpr { expr, stable_ptr: _ }) => {
                             self.handle_expr(arenas, *expr, &mut usage)
+||||||| c9743105f
+                        Statement::Let(stmt) => {
+                            self.handle_expr(arenas, stmt.expr, &mut usage);
+                            Self::handle_pattern(&arenas.patterns, stmt.pattern, &mut usage);
+=======
+                        Statement::Let(StatementLet {
+                            pattern,
+                            expr,
+                            else_clause,
+                            stable_ptr: _,
+                        }) => {
+                            self.handle_expr(arenas, *expr, &mut usage);
+                            Self::handle_pattern(&arenas.patterns, *pattern, &mut usage);
+
+                            if let Some(else_clause) = else_clause {
+                                self.handle_expr(arenas, *else_clause, &mut usage);
+                            }
+>>>>>>> origin/dev-v2.12.1
                         }
                         Statement::Continue(_) => (),
                         Statement::Return(StatementReturn { expr_option, stable_ptr: _ }) => {
