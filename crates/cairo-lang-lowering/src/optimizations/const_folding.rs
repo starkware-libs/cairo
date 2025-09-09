@@ -306,21 +306,53 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             BlockEnd::Match { info } => {
                 self.maybe_replace_inputs(info.inputs_mut());
                 match info {
-                    MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
-                        if let Some(VarInfo::Const(const_value)) = self.var_info.get(&input.var_id)
-                            && let ConstValue::Enum(variant, value) = const_value.long(self.db)
-                        {
-                            let arm = &arms[variant.idx];
-                            let output = arm.var_ids[0];
-                            if self.variables[input.var_id].info.droppable.is_ok()
-                                && self.variables[output].info.copyable.is_ok()
-                                && let Some(stmt) =
-                                    self.try_generate_const_statement(*value, output)
+                    MatchInfo::Enum(MatchEnumInfo { input, arms, location, .. }) => {
+                        if let Some(var_info) = self.var_info.get(&input.var_id) {
+                            if let VarInfo::Const(const_value) = var_info
+                                && let ConstValue::Enum(variant, value) = const_value.long(self.db)
                             {
-                                block.statements.push(stmt);
-                                block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                                let arm = &arms[variant.idx];
+                                let output = arm.var_ids[0];
+                                self.var_info.insert(output, VarInfo::Const(*value));
+                                if self.variables[input.var_id].info.droppable.is_ok()
+                                    && self.variables[output].info.copyable.is_ok()
+                                    && let Some(stmt) =
+                                        self.try_generate_const_statement(*value, output)
+                                {
+                                    block.statements.push(stmt);
+                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                                }
+                                self.var_info.insert(output, VarInfo::Const(*value));
+                            } else if let VarInfo::Snapshot(inner) = var_info
+                                && let VarInfo::Const(const_value) = inner.as_ref()
+                                && let ConstValue::Enum(variant, value) = const_value.long(self.db)
+                            {
+                                let arm = &arms[variant.idx];
+                                let output = arm.var_ids[0];
+                                if let Ok(ty) = value.ty(self.db)
+                                    && let Some(mut stmt) =
+                                        self.try_generate_const_statement(*value, output)
+                                {
+                                    let non_snap_var =
+                                        Variable::with_default_context(self.db, ty, *location);
+                                    let ignored = self.variables.alloc(non_snap_var.clone());
+                                    let pre_snap = self.variables.alloc(non_snap_var);
+                                    stmt.outputs_mut()[0] = pre_snap;
+                                    block.statements.push(stmt);
+                                    block.statements.push(Statement::Snapshot(
+                                        StatementSnapshot::new(
+                                            VarUsage { var_id: pre_snap, location: *location },
+                                            ignored,
+                                            output,
+                                        ),
+                                    ));
+                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                                }
+                                self.var_info.insert(
+                                    output,
+                                    VarInfo::Snapshot(VarInfo::Const(*value).into()),
+                                );
                             }
-                            self.var_info.insert(output, VarInfo::Const(*value));
                         }
                     }
                     MatchInfo::Value(info) => {
