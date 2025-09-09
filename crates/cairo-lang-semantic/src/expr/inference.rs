@@ -1173,6 +1173,17 @@ impl<'db, 'id> Inference<'db, 'id> {
         concrete_trait_id: ConcreteTraitId<'db>,
         lookup_context: ImplLookupContextId<'db>,
     ) -> InferenceResult<SolutionSet<'db, ConcreteTraitId<'db>>> {
+        for negative_impl in &lookup_context.long(self.db).negative_impls {
+            let generic_param = self
+                .db
+                .generic_param_semantic(*negative_impl)
+                .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
+            if let GenericParam::NegImpl(neg_impl) = generic_param
+                && Ok(concrete_trait_id) == neg_impl.concrete_trait
+            {
+                return Ok(SolutionSet::Unique(concrete_trait_id));
+            }
+        }
         for garg in concrete_trait_id.generic_args(self.db) {
             let GenericArgumentId::Type(ty) = garg else {
                 continue;
