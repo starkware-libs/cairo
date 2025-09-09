@@ -38,16 +38,8 @@ use crate::utils::InliningStrategy;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-<<<<<<< HEAD
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
     VarUsage, Variable, VariableArena, VariableId,
-||||||| c9743105f
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarUsage, Variable,
-    VariableId,
-=======
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VarUsage, Variable, VariableId,
->>>>>>> origin/dev-v2.12.1
 };
 
 /// Keeps track of equivalent values that a variables might be replaced with.

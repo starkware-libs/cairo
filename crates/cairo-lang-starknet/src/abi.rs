@@ -876,16 +876,8 @@ pub enum ABIError<'db> {
     UnexpectedType,
     #[error("Entrypoints must have a self first param.")]
     EntrypointMustHaveSelf,
-<<<<<<< HEAD
     #[error("An embedded impl must be an impl of a trait marked with #[{INTERFACE_ATTR}].")]
     EmbeddedImplMustBeInterface(Source<'db>),
-||||||| c9743105f
-    #[error("An embedded impl must be an impl of a trait marked with #[starknet::interface].")]
-    EmbeddedImplMustBeInterface(Source),
-=======
-    #[error("An embedded impl must be an impl of a trait marked with #[{INTERFACE_ATTR}].")]
-    EmbeddedImplMustBeInterface(Source),
->>>>>>> origin/dev-v2.12.1
     #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
     EmbeddedImplNotEmbeddable(Source<'db>),
     #[error(
