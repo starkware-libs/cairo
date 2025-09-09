@@ -2,14 +2,8 @@
 core = "src"
 
 [config.global]
-<<<<<<< HEAD
-||||||| c9743105f
-version = "2.12.0"
-=======
-version = "2.12.1"
->>>>>>> origin/dev-v2.12.1
 edition = "2024_07"
-version = "2.12.0"
+version = "2.12.1"
 
 [config.global.experimental_features]
 associated_item_constraints = true

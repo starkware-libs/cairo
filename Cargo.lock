@@ -624,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-executable-plugin"
-version = "2.12.0"
+version = "2.12.1"
 dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-defs",
