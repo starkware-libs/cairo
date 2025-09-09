@@ -44,7 +44,7 @@ pub fn build(
 /// type Option = Enum<felt252_ty, unit_ty>;
 /// libfunc init_option_some = enum_init<Option, 0>;
 /// felt252_const<8>() -> (felt8);
-/// ````
+/// ```
 /// this "Sierra statement"
 /// ```ignore
 /// init_option_some(felt8=[ap-5]) -> (some_id);
