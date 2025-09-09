@@ -1964,7 +1964,7 @@ pub fn execute_core_hint(
             // residue.
             let mut rng = rand::rng();
             let (random_x, random_y) = loop {
-                // Randominzing 31 bytes to make sure is in range.
+                // Randomizing 31 bytes to make sure is in range.
                 // TODO(orizi): Use `Felt252` random implementation when exists.
                 let x_bytes: [u8; 31] = rng.random();
                 let random_x = Felt252::from_bytes_be_slice(&x_bytes);
