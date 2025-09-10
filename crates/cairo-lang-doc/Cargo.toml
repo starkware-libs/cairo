@@ -7,40 +7,16 @@ license-file.workspace = true
 description = "A collection of documentation processing utilities for the Cairo programming language."
 
 [dependencies]
-<<<<<<< HEAD
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.1" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.12.1" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.1" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.1" }
-cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.12.1" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.1" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.12.1" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.1", features = ["tracing"] }
-itertools.workspace = true
-||||||| e07531d91
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.12.1" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.1" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.1" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.12.1" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.1" }
-cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.12.1" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version ="~2.12.1"}
-cairo-lang-debug = { path = "../cairo-lang-debug", version ="~2.12.1" }
-smol_str.workspace = true
-=======
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.2" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.12.2" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.2" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.2" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.12.2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.2" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.2" }
 cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "~2.12.2" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version ="~2.12.2"}
-cairo-lang-debug = { path = "../cairo-lang-debug", version ="~2.12.2" }
-smol_str.workspace = true
->>>>>>> origin/dev-v2.12.2
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.2" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.12.2" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.2", features = ["tracing"] }
+itertools.workspace = true
 pulldown-cmark = "0.13.0"
 salsa.workspace = true
 

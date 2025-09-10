@@ -5,13 +5,8 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
-<<<<<<< HEAD
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
 use cairo_lang_filesystem::ids::db_str;
-||||||| e07531d91
-=======
-use cairo_lang_filesystem::flag::flag_unsafe_panic;
->>>>>>> origin/dev-v2.12.2
 use cairo_lang_semantic::corelib::try_extract_nz_wrapped_type;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
@@ -79,25 +74,6 @@ impl<'db> VarInfo<'db> {
     }
     /// Wraps the variable info with the given number of snapshots.
     fn wrap_with_snapshots(mut self, n_snapshots: usize) -> VarInfo<'db> {
-        for _ in 0..n_snapshots {
-            self = VarInfo::Snapshot(Box::new(self));
-        }
-        self
-    }
-}
-impl VarInfo {
-    /// Peels the snapshots from the variable info and returns the number of snapshots performed.
-    fn peel_snapshots(&self) -> (usize, &VarInfo) {
-        let mut n_snapshots = 0;
-        let mut info = self;
-        while let VarInfo::Snapshot(inner) = info {
-            info = inner.as_ref();
-            n_snapshots += 1;
-        }
-        (n_snapshots, info)
-    }
-    /// Wraps the variable info with the given number of snapshots.
-    fn wrap_with_snapshots(mut self, n_snapshots: usize) -> VarInfo {
         for _ in 0..n_snapshots {
             self = VarInfo::Snapshot(Box::new(self));
         }
@@ -290,7 +266,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 if let Some(info) = self.var_info.get(&input.var_id) {
                     let (n_snapshots, info) = info.peel_snapshots();
                     match info {
-<<<<<<< HEAD
                         VarInfo::Const(const_value) => {
                             if let ConstValue::Struct(member_values, _) = const_value.long(self.db)
                             {
@@ -300,19 +275,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                                         VarInfo::Const(*value).wrap_with_snapshots(n_snapshots),
                                     );
                                 }
-||||||| e07531d91
-                        VarInfo::Const(ConstValue::Struct(member_values, _)) => {
-                            for (output, value) in zip_eq(outputs, member_values.clone()) {
-                                self.var_info
-                                    .insert(*output, wrap_with_snapshots(VarInfo::Const(value)));
-=======
-                        VarInfo::Const(ConstValue::Struct(member_values, _)) => {
-                            for (output, value) in zip_eq(outputs, member_values.clone()) {
-                                self.var_info.insert(
-                                    *output,
-                                    VarInfo::Const(value).wrap_with_snapshots(n_snapshots),
-                                );
->>>>>>> origin/dev-v2.12.2
                             }
                         }
                         VarInfo::Struct(members) => {
@@ -354,7 +316,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             BlockEnd::Match { info } => {
                 self.maybe_replace_inputs(info.inputs_mut());
                 match info {
-<<<<<<< HEAD
                     MatchInfo::Enum(MatchEnumInfo { input, arms, location, .. }) => {
                         if let Some(var_info) = self.var_info.get(&input.var_id) {
                             let (n_snapshots, var_info) = var_info.peel_snapshots();
@@ -369,32 +330,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                                     && let Ok(mut ty) = value.ty(self.db)
                                     && let Some(mut stmt) =
                                         self.try_generate_const_statement(*value, output)
-||||||| e07531d91
-                    MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
-                        if let Some(VarInfo::Const(ConstValue::Enum(variant, value))) =
-                            self.var_info.get(&input.var_id)
-                        {
-                            let arm = &arms[variant.idx];
-                            let value = value.as_ref().clone();
-                            let output = arm.var_ids[0];
-                            if self.variables[input.var_id].info.droppable.is_ok()
-                                && self.variables[output].info.copyable.is_ok()
-                            {
-                                if let Some(stmt) =
-                                    self.try_generate_const_statement(&value, output)
-=======
-                    MatchInfo::Enum(MatchEnumInfo { input, arms, location, .. }) => {
-                        if let Some(var_info) = self.var_info.get(&input.var_id) {
-                            let (n_snapshots, var_info) = var_info.peel_snapshots();
-                            // Checking whether we have actual const info on the enum.
-                            if let VarInfo::Const(ConstValue::Enum(variant, value)) = var_info {
-                                let arm = &arms[variant.idx];
-                                let output = arm.var_ids[0];
-                                if self.variables[input.var_id].info.droppable.is_ok()
-                                    && self.variables[output].info.copyable.is_ok()
->>>>>>> origin/dev-v2.12.2
                                 {
-<<<<<<< HEAD
                                     // Adding snapshot taking statements for snapshots.
                                     for _ in 0..n_snapshots {
                                         let non_snap_var =
@@ -414,58 +350,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                                     }
                                     block.statements.push(stmt);
                                     block.end = BlockEnd::Goto(arm.block_id, Default::default());
-||||||| e07531d91
-                                    block.statements.push(stmt);
-                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
-=======
-                                    if let Ok(mut ty) = value.ty(self.db) {
-                                        if let Some(mut stmt) =
-                                            self.try_generate_const_statement(value, output)
-                                        {
-                                            // Adding snapshot taking statements for snapshots.
-                                            for _ in 0..n_snapshots {
-                                                let non_snap_var = Variable::with_default_context(
-                                                    self.db, ty, *location,
-                                                );
-                                                ty = TypeLongId::Snapshot(ty).intern(self.db);
-                                                let ignored =
-                                                    self.variables.alloc(non_snap_var.clone());
-                                                let pre_snap = self.variables.alloc(non_snap_var);
-                                                stmt.outputs_mut()[0] = pre_snap;
-                                                block.statements.push(core::mem::replace(
-                                                    &mut stmt,
-                                                    Statement::Snapshot(StatementSnapshot::new(
-                                                        VarUsage {
-                                                            var_id: pre_snap,
-                                                            location: *location,
-                                                        },
-                                                        ignored,
-                                                        output,
-                                                    )),
-                                                ));
-                                            }
-                                            block.statements.push(stmt);
-                                            block.end =
-                                                BlockEnd::Goto(arm.block_id, Default::default());
-                                        }
-                                    }
->>>>>>> origin/dev-v2.12.2
                                 }
-<<<<<<< HEAD
                                 // Propagating the const value information.
                                 self.var_info.insert(
                                     output,
                                     VarInfo::Const(*value).wrap_with_snapshots(n_snapshots),
                                 );
-||||||| e07531d91
-=======
-                                // Propagating the const value information.
-                                self.var_info.insert(
-                                    output,
-                                    VarInfo::Const(value.as_ref().clone())
-                                        .wrap_with_snapshots(n_snapshots),
-                                );
->>>>>>> origin/dev-v2.12.2
                             }
                         }
                     }
