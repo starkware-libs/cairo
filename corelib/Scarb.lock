@@ -3,4 +3,4 @@ version = 1
 
 [[package]]
 name = "core"
-version = "2.12.1"
+version = "2.12.2"
