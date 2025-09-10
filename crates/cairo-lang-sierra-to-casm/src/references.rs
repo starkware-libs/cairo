@@ -63,7 +63,7 @@ impl core::fmt::Display for IntroductionPoint {
         if let Some(source_statement_idx) = self.source_statement_idx {
             write!(
                 f,
-                "#{source_statement_idx}->#{}[{}]",
+                "#{source_statement_idx}->#{} output #{}",
                 self.destination_statement_idx, self.output_idx
             )
         } else {

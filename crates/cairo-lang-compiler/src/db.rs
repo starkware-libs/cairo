@@ -29,7 +29,6 @@ fn estimate_code_size(
     db: &dyn Database,
     function_id: ConcreteFunctionWithBodyId<'_>,
 ) -> Maybe<isize> {
-    let db = db.as_view();
     let program = get_dummy_program_for_size_estimation(db, function_id)?;
 
     // All the functions except the first one are dummy functions.
@@ -52,9 +51,10 @@ fn estimate_code_size(
             }
 
             panic!(
-                "Internal compiler error: Failed to compile program to casm. You can set the \
-                 CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation and \
-                 debug the sierra program."
+                "Internal compiler error when compiling function `{}` to casm: `{err}`. You can \
+                 set the CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation \
+                 and debug the sierra program.",
+                function_id.full_path(db)
             );
         }
     };
