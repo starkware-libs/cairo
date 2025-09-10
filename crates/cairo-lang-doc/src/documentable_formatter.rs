@@ -676,8 +676,7 @@ impl<'db> HirDisplay<'db> for MacroDeclarationId<'db> {
             )
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         }
-        f.write_str("\n} => { ... }")
-            .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
+        f.write_str("\n}").map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
 }
 

@@ -335,7 +335,7 @@ macro count_idents {
     ($x:ident $y:ident $z:ident) => { ... };
     ($x:ident | $y:ident | $z:ident) => { ... };
     (abc {$x:ident, (abc $y:ident) }) => { ... };
-} => { ... }
+}
 
 //! > Item documentation #30
 
@@ -344,7 +344,7 @@ macro count_idents {
 //! > Item signature #31
 macro matcher_star {
     ($($x:expr), *) => { ... };
-} => { ... }
+}
 
 //! > Item documentation #31
 
@@ -353,7 +353,7 @@ macro matcher_star {
 //! > Item signature #32
 macro square_brackets_redundant_whitespace {
     [$x:ident] => { ... };
-} => { ... }
+}
 
 //! > Item documentation #32
 
