@@ -2,6 +2,12 @@
 core = "src"
 
 [config.global]
+<<<<<<< HEAD
+||||||| e07531d91
+version = "2.12.1"
+=======
+version = "2.12.2"
+>>>>>>> origin/dev-v2.12.2
 edition = "2024_07"
 version = "2.12.1"
 

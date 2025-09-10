@@ -429,7 +429,7 @@ checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
 name = "cairo-compile"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -442,7 +442,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-execute"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "bincode",
@@ -463,7 +463,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-format"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-utils",
@@ -476,7 +476,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-test-utils",
@@ -531,7 +531,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "bincode",
  "cairo-lang-debug",
@@ -554,7 +554,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-diagnostics"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -569,7 +569,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-doc"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-debug",
@@ -591,7 +591,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -601,7 +601,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-executable"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -642,7 +642,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-execute-utils"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -656,7 +656,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-test-utils",
@@ -673,7 +673,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -693,7 +693,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-lowering"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "assert_matches",
  "bincode",
@@ -723,7 +723,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anstream",
  "cairo-lang-diagnostics",
@@ -746,7 +746,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -772,7 +772,7 @@ checksum = "123ac0ecadf31bacae77436d72b88fa9caef2b8e92c89ce63a125ae911a12fae"
 
 [[package]]
 name = "cairo-lang-proc-macros"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
@@ -785,7 +785,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
@@ -798,7 +798,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runnable-utils"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -814,7 +814,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "ark-ff",
  "ark-secp256k1",
@@ -850,7 +850,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -877,7 +877,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "bimap",
@@ -908,7 +908,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -923,7 +923,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -942,7 +942,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -970,7 +970,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
@@ -993,7 +993,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-type-size"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-utils",
@@ -1001,7 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1036,7 +1036,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet-classes"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -1064,7 +1064,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -1083,7 +1083,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -1094,7 +1094,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-plugin"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1121,7 +1121,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1144,7 +1144,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-proc-macros",
@@ -1157,7 +1157,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-test-utils",
  "hashbrown 0.16.0",
@@ -1179,7 +1179,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-run"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1193,7 +1193,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-size-profiler"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1217,7 +1217,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-test"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1255,7 +1255,13 @@ dependencies = [
  "sha3",
  "starknet-crypto",
  "starknet-types-core",
+<<<<<<< HEAD
  "thiserror",
+||||||| e07531d91
+ "thiserror-no-std",
+=======
+ "thiserror 2.0.12",
+>>>>>>> origin/dev-v2.12.2
  "zip",
 ]
 
@@ -1828,7 +1834,7 @@ dependencies = [
 
 [[package]]
 name = "generate-syntax"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "cairo-lang-syntax-codegen",
  "cairo-lang-utils",
@@ -1848,7 +1854,7 @@ dependencies = [
 
 [[package]]
 name = "get-lowering"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -3592,7 +3598,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sierra-compile"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -3678,7 +3684,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starknet-compile"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -3717,7 +3723,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-compile"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -3730,7 +3736,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-extract-code"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "cairo-lang-starknet-classes",
@@ -3740,7 +3746,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-upgrade-validate"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -3923,7 +3929,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "2.12.1"
+version = "2.12.2"
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
@@ -3977,10 +3983,64 @@ checksum = "6c5e1be1c48b9172ee610da68fd9cd2770e7a4056cb3fc98710ee6906f0c7960"
 dependencies = [
  "proc-macro2",
  "quote",
+<<<<<<< HEAD
  "syn 2.0.106",
 ]
 
 [[package]]
+||||||| e07531d91
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "thiserror-impl-no-std"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58e6318948b519ba6dc2b442a6d0b904ebfb8d411a3ad3e07843615a72249758"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "thiserror-no-std"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3ad459d94dd517257cc96add8a43190ee620011bb6e6cdc82dafd97dfafafea"
+dependencies = [
+ "thiserror-impl-no-std",
+]
+
+[[package]]
+=======
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+>>>>>>> origin/dev-v2.12.2
 name = "thread_local"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"

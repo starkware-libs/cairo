@@ -13,10 +13,16 @@ regex = "1"
 
 [dependencies]
 anyhow.workspace = true
+<<<<<<< HEAD
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.1", features = [
   "schemars",
   "serde",
 ] }
+||||||| e07531d91
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.1", features = ["serde", "schemars"] }
+=======
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.2", features = ["serde", "schemars"] }
+>>>>>>> origin/dev-v2.12.2
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
 derivative.workspace = true
