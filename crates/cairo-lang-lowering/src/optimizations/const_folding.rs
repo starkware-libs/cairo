@@ -59,6 +59,25 @@ enum VarInfo {
     /// `None` values represent variables that are not tracked.
     Array(Vec<Option<VarInfo>>),
 }
+impl VarInfo {
+    /// Peels the snapshots from the variable info and returns the number of snapshots performed.
+    fn peel_snapshots(&self) -> (usize, &VarInfo) {
+        let mut n_snapshots = 0;
+        let mut info = self;
+        while let VarInfo::Snapshot(inner) = info {
+            info = inner.as_ref();
+            n_snapshots += 1;
+        }
+        (n_snapshots, info)
+    }
+    /// Wraps the variable info with the given number of snapshots.
+    fn wrap_with_snapshots(mut self, n_snapshots: usize) -> VarInfo {
+        for _ in 0..n_snapshots {
+            self = VarInfo::Snapshot(Box::new(self));
+        }
+        self
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Reachability {
@@ -241,29 +260,22 @@ impl<'a> ConstFoldingContext<'a> {
                 }
             }
             Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
-                if let Some(mut info) = self.var_info.get(&input.var_id) {
-                    let mut n_snapshot = 0;
-                    while let VarInfo::Snapshot(inner) = info {
-                        info = inner.as_ref();
-                        n_snapshot += 1;
-                    }
-                    let wrap_with_snapshots = |mut info| {
-                        for _ in 0..n_snapshot {
-                            info = VarInfo::Snapshot(Box::new(info));
-                        }
-                        info
-                    };
+                if let Some(info) = self.var_info.get(&input.var_id) {
+                    let (n_snapshots, info) = info.peel_snapshots();
                     match info {
                         VarInfo::Const(ConstValue::Struct(member_values, _)) => {
                             for (output, value) in zip_eq(outputs, member_values.clone()) {
-                                self.var_info
-                                    .insert(*output, wrap_with_snapshots(VarInfo::Const(value)));
+                                self.var_info.insert(
+                                    *output,
+                                    VarInfo::Const(value).wrap_with_snapshots(n_snapshots),
+                                );
                             }
                         }
                         VarInfo::Struct(members) => {
                             for (output, member) in zip_eq(outputs, members.clone()) {
                                 if let Some(member) = member {
-                                    self.var_info.insert(*output, wrap_with_snapshots(member));
+                                    self.var_info
+                                        .insert(*output, member.wrap_with_snapshots(n_snapshots));
                                 }
                             }
                         }
@@ -298,24 +310,55 @@ impl<'a> ConstFoldingContext<'a> {
             BlockEnd::Match { info } => {
                 self.maybe_replace_inputs(info.inputs_mut());
                 match info {
-                    MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) => {
-                        if let Some(VarInfo::Const(ConstValue::Enum(variant, value))) =
-                            self.var_info.get(&input.var_id)
-                        {
-                            let arm = &arms[variant.idx];
-                            let value = value.as_ref().clone();
-                            let output = arm.var_ids[0];
-                            if self.variables[input.var_id].info.droppable.is_ok()
-                                && self.variables[output].info.copyable.is_ok()
-                            {
-                                if let Some(stmt) =
-                                    self.try_generate_const_statement(&value, output)
+                    MatchInfo::Enum(MatchEnumInfo { input, arms, location, .. }) => {
+                        if let Some(var_info) = self.var_info.get(&input.var_id) {
+                            let (n_snapshots, var_info) = var_info.peel_snapshots();
+                            // Checking whether we have actual const info on the enum.
+                            if let VarInfo::Const(ConstValue::Enum(variant, value)) = var_info {
+                                let arm = &arms[variant.idx];
+                                let output = arm.var_ids[0];
+                                if self.variables[input.var_id].info.droppable.is_ok()
+                                    && self.variables[output].info.copyable.is_ok()
                                 {
-                                    block.statements.push(stmt);
-                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
+                                    if let Ok(mut ty) = value.ty(self.db) {
+                                        if let Some(mut stmt) =
+                                            self.try_generate_const_statement(value, output)
+                                        {
+                                            // Adding snapshot taking statements for snapshots.
+                                            for _ in 0..n_snapshots {
+                                                let non_snap_var = Variable::with_default_context(
+                                                    self.db, ty, *location,
+                                                );
+                                                ty = TypeLongId::Snapshot(ty).intern(self.db);
+                                                let ignored =
+                                                    self.variables.alloc(non_snap_var.clone());
+                                                let pre_snap = self.variables.alloc(non_snap_var);
+                                                stmt.outputs_mut()[0] = pre_snap;
+                                                block.statements.push(core::mem::replace(
+                                                    &mut stmt,
+                                                    Statement::Snapshot(StatementSnapshot::new(
+                                                        VarUsage {
+                                                            var_id: pre_snap,
+                                                            location: *location,
+                                                        },
+                                                        ignored,
+                                                        output,
+                                                    )),
+                                                ));
+                                            }
+                                            block.statements.push(stmt);
+                                            block.end =
+                                                BlockEnd::Goto(arm.block_id, Default::default());
+                                        }
+                                    }
                                 }
+                                // Propagating the const value information.
+                                self.var_info.insert(
+                                    output,
+                                    VarInfo::Const(value.as_ref().clone())
+                                        .wrap_with_snapshots(n_snapshots),
+                                );
                             }
-                            self.var_info.insert(output, VarInfo::Const(value));
                         }
                     }
                     MatchInfo::Value(info) => {
