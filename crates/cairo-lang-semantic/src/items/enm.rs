@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -32,15 +32,16 @@ mod test;
 // Declaration
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct EnumDeclarationData<'db> {
+struct EnumDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     generic_params: Vec<semantic::GenericParam<'db>>,
     attributes: Vec<Attribute<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-/// Implementation of [EnumSemantic::priv_enum_declaration_data].
-fn priv_enum_declaration_data<'db>(
+/// Returns the declaration data of an enum.
+#[salsa::tracked(returns(ref))]
+fn enum_declaration_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDeclarationData<'db>> {
@@ -51,15 +52,15 @@ fn priv_enum_declaration_data<'db>(
     let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
-    let generic_params_data = db.enum_generic_params_data(enum_id)?;
+    let generic_params_data = enum_generic_params_data(db, enum_id).maybe_as_ref()?;
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
     let mut resolver = Resolver::with_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.extend(generic_params_data.diagnostics);
-    let generic_params = generic_params_data.generic_params;
+    diagnostics.extend(generic_params_data.diagnostics.clone());
+    let generic_params = generic_params_data.generic_params.clone();
     let attributes = enum_ast.attributes(db).structurize(db);
 
     // Check fully resolved.
@@ -77,50 +78,8 @@ fn priv_enum_declaration_data<'db>(
     })
 }
 
-/// Query implementation of [EnumSemantic::priv_enum_declaration_data].
-#[salsa::tracked]
-fn priv_enum_declaration_data_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<EnumDeclarationData<'db>> {
-    priv_enum_declaration_data(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_declaration_diagnostics].
-fn enum_declaration_diagnostics<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_enum_declaration_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
-}
-
-/// Query Implementation of [EnumSemantic::enum_declaration_diagnostics].
-#[salsa::tracked]
-fn enum_declaration_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    enum_declaration_diagnostics(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_generic_params].
-fn enum_generic_params<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    Ok(db.enum_generic_params_data(enum_id)?.generic_params)
-}
-
-/// Query implementation of [EnumSemantic::enum_generic_params].
-#[salsa::tracked]
-fn enum_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    enum_generic_params(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_generic_params_data].
+/// Returns the generic parameters data of an enum.
+#[salsa::tracked(returns(ref))]
 fn enum_generic_params_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
@@ -149,50 +108,9 @@ fn enum_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-/// Query implementation of [EnumSemantic::enum_generic_params_data].
-#[salsa::tracked]
-fn enum_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    enum_generic_params_data(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_attributes].
-fn enum_attributes<'db>(db: &'db dyn Database, enum_id: EnumId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-    Ok(db.priv_enum_declaration_data(enum_id)?.attributes)
-}
-
-/// Query implementation of [EnumSemantic::enum_attributes].
-#[salsa::tracked]
-fn enum_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    enum_attributes(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_declaration_resolver_data].
-fn enum_declaration_resolver_data<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_enum_declaration_data(enum_id)?.resolver_data)
-}
-
-/// Query implementation of [EnumSemantic::enum_declaration_resolver_data].
-#[salsa::tracked]
-fn enum_declaration_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    enum_declaration_resolver_data(db, enum_id)
-}
-
-// Definition
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct EnumDefinitionData<'db> {
+struct EnumDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     variants: OrderedHashMap<StrRef<'db>, VariantId<'db>>,
     variant_semantic: OrderedHashMap<VariantId<'db>, Variant<'db>>,
@@ -235,8 +153,9 @@ pub enum MatchArmSelector<'db> {
     Value(ValueSelectorArm),
 }
 
-/// Implementation of [EnumSemantic::priv_enum_definition_data].
-fn priv_enum_definition_data<'db>(
+/// Returns the definition data of an enum.
+#[salsa::tracked(returns(ref))]
+fn enum_definition_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDefinitionData<'db>> {
@@ -249,14 +168,14 @@ fn priv_enum_definition_data<'db>(
     let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
-    let generic_params_data = db.enum_generic_params_data(enum_id)?;
+    let generic_params_data = enum_generic_params_data(db, enum_id).maybe_as_ref()?;
     let inference_id =
         InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
     let mut resolver = Resolver::with_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics.clone());
 
     // Variants.
     let mut variants = OrderedHashMap::default();
@@ -297,21 +216,13 @@ fn priv_enum_definition_data<'db>(
     })
 }
 
-/// Query implementation of [EnumSemantic::priv_enum_definition_data].
+/// Query implementation of [EnumSemantic::enum_definition_diagnostics].
 #[salsa::tracked]
-fn priv_enum_definition_data_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<EnumDefinitionData<'db>> {
-    priv_enum_definition_data(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_definition_diagnostics].
 fn enum_definition_diagnostics<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    let Ok(data) = db.priv_enum_definition_data(enum_id) else {
+    let Ok(data) = enum_definition_data(db, enum_id) else {
         return Default::default();
     };
 
@@ -324,9 +235,9 @@ fn enum_definition_diagnostics<'db>(
         .iter()
         .any(|attr| enum_id.has_attr(db, attr).unwrap_or_default())
     {
-        return data.diagnostics;
+        return data.diagnostics.clone();
     }
-    let mut diagnostics = SemanticDiagnostics::from(data.diagnostics);
+    let mut diagnostics = SemanticDiagnostics::from(data.diagnostics.clone());
     for (_, variant) in data.variant_semantic.iter() {
         let stable_ptr = variant.id.stable_ptr(db);
         add_type_based_diagnostics(db, &mut diagnostics, variant.ty, stable_ptr);
@@ -335,69 +246,6 @@ fn enum_definition_diagnostics<'db>(
         }
     }
     diagnostics.build()
-}
-
-/// Query implementation of [EnumSemantic::enum_definition_diagnostics].
-#[salsa::tracked]
-fn enum_definition_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    enum_definition_diagnostics(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_definition_resolver_data].
-fn enum_definition_resolver_data<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_enum_definition_data(enum_id)?.resolver_data)
-}
-
-/// Query implementation of [EnumSemantic::enum_definition_resolver_data].
-#[salsa::tracked]
-fn enum_definition_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    enum_definition_resolver_data(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::enum_variants].
-fn enum_variants<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
-    Ok(db.priv_enum_definition_data(enum_id)?.variants)
-}
-
-/// Query implementation of [EnumSemantic::enum_variants].
-#[salsa::tracked]
-fn enum_variants_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-) -> Maybe<OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
-    enum_variants(db, enum_id)
-}
-
-/// Implementation of [EnumSemantic::variant_semantic].
-fn variant_semantic<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-    variant_id: VariantId<'db>,
-) -> Maybe<Variant<'db>> {
-    let data = db.priv_enum_definition_data(enum_id)?;
-    data.variant_semantic.get(&variant_id).cloned().ok_or_else(skip_diagnostic)
-}
-
-/// Query implementation of [EnumSemantic::variant_semantic].
-#[salsa::tracked]
-fn variant_semantic_tracked<'db>(
-    db: &'db dyn Database,
-    enum_id: EnumId<'db>,
-    variant_id: VariantId<'db>,
-) -> Maybe<Variant<'db>> {
-    variant_semantic(db, enum_id, variant_id)
 }
 
 // TODO(spapini): Consider making these queries.
@@ -444,59 +292,49 @@ impl<T: Database + ?Sized> SemanticEnumEx for T {}
 
 /// Trait for enum-related semantic queries.
 pub trait EnumSemantic<'db>: Database {
-    /// Private query to compute data about an enum declaration.
-    fn priv_enum_declaration_data(
-        &'db self,
-        enum_id: EnumId<'db>,
-    ) -> Maybe<EnumDeclarationData<'db>> {
-        priv_enum_declaration_data_tracked(self.as_dyn_database(), enum_id)
-    }
     /// Returns the diagnostics of an enum declaration.
     fn enum_declaration_diagnostics(
         &'db self,
         enum_id: EnumId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        enum_declaration_diagnostics_tracked(self.as_dyn_database(), enum_id)
+        let db = self.as_dyn_database();
+        enum_declaration_data(db, enum_id)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the generic parameters of an enum.
     fn enum_generic_params(&'db self, enum_id: EnumId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
-        enum_generic_params_tracked(self.as_dyn_database(), enum_id)
-    }
-    /// Returns the generic parameters data of an enum.
-    fn enum_generic_params_data(&'db self, enum_id: EnumId<'db>) -> Maybe<GenericParamsData<'db>> {
-        enum_generic_params_data_tracked(self.as_dyn_database(), enum_id)
+        let db = self.as_dyn_database();
+        Ok(enum_declaration_data(db, enum_id).maybe_as_ref()?.generic_params.clone())
     }
     /// Returns the attributes attached to an enum.
     fn enum_attributes(&'db self, enum_id: EnumId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        enum_attributes_tracked(self.as_dyn_database(), enum_id)
+        let db = self.as_dyn_database();
+        Ok(enum_declaration_data(db, enum_id).maybe_as_ref()?.attributes.clone())
     }
     /// Returns the resolution resolved_items of an enum declaration.
     fn enum_declaration_resolver_data(
         &'db self,
         enum_id: EnumId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        enum_declaration_resolver_data_tracked(self.as_dyn_database(), enum_id)
-    }
-    /// Private query to compute data about an enum definition.
-    fn priv_enum_definition_data(
-        &'db self,
-        enum_id: EnumId<'db>,
-    ) -> Maybe<EnumDefinitionData<'db>> {
-        priv_enum_definition_data_tracked(self.as_dyn_database(), enum_id)
+        let db = self.as_dyn_database();
+        Ok(enum_declaration_data(db, enum_id).maybe_as_ref()?.resolver_data.clone())
     }
     /// Returns the definition diagnostics of an enum definition.
     fn enum_definition_diagnostics(
         &'db self,
         enum_id: EnumId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        enum_definition_diagnostics_tracked(self.as_dyn_database(), enum_id)
+        enum_definition_diagnostics(self.as_dyn_database(), enum_id)
     }
     /// Returns the members of an enum.
     fn enum_variants(
         &'db self,
         enum_id: EnumId<'db>,
-    ) -> Maybe<OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
-        enum_variants_tracked(self.as_dyn_database(), enum_id)
+    ) -> Maybe<&'db OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
+        let db = self.as_dyn_database();
+        Ok(&enum_definition_data(db, enum_id).maybe_as_ref()?.variants)
     }
     /// Returns the semantic model of a variant.
     fn variant_semantic(
@@ -504,14 +342,21 @@ pub trait EnumSemantic<'db>: Database {
         enum_id: EnumId<'db>,
         variant_id: VariantId<'db>,
     ) -> Maybe<semantic::Variant<'db>> {
-        variant_semantic_tracked(self.as_dyn_database(), enum_id, variant_id)
+        let db = self.as_dyn_database();
+        enum_definition_data(db, enum_id)
+            .maybe_as_ref()?
+            .variant_semantic
+            .get(&variant_id)
+            .cloned()
+            .ok_or_else(skip_diagnostic)
     }
     /// Returns the resolution resolved_items of an enum definition.
     fn enum_definition_resolver_data(
         &'db self,
         enum_id: EnumId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        enum_definition_resolver_data_tracked(self.as_dyn_database(), enum_id)
+        let db = self.as_dyn_database();
+        Ok(enum_definition_data(db, enum_id).maybe_as_ref()?.resolver_data.clone())
     }
 }
 impl<'db, T: Database + ?Sized> EnumSemantic<'db> for T {}

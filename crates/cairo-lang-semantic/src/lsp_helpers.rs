@@ -212,8 +212,10 @@ fn visible_importables_in_module_ex<'db>(
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(item_id)) => {
                 let enum_name = item_id.name(db);
 
-                for (name, id) in db.enum_variants(item_id).unwrap_or_default() {
-                    result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
+                if let Ok(variants) = db.enum_variants(item_id) {
+                    for (name, id) in variants.iter() {
+                        result.push((ImportableId::Variant(*id), format!("{enum_name}::{name}")));
+                    }
                 }
 
                 (ImportableId::Enum(item_id), enum_name)
@@ -263,8 +265,11 @@ fn visible_importables_in_module_ex<'db>(
         }
 
         result.push((ImportableId::Enum(enum_id), enum_name.into()));
-        for (name, id) in db.enum_variants(enum_id).unwrap_or_default() {
-            result.push((ImportableId::Variant(id), format!("{enum_name}::{name}")));
+
+        if let Ok(variants) = db.enum_variants(enum_id) {
+            for (name, id) in variants.iter() {
+                result.push((ImportableId::Variant(*id), format!("{enum_name}::{name}")));
+            }
         }
     }
 
