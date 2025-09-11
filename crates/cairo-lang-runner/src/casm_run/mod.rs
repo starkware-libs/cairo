@@ -1802,6 +1802,34 @@ fn alloc_memory(
     Ok(std::mem::replace(&mut scope.next_address, updated))
 }
 
+/// Sample a random point on the elliptic curve and insert into memory.
+pub fn random_ec_point<R: rand::RngCore>(
+    vm: &mut VirtualMachine,
+    x: CellRef,
+    y: CellRef,
+    rng: &mut R,
+) -> Result<(), HintError> {
+    // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
+    // residue.
+    let (random_x, random_y) = loop {
+        // Randomizing 31 bytes to make sure is in range.
+        // TODO(orizi): Use `Felt252` random implementation when exists.
+        let x_bytes: [u8; 31] = rng.random();
+        let random_x = Felt252::from_bytes_be_slice(&x_bytes);
+        /// The Beta value of the Starkware elliptic curve.
+        pub const BETA: Felt252 = Felt252::from_hex_unchecked(
+            "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
+        );
+        let random_y_squared = random_x * random_x * random_x + random_x + BETA;
+        if let Some(random_y) = random_y_squared.sqrt() {
+            break (random_x, random_y);
+        }
+    };
+    insert_value_to_cellref!(vm, x, random_x)?;
+    insert_value_to_cellref!(vm, y, random_y)?;
+    Ok(())
+}
+
 /// Executes a core hint.
 pub fn execute_core_hint(
     vm: &mut VirtualMachine,
@@ -1960,25 +1988,8 @@ pub fn execute_core_hint(
             insert_value_to_cellref!(vm, y, y_value)?;
         }
         CoreHint::RandomEcPoint { x, y } => {
-            // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
-            // residue.
             let mut rng = rand::rng();
-            let (random_x, random_y) = loop {
-                // Randomizing 31 bytes to make sure is in range.
-                // TODO(orizi): Use `Felt252` random implementation when exists.
-                let x_bytes: [u8; 31] = rng.random();
-                let random_x = Felt252::from_bytes_be_slice(&x_bytes);
-                /// The Beta value of the Starkware elliptic curve.
-                pub const BETA: Felt252 = Felt252::from_hex_unchecked(
-                    "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
-                );
-                let random_y_squared = random_x * random_x * random_x + random_x + BETA;
-                if let Some(random_y) = random_y_squared.sqrt() {
-                    break (random_x, random_y);
-                }
-            };
-            insert_value_to_cellref!(vm, x, random_x)?;
-            insert_value_to_cellref!(vm, y, random_y)?;
+            random_ec_point(vm, x, y, &mut rng)?;
         }
         CoreHint::FieldSqrt { val, sqrt } => {
             let val = get_val(vm, val)?;
