@@ -25,11 +25,11 @@ use cairo_lang_lowering::optimizations::scrub_units::scrub_units;
 use cairo_lang_lowering::panic::lower_panics;
 use cairo_lang_lowering::{Lowered, LoweringStage};
 use cairo_lang_semantic::ConcreteImplLongId;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionWithBodyId,
 };
+use cairo_lang_semantic::items::imp::ImplSemantic;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Intern;
@@ -52,7 +52,7 @@ fn test_lowering_consistency() {
 
     let function_id = get_func_id_by_name(
         db,
-        &[db.core_crate()],
+        &[cairo_lang_semantic::corelib::CorelibSemantic::core_crate(db)],
         "core::poseidon::_poseidon_hash_span_inner".to_string(),
     )
     .unwrap();

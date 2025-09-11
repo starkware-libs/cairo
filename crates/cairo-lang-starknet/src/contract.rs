@@ -6,13 +6,15 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, db_str};
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::inference::canonic::ResultNoErrEx;
+use cairo_lang_semantic::items::constant::ConstantSemantic;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBodyId as SemanticConcreteFunctionWithBodyId, GenericFunctionId,
 };
+use cairo_lang_semantic::items::impl_alias::ImplAliasSemantic;
+use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::substitution::SemanticRewriter;

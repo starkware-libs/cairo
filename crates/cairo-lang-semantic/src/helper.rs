@@ -1,8 +1,9 @@
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId};
 use salsa::Database;
 
-use crate::db::SemanticGroup;
+use crate::corelib::CorelibSemantic;
 use crate::items::functions::GenericFunctionId;
+use crate::items::module::ModuleSemantic;
 use crate::{FunctionId, GenericArgumentId, TypeId, corelib};
 
 /// Helper for getting functions in the corelib.

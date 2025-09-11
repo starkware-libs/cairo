@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_semantic::{self as semantic, ExprVarMemberPath};
 use cairo_lang_syntax::node::TypedStablePtr;
