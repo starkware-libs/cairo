@@ -668,7 +668,7 @@ pub struct ModuleData<'db> {
     /// All the impls of the given module.
     #[returns(ref)]
     pub impls: OrderedHashMap<ImplDefId<'db>, ast::ItemImpl<'db>>,
-    // This is needed to to limitation of Hash on large tuples in combination with salsa.
+    // This is needed to limitation of Hash on large tuples in combination with salsa.
     /// Additional metadata for the module.
     #[returns(ref)]
     pub metadata: ModuleDataMetadata<'db>,
