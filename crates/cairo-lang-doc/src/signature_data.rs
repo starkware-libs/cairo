@@ -74,11 +74,11 @@ pub(crate) fn get_enum_signature_data<'db>(
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?;
 
     let mut variants = Vec::new();
-    for (name, variant_id) in enum_variants {
-        let variant_semantic = db.variant_semantic(item_id, variant_id).map_err(|_| {
+    for (name, variant_id) in enum_variants.iter() {
+        let variant_semantic = db.variant_semantic(item_id, *variant_id).map_err(|_| {
             SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db))
         })?;
-        variants.push((name, variant_semantic.ty));
+        variants.push((*name, variant_semantic.ty));
     }
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
