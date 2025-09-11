@@ -43,6 +43,7 @@
 //! ```
 
 use crate::array::{ArrayTrait, Span, SpanTrait};
+use crate::bytes_31::split_bytes31;
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
@@ -652,6 +653,14 @@ pub impl ByteArraySpanImpl of ByteSpanTrait {
     }
 }
 
+impl ByteSpanDefault of Default<ByteSpan> {
+    fn default() -> ByteSpan {
+        ByteSpan {
+            data: [].span(), first_char_start_offset: 0, remainder_word: 0, remainder_len: 0,
+        }
+    }
+}
+
 pub trait ToByteSpanTrait<C> {
     #[must_use]
     fn span(self: @C) -> ByteSpan;
@@ -671,5 +680,41 @@ impl ByteArrayToByteSpan of ToByteSpanTrait<ByteArray> {
 impl ByteSpanToByteSpan of ToByteSpanTrait<ByteSpan> {
     fn span(self: @ByteSpan) -> ByteSpan {
         *self
+    }
+}
+
+impl ByteSpanIntoByteArray of Into<ByteSpan, ByteArray> {
+    /// Converts a `ByteSpan` into a `ByteArray`.
+    /// The cast includes trimming the start_offset of the first word of the span (which is created
+    /// when slicing).
+    ///
+    /// Note: creating `ByteArray.data` from `Span` requires allocating a new memory
+    /// segment for the returned array, and *O*(*n*) operations to populate the array with the
+    /// content of the span (see also `SpanIntoArray`).
+    fn into(mut self: ByteSpan) -> ByteArray {
+        let remainder_len = upcast(self.remainder_len);
+        let Some(first_word) = self.data.pop_front() else {
+            // Slice is included entirely in the remainder word.
+            let len_without_offset: usize = remainder_len - upcast(self.first_char_start_offset);
+            let (start_offset_trimmed, _) = split_bytes31(
+                self.remainder_word, remainder_len, len_without_offset,
+            );
+            return ByteArray {
+                data: array![],
+                pending_word: start_offset_trimmed,
+                pending_word_len: upcast(len_without_offset),
+            };
+        };
+
+        let mut ba = Default::default();
+        let n_bytes_to_append = BYTES_IN_BYTES31 - upcast(self.first_char_start_offset);
+        let (first_word_no_offset, _) = split_bytes31(
+            (*first_word).into(), BYTES_IN_BYTES31, n_bytes_to_append,
+        );
+        ba.append_word(first_word_no_offset, n_bytes_to_append);
+
+        ba.data.append_span(self.data); // Contains everything after the first word.
+        ba.append_word(self.remainder_word, remainder_len);
+        ba
     }
 }
