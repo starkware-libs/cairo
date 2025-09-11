@@ -2767,7 +2767,7 @@ fn maybe_compute_pattern_semantic<'db>(
             let params = pattern_struct.params(db);
             let pattern_param_asts = params.elements(db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
-            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?.as_ref().clone();
+            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?.clone();
             let mut used_members = UnorderedHashSet::<_>::default();
             let mut get_member =
                 |ctx: &mut ComputationContext<'db, '_>,
