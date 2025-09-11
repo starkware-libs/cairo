@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 
 use super::fmt::ExprFormatter;
 use crate::db::SemanticGroup;
+use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::{
     ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternArena, PatternId,
     semantic,

@@ -7,8 +7,16 @@ use cairo_lang_defs::ids::{
     TraitId, TraitItemId, TraitTypeId,
 };
 use cairo_lang_filesystem::ids::StrRef;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::module::ModuleItemInfo;
+use cairo_lang_semantic::items::constant::ConstantSemantic;
+use cairo_lang_semantic::items::enm::EnumSemantic;
+use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
+use cairo_lang_semantic::items::extern_type::ExternTypeSemantic;
+use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
+use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::module::{ModuleItemInfo, ModuleSemantic};
+use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;

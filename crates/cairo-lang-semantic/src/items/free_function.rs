@@ -17,7 +17,6 @@ use super::functions::{
     forbid_inline_always_with_impl_generic_param,
 };
 use super::generics::{GenericParamsData, semantic_generic_params};
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
 use crate::expr::inference::InferenceId;
@@ -26,7 +25,7 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{FunctionLongId, SemanticDiagnostic, TypeId, semantic};
+use crate::{FunctionLongId, GenericParam, SemanticDiagnostic, TypeId, semantic};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
@@ -36,8 +35,8 @@ mod test;
 
 // --- Selectors ---
 
-/// Implementation of [crate::db::SemanticGroup::free_function_declaration_diagnostics].
-pub fn free_function_declaration_diagnostics<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_declaration_diagnostics].
+fn free_function_declaration_diagnostics<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -46,51 +45,51 @@ pub fn free_function_declaration_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_diagnostics].
+/// Query implementation of [FreeFunctionSemantic::free_function_declaration_diagnostics].
 #[salsa::tracked]
-pub fn free_function_declaration_diagnostics_tracked<'db>(
+fn free_function_declaration_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     free_function_declaration_diagnostics(db, free_function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::free_function_signature].
-pub fn free_function_signature<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_signature].
+fn free_function_signature<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.signature)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_signature].
+/// Query implementation of [FreeFunctionSemantic::free_function_signature].
 #[salsa::tracked]
-pub fn free_function_signature_tracked<'db>(
+fn free_function_signature_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
     free_function_signature(db, free_function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::free_function_declaration_implicits].
-pub fn free_function_declaration_implicits<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_declaration_implicits].
+fn free_function_declaration_implicits<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.signature.implicits)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_implicits].
+/// Query implementation of [FreeFunctionSemantic::free_function_declaration_implicits].
 #[salsa::tracked]
-pub fn free_function_declaration_implicits_tracked<'db>(
+fn free_function_declaration_implicits_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
     free_function_declaration_implicits(db, free_function_id)
 }
 
-/// Implementation of [SemanticGroup::free_function_declaration_implicit_precedence]
-pub fn free_function_declaration_implicit_precedence<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_declaration_implicit_precedence]
+fn free_function_declaration_implicit_precedence<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<ImplicitPrecedence<'db>> {
@@ -99,32 +98,32 @@ pub fn free_function_declaration_implicit_precedence<'db>(
 
 /// Query implementation of [SemanticGroup::free_function_declaration_implicit_precedence]
 #[salsa::tracked]
-pub fn free_function_declaration_implicit_precedence_tracked<'db>(
+fn free_function_declaration_implicit_precedence_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<ImplicitPrecedence<'db>> {
     free_function_declaration_implicit_precedence(db, free_function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::free_function_generic_params].
-pub fn free_function_generic_params<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_generic_params].
+fn free_function_generic_params<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     Ok(db.free_function_generic_params_data(free_function_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_generic_params].
+/// Query implementation of [FreeFunctionSemantic::free_function_generic_params].
 #[salsa::tracked]
-pub fn free_function_generic_params_tracked<'db>(
+fn free_function_generic_params_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     free_function_generic_params(db, free_function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::free_function_generic_params_data].
-pub fn free_function_generic_params_data<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_generic_params_data].
+fn free_function_generic_params_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -155,43 +154,43 @@ pub fn free_function_generic_params_data<'db>(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_generic_params_data].
+/// Query implementation of [FreeFunctionSemantic::free_function_generic_params_data].
 #[salsa::tracked]
-pub fn free_function_generic_params_data_tracked<'db>(
+fn free_function_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     free_function_generic_params_data(db, free_function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::free_function_declaration_resolver_data].
-pub fn free_function_declaration_resolver_data<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_declaration_resolver_data].
+fn free_function_declaration_resolver_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_resolver_data].
+/// Query implementation of [FreeFunctionSemantic::free_function_declaration_resolver_data].
 #[salsa::tracked]
-pub fn free_function_declaration_resolver_data_tracked<'db>(
+fn free_function_declaration_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     free_function_declaration_resolver_data(db, free_function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::free_function_declaration_inline_config].
-pub fn free_function_declaration_inline_config<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_declaration_inline_config].
+fn free_function_declaration_inline_config<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.inline_config)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_inline_config].
+/// Query implementation of [FreeFunctionSemantic::free_function_declaration_inline_config].
 #[salsa::tracked]
-pub fn free_function_declaration_inline_config_tracked<'db>(
+fn free_function_declaration_inline_config_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
@@ -200,8 +199,8 @@ pub fn free_function_declaration_inline_config_tracked<'db>(
 
 // --- Computation ---
 
-/// Implementation of [crate::db::SemanticGroup::priv_free_function_declaration_data].
-pub fn priv_free_function_declaration_data<'db>(
+/// Implementation of [FreeFunctionSemantic::priv_free_function_declaration_data].
+fn priv_free_function_declaration_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
@@ -259,9 +258,9 @@ pub fn priv_free_function_declaration_data<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_free_function_declaration_data].
+/// Query implementation of [FreeFunctionSemantic::priv_free_function_declaration_data].
 #[salsa::tracked]
-pub fn priv_free_function_declaration_data_tracked<'db>(
+fn priv_free_function_declaration_data_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
@@ -272,8 +271,8 @@ pub fn priv_free_function_declaration_data_tracked<'db>(
 
 // --- Selectors ---
 
-/// Implementation of [crate::db::SemanticGroup::free_function_body_diagnostics].
-pub fn free_function_body_diagnostics<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_body_diagnostics].
+fn free_function_body_diagnostics<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -282,26 +281,26 @@ pub fn free_function_body_diagnostics<'db>(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_body_diagnostics].
+/// Query implementation of [FreeFunctionSemantic::free_function_body_diagnostics].
 #[salsa::tracked]
-pub fn free_function_body_diagnostics_tracked<'db>(
+fn free_function_body_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     free_function_body_diagnostics(db, free_function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::free_function_body_resolver_data].
-pub fn free_function_body_resolver_data<'db>(
+/// Implementation of [FreeFunctionSemantic::free_function_body_resolver_data].
+fn free_function_body_resolver_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     Ok(db.priv_free_function_body_data(free_function_id)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_body_resolver_data].
+/// Query implementation of [FreeFunctionSemantic::free_function_body_resolver_data].
 #[salsa::tracked]
-pub fn free_function_body_resolver_data_tracked<'db>(
+fn free_function_body_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -310,8 +309,8 @@ pub fn free_function_body_resolver_data_tracked<'db>(
 
 // --- Computation ---
 
-/// Implementation of [crate::db::SemanticGroup::priv_free_function_body_data].
-pub fn priv_free_function_body_data<'db>(
+/// Implementation of [FreeFunctionSemantic::priv_free_function_body_data].
+fn priv_free_function_body_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionBodyData<'db>> {
@@ -362,11 +361,105 @@ pub fn priv_free_function_body_data<'db>(
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_free_function_body_data].
+/// Query implementation of [FreeFunctionSemantic::priv_free_function_body_data].
 #[salsa::tracked]
-pub fn priv_free_function_body_data_tracked<'db>(
+fn priv_free_function_body_data_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionBodyData<'db>> {
     priv_free_function_body_data(db, free_function_id)
 }
+
+/// Trait for free function-related semantic queries.
+pub trait FreeFunctionSemantic<'db>: Database {
+    /// Returns the semantic diagnostics of a free function's declaration (signature).
+    fn free_function_declaration_diagnostics(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        free_function_declaration_diagnostics_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Returns the signature of a free function.
+    fn free_function_signature(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<semantic::Signature<'db>> {
+        free_function_signature_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Returns the explicit implicits of a signature of a free function.
+    fn free_function_declaration_implicits(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<Vec<TypeId<'db>>> {
+        free_function_declaration_implicits_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Returns the implicits precedence of a free function.
+    fn free_function_declaration_implicit_precedence(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<ImplicitPrecedence<'db>> {
+        free_function_declaration_implicit_precedence_tracked(
+            self.as_dyn_database(),
+            free_function_id,
+        )
+    }
+    /// Returns the generic params of a free function.
+    fn free_function_generic_params(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<Vec<GenericParam<'db>>> {
+        free_function_generic_params_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Returns the generic params data of a free function.
+    fn free_function_generic_params_data(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<GenericParamsData<'db>> {
+        free_function_generic_params_data_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Returns the resolution resolved_items of a free function's declaration.
+    fn free_function_declaration_resolver_data(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<Arc<ResolverData<'db>>> {
+        free_function_declaration_resolver_data_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Returns the inline configuration of a free function's declaration.
+    fn free_function_declaration_inline_config(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<InlineConfiguration<'db>> {
+        free_function_declaration_inline_config_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Private query to compute data about a free function declaration - its signature excluding
+    /// its body.
+    fn priv_free_function_declaration_data(
+        &'db self,
+        function_id: FreeFunctionId<'db>,
+    ) -> Maybe<FunctionDeclarationData<'db>> {
+        priv_free_function_declaration_data_tracked(self.as_dyn_database(), function_id)
+    }
+
+    /// Returns the semantic diagnostics of a free function's body.
+    fn free_function_body_diagnostics(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        free_function_body_diagnostics_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Returns the resolution resolved_items of a free function's body.
+    fn free_function_body_resolver_data(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<Arc<ResolverData<'db>>> {
+        free_function_body_resolver_data_tracked(self.as_dyn_database(), free_function_id)
+    }
+    /// Private query to compute data about a free function's body.
+    fn priv_free_function_body_data(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<FunctionBodyData<'db>> {
+        priv_free_function_body_data_tracked(self.as_dyn_database(), free_function_id)
+    }
+}
+impl<'db, T: Database + ?Sized> FreeFunctionSemantic<'db> for T {}

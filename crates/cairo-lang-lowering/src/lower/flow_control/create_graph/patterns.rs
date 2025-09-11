@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::corelib::validate_literal;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::corelib::{CorelibSemantic, validate_literal};
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
+use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, ExprLiteral,
