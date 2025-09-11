@@ -26,7 +26,10 @@ use salsa::Database;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::db::{DefsGroup, ModuleData, ModuleDataCacheAndLoadingData, ModuleDataMetadata};
+use crate::db::{
+    DefsGroup, ModuleData, ModuleDataCacheAndLoadingData, ModuleFilesData, ModuleNamedItemsData,
+    ModuleTypesData, ModuleUnnamedItemsData,
+};
 use crate::ids::{
     ConstantId, ConstantLongId, EnumId, EnumLongId, ExternFunctionId, ExternFunctionLongId,
     ExternTypeId, ExternTypeLongId, FileIndex, FreeFunctionId, FreeFunctionLongId, GenericParamId,
@@ -418,7 +421,6 @@ impl<'db> ModuleDataCached<'db> {
         module_data: ModuleData<'db>,
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
-        let metadata = module_data.metadata(db);
         Self {
             items: module_data
                 .items(db)
@@ -503,7 +505,7 @@ impl<'db> ModuleDataCached<'db> {
                     (ImplDefIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
-            extern_types: metadata
+            extern_types: module_data
                 .extern_types(db)
                 .iter()
                 .map(|(id, node)| {
@@ -513,7 +515,7 @@ impl<'db> ModuleDataCached<'db> {
                     )
                 })
                 .collect(),
-            extern_functions: metadata
+            extern_functions: module_data
                 .extern_functions(db)
                 .iter()
                 .map(|(id, node)| {
@@ -524,7 +526,7 @@ impl<'db> ModuleDataCached<'db> {
                 })
                 .collect(),
 
-            macro_declarations: metadata
+            macro_declarations: module_data
                 .macro_declarations(db)
                 .iter()
                 .map(|(id, node)| {
@@ -534,17 +536,17 @@ impl<'db> ModuleDataCached<'db> {
                     )
                 })
                 .collect(),
-            global_uses: metadata
+            global_uses: module_data
                 .global_uses(db)
                 .iter()
                 .map(|(id, node)| {
                     (GlobalUseIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
-            files: metadata.files(db).iter().map(|id| FileIdCached::new(*id, ctx)).collect(),
-            generated_file_aux_data: metadata.generated_file_aux_data(db).to_vec(),
+            files: module_data.files(db).iter().map(|id| FileIdCached::new(*id, ctx)).collect(),
+            generated_file_aux_data: module_data.generated_file_aux_data(db).to_vec(),
 
-            plugin_diagnostics: metadata
+            plugin_diagnostics: module_data
                 .plugin_diagnostics(db)
                 .iter()
                 .map(|(file_id, diagnostic)| {
@@ -554,7 +556,7 @@ impl<'db> ModuleDataCached<'db> {
                     )
                 })
                 .collect(),
-            diagnostics_notes: metadata
+            diagnostics_notes: module_data
                 .diagnostics_notes(db)
                 .iter()
                 .map(|(file_id, note)| {
@@ -567,22 +569,34 @@ impl<'db> ModuleDataCached<'db> {
         ModuleData::new(
             ctx.db,
             self.items.iter().map(|id| id.embed(ctx)).collect(),
-            self.constants.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.submodules.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.uses.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.free_functions.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.structs.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.enums.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.type_aliases.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.impl_aliases.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.traits.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            self.impls.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
-            ModuleDataMetadata::new(
+            ModuleTypesData::new(
                 ctx.db,
+                self.structs.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+                self.enums.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+                self.type_aliases
+                    .iter()
+                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
+                    .collect(),
                 self.extern_types
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
+            ),
+            ModuleNamedItemsData::new(
+                ctx.db,
+                self.constants.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+                self.submodules.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+                self.uses.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+                self.free_functions
+                    .iter()
+                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
+                    .collect(),
+                self.impl_aliases
+                    .iter()
+                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
+                    .collect(),
+                self.traits.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
+                self.impls.iter().map(|(id, node)| (id.embed(ctx), node.embed(ctx))).collect(),
                 self.extern_functions
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
@@ -591,12 +605,18 @@ impl<'db> ModuleDataCached<'db> {
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
+            ),
+            ModuleUnnamedItemsData::new(
+                ctx.db,
                 self.global_uses
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
                 // TODO(Gil): Handle macro calls.
                 Default::default(),
+            ),
+            ModuleFilesData::new(
+                ctx.db,
                 self.files.iter().map(|id| id.embed(ctx)).collect(),
                 self.generated_file_aux_data,
                 self.plugin_diagnostics
