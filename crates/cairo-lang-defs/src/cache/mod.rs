@@ -1724,7 +1724,7 @@ impl GreenNodeDetailsCached {
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> GreenNodeDetailsCached {
         match green_node_details {
-            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token((*token).into()),
+            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token((**token).into()),
             GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
                 children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
                 width: *width,
@@ -1734,7 +1734,7 @@ impl GreenNodeDetailsCached {
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
             GreenNodeDetailsCached::Token(token) => {
-                GreenNodeDetails::Token(db_str(ctx.db, token.clone()))
+                GreenNodeDetails::Token(db_str(ctx.db, token.clone()).into())
             }
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),
