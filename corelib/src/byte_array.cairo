@@ -43,6 +43,7 @@
 //! ```
 
 use crate::array::{ArrayTrait, Span, SpanTrait};
+use crate::bytes_31::split_bytes31;
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
@@ -624,6 +625,17 @@ pub impl ByteArraySpanImpl of ByteSpanTrait {
     }
 }
 
+impl ByteSpanDefault of Default<ByteSpan> {
+    fn default() -> ByteSpan {
+        ByteSpan {
+            data: [].span(),
+            first_char_start_offset: downcast(0).unwrap(),
+            remainder_word: 0,
+            remainder_len: downcast(0).unwrap(),
+        }
+    }
+}
+
 pub trait ToByteSpanTrait<C> {
     #[must_use]
     fn span(self: @C) -> ByteSpan;
@@ -637,5 +649,32 @@ impl ByteArrayToByteSpan of ToByteSpanTrait<ByteArray> {
             remainder_word: *self.pending_word,
             remainder_len: downcast(self.pending_word_len).expect('In [0,30] by assumption'),
         }
+    }
+}
+
+impl ByteSpanIntoByteArray of Into<ByteSpan, ByteArray> {
+    fn into(mut self: ByteSpan) -> ByteArray {
+        let start_offset = upcast(self.first_char_start_offset);
+        // Span is aligned to word boundaries.
+        if start_offset == 0 || self.data.is_empty() {
+            return ByteArray {
+                data: self.data.into(),
+                pending_word: self.remainder_word,
+                pending_word_len: upcast(self.remainder_len),
+            };
+        }
+
+        let mut ba = Default::default();
+        // Remove the start offset from the first data word.
+        let first_word = self.data.pop_front().expect('data non-empty checked above');
+        let n_bytes_to_append = BYTES_IN_BYTES31 - start_offset;
+        let (first_word_no_offset, _) = split_bytes31(
+            (*first_word).into(), BYTES_IN_BYTES31, n_bytes_to_append,
+        );
+        ba.append_word(first_word_no_offset, n_bytes_to_append);
+
+        ba.data.append_span(self.data); // Contains everything after the first word.
+        ba.append_word(self.remainder_word, upcast(self.remainder_len));
+        ba
     }
 }
