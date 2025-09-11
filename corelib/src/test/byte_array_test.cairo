@@ -547,9 +547,29 @@ fn test_span_copy() {
 
     let other_span = span;
     assert_eq!(other_span.len(), 2);
+    assert_eq!(ba, span.to_byte_array());
+
     let span_again = span.span();
-    assert_eq!(span_again.len(), span.len());
+    assert_eq!(ba, span_again.to_byte_array());
+    assert_eq!(ba, span.to_byte_array());
+
     let even_more_span_again = other_span.span();
-    assert_eq!(even_more_span_again.len(), other_span.len());
-    // TODO(giladchase): verify span content once we add `into` or `PartialEq`.
+    assert_eq!(ba, even_more_span_again.to_byte_array());
+    assert_eq!(ba, other_span.to_byte_array());
+    assert_eq!(ba, span.to_byte_array());
+}
+
+#[test]
+fn test_span_to_bytearray() {
+    let empty_ba: ByteArray = "";
+    assert_eq!(empty_ba.span().to_byte_array(), empty_ba);
+
+    // Only remainder.
+    let small_ba: ByteArray = "hello";
+    assert_eq!(small_ba.span().to_byte_array(), small_ba);
+
+    // Data word and remainder.
+    let large_ba: ByteArray = "0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVW"; // 40 bytes
+    assert_eq!(large_ba.span().to_byte_array(), large_ba);
+    // TODO(giladchase): test with slice.
 }
