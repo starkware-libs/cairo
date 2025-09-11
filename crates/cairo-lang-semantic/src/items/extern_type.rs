@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ExternTypeId, GenericKind, LanguageElementId, LookupItemId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
@@ -26,46 +26,10 @@ mod test;
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ExternTypeDeclarationData<'db> {
+struct ExternTypeDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     generic_params: Vec<GenericParam<'db>>,
     attributes: Vec<Attribute<'db>>,
-}
-
-// Selectors.
-/// Implementation of [ExternTypeSemantic::extern_type_declaration_diagnostics].
-fn extern_type_declaration_diagnostics<'db>(
-    db: &'db dyn Database,
-    extern_type_id: ExternTypeId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_extern_type_declaration_data(extern_type_id)
-        .map(|data| data.diagnostics)
-        .unwrap_or_default()
-}
-
-/// Query implementation of [ExternTypeSemantic::extern_type_declaration_diagnostics].
-#[salsa::tracked]
-fn extern_type_declaration_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    extern_type_id: ExternTypeId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    extern_type_declaration_diagnostics(db, extern_type_id)
-}
-/// Implementation of [ExternTypeSemantic::extern_type_declaration_generic_params].
-fn extern_type_declaration_generic_params<'db>(
-    db: &'db dyn Database,
-    extern_type_id: ExternTypeId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    Ok(db.extern_type_declaration_generic_params_data(extern_type_id)?.generic_params)
-}
-
-/// Query implementation of [ExternTypeSemantic::extern_type_declaration_generic_params].
-#[salsa::tracked]
-fn extern_type_declaration_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    extern_type_id: ExternTypeId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    extern_type_declaration_generic_params(db, extern_type_id)
 }
 
 // Computation.
@@ -110,8 +74,9 @@ fn extern_type_declaration_generic_params_data_tracked<'db>(
     extern_type_declaration_generic_params_data(db, extern_type_id)
 }
 
-/// Implementation of [ExternTypeSemantic::priv_extern_type_declaration_data].
-fn priv_extern_type_declaration_data<'db>(
+/// Returns the declaration data of an extern type.
+#[salsa::tracked(returns(ref))]
+fn extern_type_declaration_data<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ExternTypeDeclarationData<'db>> {
@@ -119,8 +84,10 @@ fn priv_extern_type_declaration_data<'db>(
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?;
 
     // Generic params.
-    let generic_params_data = extern_type_declaration_generic_params_data(db, extern_type_id)?;
-    let generic_params = generic_params_data.generic_params;
+    let generic_params_data_result =
+        extern_type_declaration_generic_params_data(db, extern_type_id);
+    let generic_params_data = generic_params_data_result.maybe_as_ref()?;
+    let generic_params = generic_params_data.generic_params.clone();
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::ExternType(extern_type_id),
     ));
@@ -128,7 +95,7 @@ fn priv_extern_type_declaration_data<'db>(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics.clone());
     let attributes = extern_type_syntax.attributes(db).structurize(db);
 
     // Check fully resolved.
@@ -140,56 +107,27 @@ fn priv_extern_type_declaration_data<'db>(
     Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params, attributes })
 }
 
-/// Query implementation of [ExternTypeSemantic::priv_extern_type_declaration_data].
-#[salsa::tracked]
-fn priv_extern_type_declaration_data_tracked<'db>(
-    db: &'db dyn Database,
-    extern_type_id: ExternTypeId<'db>,
-) -> Maybe<ExternTypeDeclarationData<'db>> {
-    priv_extern_type_declaration_data(db, extern_type_id)
-}
-
-/// Implementation of [ExternTypeSemantic::extern_type_attributes].
-fn extern_type_attributes<'db>(
-    db: &'db dyn Database,
-    extern_type_id: ExternTypeId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    Ok(db.priv_extern_type_declaration_data(extern_type_id)?.attributes)
-}
-
-/// Query implementation of [ExternTypeSemantic::extern_type_attributes].
-#[salsa::tracked]
-fn extern_type_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    extern_type_id: ExternTypeId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    extern_type_attributes(db, extern_type_id)
-}
-
 /// Trait for extern type-related semantic queries.
 pub trait ExternTypeSemantic<'db>: Database {
-    /// Private query to compute data about an extern type declaration. An extern type has
-    /// no body, and thus only has a declaration.
-    fn priv_extern_type_declaration_data(
-        &'db self,
-        type_id: ExternTypeId<'db>,
-    ) -> Maybe<ExternTypeDeclarationData<'db>> {
-        priv_extern_type_declaration_data_tracked(self.as_dyn_database(), type_id)
-    }
     /// Returns the semantic diagnostics of an extern type declaration. An extern type has
     /// no body, and thus only has a declaration.
     fn extern_type_declaration_diagnostics(
         &'db self,
         extern_type_id: ExternTypeId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        extern_type_declaration_diagnostics_tracked(self.as_dyn_database(), extern_type_id)
+        let db = self.as_dyn_database();
+        extern_type_declaration_data(db, extern_type_id)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the generic params of an extern type.
     fn extern_type_declaration_generic_params(
         &'db self,
         extern_type_id: ExternTypeId<'db>,
     ) -> Maybe<Vec<GenericParam<'db>>> {
-        extern_type_declaration_generic_params_tracked(self.as_dyn_database(), extern_type_id)
+        let db = self.as_dyn_database();
+        Ok(extern_type_declaration_data(db, extern_type_id).maybe_as_ref()?.generic_params.clone())
     }
     /// Returns the generic params data of an extern type.
     fn extern_type_declaration_generic_params_data(
@@ -203,7 +141,8 @@ pub trait ExternTypeSemantic<'db>: Database {
         &'db self,
         extern_type_id: ExternTypeId<'db>,
     ) -> Maybe<Vec<Attribute<'db>>> {
-        extern_type_attributes_tracked(self.as_dyn_database(), extern_type_id)
+        let db = self.as_dyn_database();
+        Ok(extern_type_declaration_data(db, extern_type_id).maybe_as_ref()?.attributes.clone())
     }
 }
 impl<'db, T: Database + ?Sized> ExternTypeSemantic<'db> for T {}
