@@ -408,6 +408,8 @@ pub struct ModuleDataCached<'db> {
     >,
     global_uses:
         OrderedHashMap<GlobalUseIdCached, TypeSyntaxNodeCached<'db, ast::UsePathStar<'db>>>,
+    macro_calls:
+        OrderedHashMap<MacroCallIdCached, TypeSyntaxNodeCached<'db, ast::ItemInlineMacro<'db>>>,
 
     files: Vec<FileIdCached>,
 
@@ -543,6 +545,13 @@ impl<'db> ModuleDataCached<'db> {
                     (GlobalUseIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
                 })
                 .collect(),
+            macro_calls: module_data
+                .macro_calls(db)
+                .iter()
+                .map(|(id, node)| {
+                    (MacroCallIdCached::new(*id, ctx), TypeSyntaxNodeCached::new(node.clone(), ctx))
+                })
+                .collect(),
             files: module_data.files(db).iter().map(|id| FileIdCached::new(*id, ctx)).collect(),
             generated_file_aux_data: module_data.generated_file_aux_data(db).to_vec(),
 
@@ -612,8 +621,10 @@ impl<'db> ModuleDataCached<'db> {
                     .iter()
                     .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
                     .collect(),
-                // TODO(Gil): Handle macro calls.
-                Default::default(),
+                self.macro_calls
+                    .iter()
+                    .map(|(id, node)| (id.embed(ctx), node.embed(ctx)))
+                    .collect(),
             ),
             ModuleFilesData::new(
                 ctx.db,
