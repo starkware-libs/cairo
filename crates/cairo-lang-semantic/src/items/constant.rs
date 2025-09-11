@@ -26,16 +26,22 @@ use salsa::Database;
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreInfo, LiteralError, core_nonzero_ty, false_variant, get_core_ty_by_name, true_variant,
-    try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreInfo, CorelibSemantic, LiteralError, core_nonzero_ty, false_variant, get_core_ty_by_name,
+    true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
-use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ExprAndId, compute_expr_semantic};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::{ConstVar, InferenceId};
 use crate::helper::ModuleHelper;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::extern_function::ExternFunctionSemantic;
+use crate::items::free_function::FreeFunctionSemantic;
+use crate::items::function_with_body::FunctionWithBodySemantic;
+use crate::items::generics::GenericsSemantic;
+use crate::items::imp::ImplSemantic;
+use crate::items::structure::StructSemantic;
+use crate::items::trt::TraitSemantic;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::resolve_type;
@@ -227,7 +233,7 @@ impl<'db> DebugWithDb<'db> for ImplConstantId<'db> {
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
-pub fn priv_constant_semantic_data<'db>(
+fn priv_constant_semantic_data<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
     in_cycle: bool,
@@ -253,7 +259,7 @@ pub fn priv_constant_semantic_data<'db>(
 }
 
 #[salsa::tracked(cycle_result=priv_constant_semantic_data_cycle)]
-pub fn priv_constant_semantic_data_tracked<'db>(
+fn priv_constant_semantic_data_tracked<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
     in_cycle: bool,
@@ -262,7 +268,7 @@ pub fn priv_constant_semantic_data_tracked<'db>(
 }
 
 /// Cycle handling for [SemanticGroup::priv_constant_semantic_data].
-pub fn priv_constant_semantic_data_cycle<'db>(
+fn priv_constant_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
     _in_cycle: bool,
@@ -1153,7 +1159,7 @@ fn numeric_arg_value<'db>(db: &'db dyn Database, value: ConstValueId<'db>) -> Op
 }
 
 /// Implementation of [SemanticGroup::constant_semantic_diagnostics].
-pub fn constant_semantic_diagnostics<'db>(
+fn constant_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -1162,7 +1168,7 @@ pub fn constant_semantic_diagnostics<'db>(
 
 /// Query implementation of [SemanticGroup::constant_semantic_diagnostics].
 #[salsa::tracked]
-pub fn constant_semantic_diagnostics_tracked<'db>(
+fn constant_semantic_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -1170,7 +1176,7 @@ pub fn constant_semantic_diagnostics_tracked<'db>(
 }
 
 /// Implementation of [SemanticGroup::constant_semantic_data].
-pub fn constant_semantic_data<'db>(
+fn constant_semantic_data<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<Constant<'db>> {
@@ -1179,7 +1185,7 @@ pub fn constant_semantic_data<'db>(
 
 /// Query implementation of [SemanticGroup::constant_semantic_data].
 #[salsa::tracked(cycle_result=constant_semantic_data_cycle)]
-pub fn constant_semantic_data_tracked<'db>(
+fn constant_semantic_data_tracked<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<Constant<'db>> {
@@ -1187,7 +1193,7 @@ pub fn constant_semantic_data_tracked<'db>(
 }
 
 /// Cycle handling for [SemanticGroup::constant_semantic_data].
-pub fn constant_semantic_data_cycle<'db>(
+fn constant_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<Constant<'db>> {
@@ -1196,7 +1202,7 @@ pub fn constant_semantic_data_cycle<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::constant_resolver_data].
-pub fn constant_resolver_data<'db>(
+fn constant_resolver_data<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -1205,7 +1211,7 @@ pub fn constant_resolver_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::constant_resolver_data].
 #[salsa::tracked(cycle_result=constant_resolver_data_cycle)]
-pub fn constant_resolver_data_tracked<'db>(
+fn constant_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -1213,7 +1219,7 @@ pub fn constant_resolver_data_tracked<'db>(
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::constant_resolver_data].
-pub fn constant_resolver_data_cycle<'db>(
+fn constant_resolver_data_cycle<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -1221,7 +1227,7 @@ pub fn constant_resolver_data_cycle<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::constant_const_value].
-pub fn constant_const_value<'db>(
+fn constant_const_value<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
@@ -1230,7 +1236,7 @@ pub fn constant_const_value<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::constant_const_value].
 #[salsa::tracked(cycle_result=constant_const_value_cycle)]
-pub fn constant_const_value_tracked<'db>(
+fn constant_const_value_tracked<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
@@ -1238,7 +1244,7 @@ pub fn constant_const_value_tracked<'db>(
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::constant_const_value].
-pub fn constant_const_value_cycle<'db>(
+fn constant_const_value_cycle<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
 ) -> Maybe<ConstValueId<'db>> {
@@ -1247,13 +1253,13 @@ pub fn constant_const_value_cycle<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::const_calc_info].
-pub fn const_calc_info<'db>(db: &'db dyn Database) -> Arc<ConstCalcInfo<'db>> {
+fn const_calc_info<'db>(db: &'db dyn Database) -> Arc<ConstCalcInfo<'db>> {
     Arc::new(ConstCalcInfo::new(db))
 }
 
 /// Implementation of [crate::db::SemanticGroup::const_calc_info].
 #[salsa::tracked]
-pub fn const_calc_info_tracked<'db>(db: &'db dyn Database) -> Arc<ConstCalcInfo<'db>> {
+fn const_calc_info_tracked<'db>(db: &'db dyn Database) -> Arc<ConstCalcInfo<'db>> {
     const_calc_info(db)
 }
 
@@ -1371,3 +1377,42 @@ impl<'db> ConstCalcInfo<'db> {
         }
     }
 }
+
+/// Trait for constant-related semantic queries.
+pub trait ConstantSemantic<'db>: Database {
+    /// Private query to compute data about a constant definition.
+    fn priv_constant_semantic_data(
+        &'db self,
+        _const_id: ConstantId<'db>,
+        _in_cycle: bool,
+    ) -> Maybe<ConstantData<'db>> {
+        priv_constant_semantic_data_tracked(self.as_dyn_database(), _const_id, _in_cycle)
+    }
+
+    /// Returns the semantic diagnostics of a constant definition.
+    fn constant_semantic_diagnostics(
+        &'db self,
+        const_id: ConstantId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        constant_semantic_diagnostics_tracked(self.as_dyn_database(), const_id)
+    }
+
+    /// Returns the semantic data of a constant definition.
+    fn constant_semantic_data(&'db self, use_id: ConstantId<'db>) -> Maybe<Constant<'db>> {
+        constant_semantic_data_tracked(self.as_dyn_database(), use_id)
+    }
+
+    fn constant_resolver_data(&'db self, use_id: ConstantId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
+        constant_resolver_data_tracked(self.as_dyn_database(), use_id)
+    }
+
+    fn constant_const_value(&'db self, const_id: ConstantId<'db>) -> Maybe<ConstValueId<'db>> {
+        constant_const_value_tracked(self.as_dyn_database(), const_id)
+    }
+
+    /// Returns information required for const calculations.
+    fn const_calc_info(&'db self) -> Arc<ConstCalcInfo<'db>> {
+        const_calc_info_tracked(self.as_dyn_database())
+    }
+}
+impl<'db, T: Database + ?Sized> ConstantSemantic<'db> for T {}

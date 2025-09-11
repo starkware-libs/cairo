@@ -105,7 +105,7 @@ pub struct CapturedValue<'db> {
 }
 
 /// Implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
-pub fn priv_macro_declaration_data<'db>(
+fn priv_macro_declaration_data<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<MacroDeclarationData<'db>> {
@@ -174,7 +174,7 @@ pub fn priv_macro_declaration_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_declaration_data].
 #[salsa::tracked]
-pub fn priv_macro_declaration_data_tracked<'db>(
+fn priv_macro_declaration_data_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<MacroDeclarationData<'db>> {
@@ -622,7 +622,7 @@ fn repetition_params_extend<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
-pub fn macro_declaration_diagnostics<'db>(
+fn macro_declaration_diagnostics<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -633,7 +633,7 @@ pub fn macro_declaration_diagnostics<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_diagnostics].
 #[salsa::tracked]
-pub fn macro_declaration_diagnostics_tracked<'db>(
+fn macro_declaration_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -641,7 +641,7 @@ pub fn macro_declaration_diagnostics_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
-pub fn macro_declaration_attributes<'db>(
+fn macro_declaration_attributes<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -650,7 +650,7 @@ pub fn macro_declaration_attributes<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_attributes].
 #[salsa::tracked]
-pub fn macro_declaration_attributes_tracked<'db>(
+fn macro_declaration_attributes_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -658,7 +658,7 @@ pub fn macro_declaration_attributes_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
-pub fn macro_declaration_resolver_data<'db>(
+fn macro_declaration_resolver_data<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -667,7 +667,7 @@ pub fn macro_declaration_resolver_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_resolver_data].
 #[salsa::tracked]
-pub fn macro_declaration_resolver_data_tracked<'db>(
+fn macro_declaration_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -675,7 +675,7 @@ pub fn macro_declaration_resolver_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::macro_declaration_rules].
-pub fn macro_declaration_rules<'db>(
+fn macro_declaration_rules<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<MacroRuleData<'db>>> {
@@ -684,7 +684,7 @@ pub fn macro_declaration_rules<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::macro_declaration_rules].
 #[salsa::tracked]
-pub fn macro_declaration_rules_tracked<'db>(
+fn macro_declaration_rules_tracked<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
 ) -> Maybe<Vec<MacroRuleData<'db>>> {
@@ -700,3 +700,43 @@ fn are_user_defined_inline_macros_enabled<'db>(
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.user_defined_inline_macros
 }
+
+/// Trait for macro declaration-related semantic queries.
+pub trait MacroDeclarationSemantic<'db>: Database {
+    /// Private query to compute data about a macro declaration.
+    fn priv_macro_declaration_data(
+        &'db self,
+        macro_id: MacroDeclarationId<'db>,
+    ) -> Maybe<MacroDeclarationData<'db>> {
+        priv_macro_declaration_data_tracked(self.as_dyn_database(), macro_id)
+    }
+    /// Returns the semantic diagnostics of a macro declaration.
+    fn macro_declaration_diagnostics(
+        &'db self,
+        macro_id: MacroDeclarationId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        macro_declaration_diagnostics_tracked(self.as_dyn_database(), macro_id)
+    }
+    /// Returns the resolver data of a macro declaration.
+    fn macro_declaration_resolver_data(
+        &'db self,
+        macro_id: MacroDeclarationId<'db>,
+    ) -> Maybe<Arc<ResolverData<'db>>> {
+        macro_declaration_resolver_data_tracked(self.as_dyn_database(), macro_id)
+    }
+    /// Returns the attributes of a macro declaration.
+    fn macro_declaration_attributes(
+        &'db self,
+        macro_id: MacroDeclarationId<'db>,
+    ) -> Maybe<Vec<Attribute<'db>>> {
+        macro_declaration_attributes_tracked(self.as_dyn_database(), macro_id)
+    }
+    /// Returns the rules semantic data of a macro declaration.
+    fn macro_declaration_rules(
+        &'db self,
+        macro_id: MacroDeclarationId<'db>,
+    ) -> Maybe<Vec<MacroRuleData<'db>>> {
+        macro_declaration_rules_tracked(self.as_dyn_database(), macro_id)
+    }
+}
+impl<'db, T: Database + ?Sized> MacroDeclarationSemantic<'db> for T {}

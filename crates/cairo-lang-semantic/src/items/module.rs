@@ -19,11 +19,14 @@ use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
-use crate::db::{SemanticGroup, get_resolver_data_options};
+use crate::db::get_resolver_data_options;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
+use crate::items::imp::ImplSemantic;
+use crate::items::impl_alias::ImplAliasSemantic;
 use crate::items::macro_call::module_macro_modules;
-use crate::items::us::ImportInfo;
+use crate::items::trt::TraitSemantic;
+use crate::items::us::{ImportInfo, UseSemantic};
 use crate::resolve::ResolvedGenericItem;
 
 /// Information per item in a module.
@@ -42,7 +45,7 @@ pub struct ModuleSemanticData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-pub fn priv_module_semantic_data_tracked<'db>(
+fn priv_module_semantic_data_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<ModuleSemanticData<'db>>> {
@@ -156,7 +159,7 @@ pub fn module_item_by_name<'db>(
     Ok(module_data.items.get(&name).map(|info| info.item_id))
 }
 
-pub fn module_item_by_name_tracked<'db>(
+fn module_item_by_name_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
     name: StrRef<'db>,
@@ -183,7 +186,7 @@ pub fn module_item_info_by_name<'db>(
     Ok(module_data.items.get(&name).cloned())
 }
 
-pub fn module_item_info_by_name_tracked<'db>(
+fn module_item_info_by_name_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
     name: StrRef<'db>,
@@ -237,7 +240,7 @@ pub fn module_all_used_uses<'db>(
 }
 
 /// Query implementation of [SemanticGroup::module_all_used_uses].
-pub fn module_all_used_uses_tracked<'db>(
+fn module_all_used_uses_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
@@ -269,7 +272,7 @@ pub fn module_attributes<'db>(
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].
-pub fn module_attributes_tracked<'db>(
+fn module_attributes_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -309,7 +312,7 @@ pub fn module_usable_trait_ids<'db>(
 }
 
 /// Query implementation of [SemanticGroup::module_usable_trait_ids].
-pub fn module_usable_trait_ids_tracked<'db>(
+fn module_usable_trait_ids_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
@@ -407,3 +410,57 @@ impl<'db> HasFeatureKind<'db> for ModuleItemInfo<'db> {
         &self.feature_kind
     }
 }
+
+/// Trait for module-related semantic queries.
+pub trait ModuleSemantic<'db>: Database {
+    /// Private query to compute data about the module.
+    fn priv_module_semantic_data(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<ModuleSemanticData<'db>>> {
+        priv_module_semantic_data_tracked(self.as_dyn_database(), module_id)
+    }
+
+    /// Returns [Maybe::Err] if the module was not properly resolved.
+    /// Returns [Maybe::Ok(None)] if the item does not exist.
+    fn module_item_by_name(
+        &'db self,
+        module_id: ModuleId<'db>,
+        name: StrRef<'db>,
+    ) -> Maybe<Option<ModuleItemId<'db>>> {
+        module_item_by_name_tracked(self.as_dyn_database(), module_id, name)
+    }
+
+    /// Returns [Maybe::Err] if the module was not properly resolved.
+    /// Returns [Maybe::Ok(None)] if the item does not exist.
+    fn module_item_info_by_name(
+        &'db self,
+        module_id: ModuleId<'db>,
+        name: StrRef<'db>,
+    ) -> Maybe<Option<ModuleItemInfo<'db>>> {
+        module_item_info_by_name_tracked(self.as_dyn_database(), module_id, name)
+    }
+
+    /// Returns all the items used within the module.
+    fn module_all_used_uses(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+        module_all_used_uses_tracked(self.as_dyn_database(), module_id)
+    }
+
+    /// Returns the attributes of a module.
+    fn module_attributes(&'db self, module_id: ModuleId<'db>) -> Maybe<Vec<Attribute<'db>>> {
+        module_attributes_tracked(self.as_dyn_database(), module_id)
+    }
+
+    /// Finds all the trait ids usable in the module.
+    fn module_usable_trait_ids(
+        &'db self,
+        module_id: ModuleId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
+        module_usable_trait_ids_tracked(self.as_dyn_database(), module_id)
+    }
+}
+
+impl<'db, T: Database + ?Sized> ModuleSemantic<'db> for T {}

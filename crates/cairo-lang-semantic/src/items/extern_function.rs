@@ -14,7 +14,6 @@ use super::function_with_body::get_inline_config;
 use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
 use super::generics::{GenericParamsData, semantic_generic_params};
 use crate::corelib::get_core_generic_function_id;
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
@@ -24,7 +23,7 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{Mutability, Parameter, SemanticDiagnostic, TypeId, semantic};
+use crate::{GenericParam, Mutability, Parameter, SemanticDiagnostic, TypeId, semantic};
 
 #[cfg(test)]
 #[path = "extern_function_test.rs"]
@@ -33,7 +32,7 @@ mod test;
 // --- Selectors ---
 
 /// Implementation of [crate::db::SemanticGroup::extern_function_declaration_inline_config].
-pub fn extern_function_declaration_inline_config<'db>(
+fn extern_function_declaration_inline_config<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
@@ -42,7 +41,7 @@ pub fn extern_function_declaration_inline_config<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_inline_config].
 #[salsa::tracked]
-pub fn extern_function_declaration_inline_config_tracked<'db>(
+fn extern_function_declaration_inline_config_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
@@ -50,7 +49,7 @@ pub fn extern_function_declaration_inline_config_tracked<'db>(
 }
 // TODO(spapini): Remove declaration from the names.
 /// Implementation of [crate::db::SemanticGroup::extern_function_declaration_diagnostics].
-pub fn extern_function_declaration_diagnostics<'db>(
+fn extern_function_declaration_diagnostics<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -61,7 +60,7 @@ pub fn extern_function_declaration_diagnostics<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_diagnostics].
 #[salsa::tracked]
-pub fn extern_function_declaration_diagnostics_tracked<'db>(
+fn extern_function_declaration_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -69,7 +68,7 @@ pub fn extern_function_declaration_diagnostics_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::extern_function_signature].
-pub fn extern_function_signature<'db>(
+fn extern_function_signature<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
@@ -78,7 +77,7 @@ pub fn extern_function_signature<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_signature].
 #[salsa::tracked]
-pub fn extern_function_signature_tracked<'db>(
+fn extern_function_signature_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
@@ -86,7 +85,7 @@ pub fn extern_function_signature_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::extern_function_declaration_generic_params].
-pub fn extern_function_declaration_generic_params<'db>(
+fn extern_function_declaration_generic_params<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -95,7 +94,7 @@ pub fn extern_function_declaration_generic_params<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_generic_params].
 #[salsa::tracked]
-pub fn extern_function_declaration_generic_params_tracked<'db>(
+fn extern_function_declaration_generic_params_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -104,7 +103,7 @@ pub fn extern_function_declaration_generic_params_tracked<'db>(
 
 /// Implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_generic_params_data].
-pub fn extern_function_declaration_generic_params_data<'db>(
+fn extern_function_declaration_generic_params_data<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -138,7 +137,7 @@ pub fn extern_function_declaration_generic_params_data<'db>(
 /// Query implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_generic_params_data].
 #[salsa::tracked]
-pub fn extern_function_declaration_generic_params_data_tracked<'db>(
+fn extern_function_declaration_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -146,7 +145,7 @@ pub fn extern_function_declaration_generic_params_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
-pub fn extern_function_declaration_implicits<'db>(
+fn extern_function_declaration_implicits<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
@@ -155,7 +154,7 @@ pub fn extern_function_declaration_implicits<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
 #[salsa::tracked]
-pub fn extern_function_declaration_implicits_tracked<'db>(
+fn extern_function_declaration_implicits_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Vec<TypeId<'db>>> {
@@ -163,7 +162,7 @@ pub fn extern_function_declaration_implicits_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::extern_function_declaration_refs].
-pub fn extern_function_declaration_refs<'db>(
+fn extern_function_declaration_refs<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Vec<Parameter<'db>>> {
@@ -178,7 +177,7 @@ pub fn extern_function_declaration_refs<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_refs].
 #[salsa::tracked]
-pub fn extern_function_declaration_refs_tracked<'db>(
+fn extern_function_declaration_refs_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Vec<Parameter<'db>>> {
@@ -187,7 +186,7 @@ pub fn extern_function_declaration_refs_tracked<'db>(
 
 /// Implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_resolver_data].
-pub fn extern_function_declaration_resolver_data<'db>(
+fn extern_function_declaration_resolver_data<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -197,7 +196,7 @@ pub fn extern_function_declaration_resolver_data<'db>(
 /// Query implementation of
 /// [crate::db::SemanticGroup::extern_function_declaration_resolver_data].
 #[salsa::tracked]
-pub fn extern_function_declaration_resolver_data_tracked<'db>(
+fn extern_function_declaration_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -207,7 +206,7 @@ pub fn extern_function_declaration_resolver_data_tracked<'db>(
 // --- Computation ---
 
 /// Implementation of [crate::db::SemanticGroup::priv_extern_function_declaration_data].
-pub fn priv_extern_function_declaration_data<'db>(
+fn priv_extern_function_declaration_data<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
@@ -287,9 +286,91 @@ pub fn priv_extern_function_declaration_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_function_declaration_data].
 #[salsa::tracked]
-pub fn priv_extern_function_declaration_data_tracked<'db>(
+fn priv_extern_function_declaration_data_tracked<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
     priv_extern_function_declaration_data(db, extern_function_id)
 }
+
+/// Trait for extern function-related semantic queries.
+pub trait ExternFunctionSemantic<'db>: Database {
+    /// Private query to compute data about an extern function declaration. An extern function has
+    /// no body, and thus only has a declaration.
+    fn priv_extern_function_declaration_data(
+        &'db self,
+        function_id: ExternFunctionId<'db>,
+    ) -> Maybe<FunctionDeclarationData<'db>> {
+        priv_extern_function_declaration_data_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the inline configuration of an extern function's declaration.
+    fn extern_function_declaration_inline_config(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Maybe<InlineConfiguration<'db>> {
+        extern_function_declaration_inline_config_tracked(
+            self.as_dyn_database(),
+            extern_function_id,
+        )
+    }
+    /// Returns the semantic diagnostics of an extern function declaration. An extern function has
+    /// no body, and thus only has a declaration.
+    fn extern_function_declaration_diagnostics(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        extern_function_declaration_diagnostics_tracked(self.as_dyn_database(), extern_function_id)
+    }
+    /// Returns the signature of an extern function.
+    fn extern_function_signature(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Maybe<semantic::Signature<'db>> {
+        extern_function_signature_tracked(self.as_dyn_database(), extern_function_id)
+    }
+    /// Returns the generic params of an extern function.
+    fn extern_function_declaration_generic_params(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Maybe<Vec<GenericParam<'db>>> {
+        extern_function_declaration_generic_params_tracked(
+            self.as_dyn_database(),
+            extern_function_id,
+        )
+    }
+    /// Returns the generic params data of an extern function.
+    fn extern_function_declaration_generic_params_data(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Maybe<GenericParamsData<'db>> {
+        extern_function_declaration_generic_params_data_tracked(
+            self.as_dyn_database(),
+            extern_function_id,
+        )
+    }
+    /// Returns the explicit implicits of an extern function declaration.
+    fn extern_function_declaration_implicits(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Maybe<Vec<TypeId<'db>>> {
+        extern_function_declaration_implicits_tracked(self.as_dyn_database(), extern_function_id)
+    }
+    /// Returns the ref parameters of an extern function declaration.
+    fn extern_function_declaration_refs(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Maybe<Vec<Parameter<'db>>> {
+        extern_function_declaration_refs_tracked(self.as_dyn_database(), extern_function_id)
+    }
+    /// Returns the resolution resolved_items of an extern function.
+    fn extern_function_declaration_resolver_data(
+        &'db self,
+        extern_function_id: ExternFunctionId<'db>,
+    ) -> Maybe<Arc<ResolverData<'db>>> {
+        extern_function_declaration_resolver_data_tracked(
+            self.as_dyn_database(),
+            extern_function_id,
+        )
+    }
+}
+impl<'db, T: Database + ?Sized> ExternFunctionSemantic<'db> for T {}

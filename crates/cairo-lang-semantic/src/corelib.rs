@@ -13,17 +13,19 @@ use num_bigint::BigInt;
 use num_traits::{Num, Signed, ToPrimitive, Zero};
 use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::helper::ModuleHelper;
 use crate::items::constant::{ConstValue, ConstValueId};
-use crate::items::enm::SemanticEnumEx;
+use crate::items::enm::{EnumSemantic, SemanticEnumEx};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::ImplLongId;
+use crate::items::imp::{ImplLongId, ImplSemantic};
+use crate::items::module::ModuleSemantic;
+use crate::items::module_type_alias::ModuleTypeAliasSemantic;
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
+    TraitSemantic,
 };
 use crate::items::us::SemanticUseEx;
 use crate::resolve::ResolvedGenericItem;
@@ -1107,3 +1109,17 @@ pub fn core_info(db: &dyn Database) -> Arc<CoreInfo<'_>> {
 pub fn core_info_tracked(db: &dyn Database) -> Arc<CoreInfo<'_>> {
     core_info(db)
 }
+
+/// Trait for corelib-related semantic queries.
+pub trait CorelibSemantic<'db>: Database {
+    fn core_crate(&'db self) -> CrateId<'db> {
+        core_crate_tracked(self.as_dyn_database())
+    }
+    fn core_module(&'db self) -> ModuleId<'db> {
+        core_module_tracked(self.as_dyn_database())
+    }
+    fn core_info(&'db self) -> Arc<CoreInfo<'db>> {
+        core_info_tracked(self.as_dyn_database())
+    }
+}
+impl<'db, T: Database + ?Sized> CorelibSemantic<'db> for T {}

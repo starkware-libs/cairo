@@ -13,11 +13,13 @@ use itertools::Itertools;
 use salsa::Database;
 
 use super::functions::InlineConfiguration;
-use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
+use crate::items::free_function::FreeFunctionSemantic;
 use crate::items::functions::ImplicitPrecedence;
+use crate::items::imp::ImplSemantic;
+use crate::items::trt::TraitSemantic;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::{Arenas, ExprId, PatternId, SemanticDiagnostic, TypeId, semantic};
 
@@ -26,7 +28,7 @@ use crate::{Arenas, ExprId, PatternId, SemanticDiagnostic, TypeId, semantic};
 // --- Selectors ---
 
 /// Implementation of [crate::db::SemanticGroup::function_declaration_diagnostics].
-pub fn function_declaration_diagnostics<'db>(
+fn function_declaration_diagnostics<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -45,7 +47,7 @@ pub fn function_declaration_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_declaration_diagnostics].
-pub fn function_declaration_diagnostics_tracked<'db>(
+fn function_declaration_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -62,7 +64,7 @@ fn function_declaration_diagnostics_helper<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::function_declaration_inline_config].
-pub fn function_declaration_inline_config<'db>(
+fn function_declaration_inline_config<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
@@ -80,7 +82,7 @@ pub fn function_declaration_inline_config<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_declaration_inline_config].
-pub fn function_declaration_inline_config_tracked<'db>(
+fn function_declaration_inline_config_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
@@ -97,7 +99,7 @@ fn function_declaration_inline_config_helper<'db>(
 }
 
 /// Implementation of [SemanticGroup::function_declaration_implicit_precedence].
-pub fn function_declaration_implicit_precedence<'db>(
+fn function_declaration_implicit_precedence<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<ImplicitPrecedence<'db>> {
@@ -115,7 +117,7 @@ pub fn function_declaration_implicit_precedence<'db>(
 }
 
 /// Query implementation of [SemanticGroup::function_declaration_implicit_precedence].
-pub fn function_declaration_implicit_precedence_tracked<'db>(
+fn function_declaration_implicit_precedence_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<ImplicitPrecedence<'db>> {
@@ -132,7 +134,7 @@ fn function_declaration_implicit_precedence_helper<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::function_with_body_signature].
-pub fn function_with_body_signature<'db>(
+fn function_with_body_signature<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
@@ -146,7 +148,7 @@ pub fn function_with_body_signature<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_with_body_signature].
-pub fn function_with_body_signature_tracked<'db>(
+fn function_with_body_signature_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<semantic::Signature<'db>> {
@@ -163,7 +165,7 @@ fn function_with_body_signature_helper<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::function_with_body_generic_params].
-pub fn function_with_body_generic_params<'db>(
+fn function_with_body_generic_params<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -185,7 +187,7 @@ pub fn function_with_body_generic_params<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_with_body_generic_params].
-pub fn function_with_body_generic_params_tracked<'db>(
+fn function_with_body_generic_params_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -202,7 +204,7 @@ fn function_with_body_generic_params_helper<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::function_with_body_attributes].
-pub fn function_with_body_attributes<'db>(
+fn function_with_body_attributes<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -221,7 +223,7 @@ pub fn function_with_body_attributes<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_with_body_attributes].
-pub fn function_with_body_attributes_tracked<'db>(
+fn function_with_body_attributes_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -294,7 +296,7 @@ unsafe impl<'db> salsa::Update for FunctionBody<'db> {
 // --- Selectors ---
 
 /// Implementation of [crate::db::SemanticGroup::function_body_diagnostics].
-pub fn function_body_diagnostics<'db>(
+fn function_body_diagnostics<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -309,7 +311,7 @@ pub fn function_body_diagnostics<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_body_diagnostics].
-pub fn function_body_diagnostics_tracked<'db>(
+fn function_body_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -327,19 +329,11 @@ fn function_body_diagnostics_helper<'db>(
 }
 
 /// Implementation of SemanticGroup::function_body_expr.
-pub fn function_body_expr<'db>(
+fn function_body_expr<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<semantic::ExprId> {
     Ok(db.function_body(function_id)?.body_expr)
-}
-
-/// Query implementation of SemanticGroup::function_body_expr.
-pub fn function_body_expr_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<semantic::ExprId> {
-    function_body_expr_helper(db, (), function_id)
 }
 
 #[salsa::tracked]
@@ -352,7 +346,7 @@ fn function_body_expr_helper<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::function_body].
-pub fn function_body<'db>(
+fn function_body<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Arc<FunctionBody<'db>>> {
@@ -366,7 +360,7 @@ pub fn function_body<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_body].
-pub fn function_body_tracked<'db>(
+fn function_body_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Arc<FunctionBody<'db>>> {
@@ -385,7 +379,7 @@ fn function_body_helper<'db>(
 // =========================================================
 
 /// Query implementation of SemanticGroup::expr_semantic.
-pub fn expr_semantic<'db>(
+fn expr_semantic<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
     id: semantic::ExprId,
@@ -394,7 +388,7 @@ pub fn expr_semantic<'db>(
 }
 
 /// Query implementation of SemanticGroup::pattern_semantic.
-pub fn pattern_semantic<'db>(
+fn pattern_semantic<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
     id: semantic::PatternId,
@@ -403,7 +397,7 @@ pub fn pattern_semantic<'db>(
 }
 
 /// Query implementation of SemanticGroup::statement_semantic.
-pub fn statement_semantic<'db>(
+fn statement_semantic<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
     id: semantic::StatementId,
@@ -559,3 +553,98 @@ pub fn get_implicit_precedence<'a, 'r>(
 
     (precedence, Some(attr))
 }
+
+/// Trait for function-with-body-related semantic queries.
+pub trait FunctionWithBodySemantic<'db>: Database {
+    /// Returns the semantic diagnostics of a declaration (signature) of a function with a body.
+    fn function_declaration_diagnostics(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        function_declaration_diagnostics_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the inline configuration of a declaration (signature) of a function with a body.
+    fn function_declaration_inline_config(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Maybe<InlineConfiguration<'db>> {
+        function_declaration_inline_config_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the implicit order of a declaration (signature) of a function with a body.
+    fn function_declaration_implicit_precedence(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Maybe<ImplicitPrecedence<'db>> {
+        function_declaration_implicit_precedence_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the signature of a function with a body.
+    fn function_with_body_signature(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Maybe<semantic::Signature<'db>> {
+        function_with_body_signature_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns all the available generic params inside a function body.
+    fn function_with_body_generic_params(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
+        function_with_body_generic_params_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the attributes of a function with a body.
+    fn function_with_body_attributes(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Maybe<Vec<Attribute<'db>>> {
+        function_with_body_attributes_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the semantic diagnostics of a body of a function (with a body).
+    fn function_body_diagnostics(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        function_body_diagnostics_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the body of a function (with a body).
+    fn function_body(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Maybe<Arc<FunctionBody<'db>>> {
+        function_body_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns the body expr of a function (with a body).
+    fn function_body_expr(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+    ) -> Maybe<semantic::ExprId> {
+        function_body_expr(self.as_dyn_database(), function_id)
+    }
+
+    /// Assumes function and expression are present.
+    fn expr_semantic(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+        id: semantic::ExprId,
+    ) -> semantic::Expr<'db> {
+        expr_semantic(self.as_dyn_database(), function_id, id)
+    }
+
+    /// Assumes function and statement are valid.
+    fn statement_semantic(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+        id: semantic::StatementId,
+    ) -> semantic::Statement<'db> {
+        statement_semantic(self.as_dyn_database(), function_id, id)
+    }
+
+    /// Assumes function and pattern are present.
+    fn pattern_semantic(
+        &'db self,
+        function_id: FunctionWithBodyId<'db>,
+        id: semantic::PatternId,
+    ) -> semantic::Pattern<'db> {
+        pattern_semantic(self.as_dyn_database(), function_id, id)
+    }
+}
+impl<'db, T: Database + ?Sized> FunctionWithBodySemantic<'db> for T {}

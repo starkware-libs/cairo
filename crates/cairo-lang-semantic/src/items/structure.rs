@@ -16,7 +16,6 @@ use salsa::Database;
 use super::attribute::SemanticQueryAttrs;
 use super::generics::{GenericParamsData, semantic_generic_params};
 use super::visibility::Visibility;
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
@@ -43,7 +42,7 @@ pub struct StructDeclarationData<'db> {
 }
 
 /// Implementation of [crate::db::SemanticGroup::priv_struct_declaration_data].
-pub fn priv_struct_declaration_data<'db>(
+fn priv_struct_declaration_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<StructDeclarationData<'db>> {
@@ -84,7 +83,7 @@ pub fn priv_struct_declaration_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_declaration_data].
 #[salsa::tracked]
-pub fn priv_struct_declaration_data_tracked<'db>(
+fn priv_struct_declaration_data_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<StructDeclarationData<'db>> {
@@ -92,7 +91,7 @@ pub fn priv_struct_declaration_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_declaration_diagnostics].
-pub fn struct_declaration_diagnostics<'db>(
+fn struct_declaration_diagnostics<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -101,7 +100,7 @@ pub fn struct_declaration_diagnostics<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_declaration_diagnostics].
 #[salsa::tracked]
-pub fn struct_declaration_diagnostics_tracked<'db>(
+fn struct_declaration_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -109,7 +108,7 @@ pub fn struct_declaration_diagnostics_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_generic_params].
-pub fn struct_generic_params<'db>(
+fn struct_generic_params<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
@@ -118,7 +117,7 @@ pub fn struct_generic_params<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_generic_params].
 #[salsa::tracked]
-pub fn struct_generic_params_tracked<'db>(
+fn struct_generic_params_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
@@ -126,7 +125,7 @@ pub fn struct_generic_params_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_generic_params_data].
-pub fn struct_generic_params_data<'db>(
+fn struct_generic_params_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -159,7 +158,7 @@ pub fn struct_generic_params_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_generic_params_data].
 #[salsa::tracked]
-pub fn struct_generic_params_data_tracked<'db>(
+fn struct_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -167,7 +166,7 @@ pub fn struct_generic_params_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_attributes].
-pub fn struct_attributes<'db>(
+fn struct_attributes<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -176,7 +175,7 @@ pub fn struct_attributes<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_attributes].
 #[salsa::tracked]
-pub fn struct_attributes_tracked<'db>(
+fn struct_attributes_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -184,7 +183,7 @@ pub fn struct_attributes_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_declaration_resolver_data].
-pub fn struct_declaration_resolver_data<'db>(
+fn struct_declaration_resolver_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -193,7 +192,7 @@ pub fn struct_declaration_resolver_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolver_data].
 #[salsa::tracked]
-pub fn struct_declaration_resolver_data_tracked<'db>(
+fn struct_declaration_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -218,7 +217,7 @@ pub struct Member<'db> {
 }
 
 /// Implementation of [crate::db::SemanticGroup::priv_struct_definition_data].
-pub fn priv_struct_definition_data<'db>(
+fn priv_struct_definition_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<StructDefinitionData<'db>> {
@@ -276,7 +275,7 @@ pub fn priv_struct_definition_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_definition_data].
 #[salsa::tracked]
-pub fn priv_struct_definition_data_tracked<'db>(
+fn priv_struct_definition_data_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<StructDefinitionData<'db>> {
@@ -284,7 +283,7 @@ pub fn priv_struct_definition_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
-pub fn struct_definition_diagnostics<'db>(
+fn struct_definition_diagnostics<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -316,7 +315,7 @@ pub fn struct_definition_diagnostics<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
 #[salsa::tracked]
-pub fn struct_definition_diagnostics_tracked<'db>(
+fn struct_definition_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -324,7 +323,7 @@ pub fn struct_definition_diagnostics_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_members].
-pub fn struct_members<'db>(
+fn struct_members<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, Member<'db>>>> {
@@ -333,7 +332,7 @@ pub fn struct_members<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_members].
 #[salsa::tracked]
-pub fn struct_members_tracked<'db>(
+fn struct_members_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, Member<'db>>>> {
@@ -341,7 +340,7 @@ pub fn struct_members_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::struct_definition_resolver_data].
-pub fn struct_definition_resolver_data<'db>(
+fn struct_definition_resolver_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -350,7 +349,7 @@ pub fn struct_definition_resolver_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_resolver_data].
 #[salsa::tracked]
-pub fn struct_definition_resolver_data_tracked<'db>(
+fn struct_definition_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -358,7 +357,7 @@ pub fn struct_definition_resolver_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::concrete_struct_members].
-pub fn concrete_struct_members<'db>(
+fn concrete_struct_members<'db>(
     db: &'db dyn Database,
     concrete_struct_id: ConcreteStructId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>>> {
@@ -382,9 +381,96 @@ pub fn concrete_struct_members<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_struct_members].
 #[salsa::tracked]
-pub fn concrete_struct_members_tracked<'db>(
+fn concrete_struct_members_tracked<'db>(
     db: &'db dyn Database,
     concrete_struct_id: ConcreteStructId<'db>,
 ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>>> {
     concrete_struct_members(db, concrete_struct_id)
 }
+
+/// Trait for struct-related semantic queries.
+pub trait StructSemantic<'db>: Database {
+    /// Private query to compute data about a struct declaration.
+    fn priv_struct_declaration_data(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Maybe<StructDeclarationData<'db>> {
+        priv_struct_declaration_data_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the declaration diagnostics of a struct.
+    fn struct_declaration_diagnostics(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        struct_declaration_diagnostics_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the attributes of a struct.
+    fn struct_attributes(&'db self, struct_id: StructId<'db>) -> Maybe<Vec<Attribute<'db>>> {
+        struct_attributes_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the generic parameters of a struct.
+    fn struct_generic_params(&'db self, struct_id: StructId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
+        struct_generic_params_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the generic parameters data of a struct.
+    fn struct_generic_params_data(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Maybe<GenericParamsData<'db>> {
+        struct_generic_params_data_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the resolution resolved_items of a struct declaration.
+    fn struct_declaration_resolver_data(
+        &'db self,
+        structure_id: StructId<'db>,
+    ) -> Maybe<Arc<ResolverData<'db>>> {
+        struct_declaration_resolver_data_tracked(self.as_dyn_database(), structure_id)
+    }
+
+    /// Private query to compute data about a struct definition.
+    fn priv_struct_definition_data(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Maybe<StructDefinitionData<'db>> {
+        priv_struct_definition_data_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the semantic diagnostics of a struct definition.
+    fn struct_definition_diagnostics(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        struct_definition_diagnostics_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the members of a struct.
+    fn struct_members(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>>> {
+        struct_members_tracked(self.as_dyn_database(), struct_id)
+    }
+
+    /// Returns the resolution resolved_items of a struct definition.
+    fn struct_definition_resolver_data(
+        &'db self,
+        structure_id: StructId<'db>,
+    ) -> Maybe<Arc<ResolverData<'db>>> {
+        struct_definition_resolver_data_tracked(self.as_dyn_database(), structure_id)
+    }
+
+    /// Returns the concrete members of a struct.
+    fn concrete_struct_members(
+        &'db self,
+        concrete_struct_id: ConcreteStructId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>>> {
+        concrete_struct_members_tracked(self.as_dyn_database(), concrete_struct_id)
+    }
+}
+
+impl<'db, T: Database + ?Sized> StructSemantic<'db> for T {}

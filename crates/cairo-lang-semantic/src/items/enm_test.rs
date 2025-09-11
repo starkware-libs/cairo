@@ -5,7 +5,8 @@ use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
-use crate::db::SemanticGroup;
+use crate::items::enm::EnumSemantic;
+use crate::items::module::ModuleSemantic;
 use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]

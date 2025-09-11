@@ -13,7 +13,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::expr::inference::canonic::CanonicalTrait;
 use crate::expr::inference::{
     ConstVar, ImplVar, ImplVarId, ImplVarTraitItemMappings, InferenceId, InferenceVar,
@@ -29,8 +28,8 @@ use crate::items::functions::{
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    NegativeImplId, NegativeImplLongId, UninferredGeneratedImplId, UninferredGeneratedImplLongId,
-    UninferredImpl,
+    ImplSemantic, NegativeImplId, NegativeImplLongId, UninferredGeneratedImplId,
+    UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,

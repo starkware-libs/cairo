@@ -23,9 +23,9 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::constant::{ConstValue, ConstValueId, ImplConstantId};
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -33,9 +33,9 @@ use cairo_lang_semantic::items::functions::{
 use cairo_lang_semantic::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use cairo_lang_semantic::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    NegativeImplId, NegativeImplLongId,
+    ImplSemantic, NegativeImplId, NegativeImplLongId,
 };
-use cairo_lang_semantic::items::trt::ConcreteTraitGenericFunctionLongId;
+use cairo_lang_semantic::items::trt::{ConcreteTraitGenericFunctionLongId, TraitSemantic};
 use cairo_lang_semantic::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeId, TypeInfo,

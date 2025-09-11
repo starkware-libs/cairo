@@ -11,7 +11,6 @@ use super::type_aliases::{
     TypeAliasData, type_alias_generic_params_data_helper, type_alias_semantic_data_cycle_helper,
     type_alias_semantic_data_helper,
 };
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve::ResolverData;
 use crate::{GenericParam, SemanticDiagnostic, TypeId};
@@ -27,7 +26,7 @@ pub struct ModuleTypeAliasData<'db> {
 // --- Selectors ---
 
 /// Implementation of [crate::db::SemanticGroup::module_type_alias_semantic_diagnostics].
-pub fn module_type_alias_semantic_diagnostics<'db>(
+fn module_type_alias_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -38,7 +37,7 @@ pub fn module_type_alias_semantic_diagnostics<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_semantic_diagnostics].
 #[salsa::tracked]
-pub fn module_type_alias_semantic_diagnostics_tracked<'db>(
+fn module_type_alias_semantic_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -46,7 +45,7 @@ pub fn module_type_alias_semantic_diagnostics_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::module_type_alias_resolved_type].
-pub fn module_type_alias_resolved_type<'db>(
+fn module_type_alias_resolved_type<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<TypeId<'db>> {
@@ -57,7 +56,7 @@ pub fn module_type_alias_resolved_type<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_resolved_type].
 #[salsa::tracked(cycle_result=module_type_alias_resolved_type_cycle)]
-pub fn module_type_alias_resolved_type_tracked<'db>(
+fn module_type_alias_resolved_type_tracked<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<TypeId<'db>> {
@@ -65,7 +64,7 @@ pub fn module_type_alias_resolved_type_tracked<'db>(
 }
 
 /// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolved_type].
-pub fn module_type_alias_resolved_type_cycle<'db>(
+fn module_type_alias_resolved_type_cycle<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<TypeId<'db>> {
@@ -77,7 +76,7 @@ pub fn module_type_alias_resolved_type_cycle<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::module_type_alias_generic_params].
-pub fn module_type_alias_generic_params<'db>(
+fn module_type_alias_generic_params<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
@@ -86,7 +85,7 @@ pub fn module_type_alias_generic_params<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_generic_params].
 #[salsa::tracked]
-pub fn module_type_alias_generic_params_tracked<'db>(
+fn module_type_alias_generic_params_tracked<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
@@ -94,7 +93,7 @@ pub fn module_type_alias_generic_params_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::module_type_alias_resolver_data].
-pub fn module_type_alias_resolver_data<'db>(
+fn module_type_alias_resolver_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -106,7 +105,7 @@ pub fn module_type_alias_resolver_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::module_type_alias_resolver_data].
 #[salsa::tracked(cycle_result=module_type_alias_resolver_data_cycle)]
-pub fn module_type_alias_resolver_data_tracked<'db>(
+fn module_type_alias_resolver_data_tracked<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -114,7 +113,7 @@ pub fn module_type_alias_resolver_data_tracked<'db>(
 }
 
 /// Trivial cycle handling for [crate::db::SemanticGroup::module_type_alias_resolver_data].
-pub fn module_type_alias_resolver_data_cycle<'db>(
+fn module_type_alias_resolver_data_cycle<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
@@ -129,7 +128,7 @@ pub fn module_type_alias_resolver_data_cycle<'db>(
 // --- Computation ---
 
 /// Implementation of [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
-pub fn priv_module_type_alias_semantic_data<'db>(
+fn priv_module_type_alias_semantic_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
     in_cycle: bool,
@@ -168,7 +167,7 @@ pub fn priv_module_type_alias_semantic_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
 #[salsa::tracked(cycle_result=priv_module_type_alias_semantic_data_cycle)]
-pub fn priv_module_type_alias_semantic_data_tracked<'db>(
+fn priv_module_type_alias_semantic_data_tracked<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
     in_cycle: bool,
@@ -177,7 +176,7 @@ pub fn priv_module_type_alias_semantic_data_tracked<'db>(
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_module_type_alias_semantic_data].
-pub fn priv_module_type_alias_semantic_data_cycle<'db>(
+fn priv_module_type_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
     _in_cycle: bool,
@@ -186,7 +185,7 @@ pub fn priv_module_type_alias_semantic_data_cycle<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::priv_module_type_alias_generic_params_data].
-pub fn priv_module_type_alias_generic_params_data<'db>(
+fn priv_module_type_alias_generic_params_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -199,9 +198,61 @@ pub fn priv_module_type_alias_generic_params_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_module_type_alias_generic_params_data].
 #[salsa::tracked]
-pub fn priv_module_type_alias_generic_params_data_tracked<'db>(
+fn priv_module_type_alias_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     priv_module_type_alias_generic_params_data(db, module_type_alias_id)
 }
+
+/// Trait for module type alias-related semantic queries.
+pub trait ModuleTypeAliasSemantic<'db>: Database {
+    /// Returns the semantic diagnostics of a type alias.
+    fn module_type_alias_semantic_diagnostics(
+        &'db self,
+        module_type_alias_id: ModuleTypeAliasId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        module_type_alias_semantic_diagnostics_tracked(self.as_dyn_database(), module_type_alias_id)
+    }
+    /// Returns the resolved type of a type alias.
+    fn module_type_alias_resolved_type(
+        &'db self,
+        module_type_alias_id: ModuleTypeAliasId<'db>,
+    ) -> Maybe<TypeId<'db>> {
+        module_type_alias_resolved_type_tracked(self.as_dyn_database(), module_type_alias_id)
+    }
+    /// Returns the generic parameters of a type alias.
+    fn module_type_alias_generic_params(
+        &'db self,
+        enum_id: ModuleTypeAliasId<'db>,
+    ) -> Maybe<Vec<GenericParam<'db>>> {
+        module_type_alias_generic_params_tracked(self.as_dyn_database(), enum_id)
+    }
+    /// Returns the resolution resolved_items of a type alias.
+    fn module_type_alias_resolver_data(
+        &'db self,
+        module_type_alias_id: ModuleTypeAliasId<'db>,
+    ) -> Maybe<Arc<ResolverData<'db>>> {
+        module_type_alias_resolver_data_tracked(self.as_dyn_database(), module_type_alias_id)
+    }
+    /// Private query to compute the generic parameters data of a type alias.
+    fn priv_module_type_alias_generic_params_data(
+        &'db self,
+        enum_id: ModuleTypeAliasId<'db>,
+    ) -> Maybe<GenericParamsData<'db>> {
+        priv_module_type_alias_generic_params_data_tracked(self.as_dyn_database(), enum_id)
+    }
+    /// Private query to compute data about a type alias.
+    fn priv_module_type_alias_semantic_data(
+        &'db self,
+        module_type_alias_id: ModuleTypeAliasId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ModuleTypeAliasData<'db>> {
+        priv_module_type_alias_semantic_data_tracked(
+            self.as_dyn_database(),
+            module_type_alias_id,
+            in_cycle,
+        )
+    }
+}
+impl<'db, T: Database + ?Sized> ModuleTypeAliasSemantic<'db> for T {}

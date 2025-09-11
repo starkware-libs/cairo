@@ -2,7 +2,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

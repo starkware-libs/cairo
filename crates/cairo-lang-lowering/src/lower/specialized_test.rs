@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;

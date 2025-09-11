@@ -10,12 +10,14 @@ use cairo_lang_utils::Intern;
 use salsa::Database;
 
 use crate::SemanticDiagnostic;
-use crate::db::SemanticGroup;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
 use crate::expr::inference::InferenceId;
-use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
+use crate::items::macro_declaration::{
+    MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
+};
+use crate::items::module::ModuleSemantic;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
 /// The data associated with a macro call in item context.
@@ -31,7 +33,7 @@ pub struct MacroCallData<'db> {
 }
 
 /// Implementation of [crate::db::SemanticGroup::priv_macro_call_data].
-pub fn priv_macro_call_data<'db>(
+fn priv_macro_call_data<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
@@ -160,8 +162,8 @@ pub fn priv_macro_call_data<'db>(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_macro_call_data].
-#[salsa::tracked]
-pub fn priv_macro_call_data_tracked<'db>(
+#[salsa::tracked(cycle_result=priv_macro_call_data_cycle)]
+fn priv_macro_call_data_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
@@ -194,14 +196,14 @@ pub fn expose_content_and_mapping<'db>(
 }
 
 /// Cycle handling for the `priv_macro_call_data` query.
-pub fn priv_macro_call_data_cycle<'db>(
+fn priv_macro_call_data_cycle<'db>(
     db: &'db dyn Database,
-    macro_call_id: &MacroCallId<'db>,
+    macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
     // If we are in a cycle, we return an empty MacroCallData with no diagnostics.
     // This is to prevent infinite recursion in case of cyclic macro calls.
     let mut diagnostics = SemanticDiagnostics::default();
-    let macro_call_syntax = db.module_macro_call_by_id(*macro_call_id)?;
+    let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
     let macro_call_path = macro_call_syntax.path(db);
     let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
 
@@ -222,7 +224,7 @@ pub fn priv_macro_call_data_cycle<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::macro_call_diagnostics].
-pub fn macro_call_diagnostics<'db>(
+fn macro_call_diagnostics<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -231,7 +233,7 @@ pub fn macro_call_diagnostics<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::macro_call_diagnostics].
 #[salsa::tracked(cycle_result=macro_call_diagnostics_cycle)]
-pub fn macro_call_diagnostics_tracked<'db>(
+fn macro_call_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -239,7 +241,7 @@ pub fn macro_call_diagnostics_tracked<'db>(
 }
 
 /// Cycle handling for the `macro_call_diagnostics` query.
-pub fn macro_call_diagnostics_cycle<'db>(
+fn macro_call_diagnostics_cycle<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -247,7 +249,7 @@ pub fn macro_call_diagnostics_cycle<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::macro_call_module_id].
-pub fn macro_call_module_id<'db>(
+fn macro_call_module_id<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
@@ -256,14 +258,14 @@ pub fn macro_call_module_id<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::macro_call_module_id].
 #[salsa::tracked(cycle_result=macro_call_module_id_cycle)]
-pub fn macro_call_module_id_tracked<'db>(
+fn macro_call_module_id_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
     macro_call_module_id(db, macro_call_id)
 }
 /// Cycle handling for the `macro_call_module_id` query.
-pub fn macro_call_module_id_cycle<'db>(
+fn macro_call_module_id_cycle<'db>(
     _db: &'db dyn Database,
     _macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
@@ -299,3 +301,26 @@ pub fn module_macro_modules<'db>(
     }
     modules
 }
+
+/// Trait for macro call-related semantic queries.
+pub trait MacroCallSemantic<'db>: Database {
+    /// Returns the semantic data of a macro call.
+    fn priv_macro_call_data(
+        &'db self,
+        macro_call_id: MacroCallId<'db>,
+    ) -> Maybe<MacroCallData<'db>> {
+        priv_macro_call_data_tracked(self.as_dyn_database(), macro_call_id)
+    }
+    /// Returns the expansion result of a macro call.
+    fn macro_call_module_id(&'db self, macro_call_id: MacroCallId<'db>) -> Maybe<ModuleId<'db>> {
+        macro_call_module_id_tracked(self.as_dyn_database(), macro_call_id)
+    }
+    /// Returns the semantic diagnostics of a macro call.
+    fn macro_call_diagnostics(
+        &'db self,
+        macro_call_id: MacroCallId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        macro_call_diagnostics_tracked(self.as_dyn_database(), macro_call_id)
+    }
+}
+impl<'db, T: Database + ?Sized> MacroCallSemantic<'db> for T {}

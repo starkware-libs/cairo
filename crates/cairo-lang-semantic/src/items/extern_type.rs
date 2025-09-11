@@ -11,7 +11,6 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use salsa::Database;
 
 use super::generics::{GenericParamsData, semantic_generic_params};
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
@@ -35,7 +34,7 @@ pub struct ExternTypeDeclarationData<'db> {
 
 // Selectors.
 /// Implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
-pub fn extern_type_declaration_diagnostics<'db>(
+fn extern_type_declaration_diagnostics<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
@@ -46,14 +45,14 @@ pub fn extern_type_declaration_diagnostics<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_diagnostics].
 #[salsa::tracked]
-pub fn extern_type_declaration_diagnostics_tracked<'db>(
+fn extern_type_declaration_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     extern_type_declaration_diagnostics(db, extern_type_id)
 }
 /// Implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
-pub fn extern_type_declaration_generic_params<'db>(
+fn extern_type_declaration_generic_params<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
@@ -62,7 +61,7 @@ pub fn extern_type_declaration_generic_params<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
 #[salsa::tracked]
-pub fn extern_type_declaration_generic_params_tracked<'db>(
+fn extern_type_declaration_generic_params_tracked<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<Vec<GenericParam<'db>>> {
@@ -71,7 +70,7 @@ pub fn extern_type_declaration_generic_params_tracked<'db>(
 
 // Computation.
 /// Implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
-pub fn extern_type_declaration_generic_params_data<'db>(
+fn extern_type_declaration_generic_params_data<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -104,7 +103,7 @@ pub fn extern_type_declaration_generic_params_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params_data].
 #[salsa::tracked]
-pub fn extern_type_declaration_generic_params_data_tracked<'db>(
+fn extern_type_declaration_generic_params_data_tracked<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -112,7 +111,7 @@ pub fn extern_type_declaration_generic_params_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
-pub fn priv_extern_type_declaration_data<'db>(
+fn priv_extern_type_declaration_data<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ExternTypeDeclarationData<'db>> {
@@ -143,7 +142,7 @@ pub fn priv_extern_type_declaration_data<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
 #[salsa::tracked]
-pub fn priv_extern_type_declaration_data_tracked<'db>(
+fn priv_extern_type_declaration_data_tracked<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ExternTypeDeclarationData<'db>> {
@@ -151,7 +150,7 @@ pub fn priv_extern_type_declaration_data_tracked<'db>(
 }
 
 /// Implementation of [crate::db::SemanticGroup::extern_type_attributes].
-pub fn extern_type_attributes<'db>(
+fn extern_type_attributes<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
@@ -160,9 +159,52 @@ pub fn extern_type_attributes<'db>(
 
 /// Query implementation of [crate::db::SemanticGroup::extern_type_attributes].
 #[salsa::tracked]
-pub fn extern_type_attributes_tracked<'db>(
+fn extern_type_attributes_tracked<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     extern_type_attributes(db, extern_type_id)
 }
+
+/// Trait for extern type-related semantic queries.
+pub trait ExternTypeSemantic<'db>: Database {
+    /// Private query to compute data about an extern type declaration. An extern type has
+    /// no body, and thus only has a declaration.
+    fn priv_extern_type_declaration_data(
+        &'db self,
+        type_id: ExternTypeId<'db>,
+    ) -> Maybe<ExternTypeDeclarationData<'db>> {
+        priv_extern_type_declaration_data_tracked(self.as_dyn_database(), type_id)
+    }
+    /// Returns the semantic diagnostics of an extern type declaration. An extern type has
+    /// no body, and thus only has a declaration.
+    fn extern_type_declaration_diagnostics(
+        &'db self,
+        extern_type_id: ExternTypeId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        extern_type_declaration_diagnostics_tracked(self.as_dyn_database(), extern_type_id)
+    }
+    /// Returns the generic params of an extern type.
+    fn extern_type_declaration_generic_params(
+        &'db self,
+        extern_type_id: ExternTypeId<'db>,
+    ) -> Maybe<Vec<GenericParam<'db>>> {
+        extern_type_declaration_generic_params_tracked(self.as_dyn_database(), extern_type_id)
+    }
+    /// Returns the generic params data of an extern type.
+    fn extern_type_declaration_generic_params_data(
+        &'db self,
+        extern_type_id: ExternTypeId<'db>,
+    ) -> Maybe<GenericParamsData<'db>> {
+        extern_type_declaration_generic_params_data_tracked(self.as_dyn_database(), extern_type_id)
+    }
+
+    /// Returns the attributes of an extern type.
+    fn extern_type_attributes(
+        &'db self,
+        extern_type_id: ExternTypeId<'db>,
+    ) -> Maybe<Vec<Attribute<'db>>> {
+        extern_type_attributes_tracked(self.as_dyn_database(), extern_type_id)
+    }
+}
+impl<'db, T: Database + ?Sized> ExternTypeSemantic<'db> for T {}
