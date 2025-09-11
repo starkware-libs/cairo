@@ -17,7 +17,9 @@ use salsa::Database;
 
 use crate::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
 use crate::inline_macros::get_default_plugin_suite;
+use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::items::functions::GenericFunctionId;
+use crate::items::module::ModuleSemantic;
 use crate::plugin::PluginSuite;
 use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
 
