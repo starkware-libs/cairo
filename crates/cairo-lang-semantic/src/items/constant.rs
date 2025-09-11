@@ -8,7 +8,8 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, skip_diagnostic,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
+    skip_diagnostic,
 };
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
@@ -83,7 +84,7 @@ impl<'db> Constant<'db> {
 
 /// Information about a constant definition.
 ///
-/// Helper struct for the data returned by [ConstantSemantic::priv_constant_semantic_data].
+/// Helper struct for the data returned by [ConstantSemantic::constant_semantic_data].
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
 pub struct ConstantData<'db> {
@@ -232,8 +233,9 @@ impl<'db> DebugWithDb<'db> for ImplConstantId<'db> {
     }
 }
 
-/// Query implementation of [ConstantSemantic::priv_constant_semantic_data].
-fn priv_constant_semantic_data<'db>(
+/// Returns the semantic data of a constant.
+#[salsa::tracked(returns(ref), cycle_result=constant_semantic_data_cycle)]
+fn constant_semantic_data<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
     in_cycle: bool,
@@ -258,22 +260,20 @@ fn priv_constant_semantic_data<'db>(
     }
 }
 
-#[salsa::tracked(cycle_result=priv_constant_semantic_data_cycle)]
-fn priv_constant_semantic_data_tracked<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-    in_cycle: bool,
-) -> Maybe<ConstantData<'db>> {
-    priv_constant_semantic_data(db, const_id, in_cycle)
-}
-
-/// Cycle handling for [ConstantSemantic::priv_constant_semantic_data].
-fn priv_constant_semantic_data_cycle<'db>(
+/// Cycle handling for [ConstantSemantic::constant_semantic_data].
+fn constant_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     const_id: ConstantId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ConstantData<'db>> {
-    priv_constant_semantic_data(db, const_id, true)
+    let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::Constant(const_id));
+    constant_semantic_data_cycle_helper(
+        db,
+        &db.module_constant_by_id(const_id)?,
+        lookup_item_id,
+        None,
+        &const_id,
+    )
 }
 
 /// Returns constant semantic data for the given ItemConstant.
@@ -1158,100 +1158,6 @@ fn numeric_arg_value<'db>(db: &'db dyn Database, value: ConstValueId<'db>) -> Op
     }
 }
 
-/// Implementation of [ConstantSemantic::constant_semantic_diagnostics].
-fn constant_semantic_diagnostics<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_constant_semantic_data(const_id, false).map(|data| data.diagnostics).unwrap_or_default()
-}
-
-/// Query implementation of [ConstantSemantic::constant_semantic_diagnostics].
-#[salsa::tracked]
-fn constant_semantic_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    constant_semantic_diagnostics(db, const_id)
-}
-
-/// Implementation of [ConstantSemantic::constant_semantic_data].
-fn constant_semantic_data<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<Constant<'db>> {
-    db.priv_constant_semantic_data(const_id, false)?.constant
-}
-
-/// Query implementation of [ConstantSemantic::constant_semantic_data].
-#[salsa::tracked(cycle_result=constant_semantic_data_cycle)]
-fn constant_semantic_data_tracked<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<Constant<'db>> {
-    constant_semantic_data(db, const_id)
-}
-
-/// Cycle handling for [ConstantSemantic::constant_semantic_data].
-fn constant_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<Constant<'db>> {
-    // Forwarding cycle handling to `priv_constant_semantic_data` handler.
-    db.priv_constant_semantic_data(const_id, false)?.constant
-}
-
-/// Implementation of [ConstantSemantic::constant_resolver_data].
-fn constant_resolver_data<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_constant_semantic_data(const_id, false)?.resolver_data)
-}
-
-/// Query implementation of [ConstantSemantic::constant_resolver_data].
-#[salsa::tracked(cycle_result=constant_resolver_data_cycle)]
-fn constant_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    constant_resolver_data(db, const_id)
-}
-
-/// Cycle handling for [ConstantSemantic::constant_resolver_data].
-fn constant_resolver_data_cycle<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_constant_semantic_data(const_id, true)?.resolver_data)
-}
-
-/// Implementation of [ConstantSemantic::constant_const_value].
-fn constant_const_value<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    Ok(db.priv_constant_semantic_data(const_id, false)?.const_value)
-}
-
-/// Query implementation of [ConstantSemantic::constant_const_value].
-#[salsa::tracked(cycle_result=constant_const_value_cycle)]
-fn constant_const_value_tracked<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    constant_const_value(db, const_id)
-}
-
-/// Cycle handling for [ConstantSemantic::constant_const_value].
-fn constant_const_value_cycle<'db>(
-    db: &'db dyn Database,
-    const_id: ConstantId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    // Forwarding cycle handling to `priv_constant_semantic_data` handler.
-    Ok(db.priv_constant_semantic_data(const_id, true)?.const_value)
-}
-
 /// Query implementation of [ConstantSemantic::const_calc_info].
 fn const_calc_info<'db>(db: &'db dyn Database) -> Arc<ConstCalcInfo<'db>> {
     Arc::new(ConstCalcInfo::new(db))
@@ -1380,32 +1286,31 @@ impl<'db> ConstCalcInfo<'db> {
 
 /// Trait for constant-related semantic queries.
 pub trait ConstantSemantic<'db>: Database {
-    /// Private query to compute data about a constant definition.
-    fn priv_constant_semantic_data(
-        &'db self,
-        _const_id: ConstantId<'db>,
-        _in_cycle: bool,
-    ) -> Maybe<ConstantData<'db>> {
-        priv_constant_semantic_data_tracked(self.as_dyn_database(), _const_id, _in_cycle)
-    }
     /// Returns the semantic diagnostics of a constant definition.
     fn constant_semantic_diagnostics(
         &'db self,
         const_id: ConstantId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        constant_semantic_diagnostics_tracked(self.as_dyn_database(), const_id)
+        let db = self.as_dyn_database();
+        constant_semantic_data(db, const_id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the semantic data of a constant definition.
     fn constant_semantic_data(&'db self, use_id: ConstantId<'db>) -> Maybe<Constant<'db>> {
-        constant_semantic_data_tracked(self.as_dyn_database(), use_id)
+        let db = self.as_dyn_database();
+        constant_semantic_data(db, use_id, false).maybe_as_ref()?.constant.clone()
     }
     /// Returns the resolver data of a constant definition.
     fn constant_resolver_data(&'db self, use_id: ConstantId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
-        constant_resolver_data_tracked(self.as_dyn_database(), use_id)
+        let db = self.as_dyn_database();
+        Ok(constant_semantic_data(db, use_id, false).maybe_as_ref()?.resolver_data.clone())
     }
     /// Returns the const value of a constant definition.
     fn constant_const_value(&'db self, const_id: ConstantId<'db>) -> Maybe<ConstValueId<'db>> {
-        constant_const_value_tracked(self.as_dyn_database(), const_id)
+        let db = self.as_dyn_database();
+        Ok(constant_semantic_data(db, const_id, false).maybe_as_ref()?.const_value)
     }
     /// Returns information required for const calculations.
     fn const_calc_info(&'db self) -> Arc<ConstCalcInfo<'db>> {
