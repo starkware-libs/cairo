@@ -939,6 +939,14 @@ pub trait SemanticGroup: Database {
     ) -> Maybe<Option<Arc<FunctionBody<'db>>>> {
         items::trt::trait_function_body_tracked(self.as_dyn_database(), trait_function_id)
     }
+
+    fn trait_function_body_resolver_data<'db>(
+        &'db self,
+        trait_function_id: TraitFunctionId<'db>,
+    ) -> Maybe<Option<Arc<ResolverData<'db>>>> {
+        self.priv_trait_function_body_data(trait_function_id).map(|x| x.map(|y| y.resolver_data))
+    }
+
     /// Private query to compute data about a trait function definition (declaration + body)
     fn priv_trait_function_body_data<'db>(
         &'db self,
