@@ -1,11 +1,12 @@
 use cairo_lang_defs::ids::{EnumId, LanguageElementId, ModuleId, ModuleItemId, StructId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_filesystem::ids::{StrRef, db_str};
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
-use cairo_lang_semantic::items::imp::ImplLookupContext;
-use cairo_lang_semantic::items::structure::Member;
+use cairo_lang_semantic::items::enm::EnumSemantic;
+use cairo_lang_semantic::items::imp::{ImplLookupContext, ImplSemantic};
+use cairo_lang_semantic::items::module::ModuleSemantic;
+use cairo_lang_semantic::items::structure::{Member, StructSemantic};
 use cairo_lang_semantic::plugin::AnalyzerPlugin;
 use cairo_lang_semantic::types::get_impl_at_context;
 use cairo_lang_semantic::{

@@ -6,16 +6,17 @@ use itertools::Itertools;
 use super::canonic::ResultNoErrEx;
 use super::conform::InferenceConform;
 use super::{Inference, InferenceError, InferenceResult};
-use crate::db::SemanticGroup;
 use crate::items::constant::ImplConstantId;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::generics::GenericParamConst;
+use crate::items::generics::{GenericParamConst, GenericsSemantic};
 use crate::items::imp::{
-    GeneratedImplLongId, ImplId, ImplImplId, ImplLongId, ImplLookupContextId, UninferredImpl,
+    GeneratedImplLongId, ImplId, ImplImplId, ImplLongId, ImplLookupContextId, ImplSemantic,
+    UninferredImpl,
 };
+use crate::items::impl_alias::ImplAliasSemantic;
 use crate::items::trt::{
     ConcreteTraitConstantId, ConcreteTraitGenericFunctionId, ConcreteTraitImplId,
-    ConcreteTraitTypeId,
+    ConcreteTraitTypeId, TraitSemantic,
 };
 use crate::keyword::SELF_PARAM_KW;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
