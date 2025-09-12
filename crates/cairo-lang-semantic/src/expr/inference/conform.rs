@@ -831,7 +831,7 @@ impl<'db> Inference<'db, '_> {
     /// Creates a var for each constrained impl_type and conforms the types.
     pub fn conform_generic_params_type_constraints(
         &mut self,
-        constraints: &Vec<(TypeId<'db>, TypeId<'db>)>,
+        constraints: &[(TypeId<'db>, TypeId<'db>)],
     ) {
         let mut impl_type_bounds = Default::default();
         for (ty0, ty1) in constraints {
