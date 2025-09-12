@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -33,8 +33,9 @@ pub struct ImplAliasData<'db> {
     pub resolver_data: Arc<ResolverData<'db>>,
 }
 
-/// Implementation of [ImplAliasSemantic::priv_impl_alias_semantic_data].
-pub fn priv_impl_alias_semantic_data<'db>(
+/// Returns data about a type alias.
+#[salsa::tracked(cycle_result=impl_alias_semantic_data_cycle, returns(ref))]
+fn impl_alias_semantic_data<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
     in_cycle: bool,
@@ -42,7 +43,8 @@ pub fn priv_impl_alias_semantic_data<'db>(
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id));
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
 
-    let generic_params_data = db.impl_alias_generic_params_data(impl_alias_id)?;
+    let generic_params_data =
+        impl_alias_generic_params_data(db, impl_alias_id).maybe_as_ref()?.clone();
 
     if in_cycle {
         impl_alias_semantic_data_cycle_helper(
@@ -54,16 +56,6 @@ pub fn priv_impl_alias_semantic_data<'db>(
     } else {
         impl_alias_semantic_data_helper(db, &impl_alias_ast, lookup_item_id, generic_params_data)
     }
-}
-
-/// Query implementation of [ImplAliasSemantic::priv_impl_alias_semantic_data].
-#[salsa::tracked(cycle_result=priv_impl_alias_semantic_data_cycle)]
-pub fn priv_impl_alias_semantic_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplAliasData<'db>> {
-    priv_impl_alias_semantic_data(db, impl_alias_id, in_cycle)
 }
 
 /// A helper function to compute the semantic data of an impl-alias item.
@@ -114,13 +106,12 @@ pub fn impl_alias_semantic_data_helper<'db>(
     })
 }
 
-/// Cycle handling for [ImplAliasSemantic::priv_impl_alias_semantic_data].
-pub fn priv_impl_alias_semantic_data_cycle<'db>(
+fn impl_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplAliasData<'db>> {
-    priv_impl_alias_semantic_data(db, impl_alias_id, true)
+    impl_alias_semantic_data(db, impl_alias_id, true).clone()
 }
 
 /// A helper function to compute the semantic data of an impl-alias item when a cycle is detected.
@@ -151,70 +142,9 @@ pub fn impl_alias_semantic_data_cycle_helper<'db>(
     })
 }
 
-/// Implementation of [ImplAliasSemantic::impl_alias_semantic_diagnostics].
-pub fn impl_alias_semantic_diagnostics<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_impl_alias_semantic_data(impl_alias_id, false)
-        .map(|data| data.diagnostics)
-        .unwrap_or_default()
-}
-
-/// Query implementation of [ImplAliasSemantic::impl_alias_semantic_diagnostics].
-#[salsa::tracked]
-pub fn impl_alias_semantic_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    impl_alias_semantic_diagnostics(db, impl_alias_id)
-}
-
-/// Implementation of [ImplAliasSemantic::impl_alias_resolved_impl].
-pub fn impl_alias_resolved_impl<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<ImplId<'db>> {
-    db.priv_impl_alias_semantic_data(impl_alias_id, false)?.resolved_impl
-}
-
-/// Query implementation of [ImplAliasSemantic::impl_alias_resolved_impl].
-#[salsa::tracked(cycle_result=impl_alias_resolved_impl_cycle)]
-pub fn impl_alias_resolved_impl_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<ImplId<'db>> {
-    impl_alias_resolved_impl(db, impl_alias_id)
-}
-
-/// Trivial cycle handling for [ImplAliasSemantic::impl_alias_resolved_impl].
-pub fn impl_alias_resolved_impl_cycle<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<ImplId<'db>> {
-    // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
-    db.priv_impl_alias_semantic_data(impl_alias_id, true)?.resolved_impl
-}
-
-/// Implementation of [ImplAliasSemantic::impl_alias_generic_params].
-pub fn impl_alias_generic_params<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    Ok(db.impl_alias_generic_params_data(impl_alias_id)?.generic_params)
-}
-
-/// Query implementation of [ImplAliasSemantic::impl_alias_generic_params].
-#[salsa::tracked]
-pub fn impl_alias_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    impl_alias_generic_params(db, impl_alias_id)
-}
-
-/// Implementation of [ImplAliasSemantic::impl_alias_generic_params_data].
-pub fn impl_alias_generic_params_data<'db>(
+/// Returns the generic parameters data of a type alias.
+#[salsa::tracked(returns(ref))]
+fn impl_alias_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -227,15 +157,6 @@ pub fn impl_alias_generic_params_data<'db>(
         LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id)),
         None,
     )
-}
-
-/// Query implementation of [ImplAliasSemantic::impl_alias_generic_params_data].
-#[salsa::tracked]
-pub fn impl_alias_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    impl_alias_generic_params_data(db, impl_alias_id)
 }
 
 /// Computes data about the generic parameters of an impl-alias item.
@@ -272,51 +193,9 @@ pub fn impl_alias_generic_params_data_helper<'db>(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
-/// Implementation of [ImplAliasSemantic::impl_alias_resolver_data].
-pub fn impl_alias_resolver_data<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_impl_alias_semantic_data(impl_alias_id, false)?.resolver_data)
-}
-
-/// Query implementation of [ImplAliasSemantic::impl_alias_resolver_data].
-#[salsa::tracked(cycle_result=impl_alias_resolver_data_cycle)]
-pub fn impl_alias_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    impl_alias_resolver_data(db, impl_alias_id)
-}
-
-/// Trivial cycle handling for [ImplAliasSemantic::impl_alias_resolver_data].
-pub fn impl_alias_resolver_data_cycle<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    // Forwarding (not as a query) cycle handling to `priv_impl_alias_semantic_data` cycle handler.
-    impl_alias_resolver_data(db, impl_alias_id)
-}
-
-/// Implementation of [ImplAliasSemantic::impl_alias_attributes].
-pub fn impl_alias_attributes<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    Ok(db.priv_impl_alias_semantic_data(impl_alias_id, false)?.attributes)
-}
-
-/// Query implementation of [ImplAliasSemantic::impl_alias_attributes].
-#[salsa::tracked]
-pub fn impl_alias_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    impl_alias_attributes(db, impl_alias_id)
-}
-
 /// Implementation of [ImplAliasSemantic::impl_alias_impl_def].
-pub fn impl_alias_impl_def<'db>(
+#[salsa::tracked(cycle_result=impl_alias_impl_def_cycle)]
+fn impl_alias_impl_def<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplDefId<'db>> {
@@ -339,27 +218,18 @@ pub fn impl_alias_impl_def<'db>(
         Ok(ResolvedGenericItem::Impl(imp)) => Ok(imp),
         Ok(ResolvedGenericItem::GenericImplAlias(impl_alias)) => db.impl_alias_impl_def(impl_alias),
         // Skipping diagnostics since we will get these through when resolving in the
-        // `priv_impl_alias_semantic_data` query.
+        // `impl_alias_semantic_data` query.
         _ => Err(skip_diagnostic()),
     }
 }
 
-/// Query implementation of [ImplAliasSemantic::impl_alias_impl_def].
-#[salsa::tracked(cycle_result=impl_alias_impl_def_cycle)]
-pub fn impl_alias_impl_def_tracked<'db>(
-    db: &'db dyn Database,
-    impl_alias_id: ImplAliasId<'db>,
-) -> Maybe<ImplDefId<'db>> {
-    impl_alias_impl_def(db, impl_alias_id)
-}
-
 /// Cycle handling for [ImplAliasSemantic::impl_alias_impl_def].
-pub fn impl_alias_impl_def_cycle<'db>(
+fn impl_alias_impl_def_cycle<'db>(
     _db: &dyn Database,
     _impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplDefId<'db>> {
     // Skipping diagnostics since we will get these through when resolving in the
-    // `priv_impl_alias_semantic_data` query.
+    // `impl_alias_semantic_data` query.
     Err(skip_diagnostic())
 }
 
@@ -367,55 +237,43 @@ pub fn impl_alias_impl_def_cycle<'db>(
 pub trait ImplAliasSemantic<'db>: Database {
     /// Returns the impl definition pointed to by the impl alias, or an error if it points to
     /// something else.
-    fn impl_alias_impl_def(&'db self, impl_alias_id: ImplAliasId<'db>) -> Maybe<ImplDefId<'db>> {
-        impl_alias_impl_def_tracked(self.as_dyn_database(), impl_alias_id)
-    }
-    /// Private query to compute data about a type alias.
-    fn priv_impl_alias_semantic_data(
-        &'db self,
-        impl_alias_id: ImplAliasId<'db>,
-        in_cycle: bool,
-    ) -> Maybe<ImplAliasData<'db>> {
-        priv_impl_alias_semantic_data_tracked(self.as_dyn_database(), impl_alias_id, in_cycle)
+    fn impl_alias_impl_def(&'db self, id: ImplAliasId<'db>) -> Maybe<ImplDefId<'db>> {
+        impl_alias_impl_def(self.as_dyn_database(), id)
     }
     /// Returns the semantic diagnostics of a type alias.
     fn impl_alias_semantic_diagnostics(
         &'db self,
-        impl_alias_id: ImplAliasId<'db>,
+        id: ImplAliasId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_alias_semantic_diagnostics_tracked(self.as_dyn_database(), impl_alias_id)
+        impl_alias_semantic_data(self.as_dyn_database(), id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the resolved type of a type alias.
-    fn impl_alias_resolved_impl(&'db self, impl_alias_id: ImplAliasId<'db>) -> Maybe<ImplId<'db>> {
-        impl_alias_resolved_impl_tracked(self.as_dyn_database(), impl_alias_id)
+    fn impl_alias_resolved_impl(&'db self, id: ImplAliasId<'db>) -> Maybe<ImplId<'db>> {
+        impl_alias_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.resolved_impl
     }
     /// Returns the generic parameters of a type alias.
-    fn impl_alias_generic_params(
-        &'db self,
-        impl_alias_id: ImplAliasId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        impl_alias_generic_params_tracked(self.as_dyn_database(), impl_alias_id)
-    }
-    /// Returns the generic parameters data of a type alias.
-    fn impl_alias_generic_params_data(
-        &'db self,
-        impl_alias_id: ImplAliasId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
-        impl_alias_generic_params_data_tracked(self.as_dyn_database(), impl_alias_id)
+    fn impl_alias_generic_params(&'db self, id: ImplAliasId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
+        Ok(impl_alias_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .generic_params
+            .clone())
     }
     /// Returns the resolution resolved_items of a type alias.
-    fn impl_alias_resolver_data(
-        &'db self,
-        impl_alias_id: ImplAliasId<'db>,
-    ) -> Maybe<Arc<ResolverData<'db>>> {
-        impl_alias_resolver_data_tracked(self.as_dyn_database(), impl_alias_id)
+    fn impl_alias_resolver_data(&'db self, id: ImplAliasId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
+        Ok(impl_alias_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .resolver_data
+            .clone())
     }
     /// Returns the attributes attached to the impl alias.
-    fn impl_alias_attributes(
-        &'db self,
-        impl_def_id: ImplAliasId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
-        impl_alias_attributes_tracked(self.as_dyn_database(), impl_def_id)
+    fn impl_alias_attributes(&'db self, id: ImplAliasId<'db>) -> Maybe<Vec<Attribute<'db>>> {
+        Ok(impl_alias_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .attributes
+            .clone())
     }
 }
 impl<'db, T: Database + ?Sized> ImplAliasSemantic<'db> for T {}
