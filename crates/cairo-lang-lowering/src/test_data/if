@@ -1129,23 +1129,24 @@ enum MyEnum3 {
 
 //! > lowering_diagnostics
 error: Variable not dropped.
- --> lib.cairo:25:40
+ --> lib.cairo:25:34
     if let MyEnum3::D(MyEnum2::B(_)) = e {}
-                                       ^
+                                 ^
 note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
 
 error: Variable not dropped.
- --> lib.cairo:25:40
+ --> lib.cairo:25:23
     if let MyEnum3::D(MyEnum2::B(_)) = e {}
-                                       ^
+                      ^^^^^^^^^^^^^
+note: In variant MyEnum2::C.
 note: Trait has no implementation in context: core::traits::Drop::<test::NonDroppable>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonDroppable>.
 
 error: Variable not dropped.
- --> lib.cairo:23:28
+ --> lib.cairo:23:23
     if let MyEnum2::B(_) = d {}
-                           ^
+                      ^
 note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
 
@@ -1153,6 +1154,7 @@ error: Variable not dropped.
  --> lib.cairo:23:28
     if let MyEnum2::B(_) = d {}
                            ^
+note: In variant MyEnum2::C.
 note: Trait has no implementation in context: core::traits::Drop::<test::NonDroppable>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonDroppable>.
 
@@ -1167,6 +1169,7 @@ error: Variable not dropped.
  --> lib.cairo:22:29
     if let MyEnum2::B(_x) = c {}
                             ^
+note: In variant MyEnum2::C.
 note: Trait has no implementation in context: core::traits::Drop::<test::NonDroppable>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonDroppable>.
 
