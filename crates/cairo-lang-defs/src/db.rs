@@ -1071,6 +1071,7 @@ pub(crate) fn module_data<'db>(
 pub type ModuleDataCacheAndLoadingData<'db> =
     (Arc<OrderedHashMap<ModuleId<'db>, ModuleData<'db>>>, Arc<DefCacheLoadingData<'db>>);
 
+#[salsa::tracked]
 fn cached_crate_modules<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
