@@ -10,9 +10,8 @@ use cairo_lang_semantic::{
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::ExprPtr;
-use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::Itertools;
+use itertools::{Itertools, zip_eq};
 use num_bigint::BigInt;
 use salsa::Database;
 
@@ -162,6 +161,19 @@ pub fn create_node_for_patterns<'db>(
     }
 }
 
+/// Helper struct for [create_node_for_enum].
+///
+/// Tracks the information for a single variant of the enum match.
+#[derive(Clone, Default)]
+struct VariantInfo<'a, 'db> {
+    /// The list of the indices of the patterns that match this variant.
+    filter: FilteredPatterns,
+    /// The list of the inner patterns.
+    /// For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
+    /// index of the variant `A`.
+    inner_patterns: Vec<PatternOption<'a, 'db>>,
+}
+
 /// Creates an [EnumMatch] node for the given `input_var` and `patterns`.
 fn create_node_for_enum<'db>(
     params: CreateNodeParams<'db, '_, '_>,
@@ -172,34 +184,27 @@ fn create_node_for_enum<'db>(
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
     let concrete_variants = ctx.db.concrete_enum_variants(concrete_enum_id).unwrap();
 
-    // Maps variant index to the list of the indices of the patterns that match it.
-    let mut variant_to_pattern_indices = vec![FilteredPatterns::default(); concrete_variants.len()];
-
-    // Maps variant index to the list of the inner patterns.
-    // For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
-    // index of the variant `A`.
-    let mut variant_to_inner_patterns: Vec<Vec<PatternOption<'_, 'db>>> =
-        vec![vec![]; concrete_variants.len()];
+    // Maps variant index to the [VariantInfo].
+    let mut variants = vec![VariantInfo::default(); concrete_variants.len()];
 
     for (idx, pattern) in patterns.iter().enumerate() {
         match pattern {
             Some(semantic::Pattern::EnumVariant(PatternEnumVariant {
                 variant,
-                inner_pattern,
+                inner_pattern: inner_pattern_id,
                 ..
             })) => {
-                variant_to_pattern_indices[variant.idx].add(idx);
-                variant_to_inner_patterns[variant.idx]
-                    .push(inner_pattern.map(|inner_pattern| get_pattern(ctx, inner_pattern)));
+                let inner_pattern =
+                    inner_pattern_id.map(|inner_pattern| get_pattern(ctx, inner_pattern));
+                variants[variant.idx].filter.add(idx);
+                variants[variant.idx].inner_patterns.push(inner_pattern);
             }
             Some(semantic::Pattern::Otherwise(..)) | None => {
-                // Add `idx` to all the variants.
-                for pattern_indices in variant_to_pattern_indices.iter_mut() {
-                    pattern_indices.add(idx);
-                }
-                // Add the `_` pattern (represented by `None`) to all the variants.
-                for inner_patterns in variant_to_inner_patterns.iter_mut() {
-                    inner_patterns.push(None);
+                for variant_info in variants.iter_mut() {
+                    // Add `idx` to all the variants.
+                    variant_info.filter.add(idx);
+                    // Add the `_` pattern (represented by `None`) to all the variants.
+                    variant_info.inner_patterns.push(None);
                 }
             }
             Some(semantic::Pattern::Variable(..)) => unreachable!(),
@@ -221,30 +226,29 @@ fn create_node_for_enum<'db>(
     }
 
     // Create a node in the graph for each variant.
-    let variants =
-        zip_eq3(concrete_variants, variant_to_pattern_indices, variant_to_inner_patterns)
-            .map(|(concrete_variant, pattern_indices, inner_patterns)| {
-                let inner_var = graph
-                    .new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots), location);
-                let node = create_node_for_patterns(
-                    CreateNodeParams {
-                        ctx,
-                        graph,
-                        patterns: &inner_patterns,
-                        build_node_callback: &mut |graph, pattern_indices_inner, path| {
-                            build_node_callback(
-                                graph,
-                                pattern_indices_inner.lift(&pattern_indices),
-                                format!("{}({path})", concrete_variant.id.name(ctx.db)),
-                            )
-                        },
-                        location,
+    let variants = zip_eq(concrete_variants, variants)
+        .map(|(concrete_variant, variant_info)| {
+            let inner_var = graph
+                .new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots), location);
+            let node = create_node_for_patterns(
+                CreateNodeParams {
+                    ctx,
+                    graph,
+                    patterns: &variant_info.inner_patterns,
+                    build_node_callback: &mut |graph, pattern_indices_inner, path| {
+                        build_node_callback(
+                            graph,
+                            pattern_indices_inner.lift(&variant_info.filter),
+                            format!("{}({path})", concrete_variant.id.name(ctx.db)),
+                        )
                     },
-                    inner_var,
-                );
-                (concrete_variant, node, inner_var)
-            })
-            .collect_vec();
+                    location,
+                },
+                inner_var,
+            );
+            (concrete_variant, node, inner_var)
+        })
+        .collect_vec();
 
     // Optimization: If all the variants lead to the same node, and the inner variables are not
     // used, there is no need to do the match.
