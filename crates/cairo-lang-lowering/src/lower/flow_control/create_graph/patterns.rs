@@ -1,3 +1,4 @@
+use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::validate_literal;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -13,6 +14,7 @@ use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use num_bigint::BigInt;
+use salsa::Database;
 
 use super::super::graph::{
     Deconstruct, EnumMatch, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId,
@@ -48,8 +50,10 @@ use crate::lower::lower_match::numeric_match_optimization_threshold;
 /// returns `0` if `y=C` and `1` otherwise.
 /// Finally, the inner pattern-matching function (for `x`) will construct a [EnumMatch] node
 /// that leads to the two nodes returned by the callback.
+///
+/// The `path: String` parameter is an example for a pattern leading to this callback.
 type BuildNodeCallback<'db, 'a> =
-    &'a mut dyn FnMut(&mut FlowControlGraphBuilder<'db>, FilteredPatterns) -> NodeId;
+    &'a mut dyn FnMut(&mut FlowControlGraphBuilder<'db>, FilteredPatterns, String) -> NodeId;
 
 /// A thin wrapper around [semantic::Pattern], where `None` represents the `_` pattern.
 type PatternOption<'a, 'db> = Option<&'a semantic::Pattern<'db>>;
@@ -95,14 +99,16 @@ pub fn create_node_for_patterns<'db>(
     let mut cache = Cache::default();
 
     // Wrap `build_node_callback` to add the bindings to the patterns and cache the result.
-    let mut build_node_callback =
-        |graph: &mut FlowControlGraphBuilder<'db>, pattern_indices: FilteredPatterns| {
-            cache.get_or_compute(
-                build_node_callback,
-                graph,
-                pattern_indices.add_bindings(bindings.clone()),
-            )
-        };
+    let mut build_node_callback = |graph: &mut FlowControlGraphBuilder<'db>,
+                                   pattern_indices: FilteredPatterns,
+                                   path: String| {
+        cache.get_or_compute(
+            build_node_callback,
+            graph,
+            pattern_indices.add_bindings(bindings.clone()),
+            path,
+        )
+    };
 
     let var_ty = graph.var_ty(input_var);
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
@@ -130,7 +136,7 @@ pub fn create_node_for_patterns<'db>(
     else {
         // If all the patterns are catch-all, we do not need to look into `input_var`.
         // Call the callback with all patterns accepted.
-        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+        return build_node_callback(graph, FilteredPatterns::all(patterns.len()), "_".into());
     };
 
     // Check if this is a numeric type that should use value matching.
@@ -225,8 +231,12 @@ fn create_node_for_enum<'db>(
                         ctx,
                         graph,
                         patterns: &inner_patterns,
-                        build_node_callback: &mut |graph, pattern_indices_inner| {
-                            build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                        build_node_callback: &mut |graph, pattern_indices_inner, path| {
+                            build_node_callback(
+                                graph,
+                                pattern_indices_inner.lift(&pattern_indices),
+                                format!("{}({path})", concrete_variant.id.name(ctx.db)),
+                            )
                         },
                         location,
                     },
@@ -269,7 +279,15 @@ fn create_node_for_tuple<'db>(
         .collect_vec();
 
     let node = create_node_for_tuple_inner(
-        CreateNodeParams { ctx, graph, patterns, build_node_callback, location },
+        CreateNodeParams {
+            ctx,
+            graph,
+            patterns,
+            build_node_callback: &mut |graph, pattern_indices, path| {
+                build_node_callback(graph, pattern_indices, format!("({path})"))
+            },
+            location,
+        },
         &inner_vars,
         types,
         0,
@@ -305,7 +323,16 @@ fn create_node_for_struct<'db>(
         .collect_vec();
 
     let node = create_node_for_tuple_inner(
-        CreateNodeParams { ctx, graph, patterns, build_node_callback, location },
+        CreateNodeParams {
+            ctx,
+            graph,
+            patterns,
+            build_node_callback: &mut |graph, pattern_indices, path| {
+                let struct_name = concrete_struct_id.struct_id(ctx.db).name(ctx.db);
+                build_node_callback(graph, pattern_indices, format!("{struct_name}{{{path}}}"))
+            },
+            location,
+        },
         &inner_vars,
         &types,
         0,
@@ -334,7 +361,7 @@ fn create_node_for_tuple_inner<'db>(
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
 
     if item_idx == types.len() {
-        return build_node_callback(graph, FilteredPatterns::all(patterns.len()));
+        return build_node_callback(graph, FilteredPatterns::all(patterns.len()), "".into());
     }
 
     // If the type is a struct, get the current member.
@@ -399,15 +426,19 @@ fn create_node_for_tuple_inner<'db>(
             ctx,
             graph,
             patterns: &patterns_ref,
-            build_node_callback: &mut |graph, pattern_indices| {
+            build_node_callback: &mut |graph, pattern_indices, path_head| {
                 // Call `create_node_for_tuple_inner` recursively to handle the rest of the tuple.
                 create_node_for_tuple_inner(
                     CreateNodeParams {
                         ctx,
                         graph,
                         patterns: &pattern_indices.indices().map(|idx| patterns[idx]).collect_vec(),
-                        build_node_callback: &mut |graph, pattern_indices_inner| {
-                            build_node_callback(graph, pattern_indices_inner.lift(&pattern_indices))
+                        build_node_callback: &mut |graph, pattern_indices_inner, path_tail| {
+                            build_node_callback(
+                                graph,
+                                pattern_indices_inner.lift(&pattern_indices),
+                                add_item_to_path(ctx.db, &path_head, &path_tail, current_member),
+                            )
                         },
                         location,
                     },
@@ -421,6 +452,34 @@ fn create_node_for_tuple_inner<'db>(
         },
         inner_vars[item_idx],
     )
+}
+
+/// Concatenates the given `item` to the given `path_tail`.
+///
+///  Adds the member name if the current item is a struct, and adds a comma if necessary.
+///
+/// `current_member` is `None` for tuples, and `Some` for structs.
+///
+/// For example, for tuples (`current_member` is `None`):
+///   if `item` is `A` and `path_tail` is `B, C`, the result is `A, B, C`.
+/// For structs (`current_member` is `Some`):
+///   if `item` is `A` and `path_tail` is `b: B, c: C`, the result will be of the form:
+///   `a: A, b: B, c: C`.
+fn add_item_to_path<'db>(
+    db: &dyn Database,
+    item: &String,
+    path_tail: &String,
+    current_member: Option<&semantic::Member<'db>>,
+) -> String {
+    // If it's a struct, add the member name.
+    let item_str = if let Some(current_member) = current_member {
+        format!("{}: {}", current_member.id.name(db), item)
+    } else {
+        item.clone()
+    };
+
+    // If it's not the only item, add a comma.
+    if path_tail.is_empty() { item_str } else { format!("{item_str}, {path_tail}") }
 }
 
 /// Handles the u256 literal as if it was a pattern of the form `u256 { low: ..., high: ... }`.
@@ -528,7 +587,7 @@ fn create_node_for_value<'db>(
     };
 
     // First, construct a node that handles the otherwise patterns.
-    let mut current_node = build_node_callback(graph, otherwise_filter.clone());
+    let mut current_node = build_node_callback(graph, otherwise_filter.clone(), "_".into());
 
     // Go over the literals (in reverse order), and construct a chain of [BooleanIf] nodes that
     // handle each literal.
@@ -537,7 +596,7 @@ fn create_node_for_value<'db>(
         if *literal < value_match_size_bigint {
             continue;
         }
-        let node_if_literal = build_node_callback(graph, filter.clone());
+        let node_if_literal = build_node_callback(graph, filter.clone(), literal.to_string());
 
         // Don't add an [EqualsLiteral] node if both branches lead to the same node.
         if node_if_literal == current_node {
@@ -567,7 +626,9 @@ fn create_node_for_value<'db>(
         let in_range_var = graph.new_var(bounded_int_ty, graph.var_location(input_var));
 
         let nodes = (0..value_match_size)
-            .map(|i| build_node_callback(graph, literals_map[&BigInt::from(i)].0.clone()))
+            .map(|i| {
+                build_node_callback(graph, literals_map[&BigInt::from(i)].0.clone(), i.to_string())
+            })
             .collect();
         let value_match_node = graph
             .add_node(FlowControlNode::ValueMatch(ValueMatch { matched_var: in_range_var, nodes }));
