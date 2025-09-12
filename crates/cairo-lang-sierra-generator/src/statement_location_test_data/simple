@@ -213,8 +213,8 @@ Originating location:
 In function: lib.cairo::foo
 struct_deconstruct<Tuple<u8, u8>>([4]) -> ([9], [10])
 Originating location:
-    match my_enum {
-          ^^^^^^^
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                  ^^^^^^^^
 In function: lib.cairo::foo
 dup<u8>([10]) -> ([10], [11])
 Originating location:

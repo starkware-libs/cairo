@@ -1,5 +1,6 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
@@ -174,6 +175,8 @@ struct VariantInfo<'a, 'db> {
     /// For example, a pattern `A(B(x))` will add the (inner) pattern `B(x)` to the vector at the
     /// index of the variant `A`.
     inner_patterns: Vec<PatternOption<'a, 'db>>,
+    // The location of the inner variable.
+    inner_var_location: Option<LocationId<'db>>,
 }
 
 /// Creates an [EnumMatch] node for the given `input_var` and `patterns`.
@@ -200,6 +203,11 @@ fn create_node_for_enum<'db>(
                     inner_pattern_id.map(|inner_pattern| get_pattern(ctx, inner_pattern));
                 variants[variant.idx].filter.add(idx);
                 variants[variant.idx].inner_patterns.push(inner_pattern);
+                if let Some(inner_pattern) = inner_pattern {
+                    variants[variant.idx]
+                        .inner_var_location
+                        .get_or_insert(ctx.get_location(inner_pattern.stable_ptr().untyped()));
+                }
             }
             Some(semantic::Pattern::Otherwise(..)) | None => {
                 for variant_info in variants.iter_mut() {
@@ -230,8 +238,21 @@ fn create_node_for_enum<'db>(
     // Create a node in the graph for each variant.
     let variants = zip_eq(concrete_variants, variants)
         .map(|(concrete_variant, variant_info)| {
-            let inner_var = graph
-                .new_var(wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots), location);
+            let inner_var_location = variant_info.inner_var_location.unwrap_or_else(|| {
+                // If there is no concrete pattern for the variant, use the outer variable location
+                // with a note.
+                graph.var_location(input_var).with_note(
+                    ctx.db,
+                    DiagnosticNote::text_only(format!(
+                        "In variant {:?}.",
+                        concrete_variant.into_debug(ctx.db)
+                    )),
+                )
+            });
+            let inner_var = graph.new_var(
+                wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
+                inner_var_location,
+            );
             let node = create_node_for_patterns(
                 CreateNodeParams {
                     ctx,
