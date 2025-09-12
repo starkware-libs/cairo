@@ -4561,7 +4561,7 @@ fn impl_function_body_diagnostics<'db>(
     impl_function_id: ImplFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_impl_function_body_data(impl_function_id)
-        .map(|data| data.diagnostics)
+        .map(|data| data.diagnostics.clone())
         .unwrap_or_default()
 }
 
@@ -4579,7 +4579,7 @@ fn impl_function_body<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<Arc<FunctionBody<'db>>> {
-    Ok(db.priv_impl_function_body_data(impl_function_id)?.body)
+    Ok(db.priv_impl_function_body_data(impl_function_id)?.body.clone())
 }
 
 /// Query implementation of [ImplSemantic::impl_function_body].
@@ -4596,7 +4596,7 @@ fn impl_function_body_resolver_data<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_impl_function_body_data(impl_function_id)?.resolver_data)
+    Ok(db.priv_impl_function_body_data(impl_function_id)?.resolver_data.clone())
 }
 
 /// Query implementation of [ImplSemantic::impl_function_body_resolver_data].
@@ -4676,7 +4676,7 @@ fn priv_impl_function_body_data<'db>(
 }
 
 /// Query implementation of [ImplSemantic::priv_impl_function_body_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn priv_impl_function_body_data_tracked<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
@@ -5738,8 +5738,9 @@ pub trait ImplSemantic<'db>: Database {
     fn priv_impl_function_body_data(
         &'db self,
         impl_function_id: ImplFunctionId<'db>,
-    ) -> Maybe<FunctionBodyData<'db>> {
+    ) -> Maybe<&'db FunctionBodyData<'db>> {
         priv_impl_function_body_data_tracked(self.as_dyn_database(), impl_function_id)
+            .maybe_as_ref()
     }
     /// Returns the dependencies of a crate.
     fn priv_crate_dependencies(

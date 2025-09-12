@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
     TraitConstantId, TraitConstantLongId, TraitFunctionId, TraitFunctionLongId, TraitId,
     TraitImplId, TraitImplLongId, TraitItemId, TraitTypeId, TraitTypeLongId, UseId,
 };
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::ids::StrRef;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
@@ -1811,7 +1811,7 @@ fn trait_function_body_diagnostics<'db>(
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_trait_function_body_data(trait_function_id)
         .map(|data| match data {
-            Some(data) => data.diagnostics,
+            Some(data) => data.diagnostics.clone(),
             None => Diagnostics::<SemanticDiagnostic<'_>>::new(),
         })
         .unwrap_or_default()
@@ -1831,10 +1831,7 @@ fn trait_function_body<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Option<Arc<FunctionBody<'db>>>> {
-    Ok(match db.priv_trait_function_body_data(trait_function_id)? {
-        Some(body_data) => Some(body_data.body),
-        None => None,
-    })
+    Ok(db.priv_trait_function_body_data(trait_function_id)?.map(|data| data.body.clone()))
 }
 
 /// Query implementation of [TraitSemantic::trait_function_body].
@@ -1916,7 +1913,7 @@ fn priv_trait_function_body_data<'db>(
 }
 
 /// Query implementation of [TraitSemantic::priv_trait_function_body_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn priv_trait_function_body_data_tracked<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
@@ -2295,14 +2292,17 @@ pub trait TraitSemantic<'db>: Database {
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
     ) -> Maybe<Option<Arc<ResolverData<'db>>>> {
-        self.priv_trait_function_body_data(trait_function_id).map(|x| x.map(|y| y.resolver_data))
+        self.priv_trait_function_body_data(trait_function_id)
+            .map(|x| x.map(|y| y.resolver_data.clone()))
     }
     /// Private query to compute data about a trait function definition (declaration + body)
     fn priv_trait_function_body_data(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<Option<FunctionBodyData<'db>>> {
+    ) -> Maybe<Option<&'db FunctionBodyData<'db>>> {
         priv_trait_function_body_data_tracked(self.as_dyn_database(), trait_function_id)
+            .maybe_as_ref()
+            .map(Option::as_ref)
     }
 
     // Concrete Trait function.
