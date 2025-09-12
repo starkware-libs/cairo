@@ -472,8 +472,8 @@ pub fn get_resolver_data_options<'db>(
         LookupItemId::TraitItem(id) => match id {
             cairo_lang_defs::ids::TraitItemId::Function(id) => {
                 let mut res = vec![db.trait_function_resolver_data(id)];
-                if let Ok(Some(body)) = db.priv_trait_function_body_data(id) {
-                    res.push(Ok(body.resolver_data));
+                if let Ok(Some(resolver_data)) = db.trait_function_body_resolver_data(id) {
+                    res.push(Ok(resolver_data));
                 }
                 res
             }

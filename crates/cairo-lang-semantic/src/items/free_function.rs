@@ -4,8 +4,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FreeFunctionId, FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
-use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -277,7 +277,7 @@ fn free_function_body_diagnostics<'db>(
     free_function_id: FreeFunctionId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     db.priv_free_function_body_data(free_function_id)
-        .map(|data| data.diagnostics)
+        .map(|data| data.diagnostics.clone())
         .unwrap_or_default()
 }
 
@@ -295,7 +295,7 @@ fn free_function_body_resolver_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_free_function_body_data(free_function_id)?.resolver_data)
+    Ok(db.priv_free_function_body_data(free_function_id)?.resolver_data.clone())
 }
 
 /// Query implementation of [FreeFunctionSemantic::free_function_body_resolver_data].
@@ -362,7 +362,7 @@ fn priv_free_function_body_data<'db>(
 }
 
 /// Query implementation of [FreeFunctionSemantic::priv_free_function_body_data].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn priv_free_function_body_data_tracked<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
@@ -417,6 +417,13 @@ pub trait FreeFunctionSemantic<'db>: Database {
     ) -> Maybe<GenericParamsData<'db>> {
         free_function_generic_params_data_tracked(self.as_dyn_database(), free_function_id)
     }
+    /// Returns the attributes of a free function.
+    fn free_function_attributes(
+        &'db self,
+        free_function_id: FreeFunctionId<'db>,
+    ) -> Maybe<Vec<Attribute<'db>>> {
+        Ok(self.priv_free_function_declaration_data(free_function_id)?.attributes)
+    }
     /// Returns the resolution resolved_items of a free function's declaration.
     fn free_function_declaration_resolver_data(
         &'db self,
@@ -457,8 +464,9 @@ pub trait FreeFunctionSemantic<'db>: Database {
     fn priv_free_function_body_data(
         &'db self,
         free_function_id: FreeFunctionId<'db>,
-    ) -> Maybe<FunctionBodyData<'db>> {
+    ) -> Maybe<&'db FunctionBodyData<'db>> {
         priv_free_function_body_data_tracked(self.as_dyn_database(), free_function_id)
+            .maybe_as_ref()
     }
 }
 impl<'db, T: Database + ?Sized> FreeFunctionSemantic<'db> for T {}
