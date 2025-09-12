@@ -25,104 +25,14 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{FunctionLongId, GenericParam, SemanticDiagnostic, TypeId, semantic};
+use crate::{FunctionLongId, GenericParam, SemanticDiagnostic, semantic};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
 mod test;
 
-// === Declaration ===
-
-// --- Selectors ---
-
-/// Implementation of [FreeFunctionSemantic::free_function_declaration_diagnostics].
-fn free_function_declaration_diagnostics<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_free_function_declaration_data(free_function_id)
-        .map(|data| data.diagnostics)
-        .unwrap_or_default()
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_declaration_diagnostics].
-#[salsa::tracked]
-fn free_function_declaration_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    free_function_declaration_diagnostics(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_signature].
-fn free_function_signature<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    Ok(db.priv_free_function_declaration_data(free_function_id)?.signature)
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_signature].
-#[salsa::tracked]
-fn free_function_signature_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    free_function_signature(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_declaration_implicits].
-fn free_function_declaration_implicits<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Vec<TypeId<'db>>> {
-    Ok(db.priv_free_function_declaration_data(free_function_id)?.signature.implicits)
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_declaration_implicits].
-#[salsa::tracked]
-fn free_function_declaration_implicits_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Vec<TypeId<'db>>> {
-    free_function_declaration_implicits(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_declaration_implicit_precedence]
-fn free_function_declaration_implicit_precedence<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<ImplicitPrecedence<'db>> {
-    Ok(db.priv_free_function_declaration_data(free_function_id)?.implicit_precedence)
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_declaration_implicit_precedence]
-#[salsa::tracked]
-fn free_function_declaration_implicit_precedence_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<ImplicitPrecedence<'db>> {
-    free_function_declaration_implicit_precedence(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_generic_params].
-fn free_function_generic_params<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    Ok(db.free_function_generic_params_data(free_function_id)?.generic_params)
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_generic_params].
-#[salsa::tracked]
-fn free_function_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    free_function_generic_params(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_generic_params_data].
+/// Returns the generic params data of a free function.
+#[salsa::tracked(returns(ref))]
 fn free_function_generic_params_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
@@ -154,53 +64,9 @@ fn free_function_generic_params_data<'db>(
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
-/// Query implementation of [FreeFunctionSemantic::free_function_generic_params_data].
-#[salsa::tracked]
-fn free_function_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    free_function_generic_params_data(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_declaration_resolver_data].
-fn free_function_declaration_resolver_data<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_free_function_declaration_data(free_function_id)?.resolver_data)
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_declaration_resolver_data].
-#[salsa::tracked]
-fn free_function_declaration_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    free_function_declaration_resolver_data(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_declaration_inline_config].
-fn free_function_declaration_inline_config<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<InlineConfiguration<'db>> {
-    Ok(db.priv_free_function_declaration_data(free_function_id)?.inline_config)
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_declaration_inline_config].
-#[salsa::tracked]
-fn free_function_declaration_inline_config_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<InlineConfiguration<'db>> {
-    free_function_declaration_inline_config(db, free_function_id)
-}
-
-// --- Computation ---
-
-/// Implementation of [FreeFunctionSemantic::priv_free_function_declaration_data].
-fn priv_free_function_declaration_data<'db>(
+/// Returns data about a free function declaration - its signature excluding its body.
+#[salsa::tracked(returns(ref))]
+fn free_function_declaration_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
@@ -209,15 +75,16 @@ fn priv_free_function_declaration_data<'db>(
     let declaration = free_function_syntax.declaration(db);
 
     // Generic params.
-    let generic_params_data = db.free_function_generic_params_data(free_function_id)?;
-    let generic_params = generic_params_data.generic_params;
+    let generic_params_data =
+        free_function_generic_params_data(db, free_function_id).maybe_as_ref()?;
+    let generic_params = generic_params_data.generic_params.clone();
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.extend(generic_params_data.diagnostics);
+    diagnostics.extend(generic_params_data.diagnostics.clone());
 
     let mut environment = Environment::empty();
 
@@ -258,58 +125,8 @@ fn priv_free_function_declaration_data<'db>(
     })
 }
 
-/// Query implementation of [FreeFunctionSemantic::priv_free_function_declaration_data].
-#[salsa::tracked]
-fn priv_free_function_declaration_data_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<FunctionDeclarationData<'db>> {
-    priv_free_function_declaration_data(db, free_function_id)
-}
-
-// === Body ===
-
-// --- Selectors ---
-
-/// Implementation of [FreeFunctionSemantic::free_function_body_diagnostics].
-fn free_function_body_diagnostics<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_free_function_body_data(free_function_id)
-        .map(|data| data.diagnostics.clone())
-        .unwrap_or_default()
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_body_diagnostics].
-#[salsa::tracked]
-fn free_function_body_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    free_function_body_diagnostics(db, free_function_id)
-}
-
-/// Implementation of [FreeFunctionSemantic::free_function_body_resolver_data].
-fn free_function_body_resolver_data<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_free_function_body_data(free_function_id)?.resolver_data.clone())
-}
-
-/// Query implementation of [FreeFunctionSemantic::free_function_body_resolver_data].
-#[salsa::tracked]
-fn free_function_body_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    free_function_body_resolver_data(db, free_function_id)
-}
-
-// --- Computation ---
-
-/// Implementation of [FreeFunctionSemantic::priv_free_function_body_data].
+/// Query implementation of [FreeFunctionSemantic::priv_free_function_body_data].
+#[salsa::tracked(returns(ref))]
 fn priv_free_function_body_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
@@ -317,7 +134,7 @@ fn priv_free_function_body_data<'db>(
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     // Compute declaration semantic.
-    let declaration = db.priv_free_function_declaration_data(free_function_id)?;
+    let declaration = free_function_declaration_data(db, free_function_id).maybe_as_ref()?;
 
     // Generic params.
     let parent_resolver_data = db.free_function_declaration_resolver_data(free_function_id)?;
@@ -327,7 +144,7 @@ fn priv_free_function_body_data<'db>(
     let mut resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
 
-    let environment = declaration.environment;
+    let environment = declaration.environment.clone();
     let function_id = (|| {
         let generic_function = GenericFunctionId::Free(free_function_id);
 
@@ -361,112 +178,97 @@ fn priv_free_function_body_data<'db>(
     })
 }
 
-/// Query implementation of [FreeFunctionSemantic::priv_free_function_body_data].
-#[salsa::tracked(returns(ref))]
-fn priv_free_function_body_data_tracked<'db>(
-    db: &'db dyn Database,
-    free_function_id: FreeFunctionId<'db>,
-) -> Maybe<FunctionBodyData<'db>> {
-    priv_free_function_body_data(db, free_function_id)
-}
-
 /// Trait for free function-related semantic queries.
 pub trait FreeFunctionSemantic<'db>: Database {
     /// Returns the semantic diagnostics of a free function's declaration (signature).
     fn free_function_declaration_diagnostics(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        free_function_declaration_diagnostics_tracked(self.as_dyn_database(), free_function_id)
+        free_function_declaration_data(self.as_dyn_database(), id)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the signature of a free function.
     fn free_function_signature(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Maybe<semantic::Signature<'db>> {
-        free_function_signature_tracked(self.as_dyn_database(), free_function_id)
-    }
-    /// Returns the explicit implicits of a signature of a free function.
-    fn free_function_declaration_implicits(
-        &'db self,
-        free_function_id: FreeFunctionId<'db>,
-    ) -> Maybe<Vec<TypeId<'db>>> {
-        free_function_declaration_implicits_tracked(self.as_dyn_database(), free_function_id)
+        Ok(free_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .signature
+            .clone())
     }
     /// Returns the implicits precedence of a free function.
     fn free_function_declaration_implicit_precedence(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Maybe<ImplicitPrecedence<'db>> {
-        free_function_declaration_implicit_precedence_tracked(
-            self.as_dyn_database(),
-            free_function_id,
-        )
+        Ok(free_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .implicit_precedence
+            .clone())
     }
     /// Returns the generic params of a free function.
     fn free_function_generic_params(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Maybe<Vec<GenericParam<'db>>> {
-        free_function_generic_params_tracked(self.as_dyn_database(), free_function_id)
-    }
-    /// Returns the generic params data of a free function.
-    fn free_function_generic_params_data(
-        &'db self,
-        free_function_id: FreeFunctionId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
-        free_function_generic_params_data_tracked(self.as_dyn_database(), free_function_id)
+        Ok(free_function_generic_params_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .generic_params
+            .clone())
     }
     /// Returns the attributes of a free function.
-    fn free_function_attributes(
-        &'db self,
-        free_function_id: FreeFunctionId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(self.priv_free_function_declaration_data(free_function_id)?.attributes)
+    fn free_function_attributes(&'db self, id: FreeFunctionId<'db>) -> Maybe<Vec<Attribute<'db>>> {
+        Ok(free_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .attributes
+            .clone())
     }
     /// Returns the resolution resolved_items of a free function's declaration.
     fn free_function_declaration_resolver_data(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        free_function_declaration_resolver_data_tracked(self.as_dyn_database(), free_function_id)
+        Ok(free_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .resolver_data
+            .clone())
     }
     /// Returns the inline configuration of a free function's declaration.
     fn free_function_declaration_inline_config(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Maybe<InlineConfiguration<'db>> {
-        free_function_declaration_inline_config_tracked(self.as_dyn_database(), free_function_id)
-    }
-    /// Private query to compute data about a free function declaration - its signature excluding
-    /// its body.
-    fn priv_free_function_declaration_data(
-        &'db self,
-        function_id: FreeFunctionId<'db>,
-    ) -> Maybe<FunctionDeclarationData<'db>> {
-        priv_free_function_declaration_data_tracked(self.as_dyn_database(), function_id)
+        Ok(free_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .inline_config
+            .clone())
     }
     /// Returns the semantic diagnostics of a free function's body.
     fn free_function_body_diagnostics(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        free_function_body_diagnostics_tracked(self.as_dyn_database(), free_function_id)
+        self.priv_free_function_body_data(id)
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the resolution resolved_items of a free function's body.
     fn free_function_body_resolver_data(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        free_function_body_resolver_data_tracked(self.as_dyn_database(), free_function_id)
+        Ok(self.priv_free_function_body_data(id)?.resolver_data.clone())
     }
-    /// Private query to compute data about a free function's body.
+    /// Returns the semantic body of a free function.
     fn priv_free_function_body_data(
         &'db self,
-        free_function_id: FreeFunctionId<'db>,
+        id: FreeFunctionId<'db>,
     ) -> Maybe<&'db FunctionBodyData<'db>> {
-        priv_free_function_body_data_tracked(self.as_dyn_database(), free_function_id)
-            .maybe_as_ref()
+        priv_free_function_body_data(self.as_dyn_database(), id).maybe_as_ref()
     }
 }
 impl<'db, T: Database + ?Sized> FreeFunctionSemantic<'db> for T {}
