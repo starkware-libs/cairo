@@ -782,7 +782,7 @@ pub fn get_impl_at_context<'db>(
     }
     let mut inference_data = InferenceData::new(InferenceId::NoContext);
     let mut inference = inference_data.inference(db);
-    inference.conform_generic_params_type_constraints(&constrains);
+    inference.conform_generic_params_type_constraints(constrains);
     // It's ok to consume the errors without reporting as this is a helper function meant to find an
     // impl and return it, but it's ok if the impl can't be found.
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context);
