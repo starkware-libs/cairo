@@ -9,8 +9,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::Usages;
 use crate::Expr;
-use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
+use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::test_utils::{SemanticDatabaseForTesting, setup_test_function};
 
 cairo_lang_test_utils::test_file_test!(

@@ -6,8 +6,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::functions::ImplGenericFunctionId;
+use cairo_lang_semantic::corelib::CorelibSemantic;
+use cairo_lang_semantic::items::functions::{FunctionsSemantic, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;

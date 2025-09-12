@@ -12,12 +12,16 @@ use cairo_lang_defs::ids::{
     TraitConstantId, TraitFunctionId, TraitId, TraitItemId, TraitTypeId, VariantId,
 };
 use cairo_lang_filesystem::ids::Tracked;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceId;
-use cairo_lang_semantic::items::constant::ConstValue;
+use cairo_lang_semantic::items::constant::{ConstValue, ConstantSemantic};
+use cairo_lang_semantic::items::enm::EnumSemantic;
+use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::items::generics::GenericArgumentId;
+use cairo_lang_semantic::items::generics::{GenericArgumentId, GenericsSemantic};
+use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::macro_declaration::MacroDeclarationSemantic;
 use cairo_lang_semantic::items::modifiers::get_relevant_modifier;
+use cairo_lang_semantic::items::us::UseSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
 use cairo_lang_semantic::types::TypeId;
 use cairo_lang_semantic::{ConcreteTypeId, Expr, GenericParam, TypeLongId};

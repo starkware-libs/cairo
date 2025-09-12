@@ -6,10 +6,14 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::corelib::core_submodule;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
-use cairo_lang_semantic::items::enm::SemanticEnumEx;
-use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext};
+use cairo_lang_semantic::items::enm::{EnumSemantic, SemanticEnumEx};
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
+use cairo_lang_semantic::items::imp::{ImplLongId, ImplLookupContext, ImplSemantic};
+use cairo_lang_semantic::items::impl_alias::ImplAliasSemantic;
+use cairo_lang_semantic::items::module::ModuleSemantic;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId, get_impl_at_context};
 use cairo_lang_semantic::{

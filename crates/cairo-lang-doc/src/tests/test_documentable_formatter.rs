@@ -2,7 +2,10 @@ use cairo_lang_defs::ids::{
     EnumId, ImplDefId, ImplItemId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitId,
     TraitItemId,
 };
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::enm::EnumSemantic;
+use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;

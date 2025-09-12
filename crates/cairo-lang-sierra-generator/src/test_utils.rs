@@ -7,6 +7,7 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
+use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};

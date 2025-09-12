@@ -6,9 +6,9 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
 use cairo_lang_semantic::corelib::{
-    core_submodule, get_core_enum_concrete_variant, get_function_id, get_panic_ty, never_ty,
+    CorelibSemantic, core_submodule, get_core_enum_concrete_variant, get_function_id, get_panic_ty,
+    never_ty,
 };
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_semantic::{self as semantic, GenericArgumentId};

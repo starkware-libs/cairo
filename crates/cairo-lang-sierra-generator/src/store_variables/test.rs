@@ -1,7 +1,6 @@
 use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_semantic::GenericArgumentId;
-use cairo_lang_semantic::corelib::get_core_ty_by_name;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::corelib::{CorelibSemantic, get_core_ty_by_name};
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,

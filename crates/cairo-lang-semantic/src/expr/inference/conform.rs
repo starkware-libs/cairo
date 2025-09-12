@@ -13,14 +13,14 @@ use super::{
     InferenceVar, LocalTypeVarId, TypeVar,
 };
 use crate::corelib::never_ty;
-use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplLongId, ImplLookupContext, NegativeImplId, NegativeImplLongId,
+    ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplSemantic, NegativeImplId,
+    NegativeImplLongId,
 };
-use crate::items::trt::ConcreteTraitImplId;
+use crate::items::trt::{ConcreteTraitImplId, TraitSemantic};
 use crate::substitution::SemanticRewriter;
 use crate::types::{ClosureTypeLongId, ImplTypeId, peel_snapshots};
 use crate::{

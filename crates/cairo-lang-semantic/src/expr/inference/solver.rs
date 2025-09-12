@@ -16,12 +16,13 @@ use super::{
     ImplVarTraitItemMappings, InferenceData, InferenceError, InferenceId, InferenceResult,
     InferenceVar, LocalImplVarId,
 };
-use crate::db::SemanticGroup;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::imp::{
-    ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplLookupContextId, UninferredImpl,
-    UninferredImplById, find_candidates_at_context, find_closure_generated_candidate,
+    ImplId, ImplImplId, ImplLongId, ImplLookupContext, ImplLookupContextId, ImplSemantic,
+    UninferredImpl, UninferredImplById, find_candidates_at_context,
+    find_closure_generated_candidate,
 };
+use crate::items::trt::TraitSemantic;
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
 use crate::types::{ImplTypeById, ImplTypeId};
 use crate::{
@@ -115,7 +116,7 @@ impl<'db> Ambiguity<'db> {
     }
 }
 
-/// Implementation of [SemanticGroup::canonic_trait_solutions].
+/// Implementation of [SemanticSolver::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
 pub fn canonic_trait_solutions<'db>(
     db: &'db dyn Database,
@@ -148,7 +149,7 @@ pub fn canonic_trait_solutions<'db>(
     ))
 }
 
-/// Query implementation of [SemanticGroup::canonic_trait_solutions].
+/// Query implementation of [SemanticSolver::canonic_trait_solutions].
 /// Assumes the lookup context is already enriched by [enrich_lookup_context].
 #[salsa::tracked(cycle_result=canonic_trait_solutions_cycle)]
 pub fn canonic_trait_solutions_tracked<'db>(
@@ -886,3 +887,22 @@ impl<'db> LiteInference<'db> {
         }
     }
 }
+
+/// Trait for solver-related semantic queries.
+pub trait SemanticSolver<'db>: Database {
+    /// Returns the solution set for a canonical trait.
+    fn canonic_trait_solutions(
+        &'db self,
+        canonical_trait: CanonicalTrait<'db>,
+        lookup_context: ImplLookupContextId<'db>,
+        impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
+    ) -> Result<SolutionSet<'db, CanonicalImpl<'db>>, InferenceError<'db>> {
+        canonic_trait_solutions_tracked(
+            self.as_dyn_database(),
+            canonical_trait,
+            lookup_context,
+            impl_type_bounds,
+        )
+    }
+}
+impl<'db, T: Database + ?Sized> SemanticSolver<'db> for T {}

@@ -56,11 +56,10 @@ use super::pattern::{
     PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_usize_ty,
-    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr,
+    get_usize_ty, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
     unwrap_error_propagation_type, validate_literal,
 };
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
     ElementKind, MultiArmExprKind, NotFoundItemType, SemanticDiagnostics,
@@ -68,17 +67,26 @@ use crate::diagnostic::{
 };
 use crate::expr::inference::solver::SolutionSet;
 use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
-use crate::items::constant::{ConstValue, resolve_const_expr_and_evaluate, validate_const_expr};
-use crate::items::enm::SemanticEnumEx;
-use crate::items::feature_kind::{FeatureConfig, FeatureConfigRestore};
-use crate::items::functions::{concrete_function_closure_params, function_signature_params};
-use crate::items::imp::{
-    DerefInfo, ImplLookupContextId, filter_candidate_traits, infer_impl_by_self,
+use crate::items::constant::{
+    ConstValue, ConstantSemantic, resolve_const_expr_and_evaluate, validate_const_expr,
 };
-use crate::items::macro_declaration::{MatcherContext, expand_macro_rule, is_macro_rule_match};
+use crate::items::enm::{EnumSemantic, SemanticEnumEx};
+use crate::items::feature_kind::{FeatureConfig, FeatureConfigRestore};
+use crate::items::functions::{FunctionsSemantic, function_signature_params};
+use crate::items::generics::GenericsSemantic;
+use crate::items::imp::{
+    DerefInfo, ImplLookupContextId, ImplSemantic, filter_candidate_traits, infer_impl_by_self,
+};
+use crate::items::macro_declaration::{
+    MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
+};
 use crate::items::modifiers::compute_mutability;
+use crate::items::module::ModuleSemantic;
+use crate::items::structure::StructSemantic;
+use crate::items::trt::TraitSemantic;
 use crate::items::visibility;
 use crate::keyword::MACRO_CALL_SITE;
+use crate::lsp_helpers::LspHelpers;
 use crate::resolve::{
     AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
     ResolvedGenericItem, Resolver, ResolverMacroData,
@@ -1422,7 +1430,7 @@ fn compute_expr_function_call_semantic<'db>(
             let mut args_iter = args_syntax.elements(db);
             // Normal parameters
             let mut named_args = vec![];
-            let closure_params = concrete_function_closure_params(db, function)?;
+            let closure_params = db.concrete_function_closure_params(function)?;
             for ty in function_parameter_types(ctx, function)? {
                 let Some(arg_syntax) = args_iter.next() else {
                     continue;
@@ -3587,7 +3595,7 @@ fn method_call_expr<'db>(
     let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
     // Other arguments.
     let closure_params: OrderedHashMap<TypeId<'db>, TypeId<'_>> =
-        concrete_function_closure_params(ctx.db, function_id)?;
+        ctx.db.concrete_function_closure_params(function_id)?;
     for ty in function_parameter_types(ctx, function_id)?.skip(1) {
         let Some(arg_syntax) = args_iter.next() else {
             break;

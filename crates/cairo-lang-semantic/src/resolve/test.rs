@@ -10,8 +10,10 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
+use crate::items::function_with_body::FunctionWithBodySemantic;
+use crate::items::module::ModuleSemantic;
+use crate::items::structure::StructSemantic;
 use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]

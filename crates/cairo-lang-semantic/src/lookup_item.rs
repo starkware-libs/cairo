@@ -10,8 +10,18 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::Maybe;
 use salsa::Database;
 
-use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceId;
+use crate::items::constant::ConstantSemantic;
+use crate::items::enm::EnumSemantic;
+use crate::items::extern_function::ExternFunctionSemantic;
+use crate::items::free_function::FreeFunctionSemantic;
+use crate::items::imp::ImplSemantic;
+use crate::items::impl_alias::ImplAliasSemantic;
+use crate::items::macro_declaration::MacroDeclarationSemantic;
+use crate::items::module_type_alias::ModuleTypeAliasSemantic;
+use crate::items::structure::StructSemantic;
+use crate::items::trt::TraitSemantic;
+use crate::items::us::UseSemantic;
 use crate::resolve::ResolverData;
 
 pub trait HasResolverData<'db> {

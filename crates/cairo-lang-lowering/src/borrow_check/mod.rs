@@ -4,7 +4,7 @@ mod test;
 
 use cairo_lang_defs::ids::TraitFunctionId;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;

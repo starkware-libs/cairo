@@ -26,11 +26,14 @@ use super::generics::{fmt_generic_args, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
-use crate::corelib::{fn_traits, unit_ty};
-use crate::db::SemanticGroup;
+use crate::corelib::{CorelibSemantic, fn_traits, unit_ty};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
 use crate::expr::fmt::CountingWriter;
+use crate::items::extern_function::ExternFunctionSemantic;
+use crate::items::free_function::FreeFunctionSemantic;
+use crate::items::imp::ImplSemantic;
+use crate::items::trt::TraitSemantic;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::GenericSubstitution;
 use crate::types::resolve_type;
@@ -795,8 +798,8 @@ fn function_title_signature_helper<'db>(
     function_title_signature(db, function_title_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::function_title_signature].
-pub fn function_title_signature<'db>(
+/// Implementation of [FunctionsSemantic::function_title_signature].
+fn function_title_signature<'db>(
     db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Signature<'db>> {
@@ -808,16 +811,16 @@ pub fn function_title_signature<'db>(
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::function_title_signature].
-pub fn function_title_signature_tracked<'db>(
+/// Query implementation of [FunctionsSemantic::function_title_signature].
+fn function_title_signature_tracked<'db>(
     db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Signature<'db>> {
     function_title_signature_helper(db, (), function_title_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::function_title_generic_params].
-pub fn function_title_generic_params<'db>(
+/// Implementation of [FunctionsSemantic::function_title_generic_params].
+fn function_title_generic_params<'db>(
     db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -831,8 +834,8 @@ pub fn function_title_generic_params<'db>(
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::function_title_generic_params].
-pub fn function_title_generic_params_tracked<'db>(
+/// Query implementation of [FunctionsSemantic::function_title_generic_params].
+fn function_title_generic_params_tracked<'db>(
     db: &'db dyn Database,
     function_title_id: FunctionTitleId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -848,8 +851,8 @@ fn function_title_generic_params_helper<'db>(
     function_title_generic_params(db, function_title_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::concrete_function_signature].
-pub fn concrete_function_signature<'db>(
+/// Implementation of [FunctionsSemantic::concrete_function_signature].
+fn concrete_function_signature<'db>(
     db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<Signature<'db>> {
@@ -863,17 +866,17 @@ pub fn concrete_function_signature<'db>(
     GenericSubstitution::new(&generic_params, &generic_args).substitute(db, generic_signature)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_function_signature].
+/// Query implementation of [FunctionsSemantic::concrete_function_signature].
 #[salsa::tracked]
-pub fn concrete_function_signature_tracked<'db>(
+fn concrete_function_signature_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<Signature<'db>> {
     concrete_function_signature(db, function_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
-pub fn concrete_function_closure_params<'db>(
+/// Implementation of [FunctionsSemantic::concrete_function_closure_params].
+fn concrete_function_closure_params<'db>(
     db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<OrderedHashMap<semantic::TypeId<'db>, semantic::TypeId<'db>>> {
@@ -897,9 +900,9 @@ pub fn concrete_function_closure_params<'db>(
     Ok(generic_closure_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::concrete_function_closure_params].
+/// Query implementation of [FunctionsSemantic::concrete_function_closure_params].
 #[salsa::tracked]
-pub fn concrete_function_closure_params_tracked<'db>(
+fn concrete_function_closure_params_tracked<'db>(
     db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<OrderedHashMap<semantic::TypeId<'db>, semantic::TypeId<'db>>> {
@@ -1054,8 +1057,8 @@ impl<'db> FromIterator<TypeId<'db>> for ImplicitPrecedence<'db> {
     }
 }
 
-/// Implementation of [crate::db::SemanticGroup::get_closure_params].
-pub fn get_closure_params<'db>(
+/// Implementation of [FunctionsSemantic::get_closure_params].
+fn get_closure_params<'db>(
     db: &'db dyn Database,
     generic_function_id: GenericFunctionId<'db>,
 ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
@@ -1082,8 +1085,8 @@ pub fn get_closure_params<'db>(
     Ok(closure_params_map)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::get_closure_params].
-pub fn get_closure_params_tracked<'db>(
+/// Query implementation of [FunctionsSemantic::get_closure_params].
+fn get_closure_params_tracked<'db>(
     db: &'db dyn Database,
     generic_function_id: GenericFunctionId<'db>,
 ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
@@ -1098,3 +1101,48 @@ fn get_closure_params_helper<'db>(
 ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
     get_closure_params(db, generic_function_id)
 }
+
+/// Trait for functions-related semantic queries.
+pub trait FunctionsSemantic<'db>: Database {
+    /// Returns the signature of the given FunctionTitleId. This include free functions, extern
+    /// functions, etc...
+    fn function_title_signature(
+        &'db self,
+        function_title_id: FunctionTitleId<'db>,
+    ) -> Maybe<semantic::Signature<'db>> {
+        function_title_signature_tracked(self.as_dyn_database(), function_title_id)
+    }
+    /// Returns the generic parameters of the given FunctionTitleId. This include free
+    /// functions, extern functions, etc...
+    fn function_title_generic_params(
+        &'db self,
+        function_title_id: FunctionTitleId<'db>,
+    ) -> Maybe<Vec<GenericParam<'db>>> {
+        function_title_generic_params_tracked(self.as_dyn_database(), function_title_id)
+    }
+    /// Returns the signature of a concrete function. This include free functions, extern functions,
+    /// etc...
+    fn concrete_function_signature(
+        &'db self,
+        function_id: FunctionId<'db>,
+    ) -> Maybe<semantic::Signature<'db>> {
+        concrete_function_signature_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns a mapping of closure types to their associated parameter types for a concrete
+    /// function.
+    fn concrete_function_closure_params(
+        &'db self,
+        function_id: FunctionId<'db>,
+    ) -> Maybe<OrderedHashMap<semantic::TypeId<'db>, semantic::TypeId<'db>>> {
+        concrete_function_closure_params_tracked(self.as_dyn_database(), function_id)
+    }
+    /// Returns a mapping of closure types to their associated parameter types for a generic
+    /// function.
+    fn get_closure_params(
+        &'db self,
+        generic_function_id: GenericFunctionId<'db>,
+    ) -> Maybe<OrderedHashMap<TypeId<'db>, TypeId<'db>>> {
+        get_closure_params_tracked(self.as_dyn_database(), generic_function_id)
+    }
+}
+impl<'db, T: Database + ?Sized> FunctionsSemantic<'db> for T {}

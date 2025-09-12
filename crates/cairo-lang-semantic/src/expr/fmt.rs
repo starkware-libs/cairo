@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_utils::Upcast;
 use salsa::Database;
 
-use crate::db::SemanticGroup;
+use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::{ExprId, PatternId, StatementId};
 
 /// Holds all the information needed for formatting expressions.

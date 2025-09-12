@@ -1,8 +1,8 @@
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::expr::inference::InferenceError;
+use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

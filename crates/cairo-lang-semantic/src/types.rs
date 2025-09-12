@@ -23,27 +23,26 @@ use salsa::Database;
 use sha3::{Digest, Keccak256};
 
 use crate::corelib::{
-    concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
+    CorelibSemantic, concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
     concrete_panic_destruct_trait, get_usize_ty, unit_ty,
 };
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, compute_expr_semantic};
 use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
-use crate::expr::inference::solver::{SolutionSet, enrich_lookup_context};
+use crate::expr::inference::solver::{SemanticSolver, SolutionSet, enrich_lookup_context};
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
 use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
-use crate::items::enm::SemanticEnumEx;
-use crate::items::generics::fmt_generic_args;
-use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId};
+use crate::items::enm::{EnumSemantic, SemanticEnumEx};
+use crate::items::extern_type::ExternTypeSemantic;
+use crate::items::generics::{GenericsSemantic, fmt_generic_args};
+use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId, ImplSemantic};
+use crate::items::structure::StructSemantic;
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{
-    ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id, types,
-};
+use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId<'db> {
@@ -732,8 +731,8 @@ pub fn verify_fixed_size_array_size<'db>(
     Ok(())
 }
 
-/// Implementation of [crate::db::SemanticGroup::generic_type_generic_params].
-pub fn generic_type_generic_params<'db>(
+/// Implementation of [TypesSemantic::generic_type_generic_params].
+fn generic_type_generic_params<'db>(
     db: &'db dyn Database,
     generic_type: GenericTypeId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -744,8 +743,8 @@ pub fn generic_type_generic_params<'db>(
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
-pub fn generic_type_generic_params_tracked<'db>(
+/// Query implementation of [TypesSemantic::generic_type_generic_params].
+fn generic_type_generic_params_tracked<'db>(
     db: &'db dyn Database,
     generic_type: GenericTypeId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
@@ -795,8 +794,8 @@ pub fn get_impl_at_context<'db>(
     Ok(inference.rewrite(impl_id).no_err())
 }
 
-/// Implementation of [crate::db::SemanticGroup::single_value_type].
-pub fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
+/// Implementation of [TypesSemantic::single_value_type].
+fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
     Ok(match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
@@ -842,12 +841,9 @@ pub fn single_value_type(db: &dyn Database, ty: TypeId<'_>) -> Maybe<bool> {
     })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::single_value_type].
+/// Query implementation of [TypesSemantic::single_value_type].
 #[salsa::tracked]
-pub fn single_value_type_tracked<'db>(
-    db: &'db dyn Database,
-    ty: types::TypeId<'db>,
-) -> Maybe<bool> {
+fn single_value_type_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> Maybe<bool> {
     single_value_type(db, ty)
 }
 
@@ -884,8 +880,8 @@ pub enum TypeSizeInformation {
     Other,
 }
 
-/// Implementation of [crate::db::SemanticGroup::type_size_info].
-pub fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
+/// Implementation of [TypesSemantic::type_size_info].
+fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInformation> {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => match concrete_type_id {
             ConcreteTypeId::Struct(id) => {
@@ -935,11 +931,11 @@ pub fn type_size_info(db: &dyn Database, ty: TypeId<'_>) -> Maybe<TypeSizeInform
     Ok(TypeSizeInformation::Other)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::type_size_info].
+/// Query implementation of [TypesSemantic::type_size_info].
 #[salsa::tracked(cycle_result=type_size_info_cycle)]
-pub fn type_size_info_tracked<'db>(
+fn type_size_info_tracked<'db>(
     db: &'db dyn Database,
-    ty: types::TypeId<'db>,
+    ty: TypeId<'db>,
 ) -> Maybe<TypeSizeInformation> {
     type_size_info(db, ty)
 }
@@ -958,8 +954,8 @@ fn check_all_type_are_zero_sized<'a>(
     Ok(zero_sized)
 }
 
-/// Cycle handling of [crate::db::SemanticGroup::type_size_info].
-pub fn type_size_info_cycle<'db>(
+/// Cycle handling of [TypesSemantic::type_size_info].
+fn type_size_info_cycle<'db>(
     _db: &'db dyn Database,
     _ty: TypeId<'db>,
 ) -> Maybe<TypeSizeInformation> {
@@ -968,8 +964,8 @@ pub fn type_size_info_cycle<'db>(
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
 // This is to ensure that sierra generator will see a consistent type info of types.
-/// Implementation of [crate::db::SemanticGroup::type_info].
-pub fn type_info<'db>(
+/// Implementation of [TypesSemantic::type_info].
+fn type_info<'db>(
     db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
     ty: TypeId<'db>,
@@ -984,9 +980,9 @@ pub fn type_info<'db>(
     TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::type_info].
+/// Query implementation of [TypesSemantic::type_info].
 #[salsa::tracked]
-pub fn type_info_tracked<'db>(
+fn type_info_tracked<'db>(
     db: &'db dyn Database,
     lookup_context: ImplLookupContextId<'db>,
     ty: TypeId<'db>,
@@ -1015,8 +1011,8 @@ fn solve_concrete_trait_no_constraints<'db>(
     }
 }
 
-/// Implementation of [crate::db::SemanticGroup::copyable].
-pub fn copyable<'db>(
+/// Implementation of [TypesSemantic::copyable].
+fn copyable<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
@@ -1027,17 +1023,17 @@ pub fn copyable<'db>(
     )
 }
 
-/// Query implementation of [crate::db::SemanticGroup::copyable].
+/// Query implementation of [TypesSemantic::copyable].
 #[salsa::tracked]
-pub fn copyable_tracked<'db>(
+fn copyable_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
     copyable(db, ty)
 }
 
-/// Implementation of [crate::db::SemanticGroup::droppable].
-pub fn droppable<'db>(
+/// Implementation of [TypesSemantic::droppable].
+fn droppable<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
@@ -1048,17 +1044,17 @@ pub fn droppable<'db>(
     )
 }
 
-/// Query implementation of [crate::db::SemanticGroup::droppable].
+/// Query implementation of [TypesSemantic::droppable].
 #[salsa::tracked]
-pub fn droppable_tracked<'db>(
+fn droppable_tracked<'db>(
     db: &'db dyn Database,
     ty: TypeId<'db>,
 ) -> Result<ImplId<'db>, InferenceError<'db>> {
     droppable(db, ty)
 }
 
-/// Implementation of [crate::db::SemanticGroup::priv_type_is_fully_concrete].
-pub fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
+/// Implementation of [TypesSemantic::priv_type_is_fully_concrete].
+fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
         TypeLongId::Tuple(types) => types.iter().all(|ty| ty.is_fully_concrete(db)),
@@ -1079,12 +1075,9 @@ pub fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_type_is_fully_concrete].
+/// Query implementation of [TypesSemantic::priv_type_is_fully_concrete].
 #[salsa::tracked]
-pub fn priv_type_is_fully_concrete_tracked<'db>(
-    db: &'db dyn Database,
-    ty: types::TypeId<'db>,
-) -> bool {
+pub fn priv_type_is_fully_concrete_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_fully_concrete(db, ty)
 }
 
@@ -1109,7 +1102,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> boo
     }
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_type_is_var_free].
+/// Query implementation of [TypesSemantic::priv_type_is_var_free].
 #[salsa::tracked]
 pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_var_free(db, ty)
@@ -1156,7 +1149,7 @@ pub fn priv_type_short_name(db: &dyn Database, ty: TypeId<'_>) -> String {
 }
 
 #[salsa::tracked]
-pub fn priv_type_short_name_tracked<'db>(db: &'db dyn Database, ty: types::TypeId<'db>) -> String {
+pub fn priv_type_short_name_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> String {
     priv_type_short_name(db, ty)
 }
 
@@ -1197,3 +1190,54 @@ pub(crate) fn are_coupons_enabled(db: &dyn Database, module_id: ModuleId<'_>) ->
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.coupons
 }
+
+/// Trait for types-related semantic queries.
+pub trait TypesSemantic<'db>: Database {
+    /// Returns the generic params of a generic type.
+    fn generic_type_generic_params(
+        &'db self,
+        generic_type: GenericTypeId<'db>,
+    ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
+        generic_type_generic_params_tracked(self.as_dyn_database(), generic_type)
+    }
+    /// Returns true if there is only one value for the given type and hence the values of the given
+    /// type are all interchangeable.
+    /// Examples include the unit type tuple of a unit type and empty structs.
+    /// Always returns false for extern types.
+    fn single_value_type(&'db self, ty: TypeId<'db>) -> Maybe<bool> {
+        single_value_type_tracked(self.as_dyn_database(), ty)
+    }
+    /// Returns the type size information for the given type.
+    fn type_size_info(&'db self, ty: TypeId<'db>) -> Maybe<TypeSizeInformation> {
+        type_size_info_tracked(self.as_dyn_database(), ty)
+    }
+    /// Returns the type info for a type in a context.
+    fn type_info(
+        &'db self,
+        lookup_context: ImplLookupContextId<'db>,
+        ty: TypeId<'db>,
+    ) -> TypeInfo<'db> {
+        type_info_tracked(self.as_dyn_database(), lookup_context, ty)
+    }
+    /// Returns the `Copy` impl for a type in general context.
+    fn copyable(&'db self, ty: TypeId<'db>) -> Result<ImplId<'db>, InferenceError<'db>> {
+        copyable_tracked(self.as_dyn_database(), ty)
+    }
+    /// Returns the `Drop` impl for a type in general context.
+    fn droppable(&'db self, ty: TypeId<'db>) -> Result<ImplId<'db>, InferenceError<'db>> {
+        droppable_tracked(self.as_dyn_database(), ty)
+    }
+    /// Private query to check if a type is fully concrete.
+    fn priv_type_is_fully_concrete(&self, ty: TypeId<'db>) -> bool {
+        priv_type_is_fully_concrete_tracked(self.as_dyn_database(), ty)
+    }
+    /// Private query to check if a type contains no variables.
+    fn priv_type_is_var_free(&self, ty: TypeId<'db>) -> bool {
+        priv_type_is_var_free_tracked(self.as_dyn_database(), ty)
+    }
+    /// Private query for a shorter unique name for types.
+    fn priv_type_short_name(&self, ty: TypeId<'db>) -> String {
+        priv_type_short_name_tracked(self.as_dyn_database(), ty)
+    }
+}
+impl<'db, T: Database + ?Sized> TypesSemantic<'db> for T {}

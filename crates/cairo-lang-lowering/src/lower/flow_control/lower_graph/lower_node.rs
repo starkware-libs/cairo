@@ -1,8 +1,7 @@
 //! Functions for lowering nodes of a [super::FlowControlGraph].
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::corelib::unit_ty;
-use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::corelib::{CorelibSemantic, unit_ty};
 use cairo_lang_semantic::{
     self as semantic, GenericArgumentId, MatchArmSelector, ValueSelectorArm, corelib,
 };

@@ -6,8 +6,11 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::ids::{FileId, Tracked};
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
+use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::macro_call::MacroCallSemantic;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::{self as semantic, ConcreteTypeId, TypeId, TypeLongId, corelib};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

@@ -4,12 +4,16 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::corelib::{
-    ErrorPropagationType, get_enum_concrete_variant, try_get_ty_by_name,
+    CorelibSemantic, ErrorPropagationType, get_enum_concrete_variant, try_get_ty_by_name,
     unwrap_error_propagation_type,
 };
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
+use cairo_lang_semantic::items::functions::{
+    FunctionsSemantic, GenericFunctionId, ImplGenericFunctionId,
+};
 use cairo_lang_semantic::items::imp::ImplLongId;
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{
     ConcreteFunction, ConcreteTraitLongId, ExprVar, LocalVariable, VarId, corelib,

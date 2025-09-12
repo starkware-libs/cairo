@@ -7,7 +7,14 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use salsa::Database;
 
-use crate::db::SemanticGroup;
+use crate::items::enm::EnumSemantic;
+use crate::items::extern_type::ExternTypeSemantic;
+use crate::items::function_with_body::FunctionWithBodySemantic;
+use crate::items::imp::ImplSemantic;
+use crate::items::impl_alias::ImplAliasSemantic;
+use crate::items::module::ModuleSemantic;
+use crate::items::structure::StructSemantic;
+use crate::items::trt::TraitSemantic;
 use crate::{ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId};
 
 pub trait AttributeTrait {

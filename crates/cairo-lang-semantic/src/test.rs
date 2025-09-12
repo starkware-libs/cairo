@@ -13,6 +13,8 @@ use salsa::Database;
 
 use crate::db::SemanticGroup;
 use crate::inline_macros::get_default_plugin_suite;
+use crate::items::free_function::FreeFunctionSemantic;
+use crate::items::module::ModuleSemantic;
 use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]

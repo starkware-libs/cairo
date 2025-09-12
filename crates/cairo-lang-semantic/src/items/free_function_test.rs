@@ -4,9 +4,9 @@ use cairo_lang_test_utils::test;
 use cairo_lang_utils::{Upcast, extract_matches};
 use pretty_assertions::assert_eq;
 
-use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
-use crate::items::function_with_body::SemanticExprLookup;
+use crate::items::function_with_body::{FunctionWithBodySemantic, SemanticExprLookup};
+use crate::items::module::ModuleSemantic;
 use crate::test_utils::{SemanticDatabaseForTesting, setup_test_module};
 
 #[test]
