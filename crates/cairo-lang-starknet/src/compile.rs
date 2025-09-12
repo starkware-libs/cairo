@@ -18,7 +18,7 @@ use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
 use itertools::{Itertools, chain};
-use salsa::Database;
+use salsa::{Database, par_map};
 
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
@@ -109,12 +109,9 @@ pub fn compile_prepared_db<'db>(
 ) -> Result<Vec<ContractClass>> {
     compiler_config.diagnostics_reporter.ensure(db)?;
 
-    contracts
-        .iter()
-        .map(|contract| {
-            compile_contract_with_prepared_and_checked_db(db, contract, &compiler_config)
-        })
-        .try_collect()
+    par_map(db, contracts, |db, contract| {
+        compile_contract_with_prepared_and_checked_db(db, contract, &compiler_config)
+    })
 }
 
 /// Compile declared Starknet contract.
