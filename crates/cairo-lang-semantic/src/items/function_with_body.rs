@@ -23,145 +23,11 @@ use crate::items::trt::TraitSemantic;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::{Arenas, ExprId, PatternId, SemanticDiagnostic, TypeId, semantic};
 
-// === Declaration ===
-
-// --- Selectors ---
-
-/// Implementation of [FunctionWithBodySemantic::function_declaration_diagnostics].
-fn function_declaration_diagnostics<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    match function_id {
-        FunctionWithBodyId::Free(id) => db.free_function_declaration_diagnostics(id),
-        FunctionWithBodyId::Impl(id) => db.impl_function_declaration_diagnostics(id),
-        FunctionWithBodyId::Trait(trait_function_id) => {
-            db.trait_function_declaration_diagnostics(trait_function_id)
-        }
-    }
-}
-
-/// Query implementation of [FunctionWithBodySemantic::function_declaration_diagnostics].
-fn function_declaration_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    function_declaration_diagnostics_helper(db, (), function_id)
-}
-
+/// Query implementation of [FunctionWithBodySemantic::function_with_body_generic_params].
 #[salsa::tracked]
-fn function_declaration_diagnostics_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    function_declaration_diagnostics(db, function_id)
-}
-
-/// Implementation of [FunctionWithBodySemantic::function_declaration_inline_config].
-fn function_declaration_inline_config<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<InlineConfiguration<'db>> {
-    match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            db.free_function_declaration_inline_config(free_function_id)
-        }
-        FunctionWithBodyId::Impl(impl_function_id) => {
-            db.impl_function_declaration_inline_config(impl_function_id)
-        }
-        FunctionWithBodyId::Trait(trait_function_id) => {
-            db.trait_function_declaration_inline_config(trait_function_id)
-        }
-    }
-}
-
-/// Query implementation of [FunctionWithBodySemantic::function_declaration_inline_config].
-fn function_declaration_inline_config_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<InlineConfiguration<'db>> {
-    function_declaration_inline_config_helper(db, (), function_id)
-}
-
-#[salsa::tracked]
-fn function_declaration_inline_config_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<InlineConfiguration<'db>> {
-    function_declaration_inline_config(db, function_id)
-}
-
-/// Implementation of [FunctionWithBodySemantic::function_declaration_implicit_precedence].
-fn function_declaration_implicit_precedence<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<ImplicitPrecedence<'db>> {
-    match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            db.free_function_declaration_implicit_precedence(free_function_id)
-        }
-        FunctionWithBodyId::Impl(impl_function_id) => {
-            db.impl_function_declaration_implicit_precedence(impl_function_id)
-        }
-        FunctionWithBodyId::Trait(trait_function_id) => {
-            db.trait_function_declaration_implicit_precedence(trait_function_id)
-        }
-    }
-}
-
-/// Query implementation of [FunctionWithBodySemantic::function_declaration_implicit_precedence].
-fn function_declaration_implicit_precedence_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<ImplicitPrecedence<'db>> {
-    function_declaration_implicit_precedence_helper(db, (), function_id)
-}
-
-#[salsa::tracked]
-fn function_declaration_implicit_precedence_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<ImplicitPrecedence<'db>> {
-    function_declaration_implicit_precedence(db, function_id)
-}
-
-/// Implementation of [FunctionWithBodySemantic::function_with_body_signature].
-fn function_with_body_signature<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    match function_id {
-        FunctionWithBodyId::Free(free_function_id) => db.free_function_signature(free_function_id),
-        FunctionWithBodyId::Impl(impl_function_id) => db.impl_function_signature(impl_function_id),
-        FunctionWithBodyId::Trait(trait_function_id) => {
-            db.trait_function_signature(trait_function_id)
-        }
-    }
-}
-
-/// Query implementation of [FunctionWithBodySemantic::function_with_body_signature].
-fn function_with_body_signature_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    function_with_body_signature_helper(db, (), function_id)
-}
-
-#[salsa::tracked]
-fn function_with_body_signature_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    function_with_body_signature(db, function_id)
-}
-
-/// Implementation of [FunctionWithBodySemantic::function_with_body_generic_params].
 fn function_with_body_generic_params<'db>(
     db: &'db dyn Database,
+    _tracked: Tracked,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
     match function_id {
@@ -180,54 +46,6 @@ fn function_with_body_generic_params<'db>(
         }
     }
 }
-
-/// Query implementation of [FunctionWithBodySemantic::function_with_body_generic_params].
-fn function_with_body_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    function_with_body_generic_params_helper(db, (), function_id)
-}
-
-#[salsa::tracked]
-fn function_with_body_generic_params_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    function_with_body_generic_params(db, function_id)
-}
-
-/// Implementation of [FunctionWithBodySemantic::function_with_body_attributes].
-fn function_with_body_attributes<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    match function_id {
-        FunctionWithBodyId::Free(id) => db.free_function_attributes(id),
-        FunctionWithBodyId::Impl(id) => db.impl_function_attributes(id),
-        FunctionWithBodyId::Trait(id) => db.trait_function_attributes(id),
-    }
-}
-
-/// Query implementation of [FunctionWithBodySemantic::function_with_body_attributes].
-fn function_with_body_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    function_with_body_attributes_helper(db, (), function_id)
-}
-
-#[salsa::tracked]
-fn function_with_body_attributes_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    function_with_body_attributes(db, function_id)
-}
-
-// === Body ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn Database)]
@@ -279,115 +97,6 @@ unsafe impl<'db> salsa::Update for FunctionBody<'db> {
 
         false
     }
-}
-
-// --- Selectors ---
-
-/// Implementation of [FunctionWithBodySemantic::function_body_diagnostics].
-fn function_body_diagnostics<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    match function_id {
-        FunctionWithBodyId::Free(id) => db.free_function_body_diagnostics(id),
-        FunctionWithBodyId::Impl(id) => db.impl_function_body_diagnostics(id),
-        FunctionWithBodyId::Trait(id) => db.trait_function_body_diagnostics(id),
-    }
-}
-
-/// Query implementation of [FunctionWithBodySemantic::function_body_diagnostics].
-fn function_body_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    function_body_diagnostics_helper(db, (), function_id)
-}
-
-#[salsa::tracked]
-
-fn function_body_diagnostics_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    function_body_diagnostics(db, function_id)
-}
-
-/// Implementation of FunctionWithBodySemantic::function_body_expr.
-fn function_body_expr<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<semantic::ExprId> {
-    Ok(db.function_body(function_id)?.body_expr)
-}
-
-#[salsa::tracked]
-fn function_body_expr_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<semantic::ExprId> {
-    function_body_expr(db, function_id)
-}
-
-/// Implementation of [FunctionWithBodySemantic::function_body].
-fn function_body<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Arc<FunctionBody<'db>>> {
-    Ok(match function_id {
-        FunctionWithBodyId::Free(id) => db.priv_free_function_body_data(id)?.body.clone(),
-        FunctionWithBodyId::Impl(id) => db.priv_impl_function_body_data(id)?.body.clone(),
-        FunctionWithBodyId::Trait(id) => {
-            db.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?.body.clone()
-        }
-    })
-}
-
-/// Query implementation of [FunctionWithBodySemantic::function_body].
-fn function_body_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Arc<FunctionBody<'db>>> {
-    function_body_helper(db, (), function_id)
-}
-
-#[salsa::tracked]
-fn function_body_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_id: FunctionWithBodyId<'db>,
-) -> Maybe<Arc<FunctionBody<'db>>> {
-    function_body(db, function_id)
-}
-
-// =========================================================
-
-/// Query implementation of FunctionWithBodySemantic::expr_semantic.
-fn expr_semantic<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-    id: semantic::ExprId,
-) -> semantic::Expr<'db> {
-    db.function_body(function_id).unwrap().arenas.exprs.get(id).unwrap().clone()
-}
-
-/// Query implementation of FunctionWithBodySemantic::pattern_semantic.
-fn pattern_semantic<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-    id: semantic::PatternId,
-) -> semantic::Pattern<'db> {
-    db.function_body(function_id).unwrap().arenas.patterns.get(id).unwrap().clone()
-}
-
-/// Query implementation of FunctionWithBodySemantic::statement_semantic.
-fn statement_semantic<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionWithBodyId<'db>,
-    id: semantic::StatementId,
-) -> semantic::Statement<'db> {
-    db.function_body(function_id).unwrap().arenas.statements.get(id).unwrap().clone()
 }
 
 pub trait SemanticExprLookup<'db>: Database {
@@ -546,63 +255,95 @@ pub trait FunctionWithBodySemantic<'db>: Database {
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        function_declaration_diagnostics_tracked(self.as_dyn_database(), function_id)
+        match function_id {
+            FunctionWithBodyId::Free(id) => self.free_function_declaration_diagnostics(id),
+            FunctionWithBodyId::Impl(id) => self.impl_function_declaration_diagnostics(id),
+            FunctionWithBodyId::Trait(id) => self.trait_function_declaration_diagnostics(id),
+        }
     }
     /// Returns the inline configuration of a declaration (signature) of a function with a body.
     fn function_declaration_inline_config(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<InlineConfiguration<'db>> {
-        function_declaration_inline_config_tracked(self.as_dyn_database(), function_id)
+        match function_id {
+            FunctionWithBodyId::Free(id) => self.free_function_declaration_inline_config(id),
+            FunctionWithBodyId::Impl(id) => self.impl_function_declaration_inline_config(id),
+            FunctionWithBodyId::Trait(id) => self.trait_function_declaration_inline_config(id),
+        }
     }
     /// Returns the implicit order of a declaration (signature) of a function with a body.
     fn function_declaration_implicit_precedence(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<ImplicitPrecedence<'db>> {
-        function_declaration_implicit_precedence_tracked(self.as_dyn_database(), function_id)
+        match function_id {
+            FunctionWithBodyId::Free(id) => self.free_function_declaration_implicit_precedence(id),
+            FunctionWithBodyId::Impl(id) => self.impl_function_declaration_implicit_precedence(id),
+            FunctionWithBodyId::Trait(id) => {
+                self.trait_function_declaration_implicit_precedence(id)
+            }
+        }
     }
     /// Returns the signature of a function with a body.
     fn function_with_body_signature(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<semantic::Signature<'db>> {
-        function_with_body_signature_tracked(self.as_dyn_database(), function_id)
+        match function_id {
+            FunctionWithBodyId::Free(id) => self.free_function_signature(id),
+            FunctionWithBodyId::Impl(id) => self.impl_function_signature(id),
+            FunctionWithBodyId::Trait(id) => self.trait_function_signature(id),
+        }
     }
     /// Returns all the available generic params inside a function body.
     fn function_with_body_generic_params(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-        function_with_body_generic_params_tracked(self.as_dyn_database(), function_id)
+        function_with_body_generic_params(self.as_dyn_database(), (), function_id)
     }
     /// Returns the attributes of a function with a body.
     fn function_with_body_attributes(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<Vec<Attribute<'db>>> {
-        function_with_body_attributes_tracked(self.as_dyn_database(), function_id)
+        match function_id {
+            FunctionWithBodyId::Free(id) => self.free_function_attributes(id),
+            FunctionWithBodyId::Impl(id) => self.impl_function_attributes(id),
+            FunctionWithBodyId::Trait(id) => self.trait_function_attributes(id),
+        }
     }
     /// Returns the semantic diagnostics of a body of a function (with a body).
     fn function_body_diagnostics(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        function_body_diagnostics_tracked(self.as_dyn_database(), function_id)
+        match function_id {
+            FunctionWithBodyId::Free(id) => self.free_function_body_diagnostics(id),
+            FunctionWithBodyId::Impl(id) => self.impl_function_body_diagnostics(id),
+            FunctionWithBodyId::Trait(id) => self.trait_function_body_diagnostics(id),
+        }
     }
     /// Returns the body of a function (with a body).
     fn function_body(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<Arc<FunctionBody<'db>>> {
-        function_body_tracked(self.as_dyn_database(), function_id)
+        Ok(match function_id {
+            FunctionWithBodyId::Free(id) => self.priv_free_function_body_data(id)?.body.clone(),
+            FunctionWithBodyId::Impl(id) => self.priv_impl_function_body_data(id)?.body.clone(),
+            FunctionWithBodyId::Trait(id) => {
+                self.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?.body.clone()
+            }
+        })
     }
     /// Returns the body expr of a function (with a body).
     fn function_body_expr(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
     ) -> Maybe<semantic::ExprId> {
-        function_body_expr(self.as_dyn_database(), function_id)
+        Ok(self.function_body(function_id)?.body_expr)
     }
     /// Assumes function and expression are present.
     fn expr_semantic(
@@ -610,7 +351,7 @@ pub trait FunctionWithBodySemantic<'db>: Database {
         function_id: FunctionWithBodyId<'db>,
         id: semantic::ExprId,
     ) -> semantic::Expr<'db> {
-        expr_semantic(self.as_dyn_database(), function_id, id)
+        self.function_body(function_id).unwrap().arenas.exprs.get(id).unwrap().clone()
     }
     /// Assumes function and statement are valid.
     fn statement_semantic(
@@ -618,7 +359,7 @@ pub trait FunctionWithBodySemantic<'db>: Database {
         function_id: FunctionWithBodyId<'db>,
         id: semantic::StatementId,
     ) -> semantic::Statement<'db> {
-        statement_semantic(self.as_dyn_database(), function_id, id)
+        self.function_body(function_id).unwrap().arenas.statements.get(id).unwrap().clone()
     }
     /// Assumes function and pattern are present.
     fn pattern_semantic(
@@ -626,7 +367,7 @@ pub trait FunctionWithBodySemantic<'db>: Database {
         function_id: FunctionWithBodyId<'db>,
         id: semantic::PatternId,
     ) -> semantic::Pattern<'db> {
-        pattern_semantic(self.as_dyn_database(), function_id, id)
+        self.function_body(function_id).unwrap().arenas.patterns.get(id).unwrap().clone()
     }
 }
 impl<'db, T: Database + ?Sized> FunctionWithBodySemantic<'db> for T {}
