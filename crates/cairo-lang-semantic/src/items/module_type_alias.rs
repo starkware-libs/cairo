@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, ModuleItemId, ModuleTypeAliasId};
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use salsa::Database;
 
@@ -17,118 +17,15 @@ use crate::{GenericParam, SemanticDiagnostic, TypeId};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ModuleTypeAliasData<'db> {
-    pub type_alias_data: TypeAliasData<'db>,
+struct ModuleTypeAliasData<'db> {
+    type_alias_data: TypeAliasData<'db>,
     /// The diagnostics of the module type alias, including the ones for the type alias itself.
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-// --- Selectors ---
-
-/// Implementation of [ModuleTypeAliasSemantic::module_type_alias_semantic_diagnostics].
-fn module_type_alias_semantic_diagnostics<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_module_type_alias_semantic_data(module_type_alias_id, false)
-        .map(|data| data.diagnostics)
-        .unwrap_or_default()
-}
-
-/// Query implementation of [ModuleTypeAliasSemantic::module_type_alias_semantic_diagnostics].
-#[salsa::tracked]
-fn module_type_alias_semantic_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    module_type_alias_semantic_diagnostics(db, module_type_alias_id)
-}
-
-/// Implementation of [ModuleTypeAliasSemantic::module_type_alias_resolved_type].
-fn module_type_alias_resolved_type<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<TypeId<'db>> {
-    db.priv_module_type_alias_semantic_data(module_type_alias_id, false)?
-        .type_alias_data
-        .resolved_type
-}
-
-/// Query implementation of [ModuleTypeAliasSemantic::module_type_alias_resolved_type].
-#[salsa::tracked(cycle_result=module_type_alias_resolved_type_cycle)]
-fn module_type_alias_resolved_type_tracked<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<TypeId<'db>> {
-    module_type_alias_resolved_type(db, module_type_alias_id)
-}
-
-/// Trivial cycle handling for [ModuleTypeAliasSemantic::module_type_alias_resolved_type].
-fn module_type_alias_resolved_type_cycle<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<TypeId<'db>> {
-    // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
-    // handler.
-    db.priv_module_type_alias_semantic_data(module_type_alias_id, true)?
-        .type_alias_data
-        .resolved_type
-}
-
-/// Implementation of [ModuleTypeAliasSemantic::module_type_alias_generic_params].
-fn module_type_alias_generic_params<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    Ok(db.priv_module_type_alias_generic_params_data(module_type_alias_id)?.generic_params)
-}
-
-/// Query implementation of [ModuleTypeAliasSemantic::module_type_alias_generic_params].
-#[salsa::tracked]
-fn module_type_alias_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    module_type_alias_generic_params(db, module_type_alias_id)
-}
-
-/// Implementation of [ModuleTypeAliasSemantic::module_type_alias_resolver_data].
-fn module_type_alias_resolver_data<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db
-        .priv_module_type_alias_semantic_data(module_type_alias_id, false)?
-        .type_alias_data
-        .resolver_data)
-}
-
-/// Query implementation of [ModuleTypeAliasSemantic::module_type_alias_resolver_data].
-#[salsa::tracked(cycle_result=module_type_alias_resolver_data_cycle)]
-fn module_type_alias_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    module_type_alias_resolver_data(db, module_type_alias_id)
-}
-
-/// Trivial cycle handling for [ModuleTypeAliasSemantic::module_type_alias_resolver_data].
-fn module_type_alias_resolver_data_cycle<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    // Forwarding (not as a query) cycle handling to `priv_module_type_alias_semantic_data` cycle
-    // handler.
-    Ok(db
-        .priv_module_type_alias_semantic_data(module_type_alias_id, true)?
-        .type_alias_data
-        .resolver_data)
-}
-
-// --- Computation ---
-
-/// Implementation of [ModuleTypeAliasSemantic::priv_module_type_alias_semantic_data].
-fn priv_module_type_alias_semantic_data<'db>(
+/// Returns the data of a type alias.
+#[salsa::tracked(cycle_result=module_type_alias_semantic_data_cycle, returns(ref))]
+fn module_type_alias_semantic_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
     in_cycle: bool,
@@ -141,7 +38,7 @@ fn priv_module_type_alias_semantic_data<'db>(
     let module_type_aliases = module_id.module_data(db)?.type_aliases(db);
     let module_type_alias_ast = module_type_aliases.get(&module_type_alias_id).to_maybe()?;
     let generic_params_data =
-        db.priv_module_type_alias_generic_params_data(module_type_alias_id)?;
+        module_type_alias_generic_params_data(db, module_type_alias_id).maybe_as_ref()?.clone();
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
     let mut diagnostics = SemanticDiagnostics::default();
@@ -165,27 +62,18 @@ fn priv_module_type_alias_semantic_data<'db>(
     Ok(ModuleTypeAliasData { type_alias_data, diagnostics: diagnostics.build() })
 }
 
-/// Query implementation of [ModuleTypeAliasSemantic::priv_module_type_alias_semantic_data].
-#[salsa::tracked(cycle_result=priv_module_type_alias_semantic_data_cycle)]
-fn priv_module_type_alias_semantic_data_tracked<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-    in_cycle: bool,
-) -> Maybe<ModuleTypeAliasData<'db>> {
-    priv_module_type_alias_semantic_data(db, module_type_alias_id, in_cycle)
-}
-
-/// Cycle handling for [ModuleTypeAliasSemantic::priv_module_type_alias_semantic_data].
-fn priv_module_type_alias_semantic_data_cycle<'db>(
+/// Cycle handling for [module_type_alias_semantic_data].
+fn module_type_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData<'db>> {
-    db.priv_module_type_alias_semantic_data(module_type_alias_id, true)
+    module_type_alias_semantic_data(db, module_type_alias_id, true).clone()
 }
 
-/// Implementation of [ModuleTypeAliasSemantic::priv_module_type_alias_generic_params_data].
-fn priv_module_type_alias_generic_params_data<'db>(
+/// Returns the generic parameters data of a type alias.
+#[salsa::tracked(returns(ref))]
+fn module_type_alias_generic_params_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -196,63 +84,49 @@ fn priv_module_type_alias_generic_params_data<'db>(
     type_alias_generic_params_data_helper(db, module_file_id, &type_alias_ast, lookup_item_id, None)
 }
 
-/// Query implementation of [ModuleTypeAliasSemantic::priv_module_type_alias_generic_params_data].
-#[salsa::tracked]
-fn priv_module_type_alias_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    module_type_alias_id: ModuleTypeAliasId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    priv_module_type_alias_generic_params_data(db, module_type_alias_id)
-}
-
 /// Trait for module type alias-related semantic queries.
 pub trait ModuleTypeAliasSemantic<'db>: Database {
     /// Returns the semantic diagnostics of a type alias.
     fn module_type_alias_semantic_diagnostics(
         &'db self,
-        module_type_alias_id: ModuleTypeAliasId<'db>,
+        id: ModuleTypeAliasId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        module_type_alias_semantic_diagnostics_tracked(self.as_dyn_database(), module_type_alias_id)
+        module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the resolved type of a type alias.
     fn module_type_alias_resolved_type(
         &'db self,
-        module_type_alias_id: ModuleTypeAliasId<'db>,
+        id: ModuleTypeAliasId<'db>,
     ) -> Maybe<TypeId<'db>> {
-        module_type_alias_resolved_type_tracked(self.as_dyn_database(), module_type_alias_id)
+        module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .type_alias_data
+            .resolved_type
     }
     /// Returns the generic parameters of a type alias.
     fn module_type_alias_generic_params(
         &'db self,
-        enum_id: ModuleTypeAliasId<'db>,
+        id: ModuleTypeAliasId<'db>,
     ) -> Maybe<Vec<GenericParam<'db>>> {
-        module_type_alias_generic_params_tracked(self.as_dyn_database(), enum_id)
+        Ok(module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .type_alias_data
+            .generic_params
+            .clone())
     }
     /// Returns the resolution resolved_items of a type alias.
     fn module_type_alias_resolver_data(
         &'db self,
-        module_type_alias_id: ModuleTypeAliasId<'db>,
+        id: ModuleTypeAliasId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        module_type_alias_resolver_data_tracked(self.as_dyn_database(), module_type_alias_id)
-    }
-    /// Private query to compute the generic parameters data of a type alias.
-    fn priv_module_type_alias_generic_params_data(
-        &'db self,
-        enum_id: ModuleTypeAliasId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
-        priv_module_type_alias_generic_params_data_tracked(self.as_dyn_database(), enum_id)
-    }
-    /// Private query to compute data about a type alias.
-    fn priv_module_type_alias_semantic_data(
-        &'db self,
-        module_type_alias_id: ModuleTypeAliasId<'db>,
-        in_cycle: bool,
-    ) -> Maybe<ModuleTypeAliasData<'db>> {
-        priv_module_type_alias_semantic_data_tracked(
-            self.as_dyn_database(),
-            module_type_alias_id,
-            in_cycle,
-        )
+        Ok(module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .type_alias_data
+            .resolver_data
+            .clone())
     }
 }
 impl<'db, T: Database + ?Sized> ModuleTypeAliasSemantic<'db> for T {}
