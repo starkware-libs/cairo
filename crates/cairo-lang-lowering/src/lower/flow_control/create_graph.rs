@@ -148,7 +148,7 @@ pub fn create_graph_expr_match<'db>(
                     // If no arm is available, report a non-exhaustive match error.
                     let kind = LoweringDiagnosticKind::MatchError(MatchError {
                         kind: MatchKind::Match,
-                        error: MatchDiagnostic::MissingMatchArm(path),
+                        error: MatchDiagnostic::NonExhaustiveMatch(path),
                     });
                     return graph.report_with_missing_node(expr.stable_ptr.untyped(), kind);
                 };
