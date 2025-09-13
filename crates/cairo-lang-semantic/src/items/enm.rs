@@ -34,7 +34,6 @@ mod test;
 #[debug_db(dyn Database)]
 struct EnumDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    generic_params: Vec<semantic::GenericParam<'db>>,
     attributes: Vec<Attribute<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
@@ -60,22 +59,14 @@ fn enum_declaration_data<'db>(
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
     diagnostics.extend(generic_params_data.diagnostics.clone());
-    let generic_params = generic_params_data.generic_params.clone();
     let attributes = enum_ast.attributes(db).structurize(db);
 
     // Check fully resolved.
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, enum_ast.stable_ptr(db).untyped());
 
-    let generic_params = inference.rewrite(generic_params).no_err();
-
     let resolver_data = Arc::new(resolver.data);
-    Ok(EnumDeclarationData {
-        diagnostics: diagnostics.build(),
-        generic_params,
-        attributes,
-        resolver_data,
-    })
+    Ok(EnumDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data })
 }
 
 /// Returns the generic parameters data of an enum.
@@ -306,7 +297,7 @@ pub trait EnumSemantic<'db>: Database {
     /// Returns the generic parameters of an enum.
     fn enum_generic_params(&'db self, enum_id: EnumId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
         let db = self.as_dyn_database();
-        Ok(enum_declaration_data(db, enum_id).maybe_as_ref()?.generic_params.clone())
+        Ok(enum_generic_params_data(db, enum_id).maybe_as_ref()?.generic_params.clone())
     }
     /// Returns the attributes attached to an enum.
     fn enum_attributes(&'db self, enum_id: EnumId<'db>) -> Maybe<Vec<Attribute<'db>>> {

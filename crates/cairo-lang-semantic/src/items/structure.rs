@@ -33,7 +33,6 @@ mod test;
 #[debug_db(dyn Database)]
 struct StructDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    generic_params: Vec<semantic::GenericParam<'db>>,
     attributes: Vec<Attribute<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
@@ -53,7 +52,6 @@ fn struct_declaration_data<'db>(
 
     // Generic params.
     let generic_params_data = struct_generic_params_data(db, struct_id).maybe_as_ref()?;
-    let generic_params = generic_params_data.generic_params.clone();
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::Struct(struct_id),
     ));
@@ -69,14 +67,8 @@ fn struct_declaration_data<'db>(
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, struct_ast.stable_ptr(db).untyped());
 
-    let generic_params = inference.rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(StructDeclarationData {
-        diagnostics: diagnostics.build(),
-        generic_params,
-        attributes,
-        resolver_data,
-    })
+    Ok(StructDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data })
 }
 
 /// Query implementation of [StructSemantic::struct_generic_params_data].
@@ -253,7 +245,7 @@ pub trait StructSemantic<'db>: Database {
     /// Returns the generic parameters of a struct.
     fn struct_generic_params(&'db self, struct_id: StructId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
         let db = self.as_dyn_database();
-        Ok(struct_declaration_data(db, struct_id).maybe_as_ref()?.generic_params.clone())
+        Ok(struct_generic_params_data(db, struct_id).maybe_as_ref()?.generic_params.clone())
     }
     /// Returns the attributes attached to a struct.
     fn struct_attributes(&'db self, struct_id: StructId<'db>) -> Maybe<Vec<Attribute<'db>>> {

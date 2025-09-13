@@ -28,7 +28,6 @@ use crate::{GenericParam, SemanticDiagnostic};
 pub struct ImplAliasData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     pub resolved_impl: Maybe<ImplId<'db>>,
-    generic_params: Vec<GenericParam<'db>>,
     attributes: Vec<Attribute<'db>>,
     pub resolver_data: Arc<ResolverData<'db>>,
 }
@@ -93,17 +92,10 @@ pub fn impl_alias_semantic_data_helper<'db>(
     inference.finalize(&mut diagnostics, impl_alias_ast.stable_ptr(db).untyped());
 
     let resolved_impl = inference.rewrite(resolved_impl).no_err();
-    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
 
     let attributes = impl_alias_ast.attributes(db).structurize(db);
     let resolver_data = Arc::new(resolver.data);
-    Ok(ImplAliasData {
-        diagnostics: diagnostics.build(),
-        resolved_impl,
-        generic_params,
-        attributes,
-        resolver_data,
-    })
+    Ok(ImplAliasData { diagnostics: diagnostics.build(), resolved_impl, attributes, resolver_data })
 }
 
 fn impl_alias_semantic_data_cycle<'db>(
@@ -127,14 +119,12 @@ pub fn impl_alias_semantic_data_cycle_helper<'db>(
     // the item instead of all the module data.
     // TODO(spapini): Add generic args when they are supported on structs.
     let err = Err(diagnostics.report(impl_alias_ast.name(db).stable_ptr(db), ImplAliasCycle));
-    let generic_params = generic_params_data.generic_params.clone();
     diagnostics.extend(generic_params_data.diagnostics);
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let attributes = impl_alias_ast.attributes(db).structurize(db);
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl: err,
-        generic_params,
         attributes,
         resolver_data: (*generic_params_data.resolver_data)
             .clone_with_inference_id(db, inference_id)
@@ -256,7 +246,7 @@ pub trait ImplAliasSemantic<'db>: Database {
     }
     /// Returns the generic parameters of a type alias.
     fn impl_alias_generic_params(&'db self, id: ImplAliasId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(impl_alias_semantic_data(self.as_dyn_database(), id, false)
+        Ok(impl_alias_generic_params_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .generic_params
             .clone())

@@ -974,7 +974,6 @@ pub struct FunctionDeclarationData<'db> {
     pub signature: semantic::Signature<'db>,
     /// The environment induced by the function's signature.
     pub environment: Environment<'db>,
-    pub generic_params: Vec<semantic::GenericParam<'db>>,
     pub attributes: Vec<Attribute<'db>>,
     pub resolver_data: Arc<ResolverData<'db>>,
     pub inline_config: InlineConfiguration<'db>,

@@ -218,7 +218,6 @@ fn priv_extern_function_declaration_data<'db>(
     // Generic params.
     let generic_params_data =
         db.extern_function_declaration_generic_params_data(extern_function_id)?;
-    let generic_params = generic_params_data.generic_params;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::ExternFunction(extern_function_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
@@ -270,13 +269,11 @@ fn priv_extern_function_declaration_data<'db>(
     inference.finalize(&mut diagnostics, extern_function_syntax.stable_ptr(db).untyped());
 
     let signature = inference.rewrite(signature).no_err();
-    let generic_params = inference.rewrite(generic_params).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         environment,
-        generic_params,
         attributes,
         resolver_data: Arc::new(resolver.data),
         inline_config,
