@@ -6,11 +6,13 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::Intern;
 use itertools::zip_eq;
 
-use super::block_builder::{BlockBuilder, SealedBlockBuilder};
-use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, VarRequest};
+use super::block_builder::BlockBuilder;
+use super::context::{LoweringContext, LoweringFlowError, VarRequest};
+use super::flow_control::create_graph::create_graph_expr_let_else;
+use super::flow_control::lower_graph::lower_graph;
 use super::generators;
-use super::lower_match::{MatchArmWrapper, lower_match_arms};
-use crate::diagnostic::MatchKind;
+use crate::VarUsage;
+use crate::ids::LocationId;
 
 /// Lowers a let-else statement.
 ///
@@ -34,35 +36,21 @@ pub fn lower_let_else<'db>(
     builder: &mut BlockBuilder<'db>,
     pattern_id: PatternId,
     expr: ExprId,
-    lowered_expr: LoweredExpr<'db>,
     else_clause: ExprId,
     stable_ptr: &StatementPtr<'db>,
 ) -> Result<(), LoweringFlowError<'db>> {
-    let pattern = ctx.function_body.arenas.patterns[pattern_id].clone();
+    let pattern = &ctx.function_body.arenas.patterns[pattern_id];
     let variables = pattern.variables(&ctx.function_body.arenas.patterns);
 
-    // Create a match expression with two arms.
-    let patterns = &[pattern_id];
+    // Create a list of the variables in the pattern, and their stable pointers.
     let var_ids_and_stable_ptrs = variables
         .iter()
         .map(|pattern_var| (VarId::Local(pattern_var.var.id), pattern_var.stable_ptr.untyped()))
         .collect();
-    let arms = vec![
-        MatchArmWrapper::LetElseSuccess(patterns, var_ids_and_stable_ptrs, stable_ptr.untyped()),
-        MatchArmWrapper::ElseClause(else_clause),
-    ];
 
-    // Lower the match expression.
-    // The result is a tuple with the values of the pattern's variables.
-    let match_lowered = lower_match_arms(
-        ctx,
-        builder,
-        expr,
-        lowered_expr,
-        arms,
-        ctx.get_location(stable_ptr.untyped()),
-        MatchKind::Match,
-    )?;
+    let graph =
+        create_graph_expr_let_else(ctx, pattern_id, expr, else_clause, var_ids_and_stable_ptrs);
+    let lowered_expr = lower_graph(ctx, builder, &graph, ctx.get_location(stable_ptr.untyped()))?;
 
     // Destruct the tuple.
     let reqs = variables
@@ -73,7 +61,7 @@ pub fn lower_let_else<'db>(
         })
         .collect();
     let output_vars = generators::StructDestructure {
-        input: match_lowered.as_var_usage(ctx, builder)?,
+        input: lowered_expr.as_var_usage(ctx, builder)?,
         var_reqs: reqs,
     }
     .add(ctx, &mut builder.statements);
@@ -98,8 +86,8 @@ pub fn lower_success_arm_body<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     mut builder: BlockBuilder<'db>,
     vars: &[(VarId<'db>, SyntaxStablePtrId<'db>)],
-    stable_ptr: &SyntaxStablePtrId<'db>,
-) -> SealedBlockBuilder<'db> {
+    location: LocationId<'db>,
+) -> (BlockBuilder<'db>, VarUsage<'db>) {
     log::trace!("Lowering success arm body");
 
     let inputs: Vec<_> = vars
@@ -119,12 +107,8 @@ pub fn lower_success_arm_body<'db>(
 
     let tys = inputs.iter().map(|var_usage| ctx.variables[var_usage.var_id].ty).collect();
     let tuple_ty = TypeLongId::Tuple(tys).intern(ctx.db);
-    let tuple_var_usage = generators::StructConstruct {
-        inputs,
-        ty: tuple_ty,
-        location: ctx.get_location(*stable_ptr),
-    }
-    .add(ctx, &mut builder.statements);
+    let tuple_var_usage = generators::StructConstruct { inputs, ty: tuple_ty, location }
+        .add(ctx, &mut builder.statements);
 
-    builder.goto_callsite(Some(tuple_var_usage))
+    (builder, tuple_var_usage)
 }
