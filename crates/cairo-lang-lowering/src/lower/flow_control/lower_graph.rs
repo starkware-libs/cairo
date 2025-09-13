@@ -12,7 +12,7 @@ use crate::lower::context::{
     LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, handle_lowering_flow_error,
 };
 use crate::lower::lowered_expr_to_block_scope_end;
-use crate::{BlockEnd, BlockId, MatchInfo, VarUsage};
+use crate::{BlockEnd, BlockId, MatchInfo, VarUsage, VariableId};
 
 mod lower_node;
 
@@ -74,8 +74,8 @@ struct LowerGraphContext<'db, 'mt, 'a> {
     /// A list of sealed blocks for the arms (excluding the arms that do not continue to the
     /// callsite).
     sealed_blocks: Vec<SealedGotoCallsite<'db>>,
-    /// A map from [FlowControlVar] to [VarUsage].
-    vars: UnorderedHashMap<FlowControlVar, VarUsage<'db>>,
+    /// A map from [FlowControlVar] to [VariableId].
+    vars: UnorderedHashMap<FlowControlVar, VariableId>,
     /// The first node (starting from the root) that does not pass its block builder directly to
     /// the child node (see [Self::pass_builder_to_child]).
     /// The block builder of this node is the original block builder.
@@ -172,11 +172,19 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
     /// This function is called when lowering the node creating the [FlowControlVar].
     /// Later, when the [FlowControlVar] is used in another node, [Self::vars] is used to get the
     /// [VarUsage].
-    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: VarUsage<'db>) {
+    fn register_var(&mut self, var_id: FlowControlVar, lowered_var: VariableId) {
         assert!(
             self.vars.insert(var_id, lowered_var).is_none(),
             "Variable {var_id:?} was already registered.",
         );
+    }
+
+    /// Returns the [VarUsage] of the given [FlowControlVar].
+    ///
+    /// Note that the usage location of [FlowControlVar]s is identical to the location of their
+    /// definition.
+    fn var_usage(&self, var: FlowControlVar) -> VarUsage<'db> {
+        VarUsage { var_id: self.vars[&var], location: var.location(self.graph) }
     }
 
     // Finalization functions.
