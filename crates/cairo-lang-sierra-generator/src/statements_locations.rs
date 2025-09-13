@@ -8,7 +8,7 @@ use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
-use salsa::Database;
+use salsa::{Database, par_map};
 
 use crate::statements_code_locations::{
     SourceCodeLocation, SourceCodeSpan, SourceFileFullPath, StatementsSourceCodeLocations,
@@ -212,10 +212,10 @@ impl<'db> StatementsLocations<'db> {
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations] and [DefsGroup].
     pub fn extract_statements_functions(&self, db: &dyn Database) -> StatementsFunctions {
         StatementsFunctions {
-            statements_to_functions_map: self
-                .locations
-                .iter_sorted()
-                .map(|(statement_idx, stable_locations)| {
+            statements_to_functions_map: par_map(
+                db,
+                self.locations.iter_sorted().collect_vec(),
+                |db, (statement_idx, stable_locations)| {
                     (
                         *statement_idx,
                         stable_locations
@@ -223,8 +223,8 @@ impl<'db> StatementsLocations<'db> {
                             .filter_map(|s| maybe_containing_function_identifier(db, *s))
                             .collect(),
                     )
-                })
-                .collect(),
+                },
+            ),
         }
     }
 
@@ -235,10 +235,10 @@ impl<'db> StatementsLocations<'db> {
         db: &dyn Database,
     ) -> StatementsSourceCodeLocations {
         StatementsSourceCodeLocations {
-            statements_to_code_location_map: self
-                .locations
-                .iter_sorted()
-                .map(|(statement_idx, stable_locations)| {
+            statements_to_code_location_map: par_map(
+                db,
+                self.locations.iter_sorted().collect_vec(),
+                |db, (statement_idx, stable_locations)| {
                     (
                         *statement_idx,
                         stable_locations
@@ -246,8 +246,8 @@ impl<'db> StatementsLocations<'db> {
                             .filter_map(|s| maybe_code_location(db, *s))
                             .collect(),
                     )
-                })
-                .collect(),
+                },
+            ),
         }
     }
 
