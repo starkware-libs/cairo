@@ -1413,7 +1413,7 @@ Root: 9
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `MyStruct{a: Some(None(_)), b: (Some(_), _, _)}` not covered.
+error: Match is non-exhaustive: `MyStruct{a: Some(None(_)), b: (Some(_), _, _)}` not covered.
  --> lib.cairo:6:5-9:5
       match x {
  _____^
@@ -1542,7 +1542,7 @@ Root: 1
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `_` not covered.
+error: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:2:5
     match x {}
     ^^^^^^^^^^
@@ -1604,7 +1604,7 @@ Root: 1
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `_` not covered.
+error: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:5:5
     match x {}
     ^^^^^^^^^^
