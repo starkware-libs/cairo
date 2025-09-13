@@ -24,7 +24,6 @@ use super::context::{
     LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError, LoweringResult,
     handle_lowering_flow_error,
 };
-use super::lower_if::{ConditionedExpr, lower_conditioned_expr_and_seal};
 use super::{
     alloc_empty_block, generators, lower_expr_block, lower_tail_expr,
     lowered_expr_to_block_scope_end, recursively_call_loop_func,
@@ -52,32 +51,25 @@ struct ExtractedEnumDetails<'db> {
 /// A wrapper enum to provide a unified interface for handling different types of match arms
 /// during the lowering phase of the compiler, allowing for consistent pattern matching
 /// and expression evaluation across different match-like constructs.
-pub enum MatchArmWrapper<'db, 'a> {
+pub enum MatchArmWrapper<'a> {
     /// A match arm. Patterns (non-empty) guard the expression to evaluate.
     Arm(&'a [PatternId], semantic::ExprId),
-    /// Else clause (no patterns) and it's expression to evaluate (if-let).
-    ElseClause(semantic::ExprId),
     /// Default clause when else clause is not provided (if-let/while-let).
     DefaultClause,
-    /// Similar to [Self::Arm], except that the expression is a conditioned expression
-    /// (see [ConditionedExpr]).
-    ConditionedArm(&'a [PatternId], ConditionedExpr<'db, 'a>),
 }
 
-impl<'db, 'a> From<&'a semantic::MatchArm> for MatchArmWrapper<'db, 'a> {
+impl<'a> From<&'a semantic::MatchArm> for MatchArmWrapper<'a> {
     fn from(arm: &'a semantic::MatchArm) -> Self {
         MatchArmWrapper::Arm(&arm.patterns, arm.expression)
     }
 }
 
-impl<'db> MatchArmWrapper<'db, '_> {
+impl<'db> MatchArmWrapper<'_> {
     /// Returns the patterns of the match arm.
     pub fn patterns(&self) -> Option<&[PatternId]> {
         match self {
-            MatchArmWrapper::Arm(patterns, _) | MatchArmWrapper::ConditionedArm(patterns, _) => {
-                Some(patterns)
-            }
-            MatchArmWrapper::ElseClause(_) | MatchArmWrapper::DefaultClause => None,
+            MatchArmWrapper::Arm(patterns, _) => Some(patterns),
+            MatchArmWrapper::DefaultClause => None,
         }
     }
 
@@ -164,7 +156,7 @@ struct PatternPath {
 /// Returns an option containing the PatternPath of the underscore pattern, if it exists.
 fn get_underscore_pattern_path_and_mark_unreachable<'db>(
     ctx: &mut LoweringContext<'db, '_>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     match_type: MatchKind<'db>,
 ) -> Option<PatternPath> {
     let otherwise_variant = arms
@@ -189,7 +181,7 @@ fn get_underscore_pattern_path_and_mark_unreachable<'db>(
 
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
         match arm {
-            MatchArmWrapper::Arm(patterns, _) | MatchArmWrapper::ConditionedArm(patterns, _) => {
+            MatchArmWrapper::Arm(patterns, _) => {
                 for pattern in *patterns {
                     let pattern_ptr = ctx.function_body.arenas.patterns[*pattern].stable_ptr();
                     ctx.diagnostics.report(
@@ -202,16 +194,6 @@ fn get_underscore_pattern_path_and_mark_unreachable<'db>(
                 }
             }
             MatchArmWrapper::DefaultClause => continue,
-            MatchArmWrapper::ElseClause(e) => {
-                let expr_ptr = ctx.function_body.arenas.exprs[*e].stable_ptr();
-                ctx.diagnostics.report(
-                    expr_ptr,
-                    MatchError(MatchError {
-                        kind: match_type,
-                        error: MatchDiagnostic::UnreachableMatchArm,
-                    }),
-                );
-            }
         }
     }
 
@@ -594,7 +576,7 @@ fn insert_tuple_path_patterns<'db>(
 /// Returns a map from a matching paths to their corresponding pattern path in a match statement.
 fn get_variants_to_arm_map_tuple<'db, 'a>(
     ctx: &mut LoweringContext<'db, '_>,
-    arms: impl Iterator<Item = &'a MatchArmWrapper<'db, 'a>>,
+    arms: impl Iterator<Item = &'a MatchArmWrapper<'a>>,
     extracted_enums_details: &[ExtractedEnumDetails<'db>],
     match_type: MatchKind<'db>,
 ) -> LoweringResult<'db, UnorderedHashMap<MatchingPath<'db>, PatternPath>>
@@ -668,7 +650,7 @@ struct LoweringMatchTupleContext<'db> {
 fn lower_tuple_match_arm<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     mut builder: BlockBuilder<'db>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     match_tuple_ctx: &mut LoweringMatchTupleContext<'db>,
     leaves_builders: &mut Vec<MatchLeafBuilder<'db>>,
     match_type: MatchKind<'db>,
@@ -759,7 +741,7 @@ fn lower_tuple_match_arm<'db>(
 fn lower_full_match_tree<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     match_tuple_ctx: &mut LoweringMatchTupleContext<'db>,
     extracted_enums_details: &[ExtractedEnumDetails<'db>],
     leaves_builders: &mut Vec<MatchLeafBuilder<'db>>,
@@ -849,7 +831,7 @@ pub(crate) fn lower_expr_match_tuple<'db>(
     expr: LoweredExpr<'db>,
     matched_expr: semantic::ExprId,
     tuple_info: &TupleInfo<'db>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     match_type: MatchKind<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     let location = expr.location();
@@ -952,7 +934,7 @@ pub(crate) fn lower_match_arms<'db>(
     builder: &mut BlockBuilder<'db>,
     matched_expr: semantic::ExprId,
     lowered_expr: LoweredExpr<'db>,
-    arms: Vec<MatchArmWrapper<'db, '_>>,
+    arms: Vec<MatchArmWrapper<'_>>,
     location: LocationId<'db>,
     match_type: MatchKind<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
@@ -989,7 +971,7 @@ pub(crate) fn lower_concrete_enum_match<'db>(
     builder: &mut BlockBuilder<'db>,
     matched_expr: semantic::ExprId,
     lowered_matched_expr: LoweredExpr<'db>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     location: LocationId<'db>,
     match_type: MatchKind<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
@@ -1030,7 +1012,7 @@ pub(crate) fn lower_optimized_extern_match<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     builder: &mut BlockBuilder<'db>,
     extern_enum: LoweredExprExternEnum<'db>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     match_type: MatchKind<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Started lowering of an optimized extern match.");
@@ -1103,7 +1085,7 @@ trait EnumVariantScopeBuilder<'db> {
     fn build_pattern_tree(
         &self,
         ctx: &mut LoweringContext<'db, '_>,
-        arms: &[MatchArmWrapper<'db, '_>],
+        arms: &[MatchArmWrapper<'_>],
         concrete_enum_id: semantic::ConcreteEnumId<'db>,
         match_type: MatchKind<'db>,
     ) -> LoweringResult<'db, PatternTree<'db>> {
@@ -1139,20 +1121,7 @@ trait EnumVariantScopeBuilder<'db> {
                     );
                     continue;
                 }
-                MatchArmWrapper::ElseClause(e) => {
-                    let ptr = ctx.function_body.arenas.exprs[*e].stable_ptr();
-                    try_push(
-                        ctx,
-                        match_type,
-                        ptr,
-                        PatternPath { arm_index, pattern_index: None },
-                        &mut pattern_tree,
-                        None,
-                    );
-                    continue;
-                }
-                MatchArmWrapper::Arm(patterns, _)
-                | MatchArmWrapper::ConditionedArm(patterns, _) => patterns,
+                MatchArmWrapper::Arm(patterns, _) => patterns,
             };
             for (pattern_index, pattern) in patterns.iter().copied().enumerate() {
                 let pattern_path = PatternPath { arm_index, pattern_index: Some(pattern_index) };
@@ -1343,10 +1312,7 @@ trait EnumVariantScopeBuilder<'db> {
         if concrete_variants.is_empty() {
             for arm in builder_context.arms {
                 match arm {
-                    MatchArmWrapper::Arm(_, expr) |
-                    MatchArmWrapper::ConditionedArm(_, ConditionedExpr{expr, ..}) |
-                    // Should actually never happen, as we can't if-let, but careful anyway.
-                    MatchArmWrapper::ElseClause(expr) => {
+                    MatchArmWrapper::Arm(_, expr) => {
                         ctx.diagnostics.report(
                             ctx.function_body.arenas.exprs[*expr].stable_ptr(),
                             MatchError(MatchError {
@@ -1354,7 +1320,7 @@ trait EnumVariantScopeBuilder<'db> {
                                 error: MatchDiagnostic::UnreachableMatchArm,
                             }),
                         );
-                    },
+                    }
                     MatchArmWrapper::DefaultClause => (),
                 }
             }
@@ -1621,7 +1587,7 @@ struct MatchArmsLoweringContext<'db, 'a> {
     /// The match kind.
     kind: MatchKind<'db>,
     /// The match arms to lower.
-    arms: &'a [MatchArmWrapper<'db, 'a>],
+    arms: &'a [MatchArmWrapper<'a>],
     /// Empty match info to be used for lowering match arms.
     empty_match_info: MatchInfo<'db>,
     /// The location of the match expression.
@@ -1633,7 +1599,7 @@ impl<'db, 'a> MatchArmsLoweringContext<'db, 'a> {
     fn new(
         builder: &'a mut BlockBuilder<'db>,
         kind: MatchKind<'db>,
-        match_arms: &'a [MatchArmWrapper<'db, 'a>],
+        match_arms: &'a [MatchArmWrapper<'a>],
         empty_match_info: MatchInfo<'db>,
         location: LocationId<'db>,
     ) -> Self {
@@ -1664,7 +1630,7 @@ fn group_match_arms<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     empty_match_info: &MatchInfo<'db>,
     location: LocationId<'db>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     variants_block_builders: Vec<MatchLeafBuilder<'db>>,
     kind: MatchKind<'db>,
 ) -> LoweringResult<'db, Vec<SealedBlockBuilder<'db>>> {
@@ -1694,7 +1660,7 @@ fn lower_match_arm_expr_and_seal_patterns<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     empty_match_info: &MatchInfo<'db>,
     location: LocationId<'db>,
-    arms: &[MatchArmWrapper<'db, '_>],
+    arms: &[MatchArmWrapper<'_>],
     kind: MatchKind<'db>,
     arm_index: usize,
     group: impl IntoIterator<Item = MatchLeafBuilder<'db>>,
@@ -1753,18 +1719,14 @@ fn lower_match_arm_expr_and_seal_patterns<'db>(
 fn lower_arm_expr_and_seal<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     kind: MatchKind<'db>,
-    arm: &MatchArmWrapper<'db, '_>,
+    arm: &MatchArmWrapper<'_>,
     mut subscope: BlockBuilder<'db>,
 ) -> Maybe<SealedBlockBuilder<'db>> {
     match (arm, kind) {
-        (
-            MatchArmWrapper::Arm(_, expr) | MatchArmWrapper::ElseClause(expr),
-            MatchKind::IfLet | MatchKind::Match,
-        ) => lower_tail_expr(ctx, subscope, *expr),
-        (
-            MatchArmWrapper::Arm(_, expr) | MatchArmWrapper::ElseClause(expr),
-            MatchKind::WhileLet(loop_expr_id, stable_ptr),
-        ) => {
+        (MatchArmWrapper::Arm(_, expr), MatchKind::IfLet | MatchKind::Match) => {
+            lower_tail_expr(ctx, subscope, *expr)
+        }
+        (MatchArmWrapper::Arm(_, expr), MatchKind::WhileLet(loop_expr_id, stable_ptr)) => {
             let semantic::Expr::Block(expr) = ctx.function_body.arenas.exprs[*expr].clone() else {
                 unreachable!("WhileLet expression should be a block");
             };
@@ -1776,9 +1738,6 @@ fn lower_arm_expr_and_seal<'db>(
             lowered_expr_to_block_scope_end(ctx, subscope, block_expr)
         }
         (MatchArmWrapper::DefaultClause, _) => Ok(subscope.goto_callsite(None)),
-        (MatchArmWrapper::ConditionedArm(_, expr), _) => {
-            lower_conditioned_expr_and_seal(ctx, subscope, expr)
-        }
     }
 }
 
