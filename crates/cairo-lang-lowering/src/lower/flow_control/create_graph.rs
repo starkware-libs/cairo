@@ -1,13 +1,14 @@
 use cache::Cache;
-use cairo_lang_semantic::{self as semantic, Condition, PatternId};
+use cairo_lang_semantic::{self as semantic, Condition, ExprId, PatternId};
 use cairo_lang_syntax::node::TypedStablePtr;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use filtered_patterns::IndexAndBindings;
 use itertools::Itertools;
 use patterns::{CreateNodeParams, create_node_for_patterns, get_pattern};
 
 use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
-    NodeId,
+    LetElseSuccess, NodeId,
 };
 use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError, MatchKind};
 use crate::lower::context::LoweringContext;
@@ -171,6 +172,58 @@ pub fn create_graph_expr_match<'db>(
     let root = graph.add_node(FlowControlNode::EvaluateExpr(EvaluateExpr {
         expr: expr.matched_expr,
         var_id: matched_var,
+        next: match_node_id,
+    }));
+
+    graph.finalize(root, ctx)
+}
+
+/// Creates a graph node for a let-else statement.
+///
+/// See [crate::lower::lower_let_else::lower_let_else] for more details.
+pub fn create_graph_expr_let_else<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    pattern: PatternId,
+    expr_id: ExprId,
+    else_clause: ExprId,
+    var_ids_and_stable_ptrs: Vec<(semantic::VarId<'db>, SyntaxStablePtrId<'db>)>,
+) -> FlowControlGraph<'db> {
+    let mut graph = FlowControlGraphBuilder::new(MatchKind::IfLet);
+
+    // Add the `true` branch (the `if` block).
+    let true_branch =
+        graph.add_node(FlowControlNode::LetElseSuccess(LetElseSuccess { var_ids_and_stable_ptrs }));
+
+    // Add the `false` branch (the `else` block), if exists.
+    let false_branch = graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: else_clause }));
+
+    let expr = &ctx.function_body.arenas.exprs[expr_id];
+
+    // Create a variable for the expression.
+    let expr_location = ctx.get_location(expr.stable_ptr().untyped());
+    let expr_var = graph.new_var(expr.ty(), expr_location);
+
+    let match_node_id = create_node_for_patterns(
+        CreateNodeParams {
+            ctx,
+            graph: &mut graph,
+            patterns: &[Some(get_pattern(ctx, pattern))],
+            build_node_callback: &mut |graph, pattern_indices, _path| {
+                if let Some(index_and_bindings) = pattern_indices.first() {
+                    index_and_bindings.wrap_node(graph, true_branch)
+                } else {
+                    false_branch
+                }
+            },
+            location: expr_location,
+        },
+        expr_var,
+    );
+
+    // Create a node for lowering `expr_id` into `expr_var` and continue to the match.
+    let root = graph.add_node(FlowControlNode::EvaluateExpr(EvaluateExpr {
+        expr: expr_id,
+        var_id: expr_var,
         next: match_node_id,
     }));
 

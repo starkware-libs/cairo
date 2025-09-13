@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
-use cairo_lang_semantic::{self as semantic, ConcreteEnumId, ConcreteVariant, VarId};
+use cairo_lang_semantic::{self as semantic, ConcreteEnumId, ConcreteVariant};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -25,7 +25,6 @@ use super::context::{
     handle_lowering_flow_error,
 };
 use super::lower_if::{ConditionedExpr, lower_conditioned_expr_and_seal};
-use super::lower_let_else::lower_success_arm_body;
 use super::{
     alloc_empty_block, generators, lower_expr_block, lower_tail_expr,
     lowered_expr_to_block_scope_end, recursively_call_loop_func,
@@ -60,13 +59,6 @@ pub enum MatchArmWrapper<'db, 'a> {
     ElseClause(semantic::ExprId),
     /// Default clause when else clause is not provided (if-let/while-let).
     DefaultClause,
-    /// The success arm of a let-else statement. See [super::lower_let_else::lower_let_else] for
-    /// more details.
-    LetElseSuccess(
-        &'a [PatternId],
-        Vec<(VarId<'db>, SyntaxStablePtrId<'db>)>,
-        SyntaxStablePtrId<'db>,
-    ),
     /// Similar to [Self::Arm], except that the expression is a conditioned expression
     /// (see [ConditionedExpr]).
     ConditionedArm(&'a [PatternId], ConditionedExpr<'db, 'a>),
@@ -82,9 +74,9 @@ impl<'db> MatchArmWrapper<'db, '_> {
     /// Returns the patterns of the match arm.
     pub fn patterns(&self) -> Option<&[PatternId]> {
         match self {
-            MatchArmWrapper::Arm(patterns, _)
-            | MatchArmWrapper::ConditionedArm(patterns, _)
-            | MatchArmWrapper::LetElseSuccess(patterns, _, _) => Some(patterns),
+            MatchArmWrapper::Arm(patterns, _) | MatchArmWrapper::ConditionedArm(patterns, _) => {
+                Some(patterns)
+            }
             MatchArmWrapper::ElseClause(_) | MatchArmWrapper::DefaultClause => None,
         }
     }
@@ -197,9 +189,7 @@ fn get_underscore_pattern_path_and_mark_unreachable<'db>(
 
     for arm in arms.iter().skip(otherwise_variant.arm_index + 1) {
         match arm {
-            MatchArmWrapper::Arm(patterns, _)
-            | MatchArmWrapper::ConditionedArm(patterns, _)
-            | MatchArmWrapper::LetElseSuccess(patterns, _, _) => {
+            MatchArmWrapper::Arm(patterns, _) | MatchArmWrapper::ConditionedArm(patterns, _) => {
                 for pattern in *patterns {
                     let pattern_ptr = ctx.function_body.arenas.patterns[*pattern].stable_ptr();
                     ctx.diagnostics.report(
@@ -1162,8 +1152,7 @@ trait EnumVariantScopeBuilder<'db> {
                     continue;
                 }
                 MatchArmWrapper::Arm(patterns, _)
-                | MatchArmWrapper::ConditionedArm(patterns, _)
-                | MatchArmWrapper::LetElseSuccess(patterns, _, _) => patterns,
+                | MatchArmWrapper::ConditionedArm(patterns, _) => patterns,
             };
             for (pattern_index, pattern) in patterns.iter().copied().enumerate() {
                 let pattern_path = PatternPath { arm_index, pattern_index: Some(pattern_index) };
@@ -1366,15 +1355,6 @@ trait EnumVariantScopeBuilder<'db> {
                             }),
                         );
                     },
-                    MatchArmWrapper::LetElseSuccess(_,_, stable_ptr) => {
-                        ctx.diagnostics.report(
-                            *stable_ptr,
-                            MatchError(MatchError {
-                                kind: builder_context.kind,
-                                error: MatchDiagnostic::UnreachableMatchArm,
-                            }),
-                        );
-                    }
                     MatchArmWrapper::DefaultClause => (),
                 }
             }
@@ -1796,12 +1776,6 @@ fn lower_arm_expr_and_seal<'db>(
             lowered_expr_to_block_scope_end(ctx, subscope, block_expr)
         }
         (MatchArmWrapper::DefaultClause, _) => Ok(subscope.goto_callsite(None)),
-        (MatchArmWrapper::LetElseSuccess(_, vars, stable_ptr), MatchKind::Match) => {
-            Ok(lower_success_arm_body(ctx, subscope, vars, stable_ptr))
-        }
-        (MatchArmWrapper::LetElseSuccess(_, _, _), _) => {
-            unreachable!("Invalid MatchKind for LetElseSuccess.")
-        }
         (MatchArmWrapper::ConditionedArm(_, expr), _) => {
             lower_conditioned_expr_and_seal(ctx, subscope, expr)
         }
