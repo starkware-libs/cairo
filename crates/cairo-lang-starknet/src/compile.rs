@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::{CompilerConfig, ensure_diagnostics};
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
@@ -107,7 +107,7 @@ pub fn compile_prepared_db<'db>(
     contracts: &[&ContractDeclaration<'db>],
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<Vec<ContractClass>> {
-    compiler_config.diagnostics_reporter.ensure(db)?;
+    ensure_diagnostics(db, &mut compiler_config.diagnostics_reporter)?;
 
     par_map(db, contracts, |db, contract| {
         compile_contract_with_prepared_and_checked_db(db, contract, &compiler_config)
