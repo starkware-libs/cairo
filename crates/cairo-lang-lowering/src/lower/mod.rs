@@ -667,19 +667,19 @@ pub fn lower_statement<'db>(
             else_clause,
             stable_ptr,
         }) => {
-            log::trace!("Lowering a let statement.");
-            let lowered_expr = lower_expr(ctx, builder, *expr)?;
             if let Some(else_clause) = else_clause {
+                log::trace!("Lowering a let-else statement.");
                 lower_let_else::lower_let_else(
                     ctx,
                     builder,
                     *pattern,
                     *expr,
-                    lowered_expr,
                     *else_clause,
                     stable_ptr,
                 )?;
             } else {
+                log::trace!("Lowering a let statement.");
+                let lowered_expr = lower_expr(ctx, builder, *expr)?;
                 lower_single_pattern(ctx, builder, *pattern, lowered_expr, true)?;
             }
         }

@@ -211,6 +211,15 @@ pub struct Downcast {
     pub out_of_range: NodeId,
 }
 
+/// An arm (final node) that returns a tuple of bound variables for the let-else success arm.
+///
+/// See [crate::lower::lower_let_else::lower_let_else] for more details.
+#[derive(Debug)]
+pub struct LetElseSuccess<'db> {
+    /// The variables to assign the result to.
+    pub var_ids_and_stable_ptrs: Vec<(semantic::VarId<'db>, SyntaxStablePtrId<'db>)>,
+}
+
 /// A node in the flow control graph for a match or if lowering.
 pub enum FlowControlNode<'db> {
     /// Evaluates an expression and assigns the result to a [FlowControlVar].
@@ -233,6 +242,8 @@ pub enum FlowControlNode<'db> {
     Upcast(Upcast),
     /// Downcasts a value to a smaller type.
     Downcast(Downcast),
+    /// An arm (final node) that returns a tuple of bound variables for the let-else success arm.
+    LetElseSuccess(LetElseSuccess<'db>),
     /// An arm (final node) that returns a unit value - `()`.
     UnitResult,
     /// Represents a node that could not be properly constructed due to an error in the code.
@@ -258,6 +269,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::BindVar(node) => Some(node.input),
             FlowControlNode::Upcast(node) => Some(node.input),
             FlowControlNode::Downcast(node) => Some(node.input),
+            FlowControlNode::LetElseSuccess(..) => None,
             FlowControlNode::UnitResult => None,
             FlowControlNode::Missing(_) => None,
         }
@@ -277,6 +289,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::Upcast(node) => node.fmt(f),
             FlowControlNode::Downcast(node) => node.fmt(f),
+            FlowControlNode::LetElseSuccess(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
             FlowControlNode::Missing(_) => write!(f, "Missing"),
         }
