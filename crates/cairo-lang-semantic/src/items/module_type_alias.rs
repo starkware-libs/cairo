@@ -111,9 +111,8 @@ pub trait ModuleTypeAliasSemantic<'db>: Database {
         &'db self,
         id: ModuleTypeAliasId<'db>,
     ) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(module_type_alias_semantic_data(self.as_dyn_database(), id, false)
+        Ok(module_type_alias_generic_params_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
-            .type_alias_data
             .generic_params
             .clone())
     }

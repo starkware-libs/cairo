@@ -77,7 +77,7 @@ fn free_function_declaration_data<'db>(
     // Generic params.
     let generic_params_data =
         free_function_generic_params_data(db, free_function_id).maybe_as_ref()?;
-    let generic_params = generic_params_data.generic_params.clone();
+    let generic_params = &generic_params_data.generic_params;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
@@ -101,7 +101,7 @@ fn free_function_declaration_data<'db>(
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
-    forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
+    forbid_inline_always_with_impl_generic_param(&mut diagnostics, generic_params, &inline_config);
 
     let (implicit_precedence, _) =
         get_implicit_precedence(db, &mut diagnostics, &mut resolver, &attributes);
@@ -111,13 +111,11 @@ fn free_function_declaration_data<'db>(
 
     inference.finalize(&mut diagnostics, declaration.stable_ptr(db).untyped());
     let signature = inference.rewrite(signature).no_err();
-    let generic_params = inference.rewrite(generic_params).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         environment,
-        generic_params,
         attributes,
         resolver_data: Arc::new(resolver.data),
         inline_config,

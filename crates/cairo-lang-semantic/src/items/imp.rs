@@ -485,7 +485,6 @@ pub enum ImplHead<'db> {
 #[debug_db(dyn Database)]
 pub struct ImplDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    generic_params: Vec<semantic::GenericParam<'db>>,
     /// The concrete trait this impl implements, or Err if cannot be resolved.
     concrete_trait: Maybe<ConcreteTraitId<'db>>,
     attributes: Vec<Attribute<'db>>,
@@ -970,7 +969,6 @@ fn priv_impl_declaration_data_inner<'db>(
 
     // Generic params.
     let generic_params_data = db.impl_def_generic_params_data(impl_def_id)?;
-    let generic_params = generic_params_data.generic_params;
     let mut resolver = Resolver::with_data(
         db,
         (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
@@ -1018,14 +1016,12 @@ fn priv_impl_declaration_data_inner<'db>(
 
     let concrete_trait: Result<ConcreteTraitId<'_>, DiagnosticAdded> =
         inference.rewrite(concrete_trait).no_err();
-    let generic_params: Vec<GenericParam<'_>> = inference.rewrite(generic_params).no_err();
 
     let attributes = impl_ast.attributes(db).structurize(db);
     let mut resolver_data = resolver.data;
     resolver_data.trait_or_impl_ctx = TraitOrImplContext::Impl(impl_def_id);
     Ok(ImplDeclarationData {
         diagnostics: diagnostics.build(),
-        generic_params,
         concrete_trait,
         attributes,
         resolver_data: Arc::new(resolver_data),
@@ -4270,14 +4266,12 @@ fn priv_impl_function_declaration_data<'db>(
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
     let signature = inference.rewrite(signature).no_err();
-    let generic_params = inference.rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplFunctionDeclarationData {
         function_declaration_data: FunctionDeclarationData {
             diagnostics: diagnostics.build(),
             signature,
-            generic_params,
             environment,
             attributes,
             resolver_data,

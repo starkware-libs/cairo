@@ -289,7 +289,6 @@ impl<'db> ConcreteTraitImplId<'db> {
 #[debug_db(dyn Database)]
 pub struct TraitDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    generic_params: Vec<GenericParam<'db>>,
     attributes: Vec<Attribute<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
@@ -472,7 +471,6 @@ fn priv_trait_declaration_data<'db>(
 
     // Generic params.
     let generic_params_data = db.trait_generic_params_data(trait_id, false)?;
-    let generic_params = generic_params_data.generic_params;
     let inference_id =
         InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
     let mut resolver = Resolver::with_data(
@@ -487,13 +485,10 @@ fn priv_trait_declaration_data<'db>(
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, trait_ast.stable_ptr(db).untyped());
 
-    let generic_params = inference.rewrite(generic_params).no_err();
-
     let mut resolver_data = resolver.data;
     resolver_data.trait_or_impl_ctx = TraitOrImplContext::Trait(trait_id);
     Ok(TraitDeclarationData {
         diagnostics: diagnostics.build(),
-        generic_params,
         attributes,
         resolver_data: Arc::new(resolver_data),
     })
@@ -1008,7 +1003,6 @@ fn priv_trait_definition_data_tracked<'db>(
 #[debug_db(dyn Database)]
 pub struct TraitItemTypeData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    pub generic_params: Vec<semantic::GenericParam<'db>>,
     pub attributes: Vec<Attribute<'db>>,
     pub resolver_data: Arc<ResolverData<'db>>,
 }
@@ -1150,7 +1144,6 @@ fn priv_trait_type_data<'db>(
     let type_syntax = &data.item_type_asts[&trait_type_id];
 
     let type_generic_params_data = db.priv_trait_type_generic_params_data(trait_type_id)?;
-    let type_generic_params = type_generic_params_data.generic_params;
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::TraitItem(
         TraitItemId::Type(trait_type_id),
     ));
@@ -1163,12 +1156,7 @@ fn priv_trait_type_data<'db>(
     let attributes = type_syntax.attributes(db).structurize(db);
     let resolver_data = Arc::new(resolver.data);
 
-    Ok(TraitItemTypeData {
-        diagnostics: diagnostics.build(),
-        generic_params: type_generic_params,
-        attributes,
-        resolver_data,
-    })
+    Ok(TraitItemTypeData { diagnostics: diagnostics.build(), attributes, resolver_data })
 }
 
 /// Query implementation of [TraitSemantic::priv_trait_type_data].
@@ -1670,7 +1658,6 @@ fn priv_trait_function_declaration_data<'db>(
     let declaration_syntax = function_syntax.declaration(db);
     let function_generic_params_data =
         db.priv_trait_function_generic_params_data(trait_function_id)?;
-    let function_generic_params = function_generic_params_data.generic_params;
     let lookup_item_id = LookupItemId::TraitItem(TraitItemId::Function(trait_function_id));
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
     let mut resolver = Resolver::with_data(
@@ -1693,7 +1680,6 @@ fn priv_trait_function_declaration_data<'db>(
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, function_syntax.stable_ptr(db).untyped());
     let signature = inference.rewrite(signature).no_err();
-    let function_generic_params = inference.rewrite(function_generic_params).no_err();
 
     validate_trait_function_signature(
         db,
@@ -1713,7 +1699,6 @@ fn priv_trait_function_declaration_data<'db>(
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
-        generic_params: function_generic_params,
         environment,
         attributes,
         resolver_data,
