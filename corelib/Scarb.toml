@@ -1,6 +1,6 @@
 [package]
 name = "core"
-version = "2.12.2"
+version = "2.12.3"
 edition = "2024_07"
 experimental-features = ["coupons", "negative_impls", "associated_item_constraints"]
 
@@ -9,4 +9,4 @@ experimental-features = ["coupons", "negative_impls", "associated_item_constrain
 no-core = true
 
 [dev-dependencies]
-cairo_test = "2.12.2"
+cairo_test = "2.12.3"

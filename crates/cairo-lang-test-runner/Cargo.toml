@@ -8,15 +8,15 @@ description = "Cairo tests runner. Used to run tests written in Cairo."
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.12.2" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.2" }
-cairo-lang-runner = { path = "../cairo-lang-runner", version = "~2.12.2" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.12.2" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.12.2" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "~2.12.2" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.12.2" }
-cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.12.2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.2" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.12.3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.3" }
+cairo-lang-runner = { path = "../cairo-lang-runner", version = "~2.12.3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.12.3" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.12.3" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "~2.12.3" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "~2.12.3" }
+cairo-lang-test-plugin = { path = "../cairo-lang-test-plugin", version = "~2.12.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.3" }
 colored.workspace = true
 itertools = { workspace = true, default-features = true }
 num-traits = { workspace = true, default-features = true }

@@ -2,7 +2,7 @@
 core = "src"
 
 [config.global]
-version = "2.12.2"
+version = "2.12.3"
 edition = "2024_07"
 
 [config.global.experimental_features]
