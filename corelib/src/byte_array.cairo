@@ -43,12 +43,12 @@
 //! ```
 
 use crate::array::{ArrayTrait, Span, SpanTrait};
-use crate::bytes_31::split_bytes31;
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
     one_shift_left_bytes_felt252, one_shift_left_bytes_u128, split_u128, u8_at_u256,
 };
+use crate::bytes_31::{slice_bytes31, split_bytes31};
 use crate::clone::Clone;
 use crate::cmp::min;
 #[allow(unused_imports)]
@@ -622,6 +622,55 @@ pub impl ByteArraySpanImpl of ByteSpanTrait {
 
     fn is_empty(self: @ByteSpan) -> bool {
         self.len() == 0
+    }
+
+    /// Returns a slice of the ByteSpan from the given start position with the given length.
+    fn slice(self: @ByteSpan, start: usize, len: usize) -> Option<ByteSpan> {
+        if len == 0 {
+            return Some(Default::default());
+        }
+        if start + len > self.len() {
+            return None;
+        }
+
+        let abs_start = upcast(*self.first_char_start_offset) + start;
+        let (start_word, start_offset) = DivRem::div_rem(abs_start, BYTES_IN_BYTES31_NONZERO);
+        let (end_word, end_offset) = DivRem::div_rem(abs_start + len, BYTES_IN_BYTES31_NONZERO);
+        let data_len = self.data.len();
+        let remainder_len = upcast(*self.remainder_len);
+
+        // Single word slice - extract from that word only
+        if start_word == end_word {
+            let word = match start_word < data_len {
+                true => slice_bytes31(
+                    (*self.data[start_word]).into(), BYTES_IN_BYTES31, start_offset, len,
+                ),
+                false => slice_bytes31(*self.remainder_word, remainder_len, start_offset, len),
+            };
+            return Some(
+                ByteSpan {
+                    data: [].span(),
+                    first_char_start_offset: downcast(0).unwrap(),
+                    remainder_word: word,
+                    remainder_len: downcast(len).unwrap(),
+                },
+            );
+        }
+
+        // Multi-word slice - data words plus optional remainder
+        let remainder = match end_word < data_len {
+            true => slice_bytes31((*self.data[end_word]).into(), BYTES_IN_BYTES31, 0, end_offset),
+            false => slice_bytes31(*self.remainder_word, remainder_len, 0, end_offset),
+        };
+
+        Some(
+            ByteSpan {
+                data: self.data.slice(start_word, min(end_word, data_len) - start_word),
+                first_char_start_offset: downcast(start_offset).unwrap(),
+                remainder_word: remainder,
+                remainder_len: downcast(end_offset).unwrap(),
+            },
+        )
     }
 }
 

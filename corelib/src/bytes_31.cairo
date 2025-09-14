@@ -169,6 +169,27 @@ pub(crate) fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252
     return (left, high_result.high.into());
 }
 
+/// Extracts a slice of bytes from a word.
+/// Returns bytes [start, start+len) where byte 0 is the leftmost (most significant) byte.
+/// The input `bytes31` and the output `bytes31`s are represented using `felt252`s to improve
+/// performance.
+///
+/// Note: this function assumes that:
+/// 1. `word` is validly convertible to a `bytes31` which has no more than `word_len` bytes of data.
+/// 2. `start + len <= word_len`.
+/// 3. `word_len <= BYTES_IN_BYTES31`.
+/// If these assumptions are not met, it can corrupt the result. Thus, this should be a
+/// private function. We could add masking/assertions but it would be more expensive.
+pub(crate) fn slice_bytes31(word: felt252, word_len: usize, start: usize, len: usize) -> felt252 {
+    if len == 0 {
+        return 0;
+    }
+    // Remove suffix: keep only bytes [0, start+len).
+    let (_, without_suffix) = split_bytes31(word, word_len, word_len - (start + len));
+    let (without_prefix_and_suffix, _) = split_bytes31(without_suffix, start + len, len);
+    without_prefix_and_suffix
+}
+
 
 /// Returns `1 << (8 * n_bytes)` as `felt252`, assuming that `n_bytes < BYTES_IN_BYTES31`.
 ///
