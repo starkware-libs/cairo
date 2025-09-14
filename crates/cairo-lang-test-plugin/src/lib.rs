@@ -2,7 +2,7 @@ use std::default::Default;
 
 use anyhow::{Result, ensure};
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::{DbWarmupContext, get_sierra_program_for_functions};
+use cairo_lang_compiler::{ensure_diagnostics, get_sierra_program_for_functions};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
@@ -103,8 +103,7 @@ pub fn compile_test_prepared_db<'db>(
         "Contract crate ids can be provided only when starknet is enabled."
     );
 
-    let context = DbWarmupContext::new();
-    context.ensure_diagnostics(db, &mut diagnostics_reporter)?;
+    ensure_diagnostics(db, &mut diagnostics_reporter)?;
 
     let contracts = tests_compilation_config.contract_declarations.unwrap_or_else(|| {
         find_contracts(
@@ -147,7 +146,7 @@ pub fn compile_test_prepared_db<'db>(
     .collect();
 
     let SierraProgramWithDebug { program: sierra_program, debug_info } =
-        get_sierra_program_for_functions(db, func_ids, context)?;
+        get_sierra_program_for_functions(db, func_ids)?;
 
     let function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>> = all_entry_points
         .iter()

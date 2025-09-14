@@ -24,7 +24,6 @@ use cairo_lang_sierra_generator::program_generator::{
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use rayon::{ThreadPool, ThreadPoolBuilder};
 use salsa::{Database, par_map};
 
 use crate::db::RootDatabase;
@@ -164,67 +163,33 @@ pub fn compile_prepared_db<'db>(
     Ok(sierra_program_with_debug)
 }
 
-/// Context for database warmup.
+/// Checks if parallelism is available for warmup.
+fn should_warmup() -> bool {
+    rayon::current_num_threads() > 1
+}
+
+/// Checks if there are diagnostics and reports them to the provided callback as strings.
+/// Returns `Err` if diagnostics were found.
 ///
-/// This struct will spawn a thread pool that can be used for parallel database warmup.
-/// This can be both diagnostics warmup and function compilation warmup.
-/// We encapsulate the thread pool here so that we can reuse it easily for both.
 /// Note: Usually diagnostics should be checked as early as possible to avoid running into
 /// compilation errors that have not been reported to the user yet (which can result in compiler
 /// panic). This requires us to split the diagnostics warmup and function compilation warmup into
 /// two separate steps (note that we don't usually know the `ConcreteFunctionWithBodyId` yet when
 /// calculating diagnostics).
-pub enum DbWarmupContext {
-    Warmup { pool: ThreadPool },
-    NoWarmup,
-}
-
-impl DbWarmupContext {
-    /// Creates a new thread pool.
-    pub fn new() -> Self {
-        if !Self::should_warmup() {
-            return Self::NoWarmup;
-        }
-        const MAX_WARMUP_PARALLELISM: usize = 4;
-        let pool = ThreadPoolBuilder::new()
-            .num_threads(rayon::current_num_threads().min(MAX_WARMUP_PARALLELISM))
-            .build()
-            .expect("failed to build rayon thread pool");
-        Self::Warmup { pool }
+///
+/// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
+pub fn ensure_diagnostics(
+    db: &dyn Database,
+    diagnostic_reporter: &mut DiagnosticsReporter<'_>,
+) -> std::result::Result<(), DiagnosticsError> {
+    if should_warmup() {
+        let crates = diagnostic_reporter.crates_of_interest(db);
+        let db_fork = db.fork_db();
+        rayon::spawn(move || {
+            warmup_diagnostics_blocking(db_fork.as_ref(), crates);
+        });
     }
-
-    /// Checks if parallelism is available for warmup.
-    fn should_warmup() -> bool {
-        rayon::current_num_threads() > 1
-    }
-
-    /// Checks if there are diagnostics and reports them to the provided callback as strings.
-    /// Returns `Err` if diagnostics were found.
-    ///
-    /// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
-    pub fn ensure_diagnostics(
-        &self,
-        db: &dyn Database,
-        diagnostic_reporter: &mut DiagnosticsReporter<'_>,
-    ) -> std::result::Result<(), DiagnosticsError> {
-        match self {
-            Self::NoWarmup => {}
-            Self::Warmup { pool } => {
-                let crates = diagnostic_reporter.crates_of_interest(db);
-                let db_fork = db.fork_db();
-                pool.spawn(move || {
-                    warmup_diagnostics_blocking(db_fork.as_ref(), crates);
-                });
-            }
-        }
-        diagnostic_reporter.ensure(db)
-    }
-}
-
-impl Default for DbWarmupContext {
-    fn default() -> Self {
-        Self::new()
-    }
+    diagnostic_reporter.ensure(db)
 }
 
 /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
@@ -283,18 +248,12 @@ fn warmup_functions_blocking<'db>(
 pub fn get_sierra_program_for_functions<'db>(
     db: &'db dyn Database,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
-    context: DbWarmupContext,
 ) -> Result<&'db SierraProgramWithDebug<'db>> {
-    match &context {
-        DbWarmupContext::Warmup { pool } => {
-            let requested_function_ids = requested_function_ids.clone();
-            let db_fork = db.fork_db();
-            // TODO(orizi): Use `spawn` instead of `install` to avoid blocking the main thread.
-            pool.install(move || {
-                warmup_functions_blocking(db_fork.as_view(), requested_function_ids)
-            });
-        }
-        DbWarmupContext::NoWarmup => {}
+    if should_warmup() {
+        let requested_function_ids = requested_function_ids.clone();
+        let db_fork = db.fork_db();
+        // TODO(orizi): Avoid blocking the main thread.
+        rayon::scope(move |_| warmup_functions_blocking(db_fork.as_view(), requested_function_ids));
     }
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()
