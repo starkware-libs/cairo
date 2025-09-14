@@ -87,7 +87,7 @@ fn lower_evaluate_expr<'db>(
 
     match lowered_expr.as_var_usage(ctx.ctx, &mut builder) {
         Ok(lowered_var) => {
-            ctx.register_var(var, lowered_var);
+            ctx.register_var(var, lowered_var.var_id);
             ctx.pass_builder_to_child(id, node.next, builder);
             Ok(())
         }
@@ -116,7 +116,7 @@ fn lower_boolean_if<'db>(
     // Finalize the block.
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(db),
-        input: ctx.vars[&node.condition_var],
+        input: ctx.var_usage(node.condition_var),
         arms: vec![
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(corelib::false_variant(db)),
@@ -179,8 +179,7 @@ fn lower_enum_match<'db>(
             let var_location = flow_control_var.location(ctx.graph);
             // Create a variable for the variant inner value.
             let variant_var = ctx.ctx.new_var(VarRequest { ty: var_ty, location: var_location });
-            let var_usage = VarUsage { var_id: variant_var, location: var_location };
-            ctx.register_var(*flow_control_var, var_usage);
+            ctx.register_var(*flow_control_var, variant_var);
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(*concrete_variant),
                 block_id: ctx.assign_child_block_id(*variant_node, &builder),
@@ -191,7 +190,7 @@ fn lower_enum_match<'db>(
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: node.concrete_enum_id,
-        input: ctx.vars[&node.matched_var],
+        input: ctx.var_usage(node.matched_var),
         arms,
         location: match_location,
     });
@@ -243,7 +242,7 @@ fn handle_extern_match<'db>(
             // (b) `LoweredExpr::Tuple` of `LoweredExpr::AtVariable`,
             // we can safely unwrap the `as_var_usage` result.
             let var_usage = variant_expr.as_var_usage(ctx.ctx, &mut child_builder).unwrap();
-            ctx.register_var(*flow_control_var, var_usage);
+            ctx.register_var(*flow_control_var, var_usage.var_id);
 
             let block_id = ctx.register_child_builder(*variant_node, child_builder);
 
@@ -290,7 +289,7 @@ fn lower_value_match<'db>(
     let match_info = MatchInfo::Value(MatchEnumValue {
         num_of_arms: node.nodes.len(),
         arms,
-        input: ctx.vars[&node.matched_var],
+        input: ctx.var_usage(node.matched_var),
         location: ctx.location,
     });
 
@@ -310,7 +309,7 @@ fn lower_equals_literal<'db>(
 
     let literal_stable_ptr = node.stable_ptr.untyped();
     let literal_location = ctx.ctx.get_location(literal_stable_ptr);
-    let input_var = ctx.vars[&node.input];
+    let input_var = ctx.var_usage(node.input);
 
     // Lower the expression `input_var - literal`.
     let is_equal: VarUsage<'db> = if node.literal == BigInt::from(0) {
@@ -383,7 +382,7 @@ fn lower_bind_var<'db>(
     mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
     let pattern_variable = node.output.get(ctx.graph);
-    let var_id = ctx.vars[&node.input].var_id;
+    let var_id = ctx.var_usage(node.input).var_id;
 
     // Override variable location to with the location of the variable in the pattern.
     // TODO(lior): Consider using the location of the first instance of the pattern binding instead
@@ -418,11 +417,11 @@ fn lower_deconstruct<'db>(
         .collect();
 
     let variable_ids =
-        generators::StructDestructure { input: ctx.vars[&node.input], var_reqs: var_requests }
+        generators::StructDestructure { input: ctx.var_usage(node.input), var_reqs: var_requests }
             .add(ctx.ctx, &mut builder.statements);
 
     for (var_id, output) in zip_eq(variable_ids, &node.outputs) {
-        ctx.register_var(*output, VarUsage { var_id, location: output.location(ctx.graph) });
+        ctx.register_var(*output, var_id);
     }
 
     ctx.pass_builder_to_child(id, node.next, builder);
@@ -445,7 +444,7 @@ fn lower_upcast<'db>(
 
     let call_result = generators::Call {
         function,
-        inputs: vec![ctx.vars[&node.input]],
+        inputs: vec![ctx.var_usage(node.input)],
         coupon_input: None,
         extra_ret_tys: vec![],
         ret_tys: vec![output_ty],
@@ -453,7 +452,7 @@ fn lower_upcast<'db>(
     }
     .add(ctx.ctx, &mut builder.statements);
 
-    ctx.register_var(node.output, call_result.returns.into_iter().next().unwrap());
+    ctx.register_var(node.output, call_result.returns.into_iter().next().unwrap().var_id);
     ctx.pass_builder_to_child(id, node.next, builder);
     Ok(())
 }
@@ -480,12 +479,11 @@ fn lower_downcast<'db>(
     // Create the output variable.
     let output_location = node.output.location(ctx.graph);
     let output_var = ctx.ctx.new_var(VarRequest { ty: output_ty, location: output_location });
-    let var_usage = VarUsage { var_id: output_var, location: output_location };
-    ctx.register_var(node.output, var_usage);
+    ctx.register_var(node.output, output_var);
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: function_id,
-        inputs: vec![ctx.vars[&node.input]],
+        inputs: vec![ctx.var_usage(node.input)],
         arms: vec![
             MatchArm {
                 arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
