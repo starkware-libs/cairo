@@ -73,3 +73,8 @@ pub use range::{
 // `RangeOp` and `RangeInclusiveOp` are used internally by the compiler.
 #[allow(unused_imports)]
 use range::{RangeInclusiveOp, RangeOp};
+
+#[unstable(feature: "get-trait")]
+pub mod get;
+#[feature("get-trait")]
+pub use get::Get;

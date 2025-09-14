@@ -55,6 +55,7 @@ use crate::cmp::min;
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[feature("bounded-int-utils")]
 use crate::internal::bounded_int::{self, BoundedInt, downcast, upcast};
+use crate::num::traits::CheckedSub;
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -837,6 +838,16 @@ pub impl ByteSpanImpl of ByteSpanTrait {
         ba.append_from_parts(self.data, self.remainder_word, upcast(self.remainder_len));
         ba
     }
+
+    /// Gets the element(s) at the given index.
+    /// Accepts ranges (returns Option<ByteSpan>), and (to-be-implemented) single indices (returns
+    /// Option<u8>).
+    #[feature("get-trait")]
+    fn get<I, impl TGet: crate::ops::Get<ByteSpan, I>, +Drop<I>>(
+        self: @ByteSpan, index: I,
+    ) -> Option<TGet::Output> {
+        TGet::get(self, index)
+    }
 }
 
 impl ByteSpanDefault of Default<ByteSpan> {
@@ -844,6 +855,61 @@ impl ByteSpanDefault of Default<ByteSpan> {
         ByteSpan {
             data: [].span(), first_char_start_offset: 0, remainder_word: 0, remainder_len: 0,
         }
+    }
+}
+
+
+impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
+    type Output = ByteSpan;
+
+    /// Returns a slice for the given range `[start, end)`.
+    /// If span is consumed by the slice: returns the default object.
+    /// If out of bounds: returns `None`.
+    fn get(self: @ByteSpan, index: crate::ops::Range<usize>) -> Option<ByteSpan> {
+        let range = index;
+        let len = (range.end).checked_sub(range.start)?;
+        if len == 0 {
+            return Some(Default::default());
+        }
+        if range.end > self.len() {
+            return None;
+        }
+
+        let abs_start = range.start + upcast(*self.first_char_start_offset);
+        let (start_word, start_offset) = DivRem::div_rem(abs_start, BYTES_IN_BYTES31_NONZERO);
+        let (end_word, end_offset) = DivRem::div_rem(abs_start + len, BYTES_IN_BYTES31_NONZERO);
+        let data_len = self.data.len();
+
+        let remainder_with_end_offset_trimmed = if end_word < data_len {
+            let word = (*self.data[end_word]).into();
+            shift_right(word, BYTES_IN_BYTES31, BYTES_IN_BYTES31 - end_offset)
+        } else {
+            let remainder_len = upcast(*self.remainder_len);
+            shift_right(*self.remainder_word, remainder_len, remainder_len - end_offset)
+        };
+
+        Some(
+            ByteSpan {
+                data: self.data.slice(start_word, min(end_word, data_len) - start_word),
+                first_char_start_offset: downcast(start_offset).unwrap(),
+                remainder_word: remainder_with_end_offset_trimmed,
+                remainder_len: downcast(end_offset).unwrap(),
+            },
+        )
+    }
+}
+
+impl ByteSpanGetRangeInclusive of crate::ops::Get<ByteSpan, crate::ops::RangeInclusive<usize>> {
+    type Output = ByteSpan;
+
+    /// Returns a slice for the given range `[start, end]`.
+    /// If span is consumed by the slice: returns the default object.
+    /// If out of bounds: returns `None`.
+    fn get(self: @ByteSpan, index: crate::ops::RangeInclusive<usize>) -> Option<ByteSpan> {
+        // Convert inclusive range to exclusive range.
+        let end_exclusive = crate::num::traits::CheckedAdd::checked_add(index.end, 1)?;
+        let range = crate::ops::Range { start: index.start, end: end_exclusive };
+        ByteSpanTrait::get(self, range)
     }
 }
 
@@ -872,6 +938,21 @@ impl ByteSpanToByteSpan of ToByteSpanTrait<ByteSpan> {
     fn span(self: @ByteSpan) -> ByteSpan {
         *self
     }
+}
+
+/// Shifts a word right by `n_bytes`.
+/// The input `bytes31` and the output `bytes31`s are represented using `felt252`s to improve
+/// performance.
+///
+/// Note: this function assumes that:
+/// 1. `word` is validly convertible to a `bytes31` which has no more than `word_len` bytes of data.
+/// 2. `n_bytes <= word_len`.
+/// 3. `word_len <= BYTES_IN_BYTES31`.
+/// If these assumptions are not met, it can corrupt the result. Thus, this should be a
+/// private function. We could add masking/assertions but it would be more expensive.
+fn shift_right(word: felt252, word_len: usize, n_bytes: usize) -> felt252 {
+    let (_shifted_out, after_shift_right) = split_bytes31(word, word_len, n_bytes);
+    after_shift_right
 }
 
 mod helpers {
