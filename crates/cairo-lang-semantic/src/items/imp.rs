@@ -3006,93 +3006,9 @@ pub struct ImplItemConstantData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-// --- Selectors ---
-
-/// Implementation of [ImplSemantic::impl_constant_def_semantic_diagnostics].
-fn impl_constant_def_semantic_diagnostics<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_impl_constant_semantic_data(impl_constant_def_id, false)
-        .map(|data| data.diagnostics)
-        .unwrap_or_default()
-}
-
-/// Query implementation of [ImplSemantic::impl_constant_def_semantic_diagnostics].
-#[salsa::tracked]
-fn impl_constant_def_semantic_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    impl_constant_def_semantic_diagnostics(db, impl_constant_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_constant_def_value].
-fn impl_constant_def_value<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id, false)?.constant_data.const_value)
-}
-
-/// Query implementation of [ImplSemantic::impl_constant_def_value].
-#[salsa::tracked(cycle_result=impl_constant_def_value_cycle)]
-fn impl_constant_def_value_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    impl_constant_def_value(db, impl_constant_def_id)
-}
-
-/// Cycle handling for [ImplSemantic::impl_constant_def_value].
-fn impl_constant_def_value_cycle<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<ConstValueId<'db>> {
-    Ok(db.priv_impl_constant_semantic_data(impl_constant_def_id, true)?.constant_data.const_value)
-}
-
-/// Implementation of [ImplSemantic::impl_constant_def_resolver_data].
-fn impl_constant_def_resolver_data<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db
-        .priv_impl_constant_semantic_data(impl_constant_def_id, false)?
-        .constant_data
-        .resolver_data)
-}
-
-/// Query implementation of [ImplSemantic::impl_constant_def_resolver_data].
-#[salsa::tracked]
-fn impl_constant_def_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    impl_constant_def_resolver_data(db, impl_constant_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_constant_def_trait_constant].
-fn impl_constant_def_trait_constant<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<TraitConstantId<'db>> {
-    db.priv_impl_constant_semantic_data(impl_constant_def_id, false)?.trait_constant_id
-}
-
-/// Query implementation of [ImplSemantic::impl_constant_def_trait_constant].
-#[salsa::tracked]
-fn impl_constant_def_trait_constant_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-) -> Maybe<TraitConstantId<'db>> {
-    impl_constant_def_trait_constant(db, impl_constant_def_id)
-}
-
-// --- Computation ---
-
-/// Query implementation of [ImplSemantic::priv_impl_constant_semantic_data].
-fn priv_impl_constant_semantic_data<'db>(
+/// Returns data about an impl constant definition.
+#[salsa::tracked(cycle_result=impl_constant_semantic_data_cycle, returns(ref))]
+fn impl_constant_semantic_data<'db>(
     db: &'db dyn Database,
     impl_constant_def_id: ImplConstantDefId<'db>,
     in_cycle: bool,
@@ -3138,24 +3054,12 @@ fn priv_impl_constant_semantic_data<'db>(
     Ok(ImplItemConstantData { constant_data, trait_constant_id, diagnostics: diagnostics.build() })
 }
 
-/// Query implementation of [ImplSemantic::priv_impl_constant_semantic_data].
-#[salsa::tracked(cycle_result=priv_impl_constant_semantic_data_cycle)]
-fn priv_impl_constant_semantic_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_constant_def_id: ImplConstantDefId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplItemConstantData<'db>> {
-    priv_impl_constant_semantic_data(db, impl_constant_def_id, in_cycle)
-}
-
-/// Cycle handling for [ImplSemantic::priv_impl_constant_semantic_data].
-fn priv_impl_constant_semantic_data_cycle<'db>(
+fn impl_constant_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     impl_constant_def_id: ImplConstantDefId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplItemConstantData<'db>> {
-    // Forwarding cycle handling to `priv_impl_constant_semantic_data` handler.
-    priv_impl_constant_semantic_data(db, impl_constant_def_id, true)
+    impl_constant_semantic_data(db, impl_constant_def_id, true).clone()
 }
 
 /// Validates the impl item constant, and returns the matching trait constant id.
@@ -5319,30 +5223,39 @@ pub trait ImplSemantic<'db>: Database {
     /// Returns the semantic diagnostics of an impl item constant.
     fn impl_constant_def_semantic_diagnostics(
         &'db self,
-        impl_constant_def_id: ImplConstantDefId<'db>,
+        id: ImplConstantDefId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_constant_def_semantic_diagnostics_tracked(self.as_dyn_database(), impl_constant_def_id)
+        impl_constant_semantic_data(self.as_dyn_database(), id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the resolved constant value of an impl item constant.
-    fn impl_constant_def_value(
-        &'db self,
-        impl_constant_def_id: ImplConstantDefId<'db>,
-    ) -> Maybe<ConstValueId<'db>> {
-        impl_constant_def_value_tracked(self.as_dyn_database(), impl_constant_def_id)
+    fn impl_constant_def_value(&'db self, id: ImplConstantDefId<'db>) -> Maybe<ConstValueId<'db>> {
+        Ok(impl_constant_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .constant_data
+            .const_value)
     }
     /// Returns the resolution resolved_items of an impl item constant.
     fn impl_constant_def_resolver_data(
         &'db self,
-        impl_constant_def_id: ImplConstantDefId<'db>,
+        id: ImplConstantDefId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        impl_constant_def_resolver_data_tracked(self.as_dyn_database(), impl_constant_def_id)
+        Ok(impl_constant_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .constant_data
+            .resolver_data
+            .clone())
     }
     /// Returns the type of an impl item constant.
     fn impl_constant_def_trait_constant(
         &'db self,
-        impl_constant_def_id: ImplConstantDefId<'db>,
+        id: ImplConstantDefId<'db>,
     ) -> Maybe<TraitConstantId<'db>> {
-        impl_constant_def_trait_constant_tracked(self.as_dyn_database(), impl_constant_def_id)
+        impl_constant_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .trait_constant_id
     }
     /// Private query to compute data about an impl item constant.
     fn priv_impl_constant_semantic_data(
@@ -5350,11 +5263,7 @@ pub trait ImplSemantic<'db>: Database {
         impl_constant_def_id: ImplConstantDefId<'db>,
         in_cycle: bool,
     ) -> Maybe<ImplItemConstantData<'db>> {
-        priv_impl_constant_semantic_data_tracked(
-            self.as_dyn_database(),
-            impl_constant_def_id,
-            in_cycle,
-        )
+        impl_constant_semantic_data(self.as_dyn_database(), impl_constant_def_id, in_cycle).clone()
     }
 
     // Impl constant.
