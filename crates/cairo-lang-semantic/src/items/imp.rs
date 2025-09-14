@@ -2827,129 +2827,19 @@ pub struct ImplItemTypeData<'db> {
 
 // --- Selectors ---
 
-/// Implementation of [ImplSemantic::impl_type_def_semantic_diagnostics].
-fn impl_type_def_semantic_diagnostics<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_impl_type_semantic_data(impl_type_def_id, false)
-        .map(|data| data.diagnostics)
-        .unwrap_or_default()
-}
-
-/// Query implementation of [ImplSemantic::impl_type_def_semantic_diagnostics].
-#[salsa::tracked]
-fn impl_type_def_semantic_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    impl_type_def_semantic_diagnostics(db, impl_type_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_type_def_resolved_type].
-fn impl_type_def_resolved_type<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<TypeId<'db>> {
-    db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.resolved_type
-}
-
-/// Query implementation of [ImplSemantic::impl_type_def_resolved_type].
-#[salsa::tracked(cycle_result=impl_type_def_resolved_type_cycle)]
-fn impl_type_def_resolved_type_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<TypeId<'db>> {
-    impl_type_def_resolved_type(db, impl_type_def_id)
-}
-
-/// Cycle handling for [ImplSemantic::impl_type_def_resolved_type].
-fn impl_type_def_resolved_type_cycle<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<TypeId<'db>> {
-    db.priv_impl_type_semantic_data(impl_type_def_id, true)?.type_alias_data.resolved_type
-}
-
-/// Implementation of [ImplSemantic::impl_type_def_generic_params].
-fn impl_type_def_generic_params<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    Ok(db.priv_impl_type_def_generic_params_data(impl_type_def_id)?.generic_params)
-}
-
-/// Query implementation of [ImplSemantic::impl_type_def_generic_params].
-#[salsa::tracked]
-fn impl_type_def_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<Vec<GenericParam<'db>>> {
-    impl_type_def_generic_params(db, impl_type_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_type_def_attributes].
-fn impl_type_def_attributes<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    Ok(db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.attributes)
-}
-
-/// Query implementation of [ImplSemantic::impl_type_def_attributes].
-#[salsa::tracked]
-fn impl_type_def_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    impl_type_def_attributes(db, impl_type_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_type_def_resolver_data].
-fn impl_type_def_resolver_data<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db.priv_impl_type_semantic_data(impl_type_def_id, false)?.type_alias_data.resolver_data)
-}
-
-/// Query implementation of [ImplSemantic::impl_type_def_resolver_data].
-#[salsa::tracked]
-fn impl_type_def_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    impl_type_def_resolver_data(db, impl_type_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_type_def_trait_type].
-fn impl_type_def_trait_type<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<TraitTypeId<'db>> {
-    db.priv_impl_type_semantic_data(impl_type_def_id, false)?.trait_type_id
-}
-
-/// Query implementation of [ImplSemantic::impl_type_def_trait_type].
-#[salsa::tracked]
-fn impl_type_def_trait_type_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<TraitTypeId<'db>> {
-    impl_type_def_trait_type(db, impl_type_def_id)
-}
-
 // --- Computation ---
 
-/// Implementation of [ImplSemantic::priv_impl_type_semantic_data].
-fn priv_impl_type_semantic_data<'db>(
+/// Returns data about an impl type definition.
+#[salsa::tracked(cycle_result=impl_type_semantic_data_cycle, returns(ref))]
+fn impl_type_semantic_data<'db>(
     db: &'db dyn Database,
     impl_type_def_id: ImplTypeDefId<'db>,
     in_cycle: bool,
 ) -> Maybe<ImplItemTypeData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?;
-    let generic_params_data = db.priv_impl_type_def_generic_params_data(impl_type_def_id)?;
+    let generic_params_data =
+        impl_type_def_generic_params_data(db, impl_type_def_id).maybe_as_ref()?.clone();
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
 
     let trait_type_id =
@@ -2984,28 +2874,17 @@ fn priv_impl_type_semantic_data<'db>(
     }
 }
 
-/// Query implementation of [ImplSemantic::priv_impl_type_semantic_data].
-#[salsa::tracked(cycle_result=priv_impl_type_semantic_data_cycle)]
-fn priv_impl_type_semantic_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-    in_cycle: bool,
-) -> Maybe<ImplItemTypeData<'db>> {
-    priv_impl_type_semantic_data(db, impl_type_def_id, in_cycle)
-}
-
-/// Cycle handling for [ImplSemantic::priv_impl_type_semantic_data].
-fn priv_impl_type_semantic_data_cycle<'db>(
+fn impl_type_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     impl_type_def_id: ImplTypeDefId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplItemTypeData<'db>> {
-    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
-    priv_impl_type_semantic_data(db, impl_type_def_id, true)
+    impl_type_semantic_data(db, impl_type_def_id, true).clone()
 }
 
-/// Implementation of [ImplSemantic::priv_impl_type_def_generic_params_data].
-fn priv_impl_type_def_generic_params_data<'db>(
+/// Returns the generic parameters data of an impl type definition.
+#[salsa::tracked(returns(ref))]
+fn impl_type_def_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_type_def_id: ImplTypeDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -3021,15 +2900,6 @@ fn priv_impl_type_def_generic_params_data<'db>(
         lookup_item_id,
         Some(impl_resolver_data),
     )
-}
-
-/// Query implementation of [ImplSemantic::priv_impl_type_def_generic_params_data].
-#[salsa::tracked]
-fn priv_impl_type_def_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_type_def_id: ImplTypeDefId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    priv_impl_type_def_generic_params_data(db, impl_type_def_id)
 }
 
 /// Validates the impl item type, and returns the matching trait type id.
@@ -3121,7 +2991,7 @@ fn impl_type_concrete_implized_cycle<'db>(
     _tracked: Tracked,
     impl_type_id: ImplTypeId<'db>,
 ) -> Maybe<TypeId<'db>> {
-    // Forwarding cycle handling to `priv_impl_type_semantic_data` handler.
+    // Forwarding cycle handling to `impl_type_semantic_data` handler.
     impl_type_concrete_implized(db, impl_type_id)
 }
 
@@ -5360,44 +5230,52 @@ pub trait ImplSemantic<'db>: Database {
     /// Returns the semantic diagnostics of an impl item type.
     fn impl_type_def_semantic_diagnostics(
         &'db self,
-        impl_type_def_id: ImplTypeDefId<'db>,
+        id: ImplTypeDefId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_type_def_semantic_diagnostics_tracked(self.as_dyn_database(), impl_type_def_id)
+        impl_type_semantic_data(self.as_dyn_database(), id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the resolved type of an impl item type.
-    fn impl_type_def_resolved_type(
-        &'db self,
-        impl_type_def_id: ImplTypeDefId<'db>,
-    ) -> Maybe<TypeId<'db>> {
-        impl_type_def_resolved_type_tracked(self.as_dyn_database(), impl_type_def_id)
+    fn impl_type_def_resolved_type(&'db self, id: ImplTypeDefId<'db>) -> Maybe<TypeId<'db>> {
+        impl_type_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .type_alias_data
+            .resolved_type
     }
     /// Returns the generic parameters of an impl item type.
     fn impl_type_def_generic_params(
         &'db self,
-        impl_type_def_id: ImplTypeDefId<'db>,
+        id: ImplTypeDefId<'db>,
     ) -> Maybe<Vec<GenericParam<'db>>> {
-        impl_type_def_generic_params_tracked(self.as_dyn_database(), impl_type_def_id)
+        Ok(impl_type_def_generic_params_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .generic_params
+            .clone())
     }
     /// Returns the attributes of an impl type.
-    fn impl_type_def_attributes(
-        &'db self,
-        impl_type_def_id: ImplTypeDefId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
-        impl_type_def_attributes_tracked(self.as_dyn_database(), impl_type_def_id)
+    fn impl_type_def_attributes(&'db self, id: ImplTypeDefId<'db>) -> Maybe<Vec<Attribute<'db>>> {
+        Ok(impl_type_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .type_alias_data
+            .attributes
+            .clone())
     }
     /// Returns the resolution resolved_items of an impl item type.
     fn impl_type_def_resolver_data(
         &'db self,
-        impl_type_def_id: ImplTypeDefId<'db>,
+        id: ImplTypeDefId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        impl_type_def_resolver_data_tracked(self.as_dyn_database(), impl_type_def_id)
+        Ok(impl_type_semantic_data(self.as_dyn_database(), id, false)
+            .maybe_as_ref()?
+            .type_alias_data
+            .resolver_data
+            .clone())
     }
     /// Returns the trait type of an impl type.
-    fn impl_type_def_trait_type(
-        &'db self,
-        impl_type_def_id: ImplTypeDefId<'db>,
-    ) -> Maybe<TraitTypeId<'db>> {
-        impl_type_def_trait_type_tracked(self.as_dyn_database(), impl_type_def_id)
+    fn impl_type_def_trait_type(&'db self, id: ImplTypeDefId<'db>) -> Maybe<TraitTypeId<'db>> {
+        impl_type_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.trait_type_id
     }
     /// Private query to compute data about an impl item type.
     fn priv_impl_type_semantic_data(
@@ -5405,14 +5283,14 @@ pub trait ImplSemantic<'db>: Database {
         impl_type_def_id: ImplTypeDefId<'db>,
         in_cycle: bool,
     ) -> Maybe<ImplItemTypeData<'db>> {
-        priv_impl_type_semantic_data_tracked(self.as_dyn_database(), impl_type_def_id, in_cycle)
+        impl_type_semantic_data(self.as_dyn_database(), impl_type_def_id, in_cycle).clone()
     }
     /// Private query to compute data about the generic parameters of an impl item type.
     fn priv_impl_type_def_generic_params_data(
         &'db self,
         impl_type_def_id: ImplTypeDefId<'db>,
     ) -> Maybe<GenericParamsData<'db>> {
-        priv_impl_type_def_generic_params_data_tracked(self.as_dyn_database(), impl_type_def_id)
+        impl_type_def_generic_params_data(self.as_dyn_database(), impl_type_def_id).clone()
     }
     /// Returns the deref chain and diagnostics for a given type.
     fn deref_chain(
