@@ -1,20 +1,27 @@
 //! Indexing traits for indexing operations on collections.
 //!
-//! This module provides traits for implementing the indexing operator `[]`, offering two distinct
-//! approaches to access elements in collections:
+//! This module provides traits for implementing indexing operations on collections:
 //!
-//! * [`IndexView`] - For snapshot-based access
-//! * [`Index`] - For reference-based access
+//! * [`IndexView`] - For the `[]` operator with snapshot-based access
+//! * [`Index`] - For the `[]` operator with mutable reference-based access
+//! * [`SliceIndex`] - For enabling `.get()` with different index types (ranges, usize, etc.)
 //!
 //! # When to use which trait
 //!
+//! ## For the `[]` operator:
 //! - Use [`IndexView`] when the collection can be accessed in a read-only context and is not
-//! mutated by a read access. This is the most common case in Cairo.
+//!   mutated by a read access. This is the most common case in Cairo.
 //! - Use [`Index`] when the input type needs to be passed as `ref`. This is mainly useful for types
 //!   depending on a [`Felt252Dict`], where dictionary accesses are modifying the data structure
 //!   itself.
 //!
-//! Only one of these traits should be implemented for any given type, not both.
+//! **Important**: Only one of [`IndexView`] or [`Index`] should be implemented for any given
+//! type-index pair, not both.
+//!
+//! ## For the `.get()` method:
+//! - Use [`SliceIndex`] to enable a container's `.get()` method to work with multiple index types
+//!   (e.g., `usize` for single elements, `Range<usize>` for slices). Unlike the `[]` operator
+//!   traits, `SliceIndex` returns `Option` for safe, non-panicking access.
 //!
 //! [`Felt252Dict`]: core::dict::Felt252Dict
 
@@ -158,4 +165,43 @@ impl DeprecatedIndexImpl<
     fn index(ref self: C, index: I) -> Self::Target {
         Deprecated::index(ref self, index)
     }
+}
+
+/// A trait for indexing into a container with different index types.
+///
+/// Unlike [`IndexView`] which panics on out-of-bounds access, `SliceIndex` returns
+/// an `Option`, making it suitable for fallible indexing operations. This trait allows
+/// containers to support multiple index types (like `Range<usize>`, `RangeInclusive<usize>`,
+/// or `usize`) through a unified interface.
+///
+/// # Examples
+///
+/// The following example shows how `ByteSpan` implements `SliceIndex` for both `Range<usize>`
+/// and `RangeInclusive<usize>`, enabling safe slicing operations that return `None` when
+/// out of bounds.
+///
+/// ```
+/// use core::byte_array::{ByteSpan, ByteSpanTrait};
+///
+/// let ba: ByteArray = "hello";
+/// let span = ba.span();
+///
+/// // Using Range<usize>
+/// let slice = span.get(1..4).unwrap();
+/// assert_eq!(slice.to_byte_array(), "ell");
+///
+/// // Using RangeInclusive<usize>
+/// let slice = span.get(1..=3).unwrap();
+/// assert_eq!(slice.to_byte_array(), "ell");
+///
+/// // Out of bounds returns None
+/// assert!(span.get(10..20).is_none());
+/// ```
+// TODO(giladchase): add examples for `usize` once supported.
+pub trait SliceIndex<C, I> {
+    /// The returned type after indexing.
+    type Output;
+
+    /// Returns the output at this index, if in bounds.
+    fn get(self: @C, index: I) -> Option<Self::Output>;
 }

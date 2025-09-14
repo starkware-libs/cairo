@@ -1,5 +1,6 @@
 #[feature("byte-span")]
 use crate::byte_array::{ByteSpanTrait, ToByteSpanTrait};
+use crate::num::traits::Bounded;
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -508,7 +509,6 @@ fn test_from_collect() {
     assert_eq!(ba, "hello");
 }
 
-// TODO(giladchase): add dedicated is_empty test once we have `slice`.
 #[test]
 fn test_span_len() {
     // Test simple happy flow --- value is included in the last word.
@@ -518,27 +518,71 @@ fn test_span_len() {
     assert_eq!(span.len(), 1);
     assert!(!span.is_empty());
 
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let span = ba_31.span();
+    assert_eq!(span.len(), 31, "wrong span len");
+    assert!(!span.is_empty());
+
     // Test empty.
     let empty_ba: ByteArray = "";
     let empty_span = empty_ba.span();
     assert_eq!(empty_span.len(), 0);
     assert!(empty_span.is_empty());
 
-    // TODO(giladchase): Add start-offset using slice once supported.
     // First word in the array, second in last word.
     let two_byte31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
-    let mut single_span = two_byte31.span();
-    assert_eq!(single_span.len(), 33, "len error with start offset");
+    let mut single_span = two_byte31.span().get(1..33).unwrap();
+    assert_eq!(single_span.len(), 32, "len error with start offset");
+    assert!(!single_span.is_empty());
+    single_span = two_byte31.span().get(1..=32).unwrap();
+    assert_eq!(single_span.len(), 32, "len error with start offset (inclusive)");
     assert!(!single_span.is_empty());
 
-    // TODO(giladchase): Add start-offset using slice once supported.
     // First word in the array, second in the array, third in last word.
     let three_bytes31: ByteArray =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"; // 64 chars.
-    let mut three_span = three_bytes31.span();
-    assert_eq!(three_span.len(), 64, "len error with size-3 bytearray");
+    let mut three_span = three_bytes31.span().get(1..64).unwrap();
+    assert_eq!(three_span.len(), 63, "len error with size-3 bytearray");
+    assert!(!three_span.is_empty());
+    three_span = three_bytes31.span().get(1..=63).unwrap();
+    assert_eq!(three_span.len(), 63, "len error with size-3 bytearray (inclusive)");
     assert!(!three_span.is_empty());
     // TODO(giladchase): use `ByteSpan::PartialEq` to check that a consuming slice == Default.
+}
+
+#[test]
+fn test_span_slice_is_empty() {
+    let ba: ByteArray = "hello";
+    let span = ba.span();
+
+    let empty = span.get(2..2).unwrap();
+    assert_eq!(empty.len(), 0);
+    assert!(empty.is_empty());
+
+    let empty_string: ByteArray = "";
+    assert_eq!(empty_string, empty.to_byte_array());
+
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let span = ba_31.span();
+    assert!(span.get(30..30).unwrap().is_empty());
+    assert!(span.get(31..31).unwrap().is_empty());
+    assert!(!span.get(30..31).unwrap().is_empty());
+    assert!(!span.get(30..=30).unwrap().is_empty());
+    assert!(!span.get(15..31).unwrap().is_empty());
+    assert!(!span.get(15..=30).unwrap().is_empty());
+    assert!(!span.get(16..31).unwrap().is_empty());
+    assert!(!span.get(16..=30).unwrap().is_empty());
+
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    let span = ba_30.span();
+    assert!(span.get(29..29).unwrap().is_empty());
+    assert!(span.get(30..30).unwrap().is_empty());
+    assert!(!span.get(29..30).unwrap().is_empty());
+    assert!(!span.get(29..=29).unwrap().is_empty());
+    assert!(!span.get(14..29).unwrap().is_empty());
+    assert!(!span.get(14..=28).unwrap().is_empty());
+    assert!(!span.get(15..29).unwrap().is_empty());
+    assert!(!span.get(15..=28).unwrap().is_empty());
 }
 
 #[test]
@@ -562,6 +606,134 @@ fn test_span_copy() {
 }
 
 #[test]
+fn test_span_slice_empty() {
+    let ba: ByteArray = "hello";
+    let span = ba.span();
+
+    let empty = span.get(2..2).unwrap();
+    assert_eq!(empty.len(), 0);
+    assert!(empty.is_empty());
+
+    let empty_string: ByteArray = "";
+    assert_eq!(empty_string, empty.to_byte_array());
+}
+
+// TODO(giladchase): replace assert+is_none with assert_eq when we have PartialEq.
+#[test]
+fn test_span_slice_out_of_bounds() {
+    let ba: ByteArray = "hello";
+    let span = ba.span();
+
+    assert!(span.get(3..8).is_none(), "end out of bounds");
+    assert!(span.get(3..=7).is_none(), "end out of bounds (inclusive)");
+    assert!(span.get(6..7).is_none(), "start out of bounds");
+    assert!(span.get(6..=6).is_none(), "start out of bounds (inclusive)");
+
+    assert!(
+        span.get(2..4).unwrap().get((Bounded::<usize>::MAX - 1)..Bounded::<usize>::MAX).is_none(),
+        "start offset overflow",
+    );
+    assert!(
+        span.get(2..=3).unwrap().get((Bounded::<usize>::MAX - 1)..Bounded::<usize>::MAX).is_none(),
+        "start offset overflow (first get inclusive)",
+    );
+    assert!(
+        span.get(2..4).unwrap().get((Bounded::<usize>::MAX - 1)..=Bounded::<usize>::MAX).is_none(),
+        "start offset overflow (second get inclusive)",
+    );
+    assert!(
+        span.get(2..=3).unwrap().get((Bounded::<usize>::MAX - 1)..=Bounded::<usize>::MAX).is_none(),
+        "start offset overflow (both gets inclusive)",
+    );
+    assert!(span.get(Bounded::<usize>::MAX..0).is_none(), "backwards range");
+
+    let empty_string: ByteArray = "";
+    assert!(empty_string.span().get(0..2).is_none(), "empty slice is sliceable");
+    assert!(empty_string.span().get(0..=1).is_none(), "empty slice is sliceable (inclusive)");
+}
+
+#[test]
+fn test_span_slice_under_31_bytes() {
+    // Word entirely in remainder word.
+    let ba: ByteArray = "abcde";
+    let span = ba.span();
+
+    let mut slice: ByteArray = span.get(0..3).unwrap().to_byte_array();
+    assert_eq!(slice, "abc", "first 3 bytes");
+    slice = span.get(0..=2).unwrap().to_byte_array();
+    assert_eq!(slice, "abc", "first 3 bytes (inclusive)");
+
+    slice = span.get(2..4).unwrap().to_byte_array();
+    assert_eq!(slice, "cd", "middle 2 bytes");
+    slice = span.get(2..=3).unwrap().to_byte_array();
+    assert_eq!(slice, "cd", "middle 2 bytes (inclusive)");
+
+    slice = span.get(4..5).unwrap().to_byte_array();
+    assert_eq!(slice, "e", "last byte");
+    slice = span.get(4..=4).unwrap().to_byte_array();
+    assert_eq!(slice, "e", "last byte (inclusive)");
+}
+#[test]
+fn test_span_slice_exactly_31_bytes() {
+    // 1 full data word, empty last_word.
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde"; // 31 bytes
+    let span31 = ba_31.span();
+    assert_eq!(span31.len(), 31);
+
+    let mut ba: ByteArray = span31.get(0..31).unwrap().to_byte_array();
+    assert_eq!(ba, ba_31);
+    ba = span31.get(0..=30).unwrap().to_byte_array();
+    assert_eq!(ba, ba_31);
+
+    // Partial slice
+    ba = span31.get(10..20).unwrap().to_byte_array();
+    assert_eq!(ba, "KLMNOPQRST", "middle 10 bytes");
+    ba = span31.get(10..=19).unwrap().to_byte_array();
+    assert_eq!(ba, "KLMNOPQRST", "middle 10 bytes (inclusive)");
+}
+
+#[test]
+fn test_span_slice_positions() {
+    // Two full bytes31 + remainder with 2 bytes.
+    let ba: ByteArray =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"; // 64 bytes
+    let span = ba.span();
+
+    // Slice from middle of first word to middle of second word.
+    let short_slice_across_data_words = span.get(10..40).unwrap();
+    let mut ba_from_span: ByteArray = short_slice_across_data_words.to_byte_array();
+    assert_eq!(ba_from_span, "KLMNOPQRSTUVWXYZabcdefghijklmn", "multi-word short slice failed");
+    ba_from_span = span.get(10..=39).unwrap().to_byte_array();
+    assert_eq!(
+        ba_from_span, "KLMNOPQRSTUVWXYZabcdefghijklmn", "multi-word short slice failed (inclusive)",
+    );
+
+    // Slice spanning 3 words (two data and remainder).
+    let long_slice_across_data_words = span.get(5..64).unwrap();
+    ba_from_span = long_slice_across_data_words.to_byte_array();
+    assert_eq!(
+        ba_from_span,
+        "FGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$",
+        "multi-word long slice failed",
+    );
+    ba_from_span = span.get(5..=63).unwrap().to_byte_array();
+    assert_eq!(
+        ba_from_span,
+        "FGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$",
+        "multi-word long slice failed (inclusive)",
+    );
+
+    // Slice from second word into remainder.
+    let short_slice_into_remainder_word = span.get(29..49).unwrap();
+    ba_from_span = short_slice_into_remainder_word.to_byte_array();
+    assert_eq!(ba_from_span, "defghijklmnopqrstuvw", "short slice into remainder word failed");
+    ba_from_span = span.get(29..=48).unwrap().to_byte_array();
+    assert_eq!(
+        ba_from_span, "defghijklmnopqrstuvw", "short slice into remainder word failed (inclusive)",
+    );
+}
+
+#[test]
 fn test_span_to_bytearray() {
     let empty_ba: ByteArray = "";
     assert_eq!(empty_ba.span().to_byte_array(), empty_ba);
@@ -578,5 +750,42 @@ fn test_span_to_bytearray() {
     let even_larger_ba: ByteArray =
         "abcdeFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"; // 64 bytes
     assert_eq!(even_larger_ba.span().to_byte_array(), even_larger_ba);
-    // TODO(giladchase): test with slice.
+
+    // Test sliced span with offset.
+    let mut sliced: ByteArray = large_ba.span().get(10..35).unwrap().to_byte_array();
+    assert_eq!(sliced, ":;<=>?@ABCDEFGHIJKLMNOPQR");
+    sliced = large_ba.span().get(10..=34).unwrap().to_byte_array();
+    assert_eq!(sliced, ":;<=>?@ABCDEFGHIJKLMNOPQR");
+}
+
+#[test]
+fn test_span_multiple_start_offset_slicing() {
+    // Test to demonstrate the optimization of lazy start-offset trimming.
+    // Multiple slicing operations on remainder word should be more efficient.
+    let ba: ByteArray = "abcdef"; // 6 bytes in remainder
+    let span = ba.span();
+
+    let slice1 = span.get(1..6).unwrap();
+    let slice2 = slice1.get(1..5).unwrap();
+    let slice3 = slice2.get(1..4).unwrap();
+
+    // Convert to ByteArray to verify correctness
+    let mut result1: ByteArray = slice1.to_byte_array();
+    assert_eq!(result1, "bcdef", "first slice");
+    let mut result2: ByteArray = slice2.to_byte_array();
+    assert_eq!(result2, "cdef", "second slice");
+    let mut result3: ByteArray = slice3.to_byte_array();
+    assert_eq!(result3, "def", "third slice");
+
+    // Test with RangeInclusive
+    let slice1_inc = span.get(1..=5).unwrap();
+    let slice2_inc = slice1_inc.get(1..=4).unwrap();
+    let slice3_inc = slice2_inc.get(1..=3).unwrap();
+
+    result1 = slice1_inc.to_byte_array();
+    assert_eq!(result1, "bcdef", "first slice (inclusive)");
+    result2 = slice2_inc.to_byte_array();
+    assert_eq!(result2, "cdef", "second slice (inclusive)");
+    result3 = slice3_inc.to_byte_array();
+    assert_eq!(result3, "def", "third slice (inclusive)");
 }
