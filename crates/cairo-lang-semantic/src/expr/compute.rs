@@ -1531,7 +1531,7 @@ pub fn compute_root_expr<'db>(
     }
     let constrains =
         ctx.db.generic_params_type_constraints(ctx.resolver.data.generic_params.clone());
-    inference.conform_generic_params_type_constraints(&constrains);
+    inference.conform_generic_params_type_constraints(constrains);
 
     let return_type = ctx.reduce_ty(return_type);
     let res = compute_expr_block_semantic(ctx, syntax)?;
