@@ -282,7 +282,7 @@ pub fn compile_prepared_db_program_artifact<'db>(
     let add_statements_functions = compiler_config.add_statements_functions;
     let add_statements_code_locations = compiler_config.add_statements_code_locations;
 
-    compiler_config.diagnostics_reporter.ensure(db)?;
+    ensure_diagnostics(db, &mut compiler_config.diagnostics_reporter)?;
 
     let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
 
