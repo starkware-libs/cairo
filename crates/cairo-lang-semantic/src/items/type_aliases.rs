@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use salsa::Database;
 
 use super::generics::{GenericParamsData, semantic_generic_params};
+use crate::TypeId;
 use crate::diagnostic::SemanticDiagnosticKind::TypeAliasCycle;
 use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
@@ -15,13 +16,11 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{GenericParam, TypeId};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
 pub struct TypeAliasData<'db> {
     pub resolved_type: Maybe<TypeId<'db>>,
-    pub generic_params: Vec<GenericParam<'db>>,
     pub attributes: Vec<Attribute<'db>>,
     pub resolver_data: Arc<ResolverData<'db>>,
 }
@@ -81,11 +80,10 @@ pub fn type_alias_semantic_data_helper<'db>(
     let inference = &mut resolver.inference();
     inference.finalize(diagnostics, type_alias_ast.stable_ptr(db).untyped());
 
-    let generic_params = inference.rewrite(generic_params_data.generic_params).no_err();
     let ty = inference.rewrite(ty).no_err();
     let attributes = type_alias_ast.attributes(db).structurize(db);
     let resolver_data = Arc::new(resolver.data);
-    Ok(TypeAliasData { resolved_type: Ok(ty), generic_params, attributes, resolver_data })
+    Ok(TypeAliasData { resolved_type: Ok(ty), attributes, resolver_data })
 }
 
 /// Cycle handling for a type-alias item.
@@ -107,10 +105,5 @@ pub fn type_alias_semantic_data_cycle_helper<'db>(
 
     let attributes = type_alias_ast.attributes(db).structurize(db);
 
-    Ok(TypeAliasData {
-        resolved_type: err,
-        generic_params: generic_params_data.generic_params,
-        attributes,
-        resolver_data: Arc::new(resolver.data),
-    })
+    Ok(TypeAliasData { resolved_type: err, attributes, resolver_data: Arc::new(resolver.data) })
 }
