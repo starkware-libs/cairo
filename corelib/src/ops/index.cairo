@@ -6,6 +6,9 @@
 //! * [`IndexView`] - For snapshot-based access
 //! * [`Index`] - For reference-based access
 //!
+//! For safe indexing operations that return `Option`, see the unstable [`Get`] trait
+//! in the [`get`] module.
+//!
 //! # When to use which trait
 //!
 //! - Use [`IndexView`] when the collection can be accessed in a read-only context and is not
@@ -17,6 +20,8 @@
 //! Only one of these traits should be implemented for any given type, not both.
 //!
 //! [`Felt252Dict`]: core::dict::Felt252Dict
+//! [`Get`]: crate::ops::get::Get
+//! [`get`]: crate::ops::get
 
 #[feature("deprecated-index-traits")]
 use crate::traits::{Index as DeprecatedIndex, IndexView as DeprecatedIndexView};
