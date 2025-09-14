@@ -15,10 +15,12 @@ use salsa::Database;
 
 use crate::Variant;
 use crate::corelib::{self, core_submodule, get_submodule};
-use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceId;
+use crate::items::enm::EnumSemantic;
 use crate::items::functions::GenericFunctionId;
 use crate::items::macro_call::module_macro_modules;
+use crate::items::module::ModuleSemantic;
+use crate::items::trt::TraitSemantic;
 use crate::items::us::SemanticUseEx;
 use crate::keyword::SELF_PARAM_KW;
 use crate::resolve::{ResolvedGenericItem, Resolver};
@@ -33,7 +35,7 @@ pub enum TypeFilter<'db> {
     TypeHead(TypeHead<'db>),
 }
 
-/// Implementation of [crate::db::SemanticGroup::methods_in_module].
+/// Implementation of [LspHelpers::methods_in_module].
 pub fn methods_in_module<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
@@ -67,7 +69,7 @@ pub fn methods_in_module<'db>(
     Arc::new(result)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::methods_in_module].
+/// Query implementation of [LspHelpers::methods_in_module].
 #[salsa::tracked]
 pub fn methods_in_module_tracked<'db>(
     db: &'db dyn Database,
@@ -92,7 +94,7 @@ fn fit_for_method(head: &TypeHead<'_>, type_head: &TypeHead<'_>) -> bool {
     false
 }
 
-/// Implementation of [crate::db::SemanticGroup::methods_in_crate].
+/// Implementation of [LspHelpers::methods_in_crate].
 pub fn methods_in_crate<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
@@ -105,7 +107,7 @@ pub fn methods_in_crate<'db>(
     Arc::new(result)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
+/// Query implementation of [LspHelpers::methods_in_crate].
 #[salsa::tracked]
 pub fn methods_in_crate_tracked<'db>(
     db: &'db dyn Database,
@@ -115,7 +117,7 @@ pub fn methods_in_crate_tracked<'db>(
     methods_in_crate(db, crate_id, type_filter)
 }
 
-/// Implementation of [crate::db::SemanticGroup::visible_importables_in_module].
+/// Implementation of [LspHelpers::visible_importables_in_module].
 pub fn visible_importables_in_module<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
@@ -133,7 +135,7 @@ pub fn visible_importables_in_module<'db>(
     .unwrap_or_else(|| Arc::new(Vec::new()))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_importables_in_module].
+/// Query implementation of [LspHelpers::visible_importables_in_module].
 #[salsa::tracked]
 pub fn visible_importables_in_module_tracked<'db>(
     db: &'db dyn Database,
@@ -326,7 +328,7 @@ fn visible_importables_in_module_ex<'db>(
     Some(Arc::new(result))
 }
 
-/// Implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
+/// Implementation of [LspHelpers::visible_importables_in_crate].
 pub fn visible_importables_in_crate<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
@@ -343,7 +345,7 @@ pub fn visible_importables_in_crate<'db>(
         .into()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_importables_in_crate].
+/// Query implementation of [LspHelpers::visible_importables_in_crate].
 #[salsa::tracked]
 pub fn visible_importables_in_crate_tracked<'db>(
     db: &'db dyn Database,
@@ -353,7 +355,7 @@ pub fn visible_importables_in_crate_tracked<'db>(
     visible_importables_in_crate(db, crate_id, user_module_file_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::visible_importables_from_module].
+/// Implementation of [LspHelpers::visible_importables_from_module].
 pub fn visible_importables_from_module<'db>(
     db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
@@ -415,7 +417,7 @@ pub fn visible_importables_from_module<'db>(
     Some(Arc::new(result))
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_importables_from_module].
+/// Query implementation of [LspHelpers::visible_importables_from_module].
 pub fn visible_importables_from_module_tracked<'db>(
     db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
@@ -432,7 +434,7 @@ fn visible_importables_from_module_helper<'db>(
     visible_importables_from_module(db, module_file_id)
 }
 
-/// Implementation of [crate::db::SemanticGroup::visible_traits_from_module].
+/// Implementation of [LspHelpers::visible_traits_from_module].
 pub fn visible_traits_from_module<'db>(
     db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
@@ -454,8 +456,8 @@ pub fn visible_traits_from_module<'db>(
     Some(traits)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::visible_traits_from_module].
-pub fn visible_traits_from_module_tracked<'db>(
+/// Query implementation of [LspHelpers::visible_traits_from_module].
+fn visible_traits_from_module_tracked<'db>(
     db: &'db dyn Database,
     module_file_id: ModuleFileId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
@@ -470,3 +472,64 @@ fn visible_traits_from_module_helper<'db>(
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
     visible_traits_from_module(db, module_file_id)
 }
+
+/// Trait for LSP helpers.
+pub trait LspHelpers<'db>: Database {
+    /// Returns all methods in a module that match the given type filter.
+    fn methods_in_module(
+        &'db self,
+        module_id: ModuleId<'db>,
+        type_filter: TypeFilter<'db>,
+    ) -> Arc<Vec<TraitFunctionId<'db>>> {
+        methods_in_module_tracked(self.as_dyn_database(), module_id, type_filter)
+    }
+    /// Returns all methods in a crate that match the given type filter.
+    fn methods_in_crate(
+        &'db self,
+        crate_id: CrateId<'db>,
+        type_filter: TypeFilter<'db>,
+    ) -> Arc<Vec<TraitFunctionId<'db>>> {
+        methods_in_crate_tracked(self.as_dyn_database(), crate_id, type_filter)
+    }
+    /// Returns all the importables visible from a module, alongside a visible use path to the
+    /// trait.
+    fn visible_importables_from_module(
+        &'db self,
+        module_id: ModuleFileId<'db>,
+    ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
+        visible_importables_from_module_tracked(self.as_dyn_database(), module_id)
+    }
+    /// Returns all visible importables in a module, alongside a visible use path to the trait.
+    /// `user_module_file_id` is the module from which the importables should be visible. If
+    /// `include_parent` is true, the parent module of `module_id` is also considered.
+    fn visible_importables_in_module(
+        &'db self,
+        module_id: ModuleId<'db>,
+        user_module_file_id: ModuleFileId<'db>,
+        include_parent: bool,
+    ) -> Arc<Vec<(ImportableId<'db>, String)>> {
+        visible_importables_in_module_tracked(
+            self.as_dyn_database(),
+            module_id,
+            user_module_file_id,
+            include_parent,
+        )
+    }
+    /// Returns all visible importables in a crate, alongside a visible use path to the trait.
+    /// `user_module_file_id` is the module from which the importables should be visible.
+    fn visible_importables_in_crate(
+        &'db self,
+        crate_id: CrateId<'db>,
+        user_module_file_id: ModuleFileId<'db>,
+    ) -> Arc<Vec<(ImportableId<'db>, String)>> {
+        visible_importables_in_crate_tracked(self.as_dyn_database(), crate_id, user_module_file_id)
+    }
+    /// Returns all the traits visible from a module, alongside a visible use path to the trait.
+    fn visible_traits_from_module(
+        &'db self,
+        module_id: ModuleFileId<'db>,
+    ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
+        visible_traits_from_module_tracked(self.as_dyn_database(), module_id)
+    }
+}
+impl<'db, T: Database + ?Sized> LspHelpers<'db> for T {}

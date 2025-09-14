@@ -32,8 +32,7 @@ use salsa::Database;
 use syntax::node::TypedStablePtr;
 use syntax::node::helpers::QueryAttrs;
 
-use crate::corelib::{core_submodule, get_submodule};
-use crate::db::SemanticGroup;
+use crate::corelib::{CorelibSemantic, core_submodule, get_submodule};
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
@@ -44,8 +43,10 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData, InferenceId};
-use crate::items::constant::{ConstValue, ImplConstantId, resolve_const_expr_and_evaluate};
-use crate::items::enm::SemanticEnumEx;
+use crate::items::constant::{
+    ConstValue, ConstantSemantic, ImplConstantId, resolve_const_expr_and_evaluate,
+};
+use crate::items::enm::{EnumSemantic, SemanticEnumEx};
 use crate::items::feature_kind::{
     FeatureConfig, FeatureConfigRestore, FeatureKind, HasFeatureKind, feature_config_from_ast_item,
     feature_config_from_item_and_parent_modules,
@@ -54,20 +55,25 @@ use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::generics::generic_params_to_args;
 use crate::items::imp::{
     ConcreteImplId, ConcreteImplLongId, DerefInfo, ImplImplId, ImplLongId, ImplLookupContext,
-    ImplLookupContextId,
+    ImplLookupContextId, ImplSemantic,
 };
-use crate::items::module::ModuleItemInfo;
+use crate::items::impl_alias::ImplAliasSemantic;
+use crate::items::macro_call::MacroCallSemantic;
+use crate::items::module::{ModuleItemInfo, ModuleSemantic};
+use crate::items::module_type_alias::ModuleTypeAliasSemantic;
 use crate::items::trt::{
     ConcreteTraitConstantLongId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
-    ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId,
+    ConcreteTraitImplLongId, ConcreteTraitLongId, ConcreteTraitTypeId, TraitSemantic,
 };
-use crate::items::us::{UseAsPathSegments, get_use_path_segments};
+use crate::items::us::{UseAsPathSegments, UseSemantic, get_use_path_segments};
 use crate::items::{TraitOrImplContext, visibility};
 use crate::keyword::{
     CRATE_KW, MACRO_CALL_SITE, MACRO_DEF_SITE, SELF_PARAM_KW, SELF_TYPE_KW, SUPER_KW,
 };
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
-use crate::types::{ConcreteEnumLongId, ImplTypeId, are_coupons_enabled, resolve_type};
+use crate::types::{
+    ConcreteEnumLongId, ImplTypeId, TypesSemantic, are_coupons_enabled, resolve_type,
+};
 use crate::{
     ConcreteFunction, ConcreteTypeId, ConcreteVariant, FunctionId, FunctionLongId,
     GenericArgumentId, GenericParam, Member, Mutability, TypeId, TypeLongId,

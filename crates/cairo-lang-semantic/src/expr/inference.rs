@@ -22,10 +22,12 @@ use salsa::Database;
 
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
+use crate::corelib::CorelibSemantic;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
+use crate::expr::inference::solver::SemanticSolver;
 use crate::expr::objects::*;
 use crate::expr::pattern::*;
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
@@ -34,11 +36,13 @@ use crate::items::functions::{
     GenericFunctionWithBodyId, ImplFunctionBodyId, ImplGenericFunctionId,
     ImplGenericFunctionWithBodyId,
 };
-use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
+use crate::items::generics::{
+    GenericParamConst, GenericParamImpl, GenericParamSemantic, GenericParamType,
+};
 use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
-    ImplLookupContextId, NegativeImplId, NegativeImplLongId, UninferredGeneratedImplId,
-    UninferredGeneratedImplLongId, UninferredImpl,
+    ImplLookupContextId, ImplSemantic, NegativeImplId, NegativeImplLongId,
+    UninferredGeneratedImplId, UninferredGeneratedImplLongId, UninferredImpl,
 };
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
