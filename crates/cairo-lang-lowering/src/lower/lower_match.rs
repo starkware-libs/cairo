@@ -1843,7 +1843,7 @@ fn report_missing_arm_error<'db>(
         location.long(ctx.db).clone(),
         MatchError(MatchError {
             kind: match_type,
-            error: MatchDiagnostic::MissingMatchArm(variants_string),
+            error: MatchDiagnostic::NonExhaustiveMatch(variants_string),
         }),
     )
 }

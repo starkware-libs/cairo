@@ -257,7 +257,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `_` not covered.
+error: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:3:5-6:5
       match x {
  _____^
@@ -474,7 +474,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `_` not covered.
+error: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:2:5
     match Some(5) {};
     ^^^^^^^^^^^^^^^^
@@ -532,7 +532,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `_` not covered.
+error: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:2:5
     match felt252_is_zero(5) {};
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -878,7 +878,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `Some(None(_))` not covered.
+error: Match is non-exhaustive: `Some(None(_))` not covered.
  --> lib.cairo:2:5-5:5
       match a {
  _____^
@@ -918,7 +918,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `Three(_)` not covered.
+error: Match is non-exhaustive: `Three(_)` not covered.
  --> lib.cairo:8:5-11:5
       match a {
  _____^
@@ -1346,7 +1346,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `(One(_), Two(_))` not covered.
+error: Match is non-exhaustive: `(One(_), Two(_))` not covered.
  --> lib.cairo:9:5-15:5
       match (a, b) {
  _____^
@@ -2540,7 +2540,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `Some(None(_))` not covered.
+error: Match is non-exhaustive: `Some(None(_))` not covered.
  --> lib.cairo:7:5-12:5
       match a {
  _____^
@@ -2889,7 +2889,7 @@ type C = Result<(), ()>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `Ok(Ok(Ok(_)))` not covered.
+error: Match is non-exhaustive: `Ok(Ok(Ok(_)))` not covered.
  --> lib.cairo:5:5-14:5
       match a {
  _____^
@@ -2932,7 +2932,7 @@ type C = Result<(), ()>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `Ok(Err(_))` not covered.
+error: Match is non-exhaustive: `Ok(Err(_))` not covered.
  --> lib.cairo:5:5-14:5
       match a {
  _____^
@@ -2975,7 +2975,7 @@ type C = Result<(), ()>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Missing match arm: `Ok(_)` not covered.
+error: Match is non-exhaustive: `Ok(_)` not covered.
  --> lib.cairo:5:5-14:5
       match a {
  _____^
