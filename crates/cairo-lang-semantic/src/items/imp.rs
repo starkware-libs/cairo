@@ -3660,66 +3660,9 @@ pub struct ImplFunctionDeclarationData<'db> {
     trait_function_id: Maybe<TraitFunctionId<'db>>,
 }
 
-// --- Selectors ---
-
-/// Query implementation of [ImplSemantic::impl_function_declaration_diagnostics].
-fn impl_function_declaration_diagnostics<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    db.priv_impl_function_declaration_data(impl_function_id)
-        .map(|data| data.function_declaration_data.diagnostics)
-        .unwrap_or_default()
-}
-
-/// Query implementation of [ImplSemantic::impl_function_declaration_diagnostics].
-#[salsa::tracked]
-fn impl_function_declaration_diagnostics_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    impl_function_declaration_diagnostics(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_signature].
-fn impl_function_signature<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .signature)
-}
-
-/// Query implementation of [ImplSemantic::impl_function_signature].
-#[salsa::tracked]
-fn impl_function_signature_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    impl_function_signature(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_generic_params].
-fn impl_function_generic_params<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    Ok(db.priv_impl_function_generic_params_data(impl_function_id)?.generic_params)
-}
-
-/// Query implementation of [ImplSemantic::impl_function_generic_params].
-#[salsa::tracked]
-fn impl_function_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    impl_function_generic_params(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::priv_impl_function_generic_params_data].
-fn priv_impl_function_generic_params_data<'db>(
+/// Returns the generic parameters data of an impl function.
+#[salsa::tracked(returns(ref))]
+fn impl_function_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
@@ -3750,137 +3693,9 @@ fn priv_impl_function_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-/// Query implementation of [ImplSemantic::priv_impl_function_generic_params_data].
-#[salsa::tracked]
-fn priv_impl_function_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    priv_impl_function_generic_params_data(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_attributes].
-fn impl_function_attributes<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .attributes)
-}
-
-/// Query implementation of [ImplSemantic::impl_function_attributes].
-#[salsa::tracked]
-fn impl_function_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    impl_function_attributes(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_resolver_data].
-fn impl_function_resolver_data<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .resolver_data)
-}
-
-/// Query implementation of [ImplSemantic::impl_function_resolver_data].
-#[salsa::tracked]
-fn impl_function_resolver_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Arc<ResolverData<'db>>> {
-    impl_function_resolver_data(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_declaration_inline_config].
-fn impl_function_declaration_inline_config<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<InlineConfiguration<'db>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .inline_config)
-}
-
-/// Query implementation of [ImplSemantic::impl_function_declaration_inline_config].
-#[salsa::tracked]
-fn impl_function_declaration_inline_config_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<InlineConfiguration<'db>> {
-    impl_function_declaration_inline_config(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_declaration_implicit_precedence].
-fn impl_function_declaration_implicit_precedence<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<ImplicitPrecedence<'db>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .implicit_precedence)
-}
-
-/// Query implementation of [ImplSemantic::impl_function_declaration_implicit_precedence].
-#[salsa::tracked]
-fn impl_function_declaration_implicit_precedence_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<ImplicitPrecedence<'db>> {
-    impl_function_declaration_implicit_precedence(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_declaration_implicits].
-fn impl_function_declaration_implicits<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Vec<TypeId<'db>>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .signature
-        .implicits)
-}
-
-/// Query implementation of [ImplSemantic::impl_function_declaration_implicits].
-#[salsa::tracked]
-fn impl_function_declaration_implicits_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<Vec<TypeId<'db>>> {
-    impl_function_declaration_implicits(db, impl_function_id)
-}
-
-/// Implementation of [ImplSemantic::impl_function_trait_function].
-fn impl_function_trait_function<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<TraitFunctionId<'db>> {
-    db.priv_impl_function_declaration_data(impl_function_id)?.trait_function_id
-}
-
-/// Query implementation of [ImplSemantic::impl_function_trait_function].
-#[salsa::tracked]
-fn impl_function_trait_function_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<TraitFunctionId<'db>> {
-    impl_function_trait_function(db, impl_function_id)
-}
-
-// --- Computation ---
-
-/// Implementation of [ImplSemantic::priv_impl_function_declaration_data].
-fn priv_impl_function_declaration_data<'db>(
+/// Returns data about an impl function declaration.
+#[salsa::tracked(returns(ref))]
+fn impl_function_declaration_data<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<ImplFunctionDeclarationData<'db>> {
@@ -3890,7 +3705,7 @@ fn priv_impl_function_declaration_data<'db>(
     let function_syntax = &data.function_asts[&impl_function_id];
     let declaration = function_syntax.declaration(db);
 
-    let generic_params_data = db.priv_impl_function_generic_params_data(impl_function_id)?;
+    let generic_params_data = impl_function_generic_params_data(db, impl_function_id).maybe_as_ref()?.clone();
     let generic_params = generic_params_data.generic_params;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Function(impl_function_id));
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
@@ -3951,15 +3766,6 @@ fn priv_impl_function_declaration_data<'db>(
         },
         trait_function_id,
     })
-}
-
-/// Query implementation of [ImplSemantic::priv_impl_function_declaration_data].
-#[salsa::tracked]
-fn priv_impl_function_declaration_data_tracked<'db>(
-    db: &'db dyn Database,
-    impl_function_id: ImplFunctionId<'db>,
-) -> Maybe<ImplFunctionDeclarationData<'db>> {
-    priv_impl_function_declaration_data(db, impl_function_id)
 }
 
 /// Struct for the parameters of [validate_impl_function_signature].
@@ -5325,82 +5131,110 @@ pub trait ImplSemantic<'db>: Database {
     /// Returns the semantic diagnostics of an impl function's declaration (signature).
     fn impl_function_declaration_diagnostics(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_function_declaration_diagnostics_tracked(self.as_dyn_database(), impl_function_id)
+        impl_function_declaration_data(self.as_dyn_database(), id)
+            .as_ref()
+            .map(|data| data.function_declaration_data.diagnostics.clone())
+            .unwrap_or_default()
     }
     /// Returns the signature of an impl function.
     fn impl_function_signature(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<semantic::Signature<'db>> {
-        impl_function_signature_tracked(self.as_dyn_database(), impl_function_id)
+        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .function_declaration_data
+            .signature
+            .clone())
     }
     /// Returns the generic params of an impl function.
     fn impl_function_generic_params(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<Vec<GenericParam<'db>>> {
-        impl_function_generic_params_tracked(self.as_dyn_database(), impl_function_id)
+        Ok(impl_function_generic_params_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .generic_params
+            .clone())
     }
     /// Returns the generic params data of an impl function.
     fn priv_impl_function_generic_params_data(
         &'db self,
         impl_function_id: ImplFunctionId<'db>,
     ) -> Maybe<GenericParamsData<'db>> {
-        priv_impl_function_generic_params_data_tracked(self.as_dyn_database(), impl_function_id)
+        impl_function_generic_params_data(self.as_dyn_database(), impl_function_id).clone()
     }
     /// Returns the attributes of an impl function.
     fn impl_function_attributes(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<Vec<Attribute<'db>>> {
-        impl_function_attributes_tracked(self.as_dyn_database(), impl_function_id)
+        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .function_declaration_data
+            .attributes
+            .clone())
     }
     /// Returns the resolution resolved_items of an impl function's declaration.
     fn impl_function_resolver_data(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
-        impl_function_resolver_data_tracked(self.as_dyn_database(), impl_function_id)
+        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .function_declaration_data
+            .resolver_data
+            .clone())
     }
     /// Returns the inline configuration of an impl function's declaration.
     fn impl_function_declaration_inline_config(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<InlineConfiguration<'db>> {
-        impl_function_declaration_inline_config_tracked(self.as_dyn_database(), impl_function_id)
+        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .function_declaration_data
+            .inline_config
+            .clone())
     }
     /// Returns the implicits precedence of an impl function.
     fn impl_function_declaration_implicit_precedence(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<ImplicitPrecedence<'db>> {
-        impl_function_declaration_implicit_precedence_tracked(
-            self.as_dyn_database(),
-            impl_function_id,
-        )
+        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .function_declaration_data
+            .implicit_precedence
+            .clone())
     }
     /// Returns the explicit implicits of a signature of an impl function.
     fn impl_function_declaration_implicits(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<Vec<TypeId<'db>>> {
-        impl_function_declaration_implicits_tracked(self.as_dyn_database(), impl_function_id)
+        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+            .maybe_as_ref()?
+            .function_declaration_data
+            .signature
+            .implicits
+            .clone())
     }
     /// Returns the trait function of an impl function.
     fn impl_function_trait_function(
         &'db self,
-        impl_function_id: ImplFunctionId<'db>,
+        id: ImplFunctionId<'db>,
     ) -> Maybe<TraitFunctionId<'db>> {
-        impl_function_trait_function_tracked(self.as_dyn_database(), impl_function_id)
+        impl_function_declaration_data(self.as_dyn_database(), id).maybe_as_ref()?.trait_function_id
     }
     /// Private query to compute data about an impl function declaration.
     fn priv_impl_function_declaration_data(
         &'db self,
         impl_function_id: ImplFunctionId<'db>,
     ) -> Maybe<ImplFunctionDeclarationData<'db>> {
-        priv_impl_function_declaration_data_tracked(self.as_dyn_database(), impl_function_id)
+        impl_function_declaration_data(self.as_dyn_database(), impl_function_id).clone()
     }
     /// Returns the semantic diagnostics of an impl function definition (declaration + body).
     fn impl_function_body_diagnostics(
