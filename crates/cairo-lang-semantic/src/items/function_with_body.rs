@@ -32,18 +32,13 @@ fn function_declaration_diagnostics<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    let declaration_data = match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            db.priv_free_function_declaration_data(free_function_id)
-        }
-        FunctionWithBodyId::Impl(impl_function_id) => db
-            .priv_impl_function_declaration_data(impl_function_id)
-            .map(|x| x.function_declaration_data),
+    match function_id {
+        FunctionWithBodyId::Free(id) => db.free_function_declaration_diagnostics(id),
+        FunctionWithBodyId::Impl(id) => db.impl_function_declaration_diagnostics(id),
         FunctionWithBodyId::Trait(trait_function_id) => {
-            db.priv_trait_function_declaration_data(trait_function_id)
+            db.trait_function_declaration_diagnostics(trait_function_id)
         }
-    };
-    declaration_data.map(|data| data.diagnostics).unwrap_or_default()
+    }
 }
 
 /// Query implementation of [FunctionWithBodySemantic::function_declaration_diagnostics].
@@ -209,16 +204,9 @@ fn function_with_body_attributes<'db>(
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            Ok(db.priv_free_function_declaration_data(free_function_id)?.attributes)
-        }
-        FunctionWithBodyId::Impl(impl_function_id) => Ok(db
-            .priv_impl_function_declaration_data(impl_function_id)?
-            .function_declaration_data
-            .attributes),
-        FunctionWithBodyId::Trait(trait_function_id) => {
-            Ok(db.priv_trait_function_declaration_data(trait_function_id)?.attributes)
-        }
+        FunctionWithBodyId::Free(id) => db.free_function_attributes(id),
+        FunctionWithBodyId::Impl(id) => db.impl_function_attributes(id),
+        FunctionWithBodyId::Trait(id) => db.trait_function_attributes(id),
     }
 }
 
@@ -300,14 +288,11 @@ fn function_body_diagnostics<'db>(
     db: &'db dyn Database,
     function_id: FunctionWithBodyId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    let body_data = match function_id {
-        FunctionWithBodyId::Free(id) => db.priv_free_function_body_data(id),
-        FunctionWithBodyId::Impl(id) => db.priv_impl_function_body_data(id),
-        FunctionWithBodyId::Trait(id) => {
-            db.priv_trait_function_body_data(id).and_then(|x| x.ok_or(DiagnosticAdded))
-        }
-    };
-    body_data.map(|data| data.diagnostics).unwrap_or_default()
+    match function_id {
+        FunctionWithBodyId::Free(id) => db.free_function_body_diagnostics(id),
+        FunctionWithBodyId::Impl(id) => db.impl_function_body_diagnostics(id),
+        FunctionWithBodyId::Trait(id) => db.trait_function_body_diagnostics(id),
+    }
 }
 
 /// Query implementation of [FunctionWithBodySemantic::function_body_diagnostics].
@@ -351,10 +336,10 @@ fn function_body<'db>(
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Arc<FunctionBody<'db>>> {
     Ok(match function_id {
-        FunctionWithBodyId::Free(id) => db.priv_free_function_body_data(id)?.body,
-        FunctionWithBodyId::Impl(id) => db.priv_impl_function_body_data(id)?.body,
+        FunctionWithBodyId::Free(id) => db.priv_free_function_body_data(id)?.body.clone(),
+        FunctionWithBodyId::Impl(id) => db.priv_impl_function_body_data(id)?.body.clone(),
         FunctionWithBodyId::Trait(id) => {
-            db.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?.body
+            db.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?.body.clone()
         }
     })
 }
