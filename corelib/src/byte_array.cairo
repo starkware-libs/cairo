@@ -55,6 +55,7 @@ use crate::cmp::min;
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[feature("bounded-int-utils")]
 use crate::internal::bounded_int::{BoundedInt, downcast, upcast};
+use crate::num::traits::CheckedAdd;
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -623,6 +624,57 @@ pub impl ByteArraySpanImpl of ByteSpanTrait {
     fn is_empty(self: @ByteSpan) -> bool {
         self.len() == 0
     }
+
+    /// Returns a slice of the ByteSpan from the given start position with the given length.
+    fn slice(self: @ByteSpan, start: usize, len: usize) -> Option<ByteSpan> {
+        if len == 0 {
+            return Some(Default::default());
+        }
+        if start.checked_add(len)? > self.len() {
+            return None;
+        }
+
+        let abs_start = start.checked_add(upcast(*self.first_char_start_offset))?;
+        let (start_word, start_offset) = DivRem::div_rem(abs_start, BYTES_IN_BYTES31_NONZERO);
+        let (end_word, end_offset) = DivRem::div_rem(
+            abs_start.checked_add(len)?, BYTES_IN_BYTES31_NONZERO,
+        );
+        let data_len = self.data.len();
+        let remainder_len = upcast(*self.remainder_len);
+
+        // Single word slice - extract from that word only
+        if start_word == end_word {
+            let word = if start_word < data_len {
+                slice_bytes31((*self.data[start_word]).into(), BYTES_IN_BYTES31, start_offset, len)
+            } else {
+                slice_bytes31(*self.remainder_word, remainder_len, start_offset, len)
+            };
+            return Some(
+                ByteSpan {
+                    data: [].span(),
+                    first_char_start_offset: 0,
+                    remainder_word: word,
+                    remainder_len: downcast(len).unwrap(),
+                },
+            );
+        }
+
+        // Multi-word slice - data words plus optional remainder
+        let remainder = if end_word < data_len {
+            slice_bytes31((*self.data[end_word]).into(), BYTES_IN_BYTES31, 0, end_offset)
+        } else {
+            slice_bytes31(*self.remainder_word, remainder_len, 0, end_offset)
+        };
+
+        Some(
+            ByteSpan {
+                data: self.data.slice(start_word, min(end_word, data_len) - start_word),
+                first_char_start_offset: downcast(start_offset).unwrap(),
+                remainder_word: remainder,
+                remainder_len: downcast(end_offset).unwrap(),
+            },
+        )
+    }
 }
 
 impl ByteSpanDefault of Default<ByteSpan> {
@@ -674,4 +726,25 @@ impl ByteSpanIntoByteArray of Into<ByteSpan, ByteArray> {
         ba.append_word(self.remainder_word, upcast(self.remainder_len));
         ba
     }
+}
+
+/// Extracts a slice of bytes from a word.
+/// Returns bytes [start, start+len) where byte 0 is the leftmost (most significant) byte.
+/// The input `bytes31` and the output `bytes31`s are represented using `felt252`s to improve
+/// performance.
+///
+/// Note: this function assumes that:
+/// 1. `word` is validly convertible to a `bytes31` which has no more than `word_len` bytes of data.
+/// 2. `start + len <= word_len`.
+/// 3. `word_len <= BYTES_IN_BYTES31`.
+/// If these assumptions are not met, it can corrupt the result. Thus, this should be a
+/// private function. We could add masking/assertions but it would be more expensive.
+fn slice_bytes31(word: felt252, word_len: usize, start: usize, len: usize) -> felt252 {
+    if len == 0 {
+        return 0;
+    }
+    // Remove suffix: keep only bytes [0, start+len).
+    let (_, without_suffix) = split_bytes31(word, word_len, word_len - (start + len));
+    let (without_prefix_and_suffix, _) = split_bytes31(without_suffix, start + len, len);
+    without_prefix_and_suffix
 }
