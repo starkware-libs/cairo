@@ -323,8 +323,6 @@ impl<'db> FileId<'db> {
     }
 }
 
-define_short_id!(StrId, Arc<str>, FilesGroup);
-
 /// Same as `Directory`, but without the interning inside virtual directories.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -358,6 +356,20 @@ define_short_id!(SmolStrId, SmolStr, FilesGroup);
 pub fn db_str(db: &dyn Database, str: impl Into<SmolStr>) -> &str {
     let smol: SmolStr = str.into();
     SmolStrId::new(db, smol).long(db)
+}
+
+#[salsa::interned]
+#[derive(Debug)]
+pub struct StrId<'db> {
+    pub long: &'db str,
+}
+
+define_short_id!(ArcStrId, Arc<str>, FilesGroup);
+
+impl<'db> ArcStrId<'db> {
+    pub fn to_str_id(self, db: &'db dyn Database) -> StrId<'db> {
+        StrId::new(db, self.long(db).as_ref())
+    }
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]

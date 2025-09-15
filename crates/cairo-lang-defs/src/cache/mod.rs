@@ -7,7 +7,7 @@ use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile, db_str,
+    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, StrId, VirtualFile, db_str,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -1724,7 +1724,9 @@ impl GreenNodeDetailsCached {
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> GreenNodeDetailsCached {
         match green_node_details {
-            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token((**token).into()),
+            GreenNodeDetails::Token(token) => {
+                GreenNodeDetailsCached::Token((SmolStr::from(token.long(ctx.db))).into())
+            }
             GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
                 children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
                 width: *width,
@@ -1734,7 +1736,7 @@ impl GreenNodeDetailsCached {
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
             GreenNodeDetailsCached::Token(token) => {
-                GreenNodeDetails::Token(db_str(ctx.db, token.clone()).into())
+                GreenNodeDetails::Token(StrId::new(ctx.db, db_str(ctx.db, token.clone())))
             }
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),

@@ -2,6 +2,7 @@
 #[path = "lexer_test.rs"]
 mod test;
 
+use cairo_lang_filesystem::ids::{StrId, Tracked};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
@@ -9,27 +10,19 @@ use cairo_lang_syntax::node::ast::{
     TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_utils::require;
 use salsa::Database;
 
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Lexer<'a> {
-    db: &'a dyn Database,
     text: &'a str,
     previous_position: TextOffset,
     current_position: TextOffset,
-    done: bool,
 }
 
 impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn Database, text: &'a str) -> Lexer<'a> {
-        Lexer {
-            db,
-            text,
-            previous_position: TextOffset::START,
-            current_position: TextOffset::START,
-            done: false,
-        }
+    pub fn from_text(text: &'a str) -> Lexer<'a> {
+        Lexer { text, previous_position: TextOffset::START, current_position: TextOffset::START }
     }
 
     pub fn position(&self) -> TextOffset {
@@ -72,13 +65,13 @@ impl<'a> Lexer<'a> {
     }
 
     // Trivia matchers.
-    fn match_trivia(&mut self, leading: bool) -> Vec<TriviumGreen<'a>> {
+    fn match_trivia(&mut self, db: &'a dyn Database, leading: bool) -> Vec<TriviumGreen<'a>> {
         let mut res: Vec<TriviumGreen<'a>> = Vec::new();
         while let Some(current) = self.peek() {
             let trivium = match current {
-                ' ' | '\r' | '\t' => self.match_trivium_whitespace(),
-                '\n' => self.match_trivium_newline(),
-                '/' if self.peek_nth(1) == Some('/') => self.match_trivium_single_line_comment(),
+                ' ' | '\r' | '\t' => self.match_trivium_whitespace(db),
+                '\n' => self.match_trivium_newline(db),
+                '/' if self.peek_nth(1) == Some('/') => self.match_trivium_single_line_comment(db),
                 _ => break,
             };
             res.push(trivium);
@@ -90,31 +83,31 @@ impl<'a> Lexer<'a> {
     }
 
     /// Assumes the next character is one of [' ', '\r', '\t'].
-    fn match_trivium_whitespace(&mut self) -> TriviumGreen<'a> {
+    fn match_trivium_whitespace(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        TokenWhitespace::new_green(self.db, self.consume_span()).into()
+        TokenWhitespace::new_green(db, self.consume_span()).into()
     }
 
     /// Assumes the next character '\n'.
-    fn match_trivium_newline(&mut self) -> TriviumGreen<'a> {
+    fn match_trivium_newline(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take();
-        TokenNewline::new_green(self.db, self.consume_span()).into()
+        TokenNewline::new_green(db, self.consume_span()).into()
     }
 
     /// Assumes the next 2 characters are "//".
-    fn match_trivium_single_line_comment(&mut self) -> TriviumGreen<'a> {
+    fn match_trivium_single_line_comment(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         match self.peek_nth(2) {
             Some('/') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineDocComment::new_green(self.db, self.consume_span()).into()
+                TokenSingleLineDocComment::new_green(db, self.consume_span()).into()
             }
             Some('!') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineInnerComment::new_green(self.db, self.consume_span()).into()
+                TokenSingleLineInnerComment::new_green(db, self.consume_span()).into()
             }
             _ => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineComment::new_green(self.db, self.consume_span()).into()
+                TokenSingleLineComment::new_green(db, self.consume_span()).into()
             }
         }
     }
@@ -249,8 +242,8 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn match_terminal(&mut self) -> LexerTerminal<'a> {
-        let leading_trivia = self.match_trivia(true);
+    fn match_terminal(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
+        let leading_trivia = self.match_trivia(db, true);
 
         let kind = if let Some(current) = self.peek() {
             match current {
@@ -312,18 +305,46 @@ impl<'a> Lexer<'a> {
         };
 
         let text = self.consume_span();
-        let trailing_trivia = self.match_trivia(false);
+        let trailing_trivia = self.match_trivia(db, false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
         // TODO(yuval): log(verbose) "consumed text: ..."
-        LexerTerminal { text, kind: terminal_kind, leading_trivia, trailing_trivia }
+        LexerTerminal {
+            text: StrId::new(db, text),
+            kind: terminal_kind,
+            leading_trivia,
+            trailing_trivia,
+        }
+    }
+
+    pub fn into_terminals(&self, db: &'a dyn Database) -> Vec<LexerTerminal<'a>> {
+        lexer_to_terminals(db, (), self)
     }
 }
 
+#[salsa::tracked]
+fn lexer_to_terminals<'a>(
+    db: &'a dyn Database,
+    _tracked: Tracked,
+    lexer: &'_ Lexer<'a>,
+) -> Vec<LexerTerminal<'a>> {
+    let mut result = Vec::new();
+    let mut lexer = lexer.clone();
+    loop {
+        let terminal = lexer.match_terminal(db);
+        let is_eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
+        result.push(terminal);
+        if is_eof {
+            break;
+        }
+    }
+    result
+}
+
 /// Output terminal emitted by the lexer.
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, salsa::Update)]
 pub struct LexerTerminal<'a> {
-    pub text: &'a str,
+    pub text: StrId<'a>,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
     pub leading_trivia: Vec<TriviumGreen<'a>>,
@@ -332,23 +353,8 @@ pub struct LexerTerminal<'a> {
 impl<'a> LexerTerminal<'a> {
     pub fn width(&self, db: &dyn Database) -> TextWidth {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
-            + TextWidth::from_str(self.text)
+            + TextWidth::from_str(self.text.long(db))
             + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
-    }
-}
-
-impl<'a> Iterator for Lexer<'a> {
-    type Item = LexerTerminal<'a>;
-
-    /// Returns the next token. Once there are no more tokens left, returns token EOF.
-    /// One should not call this after EOF was returned. If one does, None is returned.
-    fn next(&mut self) -> Option<Self::Item> {
-        require(!self.done)?;
-        let lexer_terminal = self.match_terminal();
-        if lexer_terminal.kind == SyntaxKind::TerminalEndOfFile {
-            self.done = true;
-        };
-        Some(lexer_terminal)
     }
 }
 

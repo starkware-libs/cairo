@@ -84,7 +84,7 @@ impl<'a> SyntaxNode<'a> {
         self.long(db).offset
     }
     pub fn width(&self, db: &dyn Database) -> TextWidth {
-        self.green_node(db).width()
+        self.green_node(db).width(db)
     }
     pub fn kind(&self, db: &dyn Database) -> SyntaxKind {
         self.green_node(db).kind
@@ -95,7 +95,7 @@ impl<'a> SyntaxNode<'a> {
     /// Returns the text of the token if this node is a token.
     pub fn text(&self, db: &'a dyn Database) -> Option<&'a str> {
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text),
+            green::GreenNodeDetails::Token(text) => Some(text.long(db)),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
@@ -111,7 +111,7 @@ impl<'a> SyntaxNode<'a> {
         let green_node = node.green.long(db);
         let (leading, trailing) = both_trivia_width(db, green_node);
         let start = node.offset.add_width(leading);
-        let end = node.offset.add_width(green_node.width()).sub_width(trailing);
+        let end = node.offset.add_width(green_node.width(db)).sub_width(trailing);
         TextSpan::new(start, end)
     }
     pub fn parent(&self, db: &'a dyn Database) -> Option<SyntaxNode<'a>> {
@@ -145,7 +145,7 @@ impl<'a> SyntaxNode<'a> {
         let mut key_map = VecMap::<_, usize>::new();
         for green_id in children {
             let green = green_id.long(db);
-            let width = green.width();
+            let width = green.width(db);
             let kind = green.kind;
             let rng = key_fields::key_fields_range(kind);
             let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
@@ -182,7 +182,7 @@ impl<'a> SyntaxNode<'a> {
         let node = self.long(db);
         let green_node = node.green.long(db);
         let trailing = trailing_trivia_width(db, green_node);
-        node.offset.add_width(green_node.width()).sub_width(trailing)
+        node.offset.add_width(green_node.width(db)).sub_width(trailing)
     }
 
     /// Lookups a syntax node using an offset.
@@ -211,8 +211,7 @@ impl<'a> SyntaxNode<'a> {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
-            .long(db)
-            .as_ref();
+            .long(db);
 
         self.span(db).take(file_content)
     }
@@ -225,7 +224,7 @@ impl<'a> SyntaxNode<'a> {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text.long(db)),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     let kind = child.kind(db);
@@ -254,7 +253,7 @@ impl<'a> SyntaxNode<'a> {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text.long(db)),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     if let Some(trivia) = ast::Trivia::cast(db, *child) {
@@ -290,8 +289,7 @@ impl<'a> SyntaxNode<'a> {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
-            .long(db)
-            .as_ref();
+            .long(db);
         self.span_without_trivia(db).take(file_content)
     }
 
@@ -480,7 +478,7 @@ fn leading_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> Text
                 return TextWidth::default();
             }
             if green.kind.is_terminal() {
-                return children[0].long(db).width();
+                return children[0].long(db).width(db);
             }
             let non_empty = find_non_empty_child(db, &mut children.iter())
                 .expect("Parent width non-empty - one of the children should be non-empty");
@@ -498,7 +496,7 @@ fn trailing_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> Tex
                 return TextWidth::default();
             }
             if green.kind.is_terminal() {
-                return children[2].long(db).width();
+                return children[2].long(db).width(db);
             }
             let non_empty = find_non_empty_child(db, &mut children.iter().rev())
                 .expect("Parent width non-empty - one of the children should be non-empty");
@@ -516,7 +514,7 @@ fn both_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> (TextWi
                 return (TextWidth::default(), TextWidth::default());
             }
             if green.kind.is_terminal() {
-                return (children[0].long(db).width(), children[2].long(db).width());
+                return (children[0].long(db).width(db), children[2].long(db).width(db));
             }
             let mut iter = children.iter();
             let first_non_empty = find_non_empty_child(db, &mut iter)
@@ -540,6 +538,6 @@ fn find_non_empty_child<'a>(
 ) -> Option<&'a GreenNode<'a>> {
     child_iter.find_map(|child| {
         let child = child.long(db);
-        (child.width() != TextWidth::default()).then_some(child)
+        (child.width(db) != TextWidth::default()).then_some(child)
     })
 }

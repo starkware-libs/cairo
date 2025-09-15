@@ -12,8 +12,9 @@ use serde::{Deserialize, Serialize};
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId, Directory,
-    DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, StrId, Tracked, VirtualFile,
+    ArcStrId, BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId,
+    Directory, DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, StrId, Tracked,
+    VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -379,7 +380,7 @@ pub fn file_overrides<'db>(db: &'db dyn Database) -> OrderedHashMap<FileId<'db>,
     let inp = files_group_input(db).file_overrides(db).as_ref().expect("file_overrides is not set");
     inp.iter()
         .map(|(file_id, content)| {
-            (file_id.clone().into_file_long_id(db).intern(db), content.clone().intern(db))
+            (file_id.clone().into_file_long_id(db).intern(db), StrId::new(db, content.as_ref()))
         })
         .collect()
 }
@@ -559,15 +560,15 @@ fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Optio
 
             match fs::read_to_string(path) {
                 Ok(content) => {
-                    let content: Arc<str> = content.into();
-                    Some(content.intern(db))
+                    let content = ArcStrId::new(db, Arc::from(content));
+                    Some(content.to_str_id(db))
                 }
                 Err(_) => None,
             }
         }
-        FileLongId::Virtual(virt) => Some(virt.content.clone().intern(db)),
+        FileLongId::Virtual(virt) => Some(StrId::new(db, virt.content.as_ref())),
         FileLongId::External(external_id) => {
-            Some(ext_as_virtual(db, *external_id).content.clone().intern(db))
+            Some(StrId::new(db, ext_as_virtual(db, *external_id).content.as_ref()))
         }
     }
 }
