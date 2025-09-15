@@ -25147,8 +25147,11 @@ pub struct TokenIdentifier<'db> {
 impl<'db> Token<'db> for TokenIdentifier<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenIdentifierGreen(
-            GreenNode { kind: SyntaxKind::TokenIdentifier, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenIdentifier,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -25184,8 +25187,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
     type Green = TokenIdentifierGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenIdentifierGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -25326,7 +25332,7 @@ impl<'db> Token<'db> for TokenLiteralNumber<'db> {
         TokenLiteralNumberGreen(
             GreenNode {
                 kind: SyntaxKind::TokenLiteralNumber,
-                details: GreenNodeDetails::Token(text),
+                details: GreenNodeDetails::Token(text.into()),
             }
             .intern(db),
         )
@@ -25364,8 +25370,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
     type Green = TokenLiteralNumberGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLiteralNumberGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -25507,7 +25516,7 @@ impl<'db> Token<'db> for TokenShortString<'db> {
         TokenShortStringGreen(
             GreenNode {
                 kind: SyntaxKind::TokenShortString,
-                details: GreenNodeDetails::Token(text),
+                details: GreenNodeDetails::Token(text.into()),
             }
             .intern(db),
         )
@@ -25545,8 +25554,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
     type Green = TokenShortStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenShortStringGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -25685,8 +25697,11 @@ pub struct TokenString<'db> {
 impl<'db> Token<'db> for TokenString<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenStringGreen(
-            GreenNode { kind: SyntaxKind::TokenString, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenString,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -25722,8 +25737,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
     type Green = TokenStringGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenStringGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -25862,7 +25880,7 @@ pub struct TokenAs<'db> {
 impl<'db> Token<'db> for TokenAs<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenAsGreen(
-            GreenNode { kind: SyntaxKind::TokenAs, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenAs, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -25899,8 +25917,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
     type Green = TokenAsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAsGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -26035,8 +26056,11 @@ pub struct TokenConst<'db> {
 impl<'db> Token<'db> for TokenConst<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenConstGreen(
-            GreenNode { kind: SyntaxKind::TokenConst, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenConst,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -26072,8 +26096,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
     type Green = TokenConstGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenConstGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -26212,8 +26239,11 @@ pub struct TokenElse<'db> {
 impl<'db> Token<'db> for TokenElse<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenElseGreen(
-            GreenNode { kind: SyntaxKind::TokenElse, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenElse,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -26249,8 +26279,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
     type Green = TokenElseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenElseGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -26385,8 +26418,11 @@ pub struct TokenEnum<'db> {
 impl<'db> Token<'db> for TokenEnum<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenEnumGreen(
-            GreenNode { kind: SyntaxKind::TokenEnum, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenEnum,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -26422,8 +26458,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
     type Green = TokenEnumGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEnumGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -26558,8 +26597,11 @@ pub struct TokenExtern<'db> {
 impl<'db> Token<'db> for TokenExtern<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenExternGreen(
-            GreenNode { kind: SyntaxKind::TokenExtern, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenExtern,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -26595,8 +26637,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
     type Green = TokenExternGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenExternGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -26735,8 +26780,11 @@ pub struct TokenFalse<'db> {
 impl<'db> Token<'db> for TokenFalse<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenFalseGreen(
-            GreenNode { kind: SyntaxKind::TokenFalse, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenFalse,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -26772,8 +26820,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
     type Green = TokenFalseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenFalseGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -26912,8 +26963,11 @@ pub struct TokenFunction<'db> {
 impl<'db> Token<'db> for TokenFunction<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenFunctionGreen(
-            GreenNode { kind: SyntaxKind::TokenFunction, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenFunction,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -26949,8 +27003,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
     type Green = TokenFunctionGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenFunctionGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -27089,7 +27146,7 @@ pub struct TokenIf<'db> {
 impl<'db> Token<'db> for TokenIf<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenIfGreen(
-            GreenNode { kind: SyntaxKind::TokenIf, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenIf, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -27126,8 +27183,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
     type Green = TokenIfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenIfGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -27262,8 +27322,11 @@ pub struct TokenWhile<'db> {
 impl<'db> Token<'db> for TokenWhile<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenWhileGreen(
-            GreenNode { kind: SyntaxKind::TokenWhile, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenWhile,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -27299,8 +27362,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
     type Green = TokenWhileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenWhileGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -27439,7 +27505,7 @@ pub struct TokenFor<'db> {
 impl<'db> Token<'db> for TokenFor<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenForGreen(
-            GreenNode { kind: SyntaxKind::TokenFor, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenFor, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -27476,8 +27542,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
     type Green = TokenForGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenForGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -27612,8 +27681,11 @@ pub struct TokenLoop<'db> {
 impl<'db> Token<'db> for TokenLoop<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLoopGreen(
-            GreenNode { kind: SyntaxKind::TokenLoop, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenLoop,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -27649,8 +27721,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
     type Green = TokenLoopGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLoopGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -27785,8 +27860,11 @@ pub struct TokenImpl<'db> {
 impl<'db> Token<'db> for TokenImpl<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenImplGreen(
-            GreenNode { kind: SyntaxKind::TokenImpl, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenImpl,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -27822,8 +27900,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
     type Green = TokenImplGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenImplGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -27958,8 +28039,11 @@ pub struct TokenImplicits<'db> {
 impl<'db> Token<'db> for TokenImplicits<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenImplicitsGreen(
-            GreenNode { kind: SyntaxKind::TokenImplicits, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenImplicits,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -27995,8 +28079,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
     type Green = TokenImplicitsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenImplicitsGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -28135,7 +28222,7 @@ pub struct TokenLet<'db> {
 impl<'db> Token<'db> for TokenLet<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLetGreen(
-            GreenNode { kind: SyntaxKind::TokenLet, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenLet, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -28172,8 +28259,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
     type Green = TokenLetGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLetGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -28308,8 +28398,11 @@ pub struct TokenMacro<'db> {
 impl<'db> Token<'db> for TokenMacro<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMacroGreen(
-            GreenNode { kind: SyntaxKind::TokenMacro, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMacro,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -28345,8 +28438,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
     type Green = TokenMacroGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMacroGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -28485,8 +28581,11 @@ pub struct TokenMatch<'db> {
 impl<'db> Token<'db> for TokenMatch<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMatchGreen(
-            GreenNode { kind: SyntaxKind::TokenMatch, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMatch,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -28522,8 +28621,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
     type Green = TokenMatchGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMatchGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -28662,8 +28764,11 @@ pub struct TokenModule<'db> {
 impl<'db> Token<'db> for TokenModule<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenModuleGreen(
-            GreenNode { kind: SyntaxKind::TokenModule, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenModule,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -28699,8 +28804,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
     type Green = TokenModuleGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenModuleGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -28839,7 +28947,7 @@ pub struct TokenMut<'db> {
 impl<'db> Token<'db> for TokenMut<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMutGreen(
-            GreenNode { kind: SyntaxKind::TokenMut, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenMut, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -28876,8 +28984,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
     type Green = TokenMutGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMutGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -29012,8 +29123,11 @@ pub struct TokenNoPanic<'db> {
 impl<'db> Token<'db> for TokenNoPanic<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenNoPanicGreen(
-            GreenNode { kind: SyntaxKind::TokenNoPanic, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenNoPanic,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -29049,8 +29163,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
     type Green = TokenNoPanicGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNoPanicGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -29189,7 +29306,7 @@ pub struct TokenOf<'db> {
 impl<'db> Token<'db> for TokenOf<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenOfGreen(
-            GreenNode { kind: SyntaxKind::TokenOf, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenOf, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -29226,8 +29343,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
     type Green = TokenOfGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenOfGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -29362,7 +29482,7 @@ pub struct TokenRef<'db> {
 impl<'db> Token<'db> for TokenRef<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenRefGreen(
-            GreenNode { kind: SyntaxKind::TokenRef, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenRef, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -29399,8 +29519,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
     type Green = TokenRefGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRefGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -29535,8 +29658,11 @@ pub struct TokenContinue<'db> {
 impl<'db> Token<'db> for TokenContinue<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenContinueGreen(
-            GreenNode { kind: SyntaxKind::TokenContinue, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenContinue,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -29572,8 +29698,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
     type Green = TokenContinueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenContinueGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -29712,8 +29841,11 @@ pub struct TokenReturn<'db> {
 impl<'db> Token<'db> for TokenReturn<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenReturnGreen(
-            GreenNode { kind: SyntaxKind::TokenReturn, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenReturn,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -29749,8 +29881,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
     type Green = TokenReturnGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenReturnGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -29889,8 +30024,11 @@ pub struct TokenBreak<'db> {
 impl<'db> Token<'db> for TokenBreak<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenBreakGreen(
-            GreenNode { kind: SyntaxKind::TokenBreak, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenBreak,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -29926,8 +30064,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
     type Green = TokenBreakGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenBreakGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -30066,8 +30207,11 @@ pub struct TokenStruct<'db> {
 impl<'db> Token<'db> for TokenStruct<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenStructGreen(
-            GreenNode { kind: SyntaxKind::TokenStruct, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenStruct,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -30103,8 +30247,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
     type Green = TokenStructGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenStructGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -30243,8 +30390,11 @@ pub struct TokenTrait<'db> {
 impl<'db> Token<'db> for TokenTrait<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenTraitGreen(
-            GreenNode { kind: SyntaxKind::TokenTrait, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenTrait,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -30280,8 +30430,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
     type Green = TokenTraitGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenTraitGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -30420,8 +30573,11 @@ pub struct TokenTrue<'db> {
 impl<'db> Token<'db> for TokenTrue<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenTrueGreen(
-            GreenNode { kind: SyntaxKind::TokenTrue, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenTrue,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -30457,8 +30613,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
     type Green = TokenTrueGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenTrueGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -30593,8 +30752,11 @@ pub struct TokenType<'db> {
 impl<'db> Token<'db> for TokenType<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenTypeGreen(
-            GreenNode { kind: SyntaxKind::TokenType, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenType,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -30630,8 +30792,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
     type Green = TokenTypeGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenTypeGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -30766,7 +30931,7 @@ pub struct TokenUse<'db> {
 impl<'db> Token<'db> for TokenUse<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenUseGreen(
-            GreenNode { kind: SyntaxKind::TokenUse, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenUse, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -30803,8 +30968,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
     type Green = TokenUseGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenUseGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -30939,7 +31107,7 @@ pub struct TokenPub<'db> {
 impl<'db> Token<'db> for TokenPub<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenPubGreen(
-            GreenNode { kind: SyntaxKind::TokenPub, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenPub, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -30976,8 +31144,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
     type Green = TokenPubGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenPubGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -31112,7 +31283,7 @@ pub struct TokenAnd<'db> {
 impl<'db> Token<'db> for TokenAnd<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenAndGreen(
-            GreenNode { kind: SyntaxKind::TokenAnd, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenAnd, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -31149,8 +31320,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
     type Green = TokenAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAndGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -31285,8 +31459,11 @@ pub struct TokenAndAnd<'db> {
 impl<'db> Token<'db> for TokenAndAnd<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenAndAndGreen(
-            GreenNode { kind: SyntaxKind::TokenAndAnd, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenAndAnd,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -31322,8 +31499,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
     type Green = TokenAndAndGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAndAndGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -31462,8 +31642,11 @@ pub struct TokenArrow<'db> {
 impl<'db> Token<'db> for TokenArrow<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenArrowGreen(
-            GreenNode { kind: SyntaxKind::TokenArrow, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenArrow,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -31499,8 +31682,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
     type Green = TokenArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenArrowGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -31639,7 +31825,7 @@ pub struct TokenAt<'db> {
 impl<'db> Token<'db> for TokenAt<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenAtGreen(
-            GreenNode { kind: SyntaxKind::TokenAt, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenAt, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -31676,8 +31862,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
     type Green = TokenAtGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenAtGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -31814,7 +32003,7 @@ impl<'db> Token<'db> for TokenBadCharacters<'db> {
         TokenBadCharactersGreen(
             GreenNode {
                 kind: SyntaxKind::TokenBadCharacters,
-                details: GreenNodeDetails::Token(text),
+                details: GreenNodeDetails::Token(text.into()),
             }
             .intern(db),
         )
@@ -31852,8 +32041,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
     type Green = TokenBadCharactersGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenBadCharactersGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -31993,8 +32185,11 @@ pub struct TokenColon<'db> {
 impl<'db> Token<'db> for TokenColon<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenColonGreen(
-            GreenNode { kind: SyntaxKind::TokenColon, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenColon,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -32030,8 +32225,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
     type Green = TokenColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenColonGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -32170,8 +32368,11 @@ pub struct TokenColonColon<'db> {
 impl<'db> Token<'db> for TokenColonColon<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenColonColonGreen(
-            GreenNode { kind: SyntaxKind::TokenColonColon, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenColonColon,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -32207,8 +32408,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
     type Green = TokenColonColonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenColonColonGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -32347,8 +32551,11 @@ pub struct TokenComma<'db> {
 impl<'db> Token<'db> for TokenComma<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenCommaGreen(
-            GreenNode { kind: SyntaxKind::TokenComma, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenComma,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -32384,8 +32591,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
     type Green = TokenCommaGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenCommaGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -32524,7 +32734,7 @@ pub struct TokenDiv<'db> {
 impl<'db> Token<'db> for TokenDiv<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDivGreen(
-            GreenNode { kind: SyntaxKind::TokenDiv, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenDiv, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -32561,8 +32771,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
     type Green = TokenDivGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDivGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -32697,8 +32910,11 @@ pub struct TokenDivEq<'db> {
 impl<'db> Token<'db> for TokenDivEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDivEqGreen(
-            GreenNode { kind: SyntaxKind::TokenDivEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenDivEq,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -32734,8 +32950,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
     type Green = TokenDivEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDivEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -32874,8 +33093,11 @@ pub struct TokenDollar<'db> {
 impl<'db> Token<'db> for TokenDollar<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDollarGreen(
-            GreenNode { kind: SyntaxKind::TokenDollar, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenDollar,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -32911,8 +33133,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
     type Green = TokenDollarGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDollarGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -33051,7 +33276,7 @@ pub struct TokenDot<'db> {
 impl<'db> Token<'db> for TokenDot<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDotGreen(
-            GreenNode { kind: SyntaxKind::TokenDot, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenDot, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -33088,8 +33313,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
     type Green = TokenDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDotGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -33224,8 +33452,11 @@ pub struct TokenDotDot<'db> {
 impl<'db> Token<'db> for TokenDotDot<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDotDotGreen(
-            GreenNode { kind: SyntaxKind::TokenDotDot, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenDotDot,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -33261,8 +33492,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
     type Green = TokenDotDotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDotDotGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -33401,8 +33635,11 @@ pub struct TokenDotDotEq<'db> {
 impl<'db> Token<'db> for TokenDotDotEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDotDotEqGreen(
-            GreenNode { kind: SyntaxKind::TokenDotDotEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenDotDotEq,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -33438,8 +33675,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
     type Green = TokenDotDotEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenDotDotEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -33578,8 +33818,11 @@ pub struct TokenEndOfFile<'db> {
 impl<'db> Token<'db> for TokenEndOfFile<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenEndOfFileGreen(
-            GreenNode { kind: SyntaxKind::TokenEndOfFile, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenEndOfFile,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -33615,8 +33858,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
     type Green = TokenEndOfFileGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEndOfFileGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -33755,7 +34001,7 @@ pub struct TokenEq<'db> {
 impl<'db> Token<'db> for TokenEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenEqGreen(
-            GreenNode { kind: SyntaxKind::TokenEq, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenEq, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -33792,8 +34038,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
     type Green = TokenEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -33928,8 +34177,11 @@ pub struct TokenEqEq<'db> {
 impl<'db> Token<'db> for TokenEqEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenEqEqGreen(
-            GreenNode { kind: SyntaxKind::TokenEqEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenEqEq,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -33965,8 +34217,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
     type Green = TokenEqEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEqEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -34101,7 +34356,7 @@ pub struct TokenGE<'db> {
 impl<'db> Token<'db> for TokenGE<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenGEGreen(
-            GreenNode { kind: SyntaxKind::TokenGE, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenGE, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -34138,8 +34393,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
     type Green = TokenGEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenGEGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -34274,7 +34532,7 @@ pub struct TokenGT<'db> {
 impl<'db> Token<'db> for TokenGT<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenGTGreen(
-            GreenNode { kind: SyntaxKind::TokenGT, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenGT, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -34311,8 +34569,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
     type Green = TokenGTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenGTGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -34447,8 +34708,11 @@ pub struct TokenHash<'db> {
 impl<'db> Token<'db> for TokenHash<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenHashGreen(
-            GreenNode { kind: SyntaxKind::TokenHash, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenHash,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -34484,8 +34748,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
     type Green = TokenHashGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenHashGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -34620,8 +34887,11 @@ pub struct TokenLBrace<'db> {
 impl<'db> Token<'db> for TokenLBrace<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLBraceGreen(
-            GreenNode { kind: SyntaxKind::TokenLBrace, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenLBrace,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -34657,8 +34927,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
     type Green = TokenLBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLBraceGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -34797,8 +35070,11 @@ pub struct TokenLBrack<'db> {
 impl<'db> Token<'db> for TokenLBrack<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLBrackGreen(
-            GreenNode { kind: SyntaxKind::TokenLBrack, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenLBrack,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -34834,8 +35110,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
     type Green = TokenLBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLBrackGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -34974,7 +35253,7 @@ pub struct TokenLE<'db> {
 impl<'db> Token<'db> for TokenLE<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLEGreen(
-            GreenNode { kind: SyntaxKind::TokenLE, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenLE, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -35011,8 +35290,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
     type Green = TokenLEGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLEGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -35147,8 +35429,11 @@ pub struct TokenLParen<'db> {
 impl<'db> Token<'db> for TokenLParen<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLParenGreen(
-            GreenNode { kind: SyntaxKind::TokenLParen, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenLParen,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -35184,8 +35469,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
     type Green = TokenLParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLParenGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -35324,7 +35612,7 @@ pub struct TokenLT<'db> {
 impl<'db> Token<'db> for TokenLT<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLTGreen(
-            GreenNode { kind: SyntaxKind::TokenLT, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenLT, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -35361,8 +35649,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
     type Green = TokenLTGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenLTGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -35497,8 +35788,11 @@ pub struct TokenMatchArrow<'db> {
 impl<'db> Token<'db> for TokenMatchArrow<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMatchArrowGreen(
-            GreenNode { kind: SyntaxKind::TokenMatchArrow, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMatchArrow,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -35534,8 +35828,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
     type Green = TokenMatchArrowGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMatchArrowGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -35674,8 +35971,11 @@ pub struct TokenMinus<'db> {
 impl<'db> Token<'db> for TokenMinus<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMinusGreen(
-            GreenNode { kind: SyntaxKind::TokenMinus, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMinus,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -35711,8 +36011,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
     type Green = TokenMinusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMinusGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -35851,8 +36154,11 @@ pub struct TokenMinusEq<'db> {
 impl<'db> Token<'db> for TokenMinusEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMinusEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMinusEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMinusEq,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -35888,8 +36194,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
     type Green = TokenMinusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMinusEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -36028,7 +36337,7 @@ pub struct TokenMod<'db> {
 impl<'db> Token<'db> for TokenMod<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenModGreen(
-            GreenNode { kind: SyntaxKind::TokenMod, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenMod, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -36065,8 +36374,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
     type Green = TokenModGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenModGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -36201,8 +36513,11 @@ pub struct TokenModEq<'db> {
 impl<'db> Token<'db> for TokenModEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenModEqGreen(
-            GreenNode { kind: SyntaxKind::TokenModEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenModEq,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -36238,8 +36553,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
     type Green = TokenModEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenModEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -36378,7 +36696,7 @@ pub struct TokenMul<'db> {
 impl<'db> Token<'db> for TokenMul<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMulGreen(
-            GreenNode { kind: SyntaxKind::TokenMul, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenMul, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -36415,8 +36733,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
     type Green = TokenMulGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMulGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -36551,8 +36872,11 @@ pub struct TokenMulEq<'db> {
 impl<'db> Token<'db> for TokenMulEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMulEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMulEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMulEq,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -36588,8 +36912,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
     type Green = TokenMulEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMulEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -36728,7 +37055,7 @@ pub struct TokenNeq<'db> {
 impl<'db> Token<'db> for TokenNeq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenNeqGreen(
-            GreenNode { kind: SyntaxKind::TokenNeq, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenNeq, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -36765,8 +37092,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
     type Green = TokenNeqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNeqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -36901,7 +37231,7 @@ pub struct TokenNot<'db> {
 impl<'db> Token<'db> for TokenNot<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenNotGreen(
-            GreenNode { kind: SyntaxKind::TokenNot, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenNot, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -36938,8 +37268,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
     type Green = TokenNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNotGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -37074,8 +37407,11 @@ pub struct TokenBitNot<'db> {
 impl<'db> Token<'db> for TokenBitNot<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenBitNotGreen(
-            GreenNode { kind: SyntaxKind::TokenBitNot, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenBitNot,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -37111,8 +37447,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
     type Green = TokenBitNotGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenBitNotGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -37251,7 +37590,7 @@ pub struct TokenOr<'db> {
 impl<'db> Token<'db> for TokenOr<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenOrGreen(
-            GreenNode { kind: SyntaxKind::TokenOr, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenOr, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -37288,8 +37627,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
     type Green = TokenOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenOrGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -37424,8 +37766,11 @@ pub struct TokenOrOr<'db> {
 impl<'db> Token<'db> for TokenOrOr<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenOrOrGreen(
-            GreenNode { kind: SyntaxKind::TokenOrOr, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenOrOr,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -37461,8 +37806,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
     type Green = TokenOrOrGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenOrOrGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -37597,8 +37945,11 @@ pub struct TokenPlus<'db> {
 impl<'db> Token<'db> for TokenPlus<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenPlusGreen(
-            GreenNode { kind: SyntaxKind::TokenPlus, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenPlus,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -37634,8 +37985,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
     type Green = TokenPlusGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenPlusGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -37770,8 +38124,11 @@ pub struct TokenPlusEq<'db> {
 impl<'db> Token<'db> for TokenPlusEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenPlusEqGreen(
-            GreenNode { kind: SyntaxKind::TokenPlusEq, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenPlusEq,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -37807,8 +38164,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
     type Green = TokenPlusEqGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenPlusEqGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -37949,7 +38309,7 @@ impl<'db> Token<'db> for TokenQuestionMark<'db> {
         TokenQuestionMarkGreen(
             GreenNode {
                 kind: SyntaxKind::TokenQuestionMark,
-                details: GreenNodeDetails::Token(text),
+                details: GreenNodeDetails::Token(text.into()),
             }
             .intern(db),
         )
@@ -37987,8 +38347,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
     type Green = TokenQuestionMarkGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenQuestionMarkGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -38127,8 +38490,11 @@ pub struct TokenRBrace<'db> {
 impl<'db> Token<'db> for TokenRBrace<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenRBraceGreen(
-            GreenNode { kind: SyntaxKind::TokenRBrace, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenRBrace,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -38164,8 +38530,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
     type Green = TokenRBraceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRBraceGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -38304,8 +38673,11 @@ pub struct TokenRBrack<'db> {
 impl<'db> Token<'db> for TokenRBrack<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenRBrackGreen(
-            GreenNode { kind: SyntaxKind::TokenRBrack, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenRBrack,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -38341,8 +38713,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
     type Green = TokenRBrackGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRBrackGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -38481,8 +38856,11 @@ pub struct TokenRParen<'db> {
 impl<'db> Token<'db> for TokenRParen<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenRParenGreen(
-            GreenNode { kind: SyntaxKind::TokenRParen, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenRParen,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -38518,8 +38896,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
     type Green = TokenRParenGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenRParenGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -38658,8 +39039,11 @@ pub struct TokenSemicolon<'db> {
 impl<'db> Token<'db> for TokenSemicolon<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenSemicolonGreen(
-            GreenNode { kind: SyntaxKind::TokenSemicolon, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenSemicolon,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -38695,8 +39079,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
     type Green = TokenSemicolonGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSemicolonGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -38835,8 +39222,11 @@ pub struct TokenUnderscore<'db> {
 impl<'db> Token<'db> for TokenUnderscore<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenUnderscoreGreen(
-            GreenNode { kind: SyntaxKind::TokenUnderscore, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenUnderscore,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -38872,8 +39262,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
     type Green = TokenUnderscoreGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenUnderscoreGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39012,7 +39405,7 @@ pub struct TokenXor<'db> {
 impl<'db> Token<'db> for TokenXor<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenXorGreen(
-            GreenNode { kind: SyntaxKind::TokenXor, details: GreenNodeDetails::Token(text) }
+            GreenNode { kind: SyntaxKind::TokenXor, details: GreenNodeDetails::Token(text.into()) }
                 .intern(db),
         )
     }
@@ -39049,8 +39442,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
     type Green = TokenXorGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenXorGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39274,8 +39670,11 @@ pub struct TokenEmpty<'db> {
 impl<'db> Token<'db> for TokenEmpty<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenEmptyGreen(
-            GreenNode { kind: SyntaxKind::TokenEmpty, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenEmpty,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -39311,8 +39710,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
     type Green = TokenEmptyGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenEmptyGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39453,7 +39855,7 @@ impl<'db> Token<'db> for TokenSingleLineComment<'db> {
         TokenSingleLineCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineComment,
-                details: GreenNodeDetails::Token(text),
+                details: GreenNodeDetails::Token(text.into()),
             }
             .intern(db),
         )
@@ -39491,8 +39893,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
     type Green = TokenSingleLineCommentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSingleLineCommentGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39526,7 +39931,7 @@ impl<'db> Token<'db> for TokenSingleLineInnerComment<'db> {
         TokenSingleLineInnerCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineInnerComment,
-                details: GreenNodeDetails::Token(text),
+                details: GreenNodeDetails::Token(text.into()),
             }
             .intern(db),
         )
@@ -39564,8 +39969,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
     type Green = TokenSingleLineInnerCommentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSingleLineInnerCommentGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39599,7 +40007,7 @@ impl<'db> Token<'db> for TokenSingleLineDocComment<'db> {
         TokenSingleLineDocCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineDocComment,
-                details: GreenNodeDetails::Token(text),
+                details: GreenNodeDetails::Token(text.into()),
             }
             .intern(db),
         )
@@ -39637,8 +40045,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
     type Green = TokenSingleLineDocCommentGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSingleLineDocCommentGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39670,8 +40081,11 @@ pub struct TokenWhitespace<'db> {
 impl<'db> Token<'db> for TokenWhitespace<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenWhitespaceGreen(
-            GreenNode { kind: SyntaxKind::TokenWhitespace, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenWhitespace,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -39707,8 +40121,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
     type Green = TokenWhitespaceGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenWhitespaceGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39739,8 +40156,11 @@ pub struct TokenNewline<'db> {
 impl<'db> Token<'db> for TokenNewline<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenNewlineGreen(
-            GreenNode { kind: SyntaxKind::TokenNewline, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenNewline,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -39776,8 +40196,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
     type Green = TokenNewlineGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenNewlineGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39808,8 +40231,11 @@ pub struct TokenMissing<'db> {
 impl<'db> Token<'db> for TokenMissing<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMissingGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -39845,8 +40271,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
     type Green = TokenMissingGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenMissingGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -39877,8 +40306,11 @@ pub struct TokenSkipped<'db> {
 impl<'db> Token<'db> for TokenSkipped<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenSkippedGreen(
-            GreenNode { kind: SyntaxKind::TokenSkipped, details: GreenNodeDetails::Token(text) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenSkipped,
+                details: GreenNodeDetails::Token(text.into()),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -39914,8 +40346,11 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
     type Green = TokenSkippedGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
         TokenSkippedGreen(
-            GreenNode { kind: SyntaxKind::TokenMissing, details: GreenNodeDetails::Token("") }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMissing,
+                details: GreenNodeDetails::Token("".into()),
+            }
+            .intern(db),
         )
     }
     fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {

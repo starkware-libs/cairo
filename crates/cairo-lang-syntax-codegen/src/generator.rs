@@ -527,7 +527,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
-                    details: GreenNodeDetails::Token(text),
+                    details: GreenNodeDetails::Token(text.into()),
                 }.intern(db))
             }
             fn text(&self, db: &'db dyn Database) -> &'db str {
@@ -565,7 +565,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             fn missing(db: &'db dyn Database) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::TokenMissing,
-                    details: GreenNodeDetails::Token(""),
+                    details: GreenNodeDetails::Token("".into()),
                 }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
