@@ -86,24 +86,12 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-<<<<<<< HEAD
 edition = "2024"
-||||||| a668b7cd1
-version = "2.12.2"
-edition = "2021"
-rust-version = "1.86"
-repository = "https://github.com/starkware-libs/cairo/"
-=======
-version = "2.12.3"
-edition = "2021"
-rust-version = "1.86"
-repository = "https://github.com/starkware-libs/cairo/"
->>>>>>> dev-v2.12.3
 license = "Apache-2.0"
 license-file = "LICENSE"
 repository = "https://github.com/starkware-libs/cairo/"
 rust-version = "1.86"
-version = "2.12.2"
+version = "2.12.3"
 
 [workspace.dependencies]
 anyhow = "1.0.98"
@@ -115,16 +103,8 @@ assert_matches = "1.5"
 bimap = "0.6.3"
 bincode = { version = "2", features = ["serde"] }
 cairo-lang-primitive-token = "1"
-<<<<<<< HEAD
-cairo-vm = { version = "2.4.1", features = ["mod_builtin"] }
-clap = { version = "4.5.42", features = ["derive"] }
-||||||| a668b7cd1
-cairo-vm = { version = "2.4.1", features = ["mod_builtin"] }
-clap = { version = "4.5.29", features = ["derive"] }
-=======
 cairo-vm = { version = "2.5.0", features = ["mod_builtin"] }
-clap = { version = "4.5.29", features = ["derive"] }
->>>>>>> dev-v2.12.3
+clap = { version = "4.5.42", features = ["derive"] }
 colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
 const_format = "0.2.34"
