@@ -19,9 +19,9 @@ testing = [
 ]
 
 [dependencies]
-cairo-lang-formatter = { path = "../cairo-lang-formatter", optional = true, version = "~2.12.2" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", optional = true, version = "~2.12.2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", optional = true, version = "~2.12.2", features = [
+cairo-lang-formatter = { path = "../cairo-lang-formatter", optional = true, version = "~2.12.3" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", optional = true, version = "~2.12.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", optional = true, version = "~2.12.3", features = [
   "tracing",
 ] }
 colored = { workspace = true, optional = true }
@@ -29,7 +29,7 @@ log = { workspace = true, optional = true }
 pretty_assertions = { workspace = true, optional = true }
 
 [dev-dependencies]
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.12.2" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.12.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", features = ["tracing"] }
 colored.workspace = true
 log.workspace = true
