@@ -19,8 +19,9 @@ use crate::lower::context::{LoweredExpr, LoweredExprExternEnum, VarRequest};
 use crate::lower::external::extern_facade_expr;
 use crate::lower::flow_control::graph::{
     ArmExpr, BindVar, BooleanIf, Deconstruct, Downcast, EnumMatch, EqualsLiteral, EvaluateExpr,
-    FlowControlNode, NodeId, Upcast, ValueMatch,
+    FlowControlNode, LetElseSuccess, NodeId, Upcast, ValueMatch,
 };
+use crate::lower::lower_let_else::lower_success_arm_body;
 use crate::lower::{
     generators, lower_expr, lower_expr_literal_to_var_usage, match_extern_arm_ref_args_bind,
     match_extern_variant_arm_input_types,
@@ -56,6 +57,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
         FlowControlNode::Upcast(node) => lower_upcast(ctx, id, node, builder),
         FlowControlNode::Downcast(node) => lower_downcast(ctx, id, node, builder),
+        FlowControlNode::LetElseSuccess(node) => lower_let_else_success(ctx, id, node, builder),
         FlowControlNode::Missing(diag_added) => Err(*diag_added),
     }
 }
@@ -504,5 +506,20 @@ fn lower_downcast<'db>(
     });
 
     ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
+/// Lowers a [LetElseSuccess] node.
+fn lower_let_else_success<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &LetElseSuccess<'db>,
+    builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let sealed_goto_callsite =
+        lower_success_arm_body(ctx.ctx, builder, &node.var_ids_and_stable_ptrs, ctx.location);
+    let (builder, var_usage) = sealed_goto_callsite;
+
+    ctx.finalize_with_arm(id, builder, Ok(LoweredExpr::AtVariable(var_usage)))?;
     Ok(())
 }
