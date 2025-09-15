@@ -148,7 +148,7 @@ pub fn get_syntax_file_and_diagnostics<'a>(
     file_id: FileId<'a>,
 ) -> (SyntaxFile<'a>, Diagnostics<'a, ParserDiagnostic<'a>>) {
     let mut diagnostics = DiagnosticsBuilder::default();
-    let contents = db.file_content(file_id).unwrap().long(db).as_ref();
+    let contents = db.file_content(file_id).unwrap().long(db);
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
     (syntax_file, diagnostics.build())
 }

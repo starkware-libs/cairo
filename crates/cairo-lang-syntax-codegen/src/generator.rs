@@ -190,6 +190,9 @@ fn generate_ast_code() -> rust::Tokens {
         use std::ops::Deref;
 
         use cairo_lang_filesystem::span::TextWidth;
+        use cairo_lang_filesystem::ids::ArcStrId;
+        use cairo_lang_filesystem::span::TextSpan;
+        use cairo_lang_filesystem::ids::Span;
         use cairo_lang_utils::{extract_matches, Intern};
         use salsa::Database;
 
@@ -524,15 +527,15 @@ fn gen_token_code(name: String) -> rust::Tokens {
             node: SyntaxNode<'db>,
         }
         impl<'db> Token<'db> for $(&name)<'db> {
-            fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
+            fn new_green(db: &'db dyn Database, span: Span<'db>) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
-                    details: GreenNodeDetails::Token(text.into()),
+                    details: GreenNodeDetails::Token(span),
                 }.intern(db))
             }
             fn text(&self, db: &'db dyn Database) -> &'db str {
                 extract_matches!(&self.node.long(db).green.long(db).details,
-                    GreenNodeDetails::Token)
+                    GreenNodeDetails::Token).as_str(db)
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -555,7 +558,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
         pub struct $(&green_name)<'db>(pub GreenId<'db>);
         impl<'db> $(&green_name)<'db> {
             pub fn text(&self, db: &'db dyn Database) -> &'db str {
-                extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+                extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).as_str(db)
             }
         }
         impl<'db> TypedSyntaxNode<'db> for $(&name)<'db>{
@@ -563,9 +566,10 @@ fn gen_token_code(name: String) -> rust::Tokens {
             type StablePtr = $(&ptr_name)<'db>;
             type Green = $(&green_name)<'db>;
             fn missing(db: &'db dyn Database) -> Self::Green {
+                let span = Span::new(ArcStrId::new(db, ""), TextSpan::from_str(""));
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::TokenMissing,
-                    details: GreenNodeDetails::Token("".into()),
+                    details: GreenNodeDetails::Token(span),
                 }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -660,7 +664,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     let GreenNodeDetails::Node{children,..} = &self.node.long(db).green.long(db).details else {
                         unreachable!("Expected a node, not a token");
                     };
-                    extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+                    extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).as_str(db)
                 }
             }
         }

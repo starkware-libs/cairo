@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use crate::db::{CORELIB_CRATE_NAME, FilesGroup, ext_as_virtual};
-use crate::span::{TextOffset, TextSpan};
+use crate::span::{TextOffset, TextSpan, TextWidth};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 
@@ -323,8 +323,6 @@ impl<'db> FileId<'db> {
     }
 }
 
-define_short_id!(StrId, Arc<str>, FilesGroup);
-
 /// Same as `Directory`, but without the interning inside virtual directories.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -358,6 +356,14 @@ define_short_id!(SmolStrId, SmolStr, FilesGroup);
 pub fn db_str(db: &dyn Database, str: impl Into<SmolStr>) -> &str {
     let smol: SmolStr = str.into();
     SmolStrId::new(db, smol).long(db)
+}
+
+define_short_id!(ArcStrId, Arc<str>, FilesGroup);
+
+impl<'db> ArcStrId<'db> {
+    pub fn from_str(db: &'db dyn Database, str: &str) -> Self {
+        ArcStrId::new(db, Arc::from(str))
+    }
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
@@ -482,6 +488,35 @@ define_short_id!(BlobId, BlobLongId, FilesGroup);
 impl<'db> BlobId<'db> {
     pub fn new_on_disk(db: &'db (dyn salsa::Database + 'db), path: PathBuf) -> Self {
         BlobId::new(db, BlobLongId::OnDisk(path.clean()))
+    }
+}
+
+/// A span within a source file, represented as byte offsets.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, salsa::Update)]
+pub struct Span<'db> {
+    pub text: ArcStrId<'db>,
+    pub span: TextSpan,
+}
+
+impl<'db> Span<'db> {
+    // Reconstruct an ephemeral &str when you *need* it (no storage).
+    pub fn as_str(self, db: &'db dyn Database) -> &'db str {
+        let text: &'db std::sync::Arc<str> = self.text.long(db);
+        self.span.take(text)
+    }
+
+    /// Returns the width of the span.
+    pub fn width(self) -> TextWidth {
+        self.span.width()
+    }
+
+    /// Creates a new span from a text id and a text span.
+    pub fn new(text_id: ArcStrId<'db>, span: TextSpan) -> Self {
+        Self { text: text_id, span }
+    }
+
+    pub fn from_str(db: &'db dyn Database, str: &'db str) -> Self {
+        Self::new(ArcStrId::new(db, Arc::from(str)), TextSpan::from_str(str))
     }
 }
 

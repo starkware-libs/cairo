@@ -2,7 +2,7 @@ use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{ArcStrId, FileId, Span};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax as syntax;
@@ -45,11 +45,10 @@ enum MacroParsingContext {
 pub struct Parser<'a, 'mt> {
     db: &'a dyn Database,
     file_id: FileId<'a>,
-    lexer: Lexer<'a>,
-    /// The next terminal to handle.
-    next_terminal: LexerTerminal<'a>,
-    /// The terminal following [Self::next_terminal], if known.
-    next_next_terminal: Option<LexerTerminal<'a>>,
+    /// A vector of lexed tokens to be parsed.
+    terminals: Vec<LexerTerminal<'a>>,
+    /// The current index of the token being parsed.
+    current_terminal_index: usize,
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen<'a>>,
     /// The current offset, excluding the current terminal.
@@ -64,6 +63,24 @@ pub struct Parser<'a, 'mt> {
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
     /// An indicator if we are inside a macro rule expansion.
     macro_parsing_context: MacroParsingContext,
+}
+
+impl<'a> Parser<'a, '_> {
+    fn next_terminal(&self) -> &LexerTerminal<'a> {
+        &self.terminals[self.current_terminal_index]
+    }
+
+    fn next_next_terminal(&self) -> &LexerTerminal<'a> {
+        &self.terminals[self.current_terminal_index + 1]
+    }
+
+    fn advance(&mut self) {
+        self.current_terminal_index += 1;
+    }
+
+    fn next_terminal_mut(&mut self) -> &mut LexerTerminal<'a> {
+        &mut self.terminals[self.current_terminal_index]
+    }
 }
 
 /// The possible results of a try_parse_* function failing to parse.
@@ -130,14 +147,12 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     ) -> Self {
-        let mut lexer = Lexer::from_text(db, text);
-        let next_terminal = lexer.next().unwrap();
+        let tokens: Vec<LexerTerminal<'a>> = Lexer::tokenize_text(db, text);
         Parser {
             db,
             file_id,
-            lexer,
-            next_terminal,
-            next_next_terminal: None,
+            terminals: tokens,
+            current_terminal_index: 0,
             pending_trivia: Vec::new(),
             offset: Default::default(),
             current_width: Default::default(),
@@ -213,7 +228,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
     ) -> SyntaxFile<'a> {
         let (content, offset) = primitive_token_stream_content_and_offset(token_stream);
-        let file_content = db.file_content(file_id).unwrap().long(db).as_ref();
+        let file_content = db.file_content(file_id).unwrap().long(db);
         let file_content_at_offset = offset.unwrap_or_default().take_from(file_content);
         assert!(
             file_content_at_offset.starts_with(&content),
@@ -236,7 +251,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         file_id: FileId<'a>,
         offset: Option<TextOffset>,
     ) -> Expr<'a> {
-        let content = db.file_content(file_id).unwrap().long(db).as_ref();
+        let content = db.file_content(file_id).unwrap().long(db);
         let mut parser = Parser::new(db, file_id, content, diagnostics);
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
@@ -282,14 +297,15 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // Create a new vec with the doc item as the children.
         let items = ModuleItemList::new_green(self.db, &module_items);
         // This will not panic since the above parsing only stops when reaches EOF.
-        assert_eq!(self.peek().kind, SyntaxKind::TerminalEndOfFile);
+        assert_eq!(self.next_terminal().kind, SyntaxKind::TerminalEndOfFile);
 
         // Fix offset in case there are skipped tokens before EOF. This is usually done in
         // self.take_raw() but here we don't call self.take_raw as it tries to read the next
         // token, which doesn't exist.
         self.offset = self.offset.add_width(self.current_width);
 
-        let eof = self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(self.next_terminal.clone());
+        let eof =
+            self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(self.next_terminal().clone());
         SyntaxFile::new_green(self.db, items, eof)
     }
 
@@ -894,7 +910,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Returns a GreenId of a node with a MacroRuleParamKind kind.
     fn parse_macro_rule_param_kind(&mut self) -> MacroParamKindGreen<'a> {
         let peeked = self.peek();
-        match (peeked.kind, peeked.text) {
+        match (peeked.kind, peeked.text(self.db)) {
             (SyntaxKind::TerminalIdentifier, "ident") => {
                 ParamIdent::new_green(self.db, self.parse_token::<TerminalIdentifier<'_>>()).into()
             }
@@ -983,7 +999,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         if peeked.kind.is_keyword_terminal() {
             // TODO(spapini): don't skip every keyword. Instead, pass a recovery set.
             Ok(self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
-                ParserDiagnosticKind::ReservedIdentifier { identifier: peeked.text.into() },
+                ParserDiagnosticKind::ReservedIdentifier {
+                    identifier: peeked.text(self.db).to_string(),
+                },
             ))
         } else if peeked.kind == SyntaxKind::TerminalUnderscore {
             Ok(self.skip_token_and_return_missing::<TerminalIdentifier<'_>>(
@@ -2450,7 +2468,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let for_kw = self.take::<TerminalFor<'a>>();
         let pattern = self.parse_pattern();
         let ident = self.take_raw();
-        let in_identifier: TerminalIdentifierGreen<'_> = match ident.text {
+        let in_identifier: TerminalIdentifierGreen<'_> = match ident.text(self.db) {
             "in" => self.add_trivia_to_terminal::<TerminalIdentifier<'_>>(ident),
             _ => {
                 self.append_skipped_token_to_pending_trivia(
@@ -3158,7 +3176,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Takes and validates a TerminalLiteralNumber token.
     fn take_terminal_literal_number(&mut self) -> TerminalLiteralNumberGreen<'a> {
-        let diag = validate_literal_number(self.peek().text);
+        let diag = validate_literal_number(self.peek().text(self.db));
         let green = self.take::<TerminalLiteralNumber<'_>>();
         self.add_optional_diagnostic(diag);
         green
@@ -3166,7 +3184,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Takes and validates a TerminalShortString token.
     fn take_terminal_short_string(&mut self) -> TerminalShortStringGreen<'a> {
-        let diag = validate_short_string(self.peek().text);
+        let diag = validate_short_string(self.peek().text(self.db));
         let green = self.take::<TerminalShortString<'_>>();
         self.add_optional_diagnostic(diag);
         green
@@ -3174,7 +3192,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Takes and validates a TerminalString token.
     fn take_terminal_string(&mut self) -> TerminalStringGreen<'a> {
-        let diag = validate_string(self.peek().text);
+        let diag = validate_string(self.peek().text(self.db));
         let green = self.take::<TerminalString<'_>>();
         self.add_optional_diagnostic(diag);
         green
@@ -3515,24 +3533,23 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Peeks at the next terminal from the Lexer without taking it.
     pub fn peek(&self) -> &LexerTerminal<'a> {
-        &self.next_terminal
+        self.next_terminal()
     }
 
     /// Peeks at the token following the next one.
     /// Assumption: the next token is not EOF.
     pub fn peek_next_next_kind(&mut self) -> SyntaxKind {
-        self.next_next_terminal.get_or_insert_with(|| self.lexer.next().unwrap()).kind
+        self.next_next_terminal().kind
     }
 
-    /// Takes a terminal from the Lexer and places it in self.next_terminal.
+    /// Move forward one terminal.
     fn take_raw(&mut self) -> LexerTerminal<'a> {
         self.offset = self.offset.add_width(self.current_width);
-        self.current_width = self.next_terminal.width(self.db);
-        self.last_trivia_length = trivia_total_width(self.db, &self.next_terminal.trailing_trivia);
-
-        let next_terminal =
-            self.next_next_terminal.take().unwrap_or_else(|| self.lexer.next().unwrap());
-        std::mem::replace(&mut self.next_terminal, next_terminal)
+        let terminal = self.next_terminal().clone();
+        self.current_width = terminal.width(self.db);
+        self.last_trivia_length = trivia_total_width(self.db, &terminal.trailing_trivia);
+        self.advance();
+        terminal
     }
 
     /// Skips the next, non-taken, token. A skipped token is a token which is not expected where it
@@ -3557,11 +3574,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let orig_offset = self.offset;
         let diag_start =
             self.offset.add_width(trivia_total_width(self.db, &terminal.leading_trivia));
-        let diag_end = diag_start.add_width(TextWidth::from_str(terminal.text));
+        let diag_end = diag_start.add_width(terminal.span.width());
 
         // Add to pending trivia.
         self.pending_trivia.extend(terminal.leading_trivia);
-        self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+        self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.span).into());
         let trailing_trivia_width = trivia_total_width(self.db, &terminal.trailing_trivia);
         self.pending_trivia.extend(terminal.trailing_trivia);
         self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
@@ -3647,10 +3664,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         while !should_stop(self.peek().kind) {
             let terminal = self.take_raw();
             diag_start.get_or_insert(self.offset);
-            diag_end = Some(self.offset.add_width(TextWidth::from_str(terminal.text)));
+            diag_end = Some(self.offset.add_width(terminal.span.width()));
 
             self.pending_trivia.extend(terminal.leading_trivia);
-            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+            self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.span).into());
             self.pending_trivia.extend(terminal.trailing_trivia);
         }
         if let (Some(diag_start), Some(diag_end)) = (diag_start, diag_end) {
@@ -3666,8 +3683,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         &mut self,
         lexer_terminal: LexerTerminal<'a>,
     ) -> Terminal::Green {
-        let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
-        let token = Terminal::TokenType::new_green(self.db, text);
+        let LexerTerminal { span, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
+        let token = Terminal::TokenType::new_green(self.db, span);
         let mut new_leading_trivia = mem::take(&mut self.pending_trivia);
 
         self.consume_pending_skipped_diagnostics();
@@ -3734,7 +3751,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // comment), return None and do not change the next terminal leading trivia.
         let mut has_header_doc = false;
         let mut split_index = 0;
-        for trivium in &self.next_terminal.leading_trivia {
+        for trivium in &self.next_terminal().leading_trivia {
             match trivium.0.long(self.db).kind {
                 SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenSingleLineInnerComment => {
                     has_header_doc = true;
@@ -3750,10 +3767,12 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             return None;
         }
         // Split the trivia into header doc and the rest.
-        let leading_trivia = self.next_terminal.leading_trivia.split_off(split_index);
-        let header_doc = std::mem::replace(&mut self.next_terminal.leading_trivia, leading_trivia);
+        let leading_trivia = self.next_terminal().leading_trivia.clone().split_off(split_index);
+        let header_doc =
+            std::mem::replace(&mut self.next_terminal_mut().leading_trivia, leading_trivia);
+        let empty_text_id = ArcStrId::new(self.db, "");
         let empty_lexer_terminal = LexerTerminal {
-            text: "",
+            span: Span::new(empty_text_id, TextSpan::new(TextOffset::START, TextOffset::START)),
             kind: SyntaxKind::TerminalEmpty,
             leading_trivia: header_doc,
             trailing_trivia: vec![],
