@@ -2,7 +2,9 @@
 #[path = "lexer_test.rs"]
 mod test;
 
-use cairo_lang_filesystem::ids::SmolStrId;
+use std::sync::Arc;
+
+use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
@@ -10,27 +12,24 @@ use cairo_lang_syntax::node::ast::{
     TokenWhitespace, TriviumGreen,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_utils::require;
 use salsa::Database;
 
-pub struct Lexer<'a> {
-    db: &'a dyn Database,
-    text: &'a str,
+#[derive(Clone, PartialEq, Eq, Hash)]
+pub struct Lexer {
+    text: Arc<str>,
     previous_position: TextOffset,
     current_position: TextOffset,
-    done: bool,
 }
 
-impl<'a> Lexer<'a> {
-    // Ctors.
-    pub fn from_text(db: &'a dyn Database, text: &'a str) -> Lexer<'a> {
-        Lexer {
-            db,
-            text,
+impl Lexer {
+    /// Convenience method that creates a lexer from text and immediately tokenizes it.
+    pub fn tokenize_text<'a>(db: &'a dyn Database, text: &str) -> Vec<LexerTerminal<'a>> {
+        let lexer = Lexer {
+            text: Arc::from(text),
             previous_position: TextOffset::START,
             current_position: TextOffset::START,
-            done: false,
-        }
+        };
+        tokenize_all(db, (), lexer)
     }
 
     pub fn position(&self) -> TextOffset {
@@ -39,11 +38,11 @@ impl<'a> Lexer<'a> {
 
     // Helpers.
     fn peek(&self) -> Option<char> {
-        self.current_position.take_from(self.text).chars().next()
+        self.current_position.take_from(&self.text).chars().next()
     }
 
     fn peek_nth(&self, n: usize) -> Option<char> {
-        self.current_position.take_from(self.text).chars().nth(n)
+        self.current_position.take_from(&self.text).chars().nth(n)
     }
 
     fn take(&mut self) -> Option<char> {
@@ -62,24 +61,24 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn peek_span_text(&self) -> &'a str {
-        TextSpan::new(self.previous_position, self.current_position).take(self.text)
+    fn peek_text_span(&self) -> TextSpan {
+        TextSpan::new(self.previous_position, self.current_position)
     }
 
-    fn consume_span(&mut self) -> &'a str {
-        let val = self.peek_span_text();
+    fn consume_text_span(&mut self) -> TextSpan {
+        let val = self.peek_text_span();
         self.previous_position = self.current_position;
         val
     }
 
     // Trivia matchers.
-    fn match_trivia(&mut self, leading: bool) -> Vec<TriviumGreen<'a>> {
+    fn match_trivia<'a>(&mut self, db: &'a dyn Database, leading: bool) -> Vec<TriviumGreen<'a>> {
         let mut res: Vec<TriviumGreen<'a>> = Vec::new();
         while let Some(current) = self.peek() {
             let trivium = match current {
-                ' ' | '\r' | '\t' => self.match_trivium_whitespace(),
-                '\n' => self.match_trivium_newline(),
-                '/' if self.peek_nth(1) == Some('/') => self.match_trivium_single_line_comment(),
+                ' ' | '\r' | '\t' => self.match_trivium_whitespace(db),
+                '\n' => self.match_trivium_newline(db),
+                '/' if self.peek_nth(1) == Some('/') => self.match_trivium_single_line_comment(db),
                 _ => break,
             };
             res.push(trivium);
@@ -91,43 +90,41 @@ impl<'a> Lexer<'a> {
     }
 
     /// Assumes the next character is one of [' ', '\r', '\t'].
-    fn match_trivium_whitespace(&mut self) -> TriviumGreen<'a> {
+    fn match_trivium_whitespace<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        TokenWhitespace::new_green(self.db, SmolStrId::from(self.db, self.consume_span())).into()
+        let span = self.consume_text_span();
+        let text = span.take(&self.text);
+        TokenWhitespace::new_green(db, SmolStrId::from(db, text)).into()
     }
 
     /// Assumes the next character '\n'.
-    fn match_trivium_newline(&mut self) -> TriviumGreen<'a> {
+    fn match_trivium_newline<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take();
-        TokenNewline::new_green(self.db, SmolStrId::from(self.db, self.consume_span())).into()
+        let span = self.consume_text_span();
+        let text = span.take(&self.text);
+        TokenNewline::new_green(db, SmolStrId::from(db, text)).into()
     }
 
     /// Assumes the next 2 characters are "//".
-    fn match_trivium_single_line_comment(&mut self) -> TriviumGreen<'a> {
+    fn match_trivium_single_line_comment<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         match self.peek_nth(2) {
             Some('/') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineDocComment::new_green(
-                    self.db,
-                    SmolStrId::from(self.db, self.consume_span()),
-                )
-                .into()
+                let span = self.consume_text_span();
+                let text = span.take(&self.text);
+                TokenSingleLineDocComment::new_green(db, SmolStrId::from(db, text)).into()
             }
             Some('!') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineInnerComment::new_green(
-                    self.db,
-                    SmolStrId::from(self.db, self.consume_span()),
-                )
-                .into()
+                let span = self.consume_text_span();
+                let text = span.take(&self.text);
+                TokenSingleLineInnerComment::new_green(db, SmolStrId::from(db, text)).into()
             }
             _ => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineComment::new_green(
-                    self.db,
-                    SmolStrId::from(self.db, self.consume_span()),
-                )
-                .into()
+                let span = self.consume_text_span();
+                let text = span.take(&self.text);
+                TokenSingleLineComment::new_green(db, SmolStrId::from(db, text)).into()
             }
         }
     }
@@ -204,7 +201,8 @@ impl<'a> Lexer<'a> {
         // TODO(spapini): Support or explicitly report general unicode characters.
         self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
 
-        match self.peek_span_text() {
+        let span = self.peek_text_span();
+        match span.take(&self.text) {
             "as" => TokenKind::As,
             "const" => TokenKind::Const,
             "false" => TokenKind::False,
@@ -262,8 +260,8 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn match_terminal(&mut self) -> LexerTerminal<'a> {
-        let leading_trivia = self.match_trivia(true);
+    fn match_terminal<'a>(&mut self, db: &'a dyn Database) -> LexerTerminal<'a> {
+        let leading_trivia = self.match_trivia(db, true);
 
         let kind = if let Some(current) = self.peek() {
             match current {
@@ -324,13 +322,15 @@ impl<'a> Lexer<'a> {
             TokenKind::EndOfFile
         };
 
-        let text = self.consume_span();
-        let trailing_trivia = self.match_trivia(false);
+        let span = self.consume_text_span();
+        let text_arc = self.text.clone();
+        let text = span.take(&text_arc);
+        let trailing_trivia = self.match_trivia(db, false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
         // TODO(yuval): log(verbose) "consumed text: ..."
         LexerTerminal {
-            text: SmolStrId::from(self.db, text),
+            text: SmolStrId::from(db, text),
             kind: terminal_kind,
             leading_trivia,
             trailing_trivia,
@@ -338,8 +338,27 @@ impl<'a> Lexer<'a> {
     }
 }
 
+#[salsa::tracked]
+fn tokenize_all<'a>(
+    db: &'a dyn Database,
+    _tracked: Tracked,
+    lexer: Lexer,
+) -> Vec<LexerTerminal<'a>> {
+    let mut result = Vec::new();
+    let mut lexer = lexer.clone();
+    loop {
+        let terminal = lexer.match_terminal(db);
+        let is_eof = terminal.kind == SyntaxKind::TerminalEndOfFile;
+        result.push(terminal);
+        if is_eof {
+            break;
+        }
+    }
+    result
+}
+
 /// Output terminal emitted by the lexer.
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, salsa::Update)]
 pub struct LexerTerminal<'a> {
     pub text: SmolStrId<'a>,
     /// The kind of the inner token of this terminal.
@@ -353,20 +372,9 @@ impl<'a> LexerTerminal<'a> {
             + TextWidth::from_str(self.text.long(db))
             + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
     }
-}
 
-impl<'a> Iterator for Lexer<'a> {
-    type Item = LexerTerminal<'a>;
-
-    /// Returns the next token. Once there are no more tokens left, returns token EOF.
-    /// One should not call this after EOF was returned. If one does, None is returned.
-    fn next(&mut self) -> Option<Self::Item> {
-        require(!self.done)?;
-        let lexer_terminal = self.match_terminal();
-        if lexer_terminal.kind == SyntaxKind::TerminalEndOfFile {
-            self.done = true;
-        };
-        Some(lexer_terminal)
+    pub fn text(&self, db: &'a dyn Database) -> &'a str {
+        self.text.long(db)
     }
 }
 
