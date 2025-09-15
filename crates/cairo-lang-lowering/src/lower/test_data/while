@@ -360,37 +360,33 @@ End:
 
 blk1:
 Statements:
-  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
-  (v4: core::felt252, v3: ()) <- test::foo[41-100](v2)
+  (v4: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v6: core::felt252, v5: ()) <- test::foo[41-100](v4)
 End:
-  Return(v4, v3)
+  Return(v6, v5)
 
 blk2:
 Statements:
+  (v2: ()) <- struct_construct()
 End:
-  Goto(blk5, {})
+  Goto(blk4, {})
 
 blk3:
 Statements:
+  (v3: ()) <- struct_construct()
 End:
-  Goto(blk5, {})
+  Goto(blk4, {})
 
 blk4:
 Statements:
 End:
-  Match(match test::a() {
-  })
+  Goto(blk5, {})
 
 blk5:
 Statements:
+  (v7: ()) <- struct_construct()
 End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-  (v5: ()) <- struct_construct()
-End:
-  Return(v0, v5)
+  Return(v0, v7)
 
 
 Final lowering:

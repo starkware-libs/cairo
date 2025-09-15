@@ -233,7 +233,7 @@ End:
 //! > Test while let unsupported tuple
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: true)
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -259,20 +259,42 @@ extern fn a() -> MyEnum nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported value in while-let. Currently, while-let on tuples only supports enums as tuple members.
- --> lib.cairo:9:35
-    while let (MyEnum::A(x), 3) = (a(), 3) {
-                                  ^^^^^^^^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 0
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-110](v0, v1, v2)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: core::felt252, v10: ()) <- struct_destructure(v6)
+  (v11: core::felt252) <- 1
+  (v12: core::felt252) <- core::felt252_add(v9, v11)
+  (v13: (core::felt252,)) <- struct_construct(v12)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v13)
+End:
+  Return(v3, v8, v14)
+
+blk2:
+Statements:
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v15)
 
 //! > ==========================================================================
 
 //! > Test while let numeric
 
 //! > test_runner_name
-test_function_lowering(expect_diagnostics: true)
+test_function_lowering(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -292,16 +314,35 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Numeric values are not supported in while-let conditions.
- --> lib.cairo:3:5-5:5
-      while let x = y {
- _____^
-|         y = y + x
-|     }
-|_____^
 
 //! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 0
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-87](v0, v1, v2)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: core::felt252, v10: ()) <- struct_destructure(v6)
+  (v11: core::felt252) <- 1
+  (v12: core::felt252) <- core::felt252_add(v9, v11)
+  (v13: (core::felt252,)) <- struct_construct(v12)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v13)
+End:
+  Return(v3, v8, v14)
+
+blk2:
+Statements:
+  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v15)
 
 //! > ==========================================================================
 
@@ -363,40 +404,3 @@ Statements:
   (v16: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
 End:
   Return(v4, v5, v16)
-
-//! > ==========================================================================
-
-//! > Test while let unsupported type
-
-//! > test_runner_name
-test_function_lowering(expect_diagnostics: true)
-
-//! > function
-fn foo(a: MyStruct) -> felt252 {
-    let mut y = 0;
-    while let _ = a {
-        y = y + 5;
-    }
-    y = y + 1;
-    return y;
-}
-
-//! > function_name
-foo
-
-//! > module_code
-struct MyStruct {
-    A: felt252,
-    B: felt252,
-}
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-error: Unsupported type in while-let. Type: `test::MyStruct`.
- --> lib.cairo:7:19
-    while let _ = a {
-                  ^
-
-//! > lowering_flat
-<Failed lowering function - run with RUST_LOG=warn (or less) to see diagnostics>
