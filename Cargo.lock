@@ -777,7 +777,6 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
  "expect-test",
- "proc-macro2",
  "quote",
  "salsa",
  "syn 2.0.106",
