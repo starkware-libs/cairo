@@ -24,7 +24,6 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 
 use crate::db::{
     DefsGroup, ModuleData, ModuleDataCacheAndLoadingData, ModuleFilesData, ModuleNamedItemsData,
@@ -1722,7 +1721,7 @@ impl SyntaxStablePtrIdCached {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum GreenNodeDetailsCached {
-    Token(SmolStr),
+    Token(String),
     Node { children: Vec<GreenIdCached>, width: TextWidth },
 }
 
@@ -1733,7 +1732,7 @@ impl GreenNodeDetailsCached {
     ) -> GreenNodeDetailsCached {
         match green_node_details {
             GreenNodeDetails::Token(token) => {
-                GreenNodeDetailsCached::Token(token.long(ctx.db).clone())
+                GreenNodeDetailsCached::Token(token.long(ctx.db).to_string())
             }
             GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
                 children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
@@ -1744,7 +1743,7 @@ impl GreenNodeDetailsCached {
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
             GreenNodeDetailsCached::Token(token) => {
-                GreenNodeDetails::Token(SmolStrId::new(ctx.db, token.clone()))
+                GreenNodeDetails::Token(SmolStrId::from(ctx.db, token))
             }
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),
