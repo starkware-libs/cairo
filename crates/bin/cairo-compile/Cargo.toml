@@ -12,6 +12,20 @@ clap.workspace = true
 log.workspace = true
 tracing.workspace = true
 
+<<<<<<< HEAD
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.2" }
 cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.12.2" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.2", features = ["tracing"] }
+||||||| a668b7cd1
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.2" }
+cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.12.2" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.2", features = [
+    "env_logger",
+] }
+=======
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.3" }
+cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.12.3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.3", features = [
+    "env_logger",
+] }
+>>>>>>> dev-v2.12.3

@@ -7,6 +7,7 @@ license-file.workspace = true
 description = "Handling of definitions of language items in Cairo."
 
 [dependencies]
+<<<<<<< HEAD
 bincode.workspace = true
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.2" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.2" }
@@ -14,6 +15,21 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.2"
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.2" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.2" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.2", features = ["tracing"] }
+||||||| a668b7cd1
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.2" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.2" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.2" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.2" }
+=======
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.3" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.12.3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.12.3" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.12.3" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.12.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.3" }
+>>>>>>> dev-v2.12.3
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
