@@ -19,12 +19,13 @@ use crate::lower::context::{LoweredExpr, LoweredExprExternEnum, VarRequest};
 use crate::lower::external::extern_facade_expr;
 use crate::lower::flow_control::graph::{
     ArmExpr, BindVar, BooleanIf, Deconstruct, Downcast, EnumMatch, EqualsLiteral, EvaluateExpr,
-    FlowControlNode, LetElseSuccess, NodeId, Upcast, ValueMatch,
+    FlowControlNode, LetElseSuccess, NodeId, Upcast, ValueMatch, WhileBody,
 };
 use crate::lower::lower_let_else::lower_success_arm_body;
 use crate::lower::{
-    generators, lower_expr, lower_expr_literal_to_var_usage, match_extern_arm_ref_args_bind,
-    match_extern_variant_arm_input_types,
+    generators, lower_expr, lower_expr_block, lower_expr_literal_to_var_usage,
+    match_extern_arm_ref_args_bind, match_extern_variant_arm_input_types,
+    recursively_call_loop_func,
 };
 use crate::{MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo, VarUsage};
 
@@ -49,6 +50,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::EvaluateExpr(node) => lower_evaluate_expr(ctx, id, node, builder),
         FlowControlNode::BooleanIf(node) => lower_boolean_if(ctx, id, node, builder),
         FlowControlNode::ArmExpr(node) => lower_arm_expr(ctx, id, node, builder),
+        FlowControlNode::WhileBody(node) => lower_while_body_expr(ctx, id, node, builder),
         FlowControlNode::UnitResult => lower_unit_result(ctx, id, builder),
         FlowControlNode::EnumMatch(node) => lower_enum_match(ctx, id, node, builder),
         FlowControlNode::ValueMatch(node) => lower_value_match(ctx, id, node, builder),
@@ -147,6 +149,26 @@ fn lower_arm_expr<'db>(
 ) -> Maybe<()> {
     let lowered_expr = lower_expr(ctx.ctx, &mut builder, node.expr);
     ctx.finalize_with_arm(id, builder, lowered_expr)?;
+    Ok(())
+}
+
+/// Lowers an [WhileBody] node.
+fn lower_while_body_expr<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &WhileBody<'db>,
+    mut builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let semantic::Expr::Block(expr) = ctx.ctx.function_body.arenas.exprs[node.body].clone() else {
+        unreachable!("WhileLet expression should be a block");
+    };
+    // TODO: is the lambda needed?
+    let block_expr = (|| {
+        lower_expr_block(ctx.ctx, &mut builder, &expr)?;
+        recursively_call_loop_func(ctx.ctx, &mut builder, node.loop_expr_id, node.loop_stable_ptr)
+    })();
+
+    ctx.finalize_with_arm(id, builder, block_expr)?;
     Ok(())
 }
 

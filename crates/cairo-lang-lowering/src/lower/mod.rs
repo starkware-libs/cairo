@@ -25,6 +25,8 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use context::handle_lowering_flow_error;
 use defs::ids::TopLevelLanguageElementId;
+use flow_control::create_graph::create_graph_expr_while_let;
+use flow_control::lower_graph::lower_graph;
 use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
@@ -52,14 +54,13 @@ use self::lower_if::lower_expr_if;
 use self::lower_match::lower_expr_match;
 use crate::blocks::Blocks;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
-use crate::diagnostic::{LoweringDiagnosticsBuilder, MatchDiagnostic, MatchError, MatchKind};
+use crate::diagnostic::LoweringDiagnosticsBuilder;
 use crate::ids::{
     FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
     GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature, parameter_as_member_path,
 };
 use crate::lower::context::{LoopContext, LoopEarlyReturnInfo, LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
-use crate::lower::lower_match::MatchArmWrapper;
 use crate::{
     BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
 };
@@ -294,7 +295,8 @@ pub fn lower_while_loop<'db>(
                     &loop_expr,
                     *match_expr,
                     patterns,
-                    MatchKind::WhileLet(loop_expr_id, loop_expr.stable_ptr.untyped()),
+                    loop_expr_id,
+                    loop_expr.stable_ptr.untyped(),
                 )?
                 .as_var_usage(ctx, builder)?;
 
@@ -362,35 +364,21 @@ pub fn lower_expr_while_let<'db>(
     loop_expr: &semantic::ExprWhile<'db>,
     matched_expr: semantic::ExprId,
     patterns: &[semantic::PatternId],
-    match_type: MatchKind<'db>,
+    loop_expr_id: semantic::ExprId,
+    loop_stable_ptr: SyntaxStablePtrId<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a match expression: {:?}", loop_expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(loop_expr.stable_ptr.untyped());
-    let lowered_expr = lower_expr(ctx, builder, matched_expr)?;
 
-    let ty = ctx.function_body.arenas.exprs[matched_expr].ty();
-
-    if corelib::numeric_upcastable_to_felt252(ctx.db, ty) {
-        return Err(LoweringFlowError::Failed(ctx.diagnostics.report(
-            loop_expr.stable_ptr.untyped(),
-            LoweringDiagnosticKind::MatchError(MatchError {
-                kind: match_type,
-                error: MatchDiagnostic::UnsupportedNumericInLetCondition,
-            }),
-        )));
-    }
-
-    let arms = vec![MatchArmWrapper::Arm(patterns, loop_expr.body), MatchArmWrapper::DefaultClause];
-
-    lower_match::lower_match_arms(
+    let graph = create_graph_expr_while_let(
         ctx,
-        builder,
+        patterns,
         matched_expr,
-        lowered_expr,
-        arms,
-        location,
-        match_type,
-    )
+        loop_expr.body,
+        loop_expr_id,
+        loop_stable_ptr,
+    );
+    lower_graph(ctx, builder, &graph, location)
 }
 
 /// Lowers a loop inner function into [Lowered].

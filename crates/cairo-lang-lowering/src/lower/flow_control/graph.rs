@@ -163,6 +163,19 @@ pub struct ArmExpr {
     pub expr: semantic::ExprId,
 }
 
+/// An arm (final node) for the body of a while loop.
+///
+/// Evaluates the given expression and calls the next iteration.
+#[derive(Debug)]
+pub struct WhileBody<'db> {
+    /// The body of a while loop.
+    pub body: semantic::ExprId,
+    /// The [ExprId] of the loop.
+    pub loop_expr_id: semantic::ExprId,
+    /// The stable pointer to the loop.
+    pub loop_stable_ptr: SyntaxStablePtrId<'db>,
+}
+
 /// Destructure (for structs and tuples).
 #[derive(Debug)]
 pub struct Deconstruct {
@@ -234,6 +247,8 @@ pub enum FlowControlNode<'db> {
     EqualsLiteral(EqualsLiteral<'db>),
     /// An arm (final node) that returns an expression.
     ArmExpr(ArmExpr),
+    /// An arm (final node) for the body of a while loop.
+    WhileBody(WhileBody<'db>),
     /// Destructure a tuple to its members.
     Deconstruct(Deconstruct),
     /// Binds a [FlowControlVar] to a pattern variable.
@@ -265,6 +280,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::ValueMatch(node) => Some(node.matched_var),
             FlowControlNode::EqualsLiteral(node) => Some(node.input),
             FlowControlNode::ArmExpr(..) => None,
+            FlowControlNode::WhileBody(..) => None,
             FlowControlNode::Deconstruct(node) => Some(node.input),
             FlowControlNode::BindVar(node) => Some(node.input),
             FlowControlNode::Upcast(node) => Some(node.input),
@@ -285,6 +301,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::ValueMatch(node) => node.fmt(f),
             FlowControlNode::EqualsLiteral(node) => node.fmt(f),
             FlowControlNode::ArmExpr(node) => node.fmt(f),
+            FlowControlNode::WhileBody(node) => node.fmt(f),
             FlowControlNode::Deconstruct(node) => node.fmt(f),
             FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::Upcast(node) => node.fmt(f),
