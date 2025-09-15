@@ -199,8 +199,7 @@ fn format_input(
     let original_text = db_ref
         .file_content(file_id)
         .ok_or_else(|| anyhow!("Unable to read from input."))?
-        .long(db_ref)
-        .as_ref();
+        .long(db_ref);
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id);
     if diagnostics.check_error_free().is_err() {
         return Err(FormattingError::ParsingError(

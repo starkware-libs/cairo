@@ -32,7 +32,7 @@ fn test_filesystem() {
     assert!(db.crate_config(crt2).is_none());
 
     let file_id = directory.file(&db, child_str);
-    assert_eq!(db.file_content(file_id).unwrap().long(&db).as_ref(), "content\n");
+    assert_eq!(db.file_content(file_id).unwrap().long(&db), "content\n");
 }
 
 #[test]

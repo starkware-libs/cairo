@@ -5,6 +5,7 @@
 #![allow(unused_variables)]
 use std::ops::Deref;
 
+use cairo_lang_filesystem::ids::StrId;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::{Intern, extract_matches};
 use salsa::Database;
@@ -28,7 +29,7 @@ impl<'db> Deref for Trivia<'db> {
 }
 impl<'db> Trivia<'db> {
     pub fn new_green(db: &'db dyn Database, children: &[TriviumGreen<'db>]) -> TriviaGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         TriviaGreen(
             GreenNode {
                 kind: SyntaxKind::Trivia,
@@ -761,7 +762,7 @@ impl<'db> ExprList<'db> {
         db: &'db dyn Database,
         children: &[ExprListElementOrSeparatorGreen<'db>],
     ) -> ExprListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         ExprListGreen(
             GreenNode {
                 kind: SyntaxKind::ExprList,
@@ -861,7 +862,7 @@ impl<'db> Arg<'db> {
         arg_clause: ArgClauseGreen<'db>,
     ) -> ArgGreen<'db> {
         let children = [modifiers.0, arg_clause.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgGreen(
             GreenNode {
                 kind: SyntaxKind::Arg,
@@ -1064,7 +1065,7 @@ impl<'db> ArgClauseNamed<'db> {
         value: ExprGreen<'db>,
     ) -> ArgClauseNamedGreen<'db> {
         let children = [name.0, colon.0, value.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgClauseNamedGreen(
             GreenNode {
                 kind: SyntaxKind::ArgClauseNamed,
@@ -1159,7 +1160,7 @@ impl<'db> ArgClauseUnnamed<'db> {
     pub const INDEX_VALUE: usize = 0;
     pub fn new_green(db: &'db dyn Database, value: ExprGreen<'db>) -> ArgClauseUnnamedGreen<'db> {
         let children = [value.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgClauseUnnamedGreen(
             GreenNode {
                 kind: SyntaxKind::ArgClauseUnnamed,
@@ -1248,7 +1249,7 @@ impl<'db> ArgClauseFieldInitShorthand<'db> {
         name: ExprFieldInitShorthandGreen<'db>,
     ) -> ArgClauseFieldInitShorthandGreen<'db> {
         let children = [colon.0, name.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgClauseFieldInitShorthandGreen(
             GreenNode {
                 kind: SyntaxKind::ArgClauseFieldInitShorthand,
@@ -1339,7 +1340,7 @@ impl<'db> ExprFieldInitShorthand<'db> {
         name: TerminalIdentifierGreen<'db>,
     ) -> ExprFieldInitShorthandGreen<'db> {
         let children = [name.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprFieldInitShorthandGreen(
             GreenNode {
                 kind: SyntaxKind::ExprFieldInitShorthand,
@@ -1428,7 +1429,7 @@ impl<'db> ArgList<'db> {
         db: &'db dyn Database,
         children: &[ArgListElementOrSeparatorGreen<'db>],
     ) -> ArgListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         ArgListGreen(
             GreenNode {
                 kind: SyntaxKind::ArgList,
@@ -1518,7 +1519,7 @@ pub struct ExprMissing<'db> {
 impl<'db> ExprMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> ExprMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprMissingGreen(
             GreenNode {
                 kind: SyntaxKind::ExprMissing,
@@ -1710,7 +1711,7 @@ impl<'db> PathSegmentSimple<'db> {
         ident: TerminalIdentifierGreen<'db>,
     ) -> PathSegmentSimpleGreen<'db> {
         let children = [ident.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PathSegmentSimpleGreen(
             GreenNode {
                 kind: SyntaxKind::PathSegmentSimple,
@@ -1886,7 +1887,7 @@ pub struct OptionTerminalColonColonEmpty<'db> {
 impl<'db> OptionTerminalColonColonEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionTerminalColonColonEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalColonColonEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionTerminalColonColonEmpty,
@@ -1973,7 +1974,7 @@ impl<'db> PathSegmentWithGenericArgs<'db> {
         generic_args: GenericArgsGreen<'db>,
     ) -> PathSegmentWithGenericArgsGreen<'db> {
         let children = [ident.0, separator.0, generic_args.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PathSegmentWithGenericArgsGreen(
             GreenNode {
                 kind: SyntaxKind::PathSegmentWithGenericArgs,
@@ -2073,7 +2074,7 @@ impl<'db> ExprPath<'db> {
         segments: ExprPathInnerGreen<'db>,
     ) -> ExprPathGreen<'db> {
         let children = [dollar.0, segments.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprPathGreen(
             GreenNode {
                 kind: SyntaxKind::ExprPath,
@@ -2249,7 +2250,7 @@ pub struct OptionTerminalDollarEmpty<'db> {
 impl<'db> OptionTerminalDollarEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionTerminalDollarEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalDollarEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionTerminalDollarEmpty,
@@ -2332,7 +2333,7 @@ impl<'db> PathSegmentMissing<'db> {
         ident: TerminalIdentifierGreen<'db>,
     ) -> PathSegmentMissingGreen<'db> {
         let children = [ident.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PathSegmentMissingGreen(
             GreenNode {
                 kind: SyntaxKind::PathSegmentMissing,
@@ -2421,7 +2422,7 @@ impl<'db> ExprPathInner<'db> {
         db: &'db dyn Database,
         children: &[ExprPathInnerElementOrSeparatorGreen<'db>],
     ) -> ExprPathInnerGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         ExprPathInnerGreen(
             GreenNode {
                 kind: SyntaxKind::ExprPathInner,
@@ -2523,7 +2524,7 @@ impl<'db> ExprParenthesized<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> ExprParenthesizedGreen<'db> {
         let children = [lparen.0, expr.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprParenthesizedGreen(
             GreenNode {
                 kind: SyntaxKind::ExprParenthesized,
@@ -2623,7 +2624,7 @@ impl<'db> ExprUnary<'db> {
         expr: ExprGreen<'db>,
     ) -> ExprUnaryGreen<'db> {
         let children = [op.0, expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprUnaryGreen(
             GreenNode {
                 kind: SyntaxKind::ExprUnary,
@@ -2860,7 +2861,7 @@ impl<'db> ExprBinary<'db> {
         rhs: ExprGreen<'db>,
     ) -> ExprBinaryGreen<'db> {
         let children = [lhs.0, op.0, rhs.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprBinaryGreen(
             GreenNode {
                 kind: SyntaxKind::ExprBinary,
@@ -3482,7 +3483,7 @@ impl<'db> ExprListParenthesized<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> ExprListParenthesizedGreen<'db> {
         let children = [lparen.0, expressions.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprListParenthesizedGreen(
             GreenNode {
                 kind: SyntaxKind::ExprListParenthesized,
@@ -3582,7 +3583,7 @@ impl<'db> ExprFunctionCall<'db> {
         arguments: ArgListParenthesizedGreen<'db>,
     ) -> ExprFunctionCallGreen<'db> {
         let children = [path.0, arguments.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprFunctionCallGreen(
             GreenNode {
                 kind: SyntaxKind::ExprFunctionCall,
@@ -3676,7 +3677,7 @@ impl<'db> ArgListParenthesized<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> ArgListParenthesizedGreen<'db> {
         let children = [lparen.0, arguments.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgListParenthesizedGreen(
             GreenNode {
                 kind: SyntaxKind::ArgListParenthesized,
@@ -3868,7 +3869,7 @@ pub struct OptionArgListParenthesizedEmpty<'db> {
 impl<'db> OptionArgListParenthesizedEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionArgListParenthesizedEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionArgListParenthesizedEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionArgListParenthesizedEmpty,
@@ -3953,7 +3954,7 @@ impl<'db> ExprStructCtorCall<'db> {
         arguments: StructArgListBracedGreen<'db>,
     ) -> ExprStructCtorCallGreen<'db> {
         let children = [path.0, arguments.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprStructCtorCallGreen(
             GreenNode {
                 kind: SyntaxKind::ExprStructCtorCall,
@@ -4047,7 +4048,7 @@ impl<'db> StructArgListBraced<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> StructArgListBracedGreen<'db> {
         let children = [lbrace.0, arguments.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgListBracedGreen(
             GreenNode {
                 kind: SyntaxKind::StructArgListBraced,
@@ -4149,7 +4150,7 @@ impl<'db> ExprBlock<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> ExprBlockGreen<'db> {
         let children = [lbrace.0, statements.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprBlockGreen(
             GreenNode {
                 kind: SyntaxKind::ExprBlock,
@@ -4251,7 +4252,7 @@ impl<'db> ExprMatch<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> ExprMatchGreen<'db> {
         let children = [match_kw.0, expr.0, lbrace.0, arms.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprMatchGreen(
             GreenNode {
                 kind: SyntaxKind::ExprMatch,
@@ -4355,7 +4356,7 @@ impl<'db> MatchArms<'db> {
         db: &'db dyn Database,
         children: &[MatchArmsElementOrSeparatorGreen<'db>],
     ) -> MatchArmsGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         MatchArmsGreen(
             GreenNode {
                 kind: SyntaxKind::MatchArms,
@@ -4457,7 +4458,7 @@ impl<'db> MatchArm<'db> {
         expression: ExprGreen<'db>,
     ) -> MatchArmGreen<'db> {
         let children = [patterns.0, arrow.0, expression.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MatchArmGreen(
             GreenNode {
                 kind: SyntaxKind::MatchArm,
@@ -4557,7 +4558,7 @@ impl<'db> ExprIf<'db> {
         else_clause: OptionElseClauseGreen<'db>,
     ) -> ExprIfGreen<'db> {
         let children = [if_kw.0, conditions.0, if_block.0, else_clause.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprIfGreen(
             GreenNode {
                 kind: SyntaxKind::ExprIf,
@@ -4657,7 +4658,7 @@ impl<'db> ConditionListAnd<'db> {
         db: &'db dyn Database,
         children: &[ConditionListAndElementOrSeparatorGreen<'db>],
     ) -> ConditionListAndGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         ConditionListAndGreen(
             GreenNode {
                 kind: SyntaxKind::ConditionListAnd,
@@ -4847,7 +4848,7 @@ impl<'db> ConditionLet<'db> {
         expr: ExprGreen<'db>,
     ) -> ConditionLetGreen<'db> {
         let children = [let_kw.0, patterns.0, eq.0, expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ConditionLetGreen(
             GreenNode {
                 kind: SyntaxKind::ConditionLet,
@@ -4942,7 +4943,7 @@ impl<'db> ConditionExpr<'db> {
     pub const INDEX_EXPR: usize = 0;
     pub fn new_green(db: &'db dyn Database, expr: ExprGreen<'db>) -> ConditionExprGreen<'db> {
         let children = [expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ConditionExprGreen(
             GreenNode {
                 kind: SyntaxKind::ConditionExpr,
@@ -5113,7 +5114,7 @@ impl<'db> ExprLoop<'db> {
         body: ExprBlockGreen<'db>,
     ) -> ExprLoopGreen<'db> {
         let children = [loop_kw.0, body.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprLoopGreen(
             GreenNode {
                 kind: SyntaxKind::ExprLoop,
@@ -5203,7 +5204,7 @@ impl<'db> ExprWhile<'db> {
         body: ExprBlockGreen<'db>,
     ) -> ExprWhileGreen<'db> {
         let children = [while_kw.0, conditions.0, body.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprWhileGreen(
             GreenNode {
                 kind: SyntaxKind::ExprWhile,
@@ -5305,7 +5306,7 @@ impl<'db> ExprFor<'db> {
         body: ExprBlockGreen<'db>,
     ) -> ExprForGreen<'db> {
         let children = [for_kw.0, pattern.0, identifier.0, expr.0, body.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprForGreen(
             GreenNode {
                 kind: SyntaxKind::ExprFor,
@@ -5426,7 +5427,7 @@ impl<'db> ElseClause<'db> {
         else_block_or_if: BlockOrIfGreen<'db>,
     ) -> ElseClauseGreen<'db> {
         let children = [else_kw.0, else_block_or_if.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ElseClauseGreen(
             GreenNode {
                 kind: SyntaxKind::ElseClause,
@@ -5601,7 +5602,7 @@ pub struct OptionElseClauseEmpty<'db> {
 impl<'db> OptionElseClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionElseClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionElseClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionElseClauseEmpty,
@@ -5686,7 +5687,7 @@ impl<'db> ExprErrorPropagate<'db> {
         op: TerminalQuestionMarkGreen<'db>,
     ) -> ExprErrorPropagateGreen<'db> {
         let children = [expr.0, op.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprErrorPropagateGreen(
             GreenNode {
                 kind: SyntaxKind::ExprErrorPropagate,
@@ -5782,7 +5783,7 @@ impl<'db> ExprIndexed<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> ExprIndexedGreen<'db> {
         let children = [expr.0, lbrack.0, index_expr.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprIndexedGreen(
             GreenNode {
                 kind: SyntaxKind::ExprIndexed,
@@ -5886,7 +5887,7 @@ impl<'db> ExprFixedSizeArray<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> ExprFixedSizeArrayGreen<'db> {
         let children = [lbrack.0, exprs.0, size.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprFixedSizeArrayGreen(
             GreenNode {
                 kind: SyntaxKind::ExprFixedSizeArray,
@@ -5990,7 +5991,7 @@ impl<'db> FixedSizeArraySize<'db> {
         size: ExprGreen<'db>,
     ) -> FixedSizeArraySizeGreen<'db> {
         let children = [semicolon.0, size.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FixedSizeArraySizeGreen(
             GreenNode {
                 kind: SyntaxKind::FixedSizeArraySize,
@@ -6169,7 +6170,7 @@ pub struct OptionFixedSizeArraySizeEmpty<'db> {
 impl<'db> OptionFixedSizeArraySizeEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionFixedSizeArraySizeEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionFixedSizeArraySizeEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionFixedSizeArraySizeEmpty,
@@ -6258,7 +6259,7 @@ impl<'db> ExprClosure<'db> {
         expr: ExprGreen<'db>,
     ) -> ExprClosureGreen<'db> {
         let children = [wrapper.0, ret_ty.0, optional_no_panic.0, expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprClosureGreen(
             GreenNode {
                 kind: SyntaxKind::ExprClosure,
@@ -6453,7 +6454,7 @@ impl<'db> ClosureParamWrapperNAry<'db> {
         rightor: TerminalOrGreen<'db>,
     ) -> ClosureParamWrapperNAryGreen<'db> {
         let children = [leftor.0, params.0, rightor.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ClosureParamWrapperNAryGreen(
             GreenNode {
                 kind: SyntaxKind::ClosureParamWrapperNAry,
@@ -6553,7 +6554,7 @@ impl<'db> StructArgExpr<'db> {
         expr: ExprGreen<'db>,
     ) -> StructArgExprGreen<'db> {
         let children = [colon.0, expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgExprGreen(
             GreenNode {
                 kind: SyntaxKind::StructArgExpr,
@@ -6732,7 +6733,7 @@ pub struct OptionStructArgExprEmpty<'db> {
 impl<'db> OptionStructArgExprEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionStructArgExprEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionStructArgExprEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionStructArgExprEmpty,
@@ -6817,7 +6818,7 @@ impl<'db> StructArgSingle<'db> {
         arg_expr: OptionStructArgExprGreen<'db>,
     ) -> StructArgSingleGreen<'db> {
         let children = [identifier.0, arg_expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgSingleGreen(
             GreenNode {
                 kind: SyntaxKind::StructArgSingle,
@@ -6922,7 +6923,7 @@ impl<'db> StructArgTail<'db> {
         expression: ExprGreen<'db>,
     ) -> StructArgTailGreen<'db> {
         let children = [dotdot.0, expression.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StructArgTailGreen(
             GreenNode {
                 kind: SyntaxKind::StructArgTail,
@@ -7104,7 +7105,7 @@ impl<'db> StructArgList<'db> {
         db: &'db dyn Database,
         children: &[StructArgListElementOrSeparatorGreen<'db>],
     ) -> StructArgListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         StructArgListGreen(
             GreenNode {
                 kind: SyntaxKind::StructArgList,
@@ -7206,7 +7207,7 @@ impl<'db> ArgListBraced<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> ArgListBracedGreen<'db> {
         let children = [lbrace.0, arguments.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgListBracedGreen(
             GreenNode {
                 kind: SyntaxKind::ArgListBraced,
@@ -7308,7 +7309,7 @@ impl<'db> ArgListBracketed<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> ArgListBracketedGreen<'db> {
         let children = [lbrack.0, arguments.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ArgListBracketedGreen(
             GreenNode {
                 kind: SyntaxKind::ArgListBracketed,
@@ -7536,7 +7537,7 @@ pub struct WrappedArgListMissing<'db> {
 impl<'db> WrappedArgListMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> WrappedArgListMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedArgListMissingGreen(
             GreenNode {
                 kind: SyntaxKind::WrappedArgListMissing,
@@ -7889,7 +7890,7 @@ impl<'db> PatternIdentifier<'db> {
         name: TerminalIdentifierGreen<'db>,
     ) -> PatternIdentifierGreen<'db> {
         let children = [modifiers.0, name.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternIdentifierGreen(
             GreenNode {
                 kind: SyntaxKind::PatternIdentifier,
@@ -7995,7 +7996,7 @@ impl<'db> PatternStruct<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> PatternStructGreen<'db> {
         let children = [path.0, lbrace.0, params.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternStructGreen(
             GreenNode {
                 kind: SyntaxKind::PatternStruct,
@@ -8099,7 +8100,7 @@ impl<'db> PatternStructParamList<'db> {
         db: &'db dyn Database,
         children: &[PatternStructParamListElementOrSeparatorGreen<'db>],
     ) -> PatternStructParamListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         PatternStructParamListGreen(
             GreenNode {
                 kind: SyntaxKind::PatternStructParamList,
@@ -8203,7 +8204,7 @@ impl<'db> PatternTuple<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> PatternTupleGreen<'db> {
         let children = [lparen.0, patterns.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternTupleGreen(
             GreenNode {
                 kind: SyntaxKind::PatternTuple,
@@ -8301,7 +8302,7 @@ impl<'db> PatternFixedSizeArray<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> PatternFixedSizeArrayGreen<'db> {
         let children = [lbrack.0, patterns.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternFixedSizeArrayGreen(
             GreenNode {
                 kind: SyntaxKind::PatternFixedSizeArray,
@@ -8401,7 +8402,7 @@ impl<'db> PatternList<'db> {
         db: &'db dyn Database,
         children: &[PatternListElementOrSeparatorGreen<'db>],
     ) -> PatternListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         PatternListGreen(
             GreenNode {
                 kind: SyntaxKind::PatternList,
@@ -8501,7 +8502,7 @@ impl<'db> PatternListOr<'db> {
         db: &'db dyn Database,
         children: &[PatternListOrElementOrSeparatorGreen<'db>],
     ) -> PatternListOrGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         PatternListOrGreen(
             GreenNode {
                 kind: SyntaxKind::PatternListOr,
@@ -8721,7 +8722,7 @@ impl<'db> PatternStructParamWithExpr<'db> {
         pattern: PatternGreen<'db>,
     ) -> PatternStructParamWithExprGreen<'db> {
         let children = [modifiers.0, name.0, colon.0, pattern.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternStructParamWithExprGreen(
             GreenNode {
                 kind: SyntaxKind::PatternStructParamWithExpr,
@@ -8825,7 +8826,7 @@ impl<'db> PatternEnum<'db> {
         pattern: OptionPatternEnumInnerPatternGreen<'db>,
     ) -> PatternEnumGreen<'db> {
         let children = [path.0, pattern.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternEnumGreen(
             GreenNode {
                 kind: SyntaxKind::PatternEnum,
@@ -8919,7 +8920,7 @@ impl<'db> PatternEnumInnerPattern<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> PatternEnumInnerPatternGreen<'db> {
         let children = [lparen.0, pattern.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         PatternEnumInnerPatternGreen(
             GreenNode {
                 kind: SyntaxKind::PatternEnumInnerPattern,
@@ -9119,7 +9120,7 @@ pub struct OptionPatternEnumInnerPatternEmpty<'db> {
 impl<'db> OptionPatternEnumInnerPatternEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionPatternEnumInnerPatternEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionPatternEnumInnerPatternEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionPatternEnumInnerPatternEmpty,
@@ -9204,7 +9205,7 @@ impl<'db> TypeClause<'db> {
         ty: ExprGreen<'db>,
     ) -> TypeClauseGreen<'db> {
         let children = [colon.0, ty.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TypeClauseGreen(
             GreenNode {
                 kind: SyntaxKind::TypeClause,
@@ -9379,7 +9380,7 @@ pub struct OptionTypeClauseEmpty<'db> {
 impl<'db> OptionTypeClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionTypeClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTypeClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionTypeClauseEmpty,
@@ -9464,7 +9465,7 @@ impl<'db> ReturnTypeClause<'db> {
         ty: ExprGreen<'db>,
     ) -> ReturnTypeClauseGreen<'db> {
         let children = [arrow.0, ty.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ReturnTypeClauseGreen(
             GreenNode {
                 kind: SyntaxKind::ReturnTypeClause,
@@ -9643,7 +9644,7 @@ pub struct OptionReturnTypeClauseEmpty<'db> {
 impl<'db> OptionReturnTypeClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionReturnTypeClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionReturnTypeClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionReturnTypeClauseEmpty,
@@ -9911,7 +9912,7 @@ impl<'db> StatementList<'db> {
         db: &'db dyn Database,
         children: &[StatementGreen<'db>],
     ) -> StatementListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         StatementListGreen(
             GreenNode {
                 kind: SyntaxKind::StatementList,
@@ -9982,7 +9983,7 @@ pub struct StatementMissing<'db> {
 impl<'db> StatementMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> StatementMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementMissingGreen(
             GreenNode {
                 kind: SyntaxKind::StatementMissing,
@@ -10088,7 +10089,7 @@ impl<'db> StatementLet<'db> {
             let_else_clause.0,
             semicolon.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementLetGreen(
             GreenNode {
                 kind: SyntaxKind::StatementLet,
@@ -10213,7 +10214,7 @@ impl<'db> LetElseClause<'db> {
         else_block: ExprBlockGreen<'db>,
     ) -> LetElseClauseGreen<'db> {
         let children = [else_kw.0, else_block.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         LetElseClauseGreen(
             GreenNode {
                 kind: SyntaxKind::LetElseClause,
@@ -10392,7 +10393,7 @@ pub struct OptionLetElseClauseEmpty<'db> {
 impl<'db> OptionLetElseClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionLetElseClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionLetElseClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionLetElseClauseEmpty,
@@ -10564,7 +10565,7 @@ pub struct OptionTerminalSemicolonEmpty<'db> {
 impl<'db> OptionTerminalSemicolonEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionTerminalSemicolonEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalSemicolonEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionTerminalSemicolonEmpty,
@@ -10651,7 +10652,7 @@ impl<'db> StatementExpr<'db> {
         semicolon: OptionTerminalSemicolonGreen<'db>,
     ) -> StatementExprGreen<'db> {
         let children = [attributes.0, expr.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementExprGreen(
             GreenNode {
                 kind: SyntaxKind::StatementExpr,
@@ -10753,7 +10754,7 @@ impl<'db> StatementContinue<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> StatementContinueGreen<'db> {
         let children = [attributes.0, continue_kw.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementContinueGreen(
             GreenNode {
                 kind: SyntaxKind::StatementContinue,
@@ -10848,7 +10849,7 @@ impl<'db> ExprClause<'db> {
     pub const INDEX_EXPR: usize = 0;
     pub fn new_green(db: &'db dyn Database, expr: ExprGreen<'db>) -> ExprClauseGreen<'db> {
         let children = [expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprClauseGreen(
             GreenNode {
                 kind: SyntaxKind::ExprClause,
@@ -11020,7 +11021,7 @@ pub struct OptionExprClauseEmpty<'db> {
 impl<'db> OptionExprClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionExprClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionExprClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionExprClauseEmpty,
@@ -11109,7 +11110,7 @@ impl<'db> StatementReturn<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> StatementReturnGreen<'db> {
         let children = [attributes.0, return_kw.0, expr_clause.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementReturnGreen(
             GreenNode {
                 kind: SyntaxKind::StatementReturn,
@@ -11217,7 +11218,7 @@ impl<'db> StatementBreak<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> StatementBreakGreen<'db> {
         let children = [attributes.0, break_kw.0, expr_clause.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementBreakGreen(
             GreenNode {
                 kind: SyntaxKind::StatementBreak,
@@ -11316,7 +11317,7 @@ impl<'db> StatementItem<'db> {
     pub const INDEX_ITEM: usize = 0;
     pub fn new_green(db: &'db dyn Database, item: ModuleItemGreen<'db>) -> StatementItemGreen<'db> {
         let children = [item.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         StatementItemGreen(
             GreenNode {
                 kind: SyntaxKind::StatementItem,
@@ -11407,7 +11408,7 @@ impl<'db> Param<'db> {
         type_clause: OptionTypeClauseGreen<'db>,
     ) -> ParamGreen<'db> {
         let children = [modifiers.0, name.0, type_clause.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamGreen(
             GreenNode {
                 kind: SyntaxKind::Param,
@@ -11512,7 +11513,7 @@ impl<'db> ModifierList<'db> {
         db: &'db dyn Database,
         children: &[ModifierGreen<'db>],
     ) -> ModifierListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         ModifierListGreen(
             GreenNode {
                 kind: SyntaxKind::ModifierList,
@@ -11671,7 +11672,7 @@ impl<'db> ParamList<'db> {
         db: &'db dyn Database,
         children: &[ParamListElementOrSeparatorGreen<'db>],
     ) -> ParamListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         ParamListGreen(
             GreenNode {
                 kind: SyntaxKind::ParamList,
@@ -11775,7 +11776,7 @@ impl<'db> ImplicitsClause<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> ImplicitsClauseGreen<'db> {
         let children = [implicits_kw.0, lparen.0, implicits.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ImplicitsClauseGreen(
             GreenNode {
                 kind: SyntaxKind::ImplicitsClause,
@@ -11879,7 +11880,7 @@ impl<'db> ImplicitsList<'db> {
         db: &'db dyn Database,
         children: &[ImplicitsListElementOrSeparatorGreen<'db>],
     ) -> ImplicitsListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         ImplicitsListGreen(
             GreenNode {
                 kind: SyntaxKind::ImplicitsList,
@@ -12066,7 +12067,7 @@ pub struct OptionImplicitsClauseEmpty<'db> {
 impl<'db> OptionImplicitsClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionImplicitsClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionImplicitsClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionImplicitsClauseEmpty,
@@ -12238,7 +12239,7 @@ pub struct OptionTerminalNoPanicEmpty<'db> {
 impl<'db> OptionTerminalNoPanicEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionTerminalNoPanicEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalNoPanicEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionTerminalNoPanicEmpty,
@@ -12410,7 +12411,7 @@ pub struct OptionTerminalConstEmpty<'db> {
 impl<'db> OptionTerminalConstEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionTerminalConstEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalConstEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionTerminalConstEmpty,
@@ -12504,7 +12505,7 @@ impl<'db> FunctionSignature<'db> {
     ) -> FunctionSignatureGreen<'db> {
         let children =
             [lparen.0, parameters.0, rparen.0, ret_ty.0, implicits_clause.0, optional_no_panic.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FunctionSignatureGreen(
             GreenNode {
                 kind: SyntaxKind::FunctionSignature,
@@ -12620,7 +12621,7 @@ impl<'db> Member<'db> {
         type_clause: TypeClauseGreen<'db>,
     ) -> MemberGreen<'db> {
         let children = [attributes.0, visibility.0, name.0, type_clause.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MemberGreen(
             GreenNode {
                 kind: SyntaxKind::Member,
@@ -12729,7 +12730,7 @@ impl<'db> MemberList<'db> {
         db: &'db dyn Database,
         children: &[MemberListElementOrSeparatorGreen<'db>],
     ) -> MemberListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         MemberListGreen(
             GreenNode {
                 kind: SyntaxKind::MemberList,
@@ -12831,7 +12832,7 @@ impl<'db> Variant<'db> {
         type_clause: OptionTypeClauseGreen<'db>,
     ) -> VariantGreen<'db> {
         let children = [attributes.0, name.0, type_clause.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VariantGreen(
             GreenNode {
                 kind: SyntaxKind::Variant,
@@ -12936,7 +12937,7 @@ impl<'db> VariantList<'db> {
         db: &'db dyn Database,
         children: &[VariantListElementOrSeparatorGreen<'db>],
     ) -> VariantListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         VariantListGreen(
             GreenNode {
                 kind: SyntaxKind::VariantList,
@@ -13376,7 +13377,7 @@ impl<'db> ModuleItemList<'db> {
         db: &'db dyn Database,
         children: &[ModuleItemGreen<'db>],
     ) -> ModuleItemListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         ModuleItemListGreen(
             GreenNode {
                 kind: SyntaxKind::ModuleItemList,
@@ -13447,7 +13448,7 @@ pub struct ModuleItemMissing<'db> {
 impl<'db> ModuleItemMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> ModuleItemMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ModuleItemMissingGreen(
             GreenNode {
                 kind: SyntaxKind::ModuleItemMissing,
@@ -13538,7 +13539,7 @@ impl<'db> Attribute<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> AttributeGreen<'db> {
         let children = [hash.0, lbrack.0, attr.0, arguments.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AttributeGreen(
             GreenNode {
                 kind: SyntaxKind::Attribute,
@@ -13642,7 +13643,7 @@ impl<'db> AttributeList<'db> {
         db: &'db dyn Database,
         children: &[AttributeGreen<'db>],
     ) -> AttributeListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         AttributeListGreen(
             GreenNode {
                 kind: SyntaxKind::AttributeList,
@@ -13713,7 +13714,7 @@ pub struct VisibilityDefault<'db> {
 impl<'db> VisibilityDefault<'db> {
     pub fn new_green(db: &'db dyn Database) -> VisibilityDefaultGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VisibilityDefaultGreen(
             GreenNode {
                 kind: SyntaxKind::VisibilityDefault,
@@ -13800,7 +13801,7 @@ impl<'db> VisibilityPubArgumentClause<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> VisibilityPubArgumentClauseGreen<'db> {
         let children = [lparen.0, argument.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VisibilityPubArgumentClauseGreen(
             GreenNode {
                 kind: SyntaxKind::VisibilityPubArgumentClause,
@@ -14005,7 +14006,7 @@ pub struct OptionVisibilityPubArgumentClauseEmpty<'db> {
 impl<'db> OptionVisibilityPubArgumentClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionVisibilityPubArgumentClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionVisibilityPubArgumentClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionVisibilityPubArgumentClauseEmpty,
@@ -14091,7 +14092,7 @@ impl<'db> VisibilityPub<'db> {
         argument_clause: OptionVisibilityPubArgumentClauseGreen<'db>,
     ) -> VisibilityPubGreen<'db> {
         let children = [pub_kw.0, argument_clause.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         VisibilityPubGreen(
             GreenNode {
                 kind: SyntaxKind::VisibilityPub,
@@ -14281,7 +14282,7 @@ impl<'db> ItemModule<'db> {
         body: MaybeModuleBodyGreen<'db>,
     ) -> ItemModuleGreen<'db> {
         let children = [attributes.0, visibility.0, module_kw.0, name.0, body.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemModuleGreen(
             GreenNode {
                 kind: SyntaxKind::ItemModule,
@@ -14486,7 +14487,7 @@ impl<'db> ModuleBody<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> ModuleBodyGreen<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ModuleBodyGreen(
             GreenNode {
                 kind: SyntaxKind::ModuleBody,
@@ -14588,7 +14589,7 @@ impl<'db> FunctionDeclaration<'db> {
         signature: FunctionSignatureGreen<'db>,
     ) -> FunctionDeclarationGreen<'db> {
         let children = [optional_const.0, function_kw.0, name.0, generic_params.0, signature.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FunctionDeclarationGreen(
             GreenNode {
                 kind: SyntaxKind::FunctionDeclaration,
@@ -14726,7 +14727,7 @@ impl<'db> ItemConstant<'db> {
             value.0,
             semicolon.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemConstantGreen(
             GreenNode {
                 kind: SyntaxKind::ItemConstant,
@@ -14855,7 +14856,7 @@ impl<'db> FunctionWithBody<'db> {
         body: ExprBlockGreen<'db>,
     ) -> FunctionWithBodyGreen<'db> {
         let children = [attributes.0, visibility.0, declaration.0, body.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         FunctionWithBodyGreen(
             GreenNode {
                 kind: SyntaxKind::FunctionWithBody,
@@ -14974,7 +14975,7 @@ impl<'db> ItemExternFunction<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> ItemExternFunctionGreen<'db> {
         let children = [attributes.0, visibility.0, extern_kw.0, declaration.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemExternFunctionGreen(
             GreenNode {
                 kind: SyntaxKind::ItemExternFunction,
@@ -15109,7 +15110,7 @@ impl<'db> ItemExternType<'db> {
             generic_params.0,
             semicolon.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemExternTypeGreen(
             GreenNode {
                 kind: SyntaxKind::ItemExternType,
@@ -15242,7 +15243,7 @@ impl<'db> ItemTrait<'db> {
         body: MaybeTraitBodyGreen<'db>,
     ) -> ItemTraitGreen<'db> {
         let children = [attributes.0, visibility.0, trait_kw.0, name.0, generic_params.0, body.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemTraitGreen(
             GreenNode {
                 kind: SyntaxKind::ItemTrait,
@@ -15451,7 +15452,7 @@ impl<'db> TraitBody<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> TraitBodyGreen<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitBodyGreen(
             GreenNode {
                 kind: SyntaxKind::TraitBody,
@@ -15547,7 +15548,7 @@ impl<'db> TraitItemList<'db> {
         db: &'db dyn Database,
         children: &[TraitItemGreen<'db>],
     ) -> TraitItemListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         TraitItemListGreen(
             GreenNode {
                 kind: SyntaxKind::TraitItemList,
@@ -15765,7 +15766,7 @@ pub struct TraitItemMissing<'db> {
 impl<'db> TraitItemMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> TraitItemMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemMissingGreen(
             GreenNode {
                 kind: SyntaxKind::TraitItemMissing,
@@ -15852,7 +15853,7 @@ impl<'db> TraitItemFunction<'db> {
         body: MaybeTraitFunctionBodyGreen<'db>,
     ) -> TraitItemFunctionGreen<'db> {
         let children = [attributes.0, declaration.0, body.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemFunctionGreen(
             GreenNode {
                 kind: SyntaxKind::TraitItemFunction,
@@ -15967,7 +15968,7 @@ impl<'db> TraitItemType<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> TraitItemTypeGreen<'db> {
         let children = [attributes.0, type_kw.0, name.0, generic_params.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemTypeGreen(
             GreenNode {
                 kind: SyntaxKind::TraitItemType,
@@ -16090,7 +16091,7 @@ impl<'db> TraitItemConstant<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> TraitItemConstantGreen<'db> {
         let children = [attributes.0, const_kw.0, name.0, type_clause.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemConstantGreen(
             GreenNode {
                 kind: SyntaxKind::TraitItemConstant,
@@ -16215,7 +16216,7 @@ impl<'db> TraitItemImpl<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> TraitItemImplGreen<'db> {
         let children = [attributes.0, impl_kw.0, name.0, colon.0, trait_path.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TraitItemImplGreen(
             GreenNode {
                 kind: SyntaxKind::TraitItemImpl,
@@ -16450,7 +16451,7 @@ impl<'db> ItemImpl<'db> {
             trait_path.0,
             body.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemImplGreen(
             GreenNode {
                 kind: SyntaxKind::ItemImpl,
@@ -16573,7 +16574,7 @@ impl<'db> ItemHeaderDoc<'db> {
         empty: TerminalEmptyGreen<'db>,
     ) -> ItemHeaderDocGreen<'db> {
         let children = [empty.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemHeaderDocGreen(
             GreenNode {
                 kind: SyntaxKind::ItemHeaderDoc,
@@ -16750,7 +16751,7 @@ impl<'db> ImplBody<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> ImplBodyGreen<'db> {
         let children = [lbrace.0, items.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ImplBodyGreen(
             GreenNode {
                 kind: SyntaxKind::ImplBody,
@@ -16846,7 +16847,7 @@ impl<'db> ImplItemList<'db> {
         db: &'db dyn Database,
         children: &[ImplItemGreen<'db>],
     ) -> ImplItemListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         ImplItemListGreen(
             GreenNode {
                 kind: SyntaxKind::ImplItemList,
@@ -17181,7 +17182,7 @@ pub struct ImplItemMissing<'db> {
 impl<'db> ImplItemMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> ImplItemMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ImplItemMissingGreen(
             GreenNode {
                 kind: SyntaxKind::ImplItemMissing,
@@ -17287,7 +17288,7 @@ impl<'db> ItemImplAlias<'db> {
             impl_path.0,
             semicolon.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemImplAliasGreen(
             GreenNode {
                 kind: SyntaxKind::ItemImplAlias,
@@ -17437,7 +17438,7 @@ impl<'db> ItemStruct<'db> {
             members.0,
             rbrace.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemStructGreen(
             GreenNode {
                 kind: SyntaxKind::ItemStruct,
@@ -17583,7 +17584,7 @@ impl<'db> ItemEnum<'db> {
             variants.0,
             rbrace.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemEnumGreen(
             GreenNode {
                 kind: SyntaxKind::ItemEnum,
@@ -17729,7 +17730,7 @@ impl<'db> ItemTypeAlias<'db> {
             ty.0,
             semicolon.0,
         ];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemTypeAliasGreen(
             GreenNode {
                 kind: SyntaxKind::ItemTypeAlias,
@@ -17866,7 +17867,7 @@ impl<'db> ItemUse<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> ItemUseGreen<'db> {
         let children = [attributes.0, visibility.0, use_kw.0, dollar.0, use_path.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemUseGreen(
             GreenNode {
                 kind: SyntaxKind::ItemUse,
@@ -18103,7 +18104,7 @@ impl<'db> UsePathLeaf<'db> {
         alias_clause: OptionAliasClauseGreen<'db>,
     ) -> UsePathLeafGreen<'db> {
         let children = [ident.0, alias_clause.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathLeafGreen(
             GreenNode {
                 kind: SyntaxKind::UsePathLeaf,
@@ -18210,7 +18211,7 @@ impl<'db> UsePathSingle<'db> {
         use_path: UsePathGreen<'db>,
     ) -> UsePathSingleGreen<'db> {
         let children = [ident.0, colon_colon.0, use_path.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathSingleGreen(
             GreenNode {
                 kind: SyntaxKind::UsePathSingle,
@@ -18312,7 +18313,7 @@ impl<'db> UsePathMulti<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> UsePathMultiGreen<'db> {
         let children = [lbrace.0, use_paths.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathMultiGreen(
             GreenNode {
                 kind: SyntaxKind::UsePathMulti,
@@ -18403,7 +18404,7 @@ impl<'db> UsePathStar<'db> {
     pub const INDEX_STAR: usize = 0;
     pub fn new_green(db: &'db dyn Database, star: TerminalMulGreen<'db>) -> UsePathStarGreen<'db> {
         let children = [star.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         UsePathStarGreen(
             GreenNode {
                 kind: SyntaxKind::UsePathStar,
@@ -18488,7 +18489,7 @@ impl<'db> UsePathList<'db> {
         db: &'db dyn Database,
         children: &[UsePathListElementOrSeparatorGreen<'db>],
     ) -> UsePathListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         UsePathListGreen(
             GreenNode {
                 kind: SyntaxKind::UsePathList,
@@ -18588,7 +18589,7 @@ impl<'db> AliasClause<'db> {
         alias: TerminalIdentifierGreen<'db>,
     ) -> AliasClauseGreen<'db> {
         let children = [as_kw.0, alias.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AliasClauseGreen(
             GreenNode {
                 kind: SyntaxKind::AliasClause,
@@ -18772,7 +18773,7 @@ pub struct OptionAliasClauseEmpty<'db> {
 impl<'db> OptionAliasClauseEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionAliasClauseEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionAliasClauseEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionAliasClauseEmpty,
@@ -18949,7 +18950,7 @@ impl<'db> GenericArgNamed<'db> {
         value: GenericArgValueGreen<'db>,
     ) -> GenericArgNamedGreen<'db> {
         let children = [name.0, colon.0, value.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgNamedGreen(
             GreenNode {
                 kind: SyntaxKind::GenericArgNamed,
@@ -19047,7 +19048,7 @@ impl<'db> GenericArgUnnamed<'db> {
         value: GenericArgValueGreen<'db>,
     ) -> GenericArgUnnamedGreen<'db> {
         let children = [value.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgUnnamedGreen(
             GreenNode {
                 kind: SyntaxKind::GenericArgUnnamed,
@@ -19223,7 +19224,7 @@ impl<'db> GenericArgValueExpr<'db> {
     pub const INDEX_EXPR: usize = 0;
     pub fn new_green(db: &'db dyn Database, expr: ExprGreen<'db>) -> GenericArgValueExprGreen<'db> {
         let children = [expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgValueExprGreen(
             GreenNode {
                 kind: SyntaxKind::GenericArgValueExpr,
@@ -19314,7 +19315,7 @@ impl<'db> GenericArgs<'db> {
         rangle: TerminalGTGreen<'db>,
     ) -> GenericArgsGreen<'db> {
         let children = [langle.0, generic_args.0, rangle.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgsGreen(
             GreenNode {
                 kind: SyntaxKind::GenericArgs,
@@ -19410,7 +19411,7 @@ impl<'db> GenericArgList<'db> {
         db: &'db dyn Database,
         children: &[GenericArgListElementOrSeparatorGreen<'db>],
     ) -> GenericArgListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         GenericArgListGreen(
             GreenNode {
                 kind: SyntaxKind::GenericArgList,
@@ -19512,7 +19513,7 @@ impl<'db> AssociatedItemConstraint<'db> {
         value: ExprGreen<'db>,
     ) -> AssociatedItemConstraintGreen<'db> {
         let children = [item.0, colon.0, value.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AssociatedItemConstraintGreen(
             GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraint,
@@ -19614,7 +19615,7 @@ impl<'db> AssociatedItemConstraints<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> AssociatedItemConstraintsGreen<'db> {
         let children = [lbrack.0, associated_item_constraints.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         AssociatedItemConstraintsGreen(
             GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraints,
@@ -19717,7 +19718,7 @@ impl<'db> AssociatedItemConstraintList<'db> {
         db: &'db dyn Database,
         children: &[AssociatedItemConstraintListElementOrSeparatorGreen<'db>],
     ) -> AssociatedItemConstraintListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         AssociatedItemConstraintListGreen(
             GreenNode {
                 kind: SyntaxKind::AssociatedItemConstraintList,
@@ -19924,7 +19925,7 @@ pub struct OptionAssociatedItemConstraintsEmpty<'db> {
 impl<'db> OptionAssociatedItemConstraintsEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionAssociatedItemConstraintsEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionAssociatedItemConstraintsEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionAssociatedItemConstraintsEmpty,
@@ -20110,7 +20111,7 @@ pub struct OptionWrappedGenericParamListEmpty<'db> {
 impl<'db> OptionWrappedGenericParamListEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionWrappedGenericParamListEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionWrappedGenericParamListEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionWrappedGenericParamListEmpty,
@@ -20197,7 +20198,7 @@ impl<'db> WrappedGenericParamList<'db> {
         rangle: TerminalGTGreen<'db>,
     ) -> WrappedGenericParamListGreen<'db> {
         let children = [langle.0, generic_params.0, rangle.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedGenericParamListGreen(
             GreenNode {
                 kind: SyntaxKind::WrappedGenericParamList,
@@ -20297,7 +20298,7 @@ impl<'db> GenericParamList<'db> {
         db: &'db dyn Database,
         children: &[GenericParamListElementOrSeparatorGreen<'db>],
     ) -> GenericParamListGreen<'db> {
-        let width = children.iter().map(|id| id.id().long(db).width()).sum();
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
         GenericParamListGreen(
             GreenNode {
                 kind: SyntaxKind::GenericParamList,
@@ -20546,7 +20547,7 @@ impl<'db> GenericParamType<'db> {
         name: TerminalIdentifierGreen<'db>,
     ) -> GenericParamTypeGreen<'db> {
         let children = [name.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamTypeGreen(
             GreenNode {
                 kind: SyntaxKind::GenericParamType,
@@ -20648,7 +20649,7 @@ impl<'db> GenericParamConst<'db> {
         ty: ExprGreen<'db>,
     ) -> GenericParamConstGreen<'db> {
         let children = [const_kw.0, name.0, colon.0, ty.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamConstGreen(
             GreenNode {
                 kind: SyntaxKind::GenericParamConst,
@@ -20767,7 +20768,7 @@ impl<'db> GenericParamImplNamed<'db> {
         type_constrains: OptionAssociatedItemConstraintsGreen<'db>,
     ) -> GenericParamImplNamedGreen<'db> {
         let children = [impl_kw.0, name.0, colon.0, trait_path.0, type_constrains.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamImplNamedGreen(
             GreenNode {
                 kind: SyntaxKind::GenericParamImplNamed,
@@ -20886,7 +20887,7 @@ impl<'db> GenericParamImplAnonymous<'db> {
         type_constrains: OptionAssociatedItemConstraintsGreen<'db>,
     ) -> GenericParamImplAnonymousGreen<'db> {
         let children = [plus.0, trait_path.0, type_constrains.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamImplAnonymousGreen(
             GreenNode {
                 kind: SyntaxKind::GenericParamImplAnonymous,
@@ -20986,7 +20987,7 @@ impl<'db> GenericParamNegativeImpl<'db> {
         trait_path: ExprPathGreen<'db>,
     ) -> GenericParamNegativeImplGreen<'db> {
         let children = [minus.0, trait_path.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericParamNegativeImplGreen(
             GreenNode {
                 kind: SyntaxKind::GenericParamNegativeImpl,
@@ -21078,7 +21079,7 @@ impl<'db> TokenList<'db> {
         db: &'db dyn Database,
         children: &[TokenTreeGreen<'db>],
     ) -> TokenListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         TokenListGreen(
             GreenNode {
                 kind: SyntaxKind::TokenList,
@@ -21150,7 +21151,7 @@ impl<'db> TokenTreeLeaf<'db> {
     pub const INDEX_LEAF: usize = 0;
     pub fn new_green(db: &'db dyn Database, leaf: TokenNodeGreen<'db>) -> TokenTreeLeafGreen<'db> {
         let children = [leaf.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeLeafGreen(
             GreenNode {
                 kind: SyntaxKind::TokenTreeLeaf,
@@ -21237,7 +21238,7 @@ impl<'db> TokenTreeNode<'db> {
         subtree: WrappedTokenTreeGreen<'db>,
     ) -> TokenTreeNodeGreen<'db> {
         let children = [subtree.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeNodeGreen(
             GreenNode {
                 kind: SyntaxKind::TokenTreeNode,
@@ -21334,7 +21335,7 @@ impl<'db> TokenTreeRepetition<'db> {
         operator: MacroRepetitionOperatorGreen<'db>,
     ) -> TokenTreeRepetitionGreen<'db> {
         let children = [dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeRepetitionGreen(
             GreenNode {
                 kind: SyntaxKind::TokenTreeRepetition,
@@ -21446,7 +21447,7 @@ impl<'db> TokenTreeParam<'db> {
         name: TerminalIdentifierGreen<'db>,
     ) -> TokenTreeParamGreen<'db> {
         let children = [dollar.0, name.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeParamGreen(
             GreenNode {
                 kind: SyntaxKind::TokenTreeParam,
@@ -21684,7 +21685,7 @@ pub struct TokenTreeMissing<'db> {
 impl<'db> TokenTreeMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> TokenTreeMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TokenTreeMissingGreen(
             GreenNode {
                 kind: SyntaxKind::TokenTreeMissing,
@@ -21898,7 +21899,7 @@ pub struct WrappedTokenTreeMissing<'db> {
 impl<'db> WrappedTokenTreeMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> WrappedTokenTreeMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         WrappedTokenTreeMissingGreen(
             GreenNode {
                 kind: SyntaxKind::WrappedTokenTreeMissing,
@@ -21985,7 +21986,7 @@ impl<'db> ParenthesizedTokenTree<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> ParenthesizedTokenTreeGreen<'db> {
         let children = [lparen.0, tokens.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParenthesizedTokenTreeGreen(
             GreenNode {
                 kind: SyntaxKind::ParenthesizedTokenTree,
@@ -22087,7 +22088,7 @@ impl<'db> BracedTokenTree<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> BracedTokenTreeGreen<'db> {
         let children = [lbrace.0, tokens.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracedTokenTreeGreen(
             GreenNode {
                 kind: SyntaxKind::BracedTokenTree,
@@ -22189,7 +22190,7 @@ impl<'db> BracketedTokenTree<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> BracketedTokenTreeGreen<'db> {
         let children = [lbrack.0, tokens.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracketedTokenTreeGreen(
             GreenNode {
                 kind: SyntaxKind::BracketedTokenTree,
@@ -22291,7 +22292,7 @@ impl<'db> ExprInlineMacro<'db> {
         arguments: TokenTreeNodeGreen<'db>,
     ) -> ExprInlineMacroGreen<'db> {
         let children = [path.0, bang.0, arguments.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprInlineMacroGreen(
             GreenNode {
                 kind: SyntaxKind::ExprInlineMacro,
@@ -22397,7 +22398,7 @@ impl<'db> ItemInlineMacro<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> ItemInlineMacroGreen<'db> {
         let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemInlineMacroGreen(
             GreenNode {
                 kind: SyntaxKind::ItemInlineMacro,
@@ -22516,7 +22517,7 @@ impl<'db> ItemMacroDeclaration<'db> {
     ) -> ItemMacroDeclarationGreen<'db> {
         let children =
             [attributes.0, visibility.0, macro_kw.0, name.0, lbrace.0, rules.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemMacroDeclarationGreen(
             GreenNode {
                 kind: SyntaxKind::ItemMacroDeclaration,
@@ -22641,7 +22642,7 @@ impl<'db> MacroRulesList<'db> {
         db: &'db dyn Database,
         children: &[MacroRuleGreen<'db>],
     ) -> MacroRulesListGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         MacroRulesListGreen(
             GreenNode {
                 kind: SyntaxKind::MacroRulesList,
@@ -22722,7 +22723,7 @@ impl<'db> MacroRule<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> MacroRuleGreen<'db> {
         let children = [lhs.0, fat_arrow.0, rhs.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroRuleGreen(
             GreenNode {
                 kind: SyntaxKind::MacroRule,
@@ -22822,7 +22823,7 @@ impl<'db> ParamKind<'db> {
         kind: MacroParamKindGreen<'db>,
     ) -> ParamKindGreen<'db> {
         let children = [colon.0, kind.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamKindGreen(
             GreenNode {
                 kind: SyntaxKind::ParamKind,
@@ -22996,7 +22997,7 @@ pub struct OptionParamKindEmpty<'db> {
 impl<'db> OptionParamKindEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionParamKindEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionParamKindEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionParamKindEmpty,
@@ -23083,7 +23084,7 @@ impl<'db> MacroParam<'db> {
         kind: OptionParamKindGreen<'db>,
     ) -> MacroParamGreen<'db> {
         let children = [dollar.0, name.0, kind.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroParamGreen(
             GreenNode {
                 kind: SyntaxKind::MacroParam,
@@ -23187,7 +23188,7 @@ impl<'db> MacroRepetition<'db> {
         operator: MacroRepetitionOperatorGreen<'db>,
     ) -> MacroRepetitionGreen<'db> {
         let children = [dollar.0, lparen.0, elements.0, rparen.0, separator.0, operator.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroRepetitionGreen(
             GreenNode {
                 kind: SyntaxKind::MacroRepetition,
@@ -23386,7 +23387,7 @@ pub struct OptionTerminalCommaEmpty<'db> {
 impl<'db> OptionTerminalCommaEmpty<'db> {
     pub fn new_green(db: &'db dyn Database) -> OptionTerminalCommaEmptyGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         OptionTerminalCommaEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::OptionTerminalCommaEmpty,
@@ -23600,7 +23601,7 @@ pub struct MacroRepetitionOperatorMissing<'db> {
 impl<'db> MacroRepetitionOperatorMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> MacroRepetitionOperatorMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroRepetitionOperatorMissingGreen(
             GreenNode {
                 kind: SyntaxKind::MacroRepetitionOperatorMissing,
@@ -23683,7 +23684,7 @@ impl<'db> ParamIdent<'db> {
         ident: TerminalIdentifierGreen<'db>,
     ) -> ParamIdentGreen<'db> {
         let children = [ident.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamIdentGreen(
             GreenNode {
                 kind: SyntaxKind::ParamIdent,
@@ -23766,7 +23767,7 @@ impl<'db> ParamExpr<'db> {
         expr: TerminalIdentifierGreen<'db>,
     ) -> ParamExprGreen<'db> {
         let children = [expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParamExprGreen(
             GreenNode {
                 kind: SyntaxKind::ParamExpr,
@@ -23956,7 +23957,7 @@ pub struct MacroParamKindMissing<'db> {
 impl<'db> MacroParamKindMissing<'db> {
     pub fn new_green(db: &'db dyn Database) -> MacroParamKindMissingGreen<'db> {
         let children = [];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroParamKindMissingGreen(
             GreenNode {
                 kind: SyntaxKind::MacroParamKindMissing,
@@ -24171,7 +24172,7 @@ impl<'db> MacroElements<'db> {
         db: &'db dyn Database,
         children: &[MacroElementGreen<'db>],
     ) -> MacroElementsGreen<'db> {
-        let width = children.iter().map(|id| id.0.long(db).width()).sum();
+        let width = children.iter().map(|id| id.0.long(db).width(db)).sum();
         MacroElementsGreen(
             GreenNode {
                 kind: SyntaxKind::MacroElements,
@@ -24246,7 +24247,7 @@ impl<'db> MacroWrapper<'db> {
         subtree: WrappedMacroGreen<'db>,
     ) -> MacroWrapperGreen<'db> {
         let children = [subtree.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         MacroWrapperGreen(
             GreenNode {
                 kind: SyntaxKind::MacroWrapper,
@@ -24444,7 +24445,7 @@ impl<'db> ParenthesizedMacro<'db> {
         rparen: TerminalRParenGreen<'db>,
     ) -> ParenthesizedMacroGreen<'db> {
         let children = [lparen.0, elements.0, rparen.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ParenthesizedMacroGreen(
             GreenNode {
                 kind: SyntaxKind::ParenthesizedMacro,
@@ -24546,7 +24547,7 @@ impl<'db> BracedMacro<'db> {
         rbrace: TerminalRBraceGreen<'db>,
     ) -> BracedMacroGreen<'db> {
         let children = [lbrace.0, elements.0, rbrace.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracedMacroGreen(
             GreenNode {
                 kind: SyntaxKind::BracedMacro,
@@ -24644,7 +24645,7 @@ impl<'db> BracketedMacro<'db> {
         rbrack: TerminalRBrackGreen<'db>,
     ) -> BracketedMacroGreen<'db> {
         let children = [lbrack.0, elements.0, rbrack.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         BracketedMacroGreen(
             GreenNode {
                 kind: SyntaxKind::BracketedMacro,
@@ -24746,7 +24747,7 @@ impl<'db> LegacyExprInlineMacro<'db> {
         arguments: WrappedArgListGreen<'db>,
     ) -> LegacyExprInlineMacroGreen<'db> {
         let children = [path.0, bang.0, arguments.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         LegacyExprInlineMacroGreen(
             GreenNode {
                 kind: SyntaxKind::LegacyExprInlineMacro,
@@ -24852,7 +24853,7 @@ impl<'db> LegacyItemInlineMacro<'db> {
         semicolon: TerminalSemicolonGreen<'db>,
     ) -> LegacyItemInlineMacroGreen<'db> {
         let children = [attributes.0, path.0, bang.0, arguments.0, semicolon.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         LegacyItemInlineMacroGreen(
             GreenNode {
                 kind: SyntaxKind::LegacyItemInlineMacro,
@@ -24958,7 +24959,7 @@ impl<'db> TriviumSkippedNode<'db> {
         node: SkippedNodeGreen<'db>,
     ) -> TriviumSkippedNodeGreen<'db> {
         let children = [node.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TriviumSkippedNodeGreen(
             GreenNode {
                 kind: SyntaxKind::TriviumSkippedNode,
@@ -25149,13 +25150,14 @@ impl<'db> Token<'db> for TokenIdentifier<'db> {
         TokenIdentifierGreen(
             GreenNode {
                 kind: SyntaxKind::TokenIdentifier,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25178,7 +25180,7 @@ impl<'db> From<TokenIdentifierPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenIdentifierGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenIdentifierGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
@@ -25189,7 +25191,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIdentifier<'db> {
         TokenIdentifierGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -25229,7 +25231,7 @@ impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalIdentifierGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalIdentifier,
@@ -25243,7 +25245,7 @@ impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalIdentifier<'db> {
@@ -25332,13 +25334,14 @@ impl<'db> Token<'db> for TokenLiteralNumber<'db> {
         TokenLiteralNumberGreen(
             GreenNode {
                 kind: SyntaxKind::TokenLiteralNumber,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25361,7 +25364,7 @@ impl<'db> From<TokenLiteralNumberPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLiteralNumberGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLiteralNumberGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
@@ -25372,7 +25375,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLiteralNumber<'db> {
         TokenLiteralNumberGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -25413,7 +25416,7 @@ impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLiteralNumberGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLiteralNumber,
@@ -25427,7 +25430,7 @@ impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLiteralNumber<'db> {
@@ -25516,13 +25519,14 @@ impl<'db> Token<'db> for TokenShortString<'db> {
         TokenShortStringGreen(
             GreenNode {
                 kind: SyntaxKind::TokenShortString,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25545,7 +25549,7 @@ impl<'db> From<TokenShortStringPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenShortStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenShortStringGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
@@ -25556,7 +25560,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenShortString<'db> {
         TokenShortStringGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -25596,7 +25600,7 @@ impl<'db> Terminal<'db> for TerminalShortString<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalShortStringGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalShortString,
@@ -25610,7 +25614,7 @@ impl<'db> Terminal<'db> for TerminalShortString<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalShortString<'db> {
@@ -25699,13 +25703,14 @@ impl<'db> Token<'db> for TokenString<'db> {
         TokenStringGreen(
             GreenNode {
                 kind: SyntaxKind::TokenString,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25728,7 +25733,7 @@ impl<'db> From<TokenStringPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenStringGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenStringGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
@@ -25739,7 +25744,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenString<'db> {
         TokenStringGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -25779,7 +25784,7 @@ impl<'db> Terminal<'db> for TerminalString<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalStringGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalString,
@@ -25793,7 +25798,7 @@ impl<'db> Terminal<'db> for TerminalString<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalString<'db> {
@@ -25880,12 +25885,16 @@ pub struct TokenAs<'db> {
 impl<'db> Token<'db> for TokenAs<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenAsGreen(
-            GreenNode { kind: SyntaxKind::TokenAs, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenAs,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25908,7 +25917,7 @@ impl<'db> From<TokenAsPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenAsGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAsGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
@@ -25919,7 +25928,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAs<'db> {
         TokenAsGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -25959,7 +25968,7 @@ impl<'db> Terminal<'db> for TerminalAs<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAsGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalAs,
@@ -25973,7 +25982,7 @@ impl<'db> Terminal<'db> for TerminalAs<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalAs<'db> {
@@ -26058,13 +26067,14 @@ impl<'db> Token<'db> for TokenConst<'db> {
         TokenConstGreen(
             GreenNode {
                 kind: SyntaxKind::TokenConst,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26087,7 +26097,7 @@ impl<'db> From<TokenConstPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenConstGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenConstGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
@@ -26098,7 +26108,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenConst<'db> {
         TokenConstGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -26138,7 +26148,7 @@ impl<'db> Terminal<'db> for TerminalConst<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalConstGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalConst,
@@ -26152,7 +26162,7 @@ impl<'db> Terminal<'db> for TerminalConst<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalConst<'db> {
@@ -26241,13 +26251,14 @@ impl<'db> Token<'db> for TokenElse<'db> {
         TokenElseGreen(
             GreenNode {
                 kind: SyntaxKind::TokenElse,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26270,7 +26281,7 @@ impl<'db> From<TokenElsePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenElseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenElseGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
@@ -26281,7 +26292,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenElse<'db> {
         TokenElseGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -26321,7 +26332,7 @@ impl<'db> Terminal<'db> for TerminalElse<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalElseGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalElse,
@@ -26335,7 +26346,7 @@ impl<'db> Terminal<'db> for TerminalElse<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalElse<'db> {
@@ -26420,13 +26431,14 @@ impl<'db> Token<'db> for TokenEnum<'db> {
         TokenEnumGreen(
             GreenNode {
                 kind: SyntaxKind::TokenEnum,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26449,7 +26461,7 @@ impl<'db> From<TokenEnumPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenEnumGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEnumGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
@@ -26460,7 +26472,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEnum<'db> {
         TokenEnumGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -26500,7 +26512,7 @@ impl<'db> Terminal<'db> for TerminalEnum<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEnumGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalEnum,
@@ -26514,7 +26526,7 @@ impl<'db> Terminal<'db> for TerminalEnum<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalEnum<'db> {
@@ -26599,13 +26611,14 @@ impl<'db> Token<'db> for TokenExtern<'db> {
         TokenExternGreen(
             GreenNode {
                 kind: SyntaxKind::TokenExtern,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26628,7 +26641,7 @@ impl<'db> From<TokenExternPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenExternGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenExternGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
@@ -26639,7 +26652,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenExtern<'db> {
         TokenExternGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -26679,7 +26692,7 @@ impl<'db> Terminal<'db> for TerminalExtern<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalExternGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalExtern,
@@ -26693,7 +26706,7 @@ impl<'db> Terminal<'db> for TerminalExtern<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalExtern<'db> {
@@ -26782,13 +26795,14 @@ impl<'db> Token<'db> for TokenFalse<'db> {
         TokenFalseGreen(
             GreenNode {
                 kind: SyntaxKind::TokenFalse,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26811,7 +26825,7 @@ impl<'db> From<TokenFalsePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenFalseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenFalseGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
@@ -26822,7 +26836,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFalse<'db> {
         TokenFalseGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -26862,7 +26876,7 @@ impl<'db> Terminal<'db> for TerminalFalse<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalFalseGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalFalse,
@@ -26876,7 +26890,7 @@ impl<'db> Terminal<'db> for TerminalFalse<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalFalse<'db> {
@@ -26965,13 +26979,14 @@ impl<'db> Token<'db> for TokenFunction<'db> {
         TokenFunctionGreen(
             GreenNode {
                 kind: SyntaxKind::TokenFunction,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26994,7 +27009,7 @@ impl<'db> From<TokenFunctionPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenFunctionGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenFunctionGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
@@ -27005,7 +27020,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFunction<'db> {
         TokenFunctionGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -27045,7 +27060,7 @@ impl<'db> Terminal<'db> for TerminalFunction<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalFunctionGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalFunction,
@@ -27059,7 +27074,7 @@ impl<'db> Terminal<'db> for TerminalFunction<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalFunction<'db> {
@@ -27146,12 +27161,16 @@ pub struct TokenIf<'db> {
 impl<'db> Token<'db> for TokenIf<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenIfGreen(
-            GreenNode { kind: SyntaxKind::TokenIf, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenIf,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27174,7 +27193,7 @@ impl<'db> From<TokenIfPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenIfGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenIfGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
@@ -27185,7 +27204,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenIf<'db> {
         TokenIfGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -27225,7 +27244,7 @@ impl<'db> Terminal<'db> for TerminalIf<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalIfGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalIf,
@@ -27239,7 +27258,7 @@ impl<'db> Terminal<'db> for TerminalIf<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalIf<'db> {
@@ -27324,13 +27343,14 @@ impl<'db> Token<'db> for TokenWhile<'db> {
         TokenWhileGreen(
             GreenNode {
                 kind: SyntaxKind::TokenWhile,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27353,7 +27373,7 @@ impl<'db> From<TokenWhilePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenWhileGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenWhileGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
@@ -27364,7 +27384,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhile<'db> {
         TokenWhileGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -27404,7 +27424,7 @@ impl<'db> Terminal<'db> for TerminalWhile<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalWhileGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalWhile,
@@ -27418,7 +27438,7 @@ impl<'db> Terminal<'db> for TerminalWhile<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalWhile<'db> {
@@ -27505,12 +27525,16 @@ pub struct TokenFor<'db> {
 impl<'db> Token<'db> for TokenFor<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenForGreen(
-            GreenNode { kind: SyntaxKind::TokenFor, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenFor,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27533,7 +27557,7 @@ impl<'db> From<TokenForPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenForGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenForGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
@@ -27544,7 +27568,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenFor<'db> {
         TokenForGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -27584,7 +27608,7 @@ impl<'db> Terminal<'db> for TerminalFor<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalForGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalFor,
@@ -27598,7 +27622,7 @@ impl<'db> Terminal<'db> for TerminalFor<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalFor<'db> {
@@ -27683,13 +27707,14 @@ impl<'db> Token<'db> for TokenLoop<'db> {
         TokenLoopGreen(
             GreenNode {
                 kind: SyntaxKind::TokenLoop,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27712,7 +27737,7 @@ impl<'db> From<TokenLoopPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLoopGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLoopGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
@@ -27723,7 +27748,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLoop<'db> {
         TokenLoopGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -27763,7 +27788,7 @@ impl<'db> Terminal<'db> for TerminalLoop<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLoopGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLoop,
@@ -27777,7 +27802,7 @@ impl<'db> Terminal<'db> for TerminalLoop<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLoop<'db> {
@@ -27862,13 +27887,14 @@ impl<'db> Token<'db> for TokenImpl<'db> {
         TokenImplGreen(
             GreenNode {
                 kind: SyntaxKind::TokenImpl,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27891,7 +27917,7 @@ impl<'db> From<TokenImplPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenImplGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenImplGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
@@ -27902,7 +27928,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImpl<'db> {
         TokenImplGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -27942,7 +27968,7 @@ impl<'db> Terminal<'db> for TerminalImpl<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalImplGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalImpl,
@@ -27956,7 +27982,7 @@ impl<'db> Terminal<'db> for TerminalImpl<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalImpl<'db> {
@@ -28041,13 +28067,14 @@ impl<'db> Token<'db> for TokenImplicits<'db> {
         TokenImplicitsGreen(
             GreenNode {
                 kind: SyntaxKind::TokenImplicits,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28070,7 +28097,7 @@ impl<'db> From<TokenImplicitsPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenImplicitsGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenImplicitsGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
@@ -28081,7 +28108,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenImplicits<'db> {
         TokenImplicitsGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -28121,7 +28148,7 @@ impl<'db> Terminal<'db> for TerminalImplicits<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalImplicitsGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalImplicits,
@@ -28135,7 +28162,7 @@ impl<'db> Terminal<'db> for TerminalImplicits<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalImplicits<'db> {
@@ -28222,12 +28249,16 @@ pub struct TokenLet<'db> {
 impl<'db> Token<'db> for TokenLet<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLetGreen(
-            GreenNode { kind: SyntaxKind::TokenLet, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenLet,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28250,7 +28281,7 @@ impl<'db> From<TokenLetPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLetGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLetGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
@@ -28261,7 +28292,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLet<'db> {
         TokenLetGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -28301,7 +28332,7 @@ impl<'db> Terminal<'db> for TerminalLet<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLetGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLet,
@@ -28315,7 +28346,7 @@ impl<'db> Terminal<'db> for TerminalLet<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLet<'db> {
@@ -28400,13 +28431,14 @@ impl<'db> Token<'db> for TokenMacro<'db> {
         TokenMacroGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMacro,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28429,7 +28461,7 @@ impl<'db> From<TokenMacroPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMacroGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMacroGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
@@ -28440,7 +28472,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMacro<'db> {
         TokenMacroGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -28480,7 +28512,7 @@ impl<'db> Terminal<'db> for TerminalMacro<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMacroGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMacro,
@@ -28494,7 +28526,7 @@ impl<'db> Terminal<'db> for TerminalMacro<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMacro<'db> {
@@ -28583,13 +28615,14 @@ impl<'db> Token<'db> for TokenMatch<'db> {
         TokenMatchGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMatch,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28612,7 +28645,7 @@ impl<'db> From<TokenMatchPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMatchGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMatchGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
@@ -28623,7 +28656,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatch<'db> {
         TokenMatchGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -28663,7 +28696,7 @@ impl<'db> Terminal<'db> for TerminalMatch<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMatchGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMatch,
@@ -28677,7 +28710,7 @@ impl<'db> Terminal<'db> for TerminalMatch<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMatch<'db> {
@@ -28766,13 +28799,14 @@ impl<'db> Token<'db> for TokenModule<'db> {
         TokenModuleGreen(
             GreenNode {
                 kind: SyntaxKind::TokenModule,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28795,7 +28829,7 @@ impl<'db> From<TokenModulePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenModuleGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModuleGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
@@ -28806,7 +28840,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModule<'db> {
         TokenModuleGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -28846,7 +28880,7 @@ impl<'db> Terminal<'db> for TerminalModule<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModuleGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalModule,
@@ -28860,7 +28894,7 @@ impl<'db> Terminal<'db> for TerminalModule<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalModule<'db> {
@@ -28947,12 +28981,16 @@ pub struct TokenMut<'db> {
 impl<'db> Token<'db> for TokenMut<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMutGreen(
-            GreenNode { kind: SyntaxKind::TokenMut, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMut,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28975,7 +29013,7 @@ impl<'db> From<TokenMutPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMutGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMutGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
@@ -28986,7 +29024,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMut<'db> {
         TokenMutGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -29026,7 +29064,7 @@ impl<'db> Terminal<'db> for TerminalMut<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMutGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMut,
@@ -29040,7 +29078,7 @@ impl<'db> Terminal<'db> for TerminalMut<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMut<'db> {
@@ -29125,13 +29163,14 @@ impl<'db> Token<'db> for TokenNoPanic<'db> {
         TokenNoPanicGreen(
             GreenNode {
                 kind: SyntaxKind::TokenNoPanic,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29154,7 +29193,7 @@ impl<'db> From<TokenNoPanicPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenNoPanicGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNoPanicGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
@@ -29165,7 +29204,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNoPanic<'db> {
         TokenNoPanicGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -29205,7 +29244,7 @@ impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNoPanicGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalNoPanic,
@@ -29219,7 +29258,7 @@ impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalNoPanic<'db> {
@@ -29306,12 +29345,16 @@ pub struct TokenOf<'db> {
 impl<'db> Token<'db> for TokenOf<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenOfGreen(
-            GreenNode { kind: SyntaxKind::TokenOf, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenOf,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29334,7 +29377,7 @@ impl<'db> From<TokenOfPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenOfGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOfGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
@@ -29345,7 +29388,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOf<'db> {
         TokenOfGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -29385,7 +29428,7 @@ impl<'db> Terminal<'db> for TerminalOf<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOfGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalOf,
@@ -29399,7 +29442,7 @@ impl<'db> Terminal<'db> for TerminalOf<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalOf<'db> {
@@ -29482,12 +29525,16 @@ pub struct TokenRef<'db> {
 impl<'db> Token<'db> for TokenRef<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenRefGreen(
-            GreenNode { kind: SyntaxKind::TokenRef, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenRef,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29510,7 +29557,7 @@ impl<'db> From<TokenRefPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenRefGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRefGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
@@ -29521,7 +29568,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRef<'db> {
         TokenRefGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -29561,7 +29608,7 @@ impl<'db> Terminal<'db> for TerminalRef<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRefGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalRef,
@@ -29575,7 +29622,7 @@ impl<'db> Terminal<'db> for TerminalRef<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalRef<'db> {
@@ -29660,13 +29707,14 @@ impl<'db> Token<'db> for TokenContinue<'db> {
         TokenContinueGreen(
             GreenNode {
                 kind: SyntaxKind::TokenContinue,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29689,7 +29737,7 @@ impl<'db> From<TokenContinuePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenContinueGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenContinueGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
@@ -29700,7 +29748,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenContinue<'db> {
         TokenContinueGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -29740,7 +29788,7 @@ impl<'db> Terminal<'db> for TerminalContinue<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalContinueGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalContinue,
@@ -29754,7 +29802,7 @@ impl<'db> Terminal<'db> for TerminalContinue<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalContinue<'db> {
@@ -29843,13 +29891,14 @@ impl<'db> Token<'db> for TokenReturn<'db> {
         TokenReturnGreen(
             GreenNode {
                 kind: SyntaxKind::TokenReturn,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29872,7 +29921,7 @@ impl<'db> From<TokenReturnPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenReturnGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenReturnGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
@@ -29883,7 +29932,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenReturn<'db> {
         TokenReturnGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -29923,7 +29972,7 @@ impl<'db> Terminal<'db> for TerminalReturn<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalReturnGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalReturn,
@@ -29937,7 +29986,7 @@ impl<'db> Terminal<'db> for TerminalReturn<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalReturn<'db> {
@@ -30026,13 +30075,14 @@ impl<'db> Token<'db> for TokenBreak<'db> {
         TokenBreakGreen(
             GreenNode {
                 kind: SyntaxKind::TokenBreak,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30055,7 +30105,7 @@ impl<'db> From<TokenBreakPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenBreakGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBreakGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
@@ -30066,7 +30116,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBreak<'db> {
         TokenBreakGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -30106,7 +30156,7 @@ impl<'db> Terminal<'db> for TerminalBreak<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBreakGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalBreak,
@@ -30120,7 +30170,7 @@ impl<'db> Terminal<'db> for TerminalBreak<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalBreak<'db> {
@@ -30209,13 +30259,14 @@ impl<'db> Token<'db> for TokenStruct<'db> {
         TokenStructGreen(
             GreenNode {
                 kind: SyntaxKind::TokenStruct,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30238,7 +30289,7 @@ impl<'db> From<TokenStructPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenStructGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenStructGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
@@ -30249,7 +30300,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenStruct<'db> {
         TokenStructGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -30289,7 +30340,7 @@ impl<'db> Terminal<'db> for TerminalStruct<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalStructGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalStruct,
@@ -30303,7 +30354,7 @@ impl<'db> Terminal<'db> for TerminalStruct<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalStruct<'db> {
@@ -30392,13 +30443,14 @@ impl<'db> Token<'db> for TokenTrait<'db> {
         TokenTraitGreen(
             GreenNode {
                 kind: SyntaxKind::TokenTrait,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30421,7 +30473,7 @@ impl<'db> From<TokenTraitPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenTraitGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTraitGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
@@ -30432,7 +30484,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrait<'db> {
         TokenTraitGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -30472,7 +30524,7 @@ impl<'db> Terminal<'db> for TerminalTrait<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTraitGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalTrait,
@@ -30486,7 +30538,7 @@ impl<'db> Terminal<'db> for TerminalTrait<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalTrait<'db> {
@@ -30575,13 +30627,14 @@ impl<'db> Token<'db> for TokenTrue<'db> {
         TokenTrueGreen(
             GreenNode {
                 kind: SyntaxKind::TokenTrue,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30604,7 +30657,7 @@ impl<'db> From<TokenTruePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenTrueGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTrueGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
@@ -30615,7 +30668,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenTrue<'db> {
         TokenTrueGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -30655,7 +30708,7 @@ impl<'db> Terminal<'db> for TerminalTrue<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTrueGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalTrue,
@@ -30669,7 +30722,7 @@ impl<'db> Terminal<'db> for TerminalTrue<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalTrue<'db> {
@@ -30754,13 +30807,14 @@ impl<'db> Token<'db> for TokenType<'db> {
         TokenTypeGreen(
             GreenNode {
                 kind: SyntaxKind::TokenType,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30783,7 +30837,7 @@ impl<'db> From<TokenTypePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenTypeGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenTypeGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
@@ -30794,7 +30848,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenType<'db> {
         TokenTypeGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -30834,7 +30888,7 @@ impl<'db> Terminal<'db> for TerminalType<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalTypeGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalType,
@@ -30848,7 +30902,7 @@ impl<'db> Terminal<'db> for TerminalType<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalType<'db> {
@@ -30931,12 +30985,16 @@ pub struct TokenUse<'db> {
 impl<'db> Token<'db> for TokenUse<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenUseGreen(
-            GreenNode { kind: SyntaxKind::TokenUse, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenUse,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30959,7 +31017,7 @@ impl<'db> From<TokenUsePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenUseGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenUseGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
@@ -30970,7 +31028,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUse<'db> {
         TokenUseGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -31010,7 +31068,7 @@ impl<'db> Terminal<'db> for TerminalUse<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalUseGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalUse,
@@ -31024,7 +31082,7 @@ impl<'db> Terminal<'db> for TerminalUse<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalUse<'db> {
@@ -31107,12 +31165,16 @@ pub struct TokenPub<'db> {
 impl<'db> Token<'db> for TokenPub<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenPubGreen(
-            GreenNode { kind: SyntaxKind::TokenPub, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenPub,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31135,7 +31197,7 @@ impl<'db> From<TokenPubPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenPubGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPubGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
@@ -31146,7 +31208,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPub<'db> {
         TokenPubGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -31186,7 +31248,7 @@ impl<'db> Terminal<'db> for TerminalPub<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPubGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalPub,
@@ -31200,7 +31262,7 @@ impl<'db> Terminal<'db> for TerminalPub<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalPub<'db> {
@@ -31283,12 +31345,16 @@ pub struct TokenAnd<'db> {
 impl<'db> Token<'db> for TokenAnd<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenAndGreen(
-            GreenNode { kind: SyntaxKind::TokenAnd, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenAnd,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31311,7 +31377,7 @@ impl<'db> From<TokenAndPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAndGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
@@ -31322,7 +31388,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAnd<'db> {
         TokenAndGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -31362,7 +31428,7 @@ impl<'db> Terminal<'db> for TerminalAnd<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAndGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalAnd,
@@ -31376,7 +31442,7 @@ impl<'db> Terminal<'db> for TerminalAnd<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalAnd<'db> {
@@ -31461,13 +31527,14 @@ impl<'db> Token<'db> for TokenAndAnd<'db> {
         TokenAndAndGreen(
             GreenNode {
                 kind: SyntaxKind::TokenAndAnd,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31490,7 +31557,7 @@ impl<'db> From<TokenAndAndPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenAndAndGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAndAndGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
@@ -31501,7 +31568,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAndAnd<'db> {
         TokenAndAndGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -31541,7 +31608,7 @@ impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAndAndGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalAndAnd,
@@ -31555,7 +31622,7 @@ impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalAndAnd<'db> {
@@ -31644,13 +31711,14 @@ impl<'db> Token<'db> for TokenArrow<'db> {
         TokenArrowGreen(
             GreenNode {
                 kind: SyntaxKind::TokenArrow,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31673,7 +31741,7 @@ impl<'db> From<TokenArrowPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenArrowGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
@@ -31684,7 +31752,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenArrow<'db> {
         TokenArrowGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -31724,7 +31792,7 @@ impl<'db> Terminal<'db> for TerminalArrow<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalArrowGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalArrow,
@@ -31738,7 +31806,7 @@ impl<'db> Terminal<'db> for TerminalArrow<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalArrow<'db> {
@@ -31825,12 +31893,16 @@ pub struct TokenAt<'db> {
 impl<'db> Token<'db> for TokenAt<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenAtGreen(
-            GreenNode { kind: SyntaxKind::TokenAt, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenAt,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31853,7 +31925,7 @@ impl<'db> From<TokenAtPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenAtGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenAtGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
@@ -31864,7 +31936,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenAt<'db> {
         TokenAtGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -31904,7 +31976,7 @@ impl<'db> Terminal<'db> for TerminalAt<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalAtGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalAt,
@@ -31918,7 +31990,7 @@ impl<'db> Terminal<'db> for TerminalAt<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalAt<'db> {
@@ -32003,13 +32075,14 @@ impl<'db> Token<'db> for TokenBadCharacters<'db> {
         TokenBadCharactersGreen(
             GreenNode {
                 kind: SyntaxKind::TokenBadCharacters,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32032,7 +32105,7 @@ impl<'db> From<TokenBadCharactersPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenBadCharactersGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBadCharactersGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
@@ -32043,7 +32116,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBadCharacters<'db> {
         TokenBadCharactersGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -32084,7 +32157,7 @@ impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBadCharactersGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalBadCharacters,
@@ -32098,7 +32171,7 @@ impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalBadCharacters<'db> {
@@ -32187,13 +32260,14 @@ impl<'db> Token<'db> for TokenColon<'db> {
         TokenColonGreen(
             GreenNode {
                 kind: SyntaxKind::TokenColon,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32216,7 +32290,7 @@ impl<'db> From<TokenColonPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenColonGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
@@ -32227,7 +32301,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColon<'db> {
         TokenColonGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -32267,7 +32341,7 @@ impl<'db> Terminal<'db> for TerminalColon<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalColonGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalColon,
@@ -32281,7 +32355,7 @@ impl<'db> Terminal<'db> for TerminalColon<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalColon<'db> {
@@ -32370,13 +32444,14 @@ impl<'db> Token<'db> for TokenColonColon<'db> {
         TokenColonColonGreen(
             GreenNode {
                 kind: SyntaxKind::TokenColonColon,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32399,7 +32474,7 @@ impl<'db> From<TokenColonColonPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenColonColonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenColonColonGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
@@ -32410,7 +32485,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenColonColon<'db> {
         TokenColonColonGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -32450,7 +32525,7 @@ impl<'db> Terminal<'db> for TerminalColonColon<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalColonColonGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalColonColon,
@@ -32464,7 +32539,7 @@ impl<'db> Terminal<'db> for TerminalColonColon<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalColonColon<'db> {
@@ -32553,13 +32628,14 @@ impl<'db> Token<'db> for TokenComma<'db> {
         TokenCommaGreen(
             GreenNode {
                 kind: SyntaxKind::TokenComma,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32582,7 +32658,7 @@ impl<'db> From<TokenCommaPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenCommaGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenCommaGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
@@ -32593,7 +32669,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenComma<'db> {
         TokenCommaGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -32633,7 +32709,7 @@ impl<'db> Terminal<'db> for TerminalComma<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalCommaGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalComma,
@@ -32647,7 +32723,7 @@ impl<'db> Terminal<'db> for TerminalComma<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalComma<'db> {
@@ -32734,12 +32810,16 @@ pub struct TokenDiv<'db> {
 impl<'db> Token<'db> for TokenDiv<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDivGreen(
-            GreenNode { kind: SyntaxKind::TokenDiv, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenDiv,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32762,7 +32842,7 @@ impl<'db> From<TokenDivPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenDivGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDivGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
@@ -32773,7 +32853,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDiv<'db> {
         TokenDivGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -32813,7 +32893,7 @@ impl<'db> Terminal<'db> for TerminalDiv<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDivGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalDiv,
@@ -32827,7 +32907,7 @@ impl<'db> Terminal<'db> for TerminalDiv<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalDiv<'db> {
@@ -32912,13 +32992,14 @@ impl<'db> Token<'db> for TokenDivEq<'db> {
         TokenDivEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenDivEq,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32941,7 +33022,7 @@ impl<'db> From<TokenDivEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenDivEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDivEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
@@ -32952,7 +33033,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDivEq<'db> {
         TokenDivEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -32992,7 +33073,7 @@ impl<'db> Terminal<'db> for TerminalDivEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDivEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalDivEq,
@@ -33006,7 +33087,7 @@ impl<'db> Terminal<'db> for TerminalDivEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalDivEq<'db> {
@@ -33095,13 +33176,14 @@ impl<'db> Token<'db> for TokenDollar<'db> {
         TokenDollarGreen(
             GreenNode {
                 kind: SyntaxKind::TokenDollar,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33124,7 +33206,7 @@ impl<'db> From<TokenDollarPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenDollarGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDollarGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
@@ -33135,7 +33217,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDollar<'db> {
         TokenDollarGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -33175,7 +33257,7 @@ impl<'db> Terminal<'db> for TerminalDollar<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDollarGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalDollar,
@@ -33189,7 +33271,7 @@ impl<'db> Terminal<'db> for TerminalDollar<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalDollar<'db> {
@@ -33276,12 +33358,16 @@ pub struct TokenDot<'db> {
 impl<'db> Token<'db> for TokenDot<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenDotGreen(
-            GreenNode { kind: SyntaxKind::TokenDot, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenDot,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33304,7 +33390,7 @@ impl<'db> From<TokenDotPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
@@ -33315,7 +33401,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDot<'db> {
         TokenDotGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -33355,7 +33441,7 @@ impl<'db> Terminal<'db> for TerminalDot<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalDot,
@@ -33369,7 +33455,7 @@ impl<'db> Terminal<'db> for TerminalDot<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalDot<'db> {
@@ -33454,13 +33540,14 @@ impl<'db> Token<'db> for TokenDotDot<'db> {
         TokenDotDotGreen(
             GreenNode {
                 kind: SyntaxKind::TokenDotDot,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33483,7 +33570,7 @@ impl<'db> From<TokenDotDotPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenDotDotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotDotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
@@ -33494,7 +33581,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDot<'db> {
         TokenDotDotGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -33534,7 +33621,7 @@ impl<'db> Terminal<'db> for TerminalDotDot<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotDotGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalDotDot,
@@ -33548,7 +33635,7 @@ impl<'db> Terminal<'db> for TerminalDotDot<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalDotDot<'db> {
@@ -33637,13 +33724,14 @@ impl<'db> Token<'db> for TokenDotDotEq<'db> {
         TokenDotDotEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenDotDotEq,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33666,7 +33754,7 @@ impl<'db> From<TokenDotDotEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenDotDotEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenDotDotEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
@@ -33677,7 +33765,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenDotDotEq<'db> {
         TokenDotDotEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -33717,7 +33805,7 @@ impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalDotDotEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalDotDotEq,
@@ -33731,7 +33819,7 @@ impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalDotDotEq<'db> {
@@ -33820,13 +33908,14 @@ impl<'db> Token<'db> for TokenEndOfFile<'db> {
         TokenEndOfFileGreen(
             GreenNode {
                 kind: SyntaxKind::TokenEndOfFile,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33849,7 +33938,7 @@ impl<'db> From<TokenEndOfFilePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenEndOfFileGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEndOfFileGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
@@ -33860,7 +33949,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEndOfFile<'db> {
         TokenEndOfFileGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -33900,7 +33989,7 @@ impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEndOfFileGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalEndOfFile,
@@ -33914,7 +34003,7 @@ impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalEndOfFile<'db> {
@@ -34001,12 +34090,16 @@ pub struct TokenEq<'db> {
 impl<'db> Token<'db> for TokenEq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenEqGreen(
-            GreenNode { kind: SyntaxKind::TokenEq, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenEq,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34029,7 +34122,7 @@ impl<'db> From<TokenEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
@@ -34040,7 +34133,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEq<'db> {
         TokenEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -34080,7 +34173,7 @@ impl<'db> Terminal<'db> for TerminalEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalEq,
@@ -34094,7 +34187,7 @@ impl<'db> Terminal<'db> for TerminalEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalEq<'db> {
@@ -34179,13 +34272,14 @@ impl<'db> Token<'db> for TokenEqEq<'db> {
         TokenEqEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenEqEq,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34208,7 +34302,7 @@ impl<'db> From<TokenEqEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenEqEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEqEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
@@ -34219,7 +34313,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEqEq<'db> {
         TokenEqEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -34259,7 +34353,7 @@ impl<'db> Terminal<'db> for TerminalEqEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEqEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalEqEq,
@@ -34273,7 +34367,7 @@ impl<'db> Terminal<'db> for TerminalEqEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalEqEq<'db> {
@@ -34356,12 +34450,16 @@ pub struct TokenGE<'db> {
 impl<'db> Token<'db> for TokenGE<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenGEGreen(
-            GreenNode { kind: SyntaxKind::TokenGE, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenGE,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34384,7 +34482,7 @@ impl<'db> From<TokenGEPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenGEGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenGEGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
@@ -34395,7 +34493,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGE<'db> {
         TokenGEGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -34435,7 +34533,7 @@ impl<'db> Terminal<'db> for TerminalGE<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalGEGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalGE,
@@ -34449,7 +34547,7 @@ impl<'db> Terminal<'db> for TerminalGE<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalGE<'db> {
@@ -34532,12 +34630,16 @@ pub struct TokenGT<'db> {
 impl<'db> Token<'db> for TokenGT<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenGTGreen(
-            GreenNode { kind: SyntaxKind::TokenGT, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenGT,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34560,7 +34662,7 @@ impl<'db> From<TokenGTPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenGTGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenGTGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
@@ -34571,7 +34673,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenGT<'db> {
         TokenGTGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -34611,7 +34713,7 @@ impl<'db> Terminal<'db> for TerminalGT<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalGTGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalGT,
@@ -34625,7 +34727,7 @@ impl<'db> Terminal<'db> for TerminalGT<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalGT<'db> {
@@ -34710,13 +34812,14 @@ impl<'db> Token<'db> for TokenHash<'db> {
         TokenHashGreen(
             GreenNode {
                 kind: SyntaxKind::TokenHash,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34739,7 +34842,7 @@ impl<'db> From<TokenHashPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenHashGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenHashGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
@@ -34750,7 +34853,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenHash<'db> {
         TokenHashGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -34790,7 +34893,7 @@ impl<'db> Terminal<'db> for TerminalHash<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalHashGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalHash,
@@ -34804,7 +34907,7 @@ impl<'db> Terminal<'db> for TerminalHash<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalHash<'db> {
@@ -34889,13 +34992,14 @@ impl<'db> Token<'db> for TokenLBrace<'db> {
         TokenLBraceGreen(
             GreenNode {
                 kind: SyntaxKind::TokenLBrace,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34918,7 +35022,7 @@ impl<'db> From<TokenLBracePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLBraceGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
@@ -34929,7 +35033,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrace<'db> {
         TokenLBraceGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -34969,7 +35073,7 @@ impl<'db> Terminal<'db> for TerminalLBrace<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLBraceGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLBrace,
@@ -34983,7 +35087,7 @@ impl<'db> Terminal<'db> for TerminalLBrace<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLBrace<'db> {
@@ -35072,13 +35176,14 @@ impl<'db> Token<'db> for TokenLBrack<'db> {
         TokenLBrackGreen(
             GreenNode {
                 kind: SyntaxKind::TokenLBrack,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35101,7 +35206,7 @@ impl<'db> From<TokenLBrackPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLBrackGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
@@ -35112,7 +35217,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLBrack<'db> {
         TokenLBrackGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -35152,7 +35257,7 @@ impl<'db> Terminal<'db> for TerminalLBrack<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLBrackGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLBrack,
@@ -35166,7 +35271,7 @@ impl<'db> Terminal<'db> for TerminalLBrack<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLBrack<'db> {
@@ -35253,12 +35358,16 @@ pub struct TokenLE<'db> {
 impl<'db> Token<'db> for TokenLE<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLEGreen(
-            GreenNode { kind: SyntaxKind::TokenLE, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenLE,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35281,7 +35390,7 @@ impl<'db> From<TokenLEPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLEGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLEGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
@@ -35292,7 +35401,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLE<'db> {
         TokenLEGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -35332,7 +35441,7 @@ impl<'db> Terminal<'db> for TerminalLE<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLEGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLE,
@@ -35346,7 +35455,7 @@ impl<'db> Terminal<'db> for TerminalLE<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLE<'db> {
@@ -35431,13 +35540,14 @@ impl<'db> Token<'db> for TokenLParen<'db> {
         TokenLParenGreen(
             GreenNode {
                 kind: SyntaxKind::TokenLParen,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35460,7 +35570,7 @@ impl<'db> From<TokenLParenPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLParenGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
@@ -35471,7 +35581,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLParen<'db> {
         TokenLParenGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -35511,7 +35621,7 @@ impl<'db> Terminal<'db> for TerminalLParen<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLParenGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLParen,
@@ -35525,7 +35635,7 @@ impl<'db> Terminal<'db> for TerminalLParen<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLParen<'db> {
@@ -35612,12 +35722,16 @@ pub struct TokenLT<'db> {
 impl<'db> Token<'db> for TokenLT<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenLTGreen(
-            GreenNode { kind: SyntaxKind::TokenLT, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenLT,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35640,7 +35754,7 @@ impl<'db> From<TokenLTPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenLTGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenLTGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
@@ -35651,7 +35765,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenLT<'db> {
         TokenLTGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -35691,7 +35805,7 @@ impl<'db> Terminal<'db> for TerminalLT<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalLTGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalLT,
@@ -35705,7 +35819,7 @@ impl<'db> Terminal<'db> for TerminalLT<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalLT<'db> {
@@ -35790,13 +35904,14 @@ impl<'db> Token<'db> for TokenMatchArrow<'db> {
         TokenMatchArrowGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMatchArrow,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35819,7 +35934,7 @@ impl<'db> From<TokenMatchArrowPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMatchArrowGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMatchArrowGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
@@ -35830,7 +35945,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMatchArrow<'db> {
         TokenMatchArrowGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -35870,7 +35985,7 @@ impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMatchArrowGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMatchArrow,
@@ -35884,7 +35999,7 @@ impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMatchArrow<'db> {
@@ -35973,13 +36088,14 @@ impl<'db> Token<'db> for TokenMinus<'db> {
         TokenMinusGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMinus,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36002,7 +36118,7 @@ impl<'db> From<TokenMinusPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMinusGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMinusGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
@@ -36013,7 +36129,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinus<'db> {
         TokenMinusGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -36053,7 +36169,7 @@ impl<'db> Terminal<'db> for TerminalMinus<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMinusGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMinus,
@@ -36067,7 +36183,7 @@ impl<'db> Terminal<'db> for TerminalMinus<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMinus<'db> {
@@ -36156,13 +36272,14 @@ impl<'db> Token<'db> for TokenMinusEq<'db> {
         TokenMinusEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMinusEq,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36185,7 +36302,7 @@ impl<'db> From<TokenMinusEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMinusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMinusEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
@@ -36196,7 +36313,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMinusEq<'db> {
         TokenMinusEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -36236,7 +36353,7 @@ impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMinusEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMinusEq,
@@ -36250,7 +36367,7 @@ impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMinusEq<'db> {
@@ -36337,12 +36454,16 @@ pub struct TokenMod<'db> {
 impl<'db> Token<'db> for TokenMod<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenModGreen(
-            GreenNode { kind: SyntaxKind::TokenMod, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMod,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36365,7 +36486,7 @@ impl<'db> From<TokenModPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenModGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
@@ -36376,7 +36497,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMod<'db> {
         TokenModGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -36416,7 +36537,7 @@ impl<'db> Terminal<'db> for TerminalMod<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMod,
@@ -36430,7 +36551,7 @@ impl<'db> Terminal<'db> for TerminalMod<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMod<'db> {
@@ -36515,13 +36636,14 @@ impl<'db> Token<'db> for TokenModEq<'db> {
         TokenModEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenModEq,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36544,7 +36666,7 @@ impl<'db> From<TokenModEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenModEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenModEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
@@ -36555,7 +36677,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenModEq<'db> {
         TokenModEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -36595,7 +36717,7 @@ impl<'db> Terminal<'db> for TerminalModEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalModEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalModEq,
@@ -36609,7 +36731,7 @@ impl<'db> Terminal<'db> for TerminalModEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalModEq<'db> {
@@ -36696,12 +36818,16 @@ pub struct TokenMul<'db> {
 impl<'db> Token<'db> for TokenMul<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenMulGreen(
-            GreenNode { kind: SyntaxKind::TokenMul, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenMul,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36724,7 +36850,7 @@ impl<'db> From<TokenMulPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMulGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMulGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
@@ -36735,7 +36861,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMul<'db> {
         TokenMulGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -36775,7 +36901,7 @@ impl<'db> Terminal<'db> for TerminalMul<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMulGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMul,
@@ -36789,7 +36915,7 @@ impl<'db> Terminal<'db> for TerminalMul<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMul<'db> {
@@ -36874,13 +37000,14 @@ impl<'db> Token<'db> for TokenMulEq<'db> {
         TokenMulEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMulEq,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36903,7 +37030,7 @@ impl<'db> From<TokenMulEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMulEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMulEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
@@ -36914,7 +37041,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMulEq<'db> {
         TokenMulEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -36954,7 +37081,7 @@ impl<'db> Terminal<'db> for TerminalMulEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalMulEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalMulEq,
@@ -36968,7 +37095,7 @@ impl<'db> Terminal<'db> for TerminalMulEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalMulEq<'db> {
@@ -37055,12 +37182,16 @@ pub struct TokenNeq<'db> {
 impl<'db> Token<'db> for TokenNeq<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenNeqGreen(
-            GreenNode { kind: SyntaxKind::TokenNeq, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenNeq,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37083,7 +37214,7 @@ impl<'db> From<TokenNeqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenNeqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNeqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
@@ -37094,7 +37225,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNeq<'db> {
         TokenNeqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -37134,7 +37265,7 @@ impl<'db> Terminal<'db> for TerminalNeq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNeqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalNeq,
@@ -37148,7 +37279,7 @@ impl<'db> Terminal<'db> for TerminalNeq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalNeq<'db> {
@@ -37231,12 +37362,16 @@ pub struct TokenNot<'db> {
 impl<'db> Token<'db> for TokenNot<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenNotGreen(
-            GreenNode { kind: SyntaxKind::TokenNot, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenNot,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37259,7 +37394,7 @@ impl<'db> From<TokenNotPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
@@ -37270,7 +37405,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNot<'db> {
         TokenNotGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -37310,7 +37445,7 @@ impl<'db> Terminal<'db> for TerminalNot<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalNotGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalNot,
@@ -37324,7 +37459,7 @@ impl<'db> Terminal<'db> for TerminalNot<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalNot<'db> {
@@ -37409,13 +37544,14 @@ impl<'db> Token<'db> for TokenBitNot<'db> {
         TokenBitNotGreen(
             GreenNode {
                 kind: SyntaxKind::TokenBitNot,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37438,7 +37574,7 @@ impl<'db> From<TokenBitNotPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenBitNotGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenBitNotGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
@@ -37449,7 +37585,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenBitNot<'db> {
         TokenBitNotGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -37489,7 +37625,7 @@ impl<'db> Terminal<'db> for TerminalBitNot<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalBitNotGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalBitNot,
@@ -37503,7 +37639,7 @@ impl<'db> Terminal<'db> for TerminalBitNot<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalBitNot<'db> {
@@ -37590,12 +37726,16 @@ pub struct TokenOr<'db> {
 impl<'db> Token<'db> for TokenOr<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenOrGreen(
-            GreenNode { kind: SyntaxKind::TokenOr, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenOr,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37618,7 +37758,7 @@ impl<'db> From<TokenOrPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOrGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
@@ -37629,7 +37769,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOr<'db> {
         TokenOrGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -37669,7 +37809,7 @@ impl<'db> Terminal<'db> for TerminalOr<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOrGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalOr,
@@ -37683,7 +37823,7 @@ impl<'db> Terminal<'db> for TerminalOr<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalOr<'db> {
@@ -37768,13 +37908,14 @@ impl<'db> Token<'db> for TokenOrOr<'db> {
         TokenOrOrGreen(
             GreenNode {
                 kind: SyntaxKind::TokenOrOr,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37797,7 +37938,7 @@ impl<'db> From<TokenOrOrPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenOrOrGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenOrOrGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
@@ -37808,7 +37949,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenOrOr<'db> {
         TokenOrOrGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -37848,7 +37989,7 @@ impl<'db> Terminal<'db> for TerminalOrOr<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalOrOrGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalOrOr,
@@ -37862,7 +38003,7 @@ impl<'db> Terminal<'db> for TerminalOrOr<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalOrOr<'db> {
@@ -37947,13 +38088,14 @@ impl<'db> Token<'db> for TokenPlus<'db> {
         TokenPlusGreen(
             GreenNode {
                 kind: SyntaxKind::TokenPlus,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37976,7 +38118,7 @@ impl<'db> From<TokenPlusPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenPlusGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPlusGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
@@ -37987,7 +38129,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlus<'db> {
         TokenPlusGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -38027,7 +38169,7 @@ impl<'db> Terminal<'db> for TerminalPlus<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPlusGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalPlus,
@@ -38041,7 +38183,7 @@ impl<'db> Terminal<'db> for TerminalPlus<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalPlus<'db> {
@@ -38126,13 +38268,14 @@ impl<'db> Token<'db> for TokenPlusEq<'db> {
         TokenPlusEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenPlusEq,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38155,7 +38298,7 @@ impl<'db> From<TokenPlusEqPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenPlusEqGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenPlusEqGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
@@ -38166,7 +38309,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenPlusEq<'db> {
         TokenPlusEqGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -38206,7 +38349,7 @@ impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalPlusEqGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalPlusEq,
@@ -38220,7 +38363,7 @@ impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalPlusEq<'db> {
@@ -38309,13 +38452,14 @@ impl<'db> Token<'db> for TokenQuestionMark<'db> {
         TokenQuestionMarkGreen(
             GreenNode {
                 kind: SyntaxKind::TokenQuestionMark,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38338,7 +38482,7 @@ impl<'db> From<TokenQuestionMarkPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenQuestionMarkGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenQuestionMarkGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
@@ -38349,7 +38493,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenQuestionMark<'db> {
         TokenQuestionMarkGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -38389,7 +38533,7 @@ impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalQuestionMarkGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalQuestionMark,
@@ -38403,7 +38547,7 @@ impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalQuestionMark<'db> {
@@ -38492,13 +38636,14 @@ impl<'db> Token<'db> for TokenRBrace<'db> {
         TokenRBraceGreen(
             GreenNode {
                 kind: SyntaxKind::TokenRBrace,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38521,7 +38666,7 @@ impl<'db> From<TokenRBracePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenRBraceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRBraceGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
@@ -38532,7 +38677,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrace<'db> {
         TokenRBraceGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -38572,7 +38717,7 @@ impl<'db> Terminal<'db> for TerminalRBrace<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRBraceGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalRBrace,
@@ -38586,7 +38731,7 @@ impl<'db> Terminal<'db> for TerminalRBrace<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalRBrace<'db> {
@@ -38675,13 +38820,14 @@ impl<'db> Token<'db> for TokenRBrack<'db> {
         TokenRBrackGreen(
             GreenNode {
                 kind: SyntaxKind::TokenRBrack,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38704,7 +38850,7 @@ impl<'db> From<TokenRBrackPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenRBrackGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRBrackGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
@@ -38715,7 +38861,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRBrack<'db> {
         TokenRBrackGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -38755,7 +38901,7 @@ impl<'db> Terminal<'db> for TerminalRBrack<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRBrackGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalRBrack,
@@ -38769,7 +38915,7 @@ impl<'db> Terminal<'db> for TerminalRBrack<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalRBrack<'db> {
@@ -38858,13 +39004,14 @@ impl<'db> Token<'db> for TokenRParen<'db> {
         TokenRParenGreen(
             GreenNode {
                 kind: SyntaxKind::TokenRParen,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38887,7 +39034,7 @@ impl<'db> From<TokenRParenPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenRParenGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenRParenGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
@@ -38898,7 +39045,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenRParen<'db> {
         TokenRParenGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -38938,7 +39085,7 @@ impl<'db> Terminal<'db> for TerminalRParen<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalRParenGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalRParen,
@@ -38952,7 +39099,7 @@ impl<'db> Terminal<'db> for TerminalRParen<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalRParen<'db> {
@@ -39041,13 +39188,14 @@ impl<'db> Token<'db> for TokenSemicolon<'db> {
         TokenSemicolonGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSemicolon,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39070,7 +39218,7 @@ impl<'db> From<TokenSemicolonPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenSemicolonGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSemicolonGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
@@ -39081,7 +39229,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSemicolon<'db> {
         TokenSemicolonGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -39121,7 +39269,7 @@ impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalSemicolonGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalSemicolon,
@@ -39135,7 +39283,7 @@ impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalSemicolon<'db> {
@@ -39224,13 +39372,14 @@ impl<'db> Token<'db> for TokenUnderscore<'db> {
         TokenUnderscoreGreen(
             GreenNode {
                 kind: SyntaxKind::TokenUnderscore,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39253,7 +39402,7 @@ impl<'db> From<TokenUnderscorePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenUnderscoreGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenUnderscoreGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
@@ -39264,7 +39413,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenUnderscore<'db> {
         TokenUnderscoreGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -39304,7 +39453,7 @@ impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalUnderscoreGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalUnderscore,
@@ -39318,7 +39467,7 @@ impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalUnderscore<'db> {
@@ -39405,12 +39554,16 @@ pub struct TokenXor<'db> {
 impl<'db> Token<'db> for TokenXor<'db> {
     fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
         TokenXorGreen(
-            GreenNode { kind: SyntaxKind::TokenXor, details: GreenNodeDetails::Token(text.into()) }
-                .intern(db),
+            GreenNode {
+                kind: SyntaxKind::TokenXor,
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
+            }
+            .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39433,7 +39586,7 @@ impl<'db> From<TokenXorPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenXorGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenXorGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
@@ -39444,7 +39597,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenXor<'db> {
         TokenXorGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -39484,7 +39637,7 @@ impl<'db> Terminal<'db> for TerminalXor<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalXorGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalXor,
@@ -39498,7 +39651,7 @@ impl<'db> Terminal<'db> for TerminalXor<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalXor<'db> {
@@ -39587,7 +39740,7 @@ impl<'db> SyntaxFile<'db> {
         eof: TerminalEndOfFileGreen<'db>,
     ) -> SyntaxFileGreen<'db> {
         let children = [items.0, eof.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         SyntaxFileGreen(
             GreenNode {
                 kind: SyntaxKind::SyntaxFile,
@@ -39672,13 +39825,14 @@ impl<'db> Token<'db> for TokenEmpty<'db> {
         TokenEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::TokenEmpty,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39701,7 +39855,7 @@ impl<'db> From<TokenEmptyPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenEmptyGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenEmptyGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
@@ -39712,7 +39866,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenEmpty<'db> {
         TokenEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -39752,7 +39906,7 @@ impl<'db> Terminal<'db> for TerminalEmpty<'db> {
         trailing_trivia: TriviaGreen<'db>,
     ) -> Self::Green {
         let children = [leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         TerminalEmptyGreen(
             GreenNode {
                 kind: SyntaxKind::TerminalEmpty,
@@ -39766,7 +39920,7 @@ impl<'db> Terminal<'db> for TerminalEmpty<'db> {
         else {
             unreachable!("Expected a node, not a token");
         };
-        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TerminalEmpty<'db> {
@@ -39855,13 +40009,14 @@ impl<'db> Token<'db> for TokenSingleLineComment<'db> {
         TokenSingleLineCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineComment,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39884,7 +40039,7 @@ impl<'db> From<TokenSingleLineCommentPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenSingleLineCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineCommentGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
@@ -39895,7 +40050,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineComment<'db> {
         TokenSingleLineCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -39931,13 +40086,14 @@ impl<'db> Token<'db> for TokenSingleLineInnerComment<'db> {
         TokenSingleLineInnerCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineInnerComment,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39960,7 +40116,7 @@ impl<'db> From<TokenSingleLineInnerCommentPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenSingleLineInnerCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineInnerCommentGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
@@ -39971,7 +40127,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineInnerComment<'db> {
         TokenSingleLineInnerCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -40007,13 +40163,14 @@ impl<'db> Token<'db> for TokenSingleLineDocComment<'db> {
         TokenSingleLineDocCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSingleLineDocComment,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40036,7 +40193,7 @@ impl<'db> From<TokenSingleLineDocCommentPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenSingleLineDocCommentGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSingleLineDocCommentGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
@@ -40047,7 +40204,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSingleLineDocComment<'db> {
         TokenSingleLineDocCommentGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -40083,13 +40240,14 @@ impl<'db> Token<'db> for TokenWhitespace<'db> {
         TokenWhitespaceGreen(
             GreenNode {
                 kind: SyntaxKind::TokenWhitespace,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40112,7 +40270,7 @@ impl<'db> From<TokenWhitespacePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenWhitespaceGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenWhitespaceGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
@@ -40123,7 +40281,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenWhitespace<'db> {
         TokenWhitespaceGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -40158,13 +40316,14 @@ impl<'db> Token<'db> for TokenNewline<'db> {
         TokenNewlineGreen(
             GreenNode {
                 kind: SyntaxKind::TokenNewline,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40187,7 +40346,7 @@ impl<'db> From<TokenNewlinePtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenNewlineGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenNewlineGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
@@ -40198,7 +40357,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenNewline<'db> {
         TokenNewlineGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -40233,13 +40392,14 @@ impl<'db> Token<'db> for TokenMissing<'db> {
         TokenMissingGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40262,7 +40422,7 @@ impl<'db> From<TokenMissingPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenMissingGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenMissingGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
@@ -40273,7 +40433,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenMissing<'db> {
         TokenMissingGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )
@@ -40308,13 +40468,14 @@ impl<'db> Token<'db> for TokenSkipped<'db> {
         TokenSkippedGreen(
             GreenNode {
                 kind: SyntaxKind::TokenSkipped,
-                details: GreenNodeDetails::Token(text.into()),
+                details: GreenNodeDetails::Token(StrId::new(db, text)),
             }
             .intern(db),
         )
     }
     fn text(&self, db: &'db dyn Database) -> &'db str {
         extract_matches!(&self.node.long(db).green.long(db).details, GreenNodeDetails::Token)
+            .long(db)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -40337,7 +40498,7 @@ impl<'db> From<TokenSkippedPtr<'db>> for SyntaxStablePtrId<'db> {
 pub struct TokenSkippedGreen<'db>(pub GreenId<'db>);
 impl<'db> TokenSkippedGreen<'db> {
     pub fn text(&self, db: &'db dyn Database) -> &'db str {
-        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+        extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token).long(db)
     }
 }
 impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
@@ -40348,7 +40509,7 @@ impl<'db> TypedSyntaxNode<'db> for TokenSkipped<'db> {
         TokenSkippedGreen(
             GreenNode {
                 kind: SyntaxKind::TokenMissing,
-                details: GreenNodeDetails::Token("".into()),
+                details: GreenNodeDetails::Token(StrId::new(db, "")),
             }
             .intern(db),
         )

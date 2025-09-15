@@ -33,7 +33,7 @@ fn collect_green_nodes<'db>(
     let green_node = syntax_node.green_node(db);
 
     match &green_node.details {
-        GreenNodeDetails::Token(text) => green_nodes.push((green_node.kind, text.to_string())),
+        GreenNodeDetails::Token(text) => green_nodes.push((green_node.kind, text.long(db).to_string())),
         GreenNodeDetails::Node { .. } => {
             let syntax_node_children = syntax_node.get_children(db);
             syntax_node_children.iter().for_each(|child| {
