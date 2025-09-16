@@ -291,7 +291,7 @@ fn module_semantic_diagnostics<'db>(
             diagnostics.extend(semantic_diags);
         }
     }
-    add_unused_item_diagnostics(db, module_id, &data, &mut diagnostics);
+    add_unused_item_diagnostics(db, module_id, data, &mut diagnostics);
     add_duplicated_names_from_macro_expansions_diagnostics(db, module_id, &mut diagnostics);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
         let analyzer_plugin = analyzer_plugin_id.long(db);

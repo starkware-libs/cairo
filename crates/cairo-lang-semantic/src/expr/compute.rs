@@ -3475,16 +3475,12 @@ fn dot_expr<'db>(
 /// Finds all the trait ids usable in the current context.
 fn traits_in_context<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-) -> Maybe<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>> {
-    let mut traits =
-        ctx.db.module_usable_trait_ids(ctx.resolver.prelude_submodule())?.deref().clone();
+) -> OrderedHashMap<TraitId<'db>, LookupItemId<'db>> {
+    let mut traits = ctx.db.module_usable_trait_ids(ctx.resolver.prelude_submodule()).clone();
     traits.extend(
-        ctx.db
-            .module_usable_trait_ids(ctx.resolver.module_file_id.0)?
-            .iter()
-            .map(|(k, v)| (*k, *v)),
+        ctx.db.module_usable_trait_ids(ctx.resolver.module_file_id.0).iter().map(|(k, v)| (*k, *v)),
     );
-    Ok(traits)
+    traits
 }
 
 /// Computes the semantic model of a method call expression (e.g. "expr.method(..)").
@@ -3513,7 +3509,7 @@ fn method_call_expr<'db>(
         ctx.resolver.inference().solve().ok();
     }
 
-    let mut candidate_traits = traits_in_context(ctx)?;
+    let mut candidate_traits = traits_in_context(ctx);
 
     // Add traits from impl generic args in the context.
     for generic_param in &ctx.resolver.data.generic_params {
