@@ -840,8 +840,7 @@ pub impl ByteSpanImpl of ByteSpanTrait {
     }
 
     /// Gets the element(s) at the given index.
-    /// Accepts ranges (returns Option<ByteSpan>), and (to-be-implemented) single indices (returns
-    /// Option<u8>).
+    /// Accepts ranges (returns Option<ByteSpan>), and single indices (returns Option<u8>).
     #[feature("get-trait")]
     fn get<I, impl TGet: crate::ops::Get<ByteSpan, I>, +Drop<I>>(
         self: @ByteSpan, index: I,
@@ -913,6 +912,24 @@ impl ByteSpanGetRangeInclusive of crate::ops::Get<ByteSpan, crate::ops::RangeInc
     }
 }
 
+impl ByteSpanGetUsize of crate::ops::Get<ByteSpan, usize> {
+    type Output = u8;
+
+    /// Returns the byte at the given index.
+    /// If out of bounds: returns `None`.
+    fn get(self: @ByteSpan, index: usize) -> Option<u8> {
+        helpers::byte_at(self, index)
+    }
+}
+
+impl ByteSpanIndex of core::ops::index::IndexView<ByteSpan, usize> {
+    type Target = u8;
+
+    fn index(self: @ByteSpan, index: usize) -> u8 {
+        ByteSpanTrait::get(self, index).expect('Index out of bounds')
+    }
+}
+
 /// Trait for types that can be converted into a `ByteSpan`.
 #[unstable(feature: "byte-span")]
 pub trait ToByteSpanTrait<C> {
@@ -957,11 +974,11 @@ fn shift_right(word: felt252, word_len: usize, n_bytes: usize) -> felt252 {
 
 mod helpers {
     use core::num::traits::Bounded;
-    use crate::bytes_31::BYTES_IN_BYTES31;
+    use crate::bytes_31::{BYTES_IN_BYTES31, Bytes31Trait, u8_at_u256};
     #[feature("bounded-int-utils")]
     use crate::internal::bounded_int::{
-        self, AddHelper, BoundedInt, ConstrainHelper, MulHelper, SubHelper, UnitInt, downcast,
-        upcast,
+        self, AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper, UnitInt,
+        downcast, upcast,
     };
     use super::{BYTES_IN_BYTES31_MINUS_ONE, ByteSpan, Bytes31Index};
 
@@ -969,6 +986,9 @@ mod helpers {
 
     const U32_MAX_TIMES_B31: felt252 = Bounded::<u32>::MAX.into() * BYTES_IN_BYTES31.into();
     const BYTES_IN_BYTES31_UNIT_INT: BytesInBytes31Typed = downcast(BYTES_IN_BYTES31).unwrap();
+    const NZ_BYTES_IN_BYTES31: NonZero<BytesInBytes31Typed> = 31;
+    const BYTES_IN_BYTES31_MINUS_ONE_TYPED: UnitInt<{ BYTES_IN_BYTES31_MINUS_ONE.into() }> = 30;
+    const ONE_TYPED: UnitInt<1> = 1;
 
     impl U32ByB31 of MulHelper<u32, BytesInBytes31Typed> {
         type Result = BoundedInt<0, U32_MAX_TIMES_B31>;
@@ -984,6 +1004,50 @@ mod helpers {
                 { -BYTES_IN_BYTES31_MINUS_ONE.into() },
                 { BYTES_IN_BYTES31_MINUS_ONE.into() + U32_MAX_TIMES_B31 },
             >;
+    }
+
+    // For byte_at: usize + BoundedInt<0,30>
+    impl UsizeAddBytes31Index of AddHelper<usize, Bytes31Index> {
+        type Result =
+            BoundedInt<0, { Bounded::<usize>::MAX.into() + BYTES_IN_BYTES31_MINUS_ONE.into() }>;
+    }
+
+    // For byte_at: div_rem of (usize + BoundedInt<0,30>) by 31
+    const USIZE_PLUS_30_DIV_31: felt252 = 0x8421085; // (usize::MAX + 30) / 31 = 138547333
+    impl UsizePlusBytes31IndexDivRemB31 of DivRemHelper<
+        UsizeAddBytes31Index::Result, BytesInBytes31Typed,
+    > {
+        type DivT = BoundedInt<0, USIZE_PLUS_30_DIV_31>;
+        type RemT = Bytes31Index;
+    }
+
+    // For byte_at: 30 - BoundedInt<0,30>
+    impl B30SubBytes31Index of SubHelper<
+        UnitInt<{ BYTES_IN_BYTES31_MINUS_ONE.into() }>, Bytes31Index,
+    > {
+        type Result = Bytes31Index;
+    }
+
+    // For byte_at: BoundedInt<0,30> - 1
+    impl Bytes31IndexSub1 of SubHelper<Bytes31Index, UnitInt<1>> {
+        type Result = BoundedInt<-1, { BYTES_IN_BYTES31_MINUS_ONE.into() - 1 }>;
+    }
+
+    // For byte_at: (BoundedInt<0,30> - 1) - BoundedInt<0,30>
+    impl Bytes31IndexMinus1SubBytes31Index of SubHelper<Bytes31IndexSub1::Result, Bytes31Index> {
+        type Result =
+            BoundedInt<
+                { -BYTES_IN_BYTES31_MINUS_ONE.into() - 1 },
+                { BYTES_IN_BYTES31_MINUS_ONE.into() - 1 },
+            >;
+    }
+
+    // For byte_at: split BoundedInt<-31, 29> at 0.
+    impl ConstrainRemainderIndexAt0 of bounded_int::ConstrainHelper<
+        Bytes31IndexMinus1SubBytes31Index::Result, 0,
+    > {
+        type LowT = BoundedInt<{ -BYTES_IN_BYTES31_MINUS_ONE.into() - 1 }, -1>;
+        type HighT = BoundedInt<0, { BYTES_IN_BYTES31_MINUS_ONE.into() - 1 }>;
     }
 
     /// Calculates the length of a `ByteSpan` in bytes.
@@ -1074,6 +1138,40 @@ mod helpers {
     /// Takes the length of an input word and returns the length minus one.
     pub fn length_minus_one(len: BoundedInt<1, 31>) -> Bytes31Index {
         bounded_int::sub(len, 1)
+    }
+    /// Returns the byte at the given index in the ByteSpan.
+    /// If out of bounds: returns `None`.
+    pub fn byte_at(self: @ByteSpan, index: usize) -> Option<u8> {
+        let absolute_index = bounded_int::add(index, *self.first_char_start_offset);
+        let (word_index_bounded, msb_index) = bounded_int::div_rem(
+            absolute_index, NZ_BYTES_IN_BYTES31,
+        );
+
+        let word_index = upcast(word_index_bounded);
+        match self.data.get(word_index) {
+            Some(word) => {
+                // Convert from MSB to LSB indexing.
+                let lsb_index = bounded_int::sub(BYTES_IN_BYTES31_MINUS_ONE_TYPED, msb_index);
+                Some(word.at(upcast(lsb_index)))
+            },
+            None => {
+                // Word index must equal data.len() for remainder word.
+                if word_index != self.data.len() {
+                    return None;
+                }
+
+                // Compute LSB index: remainder_len - 1 - msb_index.
+                let lsb_index_bounded = bounded_int::sub(
+                    bounded_int::sub(*self.remainder_len, ONE_TYPED), msb_index,
+                );
+
+                // Check if in bounds and extract non-negative index.
+                let Err(lsb_index) = bounded_int::constrain::<_, 0>(lsb_index_bounded) else {
+                    return None; // Out of bounds: index >= remainder_len.
+                };
+                Some(u8_at_u256((*self.remainder_word).into(), upcast(lsb_index)))
+            },
+        }
     }
 }
 pub(crate) use helpers::len_parts;
