@@ -3570,8 +3570,8 @@ fn method_call_expr<'db>(
             }
         })?;
 
-    if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id)
-        && let Some(trait_item_info) = trait_definition_data.get_trait_item_info(func_name.into())
+    if let Ok(Some(trait_item_info)) =
+        ctx.db.trait_item_info_by_name(actual_trait_id, func_name.into())
     {
         ctx.resolver.validate_feature_constraints(
             ctx.diagnostics,

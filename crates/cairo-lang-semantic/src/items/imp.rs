@@ -483,7 +483,7 @@ pub enum ImplHead<'db> {
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ImplDeclarationData<'db> {
+struct ImplDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     /// The concrete trait this impl implements, or Err if cannot be resolved.
     concrete_trait: Maybe<ConcreteTraitId<'db>>,
@@ -520,7 +520,7 @@ fn impl_def_generic_params_data<'db>(
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
-/// Implementation of [ImplSemantic::impl_def_substitution].
+/// Implementation of [PrivImplSemantic::impl_def_substitution].
 fn impl_def_substitution<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -546,7 +546,7 @@ fn impl_def_trait<'db>(db: &'db dyn Database, impl_def_id: ImplDefId<'db>) -> Ma
     resolve_trait_path(db, &mut diagnostics, &mut resolver, &trait_path_syntax)
 }
 
-/// Query implementation of [ImplSemantic::impl_def_shallow_trait_generic_args].
+/// Query implementation of [PrivImplSemantic::impl_def_shallow_trait_generic_args].
 fn impl_def_shallow_trait_generic_args<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -634,7 +634,7 @@ fn impl_def_shallow_trait_generic_args_helper<'db>(
     }
 }
 
-/// Query implementation of [ImplSemantic::impl_alias_trait_generic_args].
+/// Query implementation of [PrivImplSemantic::impl_alias_trait_generic_args].
 fn impl_alias_trait_generic_args<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
@@ -899,7 +899,7 @@ fn impl_declaration_data_inner<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ImplDefinitionData<'db> {
+struct ImplDefinitionData<'db> {
     /// The diagnostics here are "flat" - that is, only the diagnostics found on the impl level
     /// itself, and don't include the diagnostics of its items. The reason it's this way is that
     /// computing the items' diagnostics require a query about their impl, forming a cycle of
@@ -1249,7 +1249,7 @@ fn impl_functions_tracked<'db>(
     impl_functions(db, impl_def_id)
 }
 
-/// Implementation of [ImplSemantic::impl_function_by_trait_function].
+/// Implementation of [PrivImplSemantic::impl_function_by_trait_function].
 fn impl_function_by_trait_function<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1276,7 +1276,7 @@ fn impl_function_by_trait_function_tracked<'db>(
     impl_function_by_trait_function(db, impl_def_id, trait_function_id)
 }
 
-/// Implementation of [ImplSemantic::impl_item_by_name].
+/// Implementation of [PrivImplSemantic::impl_item_by_name].
 fn impl_item_by_name<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1319,7 +1319,7 @@ fn impl_item_info_by_name_tracked<'db>(
     impl_item_info_by_name(db, impl_def_id, name)
 }
 
-/// Implementation of [ImplSemantic::impl_implicit_impl_by_name].
+/// Implementation of [PrivImplSemantic::impl_implicit_impl_by_name].
 fn impl_implicit_impl_by_name<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1383,24 +1383,7 @@ fn impl_types_tracked<'db>(
     impl_types(db, impl_def_id)
 }
 
-/// Implementation of [ImplSemantic::impl_type_ids].
-fn impl_type_ids<'db>(
-    db: &'db dyn Database,
-    impl_def_id: ImplDefId<'db>,
-) -> Maybe<Arc<Vec<ImplTypeDefId<'db>>>> {
-    Ok(Arc::new(db.impl_types(impl_def_id)?.keys().copied().collect_vec()))
-}
-
-/// Query implementation of [ImplSemantic::impl_type_ids].
-#[salsa::tracked]
-fn impl_type_ids_tracked<'db>(
-    db: &'db dyn Database,
-    impl_def_id: ImplDefId<'db>,
-) -> Maybe<Arc<Vec<ImplTypeDefId<'db>>>> {
-    impl_type_ids(db, impl_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_type_by_id].
+/// Implementation of [PrivImplSemantic::impl_type_by_id].
 fn impl_type_by_id<'db>(
     db: &'db dyn Database,
     impl_type_id: ImplTypeDefId<'db>,
@@ -1466,7 +1449,7 @@ fn impl_constants_tracked<'db>(
     impl_constants(db, impl_def_id)
 }
 
-/// Implementation of [ImplSemantic::impl_constant_by_trait_constant].
+/// Implementation of [PrivImplSemantic::impl_constant_by_trait_constant].
 fn impl_constant_by_trait_constant<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1497,7 +1480,7 @@ fn impl_constant_by_trait_constant_tracked<'db>(
     impl_constant_by_trait_constant(db, impl_def_id, trait_constant_id)
 }
 
-/// Implementation of [ImplSemantic::impl_impls].
+/// Implementation of [PrivImplSemantic::impl_impls].
 fn impl_impls<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1514,24 +1497,7 @@ fn impl_impls_tracked<'db>(
     impl_impls(db, impl_def_id)
 }
 
-/// Implementation of [ImplSemantic::impl_impl_ids].
-fn impl_impl_ids<'db>(
-    db: &'db dyn Database,
-    impl_def_id: ImplDefId<'db>,
-) -> Maybe<Arc<Vec<ImplImplDefId<'db>>>> {
-    Ok(Arc::new(db.impl_impls(impl_def_id)?.keys().copied().collect_vec()))
-}
-
-/// Query implementation of [ImplSemantic::impl_impl_ids].
-#[salsa::tracked]
-fn impl_impl_ids_tracked<'db>(
-    db: &'db dyn Database,
-    impl_def_id: ImplDefId<'db>,
-) -> Maybe<Arc<Vec<ImplImplDefId<'db>>>> {
-    impl_impl_ids(db, impl_def_id)
-}
-
-/// Implementation of [ImplSemantic::impl_impl_by_id].
+/// Implementation of [PrivImplSemantic::impl_impl_by_id].
 fn impl_impl_by_id<'db>(
     db: &'db dyn Database,
     impl_impl_id: ImplImplDefId<'db>,
@@ -1549,7 +1515,7 @@ fn impl_impl_by_id_tracked<'db>(
     impl_impl_by_id(db, impl_impl_id)
 }
 
-/// Implementation of [ImplSemantic::impl_impl_by_trait_impl].
+/// Implementation of [PrivImplSemantic::impl_impl_by_trait_impl].
 fn impl_impl_by_trait_impl<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1580,7 +1546,7 @@ fn impl_impl_by_trait_impl_tracked<'db>(
     impl_impl_by_trait_impl(db, impl_def_id, trait_impl_id)
 }
 
-/// Implementation of [ImplSemantic::is_implicit_impl_impl].
+/// Implementation of [PrivImplSemantic::is_implicit_impl_impl].
 fn is_implicit_impl_impl<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1929,54 +1895,6 @@ pub enum GenericsHeadFilter<'db> {
     FirstGenericFilter(GenericArgumentHead<'db>),
     /// Generics must not exist.
     NoGenerics,
-}
-
-/// Implementation of [ImplSemantic::module_impl_ids].
-/// Returns the uninferred impls in a module.
-fn module_impl_ids<'db>(
-    db: &'db dyn Database,
-    user_module: ModuleId<'db>,
-    containing_module: ModuleId<'db>,
-) -> Maybe<Arc<BTreeSet<UninferredImplById<'db>>>> {
-    let res = db
-        .priv_module_semantic_data(containing_module)?
-        .items
-        .values()
-        .filter(|item| {
-            matches!(
-                item.item_id,
-                ModuleItemId::Impl(_) | ModuleItemId::ImplAlias(_) | ModuleItemId::Use(_)
-            ) && peek_visible_in(db, item.visibility, containing_module, user_module)
-        })
-        .filter_map(|item| match item.item_id {
-            ModuleItemId::Impl(impl_def_id) => Some(UninferredImpl::Def(impl_def_id).into()),
-            ModuleItemId::ImplAlias(impl_alias_id) => {
-                Some(UninferredImpl::ImplAlias(impl_alias_id).into())
-            }
-            ModuleItemId::Use(use_id) => match db.use_resolved_item(use_id) {
-                Ok(ResolvedGenericItem::Impl(impl_def_id)) => {
-                    Some(UninferredImpl::Def(impl_def_id).into())
-                }
-                Ok(ResolvedGenericItem::GenericImplAlias(impl_alias_id)) => {
-                    Some(UninferredImpl::ImplAlias(impl_alias_id).into())
-                }
-                _ => None,
-            },
-            _ => None,
-        })
-        .collect::<BTreeSet<_>>();
-    Ok(res.into())
-}
-
-/// Query implementation of [ImplSemantic::module_impl_ids].
-/// Returns the uninferred impls in a module.
-#[salsa::tracked]
-fn module_impl_ids_tracked<'db>(
-    db: &'db dyn Database,
-    user_module: ModuleId<'db>,
-    containing_module: ModuleId<'db>,
-) -> Maybe<Arc<BTreeSet<UninferredImplById<'db>>>> {
-    module_impl_ids(db, user_module, containing_module)
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
@@ -2688,7 +2606,7 @@ pub fn filter_candidate_traits<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ImplItemTypeData<'db> {
+struct ImplItemTypeData<'db> {
     type_alias_data: TypeAliasData<'db>,
     trait_type_id: Maybe<TraitTypeId<'db>>,
     /// The diagnostics of the module type alias, including the ones for the type alias itself.
@@ -2869,7 +2787,7 @@ fn impl_type_concrete_implized_cycle<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ImplItemConstantData<'db> {
+struct ImplItemConstantData<'db> {
     constant_data: ConstantData<'db>,
     trait_constant_id: Maybe<TraitConstantId<'db>>,
     /// The diagnostics of the impl constant, including the ones for the constant itself.
@@ -2981,7 +2899,7 @@ fn validate_impl_item_constant<'db>(
 
 // === Impl Constant ===
 
-/// Query implementation of [ImplSemantic::impl_constant_implized_by_context].
+/// Query implementation of [PrivImplSemantic::impl_constant_implized_by_context].
 fn impl_constant_implized_by_context<'db>(
     db: &'db dyn Database,
     impl_constant_id: ImplConstantId<'db>,
@@ -3003,7 +2921,7 @@ fn impl_constant_implized_by_context_tracked<'db>(
     impl_constant_implized_by_context(db, impl_constant_id, impl_def_id)
 }
 
-/// Cycle handling for [ImplSemantic::impl_constant_implized_by_context].
+/// Cycle handling for [PrivImplSemantic::impl_constant_implized_by_context].
 fn impl_constant_implized_by_context_cycle<'db>(
     db: &'db dyn Database,
     impl_constant_id: ImplConstantId<'db>,
@@ -3121,7 +3039,7 @@ fn impl_constant_concrete_implized_type_cycle<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ImplItemImplData<'db> {
+struct ImplItemImplData<'db> {
     impl_data: ImplAliasData<'db>,
     trait_impl_id: Maybe<TraitImplId<'db>>,
     /// The diagnostics of the impl impl, including the ones for the impl itself.
@@ -3264,13 +3182,13 @@ fn validate_impl_item_impl<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ImplicitImplImplData<'db> {
+struct ImplicitImplImplData<'db> {
     resolved_impl: Maybe<ImplId<'db>>,
     trait_impl_id: TraitImplId<'db>,
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-/// Query implementation of [ImplSemantic::implicit_impl_impl_semantic_diagnostics].
+/// Query implementation of [PrivImplSemantic::implicit_impl_impl_semantic_diagnostics].
 fn implicit_impl_impl_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -3290,7 +3208,7 @@ fn implicit_impl_impl_semantic_diagnostics_tracked<'db>(
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     implicit_impl_impl_semantic_diagnostics(db, impl_def_id, trait_impl_id)
 }
-/// Query implementation of [ImplSemantic::implicit_impl_impl_impl].
+/// Query implementation of [PrivImplSemantic::implicit_impl_impl_impl].
 fn implicit_impl_impl_impl<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -3312,7 +3230,7 @@ fn implicit_impl_impl_impl_tracked<'db>(
     implicit_impl_impl_impl(db, impl_def_id, trait_impl_id, in_cycle)
 }
 
-/// Cycle handling for [ImplSemantic::implicit_impl_impl_impl].
+/// Cycle handling for [PrivImplSemantic::implicit_impl_impl_impl].
 fn implicit_impl_impl_impl_cycle<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -3405,7 +3323,7 @@ fn implicit_impl_impl_semantic_data_cycle<'db>(
 
 // === Impl Impl ===
 
-/// Query implementation of [ImplSemantic::impl_impl_implized_by_context].
+/// Query implementation of [PrivImplSemantic::impl_impl_implized_by_context].
 fn impl_impl_implized_by_context<'db>(
     db: &'db dyn Database,
     impl_impl_id: ImplImplId<'db>,
@@ -3432,7 +3350,7 @@ fn impl_impl_implized_by_context_tracked<'db>(
     impl_impl_implized_by_context(db, impl_impl_id, impl_def_id, in_cycle)
 }
 
-/// Cycle handling for [ImplSemantic::impl_impl_implized_by_context].
+/// Cycle handling for [PrivImplSemantic::impl_impl_implized_by_context].
 fn impl_impl_implized_by_context_cycle<'db>(
     db: &'db dyn Database,
     impl_impl_id: ImplImplId<'db>,
@@ -3494,7 +3412,7 @@ fn impl_impl_concrete_implized_ex<'db>(
     .intern(db))
 }
 
-/// Implementation of [ImplSemantic::impl_impl_concrete_trait].
+/// Implementation of [PrivImplSemantic::impl_impl_concrete_trait].
 fn impl_impl_concrete_trait<'db>(
     db: &'db dyn Database,
     impl_impl_id: ImplImplId<'db>,
@@ -3505,7 +3423,7 @@ fn impl_impl_concrete_trait<'db>(
     })
 }
 
-/// Query implementation of [ImplSemantic::impl_impl_concrete_trait].
+/// Query implementation of [PrivImplSemantic::impl_impl_concrete_trait].
 fn impl_impl_concrete_trait_tracked<'db>(
     db: &'db dyn Database,
     impl_impl_id: ImplImplId<'db>,
@@ -3526,8 +3444,8 @@ fn impl_impl_concrete_trait_helper<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct ImplFunctionDeclarationData<'db> {
-    pub function_declaration_data: FunctionDeclarationData<'db>,
+struct ImplFunctionDeclarationData<'db> {
+    function_declaration_data: FunctionDeclarationData<'db>,
     trait_function_id: Maybe<TraitFunctionId<'db>>,
 }
 
@@ -4066,7 +3984,7 @@ fn crate_dependencies<'db>(
     crates_set
 }
 
-/// Query implementation of [ImplSemantic::crate_global_impls].
+/// Query implementation of [PrivImplSemantic::crate_global_impls].
 fn crate_global_impls<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
@@ -4107,7 +4025,7 @@ fn crate_global_impls_helper<'db>(
     Ok(crate_global_impls)
 }
 
-/// Implementation of [ImplSemantic::crate_traits_dependencies].
+/// Implementation of [PrivImplSemantic::crate_traits_dependencies].
 fn crate_traits_dependencies<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
@@ -4140,7 +4058,7 @@ fn crate_traits_dependencies_tracked<'db>(
     crate_traits_dependencies(db, crate_id)
 }
 
-/// Implementation of [ImplSemantic::reachable_trait_dependencies].
+/// Implementation of [PrivImplSemantic::reachable_trait_dependencies].
 fn reachable_trait_dependencies<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
@@ -4237,7 +4155,7 @@ fn uninferred_impl_trait_dependency<'db>(
 }
 
 #[derive(Default, Debug, Eq, PartialEq, salsa::Update)]
-pub struct ModuleImpls<'db> {
+struct ModuleImpls<'db> {
     globals_by_trait: OrderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>,
     trait_deps: OrderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>,
     globals_by_type: OrderedHashMap<TypeId<'db>, Vec<UninferredImpl<'db>>>,
@@ -4480,13 +4398,6 @@ pub trait ImplSemantic<'db>: Database {
     ) -> Maybe<ConcreteTraitId<'db>> {
         impl_declaration_data(self.as_dyn_database(), impl_def_id).maybe_as_ref()?.concrete_trait
     }
-    /// Returns the substitution for generics for the impl.
-    fn impl_def_substitution(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<Arc<GenericSubstitution<'db>>> {
-        impl_def_substitution(self.as_dyn_database(), impl_def_id)
-    }
     /// Returns the attributes attached to the impl.
     fn impl_def_attributes(&'db self, impl_def_id: ImplDefId<'db>) -> Maybe<Vec<Attribute<'db>>> {
         Ok(impl_declaration_data(self.as_dyn_database(), impl_def_id)
@@ -4503,34 +4414,12 @@ pub trait ImplSemantic<'db>: Database {
     fn impl_def_trait(&'db self, impl_def_id: ImplDefId<'db>) -> Maybe<TraitId<'db>> {
         impl_def_trait(self.as_dyn_database(), impl_def_id)
     }
-    /// Returns the shallow trait generic arguments of an impl.
-    fn impl_def_shallow_trait_generic_args(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
-        impl_def_shallow_trait_generic_args(self.as_dyn_database(), impl_def_id)
-    }
-    /// Returns the shallow trait generic arguments of an impl alias.
-    fn impl_alias_trait_generic_args(
-        &'db self,
-        impl_def_id: ImplAliasId<'db>,
-    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
-        impl_alias_trait_generic_args(self.as_dyn_database(), impl_def_id)
-    }
     /// Returns the semantic definition diagnostics of an impl.
     fn impl_semantic_definition_diagnostics(
         &'db self,
         impl_def_id: ImplDefId<'db>,
     ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
         impl_semantic_definition_diagnostics_tracked(self.as_dyn_database(), impl_def_id)
-    }
-    /// Returns the item of the impl, by the given `name`, if exists.
-    fn impl_item_by_name(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-        name: StrRef<'db>,
-    ) -> Maybe<Option<ImplItemId<'db>>> {
-        impl_item_by_name_tracked(self.as_dyn_database(), impl_def_id, name)
     }
     /// Returns the metadata for an impl item, by the given `name`, if exists.
     fn impl_item_info_by_name(
@@ -4539,14 +4428,6 @@ pub trait ImplSemantic<'db>: Database {
         name: StrRef<'db>,
     ) -> Maybe<Option<ImplItemInfo<'db>>> {
         impl_item_info_by_name_tracked(self.as_dyn_database(), impl_def_id, name)
-    }
-    /// Returns the trait impl of an implicit impl if `name` exists in trait and not in the impl.
-    fn impl_implicit_impl_by_name(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-        name: StrRef<'db>,
-    ) -> Maybe<Option<TraitImplId<'db>>> {
-        impl_implicit_impl_by_name_tracked(self.as_dyn_database(), impl_def_id, name)
     }
     /// Returns all the items used within the impl.
     fn impl_all_used_uses(
@@ -4561,20 +4442,6 @@ pub trait ImplSemantic<'db>: Database {
         impl_def_id: ImplDefId<'db>,
     ) -> Maybe<Arc<OrderedHashMap<ImplTypeDefId<'db>, ast::ItemTypeAlias<'db>>>> {
         impl_types_tracked(self.as_dyn_database(), impl_def_id)
-    }
-    /// Returns the ids of the type items in the impl.
-    fn impl_type_ids(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<Arc<Vec<ImplTypeDefId<'db>>>> {
-        impl_type_ids_tracked(self.as_dyn_database(), impl_def_id)
-    }
-    /// Returns the impl AST of the impl type that matches the given id, if exists.
-    fn impl_type_by_id(
-        &'db self,
-        impl_type_id: ImplTypeDefId<'db>,
-    ) -> Maybe<ast::ItemTypeAlias<'db>> {
-        impl_type_by_id_tracked(self.as_dyn_database(), impl_type_id)
     }
     /// Returns the impl type item that matches the given trait type item, if exists.
     fn impl_type_by_trait_type(
@@ -4591,55 +4458,6 @@ pub trait ImplSemantic<'db>: Database {
     ) -> Maybe<Arc<OrderedHashMap<ImplConstantDefId<'db>, ast::ItemConstant<'db>>>> {
         impl_constants_tracked(self.as_dyn_database(), impl_def_id)
     }
-    /// Returns the impls items in the impl.
-    fn impl_impls(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<Arc<OrderedHashMap<ImplImplDefId<'db>, ast::ItemImplAlias<'db>>>> {
-        impl_impls_tracked(self.as_dyn_database(), impl_def_id)
-    }
-    /// Returns the ids of the impl items in the impl.
-    fn impl_impl_ids(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<Arc<Vec<ImplImplDefId<'db>>>> {
-        impl_impl_ids_tracked(self.as_dyn_database(), impl_def_id)
-    }
-    /// Returns the impl AST of the impl impl that matches the given id, if exists.
-    fn impl_impl_by_id(
-        &'db self,
-        impl_impl_id: ImplImplDefId<'db>,
-    ) -> Maybe<ast::ItemImplAlias<'db>> {
-        impl_impl_by_id_tracked(self.as_dyn_database(), impl_impl_id)
-    }
-    /// Returns the impl impl item that matches the given trait impl item, if exists.
-    fn impl_impl_by_trait_impl(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-        trait_impl_id: TraitImplId<'db>,
-    ) -> Maybe<ImplImplDefId<'db>> {
-        impl_impl_by_trait_impl_tracked(self.as_dyn_database(), impl_def_id, trait_impl_id)
-    }
-    /// Returns whether `trait_impl_id` is an implicit impl in `impl_def_id`.
-    fn is_implicit_impl_impl(
-        &self,
-        impl_def_id: ImplDefId<'db>,
-        trait_impl_id: TraitImplId<'db>,
-    ) -> Maybe<bool> {
-        is_implicit_impl_impl_tracked(self.as_dyn_database(), impl_def_id, trait_impl_id)
-    }
-    /// Returns the impl constant item that matches the given trait constant item, if exists.
-    fn impl_constant_by_trait_constant(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-        trait_constant_id: TraitConstantId<'db>,
-    ) -> Maybe<ImplConstantDefId<'db>> {
-        impl_constant_by_trait_constant_tracked(
-            self.as_dyn_database(),
-            impl_def_id,
-            trait_constant_id,
-        )
-    }
     /// Returns the functions in the impl.
     fn impl_functions(
         &'db self,
@@ -4647,42 +4465,9 @@ pub trait ImplSemantic<'db>: Database {
     ) -> Maybe<OrderedHashMap<StrRef<'db>, ImplFunctionId<'db>>> {
         impl_functions_tracked(self.as_dyn_database(), impl_def_id)
     }
-    /// Returns the impl function that matches the given trait function, if exists.
-    /// Note that a function that doesn't exist in the impl doesn't necessarily indicate an error,
-    /// as, e.g., a trait function that has a default implementation doesn't have to be
-    /// implemented in the impl.
-    fn impl_function_by_trait_function(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-        trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<Option<ImplFunctionId<'db>>> {
-        impl_function_by_trait_function_tracked(
-            self.as_dyn_database(),
-            impl_def_id,
-            trait_function_id,
-        )
-    }
-    /// Returns the uninferred impls in a module.
-    fn module_impl_ids(
-        &'db self,
-        user_module: ModuleId<'db>,
-        containing_module: ModuleId<'db>,
-    ) -> Maybe<Arc<BTreeSet<UninferredImplById<'db>>>> {
-        module_impl_ids_tracked(self.as_dyn_database(), user_module, containing_module)
-    }
 
     // Impl type def.
     // ================
-    /// Returns the semantic diagnostics of an impl item type.
-    fn impl_type_def_semantic_diagnostics(
-        &'db self,
-        id: ImplTypeDefId<'db>,
-    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_type_semantic_data(self.as_dyn_database(), id, false)
-            .as_ref()
-            .map(|data| data.diagnostics.clone())
-            .unwrap_or_default()
-    }
     /// Returns the resolved type of an impl item type.
     fn impl_type_def_resolved_type(&'db self, id: ImplTypeDefId<'db>) -> Maybe<TypeId<'db>> {
         impl_type_semantic_data(self.as_dyn_database(), id, false)
@@ -4719,10 +4504,6 @@ pub trait ImplSemantic<'db>: Database {
             .resolver_data
             .clone())
     }
-    /// Returns the trait type of an impl type.
-    fn impl_type_def_trait_type(&'db self, id: ImplTypeDefId<'db>) -> Maybe<TraitTypeId<'db>> {
-        impl_type_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.trait_type_id
-    }
     /// Returns the deref chain and diagnostics for a given type.
     fn deref_chain(
         &'db self,
@@ -4747,16 +4528,6 @@ pub trait ImplSemantic<'db>: Database {
 
     // Impl constant def.
     // ================
-    /// Returns the semantic diagnostics of an impl item constant.
-    fn impl_constant_def_semantic_diagnostics(
-        &'db self,
-        id: ImplConstantDefId<'db>,
-    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_constant_semantic_data(self.as_dyn_database(), id, false)
-            .as_ref()
-            .map(|data| data.diagnostics.clone())
-            .unwrap_or_default()
-    }
     /// Returns the resolved constant value of an impl item constant.
     fn impl_constant_def_value(&'db self, id: ImplConstantDefId<'db>) -> Maybe<ConstValueId<'db>> {
         Ok(impl_constant_semantic_data(self.as_dyn_database(), id, false)
@@ -4775,30 +4546,9 @@ pub trait ImplSemantic<'db>: Database {
             .resolver_data
             .clone())
     }
-    /// Returns the type of an impl item constant.
-    fn impl_constant_def_trait_constant(
-        &'db self,
-        id: ImplConstantDefId<'db>,
-    ) -> Maybe<TraitConstantId<'db>> {
-        impl_constant_semantic_data(self.as_dyn_database(), id, false)
-            .maybe_as_ref()?
-            .trait_constant_id
-    }
 
     // Impl constant.
     // ================
-    /// Returns the given impl constant, implized by the given impl context.
-    fn impl_constant_implized_by_context(
-        &'db self,
-        impl_constant_id: ImplConstantId<'db>,
-        impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<ConstValueId<'db>> {
-        impl_constant_implized_by_context_tracked(
-            self.as_dyn_database(),
-            impl_constant_id,
-            impl_def_id,
-        )
-    }
     /// Returns the implized impl constant value if the impl is concrete.
     // TODO(Gil): Consider removing the cycle handling here if we will upgrade the salsa version.
     fn impl_constant_concrete_implized_value(
@@ -4818,16 +4568,6 @@ pub trait ImplSemantic<'db>: Database {
 
     // Impl impl def.
     // ================
-    /// Returns the semantic diagnostics of an impl item impl.
-    fn impl_impl_def_semantic_diagnostics(
-        &'db self,
-        id: ImplImplDefId<'db>,
-    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        impl_impl_semantic_data(self.as_dyn_database(), id, false)
-            .as_ref()
-            .map(|data| data.diagnostics.clone())
-            .unwrap_or_default()
-    }
     /// Returns the resolution resolved_items of an impl item impl.
     fn impl_impl_def_resolver_data(
         &'db self,
@@ -4839,74 +4579,12 @@ pub trait ImplSemantic<'db>: Database {
             .resolver_data
             .clone())
     }
-    /// Returns the type of an impl item impl.
-    fn impl_impl_def_trait_impl(&'db self, id: ImplImplDefId<'db>) -> Maybe<TraitImplId<'db>> {
-        impl_impl_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.trait_impl_id
-    }
-    /// Returns the resolved impl of an impl item impl.
-    fn impl_impl_def_impl(
-        &'db self,
-        impl_impl_def_id: ImplImplDefId<'db>,
-        in_cycle: bool,
-    ) -> Maybe<ImplId<'db>> {
-        impl_impl_semantic_data(self.as_dyn_database(), impl_impl_def_id, in_cycle)
-            .maybe_as_ref()?
-            .impl_data
-            .resolved_impl
-    }
-    /// Returns the semantic diagnostics of an implicit impl.
-    fn implicit_impl_impl_semantic_diagnostics(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-        trait_impl_id: TraitImplId<'db>,
-    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        implicit_impl_impl_semantic_diagnostics_tracked(
-            self.as_dyn_database(),
-            impl_def_id,
-            trait_impl_id,
-        )
-    }
-    /// Returns the resolved impl of an implicit impl.
-    fn implicit_impl_impl_impl(
-        &'db self,
-        impl_def_id: ImplDefId<'db>,
-        trait_impl_id: TraitImplId<'db>,
-        in_cycle: bool,
-    ) -> Maybe<ImplId<'db>> {
-        implicit_impl_impl_impl_tracked(
-            self.as_dyn_database(),
-            impl_def_id,
-            trait_impl_id,
-            in_cycle,
-        )
-    }
 
     // Impl impl.
     // ================
-    /// Returns the implized impl impl if the impl is concrete.
-    fn impl_impl_implized_by_context(
-        &'db self,
-        impl_impl_id: ImplImplId<'db>,
-        impl_def_id: ImplDefId<'db>,
-        in_cycle: bool,
-    ) -> Maybe<ImplId<'db>> {
-        impl_impl_implized_by_context_tracked(
-            self.as_dyn_database(),
-            impl_impl_id,
-            impl_def_id,
-            in_cycle,
-        )
-    }
     /// Returns the implized impl impl value if the impl is concrete.
     fn impl_impl_concrete_implized(&'db self, impl_impl_id: ImplImplId<'db>) -> Maybe<ImplId<'db>> {
         impl_impl_concrete_implized_tracked(self.as_dyn_database(), impl_impl_id)
-    }
-    /// Returns the concrete trait of an impl impl.
-    fn impl_impl_concrete_trait(
-        &'db self,
-        impl_impl_id: ImplImplId<'db>,
-    ) -> Maybe<ConcreteTraitId<'db>> {
-        impl_impl_concrete_trait_tracked(self.as_dyn_database(), impl_impl_id)
     }
 
     // Impl function.
@@ -4983,18 +4661,6 @@ pub trait ImplSemantic<'db>: Database {
             .implicit_precedence
             .clone())
     }
-    /// Returns the explicit implicits of a signature of an impl function.
-    fn impl_function_declaration_implicits(
-        &'db self,
-        id: ImplFunctionId<'db>,
-    ) -> Maybe<Vec<TypeId<'db>>> {
-        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
-            .maybe_as_ref()?
-            .function_declaration_data
-            .signature
-            .implicits
-            .clone())
-    }
     /// Returns the trait function of an impl function.
     fn impl_function_trait_function(
         &'db self,
@@ -5030,6 +4696,212 @@ pub trait ImplSemantic<'db>: Database {
     ) -> Maybe<&'db FunctionBodyData<'db>> {
         priv_impl_function_body_data_tracked(self.as_dyn_database(), impl_function_id)
             .maybe_as_ref()
+    }
+}
+impl<'db, T: Database + ?Sized> ImplSemantic<'db> for T {}
+
+/// Trait for private impl-related semantic queries.
+trait PrivImplSemantic<'db>: Database {
+    /// Returns the substitution for generics for the impl.
+    fn impl_def_substitution(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<Arc<GenericSubstitution<'db>>> {
+        impl_def_substitution(self.as_dyn_database(), impl_def_id)
+    }
+    /// Returns the shallow trait generic arguments of an impl.
+    fn impl_def_shallow_trait_generic_args(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
+        impl_def_shallow_trait_generic_args(self.as_dyn_database(), impl_def_id)
+    }
+    /// Returns the shallow trait generic arguments of an impl alias.
+    fn impl_alias_trait_generic_args(
+        &'db self,
+        impl_def_id: ImplAliasId<'db>,
+    ) -> Maybe<&'db [(GenericParamId<'db>, ShallowGenericArg<'db>)]> {
+        impl_alias_trait_generic_args(self.as_dyn_database(), impl_def_id)
+    }
+    /// Returns the item of the impl, by the given `name`, if exists.
+    fn impl_item_by_name(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+        name: StrRef<'db>,
+    ) -> Maybe<Option<ImplItemId<'db>>> {
+        impl_item_by_name_tracked(self.as_dyn_database(), impl_def_id, name)
+    }
+    /// Returns the trait impl of an implicit impl if `name` exists in trait and not in the impl.
+    fn impl_implicit_impl_by_name(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+        name: StrRef<'db>,
+    ) -> Maybe<Option<TraitImplId<'db>>> {
+        impl_implicit_impl_by_name_tracked(self.as_dyn_database(), impl_def_id, name)
+    }
+    /// Returns the impl AST of the impl type that matches the given id, if exists.
+    fn impl_type_by_id(
+        &'db self,
+        impl_type_id: ImplTypeDefId<'db>,
+    ) -> Maybe<ast::ItemTypeAlias<'db>> {
+        impl_type_by_id_tracked(self.as_dyn_database(), impl_type_id)
+    }
+    /// Returns the impls items in the impl.
+    fn impl_impls(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<Arc<OrderedHashMap<ImplImplDefId<'db>, ast::ItemImplAlias<'db>>>> {
+        impl_impls_tracked(self.as_dyn_database(), impl_def_id)
+    }
+    /// Returns the impl AST of the impl impl that matches the given id, if exists.
+    fn impl_impl_by_id(
+        &'db self,
+        impl_impl_id: ImplImplDefId<'db>,
+    ) -> Maybe<ast::ItemImplAlias<'db>> {
+        impl_impl_by_id_tracked(self.as_dyn_database(), impl_impl_id)
+    }
+    /// Returns the impl impl item that matches the given trait impl item, if exists.
+    fn impl_impl_by_trait_impl(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+        trait_impl_id: TraitImplId<'db>,
+    ) -> Maybe<ImplImplDefId<'db>> {
+        impl_impl_by_trait_impl_tracked(self.as_dyn_database(), impl_def_id, trait_impl_id)
+    }
+    /// Returns whether `trait_impl_id` is an implicit impl in `impl_def_id`.
+    fn is_implicit_impl_impl(
+        &self,
+        impl_def_id: ImplDefId<'db>,
+        trait_impl_id: TraitImplId<'db>,
+    ) -> Maybe<bool> {
+        is_implicit_impl_impl_tracked(self.as_dyn_database(), impl_def_id, trait_impl_id)
+    }
+    /// Returns the impl constant item that matches the given trait constant item, if exists.
+    fn impl_constant_by_trait_constant(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+        trait_constant_id: TraitConstantId<'db>,
+    ) -> Maybe<ImplConstantDefId<'db>> {
+        impl_constant_by_trait_constant_tracked(
+            self.as_dyn_database(),
+            impl_def_id,
+            trait_constant_id,
+        )
+    }
+    /// Returns the impl function that matches the given trait function, if exists.
+    /// Note that a function that doesn't exist in the impl doesn't necessarily indicate an error,
+    /// as, e.g., a trait function that has a default implementation doesn't have to be
+    /// implemented in the impl.
+    fn impl_function_by_trait_function(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+        trait_function_id: TraitFunctionId<'db>,
+    ) -> Maybe<Option<ImplFunctionId<'db>>> {
+        impl_function_by_trait_function_tracked(
+            self.as_dyn_database(),
+            impl_def_id,
+            trait_function_id,
+        )
+    }
+    /// Returns the semantic diagnostics of an impl item type.
+    fn impl_type_def_semantic_diagnostics(
+        &'db self,
+        id: ImplTypeDefId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        impl_type_semantic_data(self.as_dyn_database(), id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
+    }
+    /// Returns the semantic diagnostics of an impl item constant.
+    fn impl_constant_def_semantic_diagnostics(
+        &'db self,
+        id: ImplConstantDefId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        impl_constant_semantic_data(self.as_dyn_database(), id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
+    }
+    /// Returns the given impl constant, implized by the given impl context.
+    fn impl_constant_implized_by_context(
+        &'db self,
+        impl_constant_id: ImplConstantId<'db>,
+        impl_def_id: ImplDefId<'db>,
+    ) -> Maybe<ConstValueId<'db>> {
+        impl_constant_implized_by_context_tracked(
+            self.as_dyn_database(),
+            impl_constant_id,
+            impl_def_id,
+        )
+    }
+    /// Returns the semantic diagnostics of an impl item impl.
+    fn impl_impl_def_semantic_diagnostics(
+        &'db self,
+        id: ImplImplDefId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        impl_impl_semantic_data(self.as_dyn_database(), id, false)
+            .as_ref()
+            .map(|data| data.diagnostics.clone())
+            .unwrap_or_default()
+    }
+    /// Returns the resolved impl of an impl item impl.
+    fn impl_impl_def_impl(
+        &'db self,
+        impl_impl_def_id: ImplImplDefId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplId<'db>> {
+        impl_impl_semantic_data(self.as_dyn_database(), impl_impl_def_id, in_cycle)
+            .maybe_as_ref()?
+            .impl_data
+            .resolved_impl
+    }
+    /// Returns the semantic diagnostics of an implicit impl.
+    fn implicit_impl_impl_semantic_diagnostics(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+        trait_impl_id: TraitImplId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        implicit_impl_impl_semantic_diagnostics_tracked(
+            self.as_dyn_database(),
+            impl_def_id,
+            trait_impl_id,
+        )
+    }
+    /// Returns the resolved impl of an implicit impl.
+    fn implicit_impl_impl_impl(
+        &'db self,
+        impl_def_id: ImplDefId<'db>,
+        trait_impl_id: TraitImplId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplId<'db>> {
+        implicit_impl_impl_impl_tracked(
+            self.as_dyn_database(),
+            impl_def_id,
+            trait_impl_id,
+            in_cycle,
+        )
+    }
+    /// Returns the implized impl impl if the impl is concrete.
+    fn impl_impl_implized_by_context(
+        &'db self,
+        impl_impl_id: ImplImplId<'db>,
+        impl_def_id: ImplDefId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<ImplId<'db>> {
+        impl_impl_implized_by_context_tracked(
+            self.as_dyn_database(),
+            impl_impl_id,
+            impl_def_id,
+            in_cycle,
+        )
+    }
+    /// Returns the concrete trait of an impl impl.
+    fn impl_impl_concrete_trait(
+        &'db self,
+        impl_impl_id: ImplImplId<'db>,
+    ) -> Maybe<ConcreteTraitId<'db>> {
+        impl_impl_concrete_trait_tracked(self.as_dyn_database(), impl_impl_id)
     }
     /// Returns the uninferred impls of a crate which are global.
     /// An impl is global if it is defined in the same module as the trait it implements or in the
@@ -5072,4 +4944,4 @@ pub trait ImplSemantic<'db>: Database {
         trait_candidate_by_head(self.as_dyn_database(), crate_id, trait_id)
     }
 }
-impl<'db, T: Database + ?Sized> ImplSemantic<'db> for T {}
+impl<'db, T: Database + ?Sized> PrivImplSemantic<'db> for T {}

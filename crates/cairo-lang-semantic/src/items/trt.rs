@@ -287,7 +287,7 @@ impl<'db> ConcreteTraitImplId<'db> {
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct TraitDeclarationData<'db> {
+struct TraitDeclarationData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     attributes: Vec<Attribute<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
@@ -337,7 +337,7 @@ fn trait_generic_params_cycle<'db>(
     Ok(db.trait_generic_params_data(trait_id, true)?.generic_params)
 }
 
-/// Implementation of [TraitSemantic::trait_generic_params_data].
+/// Implementation of [PrivTraitSemantic::trait_generic_params_data].
 fn trait_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
@@ -379,7 +379,7 @@ fn trait_generic_params_data_tracked<'db>(
     trait_generic_params_data(db, trait_id, in_cycle)
 }
 
-/// Cycle handling for [TraitSemantic::trait_generic_params_data].
+/// Cycle handling for [PrivTraitSemantic::trait_generic_params_data].
 fn trait_generic_params_data_cycle<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
@@ -507,7 +507,7 @@ fn priv_trait_declaration_data_tracked<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct TraitDefinitionData<'db> {
+struct TraitDefinitionData<'db> {
     /// The diagnostics here are "flat" - that is, only the diagnostics found on the trait level
     /// itself, and don't include the diagnostics of its items. The reason it's this way is that
     /// computing the items' diagnostics require a query about their trait, forming a cycle of
@@ -859,7 +859,7 @@ fn trait_impl_by_name_tracked<'db>(
 
 // --- Computation ---
 
-/// Implementation of [TraitSemantic::priv_trait_definition_data].
+/// Implementation of [PrivTraitSemantic::priv_trait_definition_data].
 fn priv_trait_definition_data<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
@@ -1001,7 +1001,7 @@ fn priv_trait_definition_data_tracked<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct TraitItemTypeData<'db> {
+struct TraitItemTypeData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     pub attributes: Vec<Attribute<'db>>,
     pub resolver_data: Arc<ResolverData<'db>>,
@@ -1009,7 +1009,7 @@ pub struct TraitItemTypeData<'db> {
 
 // --- Selectors ---
 
-/// Implementation of [TraitSemantic::trait_type_diagnostics].
+/// Implementation of [PrivTraitSemantic::trait_type_diagnostics].
 fn trait_type_diagnostics<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
@@ -1079,7 +1079,7 @@ fn trait_type_resolver_data_tracked<'db>(
 
 // --- Computation ---
 
-/// Implementation of [TraitSemantic::priv_trait_type_generic_params_data].
+/// Implementation of [PrivTraitSemantic::priv_trait_type_generic_params_data].
 fn priv_trait_type_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
@@ -1133,7 +1133,7 @@ fn priv_trait_type_generic_params_data_tracked<'db>(
     priv_trait_type_generic_params_data(db, trait_type_id)
 }
 
-/// Implementation of [TraitSemantic::priv_trait_type_data].
+/// Implementation of [PrivTraitSemantic::priv_trait_type_data].
 fn priv_trait_type_data<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
@@ -1172,7 +1172,7 @@ fn priv_trait_type_data_tracked<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct TraitItemConstantData<'db> {
+struct TraitItemConstantData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     pub ty: TypeId<'db>,
     pub attributes: Vec<Attribute<'db>>,
@@ -1181,7 +1181,7 @@ pub struct TraitItemConstantData<'db> {
 
 // --- Selectors ---
 
-/// Implementation of [TraitSemantic::trait_constant_diagnostics].
+/// Implementation of [PrivTraitSemantic::trait_constant_diagnostics].
 fn trait_constant_diagnostics<'db>(
     db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
@@ -1251,7 +1251,7 @@ fn trait_constant_type_tracked<'db>(
 
 // --- Computation ---
 
-/// Implementation of [TraitSemantic::priv_trait_constant_data].
+/// Implementation of [PrivTraitSemantic::priv_trait_constant_data].
 fn priv_trait_constant_data<'db>(
     db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
@@ -1311,16 +1311,16 @@ fn concrete_trait_constant_type_tracked<'db>(
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
 #[debug_db(dyn Database)]
-pub struct TraitItemImplData<'db> {
-    pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    pub concrete_trait: Maybe<ConcreteTraitId<'db>>,
-    pub attributes: Vec<Attribute<'db>>,
-    pub resolver_data: Arc<ResolverData<'db>>,
+struct TraitItemImplData<'db> {
+    diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    concrete_trait: Maybe<ConcreteTraitId<'db>>,
+    attributes: Vec<Attribute<'db>>,
+    resolver_data: Arc<ResolverData<'db>>,
 }
 
 // --- Selectors ---
 
-/// Implementation of [TraitSemantic::trait_impl_diagnostics].
+/// Implementation of [PrivTraitSemantic::trait_impl_diagnostics].
 fn trait_impl_diagnostics<'db>(
     db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
@@ -1354,23 +1354,6 @@ fn trait_impl_resolver_data_tracked<'db>(
     trait_impl_resolver_data(db, trait_impl)
 }
 
-/// Implementation of [TraitSemantic::trait_impl_attributes].
-fn trait_impl_attributes<'db>(
-    db: &'db dyn Database,
-    trait_impl: TraitImplId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    Ok(db.priv_trait_impl_data(trait_impl)?.attributes)
-}
-
-/// Query implementation of [TraitSemantic::trait_impl_attributes].
-#[salsa::tracked]
-fn trait_impl_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    trait_impl: TraitImplId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    trait_impl_attributes(db, trait_impl)
-}
-
 /// Implementation of [TraitSemantic::trait_impl_concrete_trait].
 fn trait_impl_concrete_trait<'db>(
     db: &'db dyn Database,
@@ -1390,7 +1373,7 @@ fn trait_impl_concrete_trait_tracked<'db>(
 
 // --- Computation ---
 
-/// Implementation of [TraitSemantic::priv_trait_impl_data].
+/// Implementation of [PrivTraitSemantic::priv_trait_impl_data].
 fn priv_trait_impl_data<'db>(
     db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
@@ -1513,7 +1496,7 @@ fn trait_function_generic_params_tracked<'db>(
     trait_function_generic_params(db, trait_function_id)
 }
 
-/// Implementation of [TraitSemantic::priv_trait_function_generic_params_data].
+/// Implementation of [PrivTraitSemantic::priv_trait_function_generic_params_data].
 fn priv_trait_function_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
@@ -1627,26 +1610,9 @@ fn trait_function_declaration_implicit_precedence_tracked<'db>(
     trait_function_declaration_implicit_precedence(db, trait_function_id)
 }
 
-/// Implementation of [TraitSemantic::trait_function_declaration_implicits].
-fn trait_function_declaration_implicits<'db>(
-    db: &'db dyn Database,
-    trait_function_id: TraitFunctionId<'db>,
-) -> Maybe<Vec<TypeId<'db>>> {
-    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.signature.implicits)
-}
-
-/// Query implementation of [TraitSemantic::trait_function_declaration_implicits].
-#[salsa::tracked]
-fn trait_function_declaration_implicits_tracked<'db>(
-    db: &'db dyn Database,
-    trait_function_id: TraitFunctionId<'db>,
-) -> Maybe<Vec<TypeId<'db>>> {
-    trait_function_declaration_implicits(db, trait_function_id)
-}
-
 // --- Computation ---
 
-/// Implementation of [TraitSemantic::priv_trait_function_declaration_data].
+/// Implementation of [PrivTraitSemantic::priv_trait_function_declaration_data].
 fn priv_trait_function_declaration_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
@@ -1919,14 +1885,6 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_generic_params(&'db self, trait_id: TraitId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
         trait_generic_params_tracked(self.as_dyn_database(), trait_id)
     }
-    /// Returns the generic parameters data of a trait.
-    fn trait_generic_params_data(
-        &'db self,
-        trait_id: TraitId<'db>,
-        in_cycle: bool,
-    ) -> Maybe<GenericParamsData<'db>> {
-        trait_generic_params_data_tracked(self.as_dyn_database(), trait_id, in_cycle)
-    }
     /// Returns the ids of the generic parameters of a trait.
     fn trait_generic_params_ids(
         &'db self,
@@ -1941,13 +1899,6 @@ pub trait TraitSemantic<'db>: Database {
     /// Returns the resolution resolved_items of a trait.
     fn trait_resolver_data(&'db self, trait_id: TraitId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
         trait_resolver_data_tracked(self.as_dyn_database(), trait_id)
-    }
-    /// Private query to compute declaration data about a trait.
-    fn priv_trait_declaration_data(
-        &'db self,
-        trait_id: TraitId<'db>,
-    ) -> Maybe<TraitDeclarationData<'db>> {
-        priv_trait_declaration_data_tracked(self.as_dyn_database(), trait_id)
     }
     /// Returns the semantic definition diagnostics of a trait.
     fn trait_semantic_definition_diagnostics(
@@ -2046,23 +1997,9 @@ pub trait TraitSemantic<'db>: Database {
     ) -> Maybe<Option<TraitImplId<'db>>> {
         trait_impl_by_name_tracked(self.as_dyn_database(), trait_id, name)
     }
-    /// Private query to compute definition data about a trait.
-    fn priv_trait_definition_data(
-        &'db self,
-        trait_id: TraitId<'db>,
-    ) -> Maybe<TraitDefinitionData<'db>> {
-        priv_trait_definition_data_tracked(self.as_dyn_database(), trait_id)
-    }
 
     // Trait type.
     // ================
-    /// Returns the semantic diagnostics of a trait type.
-    fn trait_type_diagnostics(
-        &'db self,
-        trait_type_id: TraitTypeId<'db>,
-    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        trait_type_diagnostics_tracked(self.as_dyn_database(), trait_type_id)
-    }
     /// Returns the generic params of a trait type.
     fn trait_type_generic_params(
         &'db self,
@@ -2084,27 +2021,9 @@ pub trait TraitSemantic<'db>: Database {
     ) -> Maybe<Arc<ResolverData<'db>>> {
         trait_type_resolver_data_tracked(self.as_dyn_database(), trait_type_id)
     }
-    /// Private query to compute the generic params data of a trait type.
-    fn priv_trait_type_generic_params_data(
-        &'db self,
-        trait_type_id: TraitTypeId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
-        priv_trait_type_generic_params_data_tracked(self.as_dyn_database(), trait_type_id)
-    }
-    /// Private query to compute data about a trait type.
-    fn priv_trait_type_data(&'db self, type_id: TraitTypeId<'db>) -> Maybe<TraitItemTypeData<'db>> {
-        priv_trait_type_data_tracked(self.as_dyn_database(), type_id)
-    }
 
     // Trait constants.
     // ================
-    /// Returns the semantic diagnostics of a trait type.
-    fn trait_constant_diagnostics(
-        &'db self,
-        trait_constant: TraitConstantId<'db>,
-    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        trait_constant_diagnostics_tracked(self.as_dyn_database(), trait_constant)
-    }
     /// Returns the attributes of a trait constants.
     fn trait_constant_attributes(
         &'db self,
@@ -2123,13 +2042,6 @@ pub trait TraitSemantic<'db>: Database {
     ) -> Maybe<Arc<ResolverData<'db>>> {
         trait_constant_resolver_data_tracked(self.as_dyn_database(), trait_constant)
     }
-    /// Private query to compute data about a trait constant.
-    fn priv_trait_constant_data(
-        &'db self,
-        trait_constant: TraitConstantId<'db>,
-    ) -> Maybe<TraitItemConstantData<'db>> {
-        priv_trait_constant_data_tracked(self.as_dyn_database(), trait_constant)
-    }
     /// Returns the type of a trait constant.
     fn concrete_trait_constant_type(
         &'db self,
@@ -2140,20 +2052,6 @@ pub trait TraitSemantic<'db>: Database {
 
     // Trait impls.
     // ================
-    /// Returns the semantic diagnostics of a trait impls.
-    fn trait_impl_diagnostics(
-        &'db self,
-        trait_impl: TraitImplId<'db>,
-    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-        trait_impl_diagnostics_tracked(self.as_dyn_database(), trait_impl)
-    }
-    /// Returns the attributes of a trait impls.
-    fn trait_impl_attributes(
-        &'db self,
-        trait_impl: TraitImplId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
-        trait_impl_attributes_tracked(self.as_dyn_database(), trait_impl)
-    }
     /// Returns the concrete trait of a trait impl.
     fn trait_impl_concrete_trait(
         &'db self,
@@ -2167,13 +2065,6 @@ pub trait TraitSemantic<'db>: Database {
         trait_impl: TraitImplId<'db>,
     ) -> Maybe<Arc<ResolverData<'db>>> {
         trait_impl_resolver_data_tracked(self.as_dyn_database(), trait_impl)
-    }
-    /// Private query to compute data about a trait impl.
-    fn priv_trait_impl_data(
-        &'db self,
-        trait_impl: TraitImplId<'db>,
-    ) -> Maybe<TraitItemImplData<'db>> {
-        priv_trait_impl_data_tracked(self.as_dyn_database(), trait_impl)
     }
     /// Returns the concrete trait of a concrete trait impl.
     fn concrete_trait_impl_concrete_trait(
@@ -2206,13 +2097,6 @@ pub trait TraitSemantic<'db>: Database {
     ) -> Maybe<Vec<GenericParam<'db>>> {
         trait_function_generic_params_tracked(self.as_dyn_database(), trait_function_id)
     }
-    /// Returns the generic params data of a trait function.
-    fn priv_trait_function_generic_params_data(
-        &'db self,
-        trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
-        priv_trait_function_generic_params_data_tracked(self.as_dyn_database(), trait_function_id)
-    }
     /// Returns the attributes of a trait function.
     fn trait_function_attributes(
         &'db self,
@@ -2243,20 +2127,6 @@ pub trait TraitSemantic<'db>: Database {
             self.as_dyn_database(),
             trait_function_id,
         )
-    }
-    /// Returns the explicit implicits of a signature of a trait function.
-    fn trait_function_declaration_implicits(
-        &'db self,
-        trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<Vec<TypeId<'db>>> {
-        trait_function_declaration_implicits_tracked(self.as_dyn_database(), trait_function_id)
-    }
-    /// Private query to compute data about a trait function declaration.
-    fn priv_trait_function_declaration_data(
-        &'db self,
-        function_id: TraitFunctionId<'db>,
-    ) -> Maybe<FunctionDeclarationData<'db>> {
-        priv_trait_function_declaration_data_tracked(self.as_dyn_database(), function_id)
     }
     /// Returns the semantic diagnostics of a trait function definition (declaration + body).
     fn trait_function_body_diagnostics(
@@ -2314,3 +2184,90 @@ pub trait TraitSemantic<'db>: Database {
     }
 }
 impl<'db, T: Database + ?Sized> TraitSemantic<'db> for T {}
+
+/// Trait for private trait-related semantic queries.
+trait PrivTraitSemantic<'db>: Database {
+    /// Returns the generic parameters data of a trait.
+    fn trait_generic_params_data(
+        &'db self,
+        trait_id: TraitId<'db>,
+        in_cycle: bool,
+    ) -> Maybe<GenericParamsData<'db>> {
+        trait_generic_params_data_tracked(self.as_dyn_database(), trait_id, in_cycle)
+    }
+    /// Private query to compute declaration data about a trait.
+    fn priv_trait_declaration_data(
+        &'db self,
+        trait_id: TraitId<'db>,
+    ) -> Maybe<TraitDeclarationData<'db>> {
+        priv_trait_declaration_data_tracked(self.as_dyn_database(), trait_id)
+    }
+    /// Private query to compute definition data about a trait.
+    fn priv_trait_definition_data(
+        &'db self,
+        trait_id: TraitId<'db>,
+    ) -> Maybe<TraitDefinitionData<'db>> {
+        priv_trait_definition_data_tracked(self.as_dyn_database(), trait_id)
+    }
+    /// Returns the semantic diagnostics of a trait type.
+    fn trait_type_diagnostics(
+        &'db self,
+        trait_type_id: TraitTypeId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        trait_type_diagnostics_tracked(self.as_dyn_database(), trait_type_id)
+    }
+    /// Returns the semantic diagnostics of a trait impls.
+    fn trait_impl_diagnostics(
+        &'db self,
+        trait_impl: TraitImplId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        trait_impl_diagnostics_tracked(self.as_dyn_database(), trait_impl)
+    }
+    /// Private query to compute the generic params data of a trait type.
+    fn priv_trait_type_generic_params_data(
+        &'db self,
+        trait_type_id: TraitTypeId<'db>,
+    ) -> Maybe<GenericParamsData<'db>> {
+        priv_trait_type_generic_params_data_tracked(self.as_dyn_database(), trait_type_id)
+    }
+    /// Private query to compute data about a trait type.
+    fn priv_trait_type_data(&'db self, type_id: TraitTypeId<'db>) -> Maybe<TraitItemTypeData<'db>> {
+        priv_trait_type_data_tracked(self.as_dyn_database(), type_id)
+    }
+    /// Returns the semantic diagnostics of a trait type.
+    fn trait_constant_diagnostics(
+        &'db self,
+        trait_constant: TraitConstantId<'db>,
+    ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        trait_constant_diagnostics_tracked(self.as_dyn_database(), trait_constant)
+    }
+    /// Private query to compute data about a trait constant.
+    fn priv_trait_constant_data(
+        &'db self,
+        trait_constant: TraitConstantId<'db>,
+    ) -> Maybe<TraitItemConstantData<'db>> {
+        priv_trait_constant_data_tracked(self.as_dyn_database(), trait_constant)
+    }
+    /// Private query to compute data about a trait impl.
+    fn priv_trait_impl_data(
+        &'db self,
+        trait_impl: TraitImplId<'db>,
+    ) -> Maybe<TraitItemImplData<'db>> {
+        priv_trait_impl_data_tracked(self.as_dyn_database(), trait_impl)
+    }
+    /// Returns the generic params data of a trait function.
+    fn priv_trait_function_generic_params_data(
+        &'db self,
+        trait_function_id: TraitFunctionId<'db>,
+    ) -> Maybe<GenericParamsData<'db>> {
+        priv_trait_function_generic_params_data_tracked(self.as_dyn_database(), trait_function_id)
+    }
+    /// Private query to compute data about a trait function declaration.
+    fn priv_trait_function_declaration_data(
+        &'db self,
+        function_id: TraitFunctionId<'db>,
+    ) -> Maybe<FunctionDeclarationData<'db>> {
+        priv_trait_function_declaration_data_tracked(self.as_dyn_database(), function_id)
+    }
+}
+impl<'db, T: Database + ?Sized> PrivTraitSemantic<'db> for T {}
