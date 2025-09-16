@@ -3780,7 +3780,8 @@ fn get_enriched_type_member_access<'db>(
                 deref_chain: ctx
                     .db
                     .deref_chain(ty, ctx.resolver.owning_crate_id, is_mut_var)?
-                    .derefs,
+                    .derefs
+                    .clone(),
                 explored_derefs: 0,
             }
         }

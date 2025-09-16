@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
     TraitId, UseId,
 };
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::ids::{StrRef, Tracked};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
@@ -213,11 +213,13 @@ pub fn get_module_global_uses<'db>(
     Ok(module_data.global_uses.clone())
 }
 
-/// Implementation of [ModuleSemantic::module_all_used_uses].
+/// Query implementation of [ModuleSemantic::module_all_used_uses].
+#[salsa::tracked(returns(ref))]
 pub fn module_all_used_uses<'db>(
     db: &'db dyn Database,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
-) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
+) -> Maybe<OrderedHashSet<UseId<'db>>> {
     let mut all_used_uses = OrderedHashSet::default();
     let module_items = module_id.module_data(db)?.items(db);
     for item in module_items.iter() {
@@ -236,24 +238,7 @@ pub fn module_all_used_uses<'db>(
             }
         }
     }
-    Ok(all_used_uses.into())
-}
-
-/// Query implementation of [ModuleSemantic::module_all_used_uses].
-fn module_all_used_uses_tracked<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
-    module_all_used_uses_helper(db, (), module_id)
-}
-
-#[salsa::tracked]
-fn module_all_used_uses_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    module_id: ModuleId<'db>,
-) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
-    module_all_used_uses(db, module_id)
+    Ok(all_used_uses)
 }
 
 /// Implementation of [ModuleSemantic::module_attributes].
@@ -442,8 +427,8 @@ pub trait ModuleSemantic<'db>: Database {
     fn module_all_used_uses(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<Arc<OrderedHashSet<UseId<'db>>>> {
-        module_all_used_uses_tracked(self.as_dyn_database(), module_id)
+    ) -> Maybe<&'db OrderedHashSet<UseId<'db>>> {
+        module_all_used_uses(self.as_dyn_database(), (), module_id).maybe_as_ref()
     }
     /// Returns the attributes of a module.
     fn module_attributes(&'db self, module_id: ModuleId<'db>) -> Maybe<Vec<Attribute<'db>>> {

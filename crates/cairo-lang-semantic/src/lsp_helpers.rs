@@ -46,24 +46,26 @@ pub fn methods_in_module<'db>(
         return result.into();
     };
     for trait_id in module_traits_ids.iter().copied() {
-        for (_, trait_function) in db.trait_functions(trait_id).unwrap_or_default() {
-            let Ok(signature) = db.trait_function_signature(trait_function) else {
-                continue;
-            };
-            let Some(first_param) = signature.params.first() else {
-                continue;
-            };
-            if first_param.name != SELF_PARAM_KW {
-                continue;
-            }
-            if let TypeFilter::TypeHead(type_head) = &type_filter
-                && let Some(head) = first_param.ty.head(db)
-                && !fit_for_method(&head, type_head)
-            {
-                continue;
-            }
+        if let Ok(trait_functions) = db.trait_functions(trait_id) {
+            for trait_function in trait_functions.values() {
+                let Ok(signature) = db.trait_function_signature(*trait_function) else {
+                    continue;
+                };
+                let Some(first_param) = signature.params.first() else {
+                    continue;
+                };
+                if first_param.name != SELF_PARAM_KW {
+                    continue;
+                }
+                if let TypeFilter::TypeHead(type_head) = &type_filter
+                    && let Some(head) = first_param.ty.head(db)
+                    && !fit_for_method(&head, type_head)
+                {
+                    continue;
+                }
 
-            result.push(trait_function)
+                result.push(*trait_function)
+            }
         }
     }
     Arc::new(result)
