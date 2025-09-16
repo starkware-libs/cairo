@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
@@ -45,26 +43,13 @@ pub struct ModuleSemanticData<'db> {
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
 
-fn priv_module_semantic_data_tracked<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-) -> Maybe<Arc<ModuleSemanticData<'db>>> {
-    priv_module_semantic_data_helper(db, (), module_id)
-}
-
-#[salsa::tracked]
-fn priv_module_semantic_data_helper<'db>(
+/// Query implementation of [ModuleSemantic::priv_module_semantic_data].
+#[salsa::tracked(returns(ref))]
+fn priv_module_semantic_data<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     module_id: ModuleId<'db>,
-) -> Maybe<Arc<ModuleSemanticData<'db>>> {
-    priv_module_semantic_data(db, module_id)
-}
-
-fn priv_module_semantic_data<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-) -> Maybe<Arc<ModuleSemanticData<'db>>> {
+) -> Maybe<ModuleSemanticData<'db>> {
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();
@@ -147,7 +132,7 @@ fn priv_module_semantic_data<'db>(
             (*global_use_id, Visibility::from_ast(db, &mut diagnostics, &visibility))
         })
         .collect();
-    Ok(Arc::new(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() }))
+    Ok(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() })
 }
 
 pub fn module_item_by_name<'db>(
@@ -274,54 +259,36 @@ fn module_attributes_helper<'db>(
 }
 
 /// Finds all the trait ids usable in the current context, using `global use` imports.
-/// Implementation of [ModuleSemantic::module_usable_trait_ids].
+/// Query implementation of [ModuleSemantic::module_usable_trait_ids].
+#[salsa::tracked(returns(ref))]
 pub fn module_usable_trait_ids<'db>(
     db: &'db dyn Database,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
-) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
+) -> OrderedHashMap<TraitId<'db>, LookupItemId<'db>> {
     let mut module_traits = OrderedHashMap::<TraitId<'db>, LookupItemId<'db>>::default();
     for (containing_module, info) in db.module_imported_modules((), module_id).iter() {
         for defined_module in
             chain!([containing_module], module_macro_modules(db, false, *containing_module))
         {
-            if let Ok(star_module_traits) =
-                specific_module_usable_trait_ids(db, info, *defined_module)
-            {
-                for (trait_id, local_item_id) in star_module_traits {
-                    module_traits.entry(trait_id).or_insert(local_item_id);
-                }
-            }
+            extend_specific_module_usable_trait_ids(db, info, *defined_module, &mut module_traits);
         }
     }
-    Ok(module_traits.into())
+    module_traits
 }
 
-/// Query implementation of [ModuleSemantic::module_usable_trait_ids].
-fn module_usable_trait_ids_tracked<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
-    module_usable_trait_ids_helper(db, (), module_id)
-}
-
-#[salsa::tracked]
-fn module_usable_trait_ids_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    module_id: ModuleId<'db>,
-) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
-    module_usable_trait_ids(db, module_id)
-}
-
-/// Finds all the trait ids usable in the current context, not using `global use` imports.
-fn specific_module_usable_trait_ids<'db>(
+/// Extends the `module_traits` with all the trait ids usable in the current context, not using
+/// `global use` imports.
+fn extend_specific_module_usable_trait_ids<'db>(
     db: &'db dyn Database,
     info: &ImportInfo<'db>,
     containing_module: ModuleId<'db>,
-) -> Maybe<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>> {
-    let mut module_traits: OrderedHashMap<TraitId<'_>, LookupItemId<'_>> =
-        OrderedHashMap::default();
-    for item in db.priv_module_semantic_data(containing_module)?.items.values() {
+    module_traits: &mut OrderedHashMap<TraitId<'db>, LookupItemId<'db>>,
+) {
+    let Ok(data) = db.priv_module_semantic_data(containing_module) else {
+        return;
+    };
+    for item in data.items.values() {
         if !matches!(
             item.item_id,
             ModuleItemId::Trait(_)
@@ -339,7 +306,8 @@ fn specific_module_usable_trait_ids<'db>(
         match item.item_id {
             ModuleItemId::Trait(trait_id) => {
                 module_traits
-                    .insert(trait_id, LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
+                    .entry(trait_id)
+                    .or_insert(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
             }
             ModuleItemId::Impl(impl_def_id) => {
                 // Add traits from impls in the module.
@@ -387,7 +355,6 @@ fn specific_module_usable_trait_ids<'db>(
             _ => {}
         }
     }
-    Ok(module_traits)
 }
 
 impl<'db> HasFeatureKind<'db> for ModuleItemInfo<'db> {
@@ -402,8 +369,8 @@ pub trait ModuleSemantic<'db>: Database {
     fn priv_module_semantic_data(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<Arc<ModuleSemanticData<'db>>> {
-        priv_module_semantic_data_tracked(self.as_dyn_database(), module_id)
+    ) -> Maybe<&'db ModuleSemanticData<'db>> {
+        priv_module_semantic_data(self.as_dyn_database(), (), module_id).maybe_as_ref()
     }
     /// Returns [Maybe::Err] if the module was not properly resolved.
     /// Returns [Maybe::Ok(None)] if the item does not exist.
@@ -438,8 +405,8 @@ pub trait ModuleSemantic<'db>: Database {
     fn module_usable_trait_ids(
         &'db self,
         module_id: ModuleId<'db>,
-    ) -> Maybe<Arc<OrderedHashMap<TraitId<'db>, LookupItemId<'db>>>> {
-        module_usable_trait_ids_tracked(self.as_dyn_database(), module_id)
+    ) -> &'db OrderedHashMap<TraitId<'db>, LookupItemId<'db>> {
+        module_usable_trait_ids(self.as_dyn_database(), (), module_id)
     }
 }
 
