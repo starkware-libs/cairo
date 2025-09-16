@@ -42,6 +42,7 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
+use crate::IndexView;
 use crate::array::{ArrayTrait, Span, SpanTrait};
 use crate::bytes_31::split_bytes31;
 #[allow(unused_imports)]
@@ -687,6 +688,27 @@ pub impl ByteArraySpanImpl of ByteSpanTrait {
         ba
     }
 
+    fn at(self: @ByteSpan, index: usize) -> Option<u8> {
+        let actual_index = index.checked_add(upcast(self.first_char_start_offset))?;
+        let (word_index, index_in_word) = DivRem::div_rem(actual_index, BYTES_IN_BYTES31_NONZERO);
+
+        match self.data.get(word_index) {
+            Some(word) => {
+                // index_in_word is from MSB, we need index from LSB.
+                Some(word.at(BYTES_IN_BYTES31 - 1 - index_in_word))
+            },
+            None => {
+                if word_index == self.data.len() && index_in_word < upcast(self.remainder_len) {
+                    // index_in_word is from MSB, we need index from LSB.
+                    let index_in_remainder = upcast(self.remainder_len) - 1 - index_in_word;
+                    Some(u8_at_u256((*self.remainder_word).into(), index_in_remainder))
+                } else {
+                    None // Out of bounds.
+                }
+            },
+        }
+    }
+
     /// Returns a slice of the ByteSpan from the given start position with the given length.
     fn slice(self: @ByteSpan, start: usize, len: usize) -> Option<ByteSpan> {
         if len == 0 {
@@ -725,6 +747,12 @@ impl ByteSpanDefault of Default<ByteSpan> {
         ByteSpan {
             data: [].span(), first_char_start_offset: 0, remainder_word: 0, remainder_len: 0,
         }
+    }
+}
+
+impl ByteSpanIndex of IndexView<ByteSpan, usize, u8> {
+    fn index(self: @ByteSpan, index: usize) -> u8 {
+        self.at(index).expect('Index out of bounds')
     }
 }
 
