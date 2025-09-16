@@ -186,15 +186,20 @@ impl DeprecatedIndexImpl<
 /// let ba: ByteArray = "hello";
 /// let span = ba.span();
 ///
-/// // Using Range<usize>
+/// // Using usize.
+/// let byte = span.get(1).unwrap();
+/// assert!(byte == 'e');
+///
+/// // Using Range<usize>.
 /// let slice = span.get(1..4).unwrap();
 /// assert_eq!(slice.to_byte_array(), "ell");
 ///
-/// // Using RangeInclusive<usize>
+/// // Using RangeInclusive<usize>.
 /// let slice = span.get(1..=3).unwrap();
 /// assert_eq!(slice.to_byte_array(), "ell");
 ///
-/// // Out of bounds returns None
+/// // Out of bounds returns None.
+/// assert!(span.get(10).is_none());
 /// assert!(span.get(10..20).is_none());
 /// ```
 // TODO(giladchase): add examples for `usize` once supported.
