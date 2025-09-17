@@ -527,7 +527,7 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 self.generic_args_contain_var(&concrete_impl_id.long(self.db).generic_args, var)
             }
             ImplLongId::SelfImpl(concrete_trait_id) => {
-                self.generic_args_contain_var(&concrete_trait_id.generic_args(self.db), var)
+                self.generic_args_contain_var(concrete_trait_id.generic_args(self.db), var)
             }
             ImplLongId::GenericParameter(_) => false,
             ImplLongId::ImplVar(new_var) => {
@@ -540,13 +540,13 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                     return self.impl_contains_var(impl_id, var);
                 }
                 self.generic_args_contain_var(
-                    &new_var_long_id.concrete_trait_id.generic_args(self.db),
+                    new_var_long_id.concrete_trait_id.generic_args(self.db),
                     var,
                 )
             }
             ImplLongId::ImplImpl(impl_impl) => self.impl_contains_var(impl_impl.impl_id(), var),
             ImplLongId::GeneratedImpl(generated_impl) => self.generic_args_contain_var(
-                &generated_impl.concrete_trait(self.db).generic_args(self.db),
+                generated_impl.concrete_trait(self.db).generic_args(self.db),
                 var,
             ),
         }
@@ -574,7 +574,7 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                     return self.negative_impl_contains_var(neg_impl_id, var);
                 }
                 self.generic_args_contain_var(
-                    &new_var_long_id.concrete_trait_id.generic_args(self.db),
+                    new_var_long_id.concrete_trait_id.generic_args(self.db),
                     var,
                 )
             }

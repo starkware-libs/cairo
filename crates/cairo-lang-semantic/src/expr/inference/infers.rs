@@ -199,7 +199,7 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
         let long_concrete_trait = concrete_trait_id.long(self.db);
         let long_imp_concrete_trait = imp_concrete_trait.long(self.db);
         let generic_args = self.infer_generic_assignment(
-            &imp_generic_params,
+            imp_generic_params,
             &long_imp_concrete_trait.generic_args,
             &long_concrete_trait.generic_args,
             lookup_context,
@@ -399,7 +399,7 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
         let generic_params = generic_function
             .generic_params(self.db)
             .map_err(|diag_added| self.set_error(InferenceError::Reported(diag_added)))?;
-        let generic_args = self.infer_generic_args(&generic_params, lookup_context, stable_ptr)?;
+        let generic_args = self.infer_generic_args(generic_params, lookup_context, stable_ptr)?;
         Ok(FunctionLongId { function: ConcreteFunction { generic_function, generic_args } }
             .intern(self.db))
     }
@@ -489,7 +489,7 @@ fn infer_concrete_trait_by_self<'r, 'db, 'mt>(
 
     let trait_generic_params = inference.db.trait_generic_params(trait_id).ok()?;
     let trait_generic_args =
-        match inference.infer_generic_args(&trait_generic_params, lookup_context, stable_ptr) {
+        match inference.infer_generic_args(trait_generic_params, lookup_context, stable_ptr) {
             Ok(generic_args) => generic_args,
             Err(err_set) => {
                 if let Some(err) = inference.consume_error_without_reporting(err_set) {
@@ -507,7 +507,7 @@ fn infer_concrete_trait_by_self<'r, 'db, 'mt>(
     let function_generic_args =
         // TODO(yuval): consider getting the substitution from inside `infer_generic_args`
         // instead of creating it again here.
-        match tmp_inference.infer_generic_args(&function_generic_params, lookup_context, stable_ptr) {
+        match tmp_inference.infer_generic_args(function_generic_params, lookup_context, stable_ptr) {
             Ok(generic_args) => generic_args,
             Err(err_set) => {
                 if let Some(err) = inference.consume_error_without_reporting(err_set) {
@@ -517,9 +517,9 @@ fn infer_concrete_trait_by_self<'r, 'db, 'mt>(
             }
         };
 
-    let trait_substitution = GenericSubstitution::new(&trait_generic_params, &trait_generic_args);
+    let trait_substitution = GenericSubstitution::new(trait_generic_params, &trait_generic_args);
     let function_substitution =
-        GenericSubstitution::new(&function_generic_params, &function_generic_args);
+        GenericSubstitution::new(function_generic_params, &function_generic_args);
     let substitution = trait_substitution.concat(function_substitution);
 
     let fixed_param_ty = substitution.substitute(inference.db, first_param.ty).ok()?;

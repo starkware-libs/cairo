@@ -175,7 +175,7 @@ fn analyze_storage_struct<'db>(
     let lookup_context = ImplLookupContext::new(
         struct_id.parent_module(db),
         match db.struct_generic_params(struct_id) {
-            Ok(params) => params.into_iter().map(|p| p.id()).collect(),
+            Ok(params) => params.iter().map(|p| p.id()).collect(),
             Err(_) => return,
         },
         db,

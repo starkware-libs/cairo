@@ -1192,7 +1192,7 @@ impl<'db, 'id> Inference<'db, 'id> {
             let GenericArgumentId::Type(ty) = garg else {
                 continue;
             };
-            let ty = self.rewrite(ty).no_err();
+            let ty = self.rewrite(*ty).no_err();
             // If the negative impl has a generic argument that is not fully
             // concrete we can't tell if we should rule out the candidate impl.
             // For example if we have -TypeEqual<S, T> we can't tell if S and
