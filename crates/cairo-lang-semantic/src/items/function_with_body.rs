@@ -56,7 +56,7 @@ pub struct FunctionBodyData<'db> {
     pub expr_lookup: UnorderedHashMap<ast::ExprPtr<'db>, ExprId>,
     pub pattern_lookup: UnorderedHashMap<ast::PatternPtr<'db>, PatternId>,
     pub resolver_data: Arc<ResolverData<'db>>,
-    pub body: Arc<FunctionBody<'db>>,
+    pub body: FunctionBody<'db>,
 }
 
 unsafe impl<'db> salsa::Update for FunctionBodyData<'db> {
@@ -68,7 +68,7 @@ unsafe impl<'db> salsa::Update for FunctionBodyData<'db> {
         let res = unsafe {
             Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
                 | Arc::maybe_update(&mut old_value.resolver_data, new_value.resolver_data)
-                | Arc::maybe_update(&mut old_value.body, new_value.body)
+                | FunctionBody::maybe_update(&mut old_value.body, new_value.body)
         };
         if res {
             old_value.expr_lookup = new_value.expr_lookup;
@@ -331,14 +331,12 @@ pub trait FunctionWithBodySemantic<'db>: Database {
     fn function_body(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-    ) -> Maybe<Arc<FunctionBody<'db>>> {
-        Ok(match function_id {
-            FunctionWithBodyId::Free(id) => self.priv_free_function_body_data(id)?.body.clone(),
-            FunctionWithBodyId::Impl(id) => self.priv_impl_function_body_data(id)?.body.clone(),
-            FunctionWithBodyId::Trait(id) => {
-                self.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?.body.clone()
-            }
-        })
+    ) -> Maybe<&'db FunctionBody<'db>> {
+        match function_id {
+            FunctionWithBodyId::Free(id) => self.free_function_body(id),
+            FunctionWithBodyId::Impl(id) => self.impl_function_body(id),
+            FunctionWithBodyId::Trait(id) => self.trait_function_body(id)?.ok_or(DiagnosticAdded),
+        }
     }
     /// Returns the body expr of a function (with a body).
     fn function_body_expr(

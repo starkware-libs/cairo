@@ -1168,7 +1168,7 @@ fn priv_trait_function_body_data<'db>(
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas, body_expr }),
+        body: FunctionBody { arenas, body_expr },
     }))
 }
 
@@ -1442,8 +1442,8 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_function_body(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<Option<Arc<FunctionBody<'db>>>> {
-        Ok(self.priv_trait_function_body_data(trait_function_id)?.map(|data| data.body.clone()))
+    ) -> Maybe<Option<&'db FunctionBody<'db>>> {
+        Ok(self.priv_trait_function_body_data(trait_function_id)?.map(|data| &data.body))
     }
     /// Returns the resolution resolved_items of a trait function.
     fn trait_function_body_resolver_data(
