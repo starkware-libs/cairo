@@ -3479,7 +3479,7 @@ fn validate_impl_function_signature<'db>(
     }
 
     let concrete_trait_signature =
-        function_substitution.substitute(db, concrete_trait_signature)?;
+        function_substitution.substitute(db, concrete_trait_signature.clone())?;
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(
@@ -4301,12 +4301,11 @@ pub trait ImplSemantic<'db>: Database {
     fn impl_function_signature(
         &'db self,
         id: ImplFunctionId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
-        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+    ) -> Maybe<&'db semantic::Signature<'db>> {
+        Ok(&impl_function_declaration_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .function_declaration_data
-            .signature
-            .clone())
+            .signature)
     }
     /// Returns the generic params of an impl function.
     fn impl_function_generic_params(

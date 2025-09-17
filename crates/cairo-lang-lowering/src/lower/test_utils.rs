@@ -29,7 +29,7 @@ pub fn create_lowering_context<'a, 'db>(
     signature: &semantic::Signature<'db>,
     encapsulating_ctx: &'a mut EncapsulatingLoweringContext<'db>,
 ) -> LoweringContext<'db, 'a> {
-    let lowering_signature = Signature::from_semantic(db, signature.clone());
+    let lowering_signature = Signature::from_semantic(db, signature);
     let return_type = lowering_signature.return_type;
 
     let lowering_function_id =

@@ -484,7 +484,7 @@ fn infer_concrete_trait_by_self<'r, 'db, 'mt>(
 ) -> Option<(ConcreteTraitId<'db>, usize)> {
     let trait_id = trait_function.trait_id(inference.db);
     let signature = inference.db.trait_function_signature(trait_function).ok()?;
-    let first_param = signature.params.into_iter().next()?;
+    let first_param = signature.params.first()?;
     require(first_param.name == SELF_PARAM_KW)?;
 
     let trait_generic_params = inference.db.trait_generic_params(trait_id).ok()?;

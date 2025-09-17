@@ -212,7 +212,7 @@ pub fn setup_test_function_ex<'a>(
                 free_function_id,
             )
             .unwrap(),
-            signature: db.function_with_body_signature(function_id).unwrap(),
+            signature: db.function_with_body_signature(function_id).unwrap().clone(),
             body: db.function_body_expr(function_id).unwrap(),
         },
         diagnostics,

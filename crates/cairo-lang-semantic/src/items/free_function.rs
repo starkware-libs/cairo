@@ -192,11 +192,8 @@ pub trait FreeFunctionSemantic<'db>: Database {
     fn free_function_signature(
         &'db self,
         id: FreeFunctionId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
-        Ok(free_function_declaration_data(self.as_dyn_database(), id)
-            .maybe_as_ref()?
-            .signature
-            .clone())
+    ) -> Maybe<&'db semantic::Signature<'db>> {
+        Ok(&free_function_declaration_data(self.as_dyn_database(), id).maybe_as_ref()?.signature)
     }
     /// Returns the implicits precedence of a free function.
     fn free_function_declaration_implicit_precedence(
