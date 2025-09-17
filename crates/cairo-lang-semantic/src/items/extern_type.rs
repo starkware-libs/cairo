@@ -140,9 +140,9 @@ pub trait ExternTypeSemantic<'db>: Database {
     fn extern_type_attributes(
         &'db self,
         extern_type_id: ExternTypeId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
+    ) -> Maybe<&'db [Attribute<'db>]> {
         let db = self.as_dyn_database();
-        Ok(extern_type_declaration_data(db, extern_type_id).maybe_as_ref()?.attributes.clone())
+        Ok(&extern_type_declaration_data(db, extern_type_id).maybe_as_ref()?.attributes)
     }
 }
 impl<'db, T: Database + ?Sized> ExternTypeSemantic<'db> for T {}

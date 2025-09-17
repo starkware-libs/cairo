@@ -4098,11 +4098,8 @@ pub trait ImplSemantic<'db>: Database {
         impl_declaration_data(self.as_dyn_database(), impl_def_id).maybe_as_ref()?.concrete_trait
     }
     /// Returns the attributes attached to the impl.
-    fn impl_def_attributes(&'db self, impl_def_id: ImplDefId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(impl_declaration_data(self.as_dyn_database(), impl_def_id)
-            .maybe_as_ref()?
-            .attributes
-            .clone())
+    fn impl_def_attributes(&'db self, impl_def_id: ImplDefId<'db>) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&impl_declaration_data(self.as_dyn_database(), impl_def_id).maybe_as_ref()?.attributes)
     }
     /// Returns the concrete trait that is implemented by the concrete impl.
     fn impl_concrete_trait(&'db self, impl_id: ImplId<'db>) -> Maybe<ConcreteTraitId<'db>> {
@@ -4189,12 +4186,11 @@ pub trait ImplSemantic<'db>: Database {
             .clone())
     }
     /// Returns the attributes of an impl type.
-    fn impl_type_def_attributes(&'db self, id: ImplTypeDefId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(impl_type_semantic_data(self.as_dyn_database(), id, false)
+    fn impl_type_def_attributes(&'db self, id: ImplTypeDefId<'db>) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&impl_type_semantic_data(self.as_dyn_database(), id, false)
             .maybe_as_ref()?
             .type_alias_data
-            .attributes
-            .clone())
+            .attributes)
     }
     /// Returns the resolution resolved_items of an impl item type.
     fn impl_type_def_resolver_data(
@@ -4324,12 +4320,14 @@ pub trait ImplSemantic<'db>: Database {
             .clone())
     }
     /// Returns the attributes of an impl function.
-    fn impl_function_attributes(&'db self, id: ImplFunctionId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+    fn impl_function_attributes(
+        &'db self,
+        id: ImplFunctionId<'db>,
+    ) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&impl_function_declaration_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .function_declaration_data
-            .attributes
-            .clone())
+            .attributes)
     }
     /// Returns the resolution resolved_items of an impl function's declaration.
     fn impl_function_resolver_data(

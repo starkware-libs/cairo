@@ -219,11 +219,11 @@ pub trait FreeFunctionSemantic<'db>: Database {
             .clone())
     }
     /// Returns the attributes of a free function.
-    fn free_function_attributes(&'db self, id: FreeFunctionId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(free_function_declaration_data(self.as_dyn_database(), id)
-            .maybe_as_ref()?
-            .attributes
-            .clone())
+    fn free_function_attributes(
+        &'db self,
+        id: FreeFunctionId<'db>,
+    ) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&free_function_declaration_data(self.as_dyn_database(), id).maybe_as_ref()?.attributes)
     }
     /// Returns the resolution resolved_items of a free function's declaration.
     fn free_function_declaration_resolver_data(

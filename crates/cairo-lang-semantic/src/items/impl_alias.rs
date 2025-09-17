@@ -259,11 +259,8 @@ pub trait ImplAliasSemantic<'db>: Database {
             .clone())
     }
     /// Returns the attributes attached to the impl alias.
-    fn impl_alias_attributes(&'db self, id: ImplAliasId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(impl_alias_semantic_data(self.as_dyn_database(), id, false)
-            .maybe_as_ref()?
-            .attributes
-            .clone())
+    fn impl_alias_attributes(&'db self, id: ImplAliasId<'db>) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&impl_alias_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.attributes)
     }
 }
 impl<'db, T: Database + ?Sized> ImplAliasSemantic<'db> for T {}

@@ -307,7 +307,7 @@ pub trait FunctionWithBodySemantic<'db>: Database {
     fn function_with_body_attributes(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
+    ) -> Maybe<&'db [Attribute<'db>]> {
         match function_id {
             FunctionWithBodyId::Free(id) => self.free_function_attributes(id),
             FunctionWithBodyId::Impl(id) => self.impl_function_attributes(id),

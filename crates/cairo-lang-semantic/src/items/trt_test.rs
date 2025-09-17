@@ -31,7 +31,7 @@ fn test_trait() {
 
     assert_eq!(format!("{:?}", db.trait_generic_params(trait_id).unwrap()), "[]");
     assert_eq!(
-        format!("{:?}", db.trait_attributes(trait_id).unwrap().debug(db)),
+        format!("{:?}", db.trait_attributes(trait_id).unwrap().to_vec().debug(db)),
         "[Attribute { id: \"inline\" }]"
     );
 

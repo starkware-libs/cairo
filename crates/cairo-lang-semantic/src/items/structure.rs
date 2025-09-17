@@ -248,9 +248,9 @@ pub trait StructSemantic<'db>: Database {
         Ok(struct_generic_params_data(db, struct_id).maybe_as_ref()?.generic_params.clone())
     }
     /// Returns the attributes attached to a struct.
-    fn struct_attributes(&'db self, struct_id: StructId<'db>) -> Maybe<Vec<Attribute<'db>>> {
+    fn struct_attributes(&'db self, struct_id: StructId<'db>) -> Maybe<&'db [Attribute<'db>]> {
         let db = self.as_dyn_database();
-        Ok(struct_declaration_data(db, struct_id).maybe_as_ref()?.attributes.clone())
+        Ok(&struct_declaration_data(db, struct_id).maybe_as_ref()?.attributes)
     }
     /// Returns the resolution resolved_items of a struct declaration.
     fn struct_declaration_resolver_data(
