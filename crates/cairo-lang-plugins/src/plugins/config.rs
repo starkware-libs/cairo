@@ -5,6 +5,7 @@ use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -89,8 +90,8 @@ impl MacroPlugin for ConfigPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec![CFG_ATTR.to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, CFG_ATTR)]
     }
 }
 
@@ -302,7 +303,7 @@ fn extract_config_predicate_part<'a>(
             if let Some([ast::PathSegment::Simple(segment)]) =
                 path.segments(db).elements(db).collect_array()
             {
-                Some(ConfigPredicatePart::Cfg(Cfg::name(segment.identifier(db).to_string())))
+                Some(ConfigPredicatePart::Cfg(Cfg::name(segment.identifier(db).to_string(db))))
             } else {
                 None
             }
@@ -317,7 +318,7 @@ fn extract_config_predicate_part<'a>(
                 _ => return None,
             };
 
-            Some(ConfigPredicatePart::Cfg(Cfg::kv(name.text.to_string(), value_text)))
+            Some(ConfigPredicatePart::Cfg(Cfg::kv(name.text.to_string(db), value_text)))
         }
         _ => None,
     }

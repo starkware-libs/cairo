@@ -82,7 +82,7 @@ fn handle_component_item<'db>(
             handle_component_impl(db, diagnostics, item_impl, metadata, data);
         }
         ast::ModuleItem::Struct(item_struct)
-            if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+            if item_struct.name(db).text(db).long(db) == STORAGE_STRUCT_NAME =>
         {
             handle_storage_struct(
                 db,
@@ -146,7 +146,7 @@ fn get_embeddable_as_impl_generic_params<'db>(
         return Err(first_generic_param_diagnostic(generic_params_ptr));
     };
     if !try_extract_matches!(first_generic_param, ast::GenericParam::Type)
-        .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME)
+        .map_or(false, |param| param.name(db).text(db).long(db) == GENERIC_CONTRACT_STATE_NAME)
     {
         return Err(first_generic_param_diagnostic(generic_params_ptr));
     }
@@ -426,7 +426,7 @@ fn handle_first_param_for_embeddable_as<'db>(
     db: &'db dyn Database,
     param: &ast::Param<'db>,
 ) -> Option<(String, String, String)> {
-    require(param.name(db).text(db) == SELF_PARAM_KW)?;
+    require(param.name(db).text(db).long(db) == SELF_PARAM_KW)?;
     if param.is_ref_param(db) {
         return if extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause)
             .ty(db)

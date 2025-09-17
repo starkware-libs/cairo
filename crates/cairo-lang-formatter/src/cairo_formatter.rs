@@ -6,7 +6,9 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, anyhow};
 use cairo_lang_diagnostics::FormattedDiagnosticEntry;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CAIRO_FILE_EXTENSION, FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{
+    CAIRO_FILE_EXTENSION, FileId, FileKind, FileLongId, SmolStrId, VirtualFile,
+};
 use cairo_lang_parser::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics};
 use cairo_lang_utils::Intern;
 use diffy::{PatchFormatter, create_patch};
@@ -155,8 +157,8 @@ impl FormattableInput for String {
     fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn Database) -> Result<FileId<'a>> {
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
-            name: "string_to_format".into(),
-            content: self.clone().into(),
+            name: SmolStrId::from(db, "string_to_format"),
+            content: SmolStrId::from(db, self),
             code_mappings: [].into(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -175,8 +177,8 @@ impl FormattableInput for StdinFmt {
         stdin().read_to_string(&mut buffer)?;
         Ok(FileLongId::Virtual(VirtualFile {
             parent: None,
-            name: "<stdin>".into(),
-            content: buffer.into(),
+            name: SmolStrId::from(db, "<stdin>"),
+            content: SmolStrId::from(db, buffer),
             code_mappings: [].into(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -196,11 +198,8 @@ fn format_input(
     let db = SimpleParserDatabase::default();
     let db_ref = &db;
     let file_id = input.to_file_id(db_ref).context("Unable to create virtual file.")?;
-    let original_text = db_ref
-        .file_content(file_id)
-        .ok_or_else(|| anyhow!("Unable to read from input."))?
-        .long(db_ref)
-        .as_ref();
+    let original_text =
+        db_ref.file_content(file_id).ok_or_else(|| anyhow!("Unable to read from input."))?;
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id);
     if diagnostics.check_error_free().is_err() {
         return Err(FormattingError::ParsingError(

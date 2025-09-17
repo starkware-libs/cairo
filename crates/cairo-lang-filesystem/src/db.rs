@@ -8,12 +8,14 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::{Database, Setter};
 use semver::Version;
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId, Directory,
-    DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, StrId, Tracked, VirtualFile,
+    ArcStr, BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId,
+    Directory, DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, SmolStrId,
+    Tracked, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -156,12 +158,15 @@ impl Edition {
     }
 
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
-    pub fn prelude_submodule_name(&self) -> &'static str {
-        match self {
-            Self::V2023_01 => "v2023_01",
-            Self::V2023_10 | Self::V2023_11 => "v2023_10",
-            Self::V2024_07 => "v2024_07",
-        }
+    pub fn prelude_submodule_name<'db>(&self, db: &'db dyn Database) -> SmolStrId<'db> {
+        SmolStrId::from(
+            db,
+            match self {
+                Self::V2023_01 => "v2023_01",
+                Self::V2023_10 | Self::V2023_11 => "v2023_10",
+                Self::V2024_07 => "v2024_07",
+            },
+        )
     }
 
     /// Whether to ignore visibility modifiers.
@@ -240,7 +245,7 @@ pub trait FilesGroup: Database {
     }
 
     /// Interned version of `file_overrides_input`.
-    fn file_overrides<'db>(&'db self) -> &'db OrderedHashMap<FileId<'db>, StrId<'db>> {
+    fn file_overrides<'db>(&'db self) -> &'db OrderedHashMap<FileId<'db>, ArcStr> {
         file_overrides(self.as_dyn_database())
     }
 
@@ -263,8 +268,12 @@ pub trait FilesGroup: Database {
     }
 
     /// Query for the file contents. This takes overrides into consideration.
-    fn file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<StrId<'db>> {
-        file_content(self.as_dyn_database(), file_id)
+    fn file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db str> {
+        let overrides = self.file_overrides();
+        overrides.get(&file_id).map(|content| content.as_ref()).or_else(|| {
+            priv_raw_file_content(self.as_dyn_database(), file_id)
+                .map(|content| content.long(self.as_dyn_database()).as_str())
+        })
     }
 
     fn file_summary<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db FileSummary> {
@@ -375,11 +384,11 @@ pub fn set_crate_configs_input(
 }
 
 #[salsa::tracked(returns(ref))]
-pub fn file_overrides<'db>(db: &'db dyn Database) -> OrderedHashMap<FileId<'db>, StrId<'db>> {
+pub fn file_overrides<'db>(db: &'db dyn Database) -> OrderedHashMap<FileId<'db>, ArcStr> {
     let inp = files_group_input(db).file_overrides(db).as_ref().expect("file_overrides is not set");
     inp.iter()
         .map(|(file_id, content)| {
-            (file_id.clone().into_file_long_id(db).intern(db), content.clone().intern(db))
+            (file_id.clone().into_file_long_id(db).intern(db), ArcStr::new(content.clone()))
         })
         .collect()
 }
@@ -432,7 +441,7 @@ fn crate_configuration_input<'db>(
 }
 
 pub fn init_dev_corelib(db: &mut dyn salsa::Database, core_lib_dir: PathBuf) {
-    let core = CrateLongId::core().intern(db);
+    let core = CrateLongId::core(db).intern(db);
     let root = CrateConfiguration {
         root: Directory::Real(core_lib_dir),
         settings: CrateSettings {
@@ -550,7 +559,7 @@ fn crate_config<'db>(
 }
 
 #[salsa::tracked]
-fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<StrId<'db>> {
+fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<SmolStrId<'db>> {
     match file.long(db) {
         FileLongId::OnDisk(path) => {
             // This does not result in performance cost due to OS caching and the fact that salsa
@@ -558,24 +567,13 @@ fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Optio
             db.report_untracked_read();
 
             match fs::read_to_string(path) {
-                Ok(content) => {
-                    let content: Arc<str> = content.into();
-                    Some(content.intern(db))
-                }
+                Ok(content) => Some(SmolStrId::new(db, SmolStr::new(content))),
                 Err(_) => None,
             }
         }
-        FileLongId::Virtual(virt) => Some(virt.content.clone().intern(db)),
-        FileLongId::External(external_id) => {
-            Some(ext_as_virtual(db, *external_id).content.clone().intern(db))
-        }
+        FileLongId::Virtual(virt) => Some(virt.content),
+        FileLongId::External(external_id) => Some(ext_as_virtual(db, *external_id).content),
     }
-}
-
-#[salsa::tracked]
-fn file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<StrId<'db>> {
-    let overrides = db.file_overrides();
-    overrides.get(&file).copied().or_else(|| priv_raw_file_content(db, file))
 }
 
 /// Tracked function to return the content of a file as a string.
@@ -584,7 +582,7 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
     let content = db.file_content(file)?;
     let mut line_offsets = vec![TextOffset::START];
     let mut offset = TextOffset::START;
-    for ch in content.long(db).chars() {
+    for ch in content.chars() {
         offset = offset.add_width(TextWidth::from_char(ch));
         if ch == '\n' {
             line_offsets.push(offset);

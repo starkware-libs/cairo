@@ -25,7 +25,7 @@ impl Visibility {
             ast::Visibility::Pub(visibility_pub) => match visibility_pub.argument_clause(db) {
                 ast::OptionVisibilityPubArgumentClause::Empty(_) => Self::Public,
                 ast::OptionVisibilityPubArgumentClause::VisibilityPubArgumentClause(argument) => {
-                    if argument.argument(db).text(db) == "crate" {
+                    if argument.argument(db).text(db).long(db) == "crate" {
                         Self::PublicInCrate
                     } else {
                         diagnostics.add(SemanticDiagnostic::new(

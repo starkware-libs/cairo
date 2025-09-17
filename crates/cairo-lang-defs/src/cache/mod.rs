@@ -7,7 +7,7 @@ use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile, db_str,
+    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -107,7 +107,7 @@ pub fn load_cached_crate_modules<'db>(
             .unwrap_or_else(|e| {
                 panic!(
                     "failed to deserialize modules cache for crate `{}`: {e}",
-                    crate_id.long(db).name(),
+                    crate_id.long(db).name().long(db),
                 )
             });
 
@@ -780,18 +780,26 @@ enum CrateCached {
 impl CrateCached {
     fn new<'db>(crate_id: CrateLongId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         match crate_id {
-            CrateLongId::Real { name, discriminator } => CrateCached::Real { name, discriminator },
+            CrateLongId::Real { name, discriminator } => {
+                CrateCached::Real { name: name.to_string(ctx.db), discriminator }
+            }
             CrateLongId::Virtual { name, file_id, settings, cache_file: _ } => {
-                CrateCached::Virtual { name, file_id: FileIdCached::new(file_id, ctx), settings }
+                CrateCached::Virtual {
+                    name: name.to_string(ctx.db),
+                    file_id: FileIdCached::new(file_id, ctx),
+                    settings,
+                }
             }
         }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> CrateLongId<'db> {
         match self {
-            CrateCached::Real { name, discriminator } => CrateLongId::Real { name, discriminator },
+            CrateCached::Real { name, discriminator } => {
+                CrateLongId::Real { name: SmolStrId::from(ctx.db, name), discriminator }
+            }
             CrateCached::Virtual { name, file_id, settings } => {
                 CrateLongId::Virtual {
-                    name,
+                    name: SmolStrId::from(ctx.db, name),
                     file_id: file_id.embed(ctx),
                     settings,
                     cache_file: None, // todo  if two virtual crates are supported
@@ -1724,7 +1732,9 @@ impl GreenNodeDetailsCached {
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> GreenNodeDetailsCached {
         match green_node_details {
-            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token((**token).into()),
+            GreenNodeDetails::Token(token) => {
+                GreenNodeDetailsCached::Token(token.long(ctx.db).clone())
+            }
             GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
                 children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
                 width: *width,
@@ -1734,7 +1744,7 @@ impl GreenNodeDetailsCached {
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
             GreenNodeDetailsCached::Token(token) => {
-                GreenNodeDetails::Token(db_str(ctx.db, token.clone()).into())
+                GreenNodeDetails::Token(SmolStrId::new(ctx.db, token.clone()))
             }
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),
@@ -1859,8 +1869,8 @@ impl VirtualFileCached {
     fn new<'db>(virtual_file: &VirtualFile<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self {
             parent: virtual_file.parent.map(|parent| FileIdCached::new(parent, ctx)),
-            name: virtual_file.name.clone(),
-            content: String::from(&*(virtual_file.content)),
+            name: virtual_file.name.to_string(ctx.db),
+            content: virtual_file.content.to_string(ctx.db),
             code_mappings: virtual_file.code_mappings.to_vec(),
             kind: virtual_file.kind,
             original_item_removed: virtual_file.original_item_removed,
@@ -1869,8 +1879,8 @@ impl VirtualFileCached {
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> VirtualFile<'db> {
         VirtualFile {
             parent: self.parent.map(|parent| parent.embed(ctx)),
-            name: self.name,
-            content: self.content.into(),
+            name: SmolStrId::from(ctx.db, self.name),
+            content: SmolStrId::from(ctx.db, self.content),
             code_mappings: self.code_mappings.into(),
             kind: self.kind,
             original_item_removed: self.original_item_removed,
