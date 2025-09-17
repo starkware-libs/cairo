@@ -4352,12 +4352,11 @@ pub trait ImplSemantic<'db>: Database {
     fn impl_function_declaration_implicit_precedence(
         &'db self,
         id: ImplFunctionId<'db>,
-    ) -> Maybe<ImplicitPrecedence<'db>> {
-        Ok(impl_function_declaration_data(self.as_dyn_database(), id)
+    ) -> Maybe<&'db ImplicitPrecedence<'db>> {
+        Ok(&impl_function_declaration_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .function_declaration_data
-            .implicit_precedence
-            .clone())
+            .implicit_precedence)
     }
     /// Returns the trait function of an impl function.
     fn impl_function_trait_function(

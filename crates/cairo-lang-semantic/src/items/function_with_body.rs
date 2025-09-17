@@ -278,7 +278,7 @@ pub trait FunctionWithBodySemantic<'db>: Database {
     fn function_declaration_implicit_precedence(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-    ) -> Maybe<ImplicitPrecedence<'db>> {
+    ) -> Maybe<&'db ImplicitPrecedence<'db>> {
         match function_id {
             FunctionWithBodyId::Free(id) => self.free_function_declaration_implicit_precedence(id),
             FunctionWithBodyId::Impl(id) => self.impl_function_declaration_implicit_precedence(id),
