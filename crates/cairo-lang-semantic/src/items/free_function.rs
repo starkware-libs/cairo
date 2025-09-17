@@ -199,11 +199,10 @@ pub trait FreeFunctionSemantic<'db>: Database {
     fn free_function_declaration_implicit_precedence(
         &'db self,
         id: FreeFunctionId<'db>,
-    ) -> Maybe<ImplicitPrecedence<'db>> {
-        Ok(free_function_declaration_data(self.as_dyn_database(), id)
+    ) -> Maybe<&'db ImplicitPrecedence<'db>> {
+        Ok(&free_function_declaration_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
-            .implicit_precedence
-            .clone())
+            .implicit_precedence)
     }
     /// Returns the generic params of a free function.
     fn free_function_generic_params(

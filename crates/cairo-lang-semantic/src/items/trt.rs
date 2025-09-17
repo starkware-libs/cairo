@@ -1424,11 +1424,8 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_function_declaration_implicit_precedence(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<ImplicitPrecedence<'db>> {
-        Ok(self
-            .priv_trait_function_declaration_data(trait_function_id)?
-            .implicit_precedence
-            .clone())
+    ) -> Maybe<&'db ImplicitPrecedence<'db>> {
+        Ok(&self.priv_trait_function_declaration_data(trait_function_id)?.implicit_precedence)
     }
     /// Returns the semantic diagnostics of a trait function definition (declaration + body).
     fn trait_function_body_diagnostics(
