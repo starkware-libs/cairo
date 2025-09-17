@@ -115,15 +115,30 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_fmt.sh --check
 
-  # Checks all cairo corelib tests run correctly.
-  cairotest:
+  parallel-cairo-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cmd:
+          - corelib/
+          - tests/bug_samples --starknet
+          - crates/cairo-lang-starknet/cairo_level_tests/ --starknet
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: scripts/cairo_test.sh
-      - run: scripts/starknet_test.sh
+      - run: |
+          cargo run --profile=ci-dev --bin cairo-test -- ${{ matrix.cmd }}
+  # Checks all cairo code tests run correctly.
+  cairotest:
+    if: ${{ always() }}
+    needs: parallel-cairo-tests
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.parallel-cairo-tests.result == 'success'
+        run: exit 0
+      - if: needs.parallel-cairo-tests.result != 'success'
+        run: exit 1
 
   # Check for unnecessary dependencies.
   udeps:
