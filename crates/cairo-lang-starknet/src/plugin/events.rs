@@ -1,5 +1,6 @@
 use cairo_lang_defs::db::get_all_path_leaves;
 use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_starknet_classes::abi::EventFieldKind;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -31,13 +32,15 @@ pub fn get_starknet_event_variants<'db>(
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     item: &ast::ModuleItem<'db>,
     module_kind: StarknetModuleKind,
-) -> Option<Vec<&'db str>> {
+) -> Option<Vec<SmolStrId<'db>>> {
     let (has_event_name, stable_ptr, variants) = match item {
-        ast::ModuleItem::Struct(strct) => {
-            (strct.name(db).text(db) == EVENT_TYPE_NAME, strct.name(db).stable_ptr(db), vec![])
-        }
+        ast::ModuleItem::Struct(strct) => (
+            strct.name(db).text(db).long(db) == EVENT_TYPE_NAME,
+            strct.name(db).stable_ptr(db),
+            vec![],
+        ),
         ast::ModuleItem::Enum(enm) => {
-            let has_event_name = enm.name(db).text(db) == EVENT_TYPE_NAME;
+            let has_event_name = enm.name(db).text(db).long(db) == EVENT_TYPE_NAME;
             let variants = if has_event_name {
                 enm.variants(db).elements(db).map(|v| v.name(db).text(db)).collect()
             } else {
@@ -48,7 +51,7 @@ pub fn get_starknet_event_variants<'db>(
         ast::ModuleItem::Use(item) => {
             for leaf in get_all_path_leaves(db, item) {
                 let stable_ptr = &leaf.stable_ptr(db);
-                if stable_ptr.identifier(db) == EVENT_TYPE_NAME {
+                if stable_ptr.identifier(db).long(db) == EVENT_TYPE_NAME {
                     if !item.has_attr(db, EVENT_ATTR) {
                         diagnostics.push(PluginDiagnostic::error(
                             stable_ptr.untyped(),

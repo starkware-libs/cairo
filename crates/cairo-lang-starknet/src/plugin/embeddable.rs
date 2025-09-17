@@ -33,7 +33,7 @@ pub fn handle_embeddable<'db>(
     let mut diagnostics = vec![];
     let generic_params = item_impl.generic_params(db);
     let impl_name = item_impl.name(db);
-    let impl_name_str = impl_name.text(db);
+    let impl_name_str = impl_name.text(db).long(db);
     let impl_name = RewriteNode::from_ast_trimmed(&impl_name);
     let (is_valid_params, maybe_generic_args, generic_params_node) = match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => {
@@ -63,7 +63,9 @@ pub fn handle_embeddable<'db>(
             let first_generic_param = elements.next();
             let is_valid_params = first_generic_param
                 .and_then(|param| try_extract_matches!(param, ast::GenericParam::Type))
-                .is_some_and(|param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME);
+                .is_some_and(|param| {
+                    param.name(db).text(db).long(db) == GENERIC_CONTRACT_STATE_NAME
+                });
             let generic_args = RewriteNode::interspersed(
                 chain!(
                     [RewriteNode::text(GENERIC_CONTRACT_STATE_NAME)],
@@ -122,7 +124,7 @@ pub fn handle_embeddable<'db>(
             continue;
         };
         let function_name = item_function.declaration(db).name(db);
-        let function_name_str = function_name.text(db);
+        let function_name_str = function_name.text(db).long(db);
         let function_name = RewriteNode::from_ast_trimmed(&function_name);
         let function_path = RewriteNode::interpolate_patched(
             "$impl_name$$maybe_generic_args$::$func_name$",

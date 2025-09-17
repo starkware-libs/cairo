@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
@@ -24,14 +24,14 @@ use crate::db::SierraGenGroup;
 pub fn find_executable_function_ids<'db>(
     db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
-) -> HashMap<ConcreteFunctionWithBodyId<'db>, Vec<String>> {
+) -> HashMap<ConcreteFunctionWithBodyId<'db>, Vec<SmolStrId<'db>>> {
     let mut executable_function_ids = HashMap::new();
 
     for crate_id in main_crate_ids {
         let executable_attributes = db
             .crate_macro_plugins(crate_id)
             .iter()
-            .flat_map(|plugin| plugin.long(db).executable_attributes())
+            .flat_map(|plugin| plugin.long(db).executable_attributes(db))
             .collect::<Vec<_>>();
 
         if executable_attributes.is_empty() {
@@ -46,7 +46,7 @@ pub fn find_executable_function_ids<'db>(
                     let found_attrs = executable_attributes
                         .clone()
                         .iter()
-                        .filter(|attr| body.has_attr(db, attr.as_str()))
+                        .filter(|attr| body.has_attr(db, attr.long(db)))
                         .cloned()
                         .collect::<Vec<_>>();
                     if found_attrs.is_empty() {
@@ -74,7 +74,7 @@ pub fn find_executable_function_ids<'db>(
 /// The returned function ids are grouped by the executable attribute name, and sorted by full path.
 pub fn collect_executables(
     db: &dyn Database,
-    mut executable_function_ids: HashMap<ConcreteFunctionWithBodyId<'_>, Vec<String>>,
+    mut executable_function_ids: HashMap<ConcreteFunctionWithBodyId<'_>, Vec<SmolStrId<'_>>>,
     sierra_program: &Program,
 ) -> HashMap<String, Vec<FunctionId>> {
     if executable_function_ids.is_empty() {
@@ -89,7 +89,7 @@ pub fn collect_executables(
                     .map(|function_id| db.intern_sierra_function(function_id));
                 function_id.map(|function_id| (function_id, attrs))
             })
-            .collect::<HashMap<FunctionId, Vec<String>>>();
+            .collect::<HashMap<FunctionId, Vec<_>>>();
         let mut result: HashMap<String, Vec<(String, FunctionId)>> = Default::default();
         for function in &sierra_program.funcs {
             let Some(found_attrs) = executable_function_ids.get(&function.id) else {
@@ -98,7 +98,7 @@ pub fn collect_executables(
             let full_path = db.lookup_sierra_function(&function.id).semantic_full_path(db);
             for attr in found_attrs {
                 result
-                    .entry(attr.clone())
+                    .entry(attr.to_string(db))
                     .or_default()
                     .push((full_path.clone(), function.id.clone()));
             }

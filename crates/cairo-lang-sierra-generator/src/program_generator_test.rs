@@ -1,5 +1,6 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::items::module::ModuleSemantic;
@@ -111,7 +112,9 @@ fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
             .iter()
             .find_map(|module_id| {
                 try_extract_matches!(
-                    db.module_item_by_name(*module_id, func_name.into()).unwrap().unwrap(),
+                    db.module_item_by_name(*module_id, SmolStrId::from(&db, func_name))
+                        .unwrap()
+                        .unwrap(),
                     ModuleItemId::FreeFunction
                 )
             })

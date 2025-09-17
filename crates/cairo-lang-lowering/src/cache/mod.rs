@@ -99,7 +99,7 @@ pub fn load_cached_crate_functions<'db>(
             |e| {
                 panic!(
                     "failed to deserialize lookup cache for crate `{}`: {e}",
-                    crate_id.long(db).name(),
+                    crate_id.long(db).name().long(db),
                 )
             },
         );

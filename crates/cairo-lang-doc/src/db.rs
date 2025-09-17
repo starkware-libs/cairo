@@ -200,7 +200,7 @@ fn extract_item_module_level_documentation_from_file<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
 ) -> Option<String> {
-    let file_content = db.file_content(file_id)?.long(db).to_string();
+    let file_content = db.file_content(file_id)?.to_string();
     Some(
         file_content
             .lines()

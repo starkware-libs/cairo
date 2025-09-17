@@ -1,4 +1,5 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_syntax::node::ast::ModuleItem;
@@ -22,12 +23,12 @@ impl MacroPlugin for MockExecutablePlugin {
         PluginResult { code: None, diagnostics: vec![], remove_original_item: false }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec!["some".to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, "some")]
     }
 
-    fn executable_attributes(&self) -> Vec<String> {
-        vec!["some".to_string()]
+    fn executable_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, "some")]
     }
 }
 

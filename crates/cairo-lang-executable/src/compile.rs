@@ -164,7 +164,7 @@ pub fn find_executable_functions<'db>(
     let mut executables: Vec<_> = find_executable_function_ids(db, main_crate_ids)
         .into_iter()
         .filter_map(|(id, labels)| {
-            labels.into_iter().any(|l| l == EXECUTABLE_RAW_ATTR).then_some(id)
+            labels.into_iter().any(|ssid| ssid.long(db) == EXECUTABLE_RAW_ATTR).then_some(id)
         })
         .collect();
 
@@ -183,7 +183,7 @@ pub fn originating_function_path<'db>(
     wrapper: ConcreteFunctionWithBodyId<'db>,
 ) -> String {
     let semantic = wrapper.base_semantic_function(db);
-    let wrapper_name = semantic.name(db);
+    let wrapper_name = semantic.name(db).long(db).as_str();
     let wrapper_full_path = semantic.full_path(db);
     let Some(wrapped_name) = wrapper_name.strip_prefix(EXECUTABLE_PREFIX) else {
         return wrapper_full_path;
