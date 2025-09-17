@@ -8,7 +8,7 @@ use patterns::{CreateNodeParams, create_node_for_patterns, get_pattern};
 
 use super::graph::{
     ArmExpr, BooleanIf, EvaluateExpr, FlowControlGraph, FlowControlGraphBuilder, FlowControlNode,
-    LetElseSuccess, NodeId,
+    LetElseSuccess, NodeId, WhileBody,
 };
 use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError, MatchKind};
 use crate::lower::context::LoweringContext;
@@ -194,7 +194,7 @@ pub fn create_graph_expr_let_else<'db>(
     let true_branch =
         graph.add_node(FlowControlNode::LetElseSuccess(LetElseSuccess { var_ids_and_stable_ptrs }));
 
-    // Add the `false` branch (the `else` block), if exists.
+    // Add the `false` branch (the `else` block).
     let false_branch = graph.add_node(FlowControlNode::ArmExpr(ArmExpr { expr: else_clause }));
 
     let expr = &ctx.function_body.arenas.exprs[expr_id];
@@ -208,6 +208,64 @@ pub fn create_graph_expr_let_else<'db>(
             ctx,
             graph: &mut graph,
             patterns: &[Some(get_pattern(ctx, pattern))],
+            build_node_callback: &mut |graph, pattern_indices, _path| {
+                if let Some(index_and_bindings) = pattern_indices.first() {
+                    index_and_bindings.wrap_node(graph, true_branch)
+                } else {
+                    false_branch
+                }
+            },
+            location: expr_location,
+        },
+        expr_var,
+    );
+
+    // Create a node for lowering `expr_id` into `expr_var` and continue to the match.
+    let root = graph.add_node(FlowControlNode::EvaluateExpr(EvaluateExpr {
+        expr: expr_id,
+        var_id: expr_var,
+        next: match_node_id,
+    }));
+
+    graph.finalize(root, ctx)
+}
+
+/// Creates a graph node for a while-let statement.
+pub fn create_graph_expr_while_let<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    patterns: &[PatternId],
+    expr_id: ExprId,
+    body: ExprId,
+    loop_expr_id: ExprId,
+    loop_stable_ptr: SyntaxStablePtrId<'db>,
+) -> FlowControlGraph<'db> {
+    let mut graph =
+        FlowControlGraphBuilder::new(MatchKind::WhileLet(loop_expr_id, loop_stable_ptr));
+
+    // Add the `true` branch (the `while` body).
+    let true_branch = graph.add_node(FlowControlNode::WhileBody(WhileBody {
+        body,
+        loop_expr_id,
+        loop_stable_ptr,
+    }));
+
+    // Add the `false` branch.
+    let false_branch = graph.add_node(FlowControlNode::UnitResult);
+
+    let expr = &ctx.function_body.arenas.exprs[expr_id];
+
+    // Create a variable for the expression.
+    let expr_location = ctx.get_location(expr.stable_ptr().untyped());
+    let expr_var = graph.new_var(expr.ty(), expr_location);
+
+    let match_node_id = create_node_for_patterns(
+        CreateNodeParams {
+            ctx,
+            graph: &mut graph,
+            patterns: &patterns
+                .iter()
+                .map(|pattern| Some(get_pattern(ctx, *pattern)))
+                .collect_vec(),
             build_node_callback: &mut |graph, pattern_indices, _path| {
                 if let Some(index_and_bindings) = pattern_indices.first() {
                     index_and_bindings.wrap_node(graph, true_branch)
