@@ -1200,8 +1200,8 @@ pub trait TraitSemantic<'db>: Database {
         Ok(trait_generic_params_ids(self.as_dyn_database(), trait_id).maybe_as_ref()?)
     }
     /// Returns the attributes of a trait.
-    fn trait_attributes(&'db self, trait_id: TraitId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(self.priv_trait_declaration_data(trait_id)?.attributes.clone())
+    fn trait_attributes(&'db self, trait_id: TraitId<'db>) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&self.priv_trait_declaration_data(trait_id)?.attributes)
     }
     /// Returns the resolution resolved_items of a trait.
     fn trait_resolver_data(&'db self, trait_id: TraitId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
@@ -1322,8 +1322,8 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_type_attributes(
         &'db self,
         trait_type_id: TraitTypeId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(self.priv_trait_type_data(trait_type_id)?.attributes.clone())
+    ) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&self.priv_trait_type_data(trait_type_id).maybe_as_ref()?.attributes)
     }
     /// Returns the resolution resolved_items of a trait type.
     fn trait_type_resolver_data(
@@ -1408,8 +1408,8 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_function_attributes(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(self.priv_trait_function_declaration_data(trait_function_id)?.attributes.clone())
+    ) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(&self.priv_trait_function_declaration_data(trait_function_id)?.attributes)
     }
     /// Returns the resolver data of a trait function.
     fn trait_function_resolver_data(

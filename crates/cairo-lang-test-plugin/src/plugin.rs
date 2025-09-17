@@ -21,7 +21,7 @@ impl MacroPlugin for TestPlugin {
         PluginResult {
             code: None,
             diagnostics: if let ast::ModuleItem::FreeFunction(free_func_ast) = item_ast {
-                try_extract_test_config(db, free_func_ast.attributes(db).structurize(db)).err()
+                try_extract_test_config(db, &free_func_ast.attributes(db).structurize(db)).err()
             } else {
                 None
             }
