@@ -145,7 +145,7 @@ impl<'db> ConcreteImplId<'db> {
     pub fn substitution(&self, db: &'db dyn Database) -> Maybe<GenericSubstitution<'db>> {
         Ok(GenericSubstitution::from_impl(ImplLongId::Concrete(*self).intern(db)).concat(
             GenericSubstitution::new(
-                &db.impl_def_generic_params(self.impl_def_id(db))?,
+                db.impl_def_generic_params(self.impl_def_id(db))?,
                 &self.long(db).generic_args,
             ),
         ))
@@ -527,7 +527,7 @@ fn impl_def_substitution<'db>(
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<GenericSubstitution<'db>> {
     let params = db.impl_def_generic_params(impl_def_id)?;
-    let generic_args = generic_params_to_args(&params, db);
+    let generic_args = generic_params_to_args(params, db);
     ConcreteImplLongId { impl_def_id, generic_args }.intern(db).substitution(db)
 }
 
@@ -772,7 +772,7 @@ fn impl_concrete_trait<'db>(
         ImplLongId::Concrete(concrete_impl_id) => {
             let long_impl = concrete_impl_id.long(db);
             let substitution = GenericSubstitution::new(
-                &db.impl_def_generic_params(long_impl.impl_def_id)?,
+                db.impl_def_generic_params(long_impl.impl_def_id)?,
                 &long_impl.generic_args,
             );
 
@@ -2377,7 +2377,7 @@ pub fn infer_impl_by_self<'db>(
     let generic_args = ctx.resolver.resolve_generic_args(
         ctx.diagnostics,
         GenericSubstitution::from_impl(generic_function.impl_id),
-        &trait_func_generic_params,
+        trait_func_generic_params,
         &generic_args_syntax.unwrap_or_default(),
         stable_ptr,
     )?;
@@ -3396,7 +3396,7 @@ fn validate_impl_function_signature<'db>(
     }
     let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
     let func_generics: Vec<GenericParam<'_>> =
-        impl_def_substitution.substitute(db, func_generics)?;
+        impl_def_substitution.substitute(db, func_generics.to_vec())?;
 
     let function_substitution =
         GenericSubstitution::new(&func_generics, &generic_params_to_args(impl_func_generics, db));
@@ -3614,7 +3614,7 @@ fn priv_impl_function_body_data<'db>(
             impl_id: ImplLongId::Concrete(
                 ConcreteImplLongId {
                     impl_def_id,
-                    generic_args: generic_params_to_args(&generic_parameters, db),
+                    generic_args: generic_params_to_args(generic_parameters, db),
                 }
                 .intern(db),
             )
@@ -4074,11 +4074,10 @@ pub trait ImplSemantic<'db>: Database {
     fn impl_def_generic_params(
         &'db self,
         impl_def_id: ImplDefId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(impl_def_generic_params_data(self.as_dyn_database(), impl_def_id)
+    ) -> Maybe<&'db [GenericParam<'db>]> {
+        Ok(&impl_def_generic_params_data(self.as_dyn_database(), impl_def_id)
             .maybe_as_ref()?
-            .generic_params
-            .clone())
+            .generic_params)
     }
     /// Returns the resolution resolved_items of an impl.
     fn impl_def_resolver_data(
@@ -4313,11 +4312,10 @@ pub trait ImplSemantic<'db>: Database {
     fn impl_function_generic_params(
         &'db self,
         id: ImplFunctionId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(impl_function_generic_params_data(self.as_dyn_database(), id)
+    ) -> Maybe<&'db [GenericParam<'db>]> {
+        Ok(&impl_function_generic_params_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
-            .generic_params
-            .clone())
+            .generic_params)
     }
     /// Returns the attributes of an impl function.
     fn impl_function_attributes(

@@ -212,11 +212,10 @@ pub trait FreeFunctionSemantic<'db>: Database {
     fn free_function_generic_params(
         &'db self,
         id: FreeFunctionId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(free_function_generic_params_data(self.as_dyn_database(), id)
+    ) -> Maybe<&'db [GenericParam<'db>]> {
+        Ok(&free_function_generic_params_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
-            .generic_params
-            .clone())
+            .generic_params)
     }
     /// Returns the attributes of a free function.
     fn free_function_attributes(

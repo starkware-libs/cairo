@@ -883,7 +883,7 @@ impl<'db> Resolver<'db> {
         let generic_args = self.resolve_generic_args(
             diagnostics,
             GenericSubstitution::default(),
-            &generic_params,
+            generic_params,
             generic_args,
             stable_ptr,
         )?;
@@ -907,7 +907,7 @@ impl<'db> Resolver<'db> {
         let generic_args = self.resolve_generic_args(
             diagnostics,
             GenericSubstitution::default(),
-            &generic_params,
+            generic_params,
             generic_args,
             stable_ptr,
         )?;
@@ -928,7 +928,7 @@ impl<'db> Resolver<'db> {
             generic_args: self.resolve_generic_args(
                 diagnostics,
                 GenericSubstitution::default(),
-                &self.db.enum_generic_params(variant_id.enum_id(self.db))?,
+                self.db.enum_generic_params(variant_id.enum_id(self.db))?,
                 generic_args,
                 stable_ptr,
             )?,
@@ -949,11 +949,11 @@ impl<'db> Resolver<'db> {
         generic_args: &[ast::GenericArg<'db>],
     ) -> Maybe<FunctionId<'db>> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
-        let generic_params: Vec<_> = generic_function.generic_params(self.db)?;
+        let generic_params = generic_function.generic_params(self.db)?;
         let generic_args = self.resolve_generic_args(
             diagnostics,
             GenericSubstitution::default(),
-            &generic_params,
+            generic_params,
             generic_args,
             stable_ptr,
         )?;
@@ -977,7 +977,7 @@ impl<'db> Resolver<'db> {
         let generic_args = self.resolve_generic_args(
             diagnostics,
             GenericSubstitution::default(),
-            &generic_params,
+            generic_params,
             generic_args,
             stable_ptr,
         )?;
@@ -1004,7 +1004,7 @@ impl<'db> Resolver<'db> {
             let Ok(generic_params) = self.db.impl_def_generic_params(*impl_def_id) else {
                 return lookup_context.intern(self.db);
             };
-            let generic_args = generic_params_to_args(generic_params.as_slice(), self.db);
+            let generic_args = generic_params_to_args(generic_params, self.db);
             let impl_id: ConcreteImplId<'_> =
                 ConcreteImplLongId { impl_def_id: *impl_def_id, generic_args }.intern(self.db);
             lookup_context.insert_impl(ImplLongId::Concrete(impl_id).intern(self.db), self.db);
@@ -1474,7 +1474,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics<'db>,
         current_segment_generic_args: &[ast::GenericArg<'db>],
-        generic_params: Vec<GenericParam<'db>>,
+        generic_params: &[GenericParam<'db>],
         segment_stable_ptr: SyntaxStablePtrId<'db>,
         must_be_explicit_error: SemanticDiagnosticKind<'db>,
         item_forbidden_in_itself_explicit_error: SemanticDiagnosticKind<'db>,
@@ -1487,7 +1487,7 @@ impl<'db> Resolver<'db> {
         let resolved_args = self.resolve_generic_args(
             diagnostics,
             GenericSubstitution::default(),
-            &generic_params,
+            generic_params,
             current_segment_generic_args,
             segment_stable_ptr,
         )?;
@@ -1608,7 +1608,7 @@ fn resolve_actual_self_segment<'db>(
             let generic_parameters = db.trait_generic_params(*trait_id)?;
             let concrete_trait_id = ConcreteTraitLongId {
                 trait_id: *trait_id,
-                generic_args: generic_params_to_args(&generic_parameters, db),
+                generic_args: generic_params_to_args(generic_parameters, db),
             }
             .intern(db);
             Ok(ResolvedConcreteItem::SelfTrait(concrete_trait_id))
@@ -1618,7 +1618,7 @@ fn resolve_actual_self_segment<'db>(
             let impl_id = ImplLongId::Concrete(
                 ConcreteImplLongId {
                     impl_def_id: *impl_def_id,
-                    generic_args: generic_params_to_args(&generic_parameters, db),
+                    generic_args: generic_params_to_args(generic_parameters, db),
                 }
                 .intern(db),
             );
