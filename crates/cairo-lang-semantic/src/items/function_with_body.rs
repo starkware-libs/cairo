@@ -9,7 +9,7 @@ use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, Attribut
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Upcast, try_extract_matches};
-use itertools::Itertools;
+use itertools::{Itertools, chain};
 use salsa::Database;
 
 use super::functions::InlineConfiguration;
@@ -30,21 +30,23 @@ fn function_with_body_generic_params<'db>(
     _tracked: Tracked,
     function_id: FunctionWithBodyId<'db>,
 ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    match function_id {
+    Ok(match function_id {
         FunctionWithBodyId::Free(free_function_id) => {
-            db.free_function_generic_params(free_function_id)
+            db.free_function_generic_params(free_function_id)?.to_vec()
         }
-        FunctionWithBodyId::Impl(impl_function_id) => {
-            let mut res = db.impl_def_generic_params(impl_function_id.impl_def_id(db))?;
-            res.extend(db.impl_function_generic_params(impl_function_id)?);
-            Ok(res)
-        }
-        FunctionWithBodyId::Trait(trait_function_id) => {
-            let mut res = db.trait_generic_params(trait_function_id.trait_id(db))?;
-            res.extend(db.trait_function_generic_params(trait_function_id)?);
-            Ok(res)
-        }
-    }
+        FunctionWithBodyId::Impl(impl_function_id) => chain!(
+            db.impl_def_generic_params(impl_function_id.impl_def_id(db))?,
+            db.impl_function_generic_params(impl_function_id)?
+        )
+        .cloned()
+        .collect(),
+        FunctionWithBodyId::Trait(trait_function_id) => chain!(
+            db.trait_generic_params(trait_function_id.trait_id(db))?,
+            db.trait_function_generic_params(trait_function_id)?
+        )
+        .cloned()
+        .collect(),
+    })
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]

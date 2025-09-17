@@ -216,8 +216,8 @@ fn concrete_struct_members<'db>(
     // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
     //   always have the correct number of generic arguments.
     let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
-    let generic_args = concrete_struct_id.long(db).generic_args.clone();
-    let substitution = GenericSubstitution::new(&generic_params, &generic_args);
+    let generic_args = &concrete_struct_id.long(db).generic_args;
+    let substitution = GenericSubstitution::new(generic_params, generic_args);
 
     let generic_members = db.struct_members(concrete_struct_id.struct_id(db))?;
     generic_members
@@ -243,9 +243,12 @@ pub trait StructSemantic<'db>: Database {
             .unwrap_or_default()
     }
     /// Returns the generic parameters of a struct.
-    fn struct_generic_params(&'db self, struct_id: StructId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
+    fn struct_generic_params(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Maybe<&'db [GenericParam<'db>]> {
         let db = self.as_dyn_database();
-        Ok(struct_generic_params_data(db, struct_id).maybe_as_ref()?.generic_params.clone())
+        Ok(&struct_generic_params_data(db, struct_id).maybe_as_ref()?.generic_params)
     }
     /// Returns the attributes attached to a struct.
     fn struct_attributes(&'db self, struct_id: StructId<'db>) -> Maybe<&'db [Attribute<'db>]> {

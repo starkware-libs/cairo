@@ -27,7 +27,7 @@ fn test_extern_type() {
     );
     let generic_params = db.extern_type_declaration_generic_params(extern_type_id).unwrap();
     assert_eq!(
-        format!("{:?}", generic_params.debug(db)),
+        format!("{:?}", generic_params.to_vec().debug(db)),
         "[GenericParamType(test::S::A), GenericParamType(test::S::B)]"
     );
 }

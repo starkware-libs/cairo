@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId, ParamLongId,
     TopLevelLanguageElementId, TraitFunctionId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::ids::{Tracked, UnstableSalsaId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
@@ -139,19 +139,30 @@ impl<'db> GenericFunctionId<'db> {
             }
         }
     }
-    pub fn generic_params(&self, db: &'db dyn Database) -> Maybe<Vec<GenericParam<'db>>> {
+    pub fn generic_params(&self, db: &'db dyn Database) -> Maybe<&'db [GenericParam<'db>]> {
         match *self {
             GenericFunctionId::Free(id) => db.free_function_generic_params(id),
             GenericFunctionId::Extern(id) => db.extern_function_declaration_generic_params(id),
             GenericFunctionId::Impl(id) => {
-                let concrete_trait_id = db.impl_concrete_trait(id.impl_id)?;
-                let concrete_id = ConcreteTraitGenericFunctionId::new_from_data(
-                    db,
-                    concrete_trait_id,
-                    id.function,
-                );
-                GenericSubstitution::from_impl(id.impl_id)
-                    .substitute(db, db.concrete_trait_function_generic_params(concrete_id)?)
+                #[salsa::tracked(returns(ref))]
+                fn impl_function_generic_params_tracked<'db>(
+                    db: &'db dyn Database,
+                    impl_id: ImplId<'db>,
+                    trait_function: TraitFunctionId<'db>,
+                ) -> Maybe<Vec<GenericParam<'db>>> {
+                    let concrete_trait_id = db.impl_concrete_trait(impl_id)?;
+                    let concrete_id = ConcreteTraitGenericFunctionId::new_from_data(
+                        db,
+                        concrete_trait_id,
+                        trait_function,
+                    );
+                    GenericSubstitution::from_impl(impl_id).substitute(
+                        db,
+                        db.concrete_trait_function_generic_params(concrete_id)?.to_vec(),
+                    )
+                }
+                Ok(impl_function_generic_params_tracked(db, id.impl_id, id.function)
+                    .maybe_as_ref()?)
             }
         }
     }
@@ -309,12 +320,12 @@ impl<'db> FunctionLongId<'db> {
         db: &'db dyn Database,
         generic_function: GenericFunctionId<'db>,
     ) -> Maybe<Self> {
-        let generic_params: Vec<_> = generic_function.generic_params(db)?;
+        let generic_params = generic_function.generic_params(db)?;
 
         Ok(FunctionLongId {
             function: ConcreteFunction {
                 generic_function,
-                generic_args: generic_params_to_args(&generic_params, db),
+                generic_args: generic_params_to_args(generic_params, db),
             },
         })
     }
@@ -453,7 +464,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
     pub fn substitution(&self, db: &'db dyn Database) -> Maybe<GenericSubstitution<'db>> {
         Ok(match self.generic_function {
             GenericFunctionWithBodyId::Free(f) => {
-                GenericSubstitution::new(&db.free_function_generic_params(f)?, &self.generic_args)
+                GenericSubstitution::new(db.free_function_generic_params(f)?, &self.generic_args)
             }
             GenericFunctionWithBodyId::Impl(f) => match f.function_body {
                 ImplFunctionBodyId::Impl(body_id) => {
@@ -466,12 +477,11 @@ impl<'db> ConcreteFunctionWithBody<'db> {
                             db.impl_function_generic_params(body_id)?,
                             db.impl_def_generic_params(concrete_impl.impl_def_id)?
                         )
+                        .cloned()
                         .collect_vec(),
-                        &chain!(
-                            self.generic_args.iter().copied(),
-                            concrete_impl.generic_args.iter().copied()
-                        )
-                        .collect_vec(),
+                        &chain!(&self.generic_args, &concrete_impl.generic_args)
+                            .cloned()
+                            .collect_vec(),
                     ))
                 }
                 ImplFunctionBodyId::Trait(body_id) => {
@@ -483,12 +493,11 @@ impl<'db> ConcreteFunctionWithBody<'db> {
                                 db.trait_function_generic_params(body_id)?,
                                 db.trait_generic_params(concrete_trait.trait_id)?
                             )
+                            .cloned()
                             .collect_vec(),
-                            &chain!(
-                                self.generic_args.iter().copied(),
-                                concrete_trait.generic_args.iter().copied()
-                            )
-                            .collect_vec(),
+                            &chain!(&self.generic_args, &concrete_trait.generic_args)
+                                .cloned()
+                                .collect_vec(),
                         ),
                     )
                 }
@@ -500,12 +509,11 @@ impl<'db> ConcreteFunctionWithBody<'db> {
                         db.trait_function_generic_params(f.trait_function(db))?,
                         db.trait_generic_params(concrete_trait.trait_id)?
                     )
+                    .cloned()
                     .collect_vec(),
-                    &chain!(
-                        self.generic_args.iter().copied(),
-                        concrete_trait.generic_args.iter().copied()
-                    )
-                    .collect_vec(),
+                    &chain!(&self.generic_args, &concrete_trait.generic_args)
+                        .cloned()
+                        .collect_vec(),
                 )
             }
         })
@@ -527,7 +535,7 @@ impl<'db> ConcreteFunctionWithBody<'db> {
         Ok(match function_id {
             FunctionWithBodyId::Free(free) => {
                 let params = db.free_function_generic_params(free)?;
-                let generic_args = generic_params_to_args(&params, db);
+                let generic_args = generic_params_to_args(params, db);
                 ConcreteFunctionWithBody {
                     generic_function: GenericFunctionWithBodyId::Free(free),
                     generic_args,
@@ -535,10 +543,10 @@ impl<'db> ConcreteFunctionWithBody<'db> {
             }
             FunctionWithBodyId::Impl(impl_function_id) => {
                 let params = db.impl_function_generic_params(impl_function_id)?;
-                let generic_args = generic_params_to_args(&params, db);
+                let generic_args = generic_params_to_args(params, db);
                 let impl_def_id = impl_function_id.impl_def_id(db);
                 let impl_def_params = db.impl_def_generic_params(impl_def_id)?;
-                let impl_generic_args = generic_params_to_args(&impl_def_params, db);
+                let impl_generic_args = generic_params_to_args(impl_def_params, db);
                 let impl_generic_function = ImplGenericFunctionWithBodyId {
                     concrete_impl_id: ConcreteImplLongId {
                         impl_def_id,
@@ -554,10 +562,10 @@ impl<'db> ConcreteFunctionWithBody<'db> {
             }
             FunctionWithBodyId::Trait(trait_function_id) => {
                 let params = db.trait_function_generic_params(trait_function_id)?;
-                let generic_args = generic_params_to_args(&params, db);
+                let generic_args = generic_params_to_args(params, db);
                 let trait_id = trait_function_id.trait_id(db);
                 let trait_generic_params = db.trait_generic_params(trait_id)?;
-                let trait_generic_args = generic_params_to_args(&trait_generic_params, db);
+                let trait_generic_args = generic_params_to_args(trait_generic_params, db);
                 let concrete_trait_id = ConcreteTraitLongId {
                     generic_args: trait_generic_args,
                     trait_id: trait_function_id.trait_id(db),
@@ -819,51 +827,18 @@ fn function_title_signature_tracked<'db>(
     function_title_signature_helper(db, (), function_title_id)
 }
 
-/// Implementation of [FunctionsSemantic::function_title_generic_params].
-fn function_title_generic_params<'db>(
-    db: &'db dyn Database,
-    function_title_id: FunctionTitleId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    match function_title_id {
-        FunctionTitleId::Free(free_function) => db.free_function_generic_params(free_function),
-        FunctionTitleId::Extern(extern_function) => {
-            db.extern_function_declaration_generic_params(extern_function)
-        }
-        FunctionTitleId::Trait(trait_function) => db.trait_function_generic_params(trait_function),
-        FunctionTitleId::Impl(impl_function) => db.impl_function_generic_params(impl_function),
-    }
-}
-
-/// Query implementation of [FunctionsSemantic::function_title_generic_params].
-fn function_title_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    function_title_id: FunctionTitleId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    function_title_generic_params_helper(db, (), function_title_id)
-}
-
-#[salsa::tracked]
-fn function_title_generic_params_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_title_id: FunctionTitleId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    function_title_generic_params(db, function_title_id)
-}
-
 /// Implementation of [FunctionsSemantic::concrete_function_signature].
 fn concrete_function_signature<'db>(
     db: &'db dyn Database,
     function_id: FunctionId<'db>,
 ) -> Maybe<Signature<'db>> {
-    let ConcreteFunction { generic_function, generic_args, .. } =
-        function_id.long(db).function.clone();
+    let ConcreteFunction { generic_function, generic_args, .. } = &function_id.long(db).function;
     let generic_params = generic_function.generic_params(db)?;
     let generic_signature = generic_function.generic_signature(db)?;
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
-    GenericSubstitution::new(&generic_params, &generic_args).substitute(db, generic_signature)
+    GenericSubstitution::new(generic_params, generic_args).substitute(db, generic_signature)
 }
 
 /// Query implementation of [FunctionsSemantic::concrete_function_signature].
@@ -884,7 +859,7 @@ fn concrete_function_closure_params<'db>(
         function_id.long(db).function.clone();
     let generic_params = generic_function.generic_params(db)?;
     let mut generic_closure_params = db.get_closure_params(generic_function)?;
-    let substitution = GenericSubstitution::new(&generic_params, &generic_args);
+    let substitution = GenericSubstitution::new(generic_params, &generic_args);
     let mut changed_keys = vec![];
     for (key, value) in generic_closure_params.iter_mut() {
         *value = substitution.substitute(db, *value)?;
@@ -1116,8 +1091,21 @@ pub trait FunctionsSemantic<'db>: Database {
     fn function_title_generic_params(
         &'db self,
         function_title_id: FunctionTitleId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        function_title_generic_params_tracked(self.as_dyn_database(), function_title_id)
+    ) -> Maybe<&'db [GenericParam<'db>]> {
+        match function_title_id {
+            FunctionTitleId::Free(free_function) => {
+                self.free_function_generic_params(free_function)
+            }
+            FunctionTitleId::Extern(extern_function) => {
+                self.extern_function_declaration_generic_params(extern_function)
+            }
+            FunctionTitleId::Trait(trait_function) => {
+                self.trait_function_generic_params(trait_function)
+            }
+            FunctionTitleId::Impl(impl_function) => {
+                self.impl_function_generic_params(impl_function)
+            }
+        }
     }
     /// Returns the signature of a concrete function. This include free functions, extern functions,
     /// etc...
