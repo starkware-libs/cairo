@@ -49,12 +49,11 @@ the `test.cairo` file within the `tests` directory, use the following command:
 cargo run --bin cairo-test -- --single-file tests/test.cairo
 ```
 
-Two scripts are available to run tests within the Compiler repository:
+Three projects within the Compiler repository being tested with cairo test:
 
-1. `scripts/cairo_test.sh`: Executes tests within the `corelib` Cairo project and
-   the `tests/bug_samples` Cairo project.
-2. `scripts/starknet_test.sh`: Runs tests within the `cairo-lang-starknet/cairo_level_tests` Cairo
-   project.
+1. The Cairo core library: Run by running `cargo run --bin cairo-test -- corlib`.
+2. Bug samples: Run by running `cargo run --bin cairo-test -- tests/bug_samples --starknet`.
+3. Starknet features:: Run by running: `cargo run --bin cairo-test -- crates/cairo-lang-starknet/cairo_level_tests --starknet`.
 
 ### Running Rust Tests
 
