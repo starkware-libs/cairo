@@ -670,7 +670,7 @@ fn impl_generic_param_semantic<'db>(
             for constraint in constraints.associated_item_constraints(db).elements(db) {
                 let Ok(trait_type_id_opt) = db.trait_type_by_name(
                     concrete_trait_id.trait_id(db),
-                    constraint.item(db).text(db).into(),
+                    constraint.item(db).text(db),
                 ) else {
                     continue;
                 };
@@ -678,7 +678,7 @@ fn impl_generic_param_semantic<'db>(
                     diagnostics.report(
                         constraint.stable_ptr(db),
                         SemanticDiagnosticKind::NonTraitTypeConstrained {
-                            identifier: constraint.item(db).text(db).into(),
+                            identifier: constraint.item(db).text(db),
                             concrete_trait_id,
                         },
                     );

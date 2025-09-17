@@ -7,7 +7,7 @@ use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
 use crate::db::CrateConfiguration;
 use crate::flag::Flag;
-use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId};
+use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId, SmolStrId};
 use crate::test_utils::FilesDatabaseForTesting;
 use crate::{override_file_content, set_crate_config};
 
@@ -22,17 +22,17 @@ fn test_filesystem() {
     override_file_content!(db_ref, file_id, Some("content\n".into()));
 
     let config = CrateConfiguration::default_for_root(directory.clone());
-    let crt = CrateLongId::plain("my_crate").intern(db_ref);
+    let crt = CrateLongId::plain(SmolStrId::from(db_ref, "my_crate")).intern(db_ref);
     set_crate_config!(db_ref, crt, Some(config.clone()));
 
-    let crt = CrateLongId::plain("my_crate").intern(&db);
-    let crt2 = CrateLongId::plain("my_crate2").intern(&db);
+    let crt = CrateLongId::plain(SmolStrId::from(&db, "my_crate")).intern(&db);
+    let crt2 = CrateLongId::plain(SmolStrId::from(&db, "my_crate2")).intern(&db);
 
     assert_eq!(db.crate_config(crt), Some(&config));
     assert!(db.crate_config(crt2).is_none());
 
     let file_id = directory.file(&db, child_str);
-    assert_eq!(db.file_content(file_id).unwrap().long(&db).as_ref(), "content\n");
+    assert_eq!(db.file_content(file_id).unwrap(), "content\n");
 }
 
 #[test]

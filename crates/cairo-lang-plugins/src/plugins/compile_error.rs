@@ -1,6 +1,7 @@
 use cairo_lang_defs::extract_macro_single_unnamed_arg;
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use salsa::Database;
@@ -21,7 +22,8 @@ impl MacroPlugin for CompileErrorPlugin {
         let ast::ModuleItem::InlineMacro(inline_macro_ast) = item_ast else {
             return Default::default();
         };
-        if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db) != "compile_error"
+        if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db).long(db)
+            != "compile_error"
         {
             return Default::default();
         }
@@ -37,7 +39,7 @@ impl MacroPlugin for CompileErrorPlugin {
         );
         PluginResult::diagnostic_only(
             if let ast::Expr::String(err_message) = compilation_error_arg {
-                PluginDiagnostic::error(item_ast_ptr, err_message.text(db).to_string())
+                PluginDiagnostic::error(item_ast_ptr, err_message.text(db).to_string(db))
             } else {
                 PluginDiagnostic::error_with_inner_span(
                     db,
@@ -49,7 +51,7 @@ impl MacroPlugin for CompileErrorPlugin {
         )
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
+    fn declared_attributes<'db>(&self, _db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         vec![]
     }
 }

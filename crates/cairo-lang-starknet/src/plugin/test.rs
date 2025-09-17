@@ -49,7 +49,7 @@ impl TestFileRunner for ExpandContractTestRunner {
         let mut file_contents = vec![];
 
         for file_id in files {
-            let content = db.file_content(file_id).unwrap().long(&db).as_ref();
+            let content = db.file_content(file_id).unwrap();
             let content_location =
                 DiagnosticLocation { file_id, span: TextSpan::from_str(content) };
             let db = db.as_dyn_database();
@@ -59,7 +59,7 @@ impl TestFileRunner for ExpandContractTestRunner {
             } else {
                 format!("{:?}\n", original_location.debug(db))
             };
-            let file_name = file_id.file_name(db);
+            let file_name = file_id.file_name(db).long(db);
             file_contents.push(format!("{origin}{file_name}:\n\n{content}"));
         }
 

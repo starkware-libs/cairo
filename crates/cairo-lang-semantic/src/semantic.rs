@@ -1,7 +1,7 @@
 use cairo_lang_defs::ids::{LocalVarId, StatementItemId};
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
@@ -63,7 +63,7 @@ pub enum StatementItemKind<'db> {
 pub struct Parameter<'db> {
     pub id: ParamId<'db>,
     #[dont_rewrite]
-    pub name: StrRef<'db>,
+    pub name: SmolStrId<'db>,
     pub ty: TypeId<'db>,
     #[dont_rewrite]
     pub mutability: Mutability,

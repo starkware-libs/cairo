@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic, PluginResult};
 use cairo_lang_defs::plugin_utils::not_legacy_macro_diagnostic;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
@@ -43,9 +44,9 @@ struct ComponentsGenerationData<'db> {
     /// The components defined in the contract using the `component!` inline macro.
     pub components: Vec<NestedComponent<'db>>,
     /// The contract's storage members that are marked with the `substorage` attribute.
-    pub substorage_members: Vec<&'db str>,
+    pub substorage_members: Vec<SmolStrId<'db>>,
     /// The contract's event variants that are defined in the main event enum of the contract.
-    pub nested_event_variants: Vec<&'db str>,
+    pub nested_event_variants: Vec<SmolStrId<'db>>,
 }
 
 /// A component defined in a contract using the `component!` inline macro.
@@ -148,10 +149,11 @@ impl<'db> ComponentsGenerationData<'db> {
                 component_macro.stable_ptr(db).untyped(),
                 storage_name_syntax_node,
                 format!(
-                    "`{storage_node_text}` is not a substorage member in the contract's \
+                    "`{0}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
-                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{storage_node_text}: \
-                     path::to::component::{STORAGE_STRUCT_NAME},\n````"
+                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
+                     path::to::component::{STORAGE_STRUCT_NAME},\n````",
+                    storage_node_text.long(db)
                 ),
             ));
             is_valid = false;
@@ -165,12 +167,12 @@ impl<'db> ComponentsGenerationData<'db> {
                 component_macro.stable_ptr(db).untyped(),
                 event_name_syntax_node,
                 format!(
-                    "`{event_name_str}` is not a nested event in the contract's \
-                     `{EVENT_TYPE_NAME}` enum.\nConsider adding to the `{EVENT_TYPE_NAME}` \
-                     enum:\n```\n{event_name_str}: \
+                    "`{0}` is not a nested event in the contract's `{EVENT_TYPE_NAME}` \
+                     enum.\nConsider adding to the `{EVENT_TYPE_NAME}` enum:\n```\n{0}: \
                      path::to::component::{EVENT_TYPE_NAME},\n```\nNote: currently with \
                      components, only an enum {EVENT_TYPE_NAME} directly in the contract is \
                      supported.",
+                    event_name_str.long(db)
                 ),
             ));
             is_valid = false;
@@ -262,7 +264,7 @@ fn handle_contract_item<'db, 'a>(
             );
         }
         ast::ModuleItem::Struct(item_struct)
-            if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
+            if item_struct.name(db).text(db).long(db) == STORAGE_STRUCT_NAME =>
         {
             handle_storage_struct(
                 db,
@@ -303,7 +305,7 @@ fn handle_contract_item<'db, 'a>(
             }
         }
         ast::ModuleItem::InlineMacro(inline_macro_ast)
-            if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
+            if inline_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db).long(db)
                 == COMPONENT_INLINE_MACRO =>
         {
             handle_component_inline_macro(db, diagnostics, inline_macro_ast, &mut data.specific)
@@ -320,7 +322,7 @@ pub(super) fn generate_contract_specific_code<'db, 'a>(
     body: &ast::ModuleBody<'db>,
     module_ast: &ast::ItemModule<'db>,
     metadata: &'a MacroPluginMetadata<'a>,
-    event_variants: Vec<&'db str>,
+    event_variants: Vec<SmolStrId<'db>>,
 ) -> RewriteNode<'db> {
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
     generation_data.specific.components_data.nested_event_variants = event_variants;
@@ -345,7 +347,9 @@ fn generate_test_class_hash<'db>(
 ) -> RewriteNode<'db> {
     let test_class_hash = format!(
         "0x{:x}",
-        starknet_keccak(module_ast.as_syntax_node().get_text_without_trivia(db).as_bytes(),)
+        starknet_keccak(
+            module_ast.as_syntax_node().get_text_without_trivia(db).long(db).as_bytes(),
+        )
     );
 
     RewriteNode::Text(formatdoc!(
@@ -390,13 +394,14 @@ fn generate_constructor_deploy_function<'db>(
 /// Generates the deployment function for a contract.
 fn generate_deploy_function<'db>(
     db: &'db dyn Database,
-    constructor_params: Vec<(&'db str, ast::Expr<'db>)>,
+    constructor_params: Vec<(SmolStrId<'db>, ast::Expr<'db>)>,
 ) -> RewriteNode<'db> {
     let mut param_declarations = Vec::new();
     let mut calldata_serialization = Vec::new();
 
-    for (name, ty) in constructor_params.clone() {
-        let type_text = ty.as_syntax_node().get_text_without_trivia(db);
+    for (name, ty) in constructor_params {
+        let name = name.long(db);
+        let type_text = ty.as_syntax_node().get_text_without_trivia(db).long(db);
 
         param_declarations.push(format!("{name}: {type_text}"));
         calldata_serialization
@@ -472,7 +477,7 @@ fn handle_contract_free_function<'db>(
         entry_point_kind,
         item_function,
         function_name_node,
-        function_name.text(db).into(),
+        function_name.text(db).to_string(db),
         db,
         diagnostics,
         data,
@@ -526,7 +531,8 @@ fn handle_contract_impl<'db, 'a>(
             ]
             .into(),
         );
-        let wrapper_identifier = format!("{}__{}", impl_name.text(db), function_name.text(db));
+        let wrapper_identifier =
+            format!("{}__{}", impl_name.text(db).long(db), function_name.text(db).long(db));
         handle_contract_entry_point(
             entry_point_kind,
             &item_function,
@@ -764,7 +770,7 @@ fn is_first_generic_arg_contract_state<'db>(
     let ast::Expr::Path(first_generic_arg) = first_generic_arg.expr(db) else {
         return false;
     };
-    first_generic_arg.identifier(db) == CONTRACT_STATE_NAME
+    first_generic_arg.identifier(db).long(db) == CONTRACT_STATE_NAME
 }
 
 /// Verifies that a given Arg is named with given name and that the value is a path (simple if
@@ -779,7 +785,7 @@ fn try_extract_named_macro_argument<'db>(
     component_macro_stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
 ) -> Option<ast::ExprPath<'db>> {
     match arg_ast.arg_clause(db) {
-        ast::ArgClause::Named(clause) if clause.name(db).text(db) == arg_name => {
+        ast::ArgClause::Named(clause) if clause.name(db).text(db).long(db) == arg_name => {
             match clause.value(db) {
                 ast::Expr::Path(path) => {
                     if !only_simple_identifier {

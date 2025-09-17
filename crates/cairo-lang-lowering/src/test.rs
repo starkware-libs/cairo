@@ -212,7 +212,7 @@ fn test_sizes() {
     for (alias_id, alias) in type_aliases.iter() {
         let ty = db.module_type_alias_resolved_type(*alias_id).unwrap();
         let size = db.type_size(ty);
-        let alias_name = alias.name(db).text(db);
+        let alias_name = alias.name(db).text(db).long(db).as_str();
         let expected_size = alias_expected_size[alias_name];
         assert_eq!(size, expected_size, "Wrong size for type alias `{}`", ty.format(db));
     }

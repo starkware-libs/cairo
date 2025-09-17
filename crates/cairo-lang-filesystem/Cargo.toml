@@ -9,6 +9,7 @@ description = "Virtual filesystem for the compiler."
 [dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.12.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.3", features = ["serde"] }
+itertools.workspace = true
 path-clean.workspace = true
 salsa.workspace = true
 semver.workspace = true

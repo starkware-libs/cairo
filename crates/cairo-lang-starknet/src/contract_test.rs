@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::test_utils::{get_crate_semantic_diagnostics, setup_test_crate};
 use indoc::indoc;
 use itertools::Itertools;
@@ -36,11 +37,15 @@ fn test_contract_resolving() {
     assert_eq!(contracts.len(), 1);
 
     assert_eq!(
-        get_contract_internal_module_abi_functions(db, &contracts[0], EXTERNAL_MODULE)
-            .unwrap()
-            .into_iter()
-            .map(|f| f.alias)
-            .collect_vec(),
+        get_contract_internal_module_abi_functions(
+            db,
+            &contracts[0],
+            SmolStrId::from(db, EXTERNAL_MODULE)
+        )
+        .unwrap()
+        .into_iter()
+        .map(|f| f.alias)
+        .collect_vec(),
         vec!["ep1", "ep2"]
     );
 
