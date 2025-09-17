@@ -91,5 +91,5 @@ fn test_expr_lookup() {
     );
 
     let attributes = db.function_with_body_attributes(function_id).unwrap();
-    assert_eq!(format!("{:?}", attributes.debug(db)), "[Attribute { id: \"inline\" }]");
+    assert_eq!(format!("{:?}", attributes.to_vec().debug(db)), "[Attribute { id: \"inline\" }]");
 }
