@@ -4,7 +4,9 @@ use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 use itertools::zip_eq;
 
-use crate::core_libfunc_cost_base::{CostOperations, core_libfunc_postcost, core_libfunc_precost};
+use crate::core_libfunc_cost_base::{
+    CostOperations, FunctionCostInfo, core_libfunc_postcost, core_libfunc_precost,
+};
 pub use crate::core_libfunc_cost_base::{
     DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST, DICT_SQUASH_UNIQUE_KEY_COST,
     InvocationCostInfoProvider, SEGMENT_ARENA_ALLOCATION_COST,
@@ -26,7 +28,7 @@ impl CostOperations for Ops<'_> {
 
     fn function_token_cost(
         &mut self,
-        function: &cairo_lang_sierra::program::Function,
+        function: &FunctionCostInfo,
         token_type: CostTokenType,
     ) -> Self::CostType {
         if let Some(function_cost) = self.gas_info.function_costs.get(&function.id)
