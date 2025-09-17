@@ -305,13 +305,15 @@ impl<'db> AbiBuilder<'db> {
 
         let interface_path = trait_id.full_path(self.db);
         let mut items = Vec::new();
-        for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
-            let f = self.trait_function_as_abi(*function, storage_type)?;
-            self.add_entry_point(
-                function.name(self.db).into(),
-                EntryPointInfo { source, inputs: f.inputs.clone() },
-            )?;
-            items.push(Item::Function(f));
+        if let Ok(trait_functions) = self.db.trait_functions(trait_id) {
+            for function in trait_functions.values() {
+                let f = self.trait_function_as_abi(*function, storage_type)?;
+                self.add_entry_point(
+                    function.name(self.db).into(),
+                    EntryPointInfo { source, inputs: f.inputs.clone() },
+                )?;
+                items.push(Item::Function(f));
+            }
         }
 
         let interface_item = Item::Interface(Interface { name: interface_path, items });
@@ -329,9 +331,11 @@ impl<'db> AbiBuilder<'db> {
         storage_type: TypeId<'db>,
     ) -> Result<(), ABIError<'db>> {
         let trait_id = self.db.impl_def_trait(impl_def_id)?;
-        for function in self.db.trait_functions(trait_id).unwrap_or_default().values() {
-            let function_abi = self.trait_function_as_abi(*function, storage_type)?;
-            self.add_abi_item(Item::Function(function_abi), true, source)?;
+        if let Ok(trait_functions) = self.db.trait_functions(trait_id) {
+            for function in trait_functions.values() {
+                let function_abi = self.trait_function_as_abi(*function, storage_type)?;
+                self.add_abi_item(Item::Function(function_abi), true, source)?;
+            }
         }
 
         Ok(())
@@ -366,11 +370,13 @@ impl<'db> AbiBuilder<'db> {
         impl_def_id: ImplDefId<'db>,
         storage_type: TypeId<'db>,
     ) -> Result<(), ABIError<'db>> {
-        for impl_function_id in self.db.impl_functions(impl_def_id).unwrap_or_default().values() {
-            self.maybe_add_function_with_body(
-                FunctionWithBodyId::Impl(*impl_function_id),
-                storage_type,
-            )?;
+        if let Ok(impl_functions) = self.db.impl_functions(impl_def_id) {
+            for impl_function_id in impl_functions.values() {
+                self.maybe_add_function_with_body(
+                    FunctionWithBodyId::Impl(*impl_function_id),
+                    storage_type,
+                )?;
+            }
         }
         Ok(())
     }

@@ -373,7 +373,7 @@ fn add_unused_item_diagnostics<'db>(
             continue;
         }
         if let ModuleItemId::Use(use_id) = info.item_id {
-            add_unused_import_diagnostics(db, &all_used_uses, use_id, diagnostics);
+            add_unused_import_diagnostics(db, all_used_uses, use_id, diagnostics);
         };
     }
 }
