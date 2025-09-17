@@ -3,7 +3,9 @@ use std::sync::Arc;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{
+    CodeMapping, CodeOrigin, FileKind, FileLongId, SmolStrId, VirtualFile,
+};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
@@ -47,16 +49,16 @@ fn priv_macro_call_data<'db>(
     let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
     let callsite_module_id = macro_call_id.parent_module(db);
     // If the call is to `expose!` and no other `expose` item is locally declared - using expose.
-    if macro_name == EXPOSE_MACRO_NAME
-        && let Ok(None) = db.module_item_by_name(callsite_module_id, macro_name.into())
+    if macro_name.long(db) == EXPOSE_MACRO_NAME
+        && let Ok(None) = db.module_item_by_name(callsite_module_id, macro_name)
     {
         let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
         let code_mappings: Arc<[CodeMapping]> = [mapping].into();
         let parent_macro_call_data = resolver.macro_call_data;
         let generated_file_id = FileLongId::Virtual(VirtualFile {
             parent: Some(macro_call_syntax.stable_ptr(db).untyped().file_id(db)),
-            name: macro_name.into(),
-            content: content.into(),
+            name: macro_name,
+            content: SmolStrId::from(db, content),
             code_mappings: code_mappings.clone(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -85,7 +87,7 @@ fn priv_macro_call_data<'db>(
         Ok(_) => {
             let diag_added = diagnostics.report(
                 macro_call_syntax.stable_ptr(db),
-                SemanticDiagnosticKind::InlineMacroNotFound(macro_name.into()),
+                SemanticDiagnosticKind::InlineMacroNotFound(macro_name),
             );
             return Ok(MacroCallData {
                 macro_call_module: Err(diag_added),
@@ -126,7 +128,7 @@ fn priv_macro_call_data<'db>(
     }) else {
         let diag_added = diagnostics.report(
             macro_call_syntax.stable_ptr(db),
-            SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name.into()),
+            SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name),
         );
         return Ok(MacroCallData {
             macro_call_module: Err(diag_added),
@@ -142,8 +144,8 @@ fn priv_macro_call_data<'db>(
     let parent_macro_call_data = resolver.macro_call_data;
     let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().file_id(db)),
-        name: macro_name.into(),
-        content: expanded_code.text.clone(),
+        name: macro_name,
+        content: SmolStrId::from_arcstr(db, &expanded_code.text),
         code_mappings: expanded_code.code_mappings.clone(),
         kind: FileKind::Module,
         original_item_removed: false,
@@ -173,6 +175,7 @@ fn priv_macro_call_data_tracked<'db>(
 /// The name of the `expose!` macro.
 pub const EXPOSE_MACRO_NAME: &str = "expose";
 
+// TODO(eytan-starkware): Return SmolStrId
 /// Get the content and mappings for the `expose!` macro call.
 pub fn expose_content_and_mapping<'db>(
     db: &'db dyn Database,
@@ -209,7 +212,7 @@ fn priv_macro_call_data_cycle<'db>(
 
     let diag_added = diagnostics.report(
         macro_call_id.stable_ptr(db).untyped(),
-        SemanticDiagnosticKind::InlineMacroNotFound(macro_name.into()),
+        SemanticDiagnosticKind::InlineMacroNotFound(macro_name),
     );
     let module_id = macro_call_id.parent_module(db);
 

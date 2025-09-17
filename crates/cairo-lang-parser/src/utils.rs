@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{FilesGroup, init_files_group};
-use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ast::SyntaxFile;
@@ -60,8 +60,8 @@ impl SimpleParserDatabase {
     ) -> (SyntaxNode<'_>, Diagnostics<'_, ParserDiagnostic<'_>>) {
         let file = FileLongId::Virtual(VirtualFile {
             parent: None,
-            name: "parser_input".into(),
-            content: content.to_string().into(),
+            name: SmolStrId::from(self, "parser_input"),
+            content: SmolStrId::from(self, content.to_string()),
             code_mappings: [].into(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -85,8 +85,8 @@ impl SimpleParserDatabase {
         );
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
-            name: "token_stream_file_parser_input".into(),
-            content: content.into(),
+            name: SmolStrId::from(self, "token_stream_file_parser_input"),
+            content: SmolStrId::from(self, content),
             code_mappings: Default::default(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -111,8 +111,8 @@ impl SimpleParserDatabase {
         );
         let vfs = VirtualFile {
             parent: Default::default(),
-            name: "token_stream_expr_parser_input".into(),
-            content: content.into(),
+            name: SmolStrId::from(self, "token_stream_expr_parser_input"),
+            content: SmolStrId::from(self, content),
             code_mappings: Default::default(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -148,7 +148,7 @@ pub fn get_syntax_file_and_diagnostics<'a>(
     file_id: FileId<'a>,
 ) -> (SyntaxFile<'a>, Diagnostics<'a, ParserDiagnostic<'a>>) {
     let mut diagnostics = DiagnosticsBuilder::default();
-    let contents = db.file_content(file_id).unwrap().long(db).as_ref();
+    let contents = db.file_content(file_id).unwrap();
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
     (syntax_file, diagnostics.build())
 }

@@ -36,6 +36,7 @@ macro_rules! define_generic_identity {
     };
 }
 
+// TODO(eytan-starkware): Consider moving to SmolStrId in generic_identity!
 define_generic_identity!("The identity of a generic library function", GenericLibfuncId);
 
 define_generic_identity!("The identity of a generic type.", GenericTypeId);

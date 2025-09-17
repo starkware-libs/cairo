@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_test_utils::test;
 use cairo_lang_utils::{Upcast, extract_matches};
 use pretty_assertions::assert_eq;
@@ -31,7 +32,7 @@ fn test_expr_lookup() {
     let module_id = test_module.module_id;
 
     let function_id = FunctionWithBodyId::Free(extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, SmolStrId::from(db, "foo")).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     ));
     let expr_formatter = ExprFormatter { db, function_id };

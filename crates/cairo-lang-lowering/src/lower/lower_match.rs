@@ -666,7 +666,7 @@ fn lower_tuple_match_arm<'db>(
                     .current_path
                     .variants
                     .iter()
-                    .map(|variant| variant.id.name(ctx.db))
+                    .map(|variant| variant.id.name(ctx.db).long(ctx.db))
                     .join(", ")
             );
             report_missing_arm_error(
@@ -1790,7 +1790,7 @@ fn report_missing_variant_error<'db>(
 ) -> DiagnosticAdded {
     let variants_string = format!(
         "{}{}",
-        variants_used.iter().map(|v| v.id.name(ctx.db)).join("("),
+        variants_used.iter().map(|v| v.id.name(ctx.db).long(ctx.db)).join("("),
         ")".repeat(variants_used.len() - 1)
     );
     report_missing_arm_error(ctx, location, match_type, variants_string)

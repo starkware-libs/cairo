@@ -1,7 +1,7 @@
 use core::hash::Hash;
 
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SmolStrId};
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::{Intern, define_short_id, require};
 use salsa::Database;
@@ -84,7 +84,7 @@ impl<'a> SyntaxNode<'a> {
         self.long(db).offset
     }
     pub fn width(&self, db: &dyn Database) -> TextWidth {
-        self.green_node(db).width()
+        self.green_node(db).width(db)
     }
     pub fn kind(&self, db: &dyn Database) -> SyntaxKind {
         self.green_node(db).kind
@@ -93,9 +93,9 @@ impl<'a> SyntaxNode<'a> {
         TextSpan::new_with_width(self.offset(db), self.width(db))
     }
     /// Returns the text of the token if this node is a token.
-    pub fn text(&self, db: &'a dyn Database) -> Option<&'a str> {
+    pub fn text(&self, db: &'a dyn Database) -> Option<SmolStrId<'a>> {
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text),
+            green::GreenNodeDetails::Token(text) => Some(*text),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
@@ -111,7 +111,7 @@ impl<'a> SyntaxNode<'a> {
         let green_node = node.green.long(db);
         let (leading, trailing) = both_trivia_width(db, green_node);
         let start = node.offset.add_width(leading);
-        let end = node.offset.add_width(green_node.width()).sub_width(trailing);
+        let end = node.offset.add_width(green_node.width(db)).sub_width(trailing);
         TextSpan::new(start, end)
     }
     pub fn parent(&self, db: &'a dyn Database) -> Option<SyntaxNode<'a>> {
@@ -145,7 +145,7 @@ impl<'a> SyntaxNode<'a> {
         let mut key_map = VecMap::<_, usize>::new();
         for green_id in children {
             let green = green_id.long(db);
-            let width = green.width();
+            let width = green.width(db);
             let kind = green.kind;
             let rng = key_fields::key_fields_range(kind);
             let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
@@ -182,7 +182,7 @@ impl<'a> SyntaxNode<'a> {
         let node = self.long(db);
         let green_node = node.green.long(db);
         let trailing = trailing_trivia_width(db, green_node);
-        node.offset.add_width(green_node.width()).sub_width(trailing)
+        node.offset.add_width(green_node.width(db)).sub_width(trailing)
     }
 
     /// Lookups a syntax node using an offset.
@@ -208,11 +208,8 @@ impl<'a> SyntaxNode<'a> {
         // A `None` return from reading the file content is only expected in the case of an IO
         // error. Since a SyntaxNode exists and is being processed, we should have already
         // successfully accessed this file earlier, therefore it should never fail.
-        let file_content = db
-            .file_content(self.stable_ptr(db).file_id(db))
-            .expect("Failed to read file content")
-            .long(db)
-            .as_ref();
+        let file_content =
+            db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
 
         self.span(db).take(file_content)
     }
@@ -225,7 +222,7 @@ impl<'a> SyntaxNode<'a> {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text.long(db)),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     let kind = child.kind(db);
@@ -254,7 +251,7 @@ impl<'a> SyntaxNode<'a> {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text.long(db)),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     if let Some(trivia) = ast::Trivia::cast(db, *child) {
@@ -286,13 +283,10 @@ impl<'a> SyntaxNode<'a> {
     /// of the first token and the trailing trivia of the last token).
     ///
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
-    pub fn get_text_without_trivia(self, db: &'a dyn Database) -> &'a str {
-        let file_content = db
-            .file_content(self.stable_ptr(db).file_id(db))
-            .expect("Failed to read file content")
-            .long(db)
-            .as_ref();
-        self.span_without_trivia(db).take(file_content)
+    pub fn get_text_without_trivia(self, db: &'a dyn Database) -> SmolStrId<'a> {
+        let file_content =
+            db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
+        SmolStrId::from(db, self.span_without_trivia(db).take(file_content))
     }
 
     /// Returns the text under the syntax node, according to the given span.
@@ -302,10 +296,8 @@ impl<'a> SyntaxNode<'a> {
     /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
     pub fn get_text_of_span(self, db: &'a dyn Database, span: TextSpan) -> &'a str {
         assert!(self.span(db).contains(span));
-        let file_content = db
-            .file_content(self.stable_ptr(db).file_id(db))
-            .expect("Failed to read file content")
-            .long(db);
+        let file_content =
+            db.file_content(self.stable_ptr(db).file_id(db)).expect("Failed to read file content");
         span.take(file_content)
     }
 
@@ -437,8 +429,8 @@ pub trait TypedSyntaxNode<'a>: Sized {
 }
 
 pub trait Token<'a>: TypedSyntaxNode<'a> {
-    fn new_green(db: &'a dyn Database, text: &'a str) -> Self::Green;
-    fn text(&self, db: &'a dyn Database) -> &'a str;
+    fn new_green(db: &'a dyn Database, text: SmolStrId<'a>) -> Self::Green;
+    fn text(&self, db: &'a dyn Database) -> SmolStrId<'a>;
 }
 
 pub trait Terminal<'a>: TypedSyntaxNode<'a> {
@@ -451,7 +443,7 @@ pub trait Terminal<'a>: TypedSyntaxNode<'a> {
         trailing_trivia: TriviaGreen<'a>,
     ) -> <Self as TypedSyntaxNode<'a>>::Green;
     /// Returns the text of the token of this terminal (excluding the trivia).
-    fn text(&self, db: &'a dyn Database) -> &'a str;
+    fn text(&self, db: &'a dyn Database) -> SmolStrId<'a>;
     /// Casts a syntax node to this terminal type's token and then walks up to return the terminal.
     fn cast_token(db: &'a dyn Database, node: SyntaxNode<'a>) -> Option<Self> {
         if node.kind(db) == Self::TokenType::OPTIONAL_KIND? {
@@ -480,7 +472,7 @@ fn leading_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> Text
                 return TextWidth::default();
             }
             if green.kind.is_terminal() {
-                return children[0].long(db).width();
+                return children[0].long(db).width(db);
             }
             let non_empty = find_non_empty_child(db, &mut children.iter())
                 .expect("Parent width non-empty - one of the children should be non-empty");
@@ -498,7 +490,7 @@ fn trailing_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> Tex
                 return TextWidth::default();
             }
             if green.kind.is_terminal() {
-                return children[2].long(db).width();
+                return children[2].long(db).width(db);
             }
             let non_empty = find_non_empty_child(db, &mut children.iter().rev())
                 .expect("Parent width non-empty - one of the children should be non-empty");
@@ -516,7 +508,7 @@ fn both_trivia_width<'a>(db: &'a dyn Database, green: &GreenNode<'a>) -> (TextWi
                 return (TextWidth::default(), TextWidth::default());
             }
             if green.kind.is_terminal() {
-                return (children[0].long(db).width(), children[2].long(db).width());
+                return (children[0].long(db).width(db), children[2].long(db).width(db));
             }
             let mut iter = children.iter();
             let first_non_empty = find_non_empty_child(db, &mut iter)
@@ -540,6 +532,6 @@ fn find_non_empty_child<'a>(
 ) -> Option<&'a GreenNode<'a>> {
     child_iter.find_map(|child| {
         let child = child.long(db);
-        (child.width() != TextWidth::default()).then_some(child)
+        (child.width(db) != TextWidth::default()).then_some(child)
     })
 }

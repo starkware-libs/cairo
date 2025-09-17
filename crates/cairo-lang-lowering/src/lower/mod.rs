@@ -3,6 +3,7 @@ use std::vec;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, get_enum_concrete_variant, try_get_ty_by_name,
     unwrap_error_propagation_type,
@@ -978,22 +979,26 @@ fn lower_expr_string_literal<'db>(
     let db = ctx.db;
 
     // Get all the relevant types from the corelib.
-    let bytes31_ty = get_core_ty_by_name(db, "bytes31", vec![]);
-    let data_array_ty = get_core_ty_by_name(db, "Array", vec![GenericArgumentId::Type(bytes31_ty)]);
-    let byte_array_ty = get_core_ty_by_name(db, "ByteArray", vec![]);
+    let bytes31_ty = get_core_ty_by_name(db, SmolStrId::from(db, "bytes31"), vec![]);
+    let data_array_ty = get_core_ty_by_name(
+        db,
+        SmolStrId::from(db, "Array"),
+        vec![GenericArgumentId::Type(bytes31_ty)],
+    );
+    let byte_array_ty = get_core_ty_by_name(db, SmolStrId::from(db, "ByteArray"), vec![]);
 
-    let array_submodule = core_submodule(db, "array");
+    let array_submodule = core_submodule(db, SmolStrId::from(db, "array"));
     let data_array_new_function = FunctionLongId::Semantic(get_function_id(
         db,
         array_submodule,
-        "array_new",
+        SmolStrId::from(db, "array_new"),
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
     .intern(db);
     let data_array_append_function = FunctionLongId::Semantic(get_function_id(
         db,
         array_submodule,
-        "array_append",
+        SmolStrId::from(db, "array_append"),
         vec![GenericArgumentId::Type(bytes31_ty)],
     ))
     .intern(db);
@@ -1240,7 +1245,7 @@ fn lower_expr_function_call<'db>(
     };
 
     // If the function is panic(), do something special.
-    if expr.function == get_core_function_id(ctx.db, "panic", vec![]) {
+    if expr.function == get_core_function_id(ctx.db, SmolStrId::from(ctx.db, "panic"), vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
         return Err(LoweringFlowError::Panic(input, location));
     }
@@ -1428,25 +1433,30 @@ fn lower_expr_loop<'db>(
         let generic_args =
             vec![GenericArgumentId::Type(return_type), GenericArgumentId::Type(ctx.return_type)];
 
-        let internal_module = core_submodule(db, "internal");
-        let ret_ty =
-            try_get_ty_by_name(db, internal_module, "LoopResult", generic_args.clone()).unwrap();
+        let internal_module = core_submodule(db, SmolStrId::from(db, "internal"));
+        let ret_ty = try_get_ty_by_name(
+            db,
+            internal_module,
+            SmolStrId::from(db, "LoopResult"),
+            generic_args.clone(),
+        )
+        .unwrap();
         (
             ret_ty,
             Some(LoopEarlyReturnInfo {
                 normal_return_variant: get_enum_concrete_variant(
                     db,
                     internal_module,
-                    "LoopResult",
+                    SmolStrId::from(db, "LoopResult"),
                     generic_args.clone(),
-                    "Normal",
+                    SmolStrId::from(db, "Normal"),
                 ),
                 early_return_variant: get_enum_concrete_variant(
                     db,
                     internal_module,
-                    "LoopResult",
+                    SmolStrId::from(db, "LoopResult"),
                     generic_args,
-                    "EarlyReturn",
+                    SmolStrId::from(db, "EarlyReturn"),
                 ),
             }),
         )
@@ -1955,7 +1965,7 @@ fn add_closure_call_function<'db>(
     }
 
     let trait_function: cairo_lang_defs::ids::TraitFunctionId<'_> = db
-        .trait_function_by_name(trait_id, "call".into())
+        .trait_function_by_name(trait_id, SmolStrId::from(db, "call"))
         .unwrap()
         .expect("Call function must exist for an Fn trait.");
 

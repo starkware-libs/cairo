@@ -2,6 +2,7 @@
 //!
 //! The impls here are visible through [`super`] module.
 
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_utils::require;
 use num_bigint::{BigInt, Sign};
 use num_traits::Num;
@@ -37,8 +38,8 @@ impl<'a> TerminalLiteralNumber<'a> {
     pub fn numeric_value_and_suffix(
         &self,
         db: &'a dyn Database,
-    ) -> Option<(BigInt, Option<&'a str>)> {
-        let text = self.text(db);
+    ) -> Option<(BigInt, Option<SmolStrId<'a>>)> {
+        let text = self.text(db).long(db).as_str();
 
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
             (num_no_prefix, 16)
@@ -63,7 +64,10 @@ impl<'a> TerminalLiteralNumber<'a> {
                 }
                 None => (text, None),
             };
-            Some((BigInt::from_str_radix(text, radix).ok()?, suffix))
+            Some((
+                BigInt::from_str_radix(text, radix).ok()?,
+                suffix.map(|s| SmolStrId::from(db, s)),
+            ))
         }
     }
 }
@@ -71,7 +75,7 @@ impl<'a> TerminalLiteralNumber<'a> {
 impl<'a> TerminalShortString<'a> {
     /// Interpret this token/terminal as a string.
     pub fn string_value(&self, db: &'a dyn Database) -> Option<String> {
-        let text = self.text(db);
+        let text = self.text(db).long(db);
 
         let (text, _suffix) = string_value(text, '\'')?;
 
@@ -85,7 +89,7 @@ impl<'a> TerminalShortString<'a> {
 
     /// Get suffix from this literal if it has one.
     pub fn suffix(&self, db: &'a dyn Database) -> Option<&'a str> {
-        let text = self.text(db);
+        let text = self.text(db).long(db);
         let (_literal, mut suffix) = text[1..].rsplit_once('\'')?;
         require(!suffix.is_empty())?;
         if suffix.starts_with('_') {
@@ -98,7 +102,7 @@ impl<'a> TerminalShortString<'a> {
 impl<'a> TerminalString<'a> {
     /// Interpret this token/terminal as a string.
     pub fn string_value(&self, db: &'a dyn Database) -> Option<String> {
-        let text = self.text(db);
+        let text = self.text(db).long(db);
         let (text, suffix) = string_value(text, '"')?;
         if !suffix.is_empty() {
             unreachable!();

@@ -83,7 +83,7 @@ pub fn handle_trait<'db>(
     let mut library_caller_method_impls = vec![];
     let mut safe_contract_caller_method_impls = vec![];
     let mut safe_library_caller_method_impls = vec![];
-    let base_name = trait_ast.name(db).text(db);
+    let base_name = trait_ast.name(db).text(db).long(db);
     let dispatcher_trait_name = format!("{base_name}DispatcherTrait");
     let safe_dispatcher_trait_name = format!("{base_name}SafeDispatcherTrait");
     let contract_caller_name = format!("{base_name}Dispatcher");
@@ -114,7 +114,7 @@ pub fn handle_trait<'db>(
                     ));
                     continue;
                 };
-                if self_param.name(db).text(db) != SELF_PARAM_KW {
+                if self_param.name(db).text(db).long(db) != SELF_PARAM_KW {
                     diagnostics.push(PluginDiagnostic::error(
                         self_param.stable_ptr(db),
                         "The first parameter must be named `self`.".to_string(),
@@ -124,9 +124,9 @@ pub fn handle_trait<'db>(
                 let self_param_type_ok = if self_param.is_ref_param(db) {
                     extract_matches!(self_param.type_clause(db), OptionTypeClause::TypeClause)
                         .ty(db)
-                        .is_identifier(db, single_generic_param)
+                        .is_identifier(db, single_generic_param.long(db).as_str())
                 } else if let Some(snapped_ty) = self_param.try_extract_snapshot(db) {
-                    snapped_ty.is_identifier(db, single_generic_param)
+                    snapped_ty.is_identifier(db, single_generic_param.long(db).as_str())
                 } else {
                     false
                 };
@@ -170,7 +170,7 @@ pub fn handle_trait<'db>(
                         ))
                     }
 
-                    if param.name(db).text(db) == CALLDATA_PARAM_NAME {
+                    if param.name(db).text(db).long(db) == CALLDATA_PARAM_NAME {
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic::error(
@@ -226,8 +226,10 @@ pub fn handle_trait<'db>(
                     )]
                     .into(),
                 ));
-                let entry_point_selector =
-                    RewriteNode::Text(format!("selector!(\"{}\")", declaration.name(db).text(db)));
+                let entry_point_selector = RewriteNode::Text(format!(
+                    "selector!(\"{}\")",
+                    declaration.name(db).text(db).long(db)
+                ));
                 contract_caller_method_impls.push(declaration_method_impl(
                     dispatcher_signature(db, &declaration, &contract_caller_name, true),
                     entry_point_selector.clone(),

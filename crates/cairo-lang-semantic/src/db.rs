@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, StrRef, Tracked};
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, FileId, FileLongId, SmolStrId, Tracked};
 use cairo_lang_syntax::attribute::consts::{DEPRECATED_ATTR, UNUSED_IMPORTS, UNUSED_VARIABLES};
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -317,7 +317,7 @@ fn add_duplicated_names_from_macro_expansions_diagnostics<'db>(
         // Macro calls are handled by the caller.
         return;
     }
-    let mut names = UnorderedHashSet::<StrRef<'_>>::default();
+    let mut names = UnorderedHashSet::<SmolStrId<'_>>::default();
     for defined_module in chain!([&module_id], module_macro_modules(db, false, module_id)) {
         let Ok(data) = db.priv_module_semantic_data(*defined_module) else {
             continue;
@@ -395,7 +395,13 @@ fn add_unused_import_diagnostics<'db>(
         ))?;
         require(!all_used_uses.contains(&use_id))?;
         let resolver_data = db.use_resolver_data(use_id).ok()?;
-        require(!resolver_data.feature_config.allowed_lints.contains(UNUSED_IMPORTS))?;
+
+        require(
+            !resolver_data
+                .feature_config
+                .allowed_lints
+                .contains(&SmolStrId::from(db, UNUSED_IMPORTS)),
+        )?;
         Some(diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),

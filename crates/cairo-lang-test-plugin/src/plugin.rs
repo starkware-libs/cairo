@@ -1,4 +1,5 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginResult};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::ast;
 use salsa::Database;
@@ -30,12 +31,12 @@ impl MacroPlugin for TestPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         vec![
-            TEST_ATTR.to_string(),
-            AVAILABLE_GAS_ATTR.to_string(),
-            SHOULD_PANIC_ATTR.to_string(),
-            IGNORE_ATTR.to_string(),
+            SmolStrId::from(db, TEST_ATTR),
+            SmolStrId::from(db, AVAILABLE_GAS_ATTR),
+            SmolStrId::from(db, SHOULD_PANIC_ATTR),
+            SmolStrId::from(db, IGNORE_ATTR),
         ]
     }
 }

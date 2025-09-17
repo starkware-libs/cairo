@@ -239,7 +239,7 @@ fn create_node_for_enum<'db>(
                         build_node_callback(
                             graph,
                             pattern_indices_inner.lift(&variant_info.filter),
-                            format!("{}({path})", concrete_variant.id.name(ctx.db)),
+                            format!("{}({path})", concrete_variant.id.name(ctx.db).long(ctx.db)),
                         )
                     },
                     location,
@@ -332,7 +332,7 @@ fn create_node_for_struct<'db>(
             graph,
             patterns,
             build_node_callback: &mut |graph, pattern_indices, path| {
-                let struct_name = concrete_struct_id.struct_id(ctx.db).name(ctx.db);
+                let struct_name = concrete_struct_id.struct_id(ctx.db).name(ctx.db).long(ctx.db);
                 build_node_callback(graph, pattern_indices, format!("{struct_name}{{{path}}}"))
             },
             location,
@@ -477,7 +477,7 @@ fn add_item_to_path<'db>(
 ) -> String {
     // If it's a struct, add the member name.
     let item_str = if let Some(current_member) = current_member {
-        format!("{}: {}", current_member.id.name(db), item)
+        format!("{}: {}", current_member.id.name(db).long(db), item)
     } else {
         item.clone()
     };

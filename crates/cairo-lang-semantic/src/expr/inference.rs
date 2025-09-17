@@ -301,7 +301,7 @@ impl<'db> InferenceError<'db> {
                 format!(
                     "`{}::{}` type mismatch: `{:?}` and `{:?}`.",
                     impl_id.format(db),
-                    trait_type_id.name(db),
+                    trait_type_id.name(db).long(db),
                     ty0.debug(db),
                     ty1.debug(db)
                 )

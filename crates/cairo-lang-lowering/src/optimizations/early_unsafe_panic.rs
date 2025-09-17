@@ -6,6 +6,7 @@ use std::collections::HashSet;
 
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::helper::ModuleHelper;
 use itertools::zip_eq;
 use salsa::Database;
@@ -29,8 +30,8 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
 
     let core = ModuleHelper::core(db);
     let libfuncs_with_sideffect = HashSet::from_iter([
-        core.submodule("debug").extern_function_id("print"),
-        core.submodule("internal").extern_function_id("trace"),
+        core.submodule("debug").extern_function_id(SmolStrId::from(db, "print")),
+        core.submodule("internal").extern_function_id(SmolStrId::from(db, "trace")),
     ]);
 
     let ctx = UnsafePanicContext { db, fixes: vec![], libfuncs_with_sideffect };

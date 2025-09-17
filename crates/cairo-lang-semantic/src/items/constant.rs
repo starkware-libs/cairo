@@ -11,6 +11,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
     skip_diagnostic,
 };
+use cairo_lang_filesystem::ids::{SmolStrId, db_str};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -222,7 +223,7 @@ impl<'db> ImplConstantId<'db> {
     }
 
     pub fn format(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db))
+        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db).long(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplConstantId<'db> {
@@ -430,12 +431,12 @@ pub fn value_as_const_value<'db>(
 ) -> Result<ConstValueId<'db>, LiteralError<'db>> {
     validate_literal(db, ty, value)?;
     let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(db, "u256", vec![]);
+        let u256_ty = get_core_ty_by_name(db, SmolStrId::from(db, "u256"), vec![]);
 
         if ty != u256_ty {
             ConstValue::Int(value.clone(), ty).intern(db)
         } else {
-            let u128_ty = get_core_ty_by_name(db, "u128", vec![]);
+            let u128_ty = get_core_ty_by_name(db, SmolStrId::from(db, "u128"), vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
             let high = value >> 128;
@@ -1235,49 +1236,54 @@ impl<'db> ConstCalcInfo<'db> {
             unit_const,
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]),
             upcast_fns: FromIterator::from_iter([
-                bounded_int.extern_function_id("upcast"),
-                integer.extern_function_id("u8_to_felt252"),
-                integer.extern_function_id("u16_to_felt252"),
-                integer.extern_function_id("u32_to_felt252"),
-                integer.extern_function_id("u64_to_felt252"),
-                integer.extern_function_id("u128_to_felt252"),
-                integer.extern_function_id("i8_to_felt252"),
-                integer.extern_function_id("i16_to_felt252"),
-                integer.extern_function_id("i32_to_felt252"),
-                integer.extern_function_id("i64_to_felt252"),
-                integer.extern_function_id("i128_to_felt252"),
-                class_hash_module.extern_function_id("class_hash_to_felt252"),
-                contract_address_module.extern_function_id("contract_address_to_felt252"),
+                bounded_int.extern_function_id(db_str(db, "upcast")),
+                integer.extern_function_id(db_str(db, "u8_to_felt252")),
+                integer.extern_function_id(db_str(db, "u16_to_felt252")),
+                integer.extern_function_id(db_str(db, "u32_to_felt252")),
+                integer.extern_function_id(db_str(db, "u64_to_felt252")),
+                integer.extern_function_id(db_str(db, "u128_to_felt252")),
+                integer.extern_function_id(db_str(db, "i8_to_felt252")),
+                integer.extern_function_id(db_str(db, "i16_to_felt252")),
+                integer.extern_function_id(db_str(db, "i32_to_felt252")),
+                integer.extern_function_id(db_str(db, "i64_to_felt252")),
+                integer.extern_function_id(db_str(db, "i128_to_felt252")),
+                class_hash_module.extern_function_id(db_str(db, "class_hash_to_felt252")),
+                contract_address_module
+                    .extern_function_id(db_str(db, "contract_address_to_felt252")),
             ]),
             downcast_fns: FromIterator::from_iter([
-                (bounded_int.extern_function_id("downcast"), false),
-                (bounded_int.extern_function_id("bounded_int_trim_min"), true),
-                (bounded_int.extern_function_id("bounded_int_trim_max"), true),
-                (integer.extern_function_id("u8_try_from_felt252"), false),
-                (integer.extern_function_id("u16_try_from_felt252"), false),
-                (integer.extern_function_id("u32_try_from_felt252"), false),
-                (integer.extern_function_id("u64_try_from_felt252"), false),
-                (integer.extern_function_id("i8_try_from_felt252"), false),
-                (integer.extern_function_id("i16_try_from_felt252"), false),
-                (integer.extern_function_id("i32_try_from_felt252"), false),
-                (integer.extern_function_id("i64_try_from_felt252"), false),
-                (integer.extern_function_id("i128_try_from_felt252"), false),
-                (class_hash_module.extern_function_id("class_hash_try_from_felt252"), false),
+                (bounded_int.extern_function_id(db_str(db, "downcast")), false),
+                (bounded_int.extern_function_id(db_str(db, "bounded_int_trim_min")), true),
+                (bounded_int.extern_function_id(db_str(db, "bounded_int_trim_max")), true),
+                (integer.extern_function_id(db_str(db, "u8_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "u16_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "u32_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "u64_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "i8_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "i16_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "i32_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "i64_try_from_felt252")), false),
+                (integer.extern_function_id(db_str(db, "i128_try_from_felt252")), false),
                 (
-                    contract_address_module.extern_function_id("contract_address_try_from_felt252"),
+                    class_hash_module.extern_function_id(db_str(db, "class_hash_try_from_felt252")),
+                    false,
+                ),
+                (
+                    contract_address_module
+                        .extern_function_id(db_str(db, "contract_address_try_from_felt252")),
                     false,
                 ),
             ]),
-            unwrap_non_zero: zeroable.extern_function_id("unwrap_non_zero"),
+            unwrap_non_zero: zeroable.extern_function_id(db_str(db, "unwrap_non_zero")),
             nz_fns: FromIterator::from_iter([
-                core.extern_function_id("felt252_is_zero"),
-                bounded_int.extern_function_id("bounded_int_is_zero"),
-                integer.extern_function_id("u8_is_zero"),
-                integer.extern_function_id("u16_is_zero"),
-                integer.extern_function_id("u32_is_zero"),
-                integer.extern_function_id("u64_is_zero"),
-                integer.extern_function_id("u128_is_zero"),
-                integer.extern_function_id("u256_is_zero"),
+                core.extern_function_id(db_str(db, "felt252_is_zero")),
+                bounded_int.extern_function_id(db_str(db, "bounded_int_is_zero")),
+                integer.extern_function_id(db_str(db, "u8_is_zero")),
+                integer.extern_function_id(db_str(db, "u16_is_zero")),
+                integer.extern_function_id(db_str(db, "u32_is_zero")),
+                integer.extern_function_id(db_str(db, "u64_is_zero")),
+                integer.extern_function_id(db_str(db, "u128_is_zero")),
+                integer.extern_function_id(db_str(db, "u256_is_zero")),
             ]),
             core_info,
         }

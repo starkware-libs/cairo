@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
@@ -103,7 +103,7 @@ fn enum_generic_params_data<'db>(
 #[debug_db(dyn Database)]
 struct EnumDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    variants: OrderedHashMap<StrRef<'db>, VariantId<'db>>,
+    variants: OrderedHashMap<SmolStrId<'db>, VariantId<'db>>,
     variant_semantic: OrderedHashMap<VariantId<'db>, Variant<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
@@ -181,7 +181,7 @@ fn enum_definition_data<'db>(
                 resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db))
             }
         };
-        let variant_name: StrRef<'_> = variant.name(db).text(db).into();
+        let variant_name = variant.name(db).text(db);
         if let Some(_other_variant) = variants.insert(variant_name, id) {
             diagnostics
                 .report(variant.stable_ptr(db), EnumVariantRedefinition { enum_id, variant_name });
@@ -224,7 +224,7 @@ fn enum_definition_diagnostics<'db>(
     if db
         .declared_phantom_type_attributes(crate_id)
         .iter()
-        .any(|attr| enum_id.has_attr(db, attr).unwrap_or_default())
+        .any(|attr| enum_id.has_attr(db, attr.long(db)).unwrap_or_default())
     {
         return data.diagnostics.clone();
     }
@@ -323,7 +323,7 @@ pub trait EnumSemantic<'db>: Database {
     fn enum_variants(
         &'db self,
         enum_id: EnumId<'db>,
-    ) -> Maybe<&'db OrderedHashMap<StrRef<'db>, VariantId<'db>>> {
+    ) -> Maybe<&'db OrderedHashMap<SmolStrId<'db>, VariantId<'db>>> {
         let db = self.as_dyn_database();
         Ok(&enum_definition_data(db, enum_id).maybe_as_ref()?.variants)
     }

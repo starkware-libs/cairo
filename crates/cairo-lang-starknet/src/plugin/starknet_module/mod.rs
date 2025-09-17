@@ -140,7 +140,7 @@ fn validate_module<'db>(
         };
     };
     let Some(storage_struct_ast) = body.iter_items(db).find(|item| {
-        matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db) == STORAGE_STRUCT_NAME)
+        matches!(item, ast::ModuleItem::Struct(struct_ast) if struct_ast.name(db).text(db).long(db) == STORAGE_STRUCT_NAME)
     }) else {
         return PluginResult {
             code: None,
@@ -225,7 +225,7 @@ pub(super) fn handle_module_by_storage<'db>(
             aux_data: match module_kind {
                 StarknetModuleKind::Contract => {
                     Some(DynGeneratedFileAuxData::new(StarknetContractAuxData {
-                        contract_name: module_name.to_string(),
+                        contract_name: module_name.to_string(db),
                     }))
                 }
                 StarknetModuleKind::Component => None,

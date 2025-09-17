@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup, default_crate_settings};
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Tracked};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId, Tracked};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -53,7 +53,7 @@ pub fn methods_in_module<'db>(
             let Some(first_param) = signature.params.first() else {
                 continue;
             };
-            if first_param.name != SELF_PARAM_KW {
+            if first_param.name.long(db) != SELF_PARAM_KW {
                 continue;
             }
             if let TypeFilter::TypeHead(type_head) = &type_filter
@@ -163,8 +163,8 @@ fn visible_importables_in_module_ex<'db>(
     let resolver = Resolver::new(db, user_module_file_id, InferenceId::NoContext);
 
     // Check if an item in the current module is visible from the user module.
-    let is_visible = |item_name: &'db str| {
-        let item_info = db.module_item_info_by_name(module_id, item_name.into()).ok()??;
+    let is_visible = |item_name: SmolStrId<'_>| {
+        let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
         Some(resolver.is_item_visible(module_id, &item_info, user_module_file_id.0))
     };
     visited_modules.insert(module_id);
@@ -187,62 +187,69 @@ fn visible_importables_in_module_ex<'db>(
                     )[..],
                 );
 
-                (ImportableId::Crate(crate_id), crate_id.long(db).name())
+                (ImportableId::Crate(crate_id), crate_id.long(db).name().long(db))
             }
             ResolvedGenericItem::Module(inner_module_id @ ModuleId::Submodule(module)) => {
                 modules_to_visit.push(inner_module_id);
 
-                (ImportableId::Submodule(module), module.name(db))
+                (ImportableId::Submodule(module), module.name(db).long(db))
             }
             ResolvedGenericItem::Module(ModuleId::MacroCall { .. }) => {
                 continue;
             }
             ResolvedGenericItem::GenericConstant(item_id) => {
-                (ImportableId::Constant(item_id), item_id.name(db))
+                (ImportableId::Constant(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(item_id)) => {
-                (ImportableId::FreeFunction(item_id), item_id.name(db))
+                (ImportableId::FreeFunction(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::GenericFunction(GenericFunctionId::Extern(item_id)) => {
-                (ImportableId::ExternFunction(item_id), item_id.name(db))
+                (ImportableId::ExternFunction(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Struct(item_id)) => {
-                (ImportableId::Struct(item_id), item_id.name(db))
+                (ImportableId::Struct(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(item_id)) => {
                 let enum_name = item_id.name(db);
 
                 if let Ok(variants) = db.enum_variants(item_id) {
                     for (name, id) in variants.iter() {
-                        result.push((ImportableId::Variant(*id), format!("{enum_name}::{name}")));
+                        result.push((
+                            ImportableId::Variant(*id),
+                            format!("{}::{}", enum_name.long(db), name.long(db)),
+                        ));
                     }
                 }
 
-                (ImportableId::Enum(item_id), enum_name)
+                (ImportableId::Enum(item_id), enum_name.long(db))
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Extern(item_id)) => {
-                (ImportableId::ExternType(item_id), item_id.name(db))
+                (ImportableId::ExternType(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::GenericTypeAlias(item_id) => {
-                (ImportableId::TypeAlias(item_id), item_id.name(db))
+                (ImportableId::TypeAlias(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::GenericImplAlias(item_id) => {
-                (ImportableId::ImplAlias(item_id), item_id.name(db))
+                (ImportableId::ImplAlias(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::Variant(Variant { id, .. }) => {
-                (ImportableId::Variant(id), id.name(db))
+                (ImportableId::Variant(id), id.name(db).long(db))
             }
-            ResolvedGenericItem::Trait(item_id) => (ImportableId::Trait(item_id), item_id.name(db)),
-            ResolvedGenericItem::Impl(item_id) => (ImportableId::Impl(item_id), item_id.name(db)),
+            ResolvedGenericItem::Trait(item_id) => {
+                (ImportableId::Trait(item_id), item_id.name(db).long(db))
+            }
+            ResolvedGenericItem::Impl(item_id) => {
+                (ImportableId::Impl(item_id), item_id.name(db).long(db))
+            }
             ResolvedGenericItem::Macro(item_id) => {
-                (ImportableId::MacroDeclaration(item_id), item_id.name(db))
+                (ImportableId::MacroDeclaration(item_id), item_id.name(db).long(db))
             }
             ResolvedGenericItem::Variable(_)
             | ResolvedGenericItem::TraitItem(_)
             | ResolvedGenericItem::GenericFunction(GenericFunctionId::Impl(_)) => continue,
         };
 
-        result.push((resolved_item, name.into()));
+        result.push((resolved_item, name.to_string()));
     }
 
     if !matches!(module_id, ModuleId::MacroCall { .. }) {
@@ -253,7 +260,7 @@ fn visible_importables_in_module_ex<'db>(
         if !is_visible(submodule_id.name(db)).unwrap_or_default() {
             continue;
         }
-        result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).into()));
+        result.push((ImportableId::Submodule(submodule_id), submodule_id.name(db).to_string(db)));
         modules_to_visit.push(ModuleId::Submodule(submodule_id));
     }
 
@@ -264,11 +271,14 @@ fn visible_importables_in_module_ex<'db>(
             continue;
         }
 
-        result.push((ImportableId::Enum(enum_id), enum_name.into()));
+        result.push((ImportableId::Enum(enum_id), enum_name.to_string(db)));
 
         if let Ok(variants) = db.enum_variants(enum_id) {
             for (name, id) in variants.iter() {
-                result.push((ImportableId::Variant(*id), format!("{enum_name}::{name}")));
+                result.push((
+                    ImportableId::Variant(*id),
+                    format!("{}::{}", enum_name.long(db), name.long(db)),
+                ));
             }
         }
     }
@@ -276,10 +286,10 @@ fn visible_importables_in_module_ex<'db>(
     macro_rules! module_importables {
         ($query:ident, $map:expr) => {
             for item_id in db.$query(module_id).ok().unwrap_or_default().iter().copied() {
-                if !is_visible(item_id.name(db).into()).unwrap_or_default() {
+                if !is_visible(item_id.name(db)).unwrap_or_default() {
                     continue;
                 }
-                result.push(($map(item_id), item_id.name(db).into()));
+                result.push(($map(item_id), item_id.name(db).to_string(db)));
             }
         };
     }
@@ -305,7 +315,7 @@ fn visible_importables_in_module_ex<'db>(
         .unwrap_or_default()
         .iter()
         {
-            result.push((*item_id, format!("{}::{}", submodule.name(db), path)));
+            result.push((*item_id, format!("{}::{}", submodule.name(db).long(db), path)));
         }
     }
     // Traverse the parent module if needed.
@@ -340,7 +350,7 @@ pub fn visible_importables_in_crate<'db>(
     user_module_file_id: ModuleFileId<'db>,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
     let is_current_crate = user_module_file_id.0.owning_crate(db) == crate_id;
-    let crate_name = if is_current_crate { "crate" } else { crate_id.long(db).name() };
+    let crate_name = if is_current_crate { "crate" } else { crate_id.long(db).name().long(db) };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
     db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
         .iter()
@@ -369,8 +379,8 @@ pub fn visible_importables_from_module<'db>(
 
     let current_crate_id = module_id.owning_crate(db);
     let prelude_submodule_name =
-        db.crate_config(current_crate_id)?.settings.edition.prelude_submodule_name();
-    let core_prelude_submodule = core_submodule(db, "prelude");
+        db.crate_config(current_crate_id)?.settings.edition.prelude_submodule_name(db);
+    let core_prelude_submodule = core_submodule(db, SmolStrId::from(db, "prelude"));
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
     let prelude_submodule_file_id = ModuleFileId(prelude_submodule, FileIndex(0));
 
@@ -388,14 +398,17 @@ pub fn visible_importables_from_module<'db>(
         [current_crate_id],
         (!settings.dependencies.contains_key(CORELIB_CRATE_NAME)).then(|| corelib::core_crate(db)),
         settings.dependencies.iter().map(|(name, setting)| {
-            CrateLongId::Real { name: name.clone(), discriminator: setting.discriminator.clone() }
-                .intern(db)
+            CrateLongId::Real {
+                name: SmolStrId::from(db, name.clone()),
+                discriminator: setting.discriminator.clone(),
+            }
+            .intern(db)
         })
     ) {
         module_visible_importables
             .extend_from_slice(&db.visible_importables_in_crate(crate_id, module_file_id)[..]);
         module_visible_importables
-            .push((ImportableId::Crate(crate_id), crate_id.long(db).name().into()));
+            .push((ImportableId::Crate(crate_id), crate_id.long(db).name().to_string(db)));
     }
 
     // Collect importables visible in the current module.

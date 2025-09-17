@@ -3,7 +3,7 @@ use std::fmt;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_parser::macro_helpers::token_tree_as_wrapped_arg_list;
@@ -13,6 +13,7 @@ use cairo_lang_syntax::node::ast::{TokenTreeNode, UsePath};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::smol_str::SmolStr;
 use itertools::{Itertools, chain};
 use salsa::Database;
 use syntax::node::kind::SyntaxKind;
@@ -42,12 +43,12 @@ impl UseTree {
     fn insert_path(&mut self, db: &dyn Database, use_path: UsePath<'_>) {
         match use_path {
             UsePath::Leaf(leaf) => {
-                let name = leaf.extract_ident(db);
-                let alias = leaf.extract_alias(db);
+                let name = leaf.extract_ident(db).to_string();
+                let alias = leaf.extract_alias(db).map(|alias| alias.to_string());
                 self.leaves.push(Leaf { name, alias });
             }
             UsePath::Single(single) => {
-                let segment = single.extract_ident(db);
+                let segment = single.extract_ident(db).to_string();
                 let subtree = self.children.entry(segment).or_default();
                 subtree.insert_path(db, single.use_path(db));
             }
@@ -128,8 +129,8 @@ impl UseTree {
         // Create a virtual file ID for the formatted statements.
         let file_id = FileLongId::Virtual(VirtualFile {
             parent: None,
-            name: "parser_input".into(),
-            content: formatted_use_items.into(),
+            name: SmolStrId::from(db, "parser_input"),
+            content: SmolStrId::from(db, formatted_use_items),
             code_mappings: [].into(),
             kind: FileKind::Module,
             original_item_removed: false,
@@ -137,7 +138,7 @@ impl UseTree {
         .intern(db);
 
         let mut diagnostics = DiagnosticsBuilder::<ParserDiagnostic<'_>>::default();
-        let contents = db.file_content(file_id).unwrap().long(db).as_ref();
+        let contents = db.file_content(file_id).unwrap();
         Parser::parse_file(db, &mut diagnostics, file_id, contents).as_syntax_node()
     }
 }
@@ -1095,10 +1096,11 @@ impl<'a> FormatterImpl<'a> {
                 }
 
                 let decorations = chain!(
-                    use_item
-                        .attributes(self.db)
-                        .elements(self.db)
-                        .map(|attr| attr.as_syntax_node().get_text_without_trivia(self.db)),
+                    use_item.attributes(self.db).elements(self.db).map(|attr| attr
+                        .as_syntax_node()
+                        .get_text_without_trivia(self.db)
+                        .long(self.db)
+                        .as_str()),
                     [use_item.visibility(self.db).as_syntax_node().get_text(self.db)],
                 )
                 .join("\n");
@@ -1181,6 +1183,7 @@ impl<'a> FormatterImpl<'a> {
                         ast::ItemModule::from_syntax_node(self.db, *node)
                             .name(self.db)
                             .text(self.db)
+                            .long(self.db)
                     });
                     sorted_children.extend(sorted_section);
                 }
@@ -1231,7 +1234,7 @@ impl<'a> FormatterImpl<'a> {
                     }
                     self.line_state
                         .line_buffer
-                        .push_comment(trivium.as_syntax_node().text(self.db).unwrap(), !is_leading);
+                        .push_comment(trivium.as_syntax_node().get_text(self.db), !is_leading);
                     self.is_current_line_whitespaces = false;
                     self.empty_lines_allowance = 1;
                     self.is_last_element_comment = true;
@@ -1256,7 +1259,7 @@ impl<'a> FormatterImpl<'a> {
     /// Formats a token node and appends it to the result.
     /// Assumes the given SyntaxNode is a token.
     fn format_token(&mut self, syntax_node: &SyntaxNode<'_>) {
-        let text = syntax_node.text(self.db).unwrap();
+        let text = syntax_node.text(self.db).unwrap().long(self.db);
         if !syntax_node.force_no_space_before(self.db) && !self.line_state.prevent_next_space {
             self.line_state.line_buffer.push_space();
         }
@@ -1283,11 +1286,12 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
     match (a, b) {
         // Case for multi vs multi.
         (UsePath::Multi(a_multi), UsePath::Multi(b_multi)) => {
+            let empty_string = "".into();
             let get_min_child = |multi: &ast::UsePathMulti<'a>| {
                 multi.use_paths(db).elements(db).min_by_key(|child| match child {
                     UsePath::Leaf(leaf) => leaf.extract_ident(db),
                     UsePath::Single(single) => single.extract_ident(db),
-                    _ => "".to_string(),
+                    _ => &empty_string,
                 })
             };
             match (get_min_child(a_multi), get_min_child(b_multi)) {
@@ -1304,7 +1308,7 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
 
         // Case for Leaf vs Single and Single vs Leaf.
         (UsePath::Leaf(a), UsePath::Single(b)) => {
-            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
                 // Leaf is always ordered before Single if equal.
                 Ordering::Equal => Ordering::Less,
                 other => other,
@@ -1313,7 +1317,7 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
 
         (UsePath::Single(a), UsePath::Leaf(b)) => {
             // Compare the identifiers.
-            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
                 // Single is ordered after Leaf if equal.
                 Ordering::Equal => Ordering::Greater,
                 other => other,
@@ -1323,7 +1327,7 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
         // Case for Leaf vs Leaf: compare their identifiers, and only if they are equal, compare
         // their aliases.
         (UsePath::Leaf(a), UsePath::Leaf(b)) => {
-            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
                 Ordering::Equal => a.extract_alias(db).cmp(&b.extract_alias(db)),
                 other => other,
             }
@@ -1332,7 +1336,7 @@ fn compare_use_paths<'a>(a: &UsePath<'a>, b: &UsePath<'a>, db: &dyn Database) ->
         // Case for Single vs Single: compare their identifiers, then move to the next segment if
         // equal.
         (UsePath::Single(a), UsePath::Single(b)) => {
-            match compare_names(&a.extract_ident(db), &b.extract_ident(db)) {
+            match compare_names(a.extract_ident(db), b.extract_ident(db)) {
                 Ordering::Equal => compare_use_paths(&a.use_path(db), &b.use_path(db), db),
                 other => other,
             }
@@ -1375,32 +1379,32 @@ fn extract_use_path<'a>(node: &SyntaxNode<'a>, db: &'a dyn Database) -> Option<a
 }
 
 /// A trait for extracting identifiers from UsePathLeaf and UsePathSingle.
-trait IdentExtractor {
+trait IdentExtractor<'a> {
     /// Extracts the identifier and aliases from the syntax node, removing any trivia.
-    fn extract_ident(&self, db: &dyn Database) -> String;
-    fn extract_alias(&self, db: &dyn Database) -> Option<String>;
+    fn extract_ident(&self, db: &'a dyn Database) -> &'a SmolStr;
+    fn extract_alias(&self, db: &'a dyn Database) -> Option<&'a SmolStr>;
 }
-impl<'a> IdentExtractor for ast::UsePathLeaf<'a> {
-    fn extract_ident(&self, db: &dyn Database) -> String {
-        self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
+impl<'a> IdentExtractor<'a> for ast::UsePathLeaf<'a> {
+    fn extract_ident(&self, db: &'a dyn Database) -> &'a SmolStr {
+        self.ident(db).as_syntax_node().get_text_without_trivia(db).long(db)
     }
 
-    fn extract_alias(&self, db: &dyn Database) -> Option<String> {
+    fn extract_alias(&self, db: &'a dyn Database) -> Option<&'a SmolStr> {
         match self.alias_clause(db) {
             ast::OptionAliasClause::Empty(_) => None,
-            ast::OptionAliasClause::AliasClause(alias_clause) => Some(
-                alias_clause.alias(db).as_syntax_node().get_text_without_trivia(db).to_string(),
-            ),
+            ast::OptionAliasClause::AliasClause(alias_clause) => {
+                Some(alias_clause.alias(db).as_syntax_node().get_text_without_trivia(db).long(db))
+            }
         }
     }
 }
 
-impl<'a> IdentExtractor for ast::UsePathSingle<'a> {
-    fn extract_ident(&self, db: &dyn Database) -> String {
-        self.ident(db).as_syntax_node().get_text_without_trivia(db).to_string()
+impl<'a> IdentExtractor<'a> for ast::UsePathSingle<'a> {
+    fn extract_ident(&self, db: &'a dyn Database) -> &'a SmolStr {
+        self.ident(db).as_syntax_node().get_text_without_trivia(db).long(db)
     }
 
-    fn extract_alias(&self, _db: &dyn Database) -> Option<String> {
+    fn extract_alias(&self, _db: &'a dyn Database) -> Option<&'a SmolStr> {
         None
     }
 }

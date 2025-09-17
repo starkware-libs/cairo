@@ -47,10 +47,10 @@ pub fn try_extract_test_config<'db>(
     db: &'db dyn Database,
     attrs: Vec<Attribute<'db>>,
 ) -> Result<Option<TestConfig>, Vec<PluginDiagnostic<'db>>> {
-    let test_attr = attrs.iter().find(|attr| attr.id == TEST_ATTR);
-    let ignore_attr = attrs.iter().find(|attr| attr.id == IGNORE_ATTR);
-    let available_gas_attr = attrs.iter().find(|attr| attr.id == AVAILABLE_GAS_ATTR);
-    let should_panic_attr = attrs.iter().find(|attr| attr.id == SHOULD_PANIC_ATTR);
+    let test_attr = attrs.iter().find(|attr| attr.id.long(db) == TEST_ATTR);
+    let ignore_attr = attrs.iter().find(|attr| attr.id.long(db) == IGNORE_ATTR);
+    let available_gas_attr = attrs.iter().find(|attr| attr.id.long(db) == AVAILABLE_GAS_ATTR);
+    let should_panic_attr = attrs.iter().find(|attr| attr.id.long(db) == SHOULD_PANIC_ATTR);
     let mut diagnostics = vec![];
     if let Some(attr) = test_attr {
         if !attr.args.is_empty() {
@@ -136,7 +136,7 @@ fn extract_available_gas<'db>(
     match &attr.args[..] {
         [AttributeArg { variant: AttributeArgVariant::Unnamed(value), .. }] => match value {
             ast::Expr::Path(path)
-                if path.as_syntax_node().get_text_without_trivia(db) == STATIC_GAS_ARG =>
+                if path.as_syntax_node().get_text_without_trivia(db).long(db) == STATIC_GAS_ARG =>
             {
                 return None;
             }
@@ -166,7 +166,7 @@ fn extract_panic_bytes(db: &dyn Database, attr: &Attribute<'_>) -> Option<Vec<Fe
     else {
         return None;
     };
-    require(name.text == "expected")?;
+    require(name.text.long(db) == "expected")?;
 
     match value {
         ast::Expr::Tuple(panic_exprs) => {

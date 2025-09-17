@@ -20,7 +20,7 @@ use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CodeOrigin, FileKind, FileLongId, StrRef, VirtualFile,
+    CodeMapping, CodeOrigin, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_parser::db::ParserGroup;
@@ -113,7 +113,7 @@ struct MacroExpansionInfo<'db> {
     kind: MacroKind,
     /// The variables that should be exposed to the parent scope after the macro expansion.
     /// This is used for unhygienic macros.
-    vars_to_expose: Vec<(StrRef<'db>, Binding<'db>)>,
+    vars_to_expose: Vec<(SmolStrId<'db>, Binding<'db>)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -343,7 +343,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
                         self.diagnostics,
                         self.db,
                         &parent.used_variables,
-                        &name,
+                        name,
                         &old_var,
                         &self.resolver.data.feature_config,
                     );
@@ -358,14 +358,15 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
                 self.diagnostics,
                 self.db,
                 &closed.used_variables,
-                &name,
+                name,
                 &binding,
                 &self.resolver.data.feature_config,
             );
         }
         // Adds warning for unused items if required.
         for (ty_name, statement_ty) in closed.use_items {
-            if !closed.used_use_items.contains(&ty_name) && !ty_name.starts_with('_') {
+            if !closed.used_use_items.contains(&ty_name) && !ty_name.long(self.db).starts_with('_')
+            {
                 self.diagnostics.report(statement_ty.stable_ptr, UnusedUse);
             }
         }
@@ -447,11 +448,11 @@ fn add_unused_binding_warning<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
     db: &'db dyn Database,
     used_bindings: &UnorderedHashSet<VarId<'db>>,
-    name: &str,
+    name: SmolStrId<'db>,
     binding: &Binding<'db>,
     ctx_feature_config: &FeatureConfig<'db>,
 ) {
-    if !name.starts_with('_') && !used_bindings.contains(&binding.id()) {
+    if !name.long(db).starts_with('_') && !used_bindings.contains(&binding.id()) {
         match binding {
             Binding::LocalItem(local_item) => match local_item.id {
                 StatementItemId::Constant(_) => {
@@ -463,13 +464,18 @@ fn add_unused_binding_warning<'db>(
             },
             Binding::LocalVar(local_var) => {
                 if !local_var.allow_unused
-                    && !ctx_feature_config.allowed_lints.contains(UNUSED_VARIABLES)
+                    && !ctx_feature_config
+                        .allowed_lints
+                        .contains(&SmolStrId::from(db, UNUSED_VARIABLES))
                 {
                     diagnostics.report(binding.stable_ptr(db), UnusedVariable);
                 }
             }
             Binding::Param(_) => {
-                if !ctx_feature_config.allowed_lints.contains(UNUSED_VARIABLES) {
+                if !ctx_feature_config
+                    .allowed_lints
+                    .contains(&SmolStrId::from(db, UNUSED_VARIABLES))
+                {
                     diagnostics.report(binding.stable_ptr(db), UnusedVariable);
                 }
             }
@@ -478,9 +484,9 @@ fn add_unused_binding_warning<'db>(
 }
 
 // TODO(ilya): Change value to VarId.
-pub type EnvVariables<'db> = OrderedHashMap<StrRef<'db>, Binding<'db>>;
+pub type EnvVariables<'db> = OrderedHashMap<SmolStrId<'db>, Binding<'db>>;
 
-type EnvItems<'db> = OrderedHashMap<StrRef<'db>, StatementGenericItemData<'db>>;
+type EnvItems<'db> = OrderedHashMap<SmolStrId<'db>, StatementGenericItemData<'db>>;
 
 /// Struct that holds the resolved generic type of a statement item.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
@@ -498,7 +504,7 @@ pub struct Environment<'db> {
     variables: EnvVariables<'db>,
     used_variables: UnorderedHashSet<semantic::VarId<'db>>,
     use_items: EnvItems<'db>,
-    used_use_items: UnorderedHashSet<StrRef<'db>>,
+    used_use_items: UnorderedHashSet<SmolStrId<'db>>,
     /// Information for macro in case the current environment was create by expanding a macro.
     macro_info: Option<MacroExpansionInfo<'db>>,
 }
@@ -540,12 +546,12 @@ impl<'db> Environment<'db> {
 /// Returns the requested item from the environment if it exists. Returns None otherwise.
 pub fn get_statement_item_by_name<'db>(
     env: &mut Environment<'db>,
-    item_name: &'db str,
+    item_name: SmolStrId<'db>,
 ) -> Option<ResolvedGenericItem<'db>> {
     let mut maybe_env = Some(&mut *env);
     while let Some(curr_env) = maybe_env {
-        if let Some(var) = curr_env.use_items.get(item_name) {
-            curr_env.used_use_items.insert(item_name.into());
+        if let Some(var) = curr_env.use_items.get(&item_name) {
+            curr_env.used_use_items.insert(item_name);
             return Some(var.resolved_generic_item.clone());
         }
         maybe_env = curr_env.parent.as_deref_mut();
@@ -669,7 +675,7 @@ fn expand_inline_macro<'db>(
         }) else {
             return Err(ctx
                 .diagnostics
-                .report(syntax.stable_ptr(ctx.db), InlineMacroNoMatchingRule(macro_name.into())));
+                .report(syntax.stable_ptr(ctx.db), InlineMacroNoMatchingRule(macro_name)));
         };
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
@@ -691,9 +697,13 @@ fn expand_inline_macro<'db>(
             expansion_mappings: info.mappings.clone(),
             parent_macro_call_data,
         }));
-        Ok(InlineMacroExpansion { content: expanded_code.text, name: macro_name.to_string(), info })
+        Ok(InlineMacroExpansion {
+            content: expanded_code.text,
+            name: macro_name.to_string(db),
+            info,
+        })
     } else if let Some(macro_plugin_id) =
-        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string()).cloned()
+        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string(db)).cloned()
     {
         let macro_plugin = macro_plugin_id.long(ctx.db);
         let result = macro_plugin.generate_code(
@@ -702,14 +712,7 @@ fn expand_inline_macro<'db>(
             &MacroPluginMetadata {
                 cfg_set: &ctx.cfg_set,
                 declared_derives: ctx.db.declared_derives(crate_id),
-                allowed_features: &ctx
-                    .resolver
-                    .data
-                    .feature_config
-                    .allowed_features
-                    .iter()
-                    .map(|s| &**s)
-                    .collect::<OrderedHashSet<_>>(),
+                allowed_features: &ctx.resolver.data.feature_config.allowed_features,
                 edition: ctx.resolver.settings.edition,
             },
         );
@@ -728,8 +731,7 @@ fn expand_inline_macro<'db>(
         }
         let Some(code) = result.code else {
             return Err(diag_added.unwrap_or_else(|| {
-                ctx.diagnostics
-                    .report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name.into()))
+                ctx.diagnostics.report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name))
             }));
         };
         Ok(InlineMacroExpansion {
@@ -743,7 +745,7 @@ fn expand_inline_macro<'db>(
         })
     } else {
         let macro_name = syntax.path(db).as_syntax_node().get_text_without_trivia(db);
-        Err(ctx.diagnostics.report(syntax.stable_ptr(db), InlineMacroNotFound(macro_name.into())))
+        Err(ctx.diagnostics.report(syntax.stable_ptr(db), InlineMacroNotFound(macro_name)))
     }
 }
 
@@ -756,8 +758,8 @@ fn compute_expr_inline_macro_semantic<'db>(
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
-        name,
-        content,
+        name: SmolStrId::from(ctx.db, name),
+        content: SmolStrId::from(ctx.db, content),
         code_mappings: info.mappings.clone(),
         kind: FileKind::Expr,
         original_item_removed: true,
@@ -826,8 +828,8 @@ fn expand_macro_for_statement<'db>(
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
-        name,
-        content,
+        name: SmolStrId::from(ctx.db, name),
+        content: SmolStrId::from_arcstr(ctx.db, &content),
         code_mappings: info.mappings.clone(),
         kind: FileKind::StatementList,
         original_item_removed: true,
@@ -1285,7 +1287,7 @@ fn compute_expr_function_call_semantic<'db>(
                     compute_method_function_call_data(
                         ctx,
                         &[call_trait],
-                        "call",
+                        SmolStrId::from(ctx.db, "call"),
                         self_expr.clone(),
                         syntax.stable_ptr(db).untyped(),
                         None,
@@ -1418,8 +1420,7 @@ fn compute_expr_function_call_semantic<'db>(
                             .elements(db)
                             .next()
                             .unwrap()
-                            .identifier(db)
-                            .into(),
+                            .identifier(db),
                     },
                 ));
             }
@@ -1721,7 +1722,7 @@ fn compute_pattern_list_or_semantic<'db>(
     // Typecheck the arms's patterns, and introduce the new variables to the subscope.
     // Note that if the arm expr is a block, there will be *another* subscope
     // for it.
-    let mut arm_patterns_variables: UnorderedHashMap<StrRef<'db>, LocalVariable<'db>> =
+    let mut arm_patterns_variables: UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>> =
         UnorderedHashMap::default();
 
     let patterns: Vec<_> = patterns_syntax
@@ -2029,7 +2030,7 @@ fn compute_expr_for_semantic<'db>(
         compute_method_function_call_data(
             ctx,
             &[into_iterator_trait],
-            "into_iter",
+            SmolStrId::from(ctx.db, "into_iter"),
             expr,
             expr_ptr.into(),
             None,
@@ -2037,7 +2038,7 @@ fn compute_expr_for_semantic<'db>(
                 Some(NoImplementationOfTrait {
                     ty,
                     inference_errors,
-                    trait_name: "IntoIterator".into(),
+                    trait_name: SmolStrId::from(ctx.db, "IntoIterator"),
                 })
             },
             |_, _, _| {
@@ -2078,12 +2079,16 @@ fn compute_expr_for_semantic<'db>(
     let (next_function_id, _, _, _) = compute_method_function_call_data(
         ctx,
         &[iterator_trait],
-        "next",
+        SmolStrId::from(ctx.db, "next"),
         ExprAndId { expr: into_iter_expr, id: into_iter_expr_id },
         expr_ptr.into(),
         None,
         |ty, _, inference_errors| {
-            Some(NoImplementationOfTrait { ty, inference_errors, trait_name: "Iterator".into() })
+            Some(NoImplementationOfTrait {
+                ty,
+                inference_errors,
+                trait_name: SmolStrId::from(ctx.db, "Iterator"),
+            })
         },
         |_, _, _| {
             unreachable!(
@@ -2097,7 +2102,7 @@ fn compute_expr_for_semantic<'db>(
     let next_success_variant =
         match db.concrete_function_signature(next_function_id)?.return_type.long(db) {
             TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
-                assert_eq!(enm.enum_id(db).name(db), "Option");
+                assert_eq!(enm.enum_id(db).name(db).long(db), "Option");
                 db.concrete_enum_variants(*enm).unwrap().into_iter().next().unwrap()
             }
             _ => unreachable!(),
@@ -2405,7 +2410,7 @@ fn compute_expr_indexed_semantic<'db>(
     let (function_id, _, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
         &candidate_traits[..],
-        "index",
+        SmolStrId::from(db, "index"),
         expr,
         syntax.stable_ptr(db).untyped(),
         None,
@@ -2433,13 +2438,13 @@ fn compute_expr_indexed_semantic<'db>(
 fn compute_method_function_call_data<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     candidate_traits: &[TraitId<'db>],
-    func_name: &'db str,
+    func_name: SmolStrId<'db>,
     self_expr: ExprAndId<'db>,
     method_syntax: SyntaxStablePtrId<'db>,
     generic_args_syntax: Option<Vec<ast::GenericArg<'db>>>,
     no_implementation_diagnostic: impl Fn(
         TypeId<'db>,
-        &'db str,
+        SmolStrId<'db>,
         TraitInferenceErrors<'db>,
     ) -> Option<SemanticDiagnosticKind<'db>>,
     multiple_trait_diagnostic: fn(
@@ -2518,7 +2523,7 @@ fn compute_method_function_call_data<'db>(
 fn get_method_function_candidates<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     candidate_traits: &[TraitId<'db>],
-    func_name: &'db str,
+    func_name: SmolStrId<'db>,
     self_expr: ExprAndId<'db>,
     method_syntax: SyntaxStablePtrId<'db>,
     expr_ptr: ExprPtr<'db>,
@@ -2586,7 +2591,7 @@ pub fn compute_pattern_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
-    or_pattern_variables_map: &UnorderedHashMap<StrRef<'db>, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
 ) -> PatternAndId<'db> {
     let pat = maybe_compute_pattern_semantic(ctx, syntax, ty, or_pattern_variables_map);
     let pat = pat.unwrap_or_else(|diag_added| {
@@ -2605,7 +2610,7 @@ fn maybe_compute_pattern_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern_syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
-    or_pattern_variables_map: &UnorderedHashMap<StrRef<'db>, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
 ) -> Maybe<Pattern<'db>> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let db = ctx.db;
@@ -2771,22 +2776,19 @@ fn maybe_compute_pattern_semantic<'db>(
             let mut used_members = UnorderedHashSet::<_>::default();
             let mut get_member =
                 |ctx: &mut ComputationContext<'db, '_>,
-                 member_name: &'db str,
+                 member_name: SmolStrId<'db>,
                  stable_ptr: SyntaxStablePtrId<'db>| {
-                    let member = members.swap_remove(member_name).on_none(|| {
+                    let member = members.swap_remove(&member_name).on_none(|| {
                         ctx.diagnostics.report(
                             stable_ptr,
-                            if used_members.contains(member_name) {
-                                StructMemberRedefinition {
-                                    struct_id,
-                                    member_name: member_name.into(),
-                                }
+                            if used_members.contains(&member_name) {
+                                StructMemberRedefinition { struct_id, member_name }
                             } else {
-                                NoSuchStructMember { struct_id, member_name: member_name.into() }
+                                NoSuchStructMember { struct_id, member_name }
                             },
                         );
                     })?;
-                    check_struct_member_is_visible(ctx, &member, stable_ptr, member_name.into());
+                    check_struct_member_is_visible(ctx, &member, stable_ptr, member_name);
                     used_members.insert(member_name);
                     Some(member)
                 };
@@ -2916,7 +2918,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern_syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
-    or_pattern_variables_map: &UnorderedHashMap<StrRef<'db>, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
     unexpected_pattern: fn(TypeId<'db>) -> SemanticDiagnosticKind<'db>,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
 ) -> Pattern<'db> {
@@ -3124,11 +3126,11 @@ fn create_variable_pattern<'db>(
     modifier_list: &[ast::Modifier<'db>],
     ty: TypeId<'db>,
     stable_ptr: ast::PatternPtr<'db>,
-    or_pattern_variables_map: &UnorderedHashMap<StrRef<'db>, LocalVariable<'db>>,
+    or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
 ) -> Pattern<'db> {
     let db = ctx.db;
 
-    let var_id = match or_pattern_variables_map.get(identifier.text(db)) {
+    let var_id = match or_pattern_variables_map.get(&identifier.text(db)) {
         Some(var) => var.id,
         None => {
             LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr(db)).intern(ctx.db)
@@ -3142,9 +3144,14 @@ fn create_variable_pattern<'db>(
             false
         }
     };
-    let allow_unused = ctx.resolver.data.feature_config.allowed_lints.contains(UNUSED_VARIABLES);
+    let allow_unused = ctx
+        .resolver
+        .data
+        .feature_config
+        .allowed_lints
+        .contains(&SmolStrId::from(db, UNUSED_VARIABLES));
     Pattern::Variable(PatternVariable {
-        name: identifier.text(db).into(),
+        name: identifier.text(db),
         var: LocalVariable { id: var_id, ty, is_mut, allow_unused },
         stable_ptr,
     })
@@ -3188,7 +3195,7 @@ fn struct_ctor_expr<'db>(
                 let arg_name = arg_identifier.text(db);
 
                 // Find struct member by name.
-                let Some(member) = members.get(arg_name) else {
+                let Some(member) = members.get(&arg_name) else {
                     ctx.diagnostics.report(arg_identifier.stable_ptr(db), UnknownMember);
                     continue;
                 };
@@ -3196,7 +3203,7 @@ fn struct_ctor_expr<'db>(
                     ctx,
                     member,
                     arg_identifier.stable_ptr(db).untyped(),
-                    arg_name.into(),
+                    arg_name,
                 );
 
                 // Extract expression.
@@ -3329,13 +3336,13 @@ fn statements_and_tail<'a>(
 /// Creates a new numeric literal expression.
 fn new_literal_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    ty: Option<&'db str>,
+    ty: Option<SmolStrId<'db>>,
     value: BigInt,
     stable_ptr: ExprPtr<'db>,
 ) -> Maybe<ExprLiteral<'db>> {
     if let Some(ty_str) = ty {
         // Requires specific blocking as `NonZero` now has NumericLiteral support.
-        if ty_str == "NonZero" {
+        if ty_str.long(ctx.db) == "NonZero" {
             return Err(ctx.diagnostics.report(
                 stable_ptr.untyped(),
                 SemanticDiagnosticKind::WrongNumberOfArguments { expected: 1, actual: 0 },
@@ -3382,7 +3389,12 @@ fn short_string_to_semantic<'db>(
 
     let value = short_string_syntax.numeric_value(db).unwrap_or_default();
     let suffix = short_string_syntax.suffix(db);
-    new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr(db).into())
+    new_literal_expr(
+        ctx,
+        suffix.map(|s| SmolStrId::from(db, s)),
+        value,
+        short_string_syntax.stable_ptr(db).into(),
+    )
 }
 
 /// Creates a new string literal expression.
@@ -3433,7 +3445,7 @@ fn try_extract_identifier_from_path<'a>(
         return Some((first.ident(db), false));
     };
     let second = try_extract_matches!(second, PathSegment::Simple)?;
-    if first.identifier(db) == MACRO_CALL_SITE && path.placeholder_marker(db).is_some() {
+    if first.identifier(db).long(db) == MACRO_CALL_SITE && path.placeholder_marker(db).is_some() {
         Some((second.ident(db), true))
     } else {
         None
@@ -3446,7 +3458,7 @@ fn expr_as_identifier<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     path: &ast::ExprPath<'db>,
     db: &'db dyn Database,
-) -> Maybe<&'db str> {
+) -> Maybe<SmolStrId<'db>> {
     let segments_var = path.segments(db);
     let mut segments = segments_var.elements(db);
     if segments.len() == 1 {
@@ -3552,12 +3564,7 @@ fn method_call_expr<'db>(
                         lexpr_clone.stable_ptr().untyped(),
                     )
                 };
-                Some(CannotCallMethod {
-                    ty,
-                    method_name: method_name.into(),
-                    inference_errors,
-                    relevant_traits,
-                })
+                Some(CannotCallMethod { ty, method_name, inference_errors, relevant_traits })
             },
             |_, trait_function_id0, trait_function_id1| {
                 Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
@@ -3571,7 +3578,7 @@ fn method_call_expr<'db>(
         })?;
 
     if let Ok(trait_definition_data) = ctx.db.priv_trait_definition_data(actual_trait_id)
-        && let Some(trait_item_info) = trait_definition_data.get_trait_item_info(func_name.into())
+        && let Some(trait_item_info) = trait_definition_data.get_trait_item_info(func_name)
     {
         ctx.resolver.validate_feature_constraints(
             ctx.diagnostics,
@@ -3636,17 +3643,14 @@ fn member_access_expr<'db>(
             else {
                 return Err(ctx.diagnostics.report(
                     rhs_syntax.stable_ptr(db),
-                    NoSuchTypeMember {
-                        ty: long_ty.intern(ctx.db),
-                        member_name: member_name.into(),
-                    },
+                    NoSuchTypeMember { ty: long_ty.intern(ctx.db), member_name },
                 ));
             };
             check_struct_member_is_visible(
                 ctx,
                 &member,
                 rhs_syntax.stable_ptr(db).untyped(),
-                member_name.into(),
+                member_name,
             );
             let member_path = match &long_ty {
                 TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
@@ -3716,7 +3720,7 @@ fn member_access_expr<'db>(
         )),
         TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => Err(ctx.diagnostics.report(
             rhs_syntax.stable_ptr(db),
-            TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name: member_name.into() },
+            TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
         )),
         TypeLongId::Missing(diag_added) => Err(*diag_added),
     }
@@ -3730,7 +3734,7 @@ fn get_enriched_type_member_access<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     expr: ExprAndId<'db>,
     stable_ptr: ast::ExprPtr<'db>,
-    accessed_member_name: &'db str,
+    accessed_member_name: SmolStrId<'db>,
 ) -> Maybe<Option<EnrichedTypeMemberAccess<'db>>> {
     let mut ty = ctx.reduce_ty(expr.ty());
     if !ty.is_var_free(ctx.db) {
@@ -3763,7 +3767,7 @@ fn get_enriched_type_member_access<'db>(
             let members =
                 if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
                     let members = ctx.db.concrete_struct_members(concrete_struct_id)?;
-                    if let Some(member) = members.get(accessed_member_name) {
+                    if let Some(member) = members.get(&accessed_member_name) {
                         // Found direct member access - so directly returning it.
                         return Ok(Some(EnrichedTypeMemberAccess {
                             member: member.clone(),
@@ -3798,7 +3802,7 @@ fn enrich_members<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     enriched_members: &mut EnrichedMembers<'db>,
     stable_ptr: ast::ExprPtr<'db>,
-    accessed_member_name: &str,
+    accessed_member_name: SmolStrId<'db>,
 ) -> Maybe<()> {
     let EnrichedMembers { members: enriched, deref_chain, explored_derefs } = enriched_members;
 
@@ -3813,7 +3817,7 @@ fn enrich_members<'db>(
                 enriched.entry(*member_name).or_insert_with(|| (member.clone(), *explored_derefs));
             }
             // If member is contained we can stop the calculation post the lookup.
-            if members.contains_key(accessed_member_name) {
+            if members.contains_key(&accessed_member_name) {
                 // Found member, so exploration isn't done.
                 break;
             }
@@ -3938,8 +3942,7 @@ pub fn resolve_variable_by_name<'db>(
 ) -> Maybe<Expr<'db>> {
     let variable_name = identifier.text(ctx.db);
     let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
-        ctx.diagnostics
-            .report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name.into()))
+        ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
     let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
     ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
@@ -3949,7 +3952,7 @@ pub fn resolve_variable_by_name<'db>(
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
 pub fn get_binded_expr_by_name<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    variable_name: &'db str,
+    variable_name: SmolStrId<'db>,
     is_callsite_prefixed: bool,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Option<Expr<'db>> {
@@ -3968,7 +3971,7 @@ pub fn get_binded_expr_by_name<'db>(
             continue;
         }
         if (!is_callsite_prefixed || found_callsite_scope)
-            && let Some(var) = env.variables.get(variable_name)
+            && let Some(var) = env.variables.get(&variable_name)
         {
             env.used_variables.insert(var.id());
             return match var {
@@ -4089,7 +4092,7 @@ fn maybe_pop_coupon_argument<'db>(
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id.0);
-        if name_terminal.text(ctx.db) == "__coupon__" && coupons_enabled {
+        if name_terminal.text(ctx.db).long(ctx.db) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
             let arg_ty = arg.ty();
@@ -4152,7 +4155,7 @@ fn check_named_arguments<'db>(
             if param.name != name {
                 res = Err(ctx.diagnostics.report(
                     name_terminal.stable_ptr(ctx.db),
-                    NamedArgumentMismatch { expected: param.name, found: name.into() },
+                    NamedArgumentMismatch { expected: param.name, found: name },
                 ));
             }
         } else if seen_named_arguments && !reported_unnamed_argument_follows_named {
@@ -4247,7 +4250,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                         ctx.diagnostics,
                         ctx.db,
                         &ctx.environment.used_variables,
-                        &v.name,
+                        v.name,
                         &old_var,
                         &ctx.resolver.data.feature_config,
                     );
@@ -4530,18 +4533,16 @@ pub fn compute_and_append_statement_semantic<'db>(
 /// defined.
 fn add_value_to_statement_environment<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    name: &'db str,
+    name: SmolStrId<'db>,
     var_def: Binding<'db>,
     stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
 ) {
-    if let Some(old_var) = ctx.environment.variables.insert(name.into(), var_def.clone()) {
+    if let Some(old_var) = ctx.environment.variables.insert(name, var_def.clone()) {
         ctx.diagnostics.report(
             stable_ptr,
             match old_var {
-                Binding::LocalItem(_) => MultipleConstantDefinition(name.into()),
-                Binding::LocalVar(_) | Binding::Param(_) => {
-                    MultipleDefinitionforBinding(name.into())
-                }
+                Binding::LocalItem(_) => MultipleConstantDefinition(name),
+                Binding::LocalVar(_) | Binding::Param(_) => MultipleDefinitionforBinding(name),
             },
         );
     }
@@ -4552,7 +4553,7 @@ fn add_value_to_statement_environment<'db>(
 /// defined.
 fn add_item_to_statement_environment<'db>(
     ctx: &mut ComputationContext<'db, '_>,
-    name: &'db str,
+    name: SmolStrId<'db>,
     resolved_generic_item: ResolvedGenericItem<'db>,
     stable_ptr: impl Into<SyntaxStablePtrId<'db>> + std::marker::Copy,
 ) {
@@ -4560,12 +4561,12 @@ fn add_item_to_statement_environment<'db>(
         .environment
         .use_items
         .insert(
-            name.into(),
+            name,
             StatementGenericItemData { resolved_generic_item, stable_ptr: stable_ptr.into() },
         )
         .is_some()
     {
-        ctx.diagnostics.report(stable_ptr, MultipleGenericItemDefinition(name.into()));
+        ctx.diagnostics.report(stable_ptr, MultipleGenericItemDefinition(name));
     }
 }
 
@@ -4592,7 +4593,7 @@ fn check_struct_member_is_visible<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     member: &Member<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
-    member_name: StrRef<'db>,
+    member_name: SmolStrId<'db>,
 ) {
     let db = ctx.db;
     let containing_module_id = member.id.parent_module(db);
@@ -4643,7 +4644,7 @@ fn function_parameter_types<'db>(
 fn match_method_to_traits<'db>(
     db: &dyn Database,
     ty: semantic::TypeId<'db>,
-    method_name: &'db str,
+    method_name: SmolStrId<'db>,
     lookup_context: ImplLookupContextId<'db>,
     module_file_id: ModuleFileId<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
@@ -4657,8 +4658,7 @@ fn match_method_to_traits<'db>(
         .filter_map(|(trait_id, path)| {
             let mut data = InferenceData::new(InferenceId::NoContext);
             let mut inference = data.inference(db);
-            let trait_function =
-                db.trait_function_by_name(*trait_id, method_name.into()).ok()??;
+            let trait_function = db.trait_function_by_name(*trait_id, method_name).ok()??;
             let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self_without_errors(
                 trait_function,
                 ty,

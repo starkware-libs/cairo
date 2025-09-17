@@ -2,6 +2,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -42,8 +43,8 @@ impl MacroPlugin for PanicablePlugin {
         generate_panicable_code(db, declaration, attributes, visibility)
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec![PANIC_WITH_ATTR.to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, PANIC_WITH_ATTR)]
     }
 }
 
@@ -161,7 +162,7 @@ fn extract_success_ty_and_variants<'a>(
     else {
         return None;
     };
-    let ty = segment.identifier(db);
+    let ty = segment.identifier(db).long(db);
     if ty == "Option" {
         let [inner] = segment.generic_args(db).generic_args(db).elements(db).collect_array()?;
         Some((inner.clone(), "Option::Some".to_owned(), "Option::None".to_owned()))

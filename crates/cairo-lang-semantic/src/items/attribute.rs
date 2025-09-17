@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::{
     TraitTypeId,
 };
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use salsa::Database;
 
@@ -17,23 +18,23 @@ use crate::items::structure::StructSemantic;
 use crate::items::trt::TraitSemantic;
 use crate::{ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId};
 
-pub trait AttributeTrait {
-    fn name(&self, db: &dyn Database) -> String;
+pub trait AttributeTrait<'db> {
+    fn name(&self, db: &'db dyn Database) -> SmolStrId<'db>;
     fn args(&self, db: &dyn Database) -> String;
-    fn full_text(&self, db: &dyn Database) -> String {
+    fn full_text(&self, db: &'db dyn Database) -> String {
         if self.args(db).is_empty() {
-            self.name(db)
+            self.name(db).to_string(db)
         } else {
-            format!("{}({})", self.name(db), self.args(db))
+            format!("{}({})", self.name(db).long(db), self.args(db))
         }
     }
-    fn format(&self, db: &dyn Database) -> String {
+    fn format(&self, db: &'db dyn Database) -> String {
         format!("#[{}]", self.full_text(db))
     }
 }
-impl<'db> AttributeTrait for Attribute<'db> {
-    fn name(&self, _db: &dyn Database) -> String {
-        self.id.to_string()
+impl<'db> AttributeTrait<'db> for Attribute<'db> {
+    fn name(&self, _db: &'db dyn Database) -> SmolStrId<'db> {
+        self.id
     }
     fn args(&self, db: &dyn Database) -> String {
         self.args.iter().map(|arg| arg.text(db)).collect::<Vec<_>>().join(", ")
@@ -50,7 +51,7 @@ pub trait SemanticQueryAttrs<'db> {
 
     /// Collect all attributes attached to this node whose name (without args) is exactly `attr`.
     fn query_attr(&self, db: &'db dyn Database, attr: &str) -> Maybe<Vec<Attribute<'db>>> {
-        Ok(self.attributes_elements(db)?.into_iter().filter(|a| a.name(db) == attr).collect())
+        Ok(self.attributes_elements(db)?.into_iter().filter(|a| a.id.long(db) == attr).collect())
     }
 
     /// Find first attribute attached to this node whose name (without args) is exactly `attr`.
