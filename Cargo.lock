@@ -661,6 +661,7 @@ dependencies = [
  "cairo-lang-debug",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "itertools 0.14.0",
  "path-clean",
  "salsa",
  "semver",

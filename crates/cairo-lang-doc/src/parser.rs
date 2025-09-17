@@ -7,7 +7,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
@@ -358,15 +358,15 @@ impl<'db> DocumentationCommentParser<'db> {
     fn parse_comment_link_path(&self, path: String) -> Option<ExprPath<'db>> {
         let virtual_file = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
-            name: Default::default(),
-            content: path.into(),
+            name: SmolStrId::from(self.db, ""),
+            content: SmolStrId::from(self.db, path),
             code_mappings: Default::default(),
             kind: FileKind::Module,
             original_item_removed: false,
         })
         .intern(self.db);
 
-        let content = self.db.file_content(virtual_file).unwrap().long(self.db).as_ref();
+        let content = self.db.file_content(virtual_file).unwrap();
         let expr = Parser::parse_file_expr(
             self.db,
             &mut DiagnosticsBuilder::default(),
@@ -430,7 +430,7 @@ impl<'db> DocumentationCommentParser<'db> {
             // And get id of the (sub)module containing the node by traversing this stack top-down.
             .try_rfold(main_module, |module, name| {
                 let ModuleItemId::Submodule(submodule) =
-                    db.module_item_by_name(module, name.into()).ok()??
+                    db.module_item_by_name(module, name).ok()??
                 else {
                     return None;
                 };

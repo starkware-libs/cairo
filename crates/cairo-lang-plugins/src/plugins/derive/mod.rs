@@ -2,6 +2,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -56,22 +57,22 @@ impl MacroPlugin for DerivePlugin {
         )
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec![DERIVE_ATTR.to_string(), default::DEFAULT_ATTR.to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, DERIVE_ATTR), SmolStrId::from(db, default::DEFAULT_ATTR)]
     }
 
-    fn declared_derives(&self) -> Vec<String> {
+    fn declared_derives<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         vec![
-            "Copy".to_string(),
-            "Drop".to_string(),
-            "Clone".to_string(),
-            "Debug".to_string(),
-            "Default".to_string(),
-            "Destruct".to_string(),
-            "Hash".to_string(),
-            "PanicDestruct".to_string(),
-            "PartialEq".to_string(),
-            "Serde".to_string(),
+            SmolStrId::from(db, "Copy"),
+            SmolStrId::from(db, "Drop"),
+            SmolStrId::from(db, "Clone"),
+            SmolStrId::from(db, "Debug"),
+            SmolStrId::from(db, "Default"),
+            SmolStrId::from(db, "Destruct"),
+            SmolStrId::from(db, "Hash"),
+            SmolStrId::from(db, "PanicDestruct"),
+            SmolStrId::from(db, "PartialEq"),
+            SmolStrId::from(db, "Serde"),
         ]
     }
 }
@@ -105,8 +106,9 @@ fn generate_derive_code_for_type<'db>(
             };
 
             let derived = derived_path.as_syntax_node().get_text_without_trivia(db);
-            if let Some(mut code) = match derived {
-                "Copy" | "Drop" => Some(get_empty_impl(derived, &info)),
+            let derived_text = derived.long(db).as_str();
+            if let Some(mut code) = match derived_text {
+                "Copy" | "Drop" => Some(get_empty_impl(derived_text, &info)),
                 "Clone" => Some(clone::handle_clone(&info)),
                 "Debug" => Some(debug::handle_debug(&info)),
                 "Default" => default::handle_default(db, &info, &derived_path, &mut diagnostics),
@@ -116,18 +118,22 @@ fn generate_derive_code_for_type<'db>(
                 "PartialEq" => Some(partial_eq::handle_partial_eq(&info)),
                 "Serde" => Some(serde::handle_serde(&info)),
                 _ => {
-                    if !metadata.declared_derives.contains(derived) {
+                    if !metadata.declared_derives.contains(&derived) {
                         diagnostics.push(PluginDiagnostic::error(
                             derived_path.stable_ptr(db),
-                            format!("Unknown derive `{derived}` - a plugin might be missing."),
+                            format!(
+                                "Unknown derive `{derived_text}` - a plugin might be missing.",
+                            ),
                         ));
                     }
                     None
                 }
             } {
                 if let Some(doc_attr) = info.attributes.find_attr(db, DOC_ATTR) {
-                    code =
-                        format!("{}\n{code}", doc_attr.as_syntax_node().get_text_without_trivia(db))
+                    code = format!(
+                        "{}\n{code}",
+                        doc_attr.as_syntax_node().get_text_without_trivia(db).long(db)
+                    )
                 }
                 builder.add_modified(RewriteNode::mapped_text(code, db, &derived_path));
             }

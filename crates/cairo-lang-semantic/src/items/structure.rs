@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, MemberId, MemberLongId, ModuleItemId, StructId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -108,7 +108,7 @@ fn struct_generic_params_data<'db>(
 #[debug_db(dyn Database)]
 struct StructDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
-    members: OrderedHashMap<StrRef<'db>, Member<'db>>,
+    members: OrderedHashMap<SmolStrId<'db>, Member<'db>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
 
@@ -155,7 +155,7 @@ fn struct_definition_data<'db>(
         let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
-        let member_name = member.name(db).text(db).into();
+        let member_name = member.name(db).text(db);
         if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
             diagnostics
                 .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
@@ -192,7 +192,7 @@ fn struct_definition_diagnostics<'db>(
     if db
         .declared_phantom_type_attributes(crate_id)
         .iter()
-        .any(|attr| struct_id.has_attr(db, attr).unwrap_or_default())
+        .any(|attr| struct_id.has_attr(db, attr.long(db).as_str()).unwrap_or_default())
     {
         return data.diagnostics.clone();
     }
@@ -212,7 +212,7 @@ fn struct_definition_diagnostics<'db>(
 fn concrete_struct_members<'db>(
     db: &'db dyn Database,
     concrete_struct_id: ConcreteStructId<'db>,
-) -> Maybe<OrderedHashMap<StrRef<'db>, semantic::Member<'db>>> {
+) -> Maybe<OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>> {
     // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
     //   always have the correct number of generic arguments.
     let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
@@ -274,7 +274,7 @@ pub trait StructSemantic<'db>: Database {
     fn struct_members(
         &'db self,
         struct_id: StructId<'db>,
-    ) -> Maybe<&'db OrderedHashMap<StrRef<'db>, semantic::Member<'db>>> {
+    ) -> Maybe<&'db OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>> {
         let db = self.as_dyn_database();
         Ok(&struct_definition_data(db, struct_id).maybe_as_ref()?.members)
     }
@@ -290,7 +290,7 @@ pub trait StructSemantic<'db>: Database {
     fn concrete_struct_members(
         &'db self,
         concrete_struct_id: ConcreteStructId<'db>,
-    ) -> Maybe<&'db OrderedHashMap<StrRef<'db>, semantic::Member<'db>>> {
+    ) -> Maybe<&'db OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>> {
         concrete_struct_members(self.as_dyn_database(), concrete_struct_id).maybe_as_ref()
     }
 }

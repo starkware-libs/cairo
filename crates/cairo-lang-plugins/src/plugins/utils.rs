@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, IsDependentType};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use itertools::{Itertools, chain};
@@ -62,8 +63,10 @@ impl<'a> GenericParamsInfo<'a> {
             .generic_params(db)
             .elements(db)
             .map(|param| {
-                let name = param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_");
-                let full_param = param.as_syntax_node().get_text_without_trivia(db);
+                let name =
+                    param.name(db).map(|n| n.text(db).long(db).as_str()).unwrap_or_else(|| "_");
+                let full_param =
+                    param.as_syntax_node().get_text_without_trivia(db).long(db).as_str();
                 (name, full_param)
             })
             .unzip();
@@ -85,10 +88,11 @@ impl<'a> PluginTypeInfo<'a> {
         match item_ast {
             ast::ModuleItem::Struct(struct_ast) => {
                 let generics = GenericParamsInfo::new(db, struct_ast.generic_params(db));
-                let members_info =
-                    extract_members(db, struct_ast.members(db), &generics.param_names);
+                let interned =
+                    generics.param_names.iter().map(|s| SmolStrId::from(db, *s)).collect_vec();
+                let members_info = extract_members(db, struct_ast.members(db), &interned);
                 Some(Self {
-                    name: struct_ast.name(db).text(db),
+                    name: struct_ast.name(db).text(db).long(db).as_str(),
                     attributes: struct_ast.attributes(db),
                     generics,
                     members_info,
@@ -100,7 +104,7 @@ impl<'a> PluginTypeInfo<'a> {
                 let members_info =
                     extract_variants(db, enum_ast.variants(db), &generics.param_names);
                 Some(Self {
-                    name: enum_ast.name(db).text(db),
+                    name: enum_ast.name(db).text(db).long(db).as_str(),
                     attributes: enum_ast.attributes(db),
                     generics,
                     members_info,
@@ -158,13 +162,19 @@ impl<'a> PluginTypeInfo<'a> {
 fn extract_members<'a>(
     db: &'a dyn Database,
     members: ast::MemberList<'a>,
-    generics: &[&str],
+    generics: &[SmolStrId<'a>],
 ) -> Vec<MemberInfo<'a>> {
     members
         .elements(db)
         .map(|member| MemberInfo {
-            name: member.name(db).text(db),
-            ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
+            name: member.name(db).text(db).long(db).as_str(),
+            ty: member
+                .type_clause(db)
+                .ty(db)
+                .as_syntax_node()
+                .get_text_without_trivia(db)
+                .long(db)
+                .as_str(),
             attributes: member.attributes(db),
             is_generics_dependent: member.type_clause(db).ty(db).is_dependent_type(db, generics),
         })
@@ -180,17 +190,20 @@ fn extract_variants<'a>(
     variants
         .elements(db)
         .map(|variant| MemberInfo {
-            name: variant.name(db).text(db),
+            name: variant.name(db).text(db).long(db).as_str(),
             ty: match variant.type_clause(db) {
                 ast::OptionTypeClause::Empty(_) => "()",
                 ast::OptionTypeClause::TypeClause(t) => {
-                    t.ty(db).as_syntax_node().get_text_without_trivia(db)
+                    t.ty(db).as_syntax_node().get_text_without_trivia(db).long(db).as_str()
                 }
             },
             attributes: variant.attributes(db),
             is_generics_dependent: match variant.type_clause(db) {
                 ast::OptionTypeClause::Empty(_) => false,
-                ast::OptionTypeClause::TypeClause(t) => t.ty(db).is_dependent_type(db, generics),
+                ast::OptionTypeClause::TypeClause(t) => {
+                    let interned = generics.iter().map(|s| SmolStrId::from(db, *s)).collect_vec();
+                    t.ty(db).is_dependent_type(db, &interned)
+                }
             },
         })
         .collect()
