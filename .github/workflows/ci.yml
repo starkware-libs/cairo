@@ -24,45 +24,45 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        cmd:
-          - test --profile=ci-dev -p cairo-lang-casm --features=serde,parity-scale-codec,schemars
-          - test --profile=ci-dev -p cairo-lang-casm --no-default-features --features=serde,parity-scale-codec
-          - test --profile=ci-dev -p cairo-lang-compiler
-          - test --profile=ci-dev -p cairo-lang-debug
-          - test --profile=ci-dev -p cairo-lang-defs
-          - test --profile=ci-dev -p cairo-lang-diagnostics
-          - test --profile=ci-dev -p cairo-lang-doc
-          - test --profile=ci-dev -p cairo-lang-eq-solver
-          - test --profile=ci-dev -p cairo-lang-executable
-          - test --profile=ci-dev -p cairo-lang-executable-plugin
-          - test --profile=ci-dev -p cairo-lang-execute-utils
-          - test --profile=ci-dev -p cairo-lang-filesystem
-          - test --profile=ci-dev -p cairo-lang-formatter
-          - test --profile=ci-dev -p cairo-lang-lowering
-          - test --profile=ci-dev -p cairo-lang-parser
-          - test --profile=ci-dev -p cairo-lang-plugins
-          - test --profile=ci-dev -p cairo-lang-primitive-token
-          - test --profile=ci-dev -p cairo-lang-proc-macros
-          - test --profile=ci-dev -p cairo-lang-project
-          - test --profile=ci-dev -p cairo-lang-runnable-utils
-          - test --profile=ci-dev -p cairo-lang-runner
-          - test --profile=ci-dev -p cairo-lang-semantic
-          - test --profile=ci-dev -p cairo-lang-sierra
-          - test --profile=ci-dev -p cairo-lang-sierra-ap-change
-          - test --profile=ci-dev -p cairo-lang-sierra-gas
-          - test --profile=ci-dev -p cairo-lang-sierra-generator
-          - test --profile=ci-dev -p cairo-lang-sierra-to-casm
-          - test --profile=ci-dev -p cairo-lang-sierra-type-size
-          - test --profile=ci-dev -p cairo-lang-starknet-classes
-          - test --profile=ci-dev -p cairo-lang-starknet
-          - test --profile=ci-dev -p cairo-lang-syntax
-          - test --profile=ci-dev -p cairo-lang-syntax-codegen
-          - test --profile=ci-dev -p cairo-lang-test-plugin
-          - test --profile=ci-dev -p cairo-lang-test-runner
-          - test --profile=ci-dev -p cairo-lang-test-utils
-          - test --profile=ci-dev -p cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,tracing
-          - test --profile=ci-dev -p cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
-          - test --profile=ci-dev -p tests
+        args:
+          - cairo-lang-casm --features=serde,parity-scale-codec,schemars
+          - cairo-lang-casm --no-default-features --features=serde,parity-scale-codec
+          - cairo-lang-compiler
+          - cairo-lang-debug
+          - cairo-lang-defs
+          - cairo-lang-diagnostics
+          - cairo-lang-doc
+          - cairo-lang-eq-solver
+          - cairo-lang-executable
+          - cairo-lang-executable-plugin
+          - cairo-lang-execute-utils
+          - cairo-lang-filesystem
+          - cairo-lang-formatter
+          - cairo-lang-lowering
+          - cairo-lang-parser
+          - cairo-lang-plugins
+          - cairo-lang-primitive-token
+          - cairo-lang-proc-macros
+          - cairo-lang-project
+          - cairo-lang-runnable-utils
+          - cairo-lang-runner
+          - cairo-lang-semantic
+          - cairo-lang-sierra
+          - cairo-lang-sierra-ap-change
+          - cairo-lang-sierra-gas
+          - cairo-lang-sierra-generator
+          - cairo-lang-sierra-to-casm
+          - cairo-lang-sierra-type-size
+          - cairo-lang-starknet-classes
+          - cairo-lang-starknet
+          - cairo-lang-syntax
+          - cairo-lang-syntax-codegen
+          - cairo-lang-test-plugin
+          - cairo-lang-test-runner
+          - cairo-lang-test-utils
+          - cairo-lang-utils --features=serde,parity-scale-codec,schemars,testing,tracing
+          - cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
+          - tests
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@master
@@ -71,6 +71,9 @@ jobs:
           toolchain: nightly-2025-08-05
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          # Allow only the heavy 'tests' leg to upload the cache; all legs still restore it.
+          save-if: ${{ matrix.args == 'tests' }}
       - name: Install nextest
         uses: taiki-e/install-action@nextest
       # Validates that the number of commands in the matrix is equal to the number of crates in the
@@ -85,7 +88,7 @@ jobs:
             exit 1
           fi
       - run: |
-          cargo ${{ matrix.cmd }}
+          cargo test --profile=ci-dev -p ${{ matrix.args }}
   test:
     if: ${{ always() }}
     needs: parallel-tests
