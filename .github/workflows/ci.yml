@@ -20,6 +20,18 @@ jobs:
       - run: |
           cd ensure-no_std && cargo build
 
+  syntax-codegen-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          components: rustfmt
+          toolchain: nightly-2025-08-05
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --profile=ci-dev -p cairo-lang-syntax-codegen
+
   parallel-tests:
     runs-on: ubuntu-latest
     strategy:
@@ -56,7 +68,6 @@ jobs:
           - cairo-lang-starknet-classes
           - cairo-lang-starknet
           - cairo-lang-syntax
-          - cairo-lang-syntax-codegen
           - cairo-lang-test-plugin
           - cairo-lang-test-runner
           - cairo-lang-test-utils
@@ -65,23 +76,17 @@ jobs:
           - tests
     steps:
       - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          components: rustfmt
-          toolchain: nightly-2025-08-05
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           # Allow only the heavy 'tests' leg to upload the cache; all legs still restore it.
           save-if: ${{ matrix.args == 'tests' }}
-      - name: Install nextest
-        uses: taiki-e/install-action@nextest
       # Validates that the number of commands in the matrix is equal to the number of crates in the
-      # workspace + 2 (for the crates which have multiple commands)
+      # workspace + 2 (for the crates which have multiple commands) - 1 (for the syntax-codegen-test)
       - run: |
           CRATES_COUNT=$(find {crates/*,tests}/Cargo.toml | wc -l)
           COMMANDS_COUNT=${{ strategy.job-total }}
-          if [ $((CRATES_COUNT + 2)) -ne $COMMANDS_COUNT ]; then
+          if [ $((CRATES_COUNT + 2 - 1)) -ne $COMMANDS_COUNT ]; then
             echo "CRATES_COUNT: $CRATES_COUNT"
             echo "COMMANDS_COUNT: $COMMANDS_COUNT"
             echo "The number of commands in the matrix is not equal to the number of crates in the workspace + 1"
@@ -91,12 +96,12 @@ jobs:
           cargo test --profile=ci-dev -p ${{ matrix.args }}
   test:
     if: ${{ always() }}
-    needs: parallel-tests
+    needs: [parallel-tests, syntax-codegen-test]
     runs-on: ubuntu-latest
     steps:
-      - if: needs.parallel-tests.result == 'success'
+      - if: needs.parallel-tests.result == 'success' && needs.syntax-codegen-test.result == 'success'
         run: exit 0
-      - if: needs.parallel-tests.result != 'success'
+      - if: needs.parallel-tests.result != 'success' || needs.syntax-codegen-test.result != 'success'
         run: exit 1
   rustfmt:
     runs-on: ubuntu-latest
