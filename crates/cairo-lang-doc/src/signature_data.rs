@@ -129,7 +129,7 @@ pub(crate) fn get_struct_signature_data<'db>(
         variants: None,
         members: Some(members),
         return_type: None,
-        attributes: Some(struct_attributes),
+        attributes: Some(struct_attributes.to_vec()),
         params: None,
         resolver_generic_params: None,
         return_value_expr: None,

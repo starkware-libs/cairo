@@ -226,9 +226,11 @@ pub fn module_all_used_uses<'db>(
     Ok(all_used_uses)
 }
 
-/// Implementation of [ModuleSemantic::module_attributes].
+/// Query implementation of [ModuleSemantic::module_attributes].
+#[salsa::tracked(returns(ref))]
 pub fn module_attributes<'db>(
     db: &'db dyn Database,
+    _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<Vec<Attribute<'db>>> {
     Ok(match &module_id {
@@ -239,23 +241,6 @@ pub fn module_attributes<'db>(
             module_ast.attributes(db).structurize(db)
         }
     })
-}
-
-/// Query implementation of [ModuleSemantic::module_attributes].
-fn module_attributes_tracked<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    module_attributes_helper(db, (), module_id)
-}
-
-#[salsa::tracked]
-fn module_attributes_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    module_id: ModuleId<'db>,
-) -> Maybe<Vec<Attribute<'db>>> {
-    module_attributes(db, module_id)
 }
 
 /// Finds all the trait ids usable in the current context, using `global use` imports.
@@ -398,8 +383,8 @@ pub trait ModuleSemantic<'db>: Database {
         module_all_used_uses(self.as_dyn_database(), (), module_id).maybe_as_ref()
     }
     /// Returns the attributes of a module.
-    fn module_attributes(&'db self, module_id: ModuleId<'db>) -> Maybe<Vec<Attribute<'db>>> {
-        module_attributes_tracked(self.as_dyn_database(), module_id)
+    fn module_attributes(&'db self, module_id: ModuleId<'db>) -> Maybe<&'db [Attribute<'db>]> {
+        Ok(module_attributes(self.as_dyn_database(), (), module_id).maybe_as_ref()?)
     }
     /// Finds all the trait ids usable in the module.
     fn module_usable_trait_ids(

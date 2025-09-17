@@ -45,7 +45,7 @@ pub struct TestConfig {
 /// attributes are set illegally.
 pub fn try_extract_test_config<'db>(
     db: &'db dyn Database,
-    attrs: Vec<Attribute<'db>>,
+    attrs: &[Attribute<'db>],
 ) -> Result<Option<TestConfig>, Vec<PluginDiagnostic<'db>>> {
     let test_attr = attrs.iter().find(|attr| attr.id == TEST_ATTR);
     let ignore_attr = attrs.iter().find(|attr| attr.id == IGNORE_ATTR);

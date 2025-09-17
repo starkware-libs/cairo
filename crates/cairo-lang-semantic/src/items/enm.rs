@@ -300,9 +300,9 @@ pub trait EnumSemantic<'db>: Database {
         Ok(enum_generic_params_data(db, enum_id).maybe_as_ref()?.generic_params.clone())
     }
     /// Returns the attributes attached to an enum.
-    fn enum_attributes(&'db self, enum_id: EnumId<'db>) -> Maybe<Vec<Attribute<'db>>> {
+    fn enum_attributes(&'db self, enum_id: EnumId<'db>) -> Maybe<&'db [Attribute<'db>]> {
         let db = self.as_dyn_database();
-        Ok(enum_declaration_data(db, enum_id).maybe_as_ref()?.attributes.clone())
+        Ok(&enum_declaration_data(db, enum_id).maybe_as_ref()?.attributes)
     }
     /// Returns the resolution resolved_items of an enum declaration.
     fn enum_declaration_resolver_data(
