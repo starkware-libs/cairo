@@ -180,7 +180,7 @@ pub fn enrich_lookup_context<'db>(
     lookup_context.insert_module(concrete_trait_id.trait_id(db).parent_module(db), db);
     let generic_args = concrete_trait_id.generic_args(db);
     // Add the defining module of the generic args to the lookup.
-    for generic_arg in &generic_args {
+    for generic_arg in generic_args {
         if let GenericArgumentId::Type(ty) = generic_arg {
             enrich_lookup_context_with_ty(db, *ty, lookup_context);
         }
@@ -275,8 +275,8 @@ fn solve_candidate<'db>(
     }
 
     let mut res = lite_inference.can_conform_generic_args(
-        (&candidate_concrete_trait.generic_args(db), candidate_final),
-        (&canonical_trait.id.generic_args(db), target_final),
+        (candidate_concrete_trait.generic_args(db), candidate_final),
+        (canonical_trait.id.generic_args(db), target_final),
     );
 
     // If the candidate is a generic param, its trait is final and not substituted.
@@ -435,7 +435,7 @@ impl<'db> LiteInference<'db> {
     /// If the inference fails (i.e. requires full inferece), returns an error.
     fn infer_generic_assignment(
         &mut self,
-        params: Vec<GenericParam<'db>>,
+        params: &[GenericParam<'db>],
         lookup_context: ImplLookupContextId<'db>,
         impl_type_bounds: Arc<BTreeMap<ImplTypeById<'db>, TypeId<'db>>>,
     ) -> InferenceResult<SolutionSet<'db, Vec<GenericArgumentId<'db>>>> {

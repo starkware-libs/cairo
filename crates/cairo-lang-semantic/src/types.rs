@@ -9,7 +9,6 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
@@ -731,35 +730,6 @@ pub fn verify_fixed_size_array_size<'db>(
     Ok(())
 }
 
-/// Implementation of [TypesSemantic::generic_type_generic_params].
-fn generic_type_generic_params<'db>(
-    db: &'db dyn Database,
-    generic_type: GenericTypeId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    match generic_type {
-        GenericTypeId::Struct(id) => db.struct_generic_params(id),
-        GenericTypeId::Enum(id) => db.enum_generic_params(id),
-        GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
-    }
-}
-
-/// Query implementation of [TypesSemantic::generic_type_generic_params].
-fn generic_type_generic_params_tracked<'db>(
-    db: &'db dyn Database,
-    generic_type: GenericTypeId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    generic_type_generic_params_helper(db, (), generic_type)
-}
-
-#[salsa::tracked]
-fn generic_type_generic_params_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    generic_type: GenericTypeId<'db>,
-) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-    generic_type_generic_params(db, generic_type)
-}
-
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct TypeInfo<'db> {
     pub droppable: Result<ImplId<'db>, InferenceError<'db>>,
@@ -1053,7 +1023,7 @@ fn droppable_tracked<'db>(
     droppable(db, ty)
 }
 
-/// Implementation of [TypesSemantic::priv_type_is_fully_concrete].
+/// Implementation of [PrivTypesSemantic::priv_type_is_fully_concrete].
 fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
     match ty.long(db) {
         TypeLongId::Concrete(concrete_type_id) => concrete_type_id.is_fully_concrete(db),
@@ -1075,7 +1045,7 @@ fn priv_type_is_fully_concrete(db: &dyn Database, ty: TypeId<'_>) -> bool {
     }
 }
 
-/// Query implementation of [TypesSemantic::priv_type_is_fully_concrete].
+/// Query implementation of [PrivTypesSemantic::priv_type_is_fully_concrete].
 #[salsa::tracked]
 pub fn priv_type_is_fully_concrete_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_fully_concrete(db, ty)
@@ -1102,7 +1072,7 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> boo
     }
 }
 
-/// Query implementation of [TypesSemantic::priv_type_is_var_free].
+/// Query implementation of [PrivTypesSemantic::priv_type_is_var_free].
 #[salsa::tracked]
 pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
     priv_type_is_var_free(db, ty)
@@ -1197,8 +1167,12 @@ pub trait TypesSemantic<'db>: Database {
     fn generic_type_generic_params(
         &'db self,
         generic_type: GenericTypeId<'db>,
-    ) -> Maybe<Vec<semantic::GenericParam<'db>>> {
-        generic_type_generic_params_tracked(self.as_dyn_database(), generic_type)
+    ) -> Maybe<&'db [semantic::GenericParam<'db>]> {
+        match generic_type {
+            GenericTypeId::Struct(id) => self.struct_generic_params(id),
+            GenericTypeId::Enum(id) => self.enum_generic_params(id),
+            GenericTypeId::Extern(id) => self.extern_type_declaration_generic_params(id),
+        }
     }
     /// Returns true if there is only one value for the given type and hence the values of the given
     /// type are all interchangeable.
@@ -1227,6 +1201,11 @@ pub trait TypesSemantic<'db>: Database {
     fn droppable(&'db self, ty: TypeId<'db>) -> Result<ImplId<'db>, InferenceError<'db>> {
         droppable_tracked(self.as_dyn_database(), ty)
     }
+}
+impl<'db, T: Database + ?Sized> TypesSemantic<'db> for T {}
+
+/// Private trait for types-related semantic queries.
+pub trait PrivTypesSemantic<'db>: Database {
     /// Private query to check if a type is fully concrete.
     fn priv_type_is_fully_concrete(&self, ty: TypeId<'db>) -> bool {
         priv_type_is_fully_concrete_tracked(self.as_dyn_database(), ty)
@@ -1240,4 +1219,4 @@ pub trait TypesSemantic<'db>: Database {
         priv_type_short_name_tracked(self.as_dyn_database(), ty)
     }
 }
-impl<'db, T: Database + ?Sized> TypesSemantic<'db> for T {}
+impl<'db, T: Database + ?Sized> PrivTypesSemantic<'db> for T {}

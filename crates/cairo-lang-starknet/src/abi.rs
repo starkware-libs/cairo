@@ -298,7 +298,7 @@ impl<'db> AbiBuilder<'db> {
     ) -> Result<(), ABIError<'db>> {
         // Get storage type
         let generic_params = self.db.trait_generic_params(trait_id)?;
-        let [GenericParam::Type(storage_type)] = generic_params.as_slice() else {
+        let [GenericParam::Type(storage_type)] = generic_params else {
             return Err(ABIError::ExpectedOneGenericParam(source));
         };
         let storage_type = TypeLongId::GenericParameter(storage_type.id).intern(self.db);

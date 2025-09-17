@@ -125,9 +125,9 @@ pub trait ExternTypeSemantic<'db>: Database {
     fn extern_type_declaration_generic_params(
         &'db self,
         extern_type_id: ExternTypeId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
+    ) -> Maybe<&'db [GenericParam<'db>]> {
         let db = self.as_dyn_database();
-        Ok(extern_type_declaration_data(db, extern_type_id).maybe_as_ref()?.generic_params.clone())
+        Ok(&extern_type_declaration_data(db, extern_type_id).maybe_as_ref()?.generic_params)
     }
     /// Returns the generic params data of an extern type.
     fn extern_type_declaration_generic_params_data(

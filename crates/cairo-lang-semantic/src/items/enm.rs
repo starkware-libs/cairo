@@ -251,8 +251,8 @@ pub trait SemanticEnumEx: Database {
         //   always have the correct number of generic arguments.
         let db = self.as_dyn_database();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
-        let generic_args = concrete_enum_id.long(db).generic_args.clone();
-        GenericSubstitution::new(&generic_params, &generic_args).substitute(
+        let generic_args = &concrete_enum_id.long(db).generic_args;
+        GenericSubstitution::new(generic_params, generic_args).substitute(
             db,
             ConcreteVariant { concrete_enum_id, id: variant.id, ty: variant.ty, idx: variant.idx },
         )
@@ -295,9 +295,9 @@ pub trait EnumSemantic<'db>: Database {
             .unwrap_or_default()
     }
     /// Returns the generic parameters of an enum.
-    fn enum_generic_params(&'db self, enum_id: EnumId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
+    fn enum_generic_params(&'db self, enum_id: EnumId<'db>) -> Maybe<&'db [GenericParam<'db>]> {
         let db = self.as_dyn_database();
-        Ok(enum_generic_params_data(db, enum_id).maybe_as_ref()?.generic_params.clone())
+        Ok(&enum_generic_params_data(db, enum_id).maybe_as_ref()?.generic_params)
     }
     /// Returns the attributes attached to an enum.
     fn enum_attributes(&'db self, enum_id: EnumId<'db>) -> Maybe<&'db [Attribute<'db>]> {

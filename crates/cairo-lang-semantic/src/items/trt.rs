@@ -75,8 +75,8 @@ impl<'db> ConcreteTraitId<'db> {
     pub fn trait_id(&self, db: &'db dyn Database) -> TraitId<'db> {
         self.long(db).trait_id
     }
-    pub fn generic_args(&self, db: &'db dyn Database) -> Vec<GenericArgumentId<'db>> {
-        self.long(db).generic_args.clone()
+    pub fn generic_args(&self, db: &'db dyn Database) -> &'db [GenericArgumentId<'db>] {
+        &self.long(db).generic_args
     }
     pub fn name(&self, db: &'db dyn Database) -> &'db str {
         self.trait_id(db).name(db)
@@ -851,8 +851,8 @@ fn concrete_trait_constant_type<'db>(
 ) -> Maybe<TypeId<'db>> {
     let concrete_trait_id = concrete_trait_constant_id.concrete_trait(db);
     let substitution = GenericSubstitution::new(
-        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
-        &concrete_trait_id.generic_args(db),
+        db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        concrete_trait_id.generic_args(db),
     );
     let generic_ty = db.trait_constant_type(concrete_trait_constant_id.trait_constant(db))?;
     substitution.substitute(db, generic_ty)
@@ -921,8 +921,8 @@ fn concrete_trait_impl_concrete_trait<'db>(
 ) -> Maybe<ConcreteTraitId<'db>> {
     let concrete_trait_id = concrete_trait_impl_id.concrete_trait(db);
     GenericSubstitution::new(
-        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
-        &concrete_trait_id.generic_args(db),
+        db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        concrete_trait_id.generic_args(db),
     )
     .substitute(db, db.trait_impl_concrete_trait(concrete_trait_impl_id.trait_impl(db))?)
 }
@@ -1067,17 +1067,17 @@ fn concrete_trait_function_generic_params<'db>(
 ) -> Maybe<Vec<GenericParam<'db>>> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
     GenericSubstitution::new(
-        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
-        &concrete_trait_id.generic_args(db),
+        db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        concrete_trait_id.generic_args(db),
     )
     .substitute(
         db,
-        db.trait_function_generic_params(concrete_trait_function_id.trait_function(db))?,
+        db.trait_function_generic_params(concrete_trait_function_id.trait_function(db))?.to_vec(),
     )
 }
 
 /// Query implementation of [TraitSemantic::concrete_trait_function_generic_params].
-#[salsa::tracked]
+#[salsa::tracked(returns(ref))]
 fn concrete_trait_function_generic_params_tracked<'db>(
     db: &'db dyn Database,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
@@ -1092,8 +1092,8 @@ fn concrete_trait_function_signature<'db>(
 ) -> Maybe<semantic::Signature<'db>> {
     let concrete_trait_id = concrete_trait_function_id.concrete_trait(db);
     GenericSubstitution::new(
-        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
-        &concrete_trait_id.generic_args(db),
+        db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        concrete_trait_id.generic_args(db),
     )
     .substitute(db, db.trait_function_signature(concrete_trait_function_id.trait_function(db))?)
 }
@@ -1136,7 +1136,7 @@ fn priv_trait_function_body_data<'db>(
             let generic_parameters = db.trait_generic_params(trait_id)?;
             let concrete_trait = ConcreteTraitLongId {
                 trait_id,
-                generic_args: generic_params_to_args(&generic_parameters, db),
+                generic_args: generic_params_to_args(generic_parameters, db),
             }
             .intern(db);
             let generic_function = GenericFunctionId::Impl(ImplGenericFunctionId {
@@ -1189,8 +1189,8 @@ pub trait TraitSemantic<'db>: Database {
             .unwrap_or_default()
     }
     /// Returns the generic parameters of a trait.
-    fn trait_generic_params(&'db self, trait_id: TraitId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(self.trait_generic_params_data(trait_id, false)?.generic_params.clone())
+    fn trait_generic_params(&'db self, trait_id: TraitId<'db>) -> Maybe<&'db [GenericParam<'db>]> {
+        Ok(&self.trait_generic_params_data(trait_id, false)?.generic_params)
     }
     /// Returns the ids of the generic parameters of a trait.
     fn trait_generic_params_ids(
@@ -1315,8 +1315,8 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_type_generic_params(
         &'db self,
         trait_type_id: TraitTypeId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(self.priv_trait_type_generic_params_data(trait_type_id)?.generic_params.clone())
+    ) -> Maybe<&'db [GenericParam<'db>]> {
+        Ok(&self.priv_trait_type_generic_params_data(trait_type_id)?.generic_params)
     }
     /// Returns the attributes of a trait type.
     fn trait_type_attributes(
@@ -1401,8 +1401,8 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_function_generic_params(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        Ok(self.priv_trait_function_generic_params_data(trait_function_id)?.generic_params.clone())
+    ) -> Maybe<&'db [GenericParam<'db>]> {
+        Ok(&self.priv_trait_function_generic_params_data(trait_function_id)?.generic_params)
     }
     /// Returns the attributes of a trait function.
     fn trait_function_attributes(
@@ -1477,11 +1477,12 @@ pub trait TraitSemantic<'db>: Database {
     fn concrete_trait_function_generic_params(
         &'db self,
         concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
-    ) -> Maybe<Vec<GenericParam<'db>>> {
-        concrete_trait_function_generic_params_tracked(
+    ) -> Maybe<&'db [GenericParam<'db>]> {
+        Ok(concrete_trait_function_generic_params_tracked(
             self.as_dyn_database(),
             concrete_trait_function_id,
         )
+        .maybe_as_ref()?)
     }
     /// Returns the signature of a concrete trait function.
     fn concrete_trait_function_signature(
