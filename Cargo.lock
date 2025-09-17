@@ -1206,9 +1206,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "2.5.0"
+version = "3.0.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c21cacdf4e290ab5f0018f24d6bf97f8d3a8809bd09568550669270e7f9ed534"
+checksum = "c96021ea68138094428e3d8dab21a504b23adc084363c89caaa7f6bda51dc251"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1216,7 +1216,6 @@ dependencies = [
  "clap",
  "generic-array",
  "hashbrown 0.15.2",
- "hex",
  "indoc",
  "keccak",
  "lazy_static",
