@@ -450,7 +450,7 @@ impl<'db> AbiBuilder<'db> {
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
-            self.get_function_signature_inputs_and_mutability(&signature, storage_type)?;
+            self.get_function_signature_inputs_and_mutability(signature, storage_type)?;
         self.ctor = Some(EntryPointInfo { source, inputs: inputs.clone() });
         require(state_mutability == StateMutability::External).ok_or(ABIError::UnexpectedType)?;
 
@@ -470,9 +470,9 @@ impl<'db> AbiBuilder<'db> {
         let signature = self.db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
-            self.get_function_signature_inputs_and_mutability(&signature, storage_type)?;
+            self.get_function_signature_inputs_and_mutability(signature, storage_type)?;
 
-        let outputs = self.get_signature_outputs(&signature)?;
+        let outputs = self.get_signature_outputs(signature)?;
 
         let l1_handler_item =
             Item::L1Handler(L1Handler { name, inputs, outputs, state_mutability });
@@ -537,13 +537,13 @@ impl<'db> AbiBuilder<'db> {
     fn function_as_abi(
         &mut self,
         name: &str,
-        signature: Signature<'db>,
+        signature: &Signature<'db>,
         storage_type: TypeId<'db>,
     ) -> Result<Function, ABIError<'db>> {
         let (inputs, state_mutability) =
-            self.get_function_signature_inputs_and_mutability(&signature, storage_type)?;
+            self.get_function_signature_inputs_and_mutability(signature, storage_type)?;
 
-        let outputs = self.get_signature_outputs(&signature)?;
+        let outputs = self.get_signature_outputs(signature)?;
 
         Ok(Function { name: name.to_string(), inputs, outputs, state_mutability })
     }

@@ -291,7 +291,7 @@ pub trait FunctionWithBodySemantic<'db>: Database {
     fn function_with_body_signature(
         &'db self,
         function_id: FunctionWithBodyId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
+    ) -> Maybe<&'db semantic::Signature<'db>> {
         match function_id {
             FunctionWithBodyId::Free(id) => self.free_function_signature(id),
             FunctionWithBodyId::Impl(id) => self.impl_function_signature(id),

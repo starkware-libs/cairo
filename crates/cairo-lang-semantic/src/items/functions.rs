@@ -121,21 +121,28 @@ impl<'db> GenericFunctionId<'db> {
             }
         }
     }
-    pub fn generic_signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    pub fn generic_signature(&self, db: &'db dyn Database) -> Maybe<&'db Signature<'db>> {
         match *self {
             GenericFunctionId::Free(id) => db.free_function_signature(id),
             GenericFunctionId::Extern(id) => db.extern_function_signature(id),
             GenericFunctionId::Impl(id) => {
-                let concrete_trait_id = id.impl_id.concrete_trait(db)?;
-                let signature = db.concrete_trait_function_signature(
-                    ConcreteTraitGenericFunctionId::new_from_data(
-                        db,
-                        concrete_trait_id,
-                        id.function,
-                    ),
-                )?;
-
-                GenericSubstitution::from_impl(id.impl_id).substitute(db, signature)
+                #[salsa::tracked(returns(ref))]
+                fn impl_function_signature_tracked<'db>(
+                    db: &'db dyn Database,
+                    impl_id: ImplId<'db>,
+                    function: TraitFunctionId<'db>,
+                ) -> Maybe<Signature<'db>> {
+                    let concrete_trait_id = impl_id.concrete_trait(db)?;
+                    let signature = db.concrete_trait_function_signature(
+                        ConcreteTraitGenericFunctionId::new_from_data(
+                            db,
+                            concrete_trait_id,
+                            function,
+                        ),
+                    )?;
+                    GenericSubstitution::from_impl(impl_id).substitute(db, signature.clone())
+                }
+                impl_function_signature_tracked(db, id.impl_id, id.function).maybe_as_ref()
             }
         }
     }
@@ -730,7 +737,7 @@ impl<'db> Signature<'db> {
             diagnostics,
             db,
             resolver,
-            &signature_syntax.parameters(db).elements_vec(db),
+            signature_syntax.parameters(db).elements(db),
             Some(function_title_id),
             environment,
         );
@@ -790,44 +797,15 @@ pub fn function_signature_params<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
     db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
-    params: &[ast::Param<'db>],
+    params: impl Iterator<Item = ast::Param<'db>>,
     function_title_id: Option<FunctionTitleId<'db>>,
     env: &mut Environment<'db>,
 ) -> Vec<semantic::Parameter<'db>> {
     update_env_with_ast_params(diagnostics, db, resolver, params, function_title_id, env)
 }
 
-#[salsa::tracked]
-fn function_title_signature_helper<'db>(
-    db: &'db dyn Database,
-    _tracked: Tracked,
-    function_title_id: FunctionTitleId<'db>,
-) -> Maybe<Signature<'db>> {
-    function_title_signature(db, function_title_id)
-}
-
-/// Implementation of [FunctionsSemantic::function_title_signature].
-fn function_title_signature<'db>(
-    db: &'db dyn Database,
-    function_title_id: FunctionTitleId<'db>,
-) -> Maybe<Signature<'db>> {
-    match function_title_id {
-        FunctionTitleId::Free(free_function) => db.free_function_signature(free_function),
-        FunctionTitleId::Extern(extern_function) => db.extern_function_signature(extern_function),
-        FunctionTitleId::Trait(trait_function) => db.trait_function_signature(trait_function),
-        FunctionTitleId::Impl(impl_function) => db.impl_function_signature(impl_function),
-    }
-}
-
-/// Query implementation of [FunctionsSemantic::function_title_signature].
-fn function_title_signature_tracked<'db>(
-    db: &'db dyn Database,
-    function_title_id: FunctionTitleId<'db>,
-) -> Maybe<Signature<'db>> {
-    function_title_signature_helper(db, (), function_title_id)
-}
-
-/// Implementation of [FunctionsSemantic::concrete_function_signature].
+/// Query implementation of [FunctionsSemantic::concrete_function_signature].
+#[salsa::tracked(returns(ref))]
 fn concrete_function_signature<'db>(
     db: &'db dyn Database,
     function_id: FunctionId<'db>,
@@ -838,16 +816,7 @@ fn concrete_function_signature<'db>(
     // TODO(spapini): When trait generics are supported, they need to be substituted
     //   one by one, not together.
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
-    GenericSubstitution::new(generic_params, generic_args).substitute(db, generic_signature)
-}
-
-/// Query implementation of [FunctionsSemantic::concrete_function_signature].
-#[salsa::tracked]
-fn concrete_function_signature_tracked<'db>(
-    db: &'db dyn Database,
-    function_id: FunctionId<'db>,
-) -> Maybe<Signature<'db>> {
-    concrete_function_signature(db, function_id)
+    GenericSubstitution::new(generic_params, generic_args).substitute(db, generic_signature.clone())
 }
 
 /// Implementation of [FunctionsSemantic::concrete_function_closure_params].
@@ -890,16 +859,16 @@ fn update_env_with_ast_params<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
     db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
-    ast_params: &[ast::Param<'db>],
+    ast_params: impl Iterator<Item = ast::Param<'db>>,
     function_title_id: Option<FunctionTitleId<'db>>,
     env: &mut Environment<'db>,
 ) -> Vec<semantic::Parameter<'db>> {
     let mut semantic_params = Vec::new();
     for ast_param in ast_params {
-        let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
+        let semantic_param = ast_param_to_semantic(diagnostics, db, resolver, &ast_param);
 
         if env
-            .add_param(db, diagnostics, semantic_param.clone(), ast_param, function_title_id)
+            .add_param(db, diagnostics, semantic_param.clone(), &ast_param, function_title_id)
             .is_ok()
         {
             semantic_params.push(semantic_param);
@@ -1083,8 +1052,13 @@ pub trait FunctionsSemantic<'db>: Database {
     fn function_title_signature(
         &'db self,
         function_title_id: FunctionTitleId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
-        function_title_signature_tracked(self.as_dyn_database(), function_title_id)
+    ) -> Maybe<&'db semantic::Signature<'db>> {
+        match function_title_id {
+            FunctionTitleId::Free(id) => self.free_function_signature(id),
+            FunctionTitleId::Extern(id) => self.extern_function_signature(id),
+            FunctionTitleId::Trait(id) => self.trait_function_signature(id),
+            FunctionTitleId::Impl(id) => self.impl_function_signature(id),
+        }
     }
     /// Returns the generic parameters of the given FunctionTitleId. This include free
     /// functions, extern functions, etc...
@@ -1112,8 +1086,8 @@ pub trait FunctionsSemantic<'db>: Database {
     fn concrete_function_signature(
         &'db self,
         function_id: FunctionId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
-        concrete_function_signature_tracked(self.as_dyn_database(), function_id)
+    ) -> Maybe<&'db semantic::Signature<'db>> {
+        concrete_function_signature(self.as_dyn_database(), function_id).maybe_as_ref()
     }
     /// Returns a mapping of closure types to their associated parameter types for a concrete
     /// function.

@@ -1085,7 +1085,8 @@ fn concrete_trait_function_generic_params_tracked<'db>(
     concrete_trait_function_generic_params(db, concrete_trait_function_id)
 }
 
-/// Implementation of [TraitSemantic::concrete_trait_function_signature].
+/// Query implementation of [TraitSemantic::concrete_trait_function_signature].
+#[salsa::tracked(returns(ref))]
 fn concrete_trait_function_signature<'db>(
     db: &'db dyn Database,
     concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
@@ -1095,16 +1096,10 @@ fn concrete_trait_function_signature<'db>(
         db.trait_generic_params(concrete_trait_id.trait_id(db))?,
         concrete_trait_id.generic_args(db),
     )
-    .substitute(db, db.trait_function_signature(concrete_trait_function_id.trait_function(db))?)
-}
-
-/// Query implementation of [TraitSemantic::concrete_trait_function_signature].
-#[salsa::tracked]
-fn concrete_trait_function_signature_tracked<'db>(
-    db: &'db dyn Database,
-    concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
-) -> Maybe<semantic::Signature<'db>> {
-    concrete_trait_function_signature(db, concrete_trait_function_id)
+    .substitute(
+        db,
+        db.trait_function_signature(concrete_trait_function_id.trait_function(db))?.clone(),
+    )
 }
 
 // === Body ===
@@ -1394,8 +1389,8 @@ pub trait TraitSemantic<'db>: Database {
     fn trait_function_signature(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
-        Ok(self.priv_trait_function_declaration_data(trait_function_id)?.signature.clone())
+    ) -> Maybe<&'db semantic::Signature<'db>> {
+        Ok(&self.priv_trait_function_declaration_data(trait_function_id)?.signature)
     }
     /// Returns the generic params of a trait function.
     fn trait_function_generic_params(
@@ -1488,11 +1483,9 @@ pub trait TraitSemantic<'db>: Database {
     fn concrete_trait_function_signature(
         &'db self,
         concrete_trait_function_id: ConcreteTraitGenericFunctionId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
-        concrete_trait_function_signature_tracked(
-            self.as_dyn_database(),
-            concrete_trait_function_id,
-        )
+    ) -> Maybe<&'db semantic::Signature<'db>> {
+        concrete_trait_function_signature(self.as_dyn_database(), concrete_trait_function_id)
+            .maybe_as_ref()
     }
 }
 impl<'db, T: Database + ?Sized> TraitSemantic<'db> for T {}
