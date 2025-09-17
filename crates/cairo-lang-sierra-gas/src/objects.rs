@@ -1,9 +1,10 @@
 use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
+
+use crate::core_libfunc_cost_base::FunctionCostInfo;
 
 /// Represents constant cost.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -110,7 +111,7 @@ pub enum BranchCost {
     /// A cost of a function.
     /// `sign` controls whether the cost (the function cost as well as `const_cost`) is added
     /// to or reduced from the wallet.
-    FunctionCost { const_cost: ConstCost, function: Function, sign: BranchCostSign },
+    FunctionCost { const_cost: ConstCost, function: FunctionCostInfo, sign: BranchCostSign },
     /// The cost of the `branch_align` libfunc.
     BranchAlign,
     /// The cost of `withdraw_gas` and `withdraw_gas_all` libfuncs.

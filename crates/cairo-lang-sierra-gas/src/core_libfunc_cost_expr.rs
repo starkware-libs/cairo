@@ -5,7 +5,8 @@ use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 
 use crate::core_libfunc_cost_base::{
-    CostOperations, InvocationCostInfoProvider, core_libfunc_postcost, core_libfunc_precost,
+    CostOperations, FunctionCostInfo, InvocationCostInfoProvider, core_libfunc_postcost,
+    core_libfunc_precost,
 };
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
@@ -27,7 +28,7 @@ impl CostOperations for Ops<'_> {
 
     fn function_token_cost(
         &mut self,
-        function: &cairo_lang_sierra::program::Function,
+        function: &FunctionCostInfo,
         token_type: CostTokenType,
     ) -> Self::CostType {
         Self::CostType::from_iter([(
