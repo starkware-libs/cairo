@@ -163,8 +163,8 @@ pub trait ExternFunctionSemantic<'db>: Database {
     fn extern_function_signature(
         &'db self,
         extern_function_id: ExternFunctionId<'db>,
-    ) -> Maybe<semantic::Signature<'db>> {
-        Ok(self.priv_extern_function_declaration_data(extern_function_id)?.signature.clone())
+    ) -> Maybe<&'db semantic::Signature<'db>> {
+        Ok(&self.priv_extern_function_declaration_data(extern_function_id)?.signature)
     }
     /// Returns the generic params of an extern function.
     fn extern_function_declaration_generic_params(

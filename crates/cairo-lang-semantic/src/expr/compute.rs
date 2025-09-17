@@ -1156,7 +1156,7 @@ fn call_core_binary_op<'db>(
     }
 
     let sig = ctx.db.concrete_function_signature(function)?;
-    let first_param = sig.params.into_iter().next().unwrap();
+    let first_param = sig.params.first().unwrap();
 
     expr_function_call(
         ctx,
@@ -2178,7 +2178,7 @@ fn compute_expr_closure_semantic<'db>(
                 new_ctx.diagnostics,
                 new_ctx.db,
                 new_ctx.resolver,
-                &params.params(db).elements_vec(db),
+                params.params(db).elements(db),
                 None,
                 &mut new_ctx.environment,
             )
@@ -2490,7 +2490,7 @@ fn compute_method_function_call_data<'db>(
         infer_impl_by_self(ctx, trait_function_id, fixed_ty, method_syntax, generic_args_syntax)?;
 
     let signature = ctx.db.trait_function_signature(trait_function_id).unwrap();
-    let first_param = signature.params.into_iter().next().unwrap();
+    let first_param = signature.params.first().unwrap();
 
     if deref_used && first_param.mutability == Mutability::Reference {
         return Err(no_implementation_diagnostic(
@@ -4004,7 +4004,6 @@ fn expr_function_call<'db>(
     let coupon_arg = maybe_pop_coupon_argument(ctx, &mut named_args, function_id);
 
     let signature = ctx.db.concrete_function_signature(function_id)?;
-    let signature = ctx.resolver.inference().rewrite(signature).unwrap();
 
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     if named_args.len() != signature.params.len() {
@@ -4015,19 +4014,19 @@ fn expr_function_call<'db>(
     }
 
     // Check argument names and types.
-    check_named_arguments(&named_args, &signature, ctx)?;
+    check_named_arguments(&named_args, signature, ctx)?;
 
+    let inference = &mut ctx.resolver.inference();
     let mut args = Vec::new();
     for (NamedArg(arg, _name, mutability), param) in
         named_args.into_iter().zip(signature.params.iter())
     {
         let arg_ty = arg.ty();
-        let param_ty = param.ty;
+        let param_ty = inference.rewrite(param.ty).no_err();
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
         if !arg_ty.is_missing(ctx.db) {
-            let inference = &mut ctx.resolver.inference();
             let _ = inference.conform_ty_for_diag(
                 arg_ty,
                 param_ty,
@@ -4064,7 +4063,7 @@ fn expr_function_call<'db>(
         function: function_id,
         args,
         coupon_arg,
-        ty: signature.return_type,
+        ty: inference.rewrite(signature.return_type).no_err(),
         stable_ptr,
     };
     // Check panicable.
@@ -4630,7 +4629,7 @@ fn function_parameter_types<'db>(
     function: FunctionId<'db>,
 ) -> Maybe<impl Iterator<Item = TypeId<'db>> + use<'db>> {
     let signature = ctx.db.concrete_function_signature(function)?;
-    let param_types = signature.params.into_iter().map(|param| param.ty);
+    let param_types = signature.params.iter().map(|param| param.ty);
     Ok(param_types)
 }
 

@@ -502,7 +502,7 @@ pub struct Signature<'db> {
     pub location: LocationId<'db>,
 }
 impl<'db> Signature<'db> {
-    pub fn from_semantic(db: &'db dyn Database, value: semantic::Signature<'db>) -> Self {
+    pub fn from_semantic(db: &'db dyn Database, value: &semantic::Signature<'db>) -> Self {
         let semantic::Signature {
             params,
             return_type,
@@ -517,13 +517,13 @@ impl<'db> Signature<'db> {
             .map(|param| parameter_as_member_path(param.clone()))
             .collect();
         let params: Vec<semantic::ExprVarMemberPath<'_>> =
-            params.into_iter().map(parameter_as_member_path).collect();
+            params.iter().cloned().map(parameter_as_member_path).collect();
         Self {
             params,
             extra_rets: ref_params,
-            return_type,
-            implicits,
-            panicable,
+            return_type: *return_type,
+            implicits: implicits.clone(),
+            panicable: *panicable,
             location: LocationId::from_stable_location(
                 db,
                 StableLocation::new(stable_ptr.untyped()),

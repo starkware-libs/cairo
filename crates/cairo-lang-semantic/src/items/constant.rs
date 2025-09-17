@@ -1013,7 +1013,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             arenas: &body.arenas,
             vars: signature
                 .params
-                .into_iter()
+                .iter()
                 .map(|p| VarId::Param(p.id))
                 .zip(args.iter().cloned())
                 .collect(),
