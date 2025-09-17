@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
-use cairo_lang_filesystem::ids::{StrRef, Tracked};
+use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::helpers::UsePathEx;
@@ -38,7 +38,7 @@ pub struct ModuleItemInfo<'db> {
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct ModuleSemanticData<'db> {
     /// The items in the module without duplicates.
-    pub items: OrderedHashMap<StrRef<'db>, ModuleItemInfo<'db>>,
+    pub items: OrderedHashMap<SmolStrId<'db>, ModuleItemInfo<'db>>,
     pub global_uses: OrderedHashMap<GlobalUseId<'db>, Visibility>,
     pub diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
 }
@@ -112,13 +112,12 @@ fn priv_module_semantic_data<'db>(
         };
         let visibility = Visibility::from_ast(db, &mut diagnostics, &visibility);
         let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
-        if items.insert(name.into(), ModuleItemInfo { item_id, visibility, feature_kind }).is_some()
-        {
+        if items.insert(name, ModuleItemInfo { item_id, visibility, feature_kind }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
             diagnostics.report(
                 db.module_item_name_stable_ptr(module_id, item_id).unwrap(),
-                SemanticDiagnosticKind::NameDefinedMultipleTimes(name.into()),
+                SemanticDiagnosticKind::NameDefinedMultipleTimes(name),
             );
         }
     }
@@ -138,7 +137,7 @@ fn priv_module_semantic_data<'db>(
 pub fn module_item_by_name<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    name: StrRef<'db>,
+    name: SmolStrId<'db>,
 ) -> Maybe<Option<ModuleItemId<'db>>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).map(|info| info.item_id))
@@ -147,7 +146,7 @@ pub fn module_item_by_name<'db>(
 fn module_item_by_name_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    name: StrRef<'db>,
+    name: SmolStrId<'db>,
 ) -> Maybe<Option<ModuleItemId<'db>>> {
     module_item_by_name_helper(db, (), module_id, name)
 }
@@ -157,7 +156,7 @@ fn module_item_by_name_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     module_id: ModuleId<'db>,
-    name: StrRef<'db>,
+    name: SmolStrId<'db>,
 ) -> Maybe<Option<ModuleItemId<'db>>> {
     module_item_by_name(db, module_id, name)
 }
@@ -165,7 +164,8 @@ fn module_item_by_name_helper<'db>(
 pub fn module_item_info_by_name<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    name: StrRef<'db>,
+
+    name: SmolStrId<'db>,
 ) -> Maybe<Option<ModuleItemInfo<'db>>> {
     let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).cloned())
@@ -174,7 +174,7 @@ pub fn module_item_info_by_name<'db>(
 fn module_item_info_by_name_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    name: StrRef<'db>,
+    name: SmolStrId<'db>,
 ) -> Maybe<Option<ModuleItemInfo<'db>>> {
     module_item_info_by_name_helper(db, (), module_id, name)
 }
@@ -184,7 +184,7 @@ fn module_item_info_by_name_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     module_id: ModuleId<'db>,
-    name: StrRef<'db>,
+    name: SmolStrId<'db>,
 ) -> Maybe<Option<ModuleItemInfo<'db>>> {
     module_item_info_by_name(db, module_id, name)
 }
@@ -362,7 +362,8 @@ pub trait ModuleSemantic<'db>: Database {
     fn module_item_by_name(
         &'db self,
         module_id: ModuleId<'db>,
-        name: StrRef<'db>,
+
+        name: SmolStrId<'db>,
     ) -> Maybe<Option<ModuleItemId<'db>>> {
         module_item_by_name_tracked(self.as_dyn_database(), module_id, name)
     }
@@ -371,7 +372,8 @@ pub trait ModuleSemantic<'db>: Database {
     fn module_item_info_by_name(
         &'db self,
         module_id: ModuleId<'db>,
-        name: StrRef<'db>,
+
+        name: SmolStrId<'db>,
     ) -> Maybe<Option<ModuleItemInfo<'db>>> {
         module_item_info_by_name_tracked(self.as_dyn_database(), module_id, name)
     }

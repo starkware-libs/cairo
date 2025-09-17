@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -268,7 +269,7 @@ fn test_lex_single_token() {
         let terminal = lexer.next().unwrap();
         // TODO(spapini): Remove calling new_root on non root elements.
         assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
-        assert_eq!(terminal.text, text, "Wrong token text.");
+        assert_eq!(terminal.text.long(db), text, "Wrong token text.");
 
         assert_eq!(
             lexer.next().unwrap().kind,
@@ -293,19 +294,20 @@ fn test_lex_double_token() {
                 let text = format!("{text0}{separator}{text1}");
                 let mut lexer = Lexer::from_text(db, text.as_str());
                 let terminal = lexer.next().unwrap();
-                let token_text = terminal.text;
+                let token_text = terminal.text.long(db);
                 assert_eq!(
                     terminal.kind, kind0,
-                    "Wrong first token kind: {}, expected: {kind0}. Text: \"{token_text}\".",
-                    terminal.kind
+                    "Wrong first token kind: {}, expected: {kind0}. Text: \"{}\".",
+                    terminal.kind, token_text
                 );
                 assert_eq!(
                     token_text, text0,
-                    "Wrong first token text, with total text: \"{token_text}\".",
+                    "Wrong first token text, with total text: \"{}\".",
+                    token_text
                 );
 
                 let terminal = lexer.next().unwrap();
-                let token_text = terminal.text;
+                let token_text = terminal.text.long(db);
                 assert_eq!(
                     terminal.kind, kind1,
                     "Wrong second token kind {}, expected: {kind1}. Text: \"{token_text}\".",
@@ -337,7 +339,7 @@ fn test_lex_token_with_trivia() {
                 let text = format!("{leading_trivia}{expected_token_text} {trailing_trivia}");
                 let mut lexer = Lexer::from_text(db, text.as_str());
                 let terminal = lexer.next().unwrap();
-                let token_text = terminal.text;
+                let token_text = terminal.text.long(db);
                 assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
                 assert_eq!(token_text, expected_token_text, "Wrong token text.");
                 // TODO: verify trivia kinds and texts
@@ -362,64 +364,74 @@ fn test_cases() {
         res,
         vec![
             LexerTerminal {
-                text: "let",
+                text: SmolStrId::from(db, "let"),
                 kind: SyntaxKind::TerminalLet,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
+                trailing_trivia: vec![
+                    TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
+                ]
             },
             LexerTerminal {
-                text: "x",
+                text: SmolStrId::from(db, "x"),
                 kind: SyntaxKind::TerminalIdentifier,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             },
             LexerTerminal {
-                text: ":",
+                text: SmolStrId::from(db, ":"),
                 kind: SyntaxKind::TerminalColon,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
+                trailing_trivia: vec![
+                    TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
+                ]
             },
             LexerTerminal {
-                text: "&",
+                text: SmolStrId::from(db, "&"),
                 kind: SyntaxKind::TerminalAnd,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             },
             LexerTerminal {
-                text: "T",
+                text: SmolStrId::from(db, "T"),
                 kind: SyntaxKind::TerminalIdentifier,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
+                trailing_trivia: vec![
+                    TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
+                ]
             },
             LexerTerminal {
-                text: "=",
+                text: SmolStrId::from(db, "="),
                 kind: SyntaxKind::TerminalEq,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
+                trailing_trivia: vec![
+                    TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
+                ]
             },
             LexerTerminal {
-                text: "`",
+                text: SmolStrId::from(db, "`"),
                 kind: SyntaxKind::TerminalBadCharacters,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
+                trailing_trivia: vec![
+                    TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into()
+                ]
             },
             LexerTerminal {
-                text: "6",
+                text: SmolStrId::from(db, "6"),
                 kind: SyntaxKind::TerminalLiteralNumber,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             },
             LexerTerminal {
-                text: ";",
+                text: SmolStrId::from(db, ";"),
                 kind: SyntaxKind::TerminalSemicolon,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
-                    TokenWhitespace::new_green(db, " ").into(),
-                    TokenSingleLineComment::new_green(db, "//  5+ 3;").into()
+                    TokenWhitespace::new_green(db, SmolStrId::from(db, " ")).into(),
+                    TokenSingleLineComment::new_green(db, SmolStrId::from(db, "//  5+ 3;")).into()
                 ]
             },
             LexerTerminal {
-                text: "",
+                text: SmolStrId::from(db, ""),
                 kind: SyntaxKind::TerminalEndOfFile,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
@@ -436,7 +448,7 @@ fn test_bad_character() {
     let text = "`";
     let mut lexer = Lexer::from_text(db, text);
     let terminal = lexer.next().unwrap();
-    let token_text = terminal.text;
+    let token_text = terminal.text.long(db);
     assert_eq!(
         terminal.kind,
         SyntaxKind::TerminalBadCharacters,

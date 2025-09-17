@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_utils::{Intern, define_short_id};
+use itertools::Itertools;
 use path_clean::PathClean;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
@@ -32,10 +33,12 @@ pub enum CrateInput {
 impl CrateInput {
     pub fn into_crate_long_id(self, db: &dyn Database) -> CrateLongId<'_> {
         match self {
-            CrateInput::Real { name, discriminator } => CrateLongId::Real { name, discriminator },
+            CrateInput::Real { name, discriminator } => {
+                CrateLongId::Real { name: SmolStrId::from(db, name), discriminator }
+            }
             CrateInput::Virtual { name, file_long_id, settings, cache_file } => {
                 CrateLongId::Virtual {
-                    name,
+                    name: SmolStrId::from(db, name),
                     file_id: file_long_id.into_file_long_id(db).intern(db),
                     settings,
                     cache_file: cache_file.map(|blob_long_id| blob_long_id.intern(db)),
@@ -56,27 +59,29 @@ impl CrateInput {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum CrateLongId<'db> {
     /// A crate that appears in crate_roots(), and on the filesystem.
-    Real { name: String, discriminator: Option<String> },
+    Real { name: SmolStrId<'db>, discriminator: Option<String> },
     /// A virtual crate, not a part of the crate_roots(). Used mainly for tests.
     Virtual {
-        name: String,
+        name: SmolStrId<'db>,
         file_id: FileId<'db>,
         settings: String,
         cache_file: Option<BlobId<'db>>,
     },
 }
 impl<'db> CrateLongId<'db> {
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> SmolStrId<'db> {
         match self {
-            CrateLongId::Real { name, .. } | CrateLongId::Virtual { name, .. } => name.as_str(),
+            CrateLongId::Real { name, .. } | CrateLongId::Virtual { name, .. } => *name,
         }
     }
 
     pub fn into_crate_input(self, db: &'db dyn Database) -> CrateInput {
         match self {
-            CrateLongId::Real { name, discriminator } => CrateInput::Real { name, discriminator },
+            CrateLongId::Real { name, discriminator } => {
+                CrateInput::Real { name: name.to_string(db), discriminator }
+            }
             CrateLongId::Virtual { name, file_id, settings, cache_file } => CrateInput::Virtual {
-                name,
+                name: name.to_string(db),
                 file_long_id: file_id.long(db).clone().into_file_input(db),
                 settings,
                 cache_file: cache_file.map(|blob_id| blob_id.long(db).clone()),
@@ -84,24 +89,24 @@ impl<'db> CrateLongId<'db> {
         }
     }
 
-    pub fn core() -> Self {
-        CrateLongId::Real { name: CORELIB_CRATE_NAME.into(), discriminator: None }
+    pub fn core(db: &'db dyn Database) -> Self {
+        CrateLongId::Real { name: SmolStrId::from(db, CORELIB_CRATE_NAME), discriminator: None }
     }
 
-    pub fn plain(name: &str) -> Self {
-        CrateLongId::Real { name: name.into(), discriminator: None }
+    pub fn plain(name: SmolStrId<'db>) -> Self {
+        CrateLongId::Real { name, discriminator: None }
     }
 }
 define_short_id!(CrateId, CrateLongId<'db>, FilesGroup);
 impl<'db> CrateId<'db> {
     /// Gets the crate id for a real crate by name, without a discriminator.
-    pub fn plain(db: &'db dyn Database, name: &str) -> Self {
+    pub fn plain(db: &'db dyn Database, name: SmolStrId<'db>) -> Self {
         CrateId::new(db, CrateLongId::plain(name))
     }
 
     /// Gets the crate id for `core`.
     pub fn core(db: &'db dyn Database) -> Self {
-        CrateId::new(db, CrateLongId::core())
+        CrateId::new(db, CrateLongId::core(db))
     }
 }
 
@@ -227,8 +232,8 @@ impl VirtualFileInput {
     fn into_virtual_file(self, db: &dyn Database) -> VirtualFile<'_> {
         VirtualFile {
             parent: self.parent.map(|id| id.as_ref().clone().into_file_long_id(db).intern(db)),
-            name: self.name,
-            content: self.content,
+            name: SmolStrId::from(db, self.name),
+            content: SmolStrId::from(db, self.content),
             code_mappings: self.code_mappings,
             kind: self.kind,
             original_item_removed: self.original_item_removed,
@@ -239,8 +244,8 @@ impl VirtualFileInput {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub struct VirtualFile<'db> {
     pub parent: Option<FileId<'db>>,
-    pub name: String,
-    pub content: Arc<str>,
+    pub name: SmolStrId<'db>,
+    pub content: SmolStrId<'db>,
     pub code_mappings: Arc<[CodeMapping]>,
     pub kind: FileKind,
     /// Whether an original item was removed when this virtual file was created
@@ -252,17 +257,17 @@ impl<'db> VirtualFile<'db> {
     fn full_path(&self, db: &'db dyn Database) -> String {
         if let Some(parent) = self.parent {
             // TODO(yuval): consider a different path format for virtual files.
-            format!("{}[{}]", parent.full_path(db), self.name)
+            format!("{}[{}]", parent.full_path(db), self.name.long(db))
         } else {
-            self.name.clone()
+            self.name.to_string(db)
         }
     }
 
     fn into_virtual_file_input(self, db: &dyn Database) -> VirtualFileInput {
         VirtualFileInput {
             parent: self.parent.map(|id| Arc::new(id.long(db).clone().into_file_input(db))),
-            name: self.name,
-            content: self.content,
+            name: self.name.to_string(db),
+            content: Arc::from(self.content.long(db).as_str()),
             code_mappings: self.code_mappings,
             kind: self.kind,
             original_item_removed: self.original_item_removed,
@@ -271,13 +276,14 @@ impl<'db> VirtualFile<'db> {
 }
 
 impl<'db> FileLongId<'db> {
-    pub fn file_name(&self, db: &'db dyn Database) -> String {
+    pub fn file_name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         match self {
-            FileLongId::OnDisk(path) => {
-                path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
-            }
-            FileLongId::Virtual(vf) => vf.name.to_string(),
-            FileLongId::External(external_id) => ext_as_virtual(db, *external_id).name.to_string(),
+            FileLongId::OnDisk(path) => SmolStrId::from(
+                db,
+                path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>"),
+            ),
+            FileLongId::Virtual(vf) => vf.name,
+            FileLongId::External(external_id) => ext_as_virtual(db, *external_id).name,
         }
     }
     pub fn full_path(&self, db: &'db dyn Database) -> String {
@@ -310,7 +316,7 @@ impl<'db> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
     }
 
-    pub fn file_name(self, db: &dyn Database) -> String {
+    pub fn file_name(self, db: &'db dyn Database) -> SmolStrId<'db> {
         self.long(db).file_name(db)
     }
 
@@ -322,8 +328,6 @@ impl<'db> FileId<'db> {
         self.long(db).kind()
     }
 }
-
-define_short_id!(StrId, Arc<str>, FilesGroup);
 
 /// Same as `Directory`, but without the interning inside virtual directories.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
@@ -352,58 +356,76 @@ impl DirectoryInput {
     }
 }
 
-define_short_id!(SmolStrId, SmolStr, FilesGroup);
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub struct ArcStr(Arc<str>);
 
-/// Returns a string with a lifetime that is valid on the database's lifetime.
-pub fn db_str(db: &dyn Database, str: impl Into<SmolStr>) -> &str {
-    let smol: SmolStr = str.into();
-    SmolStrId::new(db, smol).long(db)
+impl ArcStr {
+    pub fn new(s: Arc<str>) -> Self {
+        ArcStr(s)
+    }
 }
 
-#[derive(Copy, Clone, Hash, PartialEq, Eq, Ord, PartialOrd)]
-pub struct StrRef<'db>(&'db str);
-impl<'db> core::ops::Deref for StrRef<'db> {
-    type Target = str;
+impl std::ops::Deref for ArcStr {
+    type Target = Arc<str>;
+
     fn deref(&self) -> &Self::Target {
-        self.0
+        &self.0
     }
 }
-impl<'db> From<&'db str> for StrRef<'db> {
-    fn from(s: &'db str) -> Self {
-        StrRef(s)
-    }
-}
-impl<'db> core::borrow::Borrow<str> for StrRef<'db> {
-    fn borrow(&self) -> &str {
-        self.0
-    }
-}
-impl<'db> PartialEq<&'db str> for StrRef<'db> {
-    fn eq(&self, other: &&'db str) -> bool {
-        &self.0 == other
-    }
-}
-impl<'db> PartialEq<StrRef<'db>> for &'db str {
-    fn eq(&self, other: &StrRef<'db>) -> bool {
-        self == &other.0
-    }
-}
-impl<'db> core::fmt::Display for StrRef<'db> {
+
+impl std::fmt::Display for ArcStr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
-impl<'db> core::fmt::Debug for StrRef<'db> {
+
+impl std::fmt::Debug for ArcStr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.0)
+        self.0.fmt(f)
     }
 }
-unsafe impl<'db> salsa::Update for StrRef<'db> {
+
+unsafe impl salsa::Update for ArcStr {
     unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
-        let old_value = unsafe { &mut *old_pointer };
-        let changed = old_value != &new_value;
-        *old_value = new_value;
-        changed
+        let old_str: &mut Self = unsafe { &mut *old_pointer };
+
+        // Fast path: same allocation => unchanged.
+        if Arc::ptr_eq(&old_str.0, &new_value.0) {
+            return false;
+        }
+        // Content-equal => unchanged.
+        if old_str.0 == new_value.0 {
+            return false;
+        }
+        // Otherwise, replace the Arc.
+        *old_str = new_value;
+        true
+    }
+}
+
+define_short_id!(SmolStrId, SmolStr, Database);
+
+pub trait DbJoin {
+    fn join(&self, db: &dyn Database, separator: &str) -> String;
+}
+
+impl<'db> DbJoin for Vec<SmolStrId<'db>> {
+    fn join(&self, db: &dyn Database, separator: &str) -> String {
+        self.iter().map(|id| id.long(db)).join(separator)
+    }
+}
+
+impl<'db> SmolStrId<'db> {
+    pub fn from(db: &'db dyn Database, content: impl Into<SmolStr>) -> Self {
+        SmolStrId::new(db, content.into())
+    }
+
+    pub fn from_arcstr(db: &'db dyn Database, content: &Arc<str>) -> Self {
+        SmolStrId::from(db, content.clone())
+    }
+
+    pub fn to_string(&self, db: &dyn Database) -> String {
+        self.long(db).to_string()
     }
 }
 

@@ -228,13 +228,13 @@ impl<'db> HirDisplay<'db> for VariantId<'db> {
                 .map_err(|_| SignatureError::FailedRetrievingSemanticData(self.full_path(f.db)))?;
         if !variant_semantic.ty.is_unit(f.db) {
             f.write_type(
-                Some(&format!("{name}: ")),
+                Some(&format!("{}: ", name.long(f.db))),
                 variant_semantic.ty,
                 None,
                 &self.full_path(f.db),
             )
         } else {
-            f.write_str(name)
+            f.write_str(name.long(f.db))
         }
         .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))
     }
@@ -247,7 +247,7 @@ impl<'db> HirDisplay<'db> for EnumId<'db> {
             f,
             "{}enum {} {{",
             get_syntactic_visibility(&enum_full_signature.visibility),
-            enum_full_signature.name,
+            enum_full_signature.name.long(f.db),
         )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(enum_full_signature.full_path.clone())
@@ -258,13 +258,13 @@ impl<'db> HirDisplay<'db> for EnumId<'db> {
             for (name, variant_type) in variants {
                 if !variant_type.is_unit(f.db) {
                     f.write_type(
-                        Some(&format!("\n{INDENT}{name}: ",)),
+                        Some(&format!("\n{INDENT}{}: ", name.long(f.db))),
                         variant_type,
                         Some(","),
                         &enum_full_signature.full_path,
                     )
                 } else {
-                    write!(f, "\n{INDENT}{name},")
+                    write!(f, "\n{INDENT}{},", name.long(f.db))
                 }
                 .map_err(|_| {
                     SignatureError::FailedWritingSignature(enum_full_signature.full_path.clone())
@@ -291,14 +291,14 @@ impl<'db> HirDisplay<'db> for MemberId<'db> {
                     f,
                     "{}{}",
                     get_syntactic_visibility(&member_full_signature.visibility),
-                    member_full_signature.name
+                    member_full_signature.name.long(f.db)
                 )
             } else {
                 f.write_type(
                     Some(&format!(
                         "{}{}: ",
                         get_syntactic_visibility(&member_full_signature.visibility),
-                        member_full_signature.name,
+                        member_full_signature.name.long(f.db),
                     )),
                     return_type,
                     None,
@@ -324,7 +324,7 @@ impl<'db> HirDisplay<'db> for StructId<'db> {
             f,
             "{}struct {}",
             get_syntactic_visibility(&struct_full_signature.visibility),
-            struct_full_signature.name,
+            struct_full_signature.name.long(f.db),
         )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
@@ -343,9 +343,11 @@ impl<'db> HirDisplay<'db> for StructId<'db> {
             for member in members {
                 let (name, member_type, visibility) = member;
                 f.write_type(
-                    Some(
-                        &format!("\n{INDENT}{}{}: ", get_syntactic_visibility(&visibility), name,),
-                    ),
+                    Some(&format!(
+                        "\n{INDENT}{}{}: ",
+                        get_syntactic_visibility(&visibility),
+                        name.long(f.db),
+                    )),
                     member_type,
                     Some(","),
                     &struct_full_signature.full_path,
@@ -380,7 +382,7 @@ impl<'db> HirDisplay<'db> for ConstantId<'db> {
             f,
             "{}const {}: ",
             get_syntactic_visibility(&constant_full_signature.visibility),
-            constant_full_signature.name,
+            constant_full_signature.name.long(f.db),
         )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(constant_full_signature.full_path.clone())
@@ -442,7 +444,7 @@ impl<'db> HirDisplay<'db> for ImplConstantDefId<'db> {
         let constant_full_signature = get_impl_constant_signature_data(f.db, *self)?;
         if let Some(return_type) = constant_full_signature.return_type {
             f.write_type(
-                Some(&format!("const {}: ", constant_full_signature.name,)),
+                Some(&format!("const {}: ", constant_full_signature.name.long(f.db))),
                 return_type,
                 Some(" = "),
                 &constant_full_signature.full_path,
@@ -486,7 +488,7 @@ impl<'db> HirDisplay<'db> for TraitId<'db> {
             f,
             "{}trait {}",
             get_syntactic_visibility(&trait_full_signature.visibility),
-            trait_full_signature.name,
+            trait_full_signature.name.long(f.db),
         )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(trait_full_signature.full_path.clone())
@@ -508,7 +510,7 @@ impl<'db> HirDisplay<'db> for TraitConstantId<'db> {
             write!(
                 f,
                 "const {}: {};",
-                trait_const_full_signature.name,
+                trait_const_full_signature.name.long(f.db),
                 extract_and_format(&return_type.format(f.db)),
             )
             .map_err(|_| {
@@ -535,9 +537,9 @@ impl<'db> HirDisplay<'db> for ImplDefId<'db> {
                 f,
                 "{}impl {}{} of {}",
                 get_syntactic_visibility(&impl_def_full_signature.visibility),
-                impl_def_full_signature.name,
+                impl_def_full_signature.name.long(f.db),
                 resolver_generic_params,
-                trait_id.name(f.db),
+                trait_id.name(f.db).long(f.db),
             )
             .map_err(|_| {
                 SignatureError::FailedWritingSignature(impl_def_full_signature.full_path.clone())
@@ -563,7 +565,7 @@ impl<'db> HirDisplay<'db> for ImplAliasId<'db> {
             f,
             "{}impl {} = ",
             get_syntactic_visibility(&impl_alias_full_signature.visibility),
-            self.name(f.db),
+            self.name(f.db).long(f.db),
         )
         .map_err(|_| {
             SignatureError::FailedWritingSignature(impl_alias_full_signature.full_path.clone())
@@ -655,7 +657,7 @@ impl<'db> HirDisplay<'db> for ExternFunctionId<'db> {
 impl<'db> HirDisplay<'db> for MacroDeclarationId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
         let module_item_id = ModuleItemId::MacroDeclaration(*self);
-        f.write_str(&format!("macro {} {{", module_item_id.name(f.db)))
+        f.write_str(&format!("macro {} {{", module_item_id.name(f.db).long(f.db)))
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         let macro_rules_data =
             f.db.macro_declaration_rules(*self)
@@ -758,8 +760,8 @@ fn format_resolver_generic_params<'db>(
                 .map(|param| {
                     if matches!(param.kind(db), GenericKind::Impl) {
                         let param_formatted = param.format(db);
-                        if param_formatted.starts_with("+") {
-                            param_formatted
+                        if param_formatted.long(db).starts_with("+") {
+                            param_formatted.long(db).to_string()
                         } else {
                             match db.generic_param_semantic(*param) {
                                 Ok(generic_param) => match generic_param {
@@ -767,8 +769,9 @@ fn format_resolver_generic_params<'db>(
                                         match generic_param_impl.concrete_trait {
                                             Ok(concrete_trait) => {
                                                 format!(
-                                                    "impl {param_formatted}: {}<{}>",
-                                                    concrete_trait.name(db),
+                                                    "impl {}: {}<{}>",
+                                                    param_formatted.long(db),
+                                                    concrete_trait.name(db).long(db),
                                                     concrete_trait
                                                         .generic_args(db)
                                                         .iter()
@@ -777,16 +780,16 @@ fn format_resolver_generic_params<'db>(
                                                         .join(", "),
                                                 )
                                             }
-                                            Err(_) => param_formatted,
+                                            Err(_) => param_formatted.long(db).to_string(),
                                         }
                                     }
-                                    _ => param_formatted,
+                                    _ => param_formatted.long(db).to_string(),
                                 },
-                                Err(_) => param_formatted,
+                                Err(_) => param_formatted.long(db).to_string(),
                             }
                         }
                     } else {
-                        param.format(db)
+                        param.format(db).long(db).to_string()
                     }
                 })
                 .join(", ")
@@ -815,7 +818,7 @@ fn write_function_signature<'db>(
         "{}{}fn {}{}",
         get_syntactic_visibility(&documentable_signature.visibility),
         syntactic_kind,
-        documentable_signature.name,
+        documentable_signature.name.long(f.db),
         resolver_generic_params,
     )?;
     if let Some(generic_args) = documentable_signature.generic_args {
@@ -834,14 +837,18 @@ fn write_function_signature<'db>(
             let modifier_postfix = if modifier.is_empty() { "" } else { " " };
             if param.ty.is_fully_concrete(f.db) {
                 f.write_type(
-                    Some(&format!("{modifier}{modifier_postfix}{}: ", param.name)),
+                    Some(&format!("{modifier}{modifier_postfix}{}: ", param.name.long(f.db))),
                     param.ty,
                     Some(&postfix),
                     &documentable_signature.full_path,
                 )?;
             } else {
                 let type_definition = get_type_clause(syntax_node, f.db).unwrap_or_default();
-                write!(f, "{modifier}{modifier_postfix}{}{type_definition}{postfix}", param.name,)?;
+                write!(
+                    f,
+                    "{modifier}{modifier_postfix}{}{type_definition}{postfix}",
+                    param.name.long(f.db)
+                )?;
             }
             count -= 1;
         }
@@ -877,15 +884,15 @@ fn write_generic_params<'db>(
         for param in generic_params {
             match param {
                 GenericParam::Type(param_type) => {
-                    let name = extract_and_format(&param_type.id.format(f.db));
+                    let name = extract_and_format(param_type.id.format(f.db).long(f.db));
                     write!(f, "{}{}", name, if count == 1 { "" } else { ", " })?;
                 }
                 GenericParam::Const(param_const) => {
-                    let name = extract_and_format(&param_const.id.format(f.db));
+                    let name = extract_and_format(param_const.id.format(f.db).long(f.db));
                     write!(f, "const {}{}", name, if count == 1 { "" } else { ", " })?;
                 }
                 GenericParam::Impl(param_impl) => {
-                    let name = extract_and_format(&param_impl.id.format(f.db));
+                    let name = extract_and_format(param_impl.id.format(f.db).long(f.db));
                     match param_impl.concrete_trait {
                         Ok(concrete_trait) => {
                             let documentable_id =
@@ -904,7 +911,7 @@ fn write_generic_params<'db>(
                                     .collect::<Vec<_>>()
                                     .join(", ");
                                 f.write_link(
-                                    concrete_trait_name.to_string(),
+                                    concrete_trait_name.to_string(f.db),
                                     Some(documentable_id),
                                 )?;
                                 if !concrete_trait_generic_args_formatted.is_empty() {
@@ -1008,7 +1015,7 @@ fn write_type_signature<'db>(
         "{}{}type {}",
         get_syntactic_visibility(&documentable_signature.visibility),
         if is_extern_type { "extern " } else { "" },
-        documentable_signature.name
+        documentable_signature.name.long(f.db)
     )?;
     if let Some(generic_params) = documentable_signature.generic_params {
         write_generic_params(generic_params, f)?;

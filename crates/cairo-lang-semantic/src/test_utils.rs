@@ -7,7 +7,9 @@ use cairo_lang_filesystem::db::{
     CrateSettings, Edition, ExperimentalFeaturesConfig, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{BlobId, CrateId, CrateLongId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{
+    BlobId, CrateId, CrateLongId, FileKind, FileLongId, SmolStrId, VirtualFile,
+};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
@@ -102,8 +104,8 @@ pub fn setup_test_crate_ex<'a>(
 ) -> CrateId<'a> {
     let file_long_id = FileLongId::Virtual(VirtualFile {
         parent: None,
-        name: "lib.cairo".into(),
-        content: content.into(),
+        name: SmolStrId::from(db, "lib.cairo"),
+        content: SmolStrId::from(db, content),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,
@@ -128,7 +130,7 @@ pub fn setup_test_crate_ex<'a>(
     };
 
     CrateLongId::Virtual {
-        name: "test".into(),
+        name: SmolStrId::from(db, "test"),
         file_id: file_long_id.intern(db),
         settings: toml::to_string_pretty(&settings).unwrap(),
         cache_file,
@@ -197,7 +199,7 @@ pub fn setup_test_function_ex<'a>(
     let (test_module, diagnostics) =
         setup_test_module_ex(db, &content, crate_settings, cache_crate).split();
     let generic_function_id = db
-        .module_item_by_name(test_module.module_id, function_name.into())
+        .module_item_by_name(test_module.module_id, SmolStrId::from(db, function_name))
         .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));

@@ -11,6 +11,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
     skip_diagnostic,
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -222,7 +223,7 @@ impl<'db> ImplConstantId<'db> {
     }
 
     pub fn format(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db))
+        format!("{}::{}", self.impl_id.name(db), self.trait_constant_id.name(db).long(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplConstantId<'db> {
@@ -430,12 +431,12 @@ pub fn value_as_const_value<'db>(
 ) -> Result<ConstValueId<'db>, LiteralError<'db>> {
     validate_literal(db, ty, value)?;
     let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(db, "u256", vec![]);
+        let u256_ty = get_core_ty_by_name(db, SmolStrId::from(db, "u256"), vec![]);
 
         if ty != u256_ty {
             ConstValue::Int(value.clone(), ty).intern(db)
         } else {
-            let u128_ty = get_core_ty_by_name(db, "u128", vec![]);
+            let u128_ty = get_core_ty_by_name(db, SmolStrId::from(db, "u128"), vec![]);
             let mask128 = BigInt::from(u128::MAX);
             let low = value & mask128;
             let high = value >> 128;
