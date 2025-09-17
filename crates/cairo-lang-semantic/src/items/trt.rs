@@ -733,7 +733,8 @@ struct TraitItemTypeData<'db> {
     pub resolver_data: Arc<ResolverData<'db>>,
 }
 
-/// Implementation of [PrivTraitSemantic::priv_trait_type_generic_params_data].
+/// Query implementation of [PrivTraitSemantic::priv_trait_type_generic_params_data].
+#[salsa::tracked(returns(ref))]
 fn priv_trait_type_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
@@ -778,16 +779,8 @@ fn priv_trait_type_generic_params_data<'db>(
     })
 }
 
-/// Query implementation of [TraitSemantic::priv_trait_type_generic_params_data].
-#[salsa::tracked]
-fn priv_trait_type_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    trait_type_id: TraitTypeId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    priv_trait_type_generic_params_data(db, trait_type_id)
-}
-
-/// Implementation of [PrivTraitSemantic::priv_trait_type_data].
+/// Query implementation of [PrivTraitSemantic::priv_trait_type_data].
+#[salsa::tracked(returns(ref))]
 fn priv_trait_type_data<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
@@ -805,21 +798,12 @@ fn priv_trait_type_data<'db>(
         db,
         (*type_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.extend(type_generic_params_data.diagnostics);
+    diagnostics.extend(type_generic_params_data.diagnostics.clone());
 
     let attributes = type_syntax.attributes(db).structurize(db);
     let resolver_data = Arc::new(resolver.data);
 
     Ok(TraitItemTypeData { diagnostics: diagnostics.build(), attributes, resolver_data })
-}
-
-/// Query implementation of [TraitSemantic::priv_trait_type_data].
-#[salsa::tracked]
-fn priv_trait_type_data_tracked<'db>(
-    db: &'db dyn Database,
-    trait_type_id: TraitTypeId<'db>,
-) -> Maybe<TraitItemTypeData<'db>> {
-    priv_trait_type_data(db, trait_type_id)
 }
 
 // === Trait item constant ===
@@ -835,7 +819,8 @@ struct TraitItemConstantData<'db> {
 
 // --- Computation ---
 
-/// Implementation of [PrivTraitSemantic::priv_trait_constant_data].
+/// Query implementation of [PrivTraitSemantic::priv_trait_constant_data].
+#[salsa::tracked(returns(ref))]
 fn priv_trait_constant_data<'db>(
     db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
@@ -857,15 +842,6 @@ fn priv_trait_constant_data<'db>(
     let resolver_data = Arc::new(resolver.data);
 
     Ok(TraitItemConstantData { diagnostics: diagnostics.build(), ty, attributes, resolver_data })
-}
-
-/// Query implementation of [TraitSemantic::priv_trait_constant_data].
-#[salsa::tracked]
-fn priv_trait_constant_data_tracked<'db>(
-    db: &'db dyn Database,
-    trait_constant: TraitConstantId<'db>,
-) -> Maybe<TraitItemConstantData<'db>> {
-    priv_trait_constant_data(db, trait_constant)
 }
 
 /// Implementation of [TraitSemantic::concrete_trait_constant_type].
@@ -902,7 +878,8 @@ struct TraitItemImplData<'db> {
     resolver_data: Arc<ResolverData<'db>>,
 }
 
-/// Implementation of [PrivTraitSemantic::priv_trait_impl_data].
+/// Query implementation of [PrivTraitSemantic::priv_trait_impl_data].
+#[salsa::tracked(returns(ref))]
 fn priv_trait_impl_data<'db>(
     db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
@@ -937,15 +914,6 @@ fn priv_trait_impl_data<'db>(
     })
 }
 
-/// Query implementation of [TraitSemantic::priv_trait_impl_data].
-#[salsa::tracked]
-fn priv_trait_impl_data_tracked<'db>(
-    db: &'db dyn Database,
-    trait_impl: TraitImplId<'db>,
-) -> Maybe<TraitItemImplData<'db>> {
-    priv_trait_impl_data(db, trait_impl)
-}
-
 /// Implementation of [TraitSemantic::concrete_trait_impl_concrete_trait].
 fn concrete_trait_impl_concrete_trait<'db>(
     db: &'db dyn Database,
@@ -970,7 +938,8 @@ fn concrete_trait_impl_concrete_trait_tracked<'db>(
 
 // === Trait function Declaration ===
 
-/// Implementation of [PrivTraitSemantic::priv_trait_function_generic_params_data].
+/// Query implementation of [TraitSemantic::priv_trait_function_generic_params_data].
+#[salsa::tracked(returns(ref))]
 fn priv_trait_function_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
@@ -1007,16 +976,8 @@ fn priv_trait_function_generic_params_data<'db>(
     })
 }
 
-/// Query implementation of [TraitSemantic::priv_trait_function_generic_params_data].
-#[salsa::tracked]
-fn priv_trait_function_generic_params_data_tracked<'db>(
-    db: &'db dyn Database,
-    trait_function_id: TraitFunctionId<'db>,
-) -> Maybe<GenericParamsData<'db>> {
-    priv_trait_function_generic_params_data(db, trait_function_id)
-}
-
-/// Implementation of [PrivTraitSemantic::priv_trait_function_declaration_data].
+/// Query implementation of [PrivTraitSemantic::priv_trait_function_declaration_data].
+#[salsa::tracked(returns(ref))]
 fn priv_trait_function_declaration_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
@@ -1034,7 +995,7 @@ fn priv_trait_function_declaration_data<'db>(
         db,
         (*function_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
     );
-    diagnostics.extend(function_generic_params_data.diagnostics);
+    diagnostics.extend(function_generic_params_data.diagnostics.clone());
     resolver.set_feature_config(&trait_function_id, function_syntax, &mut diagnostics);
     let mut environment = Environment::empty();
     let signature = semantic::Signature::from_ast(
@@ -1075,15 +1036,6 @@ fn priv_trait_function_declaration_data<'db>(
         inline_config,
         implicit_precedence,
     })
-}
-
-/// Query implementation of [TraitSemantic::priv_trait_function_declaration_data].
-#[salsa::tracked]
-fn priv_trait_function_declaration_data_tracked<'db>(
-    db: &'db dyn Database,
-    trait_function_id: TraitFunctionId<'db>,
-) -> Maybe<FunctionDeclarationData<'db>> {
-    priv_trait_function_declaration_data(db, trait_function_id)
 }
 
 fn validate_trait_function_signature<'db>(
@@ -1168,16 +1120,16 @@ fn priv_trait_function_body_data<'db>(
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
     // Compute declaration semantic.
-    let trait_function_declaration_data: FunctionDeclarationData<'db> =
+    let trait_function_declaration_data =
         db.priv_trait_function_declaration_data(trait_function_id)?;
-    let parent_resolver_data = trait_function_declaration_data.resolver_data;
+    let parent_resolver_data = &trait_function_declaration_data.resolver_data;
     let inference_id = InferenceId::LookupItemDefinition(LookupItemId::TraitItem(
         TraitItemId::Function(trait_function_id),
     ));
     let mut resolver =
         Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
     resolver.trait_or_impl_ctx = TraitOrImplContext::Trait(trait_id);
-    let environment = trait_function_declaration_data.environment;
+    let environment = trait_function_declaration_data.environment.clone();
 
     let function_id: Result<crate::FunctionId<'db>, cairo_lang_diagnostics::DiagnosticAdded> =
         (|| {
@@ -1586,12 +1538,15 @@ trait PrivTraitSemantic<'db>: Database {
     fn priv_trait_type_generic_params_data(
         &'db self,
         trait_type_id: TraitTypeId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
-        priv_trait_type_generic_params_data_tracked(self.as_dyn_database(), trait_type_id)
+    ) -> Maybe<&'db GenericParamsData<'db>> {
+        priv_trait_type_generic_params_data(self.as_dyn_database(), trait_type_id).maybe_as_ref()
     }
     /// Private query to compute data about a trait type.
-    fn priv_trait_type_data(&'db self, type_id: TraitTypeId<'db>) -> Maybe<TraitItemTypeData<'db>> {
-        priv_trait_type_data_tracked(self.as_dyn_database(), type_id)
+    fn priv_trait_type_data(
+        &'db self,
+        type_id: TraitTypeId<'db>,
+    ) -> Maybe<&'db TraitItemTypeData<'db>> {
+        priv_trait_type_data(self.as_dyn_database(), type_id).maybe_as_ref()
     }
     /// Returns the semantic diagnostics of a trait type.
     fn trait_constant_diagnostics(
@@ -1604,29 +1559,30 @@ trait PrivTraitSemantic<'db>: Database {
     fn priv_trait_constant_data(
         &'db self,
         trait_constant: TraitConstantId<'db>,
-    ) -> Maybe<TraitItemConstantData<'db>> {
-        priv_trait_constant_data_tracked(self.as_dyn_database(), trait_constant)
+    ) -> Maybe<&'db TraitItemConstantData<'db>> {
+        priv_trait_constant_data(self.as_dyn_database(), trait_constant).maybe_as_ref()
     }
     /// Private query to compute data about a trait impl.
     fn priv_trait_impl_data(
         &'db self,
         trait_impl: TraitImplId<'db>,
-    ) -> Maybe<TraitItemImplData<'db>> {
-        priv_trait_impl_data_tracked(self.as_dyn_database(), trait_impl)
+    ) -> Maybe<&'db TraitItemImplData<'db>> {
+        priv_trait_impl_data(self.as_dyn_database(), trait_impl).maybe_as_ref()
     }
     /// Returns the generic params data of a trait function.
     fn priv_trait_function_generic_params_data(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,
-    ) -> Maybe<GenericParamsData<'db>> {
-        priv_trait_function_generic_params_data_tracked(self.as_dyn_database(), trait_function_id)
+    ) -> Maybe<&'db GenericParamsData<'db>> {
+        priv_trait_function_generic_params_data(self.as_dyn_database(), trait_function_id)
+            .maybe_as_ref()
     }
     /// Private query to compute data about a trait function declaration.
     fn priv_trait_function_declaration_data(
         &'db self,
         function_id: TraitFunctionId<'db>,
-    ) -> Maybe<FunctionDeclarationData<'db>> {
-        priv_trait_function_declaration_data_tracked(self.as_dyn_database(), function_id)
+    ) -> Maybe<&'db FunctionDeclarationData<'db>> {
+        priv_trait_function_declaration_data(self.as_dyn_database(), function_id).maybe_as_ref()
     }
 }
 impl<'db, T: Database + ?Sized> PrivTraitSemantic<'db> for T {}
