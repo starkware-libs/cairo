@@ -532,6 +532,7 @@ fn impl_def_substitution<'db>(
 }
 
 /// Implementation of [ImplSemantic::impl_def_trait].
+#[salsa::tracked]
 fn impl_def_trait<'db>(db: &'db dyn Database, impl_def_id: ImplDefId<'db>) -> Maybe<TraitId<'db>> {
     let module_file_id = impl_def_id.module_file_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
