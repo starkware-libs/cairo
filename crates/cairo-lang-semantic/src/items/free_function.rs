@@ -172,7 +172,7 @@ fn priv_free_function_body_data<'db>(
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas, body_expr }),
+        body: FunctionBody { arenas, body_expr },
     })
 }
 
@@ -248,6 +248,10 @@ pub trait FreeFunctionSemantic<'db>: Database {
         self.priv_free_function_body_data(id)
             .map(|data| data.diagnostics.clone())
             .unwrap_or_default()
+    }
+    /// Returns the definition of a free function.
+    fn free_function_body(&'db self, id: FreeFunctionId<'db>) -> Maybe<&'db FunctionBody<'db>> {
+        Ok(&self.priv_free_function_body_data(id)?.body)
     }
     /// Returns the resolution resolved_items of a free function's body.
     fn free_function_body_resolver_data(

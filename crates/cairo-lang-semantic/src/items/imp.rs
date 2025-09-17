@@ -3648,7 +3648,7 @@ fn priv_impl_function_body_data<'db>(
         expr_lookup,
         pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { arenas, body_expr }),
+        body: FunctionBody { arenas, body_expr },
     })
 }
 
@@ -4378,8 +4378,8 @@ pub trait ImplSemantic<'db>: Database {
     fn impl_function_body(
         &'db self,
         impl_function_id: ImplFunctionId<'db>,
-    ) -> Maybe<Arc<FunctionBody<'db>>> {
-        Ok(self.priv_impl_function_body_data(impl_function_id)?.body.clone())
+    ) -> Maybe<&'db FunctionBody<'db>> {
+        Ok(&self.priv_impl_function_body_data(impl_function_id)?.body)
     }
     /// Returns the resolution resolved_items of an impl function's definition.
     fn impl_function_body_resolver_data(

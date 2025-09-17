@@ -1,5 +1,4 @@
 use std::ops::{Deref, DerefMut, Index};
-use std::sync::Arc;
 
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
@@ -87,7 +86,7 @@ pub struct EncapsulatingLoweringContext<'db> {
     /// Id for the current function being lowered.
     pub semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     /// Semantic model for current function body.
-    pub function_body: Arc<semantic::FunctionBody<'db>>,
+    pub function_body: &'db semantic::FunctionBody<'db>,
     /// Definitions encountered for semantic bindings. Since Constants are not lowered, this is
     /// only used for variables.
     // TODO(spapini): consider moving to semantic model.
@@ -105,7 +104,7 @@ impl<'db> EncapsulatingLoweringContext<'db> {
         semantic_function_id: defs::ids::FunctionWithBodyId<'db>,
     ) -> Maybe<Self> {
         let function_body = db.function_body(semantic_function_id)?;
-        let usages = Usages::from_function_body(&function_body);
+        let usages = Usages::from_function_body(function_body);
         Ok(Self {
             db,
             semantic_function_id,

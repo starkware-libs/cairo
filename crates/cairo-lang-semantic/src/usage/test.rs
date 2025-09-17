@@ -40,7 +40,7 @@ fn test_function_usage(
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     let function_def =
         db.function_body(test_function.concrete_function_id.function_with_body_id(db)).unwrap();
-    let usages = Usages::from_function_body(&function_def);
+    let usages = Usages::from_function_body(function_def);
 
     let mut usages_str = String::new();
     for (expr_id, usage) in usages.usages.iter() {
