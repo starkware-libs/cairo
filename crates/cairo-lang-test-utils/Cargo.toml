@@ -12,8 +12,8 @@ description = "Utilities for writing tests in the Cairo compiler project."
 testing = ["dep:cairo-lang-utils", "dep:colored", "dep:log", "dep:pretty_assertions", "dep:cairo-lang-formatter"]
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", optional = true, version = "~2.12.3" }
-cairo-lang-formatter = { path = "../cairo-lang-formatter", optional = true, version = "~2.12.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", optional = true, version = "~2.12.4-dev.0" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", optional = true, version = "~2.12.4-dev.0" }
 colored = { workspace = true, optional = true }
 log = { workspace = true, optional = true }
 pretty_assertions = { workspace = true, optional = true }

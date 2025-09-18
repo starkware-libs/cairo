@@ -8,12 +8,12 @@ description = "Emitting of CASM instructions from Sierra code."
 
 [dependencies]
 assert_matches.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.12.3" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.12.3" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "~2.12.3" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "~2.12.3" }
-cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.12.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.3", features = ["serde"] }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.12.4-dev.0" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.12.4-dev.0" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "~2.12.4-dev.0" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "~2.12.4-dev.0" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.12.4-dev.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.4-dev.0", features = ["serde"] }
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
 starknet-types-core.workspace = true
