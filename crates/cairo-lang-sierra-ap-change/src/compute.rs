@@ -5,7 +5,6 @@ use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra_type_size::{ProgramRegistryInfo, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 
 use crate::ap_change_info::ApChangeInfo;
 use crate::core_libfunc_ap_change::{self, InvocationApChangeInfoProvider};
@@ -56,18 +55,23 @@ struct ApChangeCalcHelper<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> us
     program_info: &'a ProgramRegistryInfo,
     /// Closure providing the token usages for the invocation.
     token_usages: TokenUsages,
-    /// The size of allocated locals until the statement.
-    locals_size: UnorderedHashMap<StatementIdx, usize>,
-    /// The lower bound of an ap-change to the furthest return per statement.
-    known_ap_change_to_return: UnorderedHashMap<StatementIdx, usize>,
     /// The ap_change of functions with known ap changes.
     function_ap_change: OrderedHashMap<FunctionId, usize>,
-    /// The ap tracking information per statement.
-    tracking_info: UnorderedHashMap<StatementIdx, ApTrackingInfo>,
-    /// The effective ap change from the statement's base.
-    effective_ap_change_from_base: UnorderedHashMap<StatementIdx, usize>,
+    /// The statement info per statement.
+    infos: Vec<StatementInfo>,
     /// The variables for ap alignment.
     variable_values: OrderedHashMap<StatementIdx, usize>,
+}
+#[derive(Clone, Default)]
+struct StatementInfo {
+    /// The size of allocated locals until the statement.
+    locals_size: usize,
+    /// The lower bound of an ap-change to the furthest return from the statement.
+    known_ap_change_to_return: Option<usize>,
+    /// The ap tracking information per statement.
+    tracking_info: Option<ApTrackingInfo>,
+    /// The effective ap change from the statement's base.
+    effective_ap_change_from_base: Option<usize>,
 }
 impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     ApChangeCalcHelper<'a, TokenUsages>
@@ -82,11 +86,8 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             program,
             program_info,
             token_usages,
-            locals_size: Default::default(),
-            known_ap_change_to_return: Default::default(),
             function_ap_change: Default::default(),
-            tracking_info: Default::default(),
-            effective_ap_change_from_base: Default::default(),
+            infos: vec![StatementInfo::default(); program.statements.len()],
             variable_values: Default::default(),
         })
     }
@@ -105,9 +106,8 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             .funcs
             .iter()
             .filter_map(|f| {
-                self.known_ap_change_to_return
-                    .get(&f.entry_point)
-                    .cloned()
+                self.infos[f.entry_point.0]
+                    .known_ap_change_to_return
                     .map(|ap_change| (f.id.clone(), ap_change))
             })
             .collect();
@@ -119,7 +119,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         for (ap_change, target) in self.get_branches(idx)? {
             match ap_change {
                 ApChange::AtLocalsFinalization(x) => {
-                    self.locals_size.insert(target, self.get_statement_locals(idx) + x);
+                    self.infos[target.0].locals_size = self.infos[idx.0].locals_size + x;
                 }
                 ApChange::Unknown | ApChange::FinalizeLocals => {}
                 ApChange::FromMetadata
@@ -127,9 +127,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 | ApChange::EnableApTracking
                 | ApChange::Known(_)
                 | ApChange::DisableApTracking => {
-                    if let Some(locals) = self.locals_size.get(&idx) {
-                        self.locals_size.insert(target, *locals);
-                    }
+                    self.infos[target.0].locals_size = self.infos[idx.0].locals_size;
                 }
             }
         }
@@ -144,18 +142,18 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     ) -> Result<(), ApChangeError> {
         let mut max_change = 0;
         for (ap_change, target) in self.get_branches(idx)? {
-            let Some(target_ap_change) = self.known_ap_change_to_return.get(&target) else {
+            let Some(target_ap_change) = self.infos[target.0].known_ap_change_to_return else {
                 return Ok(());
             };
             if let Some(ap_change) = self.branch_ap_change(idx, &ap_change, |id| {
-                self.known_ap_change_to_return.get(&self.func_entry_point(id).ok()?).cloned()
+                self.infos[self.func_entry_point(id).ok()?.0].known_ap_change_to_return
             }) {
                 max_change = max_change.max(target_ap_change + ap_change);
             } else {
                 return Ok(());
             };
         }
-        self.known_ap_change_to_return.insert(idx, max_change);
+        self.infos[idx.0].known_ap_change_to_return = Some(max_change);
         Ok(())
     }
 
@@ -220,13 +218,13 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     fn calc_tracking_info_for_statement(&mut self, idx: StatementIdx) -> Result<(), ApChangeError> {
         for (ap_change, target) in self.get_branches(idx)? {
             if matches!(ap_change, ApChange::EnableApTracking) {
-                self.tracking_info.insert(
-                    target,
-                    ApTrackingInfo { base: ApTrackingBase::EnableStatement(idx), ap_change: 0 },
-                );
+                self.infos[target.0].tracking_info = Some(ApTrackingInfo {
+                    base: ApTrackingBase::EnableStatement(idx),
+                    ap_change: 0,
+                });
                 continue;
             }
-            let Some(mut base_info) = self.tracking_info.get(&idx).cloned() else {
+            let Some(mut base_info) = self.infos[idx.0].tracking_info.clone() else {
                 continue;
             };
             if let Some(ap_change) = self
@@ -236,14 +234,14 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             } else {
                 continue;
             }
-            match self.tracking_info.entry(target) {
-                Entry::Occupied(e) => {
-                    e.into_mut().ap_change = e.get().ap_change.max(base_info.ap_change);
+            let target_info = &mut self.infos[target.0].tracking_info;
+            *target_info = Some(match target_info.take() {
+                Some(mut e) => {
+                    e.ap_change = e.ap_change.max(base_info.ap_change);
+                    e
                 }
-                Entry::Vacant(e) => {
-                    e.insert(base_info);
-                }
-            }
+                None => base_info,
+            });
         }
         Ok(())
     }
@@ -253,14 +251,14 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         &mut self,
         idx: StatementIdx,
     ) -> Result<(), ApChangeError> {
-        let Some(base_info) = self.tracking_info.get(&idx).cloned() else {
+        let Some(base_info) = self.infos[idx.0].tracking_info.clone() else {
             return Ok(());
         };
         if matches!(self.program.get_statement(&idx), Some(Statement::Return(_))) {
             if let ApTrackingBase::FunctionStart(id) = base_info.base
                 && let Some(func_change) = self.function_ap_change.get(&id)
             {
-                self.effective_ap_change_from_base.insert(idx, *func_change);
+                self.infos[idx.0].effective_ap_change_from_base = Some(*func_change);
             }
             return Ok(());
         }
@@ -276,7 +274,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 source_ap_change = Some(base_info.ap_change);
                 continue;
             };
-            let Some(target_ap_change) = self.effective_ap_change_from_base.get(&target) else {
+            let Some(target_ap_change) = self.infos[target.0].effective_ap_change_from_base else {
                 continue;
             };
             let calc_ap_change = target_ap_change - change;
@@ -288,7 +286,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             }
         }
         if let Some(source_ap_change) = source_ap_change {
-            self.effective_ap_change_from_base.insert(idx, source_ap_change);
+            self.infos[idx.0].effective_ap_change_from_base = Some(source_ap_change);
             for (target, path_ap_change) in paths_ap_change {
                 if path_ap_change != source_ap_change {
                     self.variable_values.insert(target, path_ap_change - source_ap_change);
@@ -311,14 +309,9 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             ApChange::FromMetadata
             | ApChange::AtLocalsFinalization(_)
             | ApChange::EnableApTracking => Some(0),
-            ApChange::FinalizeLocals => Some(self.get_statement_locals(idx)),
+            ApChange::FinalizeLocals => Some(self.infos[idx.0].locals_size),
             ApChange::FunctionCall(id) => func_ap_change(id).map(|x| 2 + x),
         }
-    }
-
-    /// Returns the locals size for a statement.
-    fn get_statement_locals(&self, idx: StatementIdx) -> usize {
-        self.locals_size.get(&idx).cloned().unwrap_or_default()
     }
 
     /// Returns the branches of a statement.
@@ -363,10 +356,10 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
         helper.tracked_ap_change_reverse_topological_order()?;
     // Setting tracking info for function entry points.
     for f in &program.funcs {
-        helper.tracking_info.insert(
-            f.entry_point,
-            ApTrackingInfo { base: ApTrackingBase::FunctionStart(f.id.clone()), ap_change: 0 },
-        );
+        helper.infos[f.entry_point.0].tracking_info = Some(ApTrackingInfo {
+            base: ApTrackingBase::FunctionStart(f.id.clone()),
+            ap_change: 0,
+        });
     }
     for idx in ap_tracked_reverse_topological_ordering.iter().rev() {
         helper.calc_tracking_info_for_statement(*idx)?;
