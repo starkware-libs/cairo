@@ -77,7 +77,7 @@ members = [
 exclude = ["ensure-no_std"]
 
 [workspace.package]
-version = "2.12.3"
+version = "2.12.4-dev.0"
 edition = "2021"
 rust-version = "1.86"
 repository = "https://github.com/starkware-libs/cairo/"
@@ -94,7 +94,7 @@ assert_matches = "1.5"
 bimap = "0.6.3"
 bincode = { version = "2", features = ["serde"] }
 cairo-lang-primitive-token = "1"
-cairo-vm = { version = "2.5.0", features = ["mod_builtin"] }
+cairo-vm = { version = "3.0.0-rc.3", features = ["mod_builtin"] }
 clap = { version = "4.5.29", features = ["derive"] }
 colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
