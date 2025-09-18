@@ -726,3 +726,63 @@ fn test_span_multiple_start_offset_slicing() {
     assert_eq!(result3, "def", "third slice");
 }
 
+#[test]
+fn test_span_at_and_index() {
+    // Test simple access.
+    let ba: ByteArray = "AB";
+    let span = ba.span();
+    assert_eq!(span.at(0), Some('A'));
+    assert_eq!(span.at(1), Some('B'));
+    assert_eq!(span.at(2), None);
+
+    // Test index operator on same span.
+    assert_eq!(span[0], 'A');
+    assert_eq!(span[1], 'B');
+
+    // Test with offset and two words.
+    let ba_33: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    let mut span = ba_33.span();
+    span = span.slice(1, 32).unwrap();
+    assert_eq!(span.at(0), Option::Some('B'));
+    assert_eq!(span.at(30), Option::Some('f'));
+    assert_eq!(span.at(31), Option::Some('g'));
+    assert_eq!(span.at(32), Option::None);
+
+    // Test with offset and two words.
+    // 64 bytes: 31 + 31 + 2.
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$";
+    let mut span = ba_64.span();
+    span = span.slice(1, 63).unwrap();
+    assert_eq!(span.at(30), Some('f'), "byte 30 - last of 1nd word");
+    assert_eq!(span.at(31), Some('g'), "byte 31 - first of 2nd word");
+    assert_eq!(span.at(60), Some('9'), "byte 60 - last of 2nd word");
+    assert_eq!(span.at(61), Some('#'), "byte 61 - first in last_word");
+    assert_eq!(span.at(62), Some('$'), "byte 62 - last in last_word");
+    assert_eq!(span.at(63), None);
+
+    // Test empty span.
+    let empty: ByteArray = Default::default();
+    let empty_span = empty.span();
+    assert_eq!(empty_span.at(0), None);
+}
+
+#[test]
+#[should_panic(expected: ('Index out of bounds',))]
+fn test_span_index_out_of_bounds() {
+    let ba: ByteArray = "AB";
+    let span = ba.span();
+    let _x = span[2]; // Should panic
+}
+
+#[test]
+fn test_span_at_overflows() {
+    // Test overflow protection with large indices.
+    let ba: ByteArray = "test";
+    let span = ba.span();
+
+    assert_eq!(span.at(Bounded::<usize>::MAX), None);
+
+    let sliced = ba.span().slice(1, 3).unwrap();
+    assert_eq!(sliced.at(Bounded::<usize>::MAX - 1), None);
+    assert_eq!(sliced.at(Bounded::<usize>::MAX), None);
+}
