@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 
 use crate::blocks::BlocksBuilder;
@@ -208,17 +207,18 @@ pub struct VarReassigner<'db, 'a> {
     pub new_vars: VariableArena<'db>,
 
     // Maps old var_id to new_var_id
-    pub vars: UnorderedHashMap<VariableId, VariableId>,
+    pub vars: Vec<Option<VariableId>>,
 }
 
 impl<'db, 'a> VarReassigner<'db, 'a> {
     pub fn new(old_vars: &'a VariableArena<'db>) -> Self {
-        Self { old_vars, new_vars: Default::default(), vars: UnorderedHashMap::default() }
+        Self { old_vars, new_vars: Default::default(), vars: vec![None; old_vars.len()] }
     }
 }
 
 impl<'db> Rebuilder<'db> for VarReassigner<'db, '_> {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
-        *self.vars.entry(var).or_insert_with(|| self.new_vars.alloc(self.old_vars[var].clone()))
+        *self.vars[var.index()]
+            .get_or_insert_with(|| self.new_vars.alloc(self.old_vars[var].clone()))
     }
 }
