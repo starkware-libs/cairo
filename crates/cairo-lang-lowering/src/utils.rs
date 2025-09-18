@@ -180,10 +180,7 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
 
     /// Rebuilds the block with renamed var and block ids.
     fn rebuild_block(&mut self, block: &Block<'db>) -> Block<'db> {
-        let mut statements = vec![];
-        for stmt in &block.statements {
-            statements.push(self.rebuild_statement(stmt));
-        }
+        let statements = block.statements.iter().map(|stmt| self.rebuild_statement(stmt)).collect();
         let end = self.rebuild_end(&block.end);
         let mut block = Block { statements, end };
         self.transform_block(&mut block);
