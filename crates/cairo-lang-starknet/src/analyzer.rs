@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{EnumId, LanguageElementId, ModuleId, ModuleItemId, StructId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_filesystem::ids::{StrRef, db_str};
+use cairo_lang_filesystem::ids::{DbJoin, SmolStrId};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::EnumSemantic;
@@ -126,7 +126,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
                 // Only run the analysis on storage structs or structs with the storage attribute.
                 if item.has_attr(db, STORAGE_NODE_ATTR)
                     || item.has_attr(db, STORAGE_ATTR)
-                    || (item.name(db).text(db) == STORAGE_STRUCT_NAME
+                    || (item.name(db).text(db).long(db) == STORAGE_STRUCT_NAME
                         && (module_id.has_attr(db, CONTRACT_ATTR).unwrap_or_default()
                             || module_id.has_attr(db, COMPONENT_ATTR).unwrap_or_default()))
                 {
@@ -232,14 +232,15 @@ fn analyze_storage_struct<'db>(
 /// Helper for the storage analyzer.
 struct StorageStructMembers<'db> {
     /// Maps the name in actual storage to the path in actual user code.
-    name_to_paths: OrderedHashMap<StrRef<'db>, Vec<StrRef<'db>>>,
+    name_to_paths: OrderedHashMap<SmolStrId<'db>, Vec<SmolStrId<'db>>>,
 }
 
 impl<'db> StorageStructMembers<'db> {
     fn handle(
         &mut self,
-        member_name: StrRef<'db>,
-        path_to_member: Vec<StrRef<'db>>,
+        db: &'db dyn Database,
+        member_name: SmolStrId<'db>,
+        path_to_member: Vec<SmolStrId<'db>>,
         pointer_to_code: SyntaxStablePtrId<'db>,
         diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     ) {
@@ -249,8 +250,8 @@ impl<'db> StorageStructMembers<'db> {
                 format!(
                     "The path `{}` collides with existing path `{}`. Fix or add \
                      `#[allow({ALLOW_COLLIDING_PATHS_ATTR})]` if intentional.",
-                    path_to_member.join("."),
-                    existing_path.join(".")
+                    path_to_member.join(db, "."),
+                    existing_path.join(db, ".")
                 ),
             ));
         } else {
@@ -271,9 +272,9 @@ impl<'db> StorageStructMembers<'db> {
 fn member_analyze<'db>(
     db: &'db dyn Database,
     member: &Member<'db>,
-    member_name: StrRef<'db>,
+    member_name: SmolStrId<'db>,
     paths_data: &mut StorageStructMembers<'db>,
-    user_data_path: &mut Vec<StrRef<'db>>,
+    user_data_path: &mut Vec<SmolStrId<'db>>,
     pointer_to_code: SyntaxStablePtrId<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -282,13 +283,13 @@ fn member_analyze<'db>(
     // Ignoring diagnostics as these would have been reported previously.
     let config = get_member_storage_config(db, &member_ast, &mut vec![]);
     if config.kind == StorageMemberKind::Basic {
-        let name = config.rename.map(|rename| db_str(db, rename).into()).unwrap_or(member_name);
-        paths_data.handle(name, user_data_path.clone(), pointer_to_code, diagnostics);
+        let name = config.rename.map(|rename| SmolStrId::from(db, rename)).unwrap_or(member_name);
+        paths_data.handle(db, name, user_data_path.clone(), pointer_to_code, diagnostics);
         user_data_path.pop();
         return;
     }
     let TypeLongId::Concrete(ConcreteTypeId::Struct(member_struct)) = member.ty.long(db) else {
-        paths_data.handle(member_name, user_data_path.clone(), pointer_to_code, diagnostics);
+        paths_data.handle(db, member_name, user_data_path.clone(), pointer_to_code, diagnostics);
         user_data_path.pop();
         return;
     };
@@ -338,7 +339,8 @@ fn concrete_valid_storage_trait<'db>(
 ) -> ConcreteTraitId<'db> {
     let module_id = ModuleHelper::core(db).submodule("starknet").submodule("storage").id;
     let name = "ValidStorageTypeTrait";
-    let Ok(Some(ModuleItemId::Trait(trait_id))) = db.module_item_by_name(module_id, name.into())
+    let Ok(Some(ModuleItemId::Trait(trait_id))) =
+        db.module_item_by_name(module_id, SmolStrId::from(db, name))
     else {
         panic!("`{name}` not found in `{}`.", module_id.full_path(db));
     };

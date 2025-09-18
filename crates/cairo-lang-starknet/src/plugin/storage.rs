@@ -160,7 +160,7 @@ fn get_substorage_member_code<'db>(
             let last = elements.next_back().unwrap();
             match last {
                 ast::PathSegment::Simple(segment)
-                    if segment.identifier(db) == STORAGE_STRUCT_NAME =>
+                    if segment.identifier(db).long(db) == STORAGE_STRUCT_NAME =>
                 {
                     let component_path = RewriteNode::interspersed(
                         elements.map(|e| RewriteNode::from_ast_trimmed(&e)),

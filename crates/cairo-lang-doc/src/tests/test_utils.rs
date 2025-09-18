@@ -5,7 +5,7 @@ use cairo_lang_filesystem::db::{
     CrateConfiguration, FilesGroup, init_dev_corelib, init_files_group,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
@@ -72,7 +72,7 @@ pub fn setup_test_module(db: &mut dyn Database, content: &str) {
 }
 
 pub fn test_crate_id<'db>(db: &'db dyn Database) -> CrateId<'db> {
-    CrateId::plain(db, "test")
+    CrateId::plain(db, SmolStrId::from(db, "test"))
 }
 
 pub fn setup_test_module_without_syntax_diagnostics(db: &mut dyn Database, content: &str) {

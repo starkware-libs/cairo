@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
-use cairo_lang_filesystem::ids::db_str;
+use cairo_lang_filesystem::ids::{SmolStrId, db_str};
 use cairo_lang_semantic::corelib::{CorelibSemantic, try_extract_nz_wrapped_type};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{
@@ -480,7 +480,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 ));
                 arr = new_arr;
             }
-            let panic_ty = corelib::get_core_ty_by_name(db, "Panic", vec![]);
+            let panic_ty = corelib::get_core_ty_by_name(db, SmolStrId::from(db, "Panic"), vec![]);
             let panic_var = self.variables.alloc(new_var(panic_ty));
             self.additional_stmts.push(Statement::StructConstruct(StatementStructConstruct {
                 inputs: vec![],
@@ -1285,71 +1285,88 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_sub_impl")))
         }));
         let wide_mul_fns = OrderedHashSet::<_>::from_iter(chain!(
-            [bounded_int_module.extern_function_id("bounded_int_mul")],
+            [bounded_int_module.extern_function_id(SmolStrId::from(db, "bounded_int_mul"))],
             ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"]
                 .map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_wide_mul")))),
         ));
         let div_rem_fns = OrderedHashSet::<_>::from_iter(chain!(
-            [bounded_int_module.extern_function_id("bounded_int_div_rem")],
+            [bounded_int_module.extern_function_id(SmolStrId::from(db, "bounded_int_div_rem"))],
             utypes.map(
                 |ty| integer_module.extern_function_id(db_str(db, format!("{ty}_safe_divmod")))
             ),
         ));
-        let type_value_ranges = OrderedHashMap::from_iter(
-            [
-                ("u8", BigInt::ZERO, u8::MAX.into(), false, true),
-                ("u16", BigInt::ZERO, u16::MAX.into(), false, true),
-                ("u32", BigInt::ZERO, u32::MAX.into(), false, true),
-                ("u64", BigInt::ZERO, u64::MAX.into(), false, true),
-                ("u128", BigInt::ZERO, u128::MAX.into(), false, true),
-                ("u256", BigInt::ZERO, BigInt::from(1) << 256, false, false),
-                ("i8", i8::MIN.into(), i8::MAX.into(), true, true),
-                ("i16", i16::MIN.into(), i16::MAX.into(), true, true),
-                ("i32", i32::MIN.into(), i32::MAX.into(), true, true),
-                ("i64", i64::MIN.into(), i64::MAX.into(), true, true),
-                ("i128", i128::MIN.into(), i128::MAX.into(), true, true),
-            ]
-            .map(
-                |(ty_name, min, max, as_bounded_int, inc_dec): (
-                    &'static str,
-                    BigInt,
-                    BigInt,
-                    bool,
-                    bool,
-                )| {
-                    let ty = corelib::get_core_ty_by_name(db, ty_name, vec![]);
-                    let is_zero = if as_bounded_int {
-                        bounded_int_module
-                            .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])
-                    } else {
-                        integer_module.function_id(db_str(db, format!("{ty_name}_is_zero")), vec![])
-                    }
-                    .lowered(db);
-                    let (inc, dec) = if inc_dec {
-                        (
-                            Some(
-                                num_module
-                                    .function_id(db_str(db, format!("{ty_name}_inc")), vec![])
-                                    .lowered(db),
-                            ),
-                            Some(
-                                num_module
-                                    .function_id(db_str(db, format!("{ty_name}_dec")), vec![])
-                                    .lowered(db),
-                            ),
-                        )
-                    } else {
-                        (None, None)
-                    };
-                    let info = TypeInfo { range: TypeRange { min, max }, is_zero, inc, dec };
-                    (ty, info)
-                },
-            ),
-        );
+        let type_value_ranges: OrderedHashMap<TypeId<'db>, TypeInfo<'db>> =
+            OrderedHashMap::from_iter(
+                [
+                    ("u8", BigInt::ZERO, u8::MAX.into(), false, true),
+                    ("u16", BigInt::ZERO, u16::MAX.into(), false, true),
+                    ("u32", BigInt::ZERO, u32::MAX.into(), false, true),
+                    ("u64", BigInt::ZERO, u64::MAX.into(), false, true),
+                    ("u128", BigInt::ZERO, u128::MAX.into(), false, true),
+                    ("u256", BigInt::ZERO, BigInt::from(1) << 256, false, false),
+                    ("i8", i8::MIN.into(), i8::MAX.into(), true, true),
+                    ("i16", i16::MIN.into(), i16::MAX.into(), true, true),
+                    ("i32", i32::MIN.into(), i32::MAX.into(), true, true),
+                    ("i64", i64::MIN.into(), i64::MAX.into(), true, true),
+                    ("i128", i128::MIN.into(), i128::MAX.into(), true, true),
+                ]
+                .map(
+                    |(ty_name, min, max, as_bounded_int, inc_dec): (
+                        &'static str,
+                        BigInt,
+                        BigInt,
+                        bool,
+                        bool,
+                    )| {
+                        let ty =
+                            corelib::get_core_ty_by_name(db, SmolStrId::from(db, ty_name), vec![]);
+                        let is_zero = if as_bounded_int {
+                            bounded_int_module.function_id(
+                                "bounded_int_is_zero",
+                                vec![GenericArgumentId::Type(ty)],
+                            )
+                        } else {
+                            integer_module.function_id(
+                                SmolStrId::from(db, format!("{ty_name}_is_zero")).long(db).as_str(),
+                                vec![],
+                            )
+                        }
+                        .lowered(db);
+                        let (inc, dec) = if inc_dec {
+                            (
+                                Some(
+                                    num_module
+                                        .function_id(
+                                            SmolStrId::from(db, format!("{ty_name}_inc"))
+                                                .long(db)
+                                                .as_str(),
+                                            vec![],
+                                        )
+                                        .lowered(db),
+                                ),
+                                Some(
+                                    num_module
+                                        .function_id(
+                                            SmolStrId::from(db, format!("{ty_name}_dec"))
+                                                .long(db)
+                                                .as_str(),
+                                            vec![],
+                                        )
+                                        .lowered(db),
+                                ),
+                            )
+                        } else {
+                            (None, None)
+                        };
+                        let info = TypeInfo { range: TypeRange { min, max }, is_zero, inc, dec };
+                        (ty, info)
+                    },
+                ),
+            );
         Self {
-            felt_sub: core.extern_function_id("felt252_sub"),
-            into_box: box_module.extern_function_id("into_box"),
-            unbox: box_module.extern_function_id("unbox"),
+            felt_sub: core.extern_function_id(SmolStrId::from(db, "felt252_sub")),
+            into_box: box_module.extern_function_id(SmolStrId::from(db, "into_box")),
+            unbox: box_module.extern_function_id(SmolStrId::from(db, "unbox")),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),
             eq_fns,
             uadd_fns,
@@ -1359,18 +1376,24 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             isub_fns,
             wide_mul_fns,
             div_rem_fns,
-            bounded_int_add: bounded_int_module.extern_function_id("bounded_int_add"),
-            bounded_int_sub: bounded_int_module.extern_function_id("bounded_int_sub"),
-            bounded_int_constrain: bounded_int_module.extern_function_id("bounded_int_constrain"),
-            array_get: array_module.extern_function_id("array_get"),
-            array_snapshot_pop_front: array_module.extern_function_id("array_snapshot_pop_front"),
-            array_snapshot_pop_back: array_module.extern_function_id("array_snapshot_pop_back"),
-            array_len: array_module.extern_function_id("array_len"),
-            array_new: array_module.extern_function_id("array_new"),
-            array_append: array_module.extern_function_id("array_append"),
-            array_pop_front: array_module.extern_function_id("array_pop_front"),
+            bounded_int_add: bounded_int_module
+                .extern_function_id(SmolStrId::from(db, "bounded_int_add")),
+            bounded_int_sub: bounded_int_module
+                .extern_function_id(SmolStrId::from(db, "bounded_int_sub")),
+            bounded_int_constrain: bounded_int_module
+                .extern_function_id(SmolStrId::from(db, "bounded_int_constrain")),
+            array_get: array_module.extern_function_id(SmolStrId::from(db, "array_get")),
+            array_snapshot_pop_front: array_module
+                .extern_function_id(SmolStrId::from(db, "array_snapshot_pop_front")),
+            array_snapshot_pop_back: array_module
+                .extern_function_id(SmolStrId::from(db, "array_snapshot_pop_back")),
+            array_len: array_module.extern_function_id(SmolStrId::from(db, "array_len")),
+            array_new: array_module.extern_function_id(SmolStrId::from(db, "array_new")),
+            array_append: array_module.extern_function_id(SmolStrId::from(db, "array_append")),
+            array_pop_front: array_module
+                .extern_function_id(SmolStrId::from(db, "array_pop_front")),
             storage_base_address_from_felt252: storage_access_module
-                .extern_function_id("storage_base_address_from_felt252"),
+                .extern_function_id(SmolStrId::from(db, "storage_base_address_from_felt252")),
             storage_base_address_const: storage_access_module
                 .generic_function_id("storage_base_address_const"),
             panic_with_felt252: core.function_id("panic_with_felt252", vec![]).lowered(db),

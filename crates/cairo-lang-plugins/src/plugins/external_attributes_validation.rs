@@ -1,4 +1,5 @@
 use cairo_lang_defs::plugin::{MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginResult};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -30,8 +31,8 @@ impl MacroPlugin for ExternalAttributesValidationPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec![DOC_ATTR.to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, DOC_ATTR)]
     }
 }
 
@@ -70,7 +71,7 @@ fn get_diagnostics<'a, Item: QueryAttrs<'a>>(
                     ));
                     return;
                 };
-                if segment.identifier(db) != HIDDEN_ATTR {
+                if segment.identifier(db).long(db) != HIDDEN_ATTR {
                     diagnostics.push(PluginDiagnostic::error(
                         path.stable_ptr(db),
                         format!(
@@ -82,7 +83,7 @@ fn get_diagnostics<'a, Item: QueryAttrs<'a>>(
             }
             AttributeArgVariant::Named { name, value } => match value {
                 ast::Expr::String(_) => {
-                    if name.text != GROUP_ATTR {
+                    if name.text.long(db) != GROUP_ATTR {
                         diagnostics.push(PluginDiagnostic::error(
                             arg.arg.stable_ptr(db),
                             format!(

@@ -2,6 +2,7 @@ use std::ops::{Deref, DerefMut, Index};
 
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
@@ -467,7 +468,12 @@ pub fn handle_lowering_flow_error<'db, 'mt>(
         LoweringFlowError::Panic(data_var, location) => {
             let panic_instance = generators::StructConstruct {
                 inputs: vec![],
-                ty: get_ty_by_name(ctx.db, core_module(ctx.db), "Panic", vec![]),
+                ty: get_ty_by_name(
+                    ctx.db,
+                    core_module(ctx.db),
+                    SmolStrId::from(ctx.db, "Panic"),
+                    vec![],
+                ),
                 location,
             }
             .add(ctx, &mut builder.statements);

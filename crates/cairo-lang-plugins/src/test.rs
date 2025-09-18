@@ -10,7 +10,9 @@ use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CrateConfiguration, FilesGroup, files_group_input, init_files_group,
 };
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, CrateId, Directory, FileLongId};
+use cairo_lang_filesystem::ids::{
+    CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, SmolStrId,
+};
 use cairo_lang_filesystem::override_file_content;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -113,7 +115,7 @@ pub fn test_expand_plugin_inner(
     let cairo_code = &inputs["cairo_code"];
 
     let db_ref: &mut dyn salsa::Database = &mut db;
-    let crate_id = CrateId::plain(db_ref, "test");
+    let crate_id = CrateId::plain(db_ref, SmolStrId::from(db_ref, "test"));
     let root = Directory::Real("test_src".into());
     cairo_lang_filesystem::set_crate_config!(
         db_ref,
@@ -125,7 +127,7 @@ pub fn test_expand_plugin_inner(
     let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db_ref);
     override_file_content!(db_ref, file_id, Some(format!("{cairo_code}\n").into()));
 
-    let crate_id = CrateId::plain(&db, "test");
+    let crate_id = CrateId::plain(&db, SmolStrId::from(&db, "test"));
     let mut diagnostic_items = vec![];
     let expanded_module =
         expand_module_text(&db, ModuleId::CrateRoot(crate_id), &mut diagnostic_items);
@@ -200,7 +202,7 @@ impl MacroPlugin for DoubleIndirectionPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec!["first".to_string(), "second".to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, "first"), SmolStrId::from(db, "second")]
     }
 }

@@ -4,7 +4,7 @@ use assert_matches::assert_matches;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
-use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
+use cairo_lang_filesystem::ids::{FlagId, FlagLongId, SmolStrId};
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, core_submodule, get_core_enum_concrete_variant, get_function_id, get_panic_ty,
     never_ty,
@@ -121,9 +121,14 @@ fn lower_unsafe_panic<'db>(
     lowered: &mut Lowered<'db>,
     opt_trace_fn: Option<FunctionId<'db>>,
 ) {
-    let panics = core_submodule(db, "panics");
-    let panic_func_id =
-        FunctionLongId::Semantic(get_function_id(db, panics, "unsafe_panic", vec![])).intern(db);
+    let panics = core_submodule(db, SmolStrId::from(db, "panics"));
+    let panic_func_id = FunctionLongId::Semantic(get_function_id(
+        db,
+        panics,
+        SmolStrId::from(db, "unsafe_panic"),
+        vec![],
+    ))
+    .intern(db);
 
     for block in lowered.blocks.iter_mut() {
         let BlockEnd::Panic(err_data) = &mut block.end else {
@@ -214,15 +219,15 @@ impl<'db> PanicSignatureInfo<'db> {
         let ok_ty = semantic::TypeLongId::Tuple(ok_ret_tys.clone()).intern(db);
         let ok_variant = get_core_enum_concrete_variant(
             db,
-            "PanicResult",
+            SmolStrId::from(db, "PanicResult"),
             vec![GenericArgumentId::Type(ok_ty)],
-            "Ok",
+            SmolStrId::from(db, "Ok"),
         );
         let err_variant = get_core_enum_concrete_variant(
             db,
-            "PanicResult",
+            SmolStrId::from(db, "PanicResult"),
             vec![GenericArgumentId::Type(ok_ty)],
-            "Err",
+            SmolStrId::from(db, "Err"),
         );
         let always_panic = original_return_ty == never_ty(db);
         let panic_ty = if always_panic { err_variant.ty } else { get_panic_ty(db, ok_ty) };

@@ -6,6 +6,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
 use cairo_lang_semantic::plugin::{AnalyzerPlugin, PluginSuite};
@@ -81,7 +82,7 @@ impl AnalyzerPlugin for RawExecutableAnalyzer {
             if input.ty
                 != corelib::get_core_ty_by_name(
                     db,
-                    "Span",
+                    SmolStrId::from(db, "Span"),
                     vec![GenericArgumentId::Type(db.core_info().felt252)],
                 )
             {
@@ -222,11 +223,11 @@ impl MacroPlugin for ExecutablePlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec![EXECUTABLE_ATTR.to_string(), EXECUTABLE_RAW_ATTR.to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![(SmolStrId::from(db, EXECUTABLE_ATTR)), (SmolStrId::from(db, EXECUTABLE_RAW_ATTR))]
     }
 
-    fn executable_attributes(&self) -> Vec<String> {
-        vec![EXECUTABLE_RAW_ATTR.to_string()]
+    fn executable_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![cairo_lang_filesystem::ids::SmolStrId::from(db, EXECUTABLE_RAW_ATTR)]
     }
 }

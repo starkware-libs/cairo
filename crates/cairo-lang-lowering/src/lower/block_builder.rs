@@ -426,7 +426,7 @@ fn get_ty<'db>(
     match member_path {
         MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
         MemberPath::Member { member_id, concrete_struct_id, .. } => {
-            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()[member_id.name(ctx.db)].ty
+            ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()[&member_id.name(ctx.db)].ty
         }
     }
 }

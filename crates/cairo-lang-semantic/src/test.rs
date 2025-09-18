@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, SmolStrId};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_utils::extract_matches;
@@ -31,14 +31,17 @@ fn test_resolve() {
 
     let module_id = test_module.module_id;
     let db: &dyn Database = &db_val;
-    assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).unwrap().is_none());
-    let felt252_add = db.module_item_by_name(module_id, "felt252_add".into()).unwrap();
+    assert!(
+        db.module_item_by_name(module_id, SmolStrId::from(db, "doesnt_exist")).unwrap().is_none()
+    );
+    let felt252_add =
+        db.module_item_by_name(module_id, SmolStrId::from(db, "felt252_add")).unwrap();
     assert_eq!(format!("{:?}", felt252_add.debug(db)), "Some(ExternFunctionId(test::felt252_add))");
-    match db.module_item_by_name(module_id, "felt252_add".into()).unwrap().unwrap() {
+    match db.module_item_by_name(module_id, SmolStrId::from(db, "felt252_add")).unwrap().unwrap() {
         ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),
     };
-    match db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap() {
+    match db.module_item_by_name(module_id, SmolStrId::from(db, "foo")).unwrap().unwrap() {
         ModuleItemId::FreeFunction(_) => {}
         _ => panic!("Expected a free function"),
     };
@@ -65,7 +68,7 @@ fn test_resolve_data_full() {
     let module_id = test_module.module_id;
     let db = &db_val;
     let foo = extract_matches!(
-        db.module_item_by_name(module_id, "foo".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, SmolStrId::from(db, "foo")).unwrap().unwrap(),
         ModuleItemId::FreeFunction
     );
     let resolver_data = db.free_function_body_resolver_data(foo).unwrap();
@@ -133,7 +136,7 @@ impl MacroPlugin for MappingsPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
+    fn declared_attributes<'db>(&self, _db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         Vec::new()
     }
 }

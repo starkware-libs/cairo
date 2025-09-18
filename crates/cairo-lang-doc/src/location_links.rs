@@ -1,6 +1,6 @@
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_formatter::{FormatterConfig, get_formatted_file};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::parser::Parser;
@@ -33,7 +33,7 @@ fn collect_green_nodes<'db>(
     let green_node = syntax_node.green_node(db);
 
     match &green_node.details {
-        GreenNodeDetails::Token(text) => green_nodes.push((green_node.kind, text.to_string())),
+        GreenNodeDetails::Token(text) => green_nodes.push((green_node.kind, text.to_string(db))),
         GreenNodeDetails::Node { .. } => {
             let syntax_node_children = syntax_node.get_children(db);
             syntax_node_children.iter().for_each(|child| {
@@ -51,8 +51,8 @@ fn get_virtual_syntax_file_signature<'db>(
 ) -> Maybe<SyntaxNode<'db>> {
     let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: None,
-        name: "string_to_format".into(),
-        content: signature.into(),
+        name: SmolStrId::from(sig_db, "string_to_format"),
+        content: SmolStrId::from(sig_db, signature),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,
@@ -60,11 +60,7 @@ fn get_virtual_syntax_file_signature<'db>(
     .intern(sig_db);
 
     let mut diagnostics_builder = DiagnosticsBuilder::default();
-    let content = sig_db
-        .file_content(virtual_file)
-        .expect("File was just ensured to be in db")
-        .long(sig_db)
-        .as_ref();
+    let content = sig_db.file_content(virtual_file).expect("File was just ensured to be in db");
     let syntax_file: SyntaxNode<'_> =
         Parser::parse_file(sig_db, &mut diagnostics_builder, virtual_file, content)
             .as_syntax_node();

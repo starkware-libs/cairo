@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, SmolStrId};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_parser::macro_helpers::as_expr_macro_token_tree;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -31,7 +31,7 @@ pub struct RepetitionId(usize);
 
 /// The captures collected during macro pattern matching.
 /// Each macro parameter name maps to a flat list of matched strings.
-type Captures<'db> = OrderedHashMap<&'db str, Vec<CapturedValue<'db>>>;
+type Captures<'db> = OrderedHashMap<SmolStrId<'db>, Vec<CapturedValue<'db>>>;
 
 /// Context used during macro pattern matching and expansion.
 /// Tracks captured values, active repetition scopes, and repetition ownership per placeholder.
@@ -43,7 +43,7 @@ pub struct MatcherContext<'db> {
 
     /// Maps each placeholder to the `RepetitionId` of the repetition block
     /// they are part of. This helps the expansion phase know which iterators to advance together.
-    pub placeholder_to_rep_id: OrderedHashMap<&'db str, RepetitionId>,
+    pub placeholder_to_rep_id: OrderedHashMap<SmolStrId<'db>, RepetitionId>,
 
     /// Stack of currently active repetition blocks. Used to assign placeholders
     /// to their correct `RepetitionId` while recursing into nested repetitions.
@@ -159,10 +159,10 @@ fn priv_macro_declaration_data<'db>(
         let used_placeholders = collect_expansion_placeholders(db, expansion.as_syntax_node());
         // Verify all used placeholders are defined
         for (placeholder_ptr, used_placeholder) in used_placeholders {
-            if !defined_placeholders.contains(used_placeholder) {
+            if !defined_placeholders.contains(&used_placeholder) {
                 diagnostics.report(
                     placeholder_ptr,
-                    SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder.into()),
+                    SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder),
                 );
             }
         }
@@ -198,9 +198,9 @@ fn get_macro_elements<'db>(
 fn extract_placeholder<'db>(
     db: &'db dyn Database,
     path_node: &MacroParam<'db>,
-) -> Option<&'db str> {
+) -> Option<SmolStrId<'db>> {
     let placeholder_name = path_node.name(db).as_syntax_node().get_text_without_trivia(db);
-    if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name) {
+    if ![MACRO_DEF_SITE, MACRO_CALL_SITE].contains(&placeholder_name.long(db).as_str()) {
         return Some(placeholder_name);
     }
     None
@@ -210,7 +210,7 @@ fn extract_placeholder<'db>(
 fn collect_expansion_placeholders<'db>(
     db: &'db dyn Database,
     node: SyntaxNode<'db>,
-) -> Vec<(SyntaxStablePtrId<'db>, &'db str)> {
+) -> Vec<(SyntaxStablePtrId<'db>, SmolStrId<'db>)> {
     let mut placeholders = Vec::new();
     if node.kind(db) == SyntaxKind::MacroParam {
         let path_node = MacroParam::from_syntax_node(db, node);
@@ -240,7 +240,7 @@ pub fn is_macro_rule_match<'db>(
     db: &'db dyn Database,
     rule: &MacroRuleData<'db>,
     input: &ast::TokenTreeNode<'db>,
-) -> Option<(Captures<'db>, OrderedHashMap<&'db str, RepetitionId>)> {
+) -> Option<(Captures<'db>, OrderedHashMap<SmolStrId<'db>, RepetitionId>)> {
     let mut ctx = MatcherContext::default();
 
     let matcher_elements = get_macro_elements(db, rule.pattern.clone());
@@ -306,7 +306,7 @@ fn is_macro_rule_match_ex<'db>(
                             ast::TokenTree::Token(token_tree_leaf) => {
                                 match token_tree_leaf.leaf(db) {
                                     ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
-                                        terminal_identifier.text(db).to_string()
+                                        terminal_identifier.text(db).to_string(db)
                                     }
                                     _ => return None,
                                 }
@@ -539,10 +539,10 @@ fn expand_macro_rule_ex(
             let placeholder_name = first_param.name(db).text(db);
             let rep_id = *matcher_ctx
                 .placeholder_to_rep_id
-                .get(placeholder_name)
+                .get(&placeholder_name)
                 .ok_or_else(skip_diagnostic)?;
             let repetition_len =
-                matcher_ctx.captures.get(placeholder_name).map(|v| v.len()).unwrap_or(0);
+                matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
             for i in 0..repetition_len {
                 matcher_ctx.repetition_indices.insert(rep_id, i);
                 for element in &elements {

@@ -1,7 +1,7 @@
 use cairo_lang_utils::Intern;
 
 use super::TextOffset;
-use crate::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use crate::ids::{FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use crate::span::{TextPosition, TextWidth};
 use crate::test_utils::FilesDatabaseForTesting;
 
@@ -14,8 +14,8 @@ fn test_db() -> FilesDatabaseForTesting {
 fn test_file<'db>(db: &'db FilesDatabaseForTesting) -> FileId<'db> {
     FileLongId::Virtual(VirtualFile {
         parent: None,
-        name: "name".into(),
-        content: TEST_STRING.into(),
+        name: SmolStrId::from(db, "name"),
+        content: SmolStrId::from(db, TEST_STRING),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,

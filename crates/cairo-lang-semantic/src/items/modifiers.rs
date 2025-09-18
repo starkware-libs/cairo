@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::ast::Modifier;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use salsa::Database;
@@ -27,8 +28,12 @@ pub fn compute_mutability<'db>(
                     diagnostics.report(
                         terminal.stable_ptr(db),
                         RedundantModifier {
-                            current_modifier: terminal.text(db).into(),
-                            previous_modifier: get_relevant_modifier(&mutability).into(),
+                            current_modifier: terminal.text(db),
+                            // TODO(eytan-starkware): Change &str to SmolStrId.
+                            previous_modifier: SmolStrId::from(
+                                db,
+                                get_relevant_modifier(&mutability),
+                            ),
                         },
                     );
                 }
@@ -36,8 +41,12 @@ pub fn compute_mutability<'db>(
                     diagnostics.report(
                         terminal.stable_ptr(db),
                         RedundantModifier {
-                            current_modifier: terminal.text(db).into(),
-                            previous_modifier: get_relevant_modifier(&mutability).into(),
+                            current_modifier: terminal.text(db),
+                            // TODO(eytan-starkware): Change &str to SmolStrId.
+                            previous_modifier: SmolStrId::from(
+                                db,
+                                get_relevant_modifier(&mutability),
+                            ),
                         },
                     );
                 }

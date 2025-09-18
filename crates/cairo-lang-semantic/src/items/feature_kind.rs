@@ -2,7 +2,7 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
-use cairo_lang_filesystem::ids::{CrateId, StrRef};
+use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, INTERNAL_ATTR, UNSTABLE_ATTR, UNUSED,
     UNUSED_IMPORTS, UNUSED_VARIABLES,
@@ -27,12 +27,12 @@ pub enum FeatureKind<'db> {
     /// The feature of the item is stable.
     Stable,
     /// The feature of the item is unstable, with the given name to allow.
-    Unstable { feature: StrRef<'db>, note: Option<StrRef<'db>> },
+    Unstable { feature: SmolStrId<'db>, note: Option<SmolStrId<'db>> },
     /// The feature of the item is deprecated, with the given name to allow, and an optional note
     /// to appear in diagnostics.
-    Deprecated { feature: StrRef<'db>, note: Option<StrRef<'db>> },
+    Deprecated { feature: SmolStrId<'db>, note: Option<SmolStrId<'db>> },
     /// This feature is for internal corelib use only. Using it in user code is not advised.
-    Internal { feature: StrRef<'db>, note: Option<StrRef<'db>> },
+    Internal { feature: SmolStrId<'db>, note: Option<SmolStrId<'db>> },
 }
 impl<'db> FeatureKind<'db> {
     pub fn from_ast(
@@ -99,21 +99,21 @@ fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
     diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
     attr: &structured::Attribute<'db>,
     allowed_args: [&str; EXTRA_ALLOWED],
-) -> [Option<StrRef<'db>>; EXTRA_ALLOWED] {
+) -> [Option<SmolStrId<'db>>; EXTRA_ALLOWED] {
     let mut arg_values = std::array::from_fn(|_| None);
     for AttributeArg { variant, arg, .. } in &attr.args {
         let AttributeArgVariant::Named { value: ast::Expr::String(value), name } = variant else {
             add_diag(diagnostics, arg.stable_ptr(db), FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
-        let Some(i) = allowed_args.iter().position(|x| *x == name.text) else {
+        let Some(i) = allowed_args.iter().position(|x| *x == name.text.long(db)) else {
             add_diag(diagnostics, name.stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
             continue;
         };
         if arg_values[i].is_some() {
             add_diag(diagnostics, name.stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
         } else {
-            arg_values[i] = Some(value.text(db).into());
+            arg_values[i] = Some(value.text(db));
         }
     }
     arg_values
@@ -136,9 +136,9 @@ fn add_diag<'db>(
 #[derive(Clone, Debug, Default, PartialEq, Eq, salsa::Update)]
 pub struct FeatureConfig<'db> {
     /// The current set of allowed features.
-    pub allowed_features: OrderedHashSet<StrRef<'db>>,
+    pub allowed_features: OrderedHashSet<SmolStrId<'db>>,
     /// Which lints are allowed.
-    pub allowed_lints: OrderedHashSet<StrRef<'db>>,
+    pub allowed_lints: OrderedHashSet<SmolStrId<'db>>,
 }
 
 impl<'db> FeatureConfig<'db> {
@@ -175,9 +175,9 @@ impl<'db> FeatureConfig<'db> {
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct FeatureConfigRestore<'db> {
     /// The features to remove from the configuration after the override.
-    features_to_remove: Vec<StrRef<'db>>,
+    features_to_remove: Vec<SmolStrId<'db>>,
     /// The previous state of the allowed lints.
-    allowed_lints_to_remove: Vec<StrRef<'db>>,
+    allowed_lints_to_remove: Vec<SmolStrId<'db>>,
 }
 
 impl FeatureConfigRestore<'_> {
@@ -202,7 +202,7 @@ pub fn feature_config_from_ast_item<'db>(
         diagnostics,
         |value| {
             if let ast::Expr::String(value) = value {
-                config.allowed_features.insert(value.text(db).into());
+                config.allowed_features.insert(value.text(db));
                 true
             } else {
                 false
@@ -218,16 +218,16 @@ pub fn feature_config_from_ast_item<'db>(
         |value| {
             let allowed = value.as_syntax_node().get_text_without_trivia(db);
             // Expand lint group UNUSED to include all `unused` lints.
-            if allowed == UNUSED {
+            if allowed.long(db) == UNUSED {
                 let all_unused_lints = [UNUSED_VARIABLES, UNUSED_IMPORTS];
                 return all_unused_lints.iter().all(|&lint| {
-                    let _already_allowed = config.allowed_lints.insert(lint.into());
+                    let _already_allowed = config.allowed_lints.insert(SmolStrId::from(db, lint));
                     db.declared_allows(crate_id).contains(lint)
                 });
             }
 
-            let _already_allowed = config.allowed_lints.insert(allowed.into());
-            db.declared_allows(crate_id).contains(allowed)
+            let _already_allowed = config.allowed_lints.insert(allowed);
+            db.declared_allows(crate_id).contains(allowed.long(db).as_str())
         },
     );
     config
@@ -278,7 +278,8 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
                     .unwrap_or_else(|| default_crate_settings(db).edition.ignore_visibility());
                 let mut allowed_lints = OrderedHashSet::default();
                 if all_declarations_pub {
-                    let _already_allowed = allowed_lints.insert(UNUSED_IMPORTS.into());
+                    let _already_allowed =
+                        allowed_lints.insert(SmolStrId::from(db, UNUSED_IMPORTS));
                 }
                 break FeatureConfig { allowed_features: OrderedHashSet::default(), allowed_lints };
             }

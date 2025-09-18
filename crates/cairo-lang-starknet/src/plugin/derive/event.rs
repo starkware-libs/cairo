@@ -67,7 +67,7 @@ fn handle_struct<'db>(
         ));
     }
     let event_data = EventData::Struct {
-        members: members.into_iter().map(|(name, kind)| (name.to_string(), kind)).collect(),
+        members: members.into_iter().map(|(name, kind)| (name.to_string(db), kind)).collect(),
     };
     let append_members = RewriteNode::Modified(ModifiedNode { children: Some(append_members) });
     let deserialize_members =
@@ -294,7 +294,7 @@ fn handle_enum<'db>(
         event_into_impls.push(into_impl);
     }
     let event_data = EventData::Enum {
-        variants: variants.into_iter().map(|(name, kind)| (name.to_string(), kind)).collect(),
+        variants: variants.into_iter().map(|(name, kind)| (name.to_string(db), kind)).collect(),
     };
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
     let deserialize_flat_variants =

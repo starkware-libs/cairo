@@ -6,6 +6,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::indoc;
@@ -134,8 +135,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec!["test_change_return_type".to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, "test_change_return_type")]
     }
 }
 

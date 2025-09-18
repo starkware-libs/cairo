@@ -149,7 +149,9 @@ pub fn handle_entry_point<'db, 'a>(
 ) {
     let declaration = item_function.declaration(db);
     let name_node = declaration.name(db);
-    if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
+    if entry_point_kind == EntryPointKind::Constructor
+        && name_node.text(db).long(db) != CONSTRUCTOR_NAME
+    {
         diagnostics.push(PluginDiagnostic::error(
             name_node.stable_ptr(db),
             format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
@@ -181,7 +183,7 @@ pub fn handle_entry_point<'db, 'a>(
     }
     let function_name = RewriteNode::from_ast_trimmed(&name_node);
     let wrapper_function_name = RewriteNode::interpolate_patched(
-        &format!("{WRAPPER_PREFIX}{wrapper_identifier}"),
+        &format!("{WRAPPER_PREFIX}{}", wrapper_identifier),
         &[("function_name".into(), function_name.clone())].into(),
     );
     match generate_entry_point_wrapper(
@@ -242,7 +244,7 @@ fn generate_entry_point_wrapper<'db>(
             "The first parameter of an entry point must be `self`.".into(),
         )]);
     };
-    if first_param.name(db).text(db) != SELF_PARAM_KW {
+    if first_param.name(db).text(db).long(db) != SELF_PARAM_KW {
         return Err(vec![PluginDiagnostic::error(
             first_param.stable_ptr(db),
             "The first parameter of an entry point must be `self`.".into(),
@@ -256,10 +258,10 @@ fn generate_entry_point_wrapper<'db>(
 
     let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
     for (param_idx, param) in params {
-        let arg_name = format!("__arg_{}", param.name(db).text(db));
+        let arg_name = format!("__arg_{}", param.name(db).text(db).long(db));
         let arg_type_ast =
             extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause).ty(db);
-        let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
+        let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db).long(db);
 
         let is_ref = param.is_ref_param(db);
         if raw_output && is_ref {
@@ -297,7 +299,7 @@ fn generate_entry_point_wrapper<'db>(
             let ret_type_ast = ty.ty(db);
 
             let return_ty_is_felt252_span = ret_type_ast.is_felt252_span(db);
-            let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
+            let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db).long(db);
             (
                 "let res = ",
                 format!("\n    core::serde::Serde::<{ret_type_name}>::serialize(@res, ref arr);"),
@@ -394,7 +396,9 @@ fn validate_l1_handler_first_parameter<'db>(
         }
 
         // Validate name
-        if maybe_strip_underscore(first_param.name(db).text(db)) != L1_HANDLER_FIRST_PARAM_NAME {
+        if maybe_strip_underscore(first_param.name(db).text(db).long(db).as_str())
+            != L1_HANDLER_FIRST_PARAM_NAME
+        {
             diagnostics.push(PluginDiagnostic::error(
                 first_param.stable_ptr(db),
                 "The second parameter of an L1 handler must be named 'from_address'.".to_string(),

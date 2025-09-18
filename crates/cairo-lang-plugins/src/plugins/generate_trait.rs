@@ -4,6 +4,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::helpers::{BodyItems, GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
@@ -40,8 +41,8 @@ impl MacroPlugin for GenerateTraitPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec![GENERATE_TRAIT_ATTR.to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, GENERATE_TRAIT_ATTR)]
     }
 }
 
@@ -79,7 +80,7 @@ fn generate_trait_for_impl<'db>(
     for attr_arg in attr.structurize(db).args {
         match attr_arg.variant {
             AttributeArgVariant::Unnamed(ast::Expr::FunctionCall(attr_arg))
-                if attr_arg.path(db).as_syntax_node().get_text_without_trivia(db)
+                if attr_arg.path(db).as_syntax_node().get_text_without_trivia(db).long(db)
                     == "trait_attrs" =>
             {
                 for arg in attr_arg.arguments(db).arguments(db).elements(db) {

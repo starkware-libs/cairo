@@ -12,7 +12,7 @@ use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateSettings, FilesGroup, default_crate_settings,
 };
-use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, StrRef};
+use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, SmolStrId};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -133,7 +133,7 @@ impl<'db> ResolvedItems<'db> {
 pub struct EnrichedMembers<'db> {
     /// A map from member names to their semantic representation and the number of deref operations
     /// needed to access them.
-    pub members: OrderedHashMap<StrRef<'db>, (Member<'db>, usize)>,
+    pub members: OrderedHashMap<SmolStrId<'db>, (Member<'db>, usize)>,
     /// The sequence of deref needed to access the members.
     pub deref_chain: Arc<Vec<DerefInfo<'db>>>,
     // The number of derefs that were explored.
@@ -141,8 +141,8 @@ pub struct EnrichedMembers<'db> {
 }
 impl<'db> EnrichedMembers<'db> {
     /// Returns `EnrichedTypeMemberAccess` for a single member if exists.
-    pub fn get_member(&self, name: &'db str) -> Option<EnrichedTypeMemberAccess<'db>> {
-        let (member, n_derefs) = self.members.get(name)?;
+    pub fn get_member(&self, name: SmolStrId<'db>) -> Option<EnrichedTypeMemberAccess<'db>> {
+        let (member, n_derefs) = self.members.get(&name)?;
         Some(EnrichedTypeMemberAccess {
             member: member.clone(),
             deref_functions: self
@@ -181,7 +181,7 @@ pub struct ResolverData<'db> {
     /// Current module in which to resolve the path.
     pub module_file_id: ModuleFileId<'db>,
     /// Named generic parameters accessible to the resolver.
-    generic_param_by_name: OrderedHashMap<StrRef<'db>, GenericParamId<'db>>,
+    generic_param_by_name: OrderedHashMap<SmolStrId<'db>, GenericParamId<'db>>,
     /// All generic parameters accessible to the resolver.
     pub generic_params: Vec<GenericParamId<'db>>,
     /// The enriched members per type and its mutability in the resolver context.
@@ -456,7 +456,7 @@ impl<'db> Resolver<'db> {
     pub fn add_generic_param(&mut self, generic_param_id: GenericParamId<'db>) {
         self.generic_params.push(generic_param_id);
         if let Some(name) = generic_param_id.name(self.db) {
-            self.generic_param_by_name.insert(name.into(), generic_param_id);
+            self.generic_param_by_name.insert(name, generic_param_id);
         }
     }
 
@@ -568,7 +568,7 @@ impl<'db> Resolver<'db> {
         let mut segments = get_use_path_segments(self.db, use_path.clone())?;
         // Remove the last segment if it's `self`.
         if let Some(last) = segments.segments.last()
-            && last.identifier(self.db) == SELF_PARAM_KW
+            && last.identifier(self.db).long(self.db) == SELF_PARAM_KW
         {
             // If the `self` keyword is used in a non-multi-use path, report an error.
             if use_path.as_syntax_node().parent(self.db).unwrap().kind(self.db)
@@ -736,7 +736,7 @@ impl<'db> Resolver<'db> {
     fn resolve_path_using_use_star(
         &mut self,
         module_id: ModuleId<'db>,
-        ident: &'db str,
+        ident: SmolStrId<'db>,
     ) -> UseStarResult<'db> {
         let mut item_info = None;
         let mut module_items_found: OrderedHashSet<ModuleItemId<'_>> = OrderedHashSet::default();
@@ -790,9 +790,8 @@ impl<'db> Resolver<'db> {
     fn resolve_item_in_module_or_expanded_macro(
         &mut self,
         module_id: ModuleId<'db>,
-        ident: &'db str,
+        ident: SmolStrId<'db>,
     ) -> Option<ModuleItemInfo<'db>> {
-        let ident = ident.into();
         if let Ok(Some(info)) = self.db.module_item_info_by_name(module_id, ident) {
             self.insert_used_use(info.item_id);
             return Some(info);
@@ -828,7 +827,7 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.data.generic_param_by_name.get(ident) {
+        if let Some(generic_param_id) = self.data.generic_param_by_name.get(&ident) {
             let item = match generic_param_id.kind(self.db) {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     TypeLongId::GenericParameter(*generic_param_id).intern(self.db),
@@ -855,13 +854,13 @@ impl<'db> Resolver<'db> {
     /// Returns the crate's `prelude` submodule.
     fn prelude_submodule_ex(&self, info: &MacroResolutionInfo<'db>) -> ModuleId<'db> {
         let active_settings = self.active_settings(info);
-        let prelude_submodule_name = active_settings.edition.prelude_submodule_name();
-        let core_prelude_submodule = core_submodule(self.db, "prelude");
+        let prelude_submodule_name = active_settings.edition.prelude_submodule_name(self.db);
+        let core_prelude_submodule = core_submodule(self.db, SmolStrId::from(self.db, "prelude"));
         get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
             || {
                 panic!(
-                    "expected prelude submodule `{prelude_submodule_name}` not found in \
-                     `core::prelude`."
+                    "expected prelude submodule `{}` not found in `core::prelude`.",
+                    prelude_submodule_name.long(self.db)
                 )
             },
         )
@@ -1074,15 +1073,15 @@ impl<'db> Resolver<'db> {
             match generic_arg_syntax {
                 ast::GenericArg::Named(arg_syntax) => {
                     let name = arg_syntax.name(db).text(db);
-                    let Some((index, generic_param_id)) = generic_param_by_name.get(name) else {
+                    let Some((index, generic_param_id)) = generic_param_by_name.get(&name) else {
                         return Err(diagnostics
-                            .report(arg_syntax.stable_ptr(db), UnknownGenericParam(name.into())));
+                            .report(arg_syntax.stable_ptr(db), UnknownGenericParam(name)));
                     };
                     if let Some(prev_index) = last_named_arg_index
                         && prev_index > index
                     {
                         return Err(diagnostics
-                            .report(arg_syntax.stable_ptr(db), GenericArgOutOfOrder(name.into())));
+                            .report(arg_syntax.stable_ptr(db), GenericArgOutOfOrder(name)));
                     }
                     last_named_arg_index = Some(index);
                     if arg_syntax_per_param
@@ -1090,7 +1089,7 @@ impl<'db> Resolver<'db> {
                         .is_some()
                     {
                         return Err(diagnostics
-                            .report(arg_syntax.stable_ptr(db), GenericArgDuplicate(name.into())));
+                            .report(arg_syntax.stable_ptr(db), GenericArgDuplicate(name)));
                     }
                 }
                 ast::GenericArg::Unnamed(arg_syntax) => {
@@ -1261,7 +1260,11 @@ impl<'db> Resolver<'db> {
                 );
             }
             FeatureKind::Deprecated { feature, note }
-                if !self.data.feature_config.allowed_lints.contains(DEPRECATED_ATTR)
+                if !self
+                    .data
+                    .feature_config
+                    .allowed_lints
+                    .contains(&SmolStrId::from(self.db, DEPRECATED_ATTR))
                     && !self.data.feature_config.allowed_features.contains(feature) =>
             {
                 diagnostics.report(
@@ -1559,10 +1562,10 @@ fn handle_macro_context_modifier<'db>(
         Some(ast::PathSegment::Simple(path_segment_simple)) => {
             let ident = path_segment_simple.ident(db);
             let ident_text = ident.text(db);
-            match ident_text {
+            match ident_text.long(db).as_str() {
                 MACRO_DEF_SITE | MACRO_CALL_SITE => {
                     segments.next();
-                    if ident_text == MACRO_DEF_SITE {
+                    if ident_text.long(db) == MACRO_DEF_SITE {
                         Ok(MacroContextModifier::DefSite)
                     } else {
                         Ok(MacroContextModifier::CallSite)
@@ -1570,7 +1573,7 @@ fn handle_macro_context_modifier<'db>(
                 }
                 _ => Err(diagnostics.report(
                     ident.stable_ptr(db),
-                    UnknownResolverModifier { modifier: ident_text.into() },
+                    UnknownResolverModifier { modifier: ident_text },
                 )),
             }
         }
@@ -1589,7 +1592,7 @@ fn resolve_self_segment<'db>(
     identifier: &ast::TerminalIdentifier<'db>,
     trait_or_impl_ctx: &TraitOrImplContext<'db>,
 ) -> Option<Maybe<ResolvedConcreteItem<'db>>> {
-    require(identifier.text(db) == SELF_TYPE_KW)?;
+    require(identifier.text(db).long(db) == SELF_TYPE_KW)?;
     Some(resolve_actual_self_segment(db, diagnostics, identifier, trait_or_impl_ctx))
 }
 
@@ -2075,7 +2078,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let mut curr = None;
         for segment in self.segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) | ast::PathSegment::Missing(_) => false,
-            ast::PathSegment::Simple(simple) => simple.identifier(db) == SUPER_KW,
+            ast::PathSegment::Simple(simple) => simple.identifier(db).long(db) == SUPER_KW,
         }) {
             let module_id = match curr {
                 Some(module_id) => module_id,
@@ -2116,7 +2119,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
     fn module_inner_item(
         &mut self,
         module_id: &ModuleId<'db>,
-        ident: &'db str,
+        ident: SmolStrId<'db>,
         identifier: &TerminalIdentifier<'db>,
     ) -> Maybe<ModuleItemInfo<'db>> {
         let db = self.resolver.db;
@@ -2159,7 +2162,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
 
         let ident = identifier.text(db);
 
-        if identifier.text(db) == SELF_TYPE_KW {
+        if identifier.text(db).long(db) == SELF_TYPE_KW {
             return Err(self.diagnostics.report(identifier.stable_ptr(db), SelfMustBeFirst));
         }
 
@@ -2167,7 +2170,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
             ResolvedConcreteItem::Module(module_id) => {
                 // Prefix `super` segments should be removed earlier. Middle `super` segments are
                 // not allowed.
-                if ident == SUPER_KW {
+                if ident.long(db) == SUPER_KW {
                     return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 }
                 let inner_item_info = self.module_inner_item(module_id, ident, identifier)?;
@@ -2180,10 +2183,10 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     let variants = db.enum_variants(enum_id).map_err(|_| {
                         self.diagnostics.report(identifier.stable_ptr(db), UnknownEnum)
                     })?;
-                    let variant_id = variants.get(ident).ok_or_else(|| {
+                    let variant_id = variants.get(&ident).ok_or_else(|| {
                         self.diagnostics.report(
                             identifier.stable_ptr(db),
-                            NoSuchVariant { enum_id, variant_name: ident.into() },
+                            NoSuchVariant { enum_id, variant_name: ident },
                         )
                     })?;
                     let variant = db.variant_semantic(enum_id, *variant_id)?;
@@ -2196,12 +2199,12 @@ impl<'db, 'a> Resolution<'db, 'a> {
             ResolvedConcreteItem::SelfTrait(concrete_trait_id) => {
                 let impl_id = ImplLongId::SelfImpl(*concrete_trait_id).intern(db);
                 let Some(trait_item_id) =
-                    db.trait_item_by_name(concrete_trait_id.trait_id(db), ident.into())?
+                    db.trait_item_by_name(concrete_trait_id.trait_id(db), ident)?
                 else {
                     return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 };
                 if let Ok(Some(trait_item_info)) =
-                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident.into())
+                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident)
                 {
                     self.resolver.validate_feature_constraints(
                         self.diagnostics,
@@ -2241,13 +2244,13 @@ impl<'db, 'a> Resolution<'db, 'a> {
             }
             ResolvedConcreteItem::Trait(concrete_trait_id) => {
                 let Some(trait_item_id) =
-                    db.trait_item_by_name(concrete_trait_id.trait_id(db), ident.into())?
+                    db.trait_item_by_name(concrete_trait_id.trait_id(db), ident)?
                 else {
                     return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 };
 
                 if let Ok(Some(trait_item_info)) =
-                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident.into())
+                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident)
                 {
                     self.resolver.validate_feature_constraints(
                         self.diagnostics,
@@ -2356,11 +2359,11 @@ impl<'db, 'a> Resolution<'db, 'a> {
             ResolvedConcreteItem::Impl(impl_id) => {
                 let concrete_trait_id = db.impl_concrete_trait(*impl_id)?;
                 let trait_id = concrete_trait_id.trait_id(db);
-                let Some(trait_item_id) = db.trait_item_by_name(trait_id, ident.into())? else {
+                let Some(trait_item_id) = db.trait_item_by_name(trait_id, ident)? else {
                     return Err(self.diagnostics.report(identifier.stable_ptr(db), InvalidPath));
                 };
                 if let Ok(Some(trait_item_info)) =
-                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident.into())
+                    db.trait_item_info_by_name(concrete_trait_id.trait_id(db), ident)
                 {
                     self.resolver.validate_feature_constraints(
                         self.diagnostics,
@@ -2371,8 +2374,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 if let ImplLongId::Concrete(concrete_impl) = impl_id.long(db) {
                     let impl_def_id: ImplDefId<'_> = concrete_impl.impl_def_id(db);
 
-                    if let Ok(Some(impl_item_info)) =
-                        db.impl_item_info_by_name(impl_def_id, ident.into())
+                    if let Ok(Some(impl_item_info)) = db.impl_item_info_by_name(impl_def_id, ident)
                     {
                         self.resolver.validate_feature_constraints(
                             self.diagnostics,
@@ -2430,7 +2432,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                     }
                 }
             }
-            ResolvedConcreteItem::Function(function_id) if ident == "Coupon" => {
+            ResolvedConcreteItem::Function(function_id) if ident.long(db) == "Coupon" => {
                 if !are_coupons_enabled(db, self.resolver.active_module_id(&self.macro_info)) {
                     self.diagnostics.report(identifier.stable_ptr(db), CouponsDisabled);
                 }
@@ -2467,10 +2469,10 @@ impl<'db, 'a> Resolution<'db, 'a> {
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = db.enum_variants(*enum_id)?;
-                let variant_id = variants.get(ident).ok_or_else(|| {
+                let variant_id = variants.get(&ident).ok_or_else(|| {
                     self.diagnostics.report(
                         identifier.stable_ptr(db),
-                        NoSuchVariant { enum_id: *enum_id, variant_name: ident.into() },
+                        NoSuchVariant { enum_id: *enum_id, variant_name: ident },
                     )
                 })?;
                 let variant = db.variant_semantic(*enum_id, *variant_id)?;
@@ -2512,14 +2514,19 @@ impl<'db, 'a> Resolution<'db, 'a> {
         }
 
         // If the first element is `crate`, use the crate's root module as the base module.
-        if ident == CRATE_KW {
+        if ident.long(db) == CRATE_KW {
             return Ok(ResolvedBase::Crate(self.resolver.active_owning_crate_id(&self.macro_info)));
         }
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
-        if let Some(dep) = self.resolver.active_settings(&self.macro_info).dependencies.get(ident) {
+        if let Some(dep) = self
+            .resolver
+            .active_settings(&self.macro_info)
+            .dependencies
+            .get(ident.long(db).as_str())
+        {
             let dep_crate_id =
-                CrateLongId::Real { name: ident.into(), discriminator: dep.discriminator.clone() }
+                CrateLongId::Real { name: ident, discriminator: dep.discriminator.clone() }
                     .intern(db);
             let configs = db.crate_configs();
             if !configs.contains_key(&dep_crate_id) {
@@ -2534,11 +2541,11 @@ impl<'db, 'a> Resolution<'db, 'a> {
             return Ok(ResolvedBase::Crate(dep_crate_id));
         }
         // If the first segment is `core` - and it was not overridden by a dependency - using it.
-        if ident == CORELIB_CRATE_NAME {
+        if ident.long(db) == CORELIB_CRATE_NAME {
             return Ok(ResolvedBase::Crate(CrateId::core(db)));
         }
         // TODO(orizi): Remove when `starknet` becomes a proper crate.
-        if ident == STARKNET_CRATE_NAME {
+        if ident.long(db) == STARKNET_CRATE_NAME {
             // Making sure we don't look for it in `*` modules, to prevent cycles.
             return Ok(ResolvedBase::Module(self.resolver.prelude_submodule_ex(&self.macro_info)));
         }
@@ -2556,7 +2563,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
             UseStarResult::PathNotFound => {}
             UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
                 let prelude = self.resolver.prelude_submodule_ex(&self.macro_info);
-                if let Ok(Some(_)) = db.module_item_by_name(prelude, ident.into()) {
+                if let Ok(Some(_)) = db.module_item_by_name(prelude, ident) {
                     return Ok(ResolvedBase::Module(prelude));
                 }
                 return Ok(ResolvedBase::ItemNotVisible(module_item_id, containing_modules));

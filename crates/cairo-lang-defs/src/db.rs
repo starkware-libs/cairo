@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_filesystem::db::{ExtAsVirtual, FilesGroup, files_group_input};
 use cairo_lang_filesystem::ids::{
-    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, Tracked, VirtualFile,
+    CrateId, CrateInput, Directory, FileId, FileKind, FileLongId, SmolStrId, Tracked, VirtualFile,
 };
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
@@ -133,19 +133,25 @@ pub trait DefsGroup: Database {
 
     /// Returns the set of attributes allowed anywhere.
     /// An attribute on any item that is not in this set will be handled as an unknown attribute.
-    fn allowed_attributes<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String> {
+    fn allowed_attributes<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> &'db OrderedHashSet<SmolStrId<'db>> {
         allowed_attributes(self.as_dyn_database(), crate_id)
     }
 
     /// Returns the set of attributes allowed on statements.
     /// An attribute on a statement that is not in this set will be handled as an unknown attribute.
-    fn allowed_statement_attributes(&self) -> &OrderedHashSet<String> {
+    fn allowed_statement_attributes<'db>(&'db self) -> &'db OrderedHashSet<SmolStrId<'db>> {
         allowed_statement_attributes(self.as_dyn_database())
     }
 
     /// Returns the set of `derive` that were declared as by a plugin.
     /// A derive that is not in this set will be handled as an unknown derive.
-    fn declared_derives<'db>(&'db self, crate_id: CrateId<'db>) -> &'db OrderedHashSet<String> {
+    fn declared_derives<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> &'db OrderedHashSet<SmolStrId<'db>> {
         declared_derives(self.as_dyn_database(), crate_id)
     }
 
@@ -154,7 +160,7 @@ pub trait DefsGroup: Database {
     fn declared_phantom_type_attributes<'db>(
         &'db self,
         crate_id: CrateId<'db>,
-    ) -> &'db OrderedHashSet<String> {
+    ) -> &'db OrderedHashSet<SmolStrId<'db>> {
         declared_phantom_type_attributes(self.as_dyn_database(), crate_id)
     }
 
@@ -449,7 +455,7 @@ fn crate_inline_macro_plugins<'db>(
 fn allowed_attributes<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
-) -> OrderedHashSet<String> {
+) -> OrderedHashSet<SmolStrId<'db>> {
     let base_attrs = [
         INLINE_ATTR,
         MUST_USE_ATTR,
@@ -469,24 +475,27 @@ fn allowed_attributes<'db>(
     let crate_plugins = db.crate_macro_plugins(crate_id);
 
     OrderedHashSet::from_iter(chain!(
-        base_attrs.map(|attr| attr.into()),
-        crate_plugins.iter().flat_map(|plugin| plugin.long(db).declared_attributes())
+        base_attrs.map(|attr| SmolStrId::from(db, attr)),
+        crate_plugins.iter().flat_map(|plugin| plugin.long(db).declared_attributes(db))
     ))
 }
 
 // TODO(eytan-starkware): Untrack this
 #[salsa::tracked(returns(ref))]
-fn allowed_statement_attributes<'db>(_db: &'db dyn Database) -> OrderedHashSet<String> {
+fn allowed_statement_attributes<'db>(db: &'db dyn Database) -> OrderedHashSet<SmolStrId<'db>> {
     let all_attributes = [FMT_SKIP_ATTR, ALLOW_ATTR, FEATURE_ATTR];
-    OrderedHashSet::from_iter(all_attributes.map(|attr| attr.into()))
+    OrderedHashSet::from_iter(all_attributes.map(|attr| SmolStrId::from(db, attr)))
 }
 
 #[salsa::tracked(returns(ref))]
-fn declared_derives<'db>(db: &'db dyn Database, crate_id: CrateId<'db>) -> OrderedHashSet<String> {
+fn declared_derives<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+) -> OrderedHashSet<SmolStrId<'db>> {
     OrderedHashSet::from_iter(
         db.crate_macro_plugins(crate_id)
             .iter()
-            .flat_map(|plugin| plugin.long(db).declared_derives()),
+            .flat_map(|plugin| plugin.long(db).declared_derives(db)),
     )
 }
 
@@ -494,12 +503,12 @@ fn declared_derives<'db>(db: &'db dyn Database, crate_id: CrateId<'db>) -> Order
 fn declared_phantom_type_attributes<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
-) -> OrderedHashSet<String> {
+) -> OrderedHashSet<SmolStrId<'db>> {
     let crate_plugins = db.crate_macro_plugins(crate_id);
 
     OrderedHashSet::from_iter(chain!(
-        [PHANTOM_ATTR.into()],
-        crate_plugins.iter().flat_map(|plugin| plugin.long(db).phantom_type_attributes())
+        [SmolStrId::from(db, PHANTOM_ATTR)],
+        crate_plugins.iter().flat_map(|plugin| plugin.long(db).phantom_type_attributes(db))
     ))
 }
 
@@ -529,7 +538,7 @@ fn module_main_file_helper<'db>(
                 // or a plugin-generated virtual file.
                 db.module_file(submodule_id.module_file_id(db))?
             } else {
-                let name = format!("{}.cairo", submodule_id.name(db));
+                let name = format!("{}.cairo", submodule_id.name(db).long(db));
                 db.module_dir(parent)?.file(db, &name)
             }
         }
@@ -567,7 +576,7 @@ fn module_dir_helper<'db>(
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.parent_module(db);
             let name = submodule_id.name(db);
-            Ok(db.module_dir(parent)?.subdir(name))
+            Ok(db.module_dir(parent)?.subdir(name.long(db)))
         }
         // This is a macro call, we return the directory for the file that contained the macro
         // call, as it is considered the location of the macro itself.
@@ -1181,8 +1190,8 @@ fn module_sub_files<'db>(
                     generated_file_id,
                     VirtualFile {
                         parent: Some(file_id),
-                        name: generated.name,
-                        content: generated.content.into(),
+                        name: SmolStrId::from(db, generated.name),
+                        content: SmolStrId::from(db, generated.content),
                         code_mappings: generated.code_mappings.into(),
                         kind: FileKind::Module,
                         original_item_removed: remove_original_item,
@@ -1209,7 +1218,7 @@ fn collect_extra_allowed_attributes<'db>(
     db: &'db dyn Database,
     item: &impl QueryAttrs<'db>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
-) -> OrderedHashSet<String> {
+) -> OrderedHashSet<SmolStrId<'db>> {
     let mut extra_allowed_attributes = OrderedHashSet::default();
     for attr in item.query_attr(db, ALLOW_ATTR_ATTR) {
         let args = attr.clone().structurize(db).args;
@@ -1225,7 +1234,7 @@ fn collect_extra_allowed_attributes<'db>(
                 && let Some([ast::PathSegment::Simple(segment)]) =
                     path.segments(db).elements(db).collect_array()
             {
-                extra_allowed_attributes.insert(segment.ident(db).text(db).into());
+                extra_allowed_attributes.insert(segment.ident(db).text(db));
                 continue;
             }
             plugin_diagnostics.push(PluginDiagnostic::error(
@@ -1240,17 +1249,17 @@ fn collect_extra_allowed_attributes<'db>(
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
 pub fn validate_attributes_flat<'db>(
     db: &'db dyn Database,
-    allowed_attributes: &OrderedHashSet<String>,
-    extra_allowed_attributes: &OrderedHashSet<String>,
+    allowed_attributes: &OrderedHashSet<SmolStrId<'db>>,
+    extra_allowed_attributes: &OrderedHashSet<SmolStrId<'db>>,
     item: &impl QueryAttrs<'db>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
     let local_extra_attributes = collect_extra_allowed_attributes(db, item, plugin_diagnostics);
     for attr in item.attributes_elements(db) {
         let attr_text = attr.attr(db).as_syntax_node().get_text_without_trivia(db);
-        if !(allowed_attributes.contains(attr_text)
-            || extra_allowed_attributes.contains(attr_text)
-            || local_extra_attributes.contains(attr_text))
+        if !(allowed_attributes.contains(&attr_text)
+            || extra_allowed_attributes.contains(&attr_text)
+            || local_extra_attributes.contains(&attr_text))
         {
             plugin_diagnostics.push(PluginDiagnostic::error(
                 attr.stable_ptr(db),
@@ -1264,8 +1273,8 @@ pub fn validate_attributes_flat<'db>(
 /// adds diagnostics.
 fn validate_attributes_element_list<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db>>(
     db: &'db dyn Database,
-    allowed_attributes: &OrderedHashSet<String>,
-    extra_allowed_attributes: &OrderedHashSet<String>,
+    allowed_attributes: &OrderedHashSet<SmolStrId<'db>>,
+    extra_allowed_attributes: &OrderedHashSet<SmolStrId<'db>>,
     items: impl Iterator<Item = Item>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
@@ -1284,7 +1293,7 @@ fn validate_attributes_element_list<'db, Item: QueryAttrs<'db> + TypedSyntaxNode
 /// or adds diagnostics.
 fn validate_attributes<'db>(
     db: &'db dyn Database,
-    allowed_attributes: &OrderedHashSet<String>,
+    allowed_attributes: &OrderedHashSet<SmolStrId<'db>>,
     item_ast: &ast::ModuleItem<'db>,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {

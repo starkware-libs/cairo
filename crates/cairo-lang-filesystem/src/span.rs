@@ -216,7 +216,7 @@ impl TextOffset {
         let line_number = self.get_line_number(db, file)?;
         let line_offset = summary.line_offsets[line_number];
         let content = db.file_content(file)?;
-        let col = TextSpan::new(line_offset, self).n_chars(content.long(db).as_ref());
+        let col = TextSpan::new(line_offset, self).n_chars(content.as_ref());
         Some(TextPosition { line: line_number, col })
     }
 }
@@ -230,7 +230,7 @@ impl TextPosition {
     /// Returns `None` if file is not found in `db`.
     pub fn offset_in_file(self, db: &dyn Database, file: FileId<'_>) -> Option<TextOffset> {
         let file_summary = db.file_summary(file)?;
-        let content = db.file_content(file)?.long(db);
+        let content = db.file_content(file)?;
 
         // Get the offset of the first character in line, or clamp to the last offset in the file.
         let mut offset =

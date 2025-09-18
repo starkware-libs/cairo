@@ -2,6 +2,7 @@
 #[path = "branch_inversion_test.rs"]
 mod test;
 
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::Intern;
 use salsa::Database;
@@ -25,9 +26,12 @@ pub fn branch_inversion(db: &dyn Database, lowered: &mut Lowered<'_>) {
     if lowered.blocks.is_empty() {
         return;
     }
-    let bool_not_func_id =
-        FunctionLongId::Semantic(corelib::get_core_function_id(db, "bool_not_impl", vec![]))
-            .intern(db);
+    let bool_not_func_id = FunctionLongId::Semantic(corelib::get_core_function_id(
+        db,
+        SmolStrId::from(db, "bool_not_impl"),
+        vec![],
+    ))
+    .intern(db);
 
     for block in lowered.blocks.iter_mut() {
         if let BlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end

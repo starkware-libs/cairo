@@ -1,5 +1,5 @@
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use cairo_lang_test_utils::test;
@@ -21,8 +21,8 @@ fn test_location_marks() {
     let db = FilesDatabaseForTesting::default();
     let file = FileLongId::Virtual(VirtualFile {
         parent: None,
-        name: "name".into(),
-        content: content.into(),
+        name: SmolStrId::from(&db, "name"),
+        content: SmolStrId::from(&db, content),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,

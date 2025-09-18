@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::Tracked;
+use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_semantic::corelib::{CorelibSemantic, get_core_ty_by_name};
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
@@ -38,7 +38,7 @@ fn get_libfunc_signature(
     let array_ty = db
         .get_concrete_type_id(get_core_ty_by_name(
             db,
-            "Array",
+            SmolStrId::from(db, "Array"),
             vec![GenericArgumentId::Type(db.core_info().felt252)],
         ))
         .expect("Can't find core::Array<core::felt252>.");

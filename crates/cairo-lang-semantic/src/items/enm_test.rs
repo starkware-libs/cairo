@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_test_utils::test;
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
@@ -48,7 +49,7 @@ fn test_enum() {
     let module_id = test_module.module_id;
 
     let enum_id = extract_matches!(
-        db.module_item_by_name(module_id, "A".into()).unwrap().unwrap(),
+        db.module_item_by_name(module_id, SmolStrId::from(db, "A")).unwrap().unwrap(),
         ModuleItemId::Enum
     );
     let actual = db
@@ -57,7 +58,8 @@ fn test_enum() {
         .iter()
         .map(|(name, variant_id)| {
             format!(
-                "{name}: {:?}, ty: {:?}",
+                "{}: {:?}, ty: {:?}",
+                name.long(db),
                 variant_id.debug(db),
                 db.variant_semantic(enum_id, *variant_id).unwrap().ty.debug(db)
             )

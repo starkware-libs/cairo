@@ -38,7 +38,7 @@ impl<'db> DebugWithDb<'db> for ConstValue<'db> {
                 value.fmt(f, db)?;
                 write!(f, ")")
             }
-            ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db)),
+            ConstValue::Generic(param) => write!(f, "{}", param.debug_name(db).long(db)),
             ConstValue::Var(var, _) => write!(f, "?{}", var.id.0),
             ConstValue::Missing(_) => write!(f, "missing"),
             ConstValue::ImplConstant(id) => id.fmt(f, db),
@@ -49,13 +49,9 @@ impl<'db> DebugWithDb<'db> for ConstValue<'db> {
 impl<'db> DebugWithDb<'db> for ConcreteVariant<'db> {
     type Db = dyn Database;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        semantic_db: &'db dyn Database,
-    ) -> std::fmt::Result {
-        let enum_name = self.concrete_enum_id.enum_id(semantic_db).name(semantic_db);
-        let variant_name = self.id.name(semantic_db);
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
+        let enum_name = self.concrete_enum_id.enum_id(db).name(db).long(db);
+        let variant_name = self.id.name(db).long(db);
         write!(f, "{enum_name}::{variant_name}")
     }
 }

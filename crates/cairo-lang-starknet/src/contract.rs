@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::ids::{CrateId, db_str};
+use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::inference::canonic::ResultNoErrEx;
@@ -110,6 +110,7 @@ pub fn get_contract_abi_functions<'db>(
     contract: &ContractDeclaration<'db>,
     module_name: &'db str,
 ) -> anyhow::Result<Vec<Aliased<semantic::ConcreteFunctionWithBodyId<'db>>>> {
+    let module_name = SmolStrId::from(db, module_name);
     Ok(chain!(
         get_contract_internal_module_abi_functions(db, contract, module_name)?,
         get_impl_aliases_abi_functions(db, contract, module_name)?
@@ -121,7 +122,7 @@ pub fn get_contract_abi_functions<'db>(
 fn get_contract_internal_module_abi_functions<'db>(
     db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
-    module_name: &'db str,
+    module_name: SmolStrId<'db>,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId<'db>>>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
     let module_id = get_submodule_id(db, generated_module_id, module_name)?;
@@ -153,7 +154,7 @@ fn get_module_aliased_functions<'db>(
             {
                 Ok(Aliased {
                     value: function_id,
-                    alias: leaf.stable_ptr(db).identifier(db).to_string(),
+                    alias: leaf.stable_ptr(db).identifier(db).to_string(db),
                 })
             } else {
                 bail!("Expected a free function.")
@@ -168,7 +169,7 @@ fn get_module_aliased_functions<'db>(
 fn get_impl_aliases_abi_functions<'db>(
     db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
-    module_prefix: &str,
+    module_prefix: SmolStrId<'db>,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId<'db>>>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
     let mut diagnostics = SemanticDiagnostics::default();
@@ -215,8 +216,11 @@ fn get_impl_aliases_abi_functions<'db>(
         else {
             bail!("Internal error: Impl alias pointed to an object with non module parent.");
         };
-        let module_id =
-            get_submodule_id(db, impl_module, db_str(db, format!("{module_prefix}_{impl_name}")))?;
+        let module_id = get_submodule_id(
+            db,
+            impl_module,
+            SmolStrId::from(db, format!("{}_{}", module_prefix.long(db), impl_name.long(db))),
+        )?;
         for abi_function in get_module_aliased_functions(db, module_id)? {
             all_abi_functions.extend(abi_function.try_map(|f| {
                 let concrete_wrapper = resolver
@@ -255,14 +259,14 @@ fn get_generated_contract_module<'db>(
     let contract_name = contract.submodule_id.name(db);
 
     match db
-        .module_item_by_name(parent_module_id, contract_name.into())
+        .module_item_by_name(parent_module_id, contract_name)
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the root module.")?
     {
         Some(ModuleItemId::Submodule(generated_module_id)) => {
             Ok(ModuleId::Submodule(generated_module_id))
         }
-        _ => anyhow::bail!(format!("Failed to get generated module {contract_name}.")),
+        _ => anyhow::bail!(format!("Failed to get generated module {}.", contract_name.long(db))),
     }
 }
 
@@ -270,16 +274,17 @@ fn get_generated_contract_module<'db>(
 fn get_submodule_id<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    submodule_name: &'db str,
+    submodule_name: SmolStrId<'db>,
 ) -> anyhow::Result<ModuleId<'db>> {
     match db
-        .module_item_by_name(module_id, submodule_name.into())
+        .module_item_by_name(module_id, submodule_name)
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
     {
         Some(ModuleItemId::Submodule(submodule_id)) => Ok(ModuleId::Submodule(submodule_id)),
         _ => anyhow::bail!(
-            "Failed to get the submodule `{submodule_name}` of `{}`.",
+            "Failed to get the submodule `{}` of `{}`.",
+            submodule_name.long(db),
             module_id.full_path(db)
         ),
     }
@@ -325,8 +330,10 @@ fn analyze_contract<'db, T: SierraIdReplacer>(
     replacer: &T,
 ) -> anyhow::Result<(Felt252, ContractInfo)> {
     // Extract class hash.
-    let item =
-        db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
+    let item = db
+        .module_item_by_name(contract.module_id(), SmolStrId::from(db, "TEST_CLASS_HASH"))
+        .unwrap()
+        .unwrap();
     let constant_id = extract_matches!(item, ModuleItemId::Constant);
     let class_hash =
         Felt252::from(db.constant_const_value(constant_id).unwrap().long(db).to_int().unwrap());

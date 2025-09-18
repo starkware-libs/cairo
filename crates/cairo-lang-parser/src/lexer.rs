@@ -2,6 +2,7 @@
 #[path = "lexer_test.rs"]
 mod test;
 
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{
@@ -92,13 +93,13 @@ impl<'a> Lexer<'a> {
     /// Assumes the next character is one of [' ', '\r', '\t'].
     fn match_trivium_whitespace(&mut self) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        TokenWhitespace::new_green(self.db, self.consume_span()).into()
+        TokenWhitespace::new_green(self.db, SmolStrId::from(self.db, self.consume_span())).into()
     }
 
     /// Assumes the next character '\n'.
     fn match_trivium_newline(&mut self) -> TriviumGreen<'a> {
         self.take();
-        TokenNewline::new_green(self.db, self.consume_span()).into()
+        TokenNewline::new_green(self.db, SmolStrId::from(self.db, self.consume_span())).into()
     }
 
     /// Assumes the next 2 characters are "//".
@@ -106,15 +107,27 @@ impl<'a> Lexer<'a> {
         match self.peek_nth(2) {
             Some('/') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineDocComment::new_green(self.db, self.consume_span()).into()
+                TokenSingleLineDocComment::new_green(
+                    self.db,
+                    SmolStrId::from(self.db, self.consume_span()),
+                )
+                .into()
             }
             Some('!') => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineInnerComment::new_green(self.db, self.consume_span()).into()
+                TokenSingleLineInnerComment::new_green(
+                    self.db,
+                    SmolStrId::from(self.db, self.consume_span()),
+                )
+                .into()
             }
             _ => {
                 self.take_while(|c| c != '\n');
-                TokenSingleLineComment::new_green(self.db, self.consume_span()).into()
+                TokenSingleLineComment::new_green(
+                    self.db,
+                    SmolStrId::from(self.db, self.consume_span()),
+                )
+                .into()
             }
         }
     }
@@ -316,14 +329,19 @@ impl<'a> Lexer<'a> {
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
         // TODO(yuval): log(verbose) "consumed text: ..."
-        LexerTerminal { text, kind: terminal_kind, leading_trivia, trailing_trivia }
+        LexerTerminal {
+            text: SmolStrId::from(self.db, text),
+            kind: terminal_kind,
+            leading_trivia,
+            trailing_trivia,
+        }
     }
 }
 
 /// Output terminal emitted by the lexer.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LexerTerminal<'a> {
-    pub text: &'a str,
+    pub text: SmolStrId<'a>,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
     pub leading_trivia: Vec<TriviumGreen<'a>>,
@@ -332,7 +350,7 @@ pub struct LexerTerminal<'a> {
 impl<'a> LexerTerminal<'a> {
     pub fn width(&self, db: &dyn Database) -> TextWidth {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
-            + TextWidth::from_str(self.text)
+            + TextWidth::from_str(self.text.long(db))
             + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<TextWidth>()
     }
 }

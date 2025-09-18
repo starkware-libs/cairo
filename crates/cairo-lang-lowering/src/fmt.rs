@@ -147,6 +147,7 @@ impl<'db> DebugWithDb<'db> for VarUsage<'db> {
                     .stable_location
                     .syntax_node(ctx.db)
                     .get_text_without_trivia(ctx.db)
+                    .long(ctx.db)
                     .lines()
                     .map(|s| s.trim())
                     .join(" ")
@@ -311,8 +312,8 @@ impl<'db> DebugWithDb<'db> for StatementEnumConstruct<'db> {
     type Db = LoweredFormatter<'db>;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &Self::Db) -> std::fmt::Result {
-        let enum_name = self.variant.concrete_enum_id.enum_id(ctx.db).name(ctx.db);
-        let variant_name = self.variant.id.name(ctx.db);
+        let enum_name = self.variant.concrete_enum_id.enum_id(ctx.db).name(ctx.db).long(ctx.db);
+        let variant_name = self.variant.id.name(ctx.db).long(ctx.db);
         write!(f, "{enum_name}::{variant_name}(",)?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")

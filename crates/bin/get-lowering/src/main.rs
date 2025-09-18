@@ -270,9 +270,10 @@ fn main() -> anyhow::Result<()> {
                 .keys()
                 .sorted_by_key(|key| match key {
                     GeneratedFunctionKey::Loop(id) => (id.0.lookup(db).span_without_trivia(db), ""),
-                    GeneratedFunctionKey::TraitFunc(trait_function, id) => {
-                        (id.syntax_node(db).span_without_trivia(db), trait_function.name(db))
-                    }
+                    GeneratedFunctionKey::TraitFunc(trait_function, id) => (
+                        id.syntax_node(db).span_without_trivia(db),
+                        trait_function.name(db).long(db).as_str(),
+                    ),
                 })
                 .take(generated_function_index + 1)
                 .collect_vec();

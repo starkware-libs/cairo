@@ -4,7 +4,7 @@ use cairo_lang_defs::plugin::{
     PluginGeneratedFile,
 };
 use cairo_lang_defs::plugin_utils::{PluginResultTrait, not_legacy_macro_diagnostic};
-use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin};
+use cairo_lang_filesystem::ids::{CodeMapping, CodeOrigin, SmolStrId};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -37,15 +37,15 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         );
 
         let mut diagnostics = vec![];
-        const DEPRECATION_FEATURE: &str = r#""deprecated-consteval-int-macro""#;
-        if !metadata.allowed_features.contains(DEPRECATION_FEATURE) {
+        let deprecation_feature = SmolStrId::from(db, r#""deprecated-consteval-int-macro""#);
+        if !metadata.allowed_features.contains(&deprecation_feature) {
             diagnostics.push(PluginDiagnostic::warning(
                 syntax.stable_ptr(db),
                 format!(
-                    "Usage of deprecated macro `{}` with no `#[feature({DEPRECATION_FEATURE})]` \
-                     attribute. Note: Use simple calculations instead, as these are supported in \
-                     const context.",
-                    Self::NAME
+                    "Usage of deprecated macro `{}` with no `#[feature({})]` attribute. Note: Use \
+                     simple calculations instead, as these are supported in const context.",
+                    Self::NAME,
+                    deprecation_feature.long(db),
                 ),
             ));
         }

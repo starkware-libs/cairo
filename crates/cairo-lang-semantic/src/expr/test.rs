@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, NamedLanguageElementId, VarId};
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -272,7 +273,10 @@ fn test_function_body() {
     )
     .unwrap();
     let db = &db_val;
-    let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap().unwrap();
+    let item_id = db
+        .module_item_by_name(test_function.module_id, SmolStrId::from(db, "foo"))
+        .unwrap()
+        .unwrap();
 
     let function_id =
         FunctionWithBodyId::Free(extract_matches!(item_id, ModuleItemId::FreeFunction));
@@ -296,5 +300,5 @@ fn test_function_body() {
     );
     let semantic::ExprVar { var, ty: _, stable_ptr: _ } = extract_matches!(expr, crate::Expr::Var);
     let param = extract_matches!(var, VarId::Param);
-    assert_eq!(param.name(db), "a");
+    assert_eq!(param.name(db).long(db), "a");
 }

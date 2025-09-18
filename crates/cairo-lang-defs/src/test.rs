@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, init_files_group};
-use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -109,7 +109,7 @@ fn test_generic_item_id(
 }
 
 pub fn get_crate_id<'db>(db: &'db dyn Database) -> CrateId<'db> {
-    CrateId::plain(db, "test")
+    CrateId::plain(db, SmolStrId::from(db, "test"))
 }
 
 pub fn setup_test_module(db: &mut dyn Database, content: &str) {
@@ -140,7 +140,7 @@ fn test_module_file() {
         module_id.module_data(db).ok().unwrap().items(db)[0],
         ModuleItemId::Submodule
     );
-    assert_eq!(item_id.name(db), "mysubmodule");
+    assert_eq!(item_id.name(db).long(db), "mysubmodule");
 
     let submodule_id = ModuleId::Submodule(item_id);
     assert_eq!(
@@ -215,7 +215,7 @@ impl MacroPlugin for DummyPlugin {
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "virt".into(),
-                        content: format!("fn f(x:{}){{}}", struct_ast.name(db).text(db)),
+                        content: format!("fn f(x:{}){{}}", struct_ast.name(db).text(db).long(db)),
                         code_mappings: Default::default(),
                         aux_data: None,
                         diagnostics_note: Default::default(),
@@ -244,8 +244,8 @@ impl MacroPlugin for DummyPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec!["remove_original".to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, "remove_original")]
     }
 }
 
@@ -321,8 +321,8 @@ impl MacroPlugin for RemoveOrigPlugin {
         PluginResult { code: None, diagnostics: vec![], remove_original_item: true }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec!["remove_orig".to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, "remove_orig")]
     }
 }
 
@@ -341,7 +341,7 @@ impl MacroPlugin for FooToBarPlugin {
         else {
             return PluginResult::default();
         };
-        if free_function_ast.declaration(db).name(db).text(db) != "foo" {
+        if free_function_ast.declaration(db).name(db).text(db).long(db) != "foo" {
             return PluginResult::default();
         }
         if !free_function_ast.has_attr(db, "foo_to_bar") {
@@ -362,8 +362,8 @@ impl MacroPlugin for FooToBarPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
-        vec!["foo_to_bar".to_string()]
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, "foo_to_bar")]
     }
 }
 

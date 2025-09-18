@@ -142,7 +142,7 @@ pub fn get_inline_config<'db>(
     let mut config = InlineConfiguration::None;
     let mut seen_inline_attr = false;
     for attr in attributes {
-        if attr.id != INLINE_ATTR {
+        if attr.id.long(db) != INLINE_ATTR {
             continue;
         }
 
@@ -192,12 +192,13 @@ pub fn get_inline_config<'db>(
 /// If there is no implicit precedence influencing attribute, then this function returns
 /// [ImplicitPrecedence::UNSPECIFIED].
 pub fn get_implicit_precedence<'a, 'r>(
-    syntax_db: &'a dyn Database,
+    db: &'a dyn Database,
     diagnostics: &mut SemanticDiagnostics<'a>,
     resolver: &mut Resolver<'a>,
     attributes: &'r [Attribute<'a>],
 ) -> (ImplicitPrecedence<'a>, Option<&'r Attribute<'a>>) {
-    let mut attributes = attributes.iter().rev().filter(|attr| attr.id == IMPLICIT_PRECEDENCE_ATTR);
+    let mut attributes =
+        attributes.iter().rev().filter(|attr| attr.id.long(db) == IMPLICIT_PRECEDENCE_ATTR);
 
     // Pick the last attribute if any.
     let Some(attr) = attributes.next() else { return (ImplicitPrecedence::UNSPECIFIED, None) };
@@ -217,7 +218,7 @@ pub fn get_implicit_precedence<'a, 'r>(
                 AttributeArgVariant::Unnamed(value) => {
                     let ast::Expr::Path(path) = value else {
                         return Err(diagnostics.report(
-                            value.stable_ptr(syntax_db),
+                            value.stable_ptr(db),
                             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
                         ));
                     };
@@ -228,7 +229,7 @@ pub fn get_implicit_precedence<'a, 'r>(
                             try_extract_matches!(resolved_item, ResolvedConcreteItem::Type)
                                 .ok_or_else(|| {
                                     diagnostics.report(
-                                        value.stable_ptr(syntax_db),
+                                        value.stable_ptr(db),
                                         SemanticDiagnosticKind::UnknownType,
                                     )
                                 })
@@ -236,7 +237,7 @@ pub fn get_implicit_precedence<'a, 'r>(
                 }
 
                 _ => Err(diagnostics.report(
-                    arg.arg.stable_ptr(syntax_db),
+                    arg.arg.stable_ptr(db),
                     SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
                 )),
             })

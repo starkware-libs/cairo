@@ -425,7 +425,7 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
                     f,
                     "Generated `{}::{}` for {{closure@{:?}}}",
                     trait_id.full_path(db),
-                    trait_func.name(db),
+                    trait_func.name(db).long(db),
                     loc.debug(db),
                 )
             }

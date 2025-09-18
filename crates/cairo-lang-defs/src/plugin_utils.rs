@@ -70,7 +70,7 @@ pub fn unsupported_bracket_diagnostic<'db, CallAst: InlineMacroCall<'db>>(
         legacy_macro_ast.arguments(db).left_bracket_syntax_node(db),
         format!(
             "Macro `{}` does not support this bracket type.",
-            legacy_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db)
+            legacy_macro_ast.path(db).as_syntax_node().get_text_without_trivia(db).long(db)
         ),
     ))
 }
@@ -118,7 +118,12 @@ pub fn try_extract_unnamed_arg<'db>(
 
 /// Escapes a node for use in a format string.
 pub fn escape_node(db: &dyn Database, node: SyntaxNode<'_>) -> String {
-    node.get_text_without_trivia(db).replace('{', "{{").replace('}', "}}").escape_unicode().join("")
+    node.get_text_without_trivia(db)
+        .long(db)
+        .replace('{', "{{")
+        .replace('}', "}}")
+        .escape_unicode()
+        .join("")
 }
 
 /// Macro to extract unnamed arguments of an inline macro.
@@ -160,7 +165,8 @@ macro_rules! extract_macro_unnamed_args {
                         "Macro `{}` must have exactly {} unnamed arguments.",
                         $crate::plugin_utils::InlineMacroCall::path($syntax, $db)
                             .as_syntax_node()
-                            .get_text_without_trivia($db),
+                            .get_text_without_trivia($db)
+                            .long($db),
                         $n
                     ),
                 ),

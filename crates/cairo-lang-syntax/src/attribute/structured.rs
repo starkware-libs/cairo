@@ -1,7 +1,7 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::SmolStrId;
 use salsa::Database;
 
 use crate::node::{Terminal, TypedSyntaxNode, ast};
@@ -10,7 +10,7 @@ use crate::node::{Terminal, TypedSyntaxNode, ast};
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct Attribute<'a> {
     pub stable_ptr: ast::AttributePtr<'a>,
-    pub id: StrRef<'a>,
+    pub id: SmolStrId<'a>,
     pub id_stable_ptr: ast::ExprPathPtr<'a>,
     pub args: Vec<AttributeArg<'a>>,
     pub args_stable_ptr: ast::OptionArgListParenthesizedPtr<'a>,
@@ -21,7 +21,7 @@ impl<'a> Attribute<'a> {
         match &self.args[..] {
             [arg] => match &arg.variant {
                 AttributeArgVariant::Unnamed(value) => {
-                    value.as_syntax_node().get_text_without_trivia(db) == arg_name
+                    value.as_syntax_node().get_text_without_trivia(db).long(db) == arg_name
                 }
                 _ => false,
             },
@@ -53,27 +53,27 @@ pub enum AttributeArgVariant<'a> {
 /// The data on a name part of an argument.
 pub struct NameInfo<'a> {
     /// The name of the argument.
-    pub text: StrRef<'a>,
+    pub text: SmolStrId<'a>,
     /// The stable pointer to the name.
     pub stable_ptr: ast::TerminalIdentifierPtr<'a>,
 }
 impl<'a> NameInfo<'a> {
     fn from_ast(name: &ast::TerminalIdentifier<'a>, db: &'a dyn Database) -> Self {
-        NameInfo { text: name.text(db).into(), stable_ptr: name.stable_ptr(db) }
+        NameInfo { text: name.text(db), stable_ptr: name.stable_ptr(db) }
     }
 }
 
 /// Easier to digest representation of a [`ast::Modifier`] attached to [`AttributeArg`].
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct Modifier<'a> {
-    pub text: StrRef<'a>,
+    pub text: SmolStrId<'a>,
     pub stable_ptr: ast::ModifierPtr<'a>,
 }
 
 impl<'a> DebugWithDb<'a> for Attribute<'a> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'a dyn Database) -> fmt::Result {
-        write!(f, r#"Attribute {{ id: "{}""#, self.id)?;
+        write!(f, r#"Attribute {{ id: "{}""#, self.id.long(db))?;
         if !self.args.is_empty() {
             write!(f, ", args: [")?;
             for arg in &self.args {
@@ -97,7 +97,7 @@ impl<'a> AttributeStructurize<'a> for ast::Attribute<'a> {
 
         Attribute {
             stable_ptr: self.stable_ptr(db),
-            id: attr_id.as_syntax_node().get_text_without_trivia(db).into(),
+            id: attr_id.as_syntax_node().get_text_without_trivia(db),
             id_stable_ptr: attr_id.stable_ptr(db),
             args: match attr_args {
                 ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {
@@ -149,13 +149,17 @@ impl<'a> AttributeArg<'a> {
     pub fn text(&self, db: &dyn Database) -> String {
         match &self.variant {
             AttributeArgVariant::Unnamed(value) => {
-                value.as_syntax_node().get_text_without_trivia(db).to_string()
+                value.as_syntax_node().get_text_without_trivia(db).to_string(db)
             }
             AttributeArgVariant::Named { value, name } => {
-                format!("{}: {}", name.text, value.as_syntax_node().get_text_without_trivia(db))
+                format!(
+                    "{}: {}",
+                    name.text.long(db),
+                    value.as_syntax_node().get_text_without_trivia(db).long(db)
+                )
             }
             AttributeArgVariant::FieldInitShorthand(name) => {
-                format!(":{}", name.text)
+                format!(":{}", name.text.long(db))
             }
         }
     }
@@ -166,7 +170,10 @@ impl<'a> Modifier<'a> {
     fn from(modifier: ast::Modifier<'a>, db: &'a dyn Database) -> Modifier<'a> {
         Modifier {
             stable_ptr: modifier.stable_ptr(db),
-            text: modifier.as_syntax_node().get_text(db).into(),
+            text: modifier
+                .as_syntax_node()
+                .text(db)
+                .expect("Modifier should always have underlying text"),
         }
     }
 }

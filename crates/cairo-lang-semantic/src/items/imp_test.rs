@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_test_utils::test;
 use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
@@ -30,14 +31,16 @@ fn test_impl() {
     assert!(diagnostics.is_empty());
 
     let impl_def_id = extract_matches!(
-        db.module_item_by_name(test_module.module_id, "Contract".into()).unwrap().unwrap(),
+        db.module_item_by_name(test_module.module_id, SmolStrId::from(db, "Contract"))
+            .unwrap()
+            .unwrap(),
         ModuleItemId::Impl
     );
 
     assert_eq!(format!("{:?}", db.impl_def_generic_params(impl_def_id).unwrap()), "[]");
 
     let impl_functions = db.impl_functions(impl_def_id).unwrap();
-    let impl_function_id = impl_functions.get("foo").unwrap();
+    let impl_function_id = impl_functions.get(&SmolStrId::from(db, "foo")).unwrap();
     let signature = db.impl_function_signature(*impl_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),

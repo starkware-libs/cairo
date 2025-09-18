@@ -5,6 +5,7 @@
 //! destructor calls.
 
 use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteFunction;
 use cairo_lang_semantic::corelib::{
@@ -279,7 +280,7 @@ impl<'db> Analyzer<'db, '_> for DestructAdder<'db, '_> {
 }
 
 fn panic_ty<'db>(db: &'db dyn Database) -> semantic::TypeId<'db> {
-    get_ty_by_name(db, core_module(db), "Panic", vec![])
+    get_ty_by_name(db, core_module(db), SmolStrId::from(db, "Panic"), vec![])
 }
 
 /// Inserts destructor calls into the lowered function.

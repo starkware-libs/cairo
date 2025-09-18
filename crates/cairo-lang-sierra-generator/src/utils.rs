@@ -367,7 +367,7 @@ pub fn generic_libfunc_id(
     generic_args: Vec<GenericArg>,
 ) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
-        generic_id: GenericLibfuncId::from_string(extern_id.name(db)),
+        generic_id: GenericLibfuncId::from_string(extern_id.name(db).long(db).clone()),
         generic_args,
     })
 }

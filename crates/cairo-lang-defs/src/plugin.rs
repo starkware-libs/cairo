@@ -6,7 +6,7 @@ use std::sync::Arc;
 use cairo_lang_diagnostics::Severity;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
-use cairo_lang_filesystem::ids::CodeMapping;
+use cairo_lang_filesystem::ids::{CodeMapping, SmolStrId};
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, ast};
@@ -145,9 +145,9 @@ pub struct MacroPluginMetadata<'a> {
     /// Config set of the crate to which the current item belongs.
     pub cfg_set: &'a CfgSet,
     /// The possible derives declared by any plugin.
-    pub declared_derives: &'a OrderedHashSet<String>,
+    pub declared_derives: &'a OrderedHashSet<SmolStrId<'a>>,
     /// The allowed features at the macro activation site.
-    pub allowed_features: &'a OrderedHashSet<&'a str>,
+    pub allowed_features: &'a OrderedHashSet<SmolStrId<'a>>,
     /// The edition of the crate to which the current item belongs.
     pub edition: Edition,
 }
@@ -169,14 +169,14 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// for unknown attribute.
     /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
     /// plugin writers should not rely on that.
-    fn declared_attributes(&self) -> Vec<String>;
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>>;
 
     /// Derives this plugin supplies.
     /// Any derived classes the plugin supplies without declaring here are likely to cause a
     /// compilation error for unknown derive.
     /// Note: They may not cause a diagnostic if some other plugin declares such derive, but
     /// plugin writers should not rely on that.
-    fn declared_derives(&self) -> Vec<String> {
+    fn declared_derives<'db>(&self, _db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         Vec::new()
     }
 
@@ -185,14 +185,14 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// in a dedicated field in the generated program.
     /// Must return a subset of `declared_attributes`.
     /// This mechanism is optional.
-    fn executable_attributes(&self) -> Vec<String> {
+    fn executable_attributes<'db>(&self, _db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         Vec::new()
     }
 
     /// Attributes that mark a type as a phantom type. Must return a subset of
     /// `declared_attributes`.
     /// This mechanism is optional.
-    fn phantom_type_attributes(&self) -> Vec<String> {
+    fn phantom_type_attributes<'db>(&self, _db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         Vec::new()
     }
 

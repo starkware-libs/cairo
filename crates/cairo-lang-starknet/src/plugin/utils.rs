@@ -73,7 +73,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
             return false;
         };
 
-        arg_segment.identifier(db) == identifier
+        arg_segment.identifier(db).long(db) == identifier
     }
 
     fn is_name_with_arg(&self, db: &dyn Database, name: &str, generic_arg: &str) -> bool {
@@ -85,7 +85,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
             return false;
         };
 
-        if path_segment_with_generics.identifier(db) != name {
+        if path_segment_with_generics.identifier(db).long(db) != name {
             return false;
         }
         let generic_args = path_segment_with_generics.generic_args(db).generic_args(db);
@@ -246,7 +246,7 @@ pub fn has_derive<'db, T: QueryAttrs<'db>>(
             else {
                 continue;
             };
-            if path.as_syntax_node().get_text_without_trivia(db) == derived_type {
+            if path.as_syntax_node().get_text_without_trivia(db).long(db) == derived_type {
                 return Some(arg);
             }
         }

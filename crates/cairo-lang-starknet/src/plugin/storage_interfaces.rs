@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_defs::plugin_utils::extract_single_unnamed_arg;
-use cairo_lang_filesystem::ids::CodeMapping;
+use cairo_lang_filesystem::ids::{CodeMapping, SmolStrId};
 use cairo_lang_plugins::plugins::utils::GenericParamsInfo;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -158,16 +158,16 @@ impl MacroPlugin for StorageInterfacesPlugin {
         }
     }
 
-    fn declared_attributes(&self) -> Vec<String> {
+    fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         vec![
-            STORAGE_NODE_ATTR.to_string(),
-            STORAGE_SUB_POINTERS_ATTR.to_string(),
-            RENAME_ATTR.to_string(),
+            SmolStrId::from(db, STORAGE_NODE_ATTR),
+            SmolStrId::from(db, STORAGE_SUB_POINTERS_ATTR),
+            SmolStrId::from(db, RENAME_ATTR),
         ]
     }
 
-    fn phantom_type_attributes(&self) -> Vec<String> {
-        vec![STORAGE_NODE_ATTR.to_string()]
+    fn phantom_type_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        vec![SmolStrId::from(db, STORAGE_NODE_ATTR)]
     }
 }
 
@@ -199,7 +199,7 @@ impl<'db> StorageInterfaceInfo<'db> {
             && let OptionArgListParenthesized::ArgListParenthesized(arguments) = attr.arguments(db)
             && let Some(arg) = extract_single_unnamed_arg(db, arguments.arguments(db))
         {
-            let target_name = arg.as_syntax_node().get_text_without_trivia(db).to_string();
+            let target_name = arg.as_syntax_node().get_text_without_trivia(db).to_string(db);
             return Some(Self {
                 db,
                 node_type: StorageInterfaceType::EnumSubPointers { target_name },
@@ -786,7 +786,7 @@ fn add_node_enum_impl<'db>(
         let field_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => "()".to_string(),
             ast::OptionTypeClause::TypeClause(tc) => {
-                tc.ty(db).as_syntax_node().get_text_without_trivia(db).to_string()
+                tc.ty(db).as_syntax_node().get_text_without_trivia(db).to_string(db)
             }
         };
 

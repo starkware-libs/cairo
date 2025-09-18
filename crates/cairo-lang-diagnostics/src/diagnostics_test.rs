@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use cairo_lang_test_utils::test;
@@ -35,8 +35,8 @@ impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
 fn setup<'db>(db: &'db FilesDatabaseForTesting) -> FileId<'db> {
     FileLongId::Virtual(VirtualFile {
         parent: None,
-        name: "dummy_file.sierra".into(),
-        content: "abcd\nefg.\n".into(),
+        name: SmolStrId::from(db, "dummy_file.sierra"),
+        content: SmolStrId::from(db, "abcd\nefg.\n"),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,

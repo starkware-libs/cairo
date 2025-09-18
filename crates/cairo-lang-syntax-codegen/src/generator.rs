@@ -190,6 +190,7 @@ fn generate_ast_code() -> rust::Tokens {
         use std::ops::Deref;
 
         use cairo_lang_filesystem::span::TextWidth;
+        use cairo_lang_filesystem::ids::SmolStrId;
         use cairo_lang_utils::{extract_matches, Intern};
         use salsa::Database;
 
@@ -250,7 +251,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
                 db: &'db dyn Database, children: &[$(&element_green_name)<'db>]
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
-                    id.0.long(db).width()).sum();
+                    id.0.long(db).width(db)).sum();
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
@@ -306,7 +307,7 @@ fn gen_separated_list_code(
                 db: &'db dyn Database, children: &[$(&element_or_separator_green_name)<'db>]
             ) -> $(&green_name)<'db> {
                 let width = children.iter().map(|id|
-                    id.id().long(db).width()).sum();
+                    id.id().long(db).width(db)).sum();
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
                     details: GreenNodeDetails::Node {
@@ -524,14 +525,14 @@ fn gen_token_code(name: String) -> rust::Tokens {
             node: SyntaxNode<'db>,
         }
         impl<'db> Token<'db> for $(&name)<'db> {
-            fn new_green(db: &'db dyn Database, text: &'db str) -> Self::Green {
+            fn new_green(db: &'db dyn Database, text: SmolStrId<'db>) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::$(&name),
-                    details: GreenNodeDetails::Token(text.into()),
+                    details: GreenNodeDetails::Token(text),
                 }.intern(db))
             }
-            fn text(&self, db: &'db dyn Database) -> &'db str {
-                extract_matches!(&self.node.long(db).green.long(db).details,
+            fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
+                *extract_matches!(&self.node.long(db).green.long(db).details,
                     GreenNodeDetails::Token)
             }
         }
@@ -554,8 +555,8 @@ fn gen_token_code(name: String) -> rust::Tokens {
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
         pub struct $(&green_name)<'db>(pub GreenId<'db>);
         impl<'db> $(&green_name)<'db> {
-            pub fn text(&self, db: &'db dyn Database) -> &'db str {
-                extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
+            pub fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
+                *extract_matches!(&self.0.long(db).details, GreenNodeDetails::Token)
             }
         }
         impl<'db> TypedSyntaxNode<'db> for $(&name)<'db>{
@@ -565,7 +566,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             fn missing(db: &'db dyn Database) -> Self::Green {
                 $(&green_name)(GreenNode {
                     kind: SyntaxKind::TokenMissing,
-                    details: GreenNodeDetails::Token("".into()),
+                    details: GreenNodeDetails::Token(SmolStrId::from(db, "")),
                 }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -650,17 +651,17 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 ) -> Self::Green {
                     let children = [$args];
                     let width =
-                        children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+                        children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
                     $(&green_name)(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children: children.into(), width },
                     }.intern(db))
                 }
-                fn text(&self, db: &'db dyn Database) -> &'db str {
+                fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
                     let GreenNodeDetails::Node{children,..} = &self.node.long(db).green.long(db).details else {
                         unreachable!("Expected a node, not a token");
                     };
-                    extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
+                    *extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
                 }
             }
         }
@@ -671,7 +672,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 pub fn new_green(db: &'db dyn Database, $params) -> $(&green_name)<'db> {
                     let children = [$args];
                     let width =
-                        children.into_iter().map(|id: GreenId<'_>| id.long(db).width()).sum();
+                        children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
                     $(&green_name)(GreenNode {
                         kind: SyntaxKind::$(&name),
                         details: GreenNodeDetails::Node { children: children.into(), width },

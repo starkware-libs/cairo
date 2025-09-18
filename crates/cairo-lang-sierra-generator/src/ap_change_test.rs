@@ -39,7 +39,7 @@ fn contains_cycles_test(
                 ConcreteFunctionWithBodyId::from_no_generics_free(db, *free_function_id).unwrap();
             format!(
                 "{}: ap_change={:?}, has_cycles={:?}",
-                free_function_id.name(db),
+                free_function_id.name(db).long(db),
                 db.get_ap_change(function_id),
                 db.final_contains_call_cycle(function_id),
             )

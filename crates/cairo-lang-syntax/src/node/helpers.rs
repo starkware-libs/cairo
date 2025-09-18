@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::SmolStrId;
 use salsa::Database;
 
 use super::ast::{
@@ -21,7 +22,7 @@ use crate::node::green::GreenNodeDetails;
 mod test;
 
 pub trait GetIdentifier<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> &'a str;
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a>;
 }
 impl<'a> ast::UsePathLeafPtr<'a> {
     pub fn name_green(&self, _syntax_db: &dyn Database) -> Self {
@@ -29,7 +30,7 @@ impl<'a> ast::UsePathLeafPtr<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::UsePathLeafPtr<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let alias_clause_green = self.alias_clause_green(db).0;
         let green_node = alias_clause_green.long(db);
         let children = match &green_node.details {
@@ -42,7 +43,7 @@ impl<'a> GetIdentifier<'a> for ast::UsePathLeafPtr<'a> {
         }
         let ident_green = self.ident_green(db);
         let ident = ident_green.identifier(db);
-        if ident != "self" {
+        if ident.long(db) != "self" {
             return ident;
         }
         let mut node = self.0.lookup(db);
@@ -60,7 +61,7 @@ impl<'a> GetIdentifier<'a> for ast::UsePathLeafPtr<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegmentGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -72,7 +73,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentGreen<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::ExprPathGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -85,7 +86,7 @@ impl<'a> GetIdentifier<'a> for ast::ExprPathGreen<'a> {
 
 impl<'a> GetIdentifier<'a> for ast::ExprPathInnerGreen<'a> {
     /// Retrieves the text of the last identifier in the path.
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let green_node = self.0.long(db);
         let children = match &green_node.details {
             GreenNodeDetails::Node { children, width: _ } => children,
@@ -97,9 +98,9 @@ impl<'a> GetIdentifier<'a> for ast::ExprPathInnerGreen<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::TerminalIdentifierGreen<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         match &self.0.long(db).details {
-            GreenNodeDetails::Token(_) => "Unexpected token",
+            GreenNodeDetails::Token(_) => panic!("Unexpected token"),
             GreenNodeDetails::Node { children, width: _ } => {
                 TokenIdentifierGreen(children[1]).text(db)
             }
@@ -108,7 +109,7 @@ impl<'a> GetIdentifier<'a> for ast::TerminalIdentifierGreen<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::ExprPath<'a> {
     /// Retrieves the identifier of the last segment of the path.
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         self.segments(db).elements(db).next_back().unwrap().identifier(db)
     }
 }
@@ -138,7 +139,7 @@ impl<'a> PathSegmentEx<'a> for ast::PathSegment<'a> {
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegment<'a> {
     /// Retrieves the text of the segment (without the generic args).
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         match self {
             ast::PathSegment::Simple(segment) => segment.identifier(db),
             ast::PathSegment::WithGenericArgs(segment) => segment.identifier(db),
@@ -147,7 +148,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegment<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegmentSimple<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -156,7 +157,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentSimple<'a> {
     }
 }
 impl<'a> GetIdentifier<'a> for ast::PathSegmentWithGenericArgs<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -166,7 +167,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentWithGenericArgs<'a> {
 }
 
 impl<'a> GetIdentifier<'a> for ast::PathSegmentMissing<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         let green_node = self.as_syntax_node().green_node(db);
         let GreenNodeDetails::Node { children, .. } = &green_node.details else {
             panic!("Unexpected token");
@@ -176,7 +177,7 @@ impl<'a> GetIdentifier<'a> for ast::PathSegmentMissing<'a> {
 }
 
 impl<'a> GetIdentifier<'a> for ast::Modifier<'a> {
-    fn identifier(&self, db: &'a dyn Database) -> &'a str {
+    fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
         match self {
             Modifier::Ref(r) => r.text(db),
             Modifier::Mut(m) => m.text(db),
@@ -268,7 +269,7 @@ pub fn is_single_arg_attr(db: &dyn Database, attr: &Attribute<'_>, arg_name: &st
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
             matches!(&args.arguments(db).elements_vec(db)[..],
-                    [arg] if arg.as_syntax_node().get_text_without_trivia(db) == arg_name)
+                    [arg] if arg.as_syntax_node().get_text_without_trivia(db).long(db) == arg_name)
         }
         OptionArgListParenthesized::Empty(_) => false,
     }
@@ -294,8 +295,9 @@ pub trait QueryAttrs<'a> {
         db: &'a dyn Database,
         attr: &'a str,
     ) -> impl Iterator<Item = Attribute<'a>> {
-        self.attributes_elements(db)
-            .filter(move |a| a.attr(db).as_syntax_node().get_text_without_trivia(db) == attr)
+        self.attributes_elements(db).filter(move |a| {
+            a.attr(db).as_syntax_node().get_text_without_trivia(db).long(db) == attr
+        })
     }
 
     /// Find first attribute named exactly `attr` attached do this node.
@@ -724,16 +726,16 @@ impl<'a> UsePathLeaf<'a> {
 }
 
 /// Helper trait for check syntactically if a type is dependent on a given identifier.
-pub trait IsDependentType {
+pub trait IsDependentType<'db> {
     /// Returns true if `self` is dependent on `identifier` in an internal type.
     /// For example given identifier `T` will return true for:
     /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`.
     /// Does not resolve paths, type aliases or named generics.
-    fn is_dependent_type(&self, db: &dyn Database, identifiers: &[&str]) -> bool;
+    fn is_dependent_type(&self, db: &'db dyn Database, identifiers: &[SmolStrId<'db>]) -> bool;
 }
 
-impl<'a> IsDependentType for ast::ExprPath<'a> {
-    fn is_dependent_type(&self, db: &dyn Database, identifiers: &[&str]) -> bool {
+impl<'a> IsDependentType<'a> for ast::ExprPath<'a> {
+    fn is_dependent_type(&self, db: &'a dyn Database, identifiers: &[SmolStrId<'a>]) -> bool {
         let segments = self.segments(db).elements_vec(db);
         if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
             identifiers.contains(&arg_segment.identifier(db))
@@ -759,8 +761,8 @@ impl<'a> IsDependentType for ast::ExprPath<'a> {
     }
 }
 
-impl<'a> IsDependentType for ast::Expr<'a> {
-    fn is_dependent_type(&self, db: &dyn Database, identifiers: &[&str]) -> bool {
+impl<'a> IsDependentType<'a> for ast::Expr<'a> {
+    fn is_dependent_type(&self, db: &dyn Database, identifiers: &[SmolStrId<'a>]) -> bool {
         match self {
             ast::Expr::Path(type_path) => type_path.is_dependent_type(db, identifiers),
             ast::Expr::Unary(unary) => unary.expr(db).is_dependent_type(db, identifiers),

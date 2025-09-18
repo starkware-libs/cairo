@@ -59,7 +59,7 @@ pub fn as_expr_macro_token_tree<'a>(
 
     let span = TextSpan::new(first_token.offset(db), last_token.span(db).end);
 
-    let mut parser = Parser::new(db, file_id, span.take(file_content.long(db)), &mut diagnostics);
+    let mut parser = Parser::new(db, file_id, span.take(file_content), &mut diagnostics);
     let expr_green = parser.parse_expr();
     let expr = ast::Expr::from_syntax_node(
         db,

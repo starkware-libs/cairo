@@ -390,7 +390,7 @@ impl<'db> DebugWithDb<'db> for ExprVarMemberPath<'db> {
         match self {
             ExprVarMemberPath::Var(var) => var.fmt(f, db),
             ExprVarMemberPath::Member { parent, member_id, .. } => {
-                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db))
+                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db).long(db))
             }
         }
     }

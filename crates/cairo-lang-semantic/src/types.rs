@@ -155,21 +155,21 @@ impl<'db> TypeLongId<'db> {
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
-                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
                 }
                 ConcreteTypeId::Enum(id) => {
                     let crate_id = id.enum_id(db).long(db).0.0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
-                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
                 }
                 ConcreteTypeId::Extern(id) => {
                     let crate_id = id.extern_type_id(db).long(db).0.0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
-                        .any(|attr| id.has_attr(db, attr).unwrap_or_default())
+                        .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
                 }
             },
             TypeLongId::Tuple(inner) => inner.iter().any(|ty| ty.is_phantom(db)),
@@ -232,10 +232,15 @@ impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
             }
             TypeLongId::Snapshot(ty) => write!(f, "@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
-                write!(f, "{}", generic_param.name(db).unwrap_or("_"))
+                write!(f, "{}", generic_param.name(db).map_or("_", |name| name.long(db)))
             }
             TypeLongId::ImplType(impl_type_id) => {
-                write!(f, "{:?}::{}", impl_type_id.impl_id.debug(db), impl_type_id.ty.name(db))
+                write!(
+                    f,
+                    "{:?}::{}",
+                    impl_type_id.impl_id.debug(db),
+                    impl_type_id.ty.name(db).long(db)
+                )
             }
             TypeLongId::Var(var) => write!(f, "?{}", var.id.0),
             TypeLongId::Coupon(function_id) => write!(f, "{}::Coupon", function_id.full_path(db)),
@@ -440,7 +445,7 @@ impl<'db> ImplTypeId<'db> {
         self.ty
     }
     pub fn format(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_id.name(db), self.ty.name(db))
+        format!("{}::{}", self.impl_id.name(db), self.ty.name(db).long(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplTypeId<'db> {
@@ -829,7 +834,7 @@ pub fn add_type_based_diagnostics<'db>(
     }
     if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.long(db) {
         let long_id = extrn.long(db);
-        if long_id.extern_type_id.name(db) == "Array"
+        if long_id.extern_type_id.name(db).long(db) == "Array"
             && let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..]
             && db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized)
         {

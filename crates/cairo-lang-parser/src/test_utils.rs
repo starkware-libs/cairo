@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::vec::IntoIter;
 
-use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_primitive_token::{PrimitiveSpan, PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::SyntaxNode;
@@ -36,8 +36,8 @@ pub fn create_virtual_file<'a>(
 ) -> FileId<'a> {
     FileLongId::Virtual(VirtualFile {
         parent: None,
-        name: file_name.into(),
-        content: content.into(),
+        name: SmolStrId::from(db, file_name.into()),
+        content: SmolStrId::from(db, content),
         code_mappings: [].into(),
         kind: FileKind::Module,
         original_item_removed: false,

@@ -2,6 +2,7 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
@@ -74,7 +75,9 @@ pub fn specialized_function_lowered<'db>(
     let base_semantic = specialized.base.base_semantic_function(db);
 
     let array_new_fn = GenericFunctionId::Extern(
-        ModuleHelper::core(db).submodule("array").extern_function_id("array_new"),
+        ModuleHelper::core(db)
+            .submodule("array")
+            .extern_function_id(SmolStrId::from(db, "array_new")),
     );
 
     let mut variables =

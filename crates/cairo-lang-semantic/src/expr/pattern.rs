@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::DiagnosticAdded;
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -156,7 +156,7 @@ pub struct PatternStringLiteral<'db> {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct PatternVariable<'db> {
     #[dont_rewrite]
-    pub name: StrRef<'db>,
+    pub name: SmolStrId<'db>,
     pub var: LocalVariable<'db>,
     #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr<'db>,
@@ -164,12 +164,8 @@ pub struct PatternVariable<'db> {
 impl<'db> DebugWithDb<'db> for PatternVariable<'db> {
     type Db = ExprFormatter<'db>;
 
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        _db: &'db ExprFormatter<'_>,
-    ) -> std::fmt::Result {
-        write!(f, "{}", self.name)
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db ExprFormatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name.long(db.db))
     }
 }
 

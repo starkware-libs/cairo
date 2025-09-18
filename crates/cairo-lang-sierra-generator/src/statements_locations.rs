@@ -53,8 +53,8 @@ pub fn maybe_containing_function_identifier_for_tests(
     location: StableLocation<'_>,
 ) -> Option<String> {
     let file_id = location.file_id(db);
-    let absolute_semantic_path_to_file_module =
-        file_module_absolute_identifier(db, file_id).unwrap_or_else(|| file_id.file_name(db));
+    let absolute_semantic_path_to_file_module = file_module_absolute_identifier(db, file_id)
+        .unwrap_or_else(|| file_id.file_name(db).to_string(db));
 
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
     if relative_semantic_path.is_empty() {
@@ -95,21 +95,21 @@ pub fn function_identifier_relative_to_file_module(
                     statement_located_in_function = true;
                 }
 
-                relative_semantic_path_segments.push(function_name.to_string());
+                relative_semantic_path_segments.push(function_name.to_string(db));
             }
             cairo_lang_syntax::node::kind::SyntaxKind::ItemImpl => {
                 let impl_name =
                     cairo_lang_syntax::node::ast::ItemImpl::from_syntax_node(db, syntax_node)
                         .name(db)
                         .text(db);
-                relative_semantic_path_segments.push(impl_name.to_string());
+                relative_semantic_path_segments.push(impl_name.to_string(db));
             }
             cairo_lang_syntax::node::kind::SyntaxKind::ItemModule => {
                 let module_name =
                     cairo_lang_syntax::node::ast::ItemModule::from_syntax_node(db, syntax_node)
                         .name(db)
                         .text(db);
-                relative_semantic_path_segments.push(module_name.to_string());
+                relative_semantic_path_segments.push(module_name.to_string(db));
             }
             _ => {}
         }
@@ -126,7 +126,7 @@ pub fn function_identifier_relative_to_file_module(
     if !statement_located_in_function
         && matches!(file_id.long(db), FileLongId::Virtual(VirtualFile { parent: Some(_), .. }))
     {
-        relative_semantic_path_segments.insert(0, file_id.file_name(db));
+        relative_semantic_path_segments.insert(0, file_id.file_name(db).to_string(db));
     }
 
     relative_semantic_path_segments.into_iter().rev().join("::")
