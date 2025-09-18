@@ -965,7 +965,9 @@ impl<'a> ConstFoldingContext<'a> {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
             if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id) {
                 if let VarInfo::Array(infos) = arr_info.as_ref() {
-                    if let Some(Some(output_var_info)) = infos.get(index) {
+                    match infos.get(index) {
+                                    Some(Some(output_var_info)) => {
+
                         let arm = &info.arms[0];
                         let output_var_info = output_var_info.clone();
                         let box_info =
@@ -1008,13 +1010,18 @@ impl<'a> ConstFoldingContext<'a> {
                                 BlockEnd::Goto(arm.block_id, Default::default()),
                             ));
                         }
-                    } else {
+                    }
+                    Some(None) => {
+                        return None;
+                    }
+                    None => {
                         return Some((
                             vec![],
                             BlockEnd::Goto(info.arms[1].block_id, Default::default()),
                         ));
                     }
                 }
+            }
             }
             if index.is_zero() {
                 if let [success, failure] = info.arms.as_mut_slice() {
