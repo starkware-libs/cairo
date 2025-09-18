@@ -25,7 +25,9 @@ use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use context::handle_lowering_flow_error;
 use defs::ids::TopLevelLanguageElementId;
-use flow_control::create_graph::create_graph_expr_while_let;
+use flow_control::create_graph::{
+    create_graph_expr_if, create_graph_expr_match, create_graph_expr_while_let,
+};
 use flow_control::lower_graph::lower_graph;
 use itertools::{Itertools, chain, izip, zip_eq};
 use num_bigint::{BigInt, Sign};
@@ -50,8 +52,6 @@ use self::context::{
 };
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::logical_op::lower_logical_op;
-use self::lower_if::lower_expr_if;
-use self::lower_match::lower_expr_match;
 use crate::blocks::Blocks;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::LoweringDiagnosticsBuilder;
@@ -71,9 +71,7 @@ mod external;
 mod flow_control;
 pub mod generators;
 mod logical_op;
-mod lower_if;
 mod lower_let_else;
-mod lower_match;
 pub mod refs;
 
 #[cfg(test)]
@@ -1202,6 +1200,27 @@ fn lower_expr_desnap<'db>(
     Ok(LoweredExpr::AtVariable(
         generators::Desnap { input, location }.add(ctx, &mut builder.statements),
     ))
+}
+
+/// Lowers an expression of type [semantic::ExprIf].
+fn lower_expr_if<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    builder: &mut BlockBuilder<'db>,
+    expr: &semantic::ExprIf<'db>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
+    let graph = create_graph_expr_if(ctx, expr);
+    lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()))
+}
+
+/// Lowers an expression of type [semantic::ExprMatch].
+fn lower_expr_match<'db>(
+    ctx: &mut LoweringContext<'db, '_>,
+    expr: &semantic::ExprMatch<'db>,
+    builder: &mut BlockBuilder<'db>,
+) -> LoweringResult<'db, LoweredExpr<'db>> {
+    log::trace!("Lowering a match expression: {:?}", expr.debug(&ctx.expr_formatter));
+    let graph = create_graph_expr_match(ctx, expr);
+    lower_graph(ctx, builder, &graph, ctx.get_location(expr.stable_ptr.untyped()))
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
