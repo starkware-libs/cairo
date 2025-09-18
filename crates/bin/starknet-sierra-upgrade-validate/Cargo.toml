@@ -10,8 +10,8 @@ publish = false
 [dependencies]
 anyhow.workspace = true
 async-channel = "2.5.0"
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.12.3" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.3", features = ["serde"] }
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.13.0-dev.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.0-dev.0", features = ["serde"] }
 clap.workspace = true
 indicatif = "0.18.0"
 reqwest = { version = "0.12", features = ["json"] }

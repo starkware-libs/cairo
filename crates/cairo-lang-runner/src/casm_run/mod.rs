@@ -2,7 +2,6 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
 use std::ops::{Shl, Sub};
-use std::rc::Rc;
 use std::vec::IntoIter;
 
 use ark_ff::{BigInteger, PrimeField};
@@ -422,6 +421,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
+        _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().ok_or(HintError::WrongHintData)?;
         let hint = match hint {
@@ -468,7 +468,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         _ap_tracking_data: &ApTracking,
         _reference_ids: &HashMap<String, usize>,
         _references: &[HintReference],
-        _constants: Rc<HashMap<String, Felt252>>,
+        _constants: &[String],
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
@@ -2340,8 +2340,8 @@ pub fn run_function_with_runner(
     additional_initialization(&mut runner.vm)?;
 
     runner.run_until_pc(end, hint_processor).map_err(CairoRunError::from)?;
-    runner.end_run(true, false, hint_processor).map_err(CairoRunError::from)?;
-    runner.relocate(true).map_err(CairoRunError::from)?;
+    runner.end_run(true, false, hint_processor, false).map_err(CairoRunError::from)?;
+    runner.relocate(true, true).map_err(CairoRunError::from)?;
     Ok(())
 }
 

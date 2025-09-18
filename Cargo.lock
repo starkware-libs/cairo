@@ -429,7 +429,7 @@ checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
 
 [[package]]
 name = "cairo-compile"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -442,7 +442,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-execute"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "bincode",
@@ -463,7 +463,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-format"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-utils",
@@ -476,7 +476,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-test-utils",
@@ -531,7 +531,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "bincode",
  "cairo-lang-debug",
@@ -554,7 +554,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-diagnostics"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -569,7 +569,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-doc"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-debug",
@@ -591,7 +591,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -601,7 +601,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-executable"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -624,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-executable-plugin"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-compiler",
  "cairo-lang-defs",
@@ -642,7 +642,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-execute-utils"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -656,7 +656,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-test-utils",
@@ -673,7 +673,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -693,7 +693,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-lowering"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "assert_matches",
  "bincode",
@@ -723,7 +723,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anstream",
  "cairo-lang-diagnostics",
@@ -746,7 +746,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -772,7 +772,7 @@ checksum = "123ac0ecadf31bacae77436d72b88fa9caef2b8e92c89ce63a125ae911a12fae"
 
 [[package]]
 name = "cairo-lang-proc-macros"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
@@ -784,7 +784,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
@@ -797,7 +797,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runnable-utils"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -813,7 +813,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "ark-ff",
  "ark-secp256k1",
@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -876,7 +876,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "bimap",
@@ -907,7 +907,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -922,7 +922,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -941,7 +941,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -969,7 +969,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
@@ -992,7 +992,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-type-size"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-utils",
@@ -1000,7 +1000,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1035,7 +1035,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet-classes"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-casm",
  "cairo-lang-sierra",
@@ -1063,7 +1063,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -1082,7 +1082,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -1093,7 +1093,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-plugin"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1120,7 +1120,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1143,7 +1143,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-formatter",
  "cairo-lang-proc-macros",
@@ -1156,7 +1156,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-test-utils",
  "hashbrown 0.16.0",
@@ -1178,7 +1178,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-run"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1192,7 +1192,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-size-profiler"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1216,7 +1216,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-test"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -1227,9 +1227,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "2.5.0"
+version = "3.0.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c21cacdf4e290ab5f0018f24d6bf97f8d3a8809bd09568550669270e7f9ed534"
+checksum = "c96021ea68138094428e3d8dab21a504b23adc084363c89caaa7f6bda51dc251"
 dependencies = [
  "anyhow",
  "bincode",
@@ -1237,7 +1237,6 @@ dependencies = [
  "clap",
  "generic-array",
  "hashbrown 0.15.5",
- "hex",
  "indoc",
  "keccak",
  "lazy_static",
@@ -1828,7 +1827,7 @@ dependencies = [
 
 [[package]]
 name = "generate-syntax"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "cairo-lang-syntax-codegen",
  "cairo-lang-utils",
@@ -1848,7 +1847,7 @@ dependencies = [
 
 [[package]]
 name = "get-lowering"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -3604,7 +3603,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "sierra-compile"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -3690,7 +3689,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starknet-compile"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -3729,7 +3728,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-compile"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-sierra",
@@ -3742,7 +3741,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-extract-code"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "cairo-lang-starknet-classes",
@@ -3752,7 +3751,7 @@ dependencies = [
 
 [[package]]
 name = "starknet-sierra-upgrade-validate"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -3935,7 +3934,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "2.12.3"
+version = "2.13.0-dev.0"
 dependencies = [
  "assert_matches",
  "cairo-lang-casm",
