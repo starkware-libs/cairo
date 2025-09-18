@@ -7,7 +7,7 @@ use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, VirtualFile, db_str,
+    ArcStrId, CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, Span, VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -24,7 +24,6 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 
 use crate::db::{
     DefsGroup, ModuleData, ModuleDataCacheAndLoadingData, ModuleFilesData, ModuleNamedItemsData,
@@ -263,6 +262,7 @@ pub struct DefCacheLoadingData<'db> {
     global_use_ids: OrderedHashMap<GlobalUseIdCached, GlobalUseId<'db>>,
 
     file_ids: OrderedHashMap<FileIdCached, FileId<'db>>,
+    arc_str_ids: OrderedHashMap<ArcStrIdCached, ArcStrId<'db>>,
     self_crate_id: CrateId<'db>,
     lookups: DefCacheLookups,
 }
@@ -290,6 +290,7 @@ impl<'db> DefCacheLoadingData<'db> {
             global_use_ids: OrderedHashMap::default(),
 
             file_ids: OrderedHashMap::default(),
+            arc_str_ids: OrderedHashMap::default(),
             self_crate_id,
             lookups,
         }
@@ -362,6 +363,7 @@ pub struct DefCacheSavingData<'db> {
 
     syntax_stable_ptr_ids: OrderedHashMap<SyntaxStablePtrId<'db>, SyntaxStablePtrIdCached>,
     file_ids: OrderedHashMap<FileId<'db>, FileIdCached>,
+    arc_str_ids: OrderedHashMap<ArcStrId<'db>, ArcStrIdCached>,
 
     pub lookups: DefCacheLookups,
 }
@@ -666,6 +668,7 @@ pub struct DefCacheLookups {
     macro_call_ids_lookup: Vec<MacroCallCached>,
 
     file_ids_lookup: Vec<FileCached>,
+    arc_str_ids_lookup: Vec<ArcStrCached>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -1714,7 +1717,7 @@ impl SyntaxStablePtrIdCached {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum GreenNodeDetailsCached {
-    Token(SmolStr),
+    Token(SpanCached),
     Node { children: Vec<GreenIdCached>, width: TextWidth },
 }
 
@@ -1724,7 +1727,9 @@ impl GreenNodeDetailsCached {
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> GreenNodeDetailsCached {
         match green_node_details {
-            GreenNodeDetails::Token(token) => GreenNodeDetailsCached::Token((**token).into()),
+            GreenNodeDetails::Token(token) => {
+                GreenNodeDetailsCached::Token(SpanCached::new(*token, ctx))
+            }
             GreenNodeDetails::Node { children, width } => GreenNodeDetailsCached::Node {
                 children: children.iter().map(|child| GreenIdCached::new(*child, ctx)).collect(),
                 width: *width,
@@ -1733,9 +1738,7 @@ impl GreenNodeDetailsCached {
     }
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> GreenNodeDetails<'db> {
         match self {
-            GreenNodeDetailsCached::Token(token) => {
-                GreenNodeDetails::Token(db_str(ctx.db, token.clone()).into())
-            }
+            GreenNodeDetailsCached::Token(token) => GreenNodeDetails::Token(token.embed(ctx)),
             GreenNodeDetailsCached::Node { children, width } => GreenNodeDetails::Node {
                 children: children.iter().map(|child| child.embed(ctx)).collect(),
                 width: *width,
@@ -1842,6 +1845,54 @@ impl FileIdCached {
     }
     fn get_embedded<'db>(&self, data: &Arc<DefCacheLoadingData<'db>>) -> FileId<'db> {
         data.file_ids[self]
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
+struct ArcStrCached {
+    str: Arc<str>,
+}
+impl ArcStrCached {
+    fn new<'db>(id: ArcStrId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+        Self { str: id.long(ctx.db).clone() }
+    }
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ArcStrId<'db> {
+        ArcStrId::new(ctx.db, self.str)
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Copy, salsa::Update)]
+struct ArcStrIdCached(usize);
+impl ArcStrIdCached {
+    fn new<'db>(id: ArcStrId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+        if let Some(cached_id) = ctx.arc_str_ids.get(&id) {
+            return *cached_id;
+        }
+        let cached = ArcStrCached::new(id, ctx);
+        let cached_id = ArcStrIdCached(ctx.arc_str_ids_lookup.len());
+        ctx.arc_str_ids_lookup.push(cached);
+        ctx.arc_str_ids.insert(id, cached_id);
+        cached_id
+    }
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ArcStrId<'db> {
+        if let Some(id) = ctx.arc_str_ids.get(&self) {
+            return *id;
+        }
+        let cached = ctx.arc_str_ids_lookup[self.0].clone();
+        let id = cached.embed(ctx);
+        ctx.arc_str_ids.insert(self, id);
+        id
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
+struct SpanCached(ArcStrIdCached, TextSpan);
+impl SpanCached {
+    fn new<'db>(span: Span<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+        Self(ArcStrIdCached::new(span.text, ctx), span.span)
+    }
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> Span<'db> {
+        Span::new(self.0.embed(ctx), self.1)
     }
 }
 

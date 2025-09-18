@@ -54,11 +54,10 @@ fn file_syntax_data<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> SyntaxD
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
         FileKind::Module => {
-            Parser::parse_file(db, &mut diagnostics, file_id, s.long(db).as_ref()).as_syntax_node()
+            Parser::parse_file(db, &mut diagnostics, file_id, s.long(db)).as_syntax_node()
         }
         FileKind::Expr => {
-            Parser::parse_file_expr(db, &mut diagnostics, file_id, s.long(db).as_ref())
-                .as_syntax_node()
+            Parser::parse_file_expr(db, &mut diagnostics, file_id, s.long(db)).as_syntax_node()
         }
         FileKind::StatementList => {
             Parser::parse_file_statement_list(db, &mut diagnostics, file_id, s.long(db))

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::ids::{FileLongId, Span};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
@@ -136,11 +136,11 @@ fn test_stable_ptr() {
 fn setup(db: &DatabaseForTesting) -> SyntaxNode<'_> {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
-    let token_foo = TokenIdentifier::new_green(db, "foo");
-    let token_whitespace1 = TokenWhitespace::new_green(db, " ");
-    let token_plus = TokenPlus::new_green(db, "+");
-    let token_whitespace2 = TokenWhitespace::new_green(db, " ");
-    let token5 = TokenLiteralNumber::new_green(db, "5");
+    let token_foo = TokenIdentifier::new_green(db, Span::from_str(db, "foo"));
+    let token_whitespace1 = TokenWhitespace::new_green(db, Span::from_str(db, " "));
+    let token_plus = TokenPlus::new_green(db, Span::from_str(db, "+"));
+    let token_whitespace2 = TokenWhitespace::new_green(db, Span::from_str(db, " "));
+    let token5 = TokenLiteralNumber::new_green(db, Span::from_str(db, "5"));
     assert_eq!(token_whitespace1, token_whitespace2);
     let no_trivia = Trivia::new_green(db, &[]);
     let triviums = [token_whitespace1, token_whitespace2];

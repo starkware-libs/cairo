@@ -397,11 +397,7 @@ error: Missing tokens. Expected an item after attributes.
     ├── items (kind: ModuleItemList)
     │   ├── child #0 (kind: ItemHeaderDoc)
     │   │   └── empty (kind: TerminalEmpty)
-    │   │       ├── leading_trivia (kind: Trivia)
-    │   │       │   ├── child #0 (kind: TokenWhitespace).
-    │   │       │   ├── child #1 (kind: TokenSingleLineComment): '// A comment'
-    │   │       │   ├── child #2 (kind: TokenNewline).
-    │   │       │   └── child #3 (kind: TokenWhitespace).
+    │   │       ├── leading_trivia (kind: Trivia) []
     │   │       ├── token (kind: TokenEmpty): ''
     │   │       └── trailing_trivia (kind: Trivia) []
     │   └── child #1: Missing []
@@ -411,7 +407,11 @@ error: Missing tokens. Expected an item after attributes.
         │       └── node (kind: AttributeList)
         │           └── child #0 (kind: Attribute)
         │               ├── hash (kind: TerminalHash)
-        │               │   ├── leading_trivia (kind: Trivia) []
+        │               │   ├── leading_trivia (kind: Trivia)
+        │               │   │   ├── child #0 (kind: TokenWhitespace).
+        │               │   │   ├── child #1 (kind: TokenSingleLineComment): '// A comment'
+        │               │   │   ├── child #2 (kind: TokenNewline).
+        │               │   │   └── child #3 (kind: TokenWhitespace).
         │               │   ├── token (kind: TokenHash): '#'
         │               │   └── trailing_trivia (kind: Trivia) []
         │               ├── lbrack (kind: TerminalLBrack) <ignored>
@@ -506,11 +506,7 @@ error: Missing tokens. Expected an item after attributes.
     ├── items (kind: ModuleItemList)
     │   ├── child #0 (kind: ItemHeaderDoc)
     │   │   └── empty (kind: TerminalEmpty)
-    │   │       ├── leading_trivia (kind: Trivia)
-    │   │       │   ├── child #0 (kind: TokenWhitespace).
-    │   │       │   ├── child #1 (kind: TokenSingleLineComment): '// A comment'
-    │   │       │   ├── child #2 (kind: TokenNewline).
-    │   │       │   └── child #3 (kind: TokenWhitespace).
+    │   │       ├── leading_trivia (kind: Trivia) []
     │   │       ├── token (kind: TokenEmpty): ''
     │   │       └── trailing_trivia (kind: Trivia) []
     │   └── child #1: Missing []
@@ -520,7 +516,11 @@ error: Missing tokens. Expected an item after attributes.
         │   │   └── node (kind: AttributeList)
         │   │       └── child #0 (kind: Attribute)
         │   │           ├── hash (kind: TerminalHash)
-        │   │           │   ├── leading_trivia (kind: Trivia) []
+        │   │           │   ├── leading_trivia (kind: Trivia)
+        │   │           │   │   ├── child #0 (kind: TokenWhitespace).
+        │   │           │   │   ├── child #1 (kind: TokenSingleLineComment): '// A comment'
+        │   │           │   │   ├── child #2 (kind: TokenNewline).
+        │   │           │   │   └── child #3 (kind: TokenWhitespace).
         │   │           │   ├── token (kind: TokenHash): '#'
         │   │           │   └── trailing_trivia (kind: Trivia) []
         │   │           ├── lbrack (kind: TerminalLBrack) <ignored>
@@ -1357,9 +1357,7 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
     ├── items (kind: ModuleItemList)
     │   └── child #0 (kind: ItemHeaderDoc)
     │       └── empty (kind: TerminalEmpty)
-    │           ├── leading_trivia (kind: Trivia)
-    │           │   ├── child #0 (kind: TokenSingleLineComment): '// TODO(Gil): handle multiline diagnostics.'
-    │           │   └── child #1 (kind: TokenNewline).
+    │           ├── leading_trivia (kind: Trivia) []
     │           ├── token (kind: TokenEmpty): ''
     │           └── trailing_trivia (kind: Trivia) []
     └── eof (kind: TerminalEndOfFile)
@@ -1368,7 +1366,9 @@ error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/I
         │   │   └── node (kind: AttributeList)
         │   │       └── child #0 (kind: Attribute)
         │   │           ├── hash (kind: TerminalHash)
-        │   │           │   ├── leading_trivia (kind: Trivia) []
+        │   │           │   ├── leading_trivia (kind: Trivia)
+        │   │           │   │   ├── child #0 (kind: TokenSingleLineComment): '// TODO(Gil): handle multiline diagnostics.'
+        │   │           │   │   └── child #1 (kind: TokenNewline).
         │   │           │   ├── token (kind: TokenHash): '#'
         │   │           │   └── trailing_trivia (kind: Trivia) []
         │   │           ├── lbrack (kind: TerminalLBrack) <ignored>

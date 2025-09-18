@@ -12,8 +12,9 @@ use serde::{Deserialize, Serialize};
 use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
-    BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId, Directory,
-    DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, StrId, Tracked, VirtualFile,
+    ArcStrId, BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId,
+    Directory, DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, Tracked,
+    VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -240,7 +241,7 @@ pub trait FilesGroup: Database {
     }
 
     /// Interned version of `file_overrides_input`.
-    fn file_overrides<'db>(&'db self) -> &'db OrderedHashMap<FileId<'db>, StrId<'db>> {
+    fn file_overrides<'db>(&'db self) -> &'db OrderedHashMap<FileId<'db>, ArcStrId<'db>> {
         file_overrides(self.as_dyn_database())
     }
 
@@ -263,7 +264,7 @@ pub trait FilesGroup: Database {
     }
 
     /// Query for the file contents. This takes overrides into consideration.
-    fn file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<StrId<'db>> {
+    fn file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<ArcStrId<'db>> {
         file_content(self.as_dyn_database(), file_id)
     }
 
@@ -375,11 +376,11 @@ pub fn set_crate_configs_input(
 }
 
 #[salsa::tracked(returns(ref))]
-pub fn file_overrides<'db>(db: &'db dyn Database) -> OrderedHashMap<FileId<'db>, StrId<'db>> {
+pub fn file_overrides<'db>(db: &'db dyn Database) -> OrderedHashMap<FileId<'db>, ArcStrId<'db>> {
     let inp = files_group_input(db).file_overrides(db).as_ref().expect("file_overrides is not set");
     inp.iter()
         .map(|(file_id, content)| {
-            (file_id.clone().into_file_long_id(db).intern(db), content.clone().intern(db))
+            (file_id.clone().into_file_long_id(db).intern(db), ArcStrId::new(db, content.clone()))
         })
         .collect()
 }
@@ -550,7 +551,7 @@ fn crate_config<'db>(
 }
 
 #[salsa::tracked]
-fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<StrId<'db>> {
+fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<ArcStrId<'db>> {
     match file.long(db) {
         FileLongId::OnDisk(path) => {
             // This does not result in performance cost due to OS caching and the fact that salsa
@@ -559,21 +560,21 @@ fn priv_raw_file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Optio
 
             match fs::read_to_string(path) {
                 Ok(content) => {
-                    let content: Arc<str> = content.into();
-                    Some(content.intern(db))
+                    let content = ArcStrId::from_str(db, &content);
+                    Some(content)
                 }
                 Err(_) => None,
             }
         }
-        FileLongId::Virtual(virt) => Some(virt.content.clone().intern(db)),
+        FileLongId::Virtual(virt) => Some(ArcStrId::new(db, virt.content.clone())),
         FileLongId::External(external_id) => {
-            Some(ext_as_virtual(db, *external_id).content.clone().intern(db))
+            Some(ArcStrId::new(db, ext_as_virtual(db, *external_id).content.clone()))
         }
     }
 }
 
 #[salsa::tracked]
-fn file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<StrId<'db>> {
+fn file_content<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<ArcStrId<'db>> {
     let overrides = db.file_overrides();
     overrides.get(&file).copied().or_else(|| priv_raw_file_content(db, file))
 }

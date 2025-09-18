@@ -97,7 +97,7 @@ impl<'a> Printer<'a> {
                         field_description,
                         indent,
                         extra_head_indent,
-                        text,
+                        text.as_str(self.db),
                         green_node.kind,
                     )
                 }

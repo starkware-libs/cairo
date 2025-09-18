@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::StrRef;
+use cairo_lang_filesystem::ids::Span;
 use cairo_lang_filesystem::span::TextWidth;
 
 use super::ids::GreenId;
@@ -6,7 +6,7 @@ use super::kind::SyntaxKind;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum GreenNodeDetails<'a> {
-    Token(StrRef<'a>),
+    Token(Span<'a>),
     Node { children: Vec<GreenId<'a>>, width: TextWidth },
 }
 /// Green node. Underlying untyped representation of the syntax tree.
@@ -18,7 +18,7 @@ pub struct GreenNode<'a> {
 impl<'a> GreenNode<'a> {
     pub fn width(&self) -> TextWidth {
         match &self.details {
-            GreenNodeDetails::Token(text) => TextWidth::from_str(text),
+            GreenNodeDetails::Token(text) => text.width(),
             GreenNodeDetails::Node { width, .. } => *width,
         }
     }
