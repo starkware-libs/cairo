@@ -46,8 +46,8 @@ use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::qm31::QM31Concrete;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
-use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_sierra::program::Function;
+use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
+use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_utils::casts::IntoOrPanic;
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
@@ -77,6 +77,21 @@ pub const DICT_SQUASH_FIXED_COST: ConstCost =
 pub const SEGMENT_ARENA_ALLOCATION_COST: ConstCost =
     ConstCost { steps: 8, holes: 0, range_checks: 0, range_checks96: 0 };
 
+/// The information about a function required for calculating costs.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FunctionCostInfo {
+    /// The id of the function.
+    pub id: FunctionId,
+    /// The entry point of the function.
+    pub entry_point: StatementIdx,
+}
+impl FunctionCostInfo {
+    /// Creates a new [FunctionCostInfo] from a [Function].
+    pub fn new(function: &Function) -> Self {
+        Self { id: function.id.clone(), entry_point: function.entry_point }
+    }
+}
+
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
     type CostType: Clone;
@@ -96,7 +111,7 @@ pub trait CostOperations {
     /// Gets a cost for the content of a function.
     fn function_token_cost(
         &mut self,
-        function: &Function,
+        function: &FunctionCostInfo,
         token_type: CostTokenType,
     ) -> Self::CostType;
     /// Gets a cost for a variable for the current statement.
@@ -140,7 +155,7 @@ pub fn core_libfunc_cost(
         FunctionCall(SignatureAndFunctionConcreteLibfunc { function, .. }) => {
             vec![BranchCost::FunctionCost {
                 const_cost: ConstCost::steps(2),
-                function: function.clone(),
+                function: FunctionCostInfo::new(function),
                 sign: BranchCostSign::Subtract,
             }]
         }
@@ -470,14 +485,14 @@ pub fn core_libfunc_cost(
             CouponConcreteLibfunc::Buy(libfunc) => {
                 vec![BranchCost::FunctionCost {
                     const_cost: ConstCost::default(),
-                    function: libfunc.function.clone(),
+                    function: FunctionCostInfo::new(&libfunc.function),
                     sign: BranchCostSign::Subtract,
                 }]
             }
             CouponConcreteLibfunc::Refund(libfunc) => {
                 vec![BranchCost::FunctionCost {
                     const_cost: ConstCost::default(),
-                    function: libfunc.function.clone(),
+                    function: FunctionCostInfo::new(&libfunc.function),
                     sign: BranchCostSign::Add,
                 }]
             }
