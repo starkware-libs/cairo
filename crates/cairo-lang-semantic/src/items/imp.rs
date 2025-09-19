@@ -1833,13 +1833,10 @@ impl<'db> ImplLookupContext<'db> {
 
                 let uninferred_impl = UninferredImpl::GenericParam(**generic_param_id);
 
-                let Ok(global_impls) = db.crate_global_impls(crate_id) else {
-                    return true;
-                };
                 let Ok(trait_id) = uninferred_impl.trait_id(db) else {
                     return true;
                 };
-                let Some(set) = global_impls.get(&trait_id) else {
+                let Some(set) = db.crate_global_impls(crate_id).get(&trait_id) else {
                     return true;
                 };
                 let uninferred_impl: UninferredImplById<'db> = uninferred_impl.into();
@@ -1885,8 +1882,7 @@ impl<'db> ImplLookupContext<'db> {
     pub fn insert_module(&mut self, module_id: ModuleId<'db>, db: &'db dyn Database) {
         // Make sure to use the module as perceived by the user, as it contains all the macros.
         let module_id = db.module_perceived_module(module_id);
-        let default_map = UnorderedHashMap::default();
-        let crate_global_impls = db.crate_global_impls(self.crate_id).unwrap_or(&default_map);
+        let crate_global_impls = db.crate_global_impls(self.crate_id);
         if let Ok(module_impls) = db.module_global_impls((), module_id) {
             module_impls.locals.iter().for_each(|imp| {
                 if let Ok(trait_id) = imp.0.trait_id(db)
@@ -2082,11 +2078,7 @@ fn trait_candidate_by_head<'db>(
     let mut res: OrderedHashMap<GenericsHeadFilter<'db>, OrderedHashSet<UninferredImplById<'db>>> =
         OrderedHashMap::default();
 
-    let Ok(impls) = db.crate_global_impls(crate_id) else {
-        return res;
-    };
-
-    if let Some(candidates) = impls.get(&trait_id) {
+    if let Some(candidates) = db.crate_global_impls(crate_id).get(&trait_id) {
         for candidate in candidates.iter() {
             let Ok(shallow_generic_args) = candidate.0.trait_shallow_generic_args(db) else {
                 continue;
@@ -2145,7 +2137,7 @@ pub fn find_candidates_at_context<'db>(
         .cloned();
     match filter.generics_filter {
         GenericsHeadFilter::NoFilter => {
-            let globals = db.crate_global_impls(crate_id)?;
+            let globals = db.crate_global_impls(crate_id);
             let globals = globals.get(&filter.trait_id);
             res.extend(locals);
             res.extend(globals.into_iter().flat_map(|s| s.clone().into_iter()))
@@ -3700,22 +3692,12 @@ fn crate_dependencies<'db>(
     crates_set
 }
 
+#[salsa::tracked(returns(ref))]
 /// Query implementation of [PrivImplSemantic::crate_global_impls].
 fn crate_global_impls<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
-) -> Maybe<&'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>> {
-    match crate_global_impls_helper(db, crate_id) {
-        Ok(x) => Ok(x),
-        Err(e) => Err(*e),
-    }
-}
-
-#[salsa::tracked(returns(ref))]
-fn crate_global_impls_helper<'db>(
-    db: &'db dyn Database,
-    crate_id: CrateId<'db>,
-) -> Maybe<UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>> {
+) -> UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>> {
     let mut crate_global_impls: UnorderedHashMap<
         TraitId<'db>,
         OrderedHashSet<UninferredImplById<'db>>,
@@ -3731,14 +3713,17 @@ fn crate_global_impls_helper<'db>(
             if let Ok(x) = db.module_submodules_ids(module_id) {
                 modules.extend(x.iter().map(|sub_module| ModuleId::Submodule(*sub_module)));
             }
-            let macro_call_ids = db.module_macro_calls_ids(module_id)?;
-            modules.extend(
-                macro_call_ids.iter().map(|id| db.macro_call_module_id(*id)).filter_map(|x| x.ok()),
-            )
+            if let Ok(macro_call_ids) = db.module_macro_calls_ids(module_id) {
+                modules.extend(
+                    macro_call_ids
+                        .iter()
+                        .map(|id| db.macro_call_module_id(*id))
+                        .filter_map(|x| x.ok()),
+                )
+            }
         }
     }
-
-    Ok(crate_global_impls)
+    crate_global_impls
 }
 
 /// Query implementation of [PrivImplSemantic::crate_traits_dependencies].
@@ -4616,7 +4601,7 @@ trait PrivImplSemantic<'db>: Database {
     fn crate_global_impls(
         &'db self,
         crate_id: CrateId<'db>,
-    ) -> Maybe<&'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>>> {
+    ) -> &'db UnorderedHashMap<TraitId<'db>, OrderedHashSet<UninferredImplById<'db>>> {
         crate_global_impls(self.as_dyn_database(), crate_id)
     }
     /// Returns the traits which impls of a trait directly depend on.
