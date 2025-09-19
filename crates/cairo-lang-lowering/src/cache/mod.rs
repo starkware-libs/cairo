@@ -53,6 +53,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use id_arena::Arena;
 use num_bigint::BigInt;
 use salsa::Database;
@@ -997,7 +998,7 @@ impl VarRemappingCached {
         }
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> VarRemapping<'db> {
-        let mut remapping = OrderedHashMap::default();
+        let mut remapping = SmallOrderedMap::default();
         for (dst, src) in self.remapping {
             remapping.insert(ctx.lowered_variables_id[dst], src.embed(ctx));
         }

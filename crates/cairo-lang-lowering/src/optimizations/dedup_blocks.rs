@@ -4,7 +4,7 @@ mod test;
 
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::{ConcreteVariant, TypeId};
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use cairo_lang_utils::unordered_hash_map::{self, UnorderedHashMap};
 use itertools::{Itertools, zip_eq};
 
@@ -294,7 +294,7 @@ pub fn dedup_blocks<'db>(lowered: &mut Lowered<'db>) {
                 end: BlockEnd::Goto(
                     block_id,
                     VarRemapping {
-                        remapping: OrderedHashMap::from_iter(zip_eq(
+                        remapping: SmallOrderedMap::from_iter(zip_eq(
                             target_inputs.iter().map(|var_usage| var_usage.var_id),
                             inputs.iter().cloned(),
                         )),
@@ -318,7 +318,7 @@ pub fn dedup_blocks<'db>(lowered: &mut Lowered<'db>) {
 
                 let inputs = ctx.block_id_to_inputs.get(target_block).unwrap();
                 let mut inputs_remapping = VarRemapping {
-                    remapping: OrderedHashMap::from_iter(zip_eq(
+                    remapping: SmallOrderedMap::from_iter(zip_eq(
                         target_inputs.iter().map(|var_usage| var_usage.var_id),
                         inputs.iter().cloned(),
                     )),
