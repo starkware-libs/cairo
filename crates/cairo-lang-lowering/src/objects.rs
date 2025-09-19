@@ -18,7 +18,7 @@ use cairo_lang_semantic::items::imp::ImplLookupContextId;
 use cairo_lang_semantic::types::{TypeInfo, TypesSemantic};
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use id_arena::{Arena, DefaultArenaBehavior, Id};
 
 pub mod blocks;
@@ -172,10 +172,10 @@ unsafe impl<'db> salsa::Update for Lowered<'db> {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VarRemapping<'db> {
     /// Map from new_var to old_var (since new_var cannot appear twice, but old_var can).
-    pub remapping: OrderedHashMap<VariableId, VarUsage<'db>>,
+    pub remapping: SmallOrderedMap<VariableId, VarUsage<'db>>,
 }
 impl<'db> Deref for VarRemapping<'db> {
-    type Target = OrderedHashMap<VariableId, VarUsage<'db>>;
+    type Target = SmallOrderedMap<VariableId, VarUsage<'db>>;
 
     fn deref(&self) -> &Self::Target {
         &self.remapping

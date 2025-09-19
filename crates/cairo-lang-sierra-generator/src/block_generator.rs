@@ -231,7 +231,7 @@ fn generate_push_values_statement_for_remapping<'db, 'mt>(
     }
     let location = remapping
         .iter()
-        .last()
+        .next_back()
         .map(|(_, inner_output)| inner_output.location.all_locations(context.get_db()))
         .unwrap_or_default();
     Ok(StatementWithLocation {
