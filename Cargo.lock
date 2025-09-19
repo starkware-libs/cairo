@@ -902,7 +902,6 @@ dependencies = [
  "test-case",
  "thiserror",
  "tracing",
- "vector-map",
 ]
 
 [[package]]
@@ -1174,6 +1173,7 @@ dependencies = [
  "tracing",
  "tracing-log",
  "tracing-subscriber",
+ "vector-map",
 ]
 
 [[package]]
