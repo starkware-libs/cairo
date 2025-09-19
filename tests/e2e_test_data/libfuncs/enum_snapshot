@@ -19,7 +19,7 @@ fn foo(e: @SingleVariant) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -66,7 +66,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -133,7 +133,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -206,7 +206,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];

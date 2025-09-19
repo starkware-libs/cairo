@@ -23,8 +23,8 @@ ret;
 dw 100;
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 100})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -73,8 +73,8 @@ ret;
 dw 100;
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 100})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -123,8 +123,8 @@ ret;
 dw -1000;
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 100})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type i16 = i16 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -188,10 +188,10 @@ dw 16;
 dw 32;
 
 //! > function_costs
-test::bar1: CostTokenMap({Const: 200})
-test::bar2: CostTokenMap({Const: 200})
-test::foo1: CostTokenMap({Const: 300})
-test::foo2: CostTokenMap({Const: 300})
+test::bar1: SmallOrderedMap({Const: 200})
+test::bar2: SmallOrderedMap({Const: 200})
+test::foo1: SmallOrderedMap({Const: 300})
+test::foo2: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -250,8 +250,8 @@ ret;
 dw 0;
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 100})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -314,8 +314,8 @@ dw 16;
 dw 32;
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 300})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -381,8 +381,8 @@ dw 0;
 dw 1337;
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 300})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -466,8 +466,8 @@ dw 0;
 dw 0;
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 1000})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 1000})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -523,7 +523,7 @@ ret;
 dw 100;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 800})
+test::foo: SmallOrderedMap({Const: 800})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -598,7 +598,7 @@ ret;
 dw 300;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 2400})
+test::foo: SmallOrderedMap({Const: 2400})
 
 //! > sierra_code
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -679,7 +679,7 @@ return([1]);
 test::foo@F0() -> (Snapshot<Array<felt252>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 500})
+test::foo: SmallOrderedMap({Const: 500})
 
 //! > ==========================================================================
 
@@ -749,7 +749,7 @@ return([1]);
 test::foo@F0() -> (Snapshot<Array<Tuple<felt252, felt252, felt252, felt252>>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 500})
+test::foo: SmallOrderedMap({Const: 500})
 
 //! > ==========================================================================
 
@@ -800,8 +800,8 @@ test::bar@F0() -> (NonZero<felt252>);
 test::foo@F1() -> (Box<NonZero<felt252>>);
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 100})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -852,8 +852,8 @@ test::bar@F0() -> (NonZero<u8>);
 test::foo@F1() -> (Box<NonZero<u8>>);
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 100})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -909,8 +909,8 @@ test::bar@F0() -> (NonZero<core::integer::u256>);
 test::foo@F1() -> (Box<NonZero<core::integer::u256>>);
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 200})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -966,8 +966,8 @@ test::bar@F0() -> (NonZero<core::integer::u256>);
 test::foo@F1() -> (Box<NonZero<core::integer::u256>>);
 
 //! > function_costs
-test::bar: CostTokenMap({Const: 200})
-test::foo: CostTokenMap({Const: 300})
+test::bar: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -1035,4 +1035,4 @@ return([0]);
 test::foo@F0() -> (Box<NonZero<core::integer::u512>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})

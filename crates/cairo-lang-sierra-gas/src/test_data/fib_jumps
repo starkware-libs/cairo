@@ -7,15 +7,15 @@ fib_jumps
 test_solve_gas
 
 //! > gas_solution
-#2: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
-#4: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1070})
-#9: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
-#19: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
-#22: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 470})
-#26: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
-#28: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1070})
-#29: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
-#40: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
-#45: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
+#2: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
+#4: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1070})
+#9: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
+#19: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
+#22: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 470})
+#26: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
+#28: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1070})
+#29: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
+#40: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
+#45: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0})
 
-Fibonacci: CostTokenMap({Const: 1470})
+Fibonacci: SmallOrderedMap({Const: 1470})

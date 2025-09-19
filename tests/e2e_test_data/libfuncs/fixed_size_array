@@ -23,8 +23,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 500})
-test::bar: CostTokenMap({})
+test::foo: SmallOrderedMap({Const: 500})
+test::bar: SmallOrderedMap({})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];

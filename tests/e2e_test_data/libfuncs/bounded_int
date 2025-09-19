@@ -20,7 +20,7 @@ fn foo(a: i8, b: i8) -> AddType {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -60,7 +60,7 @@ fn foo(a: i8, b: i8) -> SubType {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -100,7 +100,7 @@ fn foo(a: i8, b: i8) -> MulType {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -140,7 +140,7 @@ fn foo(a: NonZero<i8>, b: NonZero<i8>) -> MulType {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -182,7 +182,7 @@ fn foo(a: i8) -> AddType {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -235,7 +235,7 @@ fn foo(a: BoundedInt<128, 255>, b: NonZero<BoundedInt<3, 8>>) -> DivRemType {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1210})
+test::foo: SmallOrderedMap({Const: 1210})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -303,7 +303,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1680})
+test::foo: SmallOrderedMap({Const: 1680})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -367,7 +367,7 @@ fn foo(
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1480})
+test::foo: SmallOrderedMap({Const: 1480})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -429,7 +429,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 770})
+test::foo: SmallOrderedMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -498,7 +498,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 780})
+test::foo: SmallOrderedMap({Const: 780})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -571,7 +571,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 770})
+test::foo: SmallOrderedMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -640,7 +640,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 770})
+test::foo: SmallOrderedMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -700,7 +700,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type i8 = i8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -758,7 +758,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type BoundedInt<0, 680564733841876926926749214863536422911> = BoundedInt<0, 680564733841876926926749214863536422911> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -810,7 +810,7 @@ fn foo(
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<1, 680564733841876926926749214863536422911> = BoundedInt<1, 680564733841876926926749214863536422911> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -848,7 +848,7 @@ fn foo(
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<-680564733841876926926749214863536422911, -1> = BoundedInt<-680564733841876926926749214863536422911, -1> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -918,7 +918,7 @@ return([4]);
 test::foo@F0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<1, 255>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -974,7 +974,7 @@ return([4]);
 test::foo@F0([0]: BoundedInt<-255, 0>) -> (core::internal::OptionRev::<test::BoundedInt::<-255, -1>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -1031,7 +1031,7 @@ return([4]);
 test::foo@F0([0]: i8) -> (core::internal::OptionRev::<test::BoundedInt::<-127, 127>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 400})
 
 //! > ==========================================================================
 
@@ -1088,4 +1088,4 @@ return([4]);
 test::foo@F0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<0, 254>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 400})

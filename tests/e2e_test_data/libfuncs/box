@@ -19,7 +19,7 @@ __boxed_segment += 1
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -50,7 +50,7 @@ fn foo(x: Box<felt252>) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -90,7 +90,7 @@ __boxed_segment += 2
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -123,7 +123,7 @@ fn foo(x: Box<u256>) -> u256 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -157,7 +157,7 @@ fn foo(e: ()) -> Box<()> {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -187,7 +187,7 @@ fn foo(x: Box<()>) -> () {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({})
+test::foo: SmallOrderedMap({})
 
 //! > sierra_code
 type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -221,7 +221,7 @@ fn foo(e: Empty) -> Box<Empty> {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -252,7 +252,7 @@ fn foo(x: Box<Empty>) -> Empty {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({})
+test::foo: SmallOrderedMap({})
 
 //! > sierra_code
 type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -283,7 +283,7 @@ fn foo(value: @Box::<Array<felt252>>) -> Box<@Array<felt252>> {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type Box<Array<felt252>> = Box<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
