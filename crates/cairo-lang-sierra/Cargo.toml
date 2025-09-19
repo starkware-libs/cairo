@@ -31,7 +31,6 @@ sha3.workspace = true
 smol_str.workspace = true
 starknet-types-core.workspace = true
 thiserror.workspace = true
-vector-map.workspace = true
 
 [dev-dependencies]
 bimap.workspace = true

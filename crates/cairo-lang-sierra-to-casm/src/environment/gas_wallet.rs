@@ -14,7 +14,7 @@ pub enum GasWalletError {
 }
 
 /// Environment tracking the amount of gas available in a statement's context.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum GasWallet {
     /// A known value.
     Value(CostTokenMap<i64>),
@@ -50,6 +50,16 @@ impl Display for GasWallet {
         match self {
             Self::Value(value) => write!(f, "GasWallet::Value({value:?})"),
             Self::Disabled => write!(f, "GasWallet::Disabled"),
+        }
+    }
+}
+impl Eq for GasWallet {}
+impl PartialEq for GasWallet {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Value(a), Self::Value(b)) => a.eq_unordered(b),
+            (Self::Disabled, Self::Disabled) => true,
+            _ => false,
         }
     }
 }
