@@ -1,3 +1,4 @@
+use std::mem;
 use anyhow::{Context, bail};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
@@ -29,7 +30,7 @@ use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
 use itertools::{Itertools, chain};
-use salsa::Database;
+use salsa::{par_map, Database};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -99,6 +100,11 @@ pub fn find_contracts<'db>(
         for module_id in modules.iter() {
             contract_declarations.extend(module_contract(db, *module_id));
         }
+
+        // let contracts: Vec<Option<ContractDeclaration<'_>>> = par_map(db, modules, |db, module| {
+        //     unsafe {mem::transmute(module_contract(db, *module))}
+        // });
+        // contract_declarations.extend(contracts.into_iter().flatten());
     }
     contract_declarations
 }

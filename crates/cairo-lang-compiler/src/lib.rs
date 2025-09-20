@@ -289,8 +289,40 @@ pub fn compile_prepared_db_program_artifact<'db>(
     let mut sierra_program_with_debug = if executable_functions.is_empty() {
         // No executables found - compile for all main crates.
         // TODO(maciektr): Deprecate in future. This compilation is useless, without `replace_ids`.
-        db.get_sierra_program(main_crate_ids)
+        // db.get_sierra_program(main_crate_ids)
+        let mut requested_function_ids = vec![];
+        for crate_id in main_crate_ids {
+            for module_id in db.crate_modules(crate_id).iter() {
+                for (free_func_id, _) in
+                    module_id.module_data(db).unwrap().free_functions(db).iter()
+                {
+                    // TODO(spapini): Search Impl functions.
+                    if let Some(function) =
+                        ConcreteFunctionWithBodyId::from_no_generics_free(db, *free_func_id)
+                    {
+                        requested_function_ids.push(function)
+                    }
+                }
+            }
+        }
+        if should_warmup() {
+            let requested_function_ids = requested_function_ids.clone();
+            let db_fork = db.fork_db();
+            // TODO(orizi): Avoid blocking the main thread.
+            rayon::scope(move |_| {
+                warmup_functions_blocking(db_fork.as_view(), requested_function_ids)
+            });
+        }
+        db.get_sierra_program_for_functions(requested_function_ids)
     } else {
+        if should_warmup() {
+            let requested_function_ids = executable_functions.clone().into_keys().collect();
+            let db_fork = db.fork_db();
+            // TODO(orizi): Avoid blocking the main thread.
+            rayon::scope(move |_| {
+                warmup_functions_blocking(db_fork.as_view(), requested_function_ids)
+            });
+        }
         // Compile for executable functions only.
         db.get_sierra_program_for_functions(executable_functions.clone().into_keys().collect())
     }
