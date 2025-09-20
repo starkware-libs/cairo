@@ -162,11 +162,9 @@ fn lower_while_body_expr<'db>(
     let semantic::Expr::Block(expr) = ctx.ctx.function_body.arenas.exprs[node.body].clone() else {
         unreachable!("WhileLet expression should be a block");
     };
-    // TODO: is the lambda needed?
-    let block_expr = (|| {
-        lower_expr_block(ctx.ctx, &mut builder, &expr)?;
+    let block_expr = lower_expr_block(ctx.ctx, &mut builder, &expr).and_then(|_| {
         recursively_call_loop_func(ctx.ctx, &mut builder, node.loop_expr_id, node.loop_stable_ptr)
-    })();
+    });
 
     ctx.finalize_with_arm(id, builder, block_expr)?;
     Ok(())

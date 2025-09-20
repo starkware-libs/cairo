@@ -17,7 +17,6 @@ use crate::{BlockEnd, BlockId, MatchInfo, VarUsage, VariableId};
 mod lower_node;
 
 /// Lowers a flow control graph.
-#[allow(dead_code)]
 pub fn lower_graph<'db, 'mt>(
     ctx: &mut LoweringContext<'db, 'mt>,
     builder: &mut BlockBuilder<'db>,

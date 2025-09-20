@@ -109,7 +109,6 @@ pub fn create_graph_expr_if<'db>(
 }
 
 /// Creates a graph node for [semantic::ExprMatch].
-#[allow(dead_code)]
 pub fn create_graph_expr_match<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprMatch<'db>,
