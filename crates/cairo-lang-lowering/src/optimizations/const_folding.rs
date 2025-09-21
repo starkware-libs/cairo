@@ -965,50 +965,55 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id)
                 && let VarInfo::Array(infos) = arr_info.as_ref()
             {
-                if let Some(Some(output_var_info)) = infos.get(index) {
-                    let arm = &info.arms[0];
-                    let output_var_info = output_var_info.clone();
-                    let box_info =
-                        VarInfo::Box(VarInfo::Snapshot(output_var_info.clone().into()).into());
-                    self.var_info.insert(arm.var_ids[0], box_info);
-                    if let VarInfo::Const(value) = output_var_info {
-                        let value_ty = value.ty(db).ok()?;
-                        let value_box_ty = corelib::core_box_ty(db, value_ty);
-                        let location = info.location;
-                        let boxed_var = Variable::with_default_context(db, value_box_ty, location);
-                        let boxed = self.variables.alloc(boxed_var.clone());
-                        let unused_boxed = self.variables.alloc(boxed_var);
-                        let snapped = self.variables.alloc(Variable::with_default_context(
-                            db,
-                            TypeLongId::Snapshot(value_box_ty).intern(db),
-                            location,
-                        ));
+                match infos.get(index) {
+                    Some(Some(output_var_info)) => {
+                        let arm = &info.arms[0];
+                        let output_var_info = output_var_info.clone();
+                        let box_info =
+                            VarInfo::Box(VarInfo::Snapshot(output_var_info.clone().into()).into());
+                        self.var_info.insert(arm.var_ids[0], box_info);
+                        if let VarInfo::Const(value) = output_var_info {
+                            let value_ty = value.ty(db).ok()?;
+                            let value_box_ty = corelib::core_box_ty(db, value_ty);
+                            let location = info.location;
+                            let boxed_var =
+                                Variable::with_default_context(db, value_box_ty, location);
+                            let boxed = self.variables.alloc(boxed_var.clone());
+                            let unused_boxed = self.variables.alloc(boxed_var);
+                            let snapped = self.variables.alloc(Variable::with_default_context(
+                                db,
+                                TypeLongId::Snapshot(value_box_ty).intern(db),
+                                location,
+                            ));
+                            return Some((
+                                vec![
+                                    Statement::Const(StatementConst::new_boxed(value, boxed)),
+                                    Statement::Snapshot(StatementSnapshot {
+                                        input: VarUsage { var_id: boxed, location },
+                                        outputs: [unused_boxed, snapped],
+                                    }),
+                                    Statement::Call(StatementCall {
+                                        function: self
+                                            .box_forward_snapshot
+                                            .concretize(db, vec![GenericArgumentId::Type(value_ty)])
+                                            .lowered(db),
+                                        inputs: vec![VarUsage { var_id: snapped, location }],
+                                        with_coupon: false,
+                                        outputs: vec![arm.var_ids[0]],
+                                        location: info.location,
+                                    }),
+                                ],
+                                BlockEnd::Goto(arm.block_id, Default::default()),
+                            ));
+                        }
+                    }
+                    None => {
                         return Some((
-                            vec![
-                                Statement::Const(StatementConst::new_boxed(value, boxed)),
-                                Statement::Snapshot(StatementSnapshot {
-                                    input: VarUsage { var_id: boxed, location },
-                                    outputs: [unused_boxed, snapped],
-                                }),
-                                Statement::Call(StatementCall {
-                                    function: self
-                                        .box_forward_snapshot
-                                        .concretize(db, vec![GenericArgumentId::Type(value_ty)])
-                                        .lowered(db),
-                                    inputs: vec![VarUsage { var_id: snapped, location }],
-                                    with_coupon: false,
-                                    outputs: vec![arm.var_ids[0]],
-                                    location: info.location,
-                                }),
-                            ],
-                            BlockEnd::Goto(arm.block_id, Default::default()),
+                            vec![],
+                            BlockEnd::Goto(info.arms[1].block_id, Default::default()),
                         ));
                     }
-                } else {
-                    return Some((
-                        vec![],
-                        BlockEnd::Goto(info.arms[1].block_id, Default::default()),
-                    ));
+                    Some(None) => {}
                 }
             }
             if index.is_zero()
