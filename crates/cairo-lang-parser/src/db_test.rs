@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, Span};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ast::{
     ModuleItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
@@ -16,7 +16,7 @@ use crate::test_utils::{MockToken, MockTokenStream, create_virtual_file};
 use crate::utils::{SimpleParserDatabase, get_syntax_root_and_diagnostics_from_file};
 
 fn build_empty_file_green_tree<'a>(db: &'a dyn Database, file_id: FileId<'a>) -> SyntaxFile<'a> {
-    let eof_token = TokenEndOfFile::new_green(db, "");
+    let eof_token = TokenEndOfFile::new_green(db, Span::from_str(db, ""));
     let eof_terminal = TerminalEndOfFile::new_green(
         db,
         Trivia::new_green(db, &[]),

@@ -1,7 +1,7 @@
 use core::hash::Hash;
 
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, Span};
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_utils::{Intern, define_short_id, require};
 use salsa::Database;
@@ -95,7 +95,7 @@ impl<'a> SyntaxNode<'a> {
     /// Returns the text of the token if this node is a token.
     pub fn text(&self, db: &'a dyn Database) -> Option<&'a str> {
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text),
+            green::GreenNodeDetails::Token(text) => Some(text.as_str(db)),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
@@ -211,8 +211,7 @@ impl<'a> SyntaxNode<'a> {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
-            .long(db)
-            .as_ref();
+            .long(db);
 
         self.span(db).take(file_content)
     }
@@ -225,7 +224,7 @@ impl<'a> SyntaxNode<'a> {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text.as_str(db)),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     let kind = child.kind(db);
@@ -254,7 +253,7 @@ impl<'a> SyntaxNode<'a> {
         let mut buffer = String::new();
 
         match &self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => buffer.push_str(text),
+            green::GreenNodeDetails::Token(text) => buffer.push_str(text.as_str(db)),
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.get_children(db).iter() {
                     if let Some(trivia) = ast::Trivia::cast(db, *child) {
@@ -290,8 +289,7 @@ impl<'a> SyntaxNode<'a> {
         let file_content = db
             .file_content(self.stable_ptr(db).file_id(db))
             .expect("Failed to read file content")
-            .long(db)
-            .as_ref();
+            .long(db);
         self.span_without_trivia(db).take(file_content)
     }
 
@@ -437,7 +435,7 @@ pub trait TypedSyntaxNode<'a>: Sized {
 }
 
 pub trait Token<'a>: TypedSyntaxNode<'a> {
-    fn new_green(db: &'a dyn Database, text: &'a str) -> Self::Green;
+    fn new_green(db: &'a dyn Database, span: Span<'a>) -> Self::Green;
     fn text(&self, db: &'a dyn Database) -> &'a str;
 }
 
