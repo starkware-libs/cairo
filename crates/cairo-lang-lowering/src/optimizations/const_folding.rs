@@ -963,9 +963,11 @@ impl<'a> ConstFoldingContext<'a> {
             ))
         } else if id == self.array_get {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
-            if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id) {
-                if let VarInfo::Array(infos) = arr_info.as_ref() {
-                    if let Some(Some(output_var_info)) = infos.get(index) {
+            if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id)
+                && let VarInfo::Array(infos) = arr_info.as_ref()
+            {
+                match infos.get(index) {
+                    Some(Some(output_var_info)) => {
                         let arm = &info.arms[0];
                         let output_var_info = output_var_info.clone();
                         let box_info =
@@ -986,10 +988,7 @@ impl<'a> ConstFoldingContext<'a> {
                             ));
                             return Some((
                                 vec![
-                                    Statement::Const(StatementConst {
-                                        value: ConstValue::Boxed(value.into()),
-                                        output: boxed,
-                                    }),
+                                    Statement::Const(StatementConst::new_boxed(value, boxed)),
                                     Statement::Snapshot(StatementSnapshot {
                                         input: VarUsage { var_id: boxed, location },
                                         outputs: [unused_boxed, snapped],
@@ -1008,26 +1007,28 @@ impl<'a> ConstFoldingContext<'a> {
                                 BlockEnd::Goto(arm.block_id, Default::default()),
                             ));
                         }
-                    } else {
+                    }
+                    None => {
                         return Some((
                             vec![],
                             BlockEnd::Goto(info.arms[1].block_id, Default::default()),
                         ));
                     }
+                    Some(None) => {}
                 }
             }
-            if index.is_zero() {
-                if let [success, failure] = info.arms.as_mut_slice() {
-                    let arr = info.inputs[0].var_id;
-                    let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
-                    let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
-                    info.inputs.truncate(1);
-                    info.function = GenericFunctionId::Extern(self.array_snapshot_pop_front)
-                        .concretize(db, generic_args)
-                        .lowered(db);
-                    success.var_ids.insert(0, unused_arr_output0);
-                    failure.var_ids.insert(0, unused_arr_output1);
-                }
+            if index.is_zero()
+                && let [success, failure] = info.arms.as_mut_slice()
+            {
+                let arr = info.inputs[0].var_id;
+                let unused_arr_output0 = self.variables.alloc(self.variables[arr].clone());
+                let unused_arr_output1 = self.variables.alloc(self.variables[arr].clone());
+                info.inputs.truncate(1);
+                info.function = GenericFunctionId::Extern(self.array_snapshot_pop_front)
+                    .concretize(db, generic_args)
+                    .lowered(db);
+                success.var_ids.insert(0, unused_arr_output0);
+                failure.var_ids.insert(0, unused_arr_output1);
             }
             None
         } else if id == self.array_pop_front {
