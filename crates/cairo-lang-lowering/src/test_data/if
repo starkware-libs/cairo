@@ -1093,7 +1093,7 @@ End:
 test_function_lowering(expect_diagnostics: true)
 
 //! > function
-fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2) {
+fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2, e: MyEnum3) {
     // TODO(lior): Fix the locations in this test.
     if let MyEnum::A(_x) = a {}
     // If the variable is not bound, the match is skipped, which leads to an error.
@@ -1102,6 +1102,8 @@ fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2) {
     // value not being dropped. Test with and without binding.
     if let MyEnum2::B(_x) = c {}
     if let MyEnum2::B(_) = d {}
+    // Three levels of nesting. Both MyEnum2::B and MyEnum2::C are not dropped.
+    if let MyEnum3::D(MyEnum2::B(_)) = e {}
 }
 
 //! > function_name
@@ -1112,38 +1114,65 @@ enum MyEnum {
     A: felt252,
 }
 
+struct NonDroppable {}
+
 enum MyEnum2 {
     B: MyEnum,
-    C: MyEnum,
+    C: NonDroppable,
+}
+
+enum MyEnum3 {
+    D: MyEnum2,
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Variable not dropped.
- --> lib.cairo:17:28
+ --> lib.cairo:25:40
+    if let MyEnum3::D(MyEnum2::B(_)) = e {}
+                                       ^
+note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
+
+error: Variable not dropped.
+ --> lib.cairo:25:40
+    if let MyEnum3::D(MyEnum2::B(_)) = e {}
+                                       ^
+note: Trait has no implementation in context: core::traits::Drop::<test::NonDroppable>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::NonDroppable>.
+
+error: Variable not dropped.
+ --> lib.cairo:23:28
     if let MyEnum2::B(_) = d {}
                            ^
 note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
 
 error: Variable not dropped.
- --> lib.cairo:16:23
+ --> lib.cairo:23:28
+    if let MyEnum2::B(_) = d {}
+                           ^
+note: Trait has no implementation in context: core::traits::Drop::<test::NonDroppable>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::NonDroppable>.
+
+error: Variable not dropped.
+ --> lib.cairo:22:23
     if let MyEnum2::B(_x) = c {}
                       ^^
 note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
 
 error: Variable not dropped.
- --> lib.cairo:16:29
+ --> lib.cairo:22:29
     if let MyEnum2::B(_x) = c {}
                             ^
-note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
-note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
+note: Trait has no implementation in context: core::traits::Drop::<test::NonDroppable>.
+note: Trait has no implementation in context: core::traits::Destruct::<test::NonDroppable>.
 
 error: Variable not dropped.
- --> lib.cairo:9:19
-fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2) {
+ --> lib.cairo:15:19
+fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2, e: MyEnum3) {
                   ^
 note: Trait has no implementation in context: core::traits::Drop::<test::MyEnum>.
 note: Trait has no implementation in context: core::traits::Destruct::<test::MyEnum>.
