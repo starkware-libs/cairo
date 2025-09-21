@@ -178,7 +178,7 @@ fn main() -> anyhow::Result<()> {
                 let mut node = loc.syntax_node(db);
                 while let Some(parent) = node.parent(db) {
                     if let Some(name) = try_extract_path_segment_name(db, node) {
-                        segments.push(name.text(db).to_string());
+                        segments.push(name.text(db).to_string(db));
                     }
                     node = parent;
                 }

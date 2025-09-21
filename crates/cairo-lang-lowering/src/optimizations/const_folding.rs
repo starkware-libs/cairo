@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
-use cairo_lang_filesystem::ids::db_str;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::{CorelibSemantic, try_extract_nz_wrapped_type};
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{
@@ -480,7 +480,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 ));
                 arr = new_arr;
             }
-            let panic_ty = corelib::get_core_ty_by_name(db, "Panic", vec![]);
+            let panic_ty = corelib::get_core_ty_by_name(db, SmolStrId::from(db, "Panic"), vec![]);
             let panic_var = self.variables.alloc(new_var(panic_ty));
             self.additional_stmts.push(Statement::StructConstruct(StatementStructConstruct {
                 inputs: vec![],
@@ -1271,86 +1271,102 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
         let utypes = ["u8", "u16", "u32", "u64", "u128"];
         let itypes = ["i8", "i16", "i32", "i64", "i128"];
         let eq_fns = OrderedHashSet::<_>::from_iter(
-            chain!(utypes, itypes)
-                .map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_eq")))),
+            chain!(utypes, itypes).map(|ty| integer_module.extern_function_id(&format!("{ty}_eq"))),
         );
-        let uadd_fns = OrderedHashSet::<_>::from_iter(utypes.map(|ty| {
-            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_add")))
-        }));
-        let usub_fns = OrderedHashSet::<_>::from_iter(utypes.map(|ty| {
-            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_sub")))
-        }));
+        let uadd_fns = OrderedHashSet::<_>::from_iter(
+            utypes.map(|ty| integer_module.extern_function_id(&format!("{ty}_overflowing_add"))),
+        );
+        let usub_fns = OrderedHashSet::<_>::from_iter(
+            utypes.map(|ty| integer_module.extern_function_id(&format!("{ty}_overflowing_sub"))),
+        );
         let diff_fns = OrderedHashSet::<_>::from_iter(
-            itypes.map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_diff")))),
+            itypes.map(|ty| integer_module.extern_function_id(&format!("{ty}_diff"))),
         );
-        let iadd_fns = OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
-            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_add_impl")))
-        }));
-        let isub_fns = OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
-            integer_module.extern_function_id(db_str(db, format!("{ty}_overflowing_sub_impl")))
-        }));
+        let iadd_fns =
+            OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
+                integer_module.extern_function_id(&format!("{ty}_overflowing_add_impl"))
+            }));
+        let isub_fns =
+            OrderedHashSet::<_>::from_iter(itypes.map(|ty| {
+                integer_module.extern_function_id(&format!("{ty}_overflowing_sub_impl"))
+            }));
         let wide_mul_fns = OrderedHashSet::<_>::from_iter(chain!(
             [bounded_int_module.extern_function_id("bounded_int_mul")],
             ["u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64"]
-                .map(|ty| integer_module.extern_function_id(db_str(db, format!("{ty}_wide_mul")))),
+                .map(|ty| integer_module.extern_function_id(&format!("{ty}_wide_mul"))),
         ));
         let div_rem_fns = OrderedHashSet::<_>::from_iter(chain!(
             [bounded_int_module.extern_function_id("bounded_int_div_rem")],
-            utypes.map(
-                |ty| integer_module.extern_function_id(db_str(db, format!("{ty}_safe_divmod")))
-            ),
+            utypes.map(|ty| integer_module.extern_function_id(&format!("{ty}_safe_divmod"))),
         ));
-        let type_value_ranges = OrderedHashMap::from_iter(
-            [
-                ("u8", BigInt::ZERO, u8::MAX.into(), false, true),
-                ("u16", BigInt::ZERO, u16::MAX.into(), false, true),
-                ("u32", BigInt::ZERO, u32::MAX.into(), false, true),
-                ("u64", BigInt::ZERO, u64::MAX.into(), false, true),
-                ("u128", BigInt::ZERO, u128::MAX.into(), false, true),
-                ("u256", BigInt::ZERO, BigInt::from(1) << 256, false, false),
-                ("i8", i8::MIN.into(), i8::MAX.into(), true, true),
-                ("i16", i16::MIN.into(), i16::MAX.into(), true, true),
-                ("i32", i32::MIN.into(), i32::MAX.into(), true, true),
-                ("i64", i64::MIN.into(), i64::MAX.into(), true, true),
-                ("i128", i128::MIN.into(), i128::MAX.into(), true, true),
-            ]
-            .map(
-                |(ty_name, min, max, as_bounded_int, inc_dec): (
-                    &'static str,
-                    BigInt,
-                    BigInt,
-                    bool,
-                    bool,
-                )| {
-                    let ty = corelib::get_core_ty_by_name(db, ty_name, vec![]);
-                    let is_zero = if as_bounded_int {
-                        bounded_int_module
-                            .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])
-                    } else {
-                        integer_module.function_id(db_str(db, format!("{ty_name}_is_zero")), vec![])
-                    }
-                    .lowered(db);
-                    let (inc, dec) = if inc_dec {
-                        (
-                            Some(
-                                num_module
-                                    .function_id(db_str(db, format!("{ty_name}_inc")), vec![])
-                                    .lowered(db),
-                            ),
-                            Some(
-                                num_module
-                                    .function_id(db_str(db, format!("{ty_name}_dec")), vec![])
-                                    .lowered(db),
-                            ),
-                        )
-                    } else {
-                        (None, None)
-                    };
-                    let info = TypeInfo { range: TypeRange { min, max }, is_zero, inc, dec };
-                    (ty, info)
-                },
-            ),
-        );
+        let type_value_ranges: OrderedHashMap<TypeId<'db>, TypeInfo<'db>> =
+            OrderedHashMap::from_iter(
+                [
+                    ("u8", BigInt::ZERO, u8::MAX.into(), false, true),
+                    ("u16", BigInt::ZERO, u16::MAX.into(), false, true),
+                    ("u32", BigInt::ZERO, u32::MAX.into(), false, true),
+                    ("u64", BigInt::ZERO, u64::MAX.into(), false, true),
+                    ("u128", BigInt::ZERO, u128::MAX.into(), false, true),
+                    ("u256", BigInt::ZERO, BigInt::from(1) << 256, false, false),
+                    ("i8", i8::MIN.into(), i8::MAX.into(), true, true),
+                    ("i16", i16::MIN.into(), i16::MAX.into(), true, true),
+                    ("i32", i32::MIN.into(), i32::MAX.into(), true, true),
+                    ("i64", i64::MIN.into(), i64::MAX.into(), true, true),
+                    ("i128", i128::MIN.into(), i128::MAX.into(), true, true),
+                ]
+                .map(
+                    |(ty_name, min, max, as_bounded_int, inc_dec): (
+                        &'static str,
+                        BigInt,
+                        BigInt,
+                        bool,
+                        bool,
+                    )| {
+                        let ty =
+                            corelib::get_core_ty_by_name(db, SmolStrId::from(db, ty_name), vec![]);
+                        let is_zero = if as_bounded_int {
+                            bounded_int_module.function_id(
+                                "bounded_int_is_zero",
+                                vec![GenericArgumentId::Type(ty)],
+                            )
+                        } else {
+                            integer_module.function_id(
+                                SmolStrId::from(db, format!("{ty_name}_is_zero")).long(db).as_str(),
+                                vec![],
+                            )
+                        }
+                        .lowered(db);
+                        let (inc, dec) = if inc_dec {
+                            (
+                                Some(
+                                    num_module
+                                        .function_id(
+                                            SmolStrId::from(db, format!("{ty_name}_inc"))
+                                                .long(db)
+                                                .as_str(),
+                                            vec![],
+                                        )
+                                        .lowered(db),
+                                ),
+                                Some(
+                                    num_module
+                                        .function_id(
+                                            SmolStrId::from(db, format!("{ty_name}_dec"))
+                                                .long(db)
+                                                .as_str(),
+                                            vec![],
+                                        )
+                                        .lowered(db),
+                                ),
+                            )
+                        } else {
+                            (None, None)
+                        };
+                        let info = TypeInfo { range: TypeRange { min, max }, is_zero, inc, dec };
+                        (ty, info)
+                    },
+                ),
+            );
         Self {
             felt_sub: core.extern_function_id("felt252_sub"),
             into_box: box_module.extern_function_id("into_box"),

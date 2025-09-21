@@ -13,7 +13,7 @@ impl<'a> GreenId<'a> {
     /// Returns the width of the node of this green id.
     pub fn width(&self, db: &dyn Database) -> TextWidth {
         match &self.long(db).details {
-            super::green::GreenNodeDetails::Token(text) => TextWidth::from_str(text),
+            super::green::GreenNodeDetails::Token(text) => TextWidth::from_str(text.long(db)),
             super::green::GreenNodeDetails::Node { width, .. } => *width,
         }
     }
