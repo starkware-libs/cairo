@@ -19,7 +19,7 @@ use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::{
-    SierraProgramWithDebug, try_get_function_with_body_id,
+    SierraProgramWithDebug, find_all_free_function_ids, try_get_function_with_body_id,
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_utils::Intern;
@@ -289,13 +289,14 @@ pub fn compile_prepared_db_program_artifact<'db>(
     let mut sierra_program_with_debug = if executable_functions.is_empty() {
         // No executables found - compile for all main crates.
         // TODO(maciektr): Deprecate in future. This compilation is useless, without `replace_ids`.
-        db.get_sierra_program(main_crate_ids)
+        let function_ids = find_all_free_function_ids(db, main_crate_ids)
+            .to_option()
+            .context("Compilation failed without any diagnostics.")?;
+        get_sierra_program_for_functions(db, function_ids)
     } else {
         // Compile for executable functions only.
-        db.get_sierra_program_for_functions(executable_functions.clone().into_keys().collect())
-    }
-    .to_option()
-    .context("Compilation failed without any diagnostics")?
+        get_sierra_program_for_functions(db, executable_functions.clone().into_keys().collect())
+    }?
     .clone();
 
     if compiler_config.replace_ids {
