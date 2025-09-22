@@ -1228,3 +1228,39 @@ Statements:
   (v9: core::integer::u16) <- struct_destructure(v8{`w.inner`})
 End:
   Return(v9)
+
+//! > ==========================================================================
+
+//! > No irrelevant borrow check diagnostics
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo() {
+    let _foo = ();
+}
+
+mod non_existent;
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error[E0005]: Module file not found. Expected path: non_existent.cairo
+ --> lib.cairo:5:1
+mod non_existent;
+^^^^^^^^^^^^^^^^^
+
+//! > lowering_diagnostics
+
+//! > lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)
