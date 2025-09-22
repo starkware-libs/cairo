@@ -200,7 +200,7 @@ pub fn handle_entry_point<'db, 'a>(
             let generated = match entry_point_kind {
                 EntryPointKind::Constructor => &mut data.constructor_functions,
                 EntryPointKind::L1Handler => {
-                    validate_l1_handler_first_parameter(db, &params, diagnostics);
+                    validate_l1_handler_second_parameter(db, &params, diagnostics);
                     &mut data.l1_handler_functions
                 }
                 EntryPointKind::External => &mut data.external_functions,
@@ -375,32 +375,32 @@ fn generate_entry_point_wrapper<'db>(
     ).mapped(db, function))
 }
 
-/// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
+/// Validates the second parameter of an L1 handler is `from_address: felt252` or `_from_address:
 /// felt252`.
-fn validate_l1_handler_first_parameter<'db>(
+fn validate_l1_handler_second_parameter<'db>(
     db: &'db dyn Database,
     params: &ast::ParamList<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
-    if let Some(first_param) = params.elements(db).nth(1) {
+    if let Some(second_param) = params.elements(db).nth(1) {
         // Validate type
 
-        if !extract_matches!(first_param.type_clause(db), OptionTypeClause::TypeClause)
+        if !extract_matches!(second_param.type_clause(db), OptionTypeClause::TypeClause)
             .ty(db)
             .is_felt252(db)
         {
             diagnostics.push(PluginDiagnostic::error(
-                first_param.stable_ptr(db),
+                second_param.stable_ptr(db),
                 "The second parameter of an L1 handler must be of type `felt252`.".to_string(),
             ));
         }
 
         // Validate name
-        if maybe_strip_underscore(first_param.name(db).text(db).long(db).as_str())
+        if maybe_strip_underscore(second_param.name(db).text(db).long(db).as_str())
             != L1_HANDLER_FIRST_PARAM_NAME
         {
             diagnostics.push(PluginDiagnostic::error(
-                first_param.stable_ptr(db),
+                second_param.stable_ptr(db),
                 "The second parameter of an L1 handler must be named 'from_address'.".to_string(),
             ));
         }
