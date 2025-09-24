@@ -27,7 +27,7 @@ wrap_comments = true
 #         "--",
 #         "rustfmt",
 #         "--edition",
-#         "2021",
+#         "2024",
 #         "--"
 #     ]
 # and run "rustup toolchain install nightly-2025-08-05".
