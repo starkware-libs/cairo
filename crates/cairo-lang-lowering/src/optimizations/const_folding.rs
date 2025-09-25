@@ -1048,7 +1048,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     vec![],
                     BlockEnd::Goto(
                         arm.block_id,
-                        VarRemapping { remapping: [(arm.var_ids[0], info.inputs[0])].into() },
+                        VarRemapping {
+                            remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
+                        },
                     ),
                 ))
             }
@@ -1064,7 +1066,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     vec![],
                     BlockEnd::Goto(
                         arm.block_id,
-                        VarRemapping { remapping: [(arm.var_ids[0], info.inputs[0])].into() },
+                        VarRemapping {
+                            remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
+                        },
                     ),
                 ))
             } else {
