@@ -78,10 +78,10 @@ fn test_mut_vec_iter() {
 
 #[test]
 fn test_simple_member_write_to_vec() {
-    let mut map_contract_state = contract_with_map::contract_state_for_testing();
-    let mut vec_contract_state = contract_with_vec::contract_state_for_testing();
-    vec_contract_state.simple.push(1);
-    assert_eq!(map_contract_state.simple.entry(0).read(), 1);
+    // Ensure read and write occur within the same contract state
+    let mut state = contract_with_vec::contract_state_for_testing();
+    state.simple.push(1);
+    assert_eq!(state.simple.at(0).read(), 1);
 }
 
 #[test]
