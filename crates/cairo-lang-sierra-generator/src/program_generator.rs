@@ -377,6 +377,15 @@ pub fn get_sierra_program<'db>(
     _tracked: Tracked,
     requested_crate_ids: Vec<CrateId<'db>>,
 ) -> Maybe<SierraProgramWithDebug<'db>> {
+    let requested_function_ids = find_all_free_function_ids(db, requested_crate_ids)?;
+    db.get_sierra_program_for_functions(requested_function_ids).cloned()
+}
+
+/// Return [`ConcreteFunctionWithBodyId`] for all free functions in the given list of crates.
+pub fn find_all_free_function_ids<'db>(
+    db: &'db dyn Database,
+    requested_crate_ids: Vec<CrateId<'db>>,
+) -> Maybe<Vec<ConcreteFunctionWithBodyId<'db>>> {
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
@@ -390,7 +399,7 @@ pub fn get_sierra_program<'db>(
             }
         }
     }
-    db.get_sierra_program_for_functions(requested_function_ids).cloned()
+    Ok(requested_function_ids)
 }
 
 /// Given `function_id` generates a dummy program with the body of the relevant function
