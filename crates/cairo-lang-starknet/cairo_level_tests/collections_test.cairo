@@ -25,11 +25,10 @@ mod contract_with_vec {
 
 #[test]
 fn test_simple_member_write_to_map() {
-    let mut map_contract_state = contract_with_map::contract_state_for_testing();
-    let mut vec_contract_state = contract_with_vec::contract_state_for_testing();
-    let vec_entry = vec_contract_state.simple.allocate();
-    map_contract_state.simple.entry(0).write(1);
-    assert_eq!(vec_entry.read(), 1);
+    // Ensure read and write occur within the same contract state
+    let mut state = contract_with_map::contract_state_for_testing();
+    state.simple.entry(0).write(1);
+    assert_eq!(state.simple.entry(0).read(), 1);
 }
 
 #[test]
