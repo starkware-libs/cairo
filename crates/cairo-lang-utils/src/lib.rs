@@ -26,6 +26,8 @@ pub mod iterators;
 pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
+#[cfg(feature = "std")]
+pub mod small_ordered_map;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
 

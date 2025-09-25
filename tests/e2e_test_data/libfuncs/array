@@ -16,7 +16,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -51,7 +51,7 @@ fn foo(ref arr: Array<felt252>, value: felt252) {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -88,7 +88,7 @@ fn foo(ref arr: Array<felt252>, value1: felt252, value2: felt252) {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 400})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -133,7 +133,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 700})
+test::foo: SmallOrderedMap({Const: 700})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -195,7 +195,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 700})
+test::foo: SmallOrderedMap({Const: 700})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -257,7 +257,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 700})
+test::foo: SmallOrderedMap({Const: 700})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -320,7 +320,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 700})
+test::foo: SmallOrderedMap({Const: 700})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -388,7 +388,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 980})
+test::foo: SmallOrderedMap({Const: 980})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -459,7 +459,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1080})
+test::foo: SmallOrderedMap({Const: 1080})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -531,7 +531,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1080})
+test::foo: SmallOrderedMap({Const: 1080})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -606,7 +606,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1170})
+test::foo: SmallOrderedMap({Const: 1170})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -679,7 +679,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1270})
+test::foo: SmallOrderedMap({Const: 1270})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -755,7 +755,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1270})
+test::foo: SmallOrderedMap({Const: 1270})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -811,7 +811,7 @@ fn foo(ref arr: Array<felt252>) -> usize {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -853,7 +853,7 @@ fn foo(ref arr: Array<u256>) -> usize {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 400})
 
 //! > sierra_code
 type Array<core::integer::u256> = Array<core::integer::u256> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -896,7 +896,7 @@ fn foo(x1: Box<@(felt252, felt252, felt252)>) -> @Array<felt252> {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type Box<Tuple<felt252, felt252, felt252>> = Box<Tuple<felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -941,7 +941,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 500})
+test::foo: SmallOrderedMap({Const: 500})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -1010,7 +1010,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1070})
+test::foo: SmallOrderedMap({Const: 1070})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -1086,7 +1086,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1070})
+test::foo: SmallOrderedMap({Const: 1070})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];

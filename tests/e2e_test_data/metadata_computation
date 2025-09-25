@@ -30,30 +30,30 @@ fn two() -> u32 {
 }
 
 //! > gas_solution_lp
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1})
-#10: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
-#20: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0})
-#36: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0})
-#43: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
-#47: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1})
+#10: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
+#20: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0})
+#36: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0})
+#43: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
+#47: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 1570, Step: 15, Hole: 6, RangeCheck: 1})
-test::holes: CostTokenMap({Const: 600, Step: 6, Hole: 4, RangeCheck: 0})
-test::use_rc: CostTokenMap({Const: 1070, Step: 10, Hole: 1, RangeCheck: 1})
-test::two: CostTokenMap({Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 1570, Step: 15, Hole: 6, RangeCheck: 1})
+test::holes: SmallOrderedMap({Const: 600, Step: 6, Hole: 4, RangeCheck: 0})
+test::use_rc: SmallOrderedMap({Const: 1070, Step: 10, Hole: 1, RangeCheck: 1})
+test::two: SmallOrderedMap({Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1})
-#10: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
-#20: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0})
-#36: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0})
-#43: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
-#47: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 250, Step: 2, Hole: 0, RangeCheck: 1})
+#10: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
+#20: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 0})
+#36: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 260, Step: 3, Hole: 0, RangeCheck: 0})
+#43: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
+#47: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 1570, Step: 15, Hole: 6, RangeCheck: 1})
-test::holes: CostTokenMap({Const: 600, Step: 6, Hole: 4, RangeCheck: 0})
-test::use_rc: CostTokenMap({Const: 1070, Step: 10, Hole: 1, RangeCheck: 1})
-test::two: CostTokenMap({Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 1570, Step: 15, Hole: 6, RangeCheck: 1})
+test::holes: SmallOrderedMap({Const: 600, Step: 6, Hole: 4, RangeCheck: 0})
+test::use_rc: SmallOrderedMap({Const: 1070, Step: 10, Hole: 1, RangeCheck: 1})
+test::two: SmallOrderedMap({Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 #5: 2
@@ -258,28 +258,28 @@ fn bar() {
 test::bar 10000
 
 //! > gas_solution_lp
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 0, Hole: 0, RangeCheck: 0})
-#11: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9780, Step: 0, Hole: 0, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#18: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
-#23: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 2, RangeCheck: 0})
-#30: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0})
-#38: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 0, Hole: 0, RangeCheck: 0})
+#11: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9780, Step: 0, Hole: 0, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#18: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 100, Step: 1, Hole: 0, RangeCheck: 0})
+#23: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 2, RangeCheck: 0})
+#30: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0})
+#38: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 30900, Step: 13, Hole: 4, RangeCheck: 0})
-test::bar: CostTokenMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 30900, Step: 13, Hole: 4, RangeCheck: 0})
+test::bar: SmallOrderedMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#11: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19660, Step: 0, Hole: 0, RangeCheck: 0})
-#18: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19760, Step: 1, Hole: 0, RangeCheck: 0})
-#23: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 1, Hole: 2, RangeCheck: 0})
-#30: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0})
-#38: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#11: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19660, Step: 0, Hole: 0, RangeCheck: 0})
+#18: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19760, Step: 1, Hole: 0, RangeCheck: 0})
+#23: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9880, Step: 1, Hole: 2, RangeCheck: 0})
+#30: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 1, Hole: 4, RangeCheck: 0})
+#38: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 30900, Step: 13, Hole: 4, RangeCheck: 0})
-test::bar: CostTokenMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 30900, Step: 13, Hole: 4, RangeCheck: 0})
+test::bar: SmallOrderedMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 #5: 2
@@ -438,32 +438,32 @@ fn bar() {
 test::bar 10000
 
 //! > gas_solution_lp
-#0: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1})
-#1: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 0, RangeCheck: 0})
-#6: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0})
-#8: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10250, Step: 2, Hole: 0, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 350, Step: 1, Hole: 3, RangeCheck: 1})
-#24: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#32: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1})
+#1: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 0, RangeCheck: 0})
+#6: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#7: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0})
+#8: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 5, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10250, Step: 2, Hole: 0, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 350, Step: 1, Hole: 3, RangeCheck: 1})
+#24: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#32: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 21280, Step: 14, Hole: 1, RangeCheck: 1})
-test::bar: CostTokenMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 21280, Step: 14, Hole: 1, RangeCheck: 1})
+test::bar: SmallOrderedMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#0: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1})
-#1: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#6: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0})
-#8: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 5, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19890, Step: 2, Hole: 0, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9990, Step: 1, Hole: 3, RangeCheck: 1})
-#24: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#32: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 4, RangeCheck: 1})
+#1: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#6: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#7: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 0})
+#8: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9640, Step: 0, Hole: 5, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19890, Step: 2, Hole: 0, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9990, Step: 1, Hole: 3, RangeCheck: 1})
+#24: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#32: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 21280, Step: 14, Hole: 1, RangeCheck: 1})
-test::bar: CostTokenMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 21280, Step: 14, Hole: 1, RangeCheck: 1})
+test::bar: SmallOrderedMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 #12: 5
@@ -627,32 +627,32 @@ fn bar() {
 test::bar 2000
 
 //! > gas_solution_lp
-#4: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1})
-#6: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0})
-#8: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0})
-#20: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1})
-#28: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#4: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1})
+#6: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#7: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0})
+#8: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0})
+#20: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1})
+#28: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 2940, Step: 10, Hole: 7, RangeCheck: 1})
-test::bar: CostTokenMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 2940, Step: 10, Hole: 7, RangeCheck: 1})
+test::bar: SmallOrderedMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#4: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1})
-#6: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#7: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0})
-#8: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0})
-#20: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1})
-#28: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#4: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 2, Hole: 0, RangeCheck: 1})
+#6: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#7: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 700, Step: 4, Hole: 0, RangeCheck: 0})
+#8: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 7, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1550, Step: 0, Hole: 2, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 1, Hole: 0, RangeCheck: 0})
+#20: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 3, RangeCheck: 1})
+#28: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 2940, Step: 10, Hole: 7, RangeCheck: 1})
-test::bar: CostTokenMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 2940, Step: 10, Hole: 7, RangeCheck: 1})
+test::bar: SmallOrderedMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 #12: 5
@@ -807,30 +807,30 @@ test::bar 10000
 test::foo 100000
 
 //! > gas_solution_lp
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#10: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0})
-#13: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#15: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0})
-#20: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
-#24: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#27: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0})
-#30: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#10: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0})
+#13: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#15: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0})
+#20: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
+#24: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#27: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0})
+#30: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 100000, Step: 10, Hole: 5, RangeCheck: 0})
-test::bar: CostTokenMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 100000, Step: 10, Hole: 5, RangeCheck: 0})
+test::bar: SmallOrderedMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#10: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0})
-#13: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#15: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0})
-#20: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
-#24: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#27: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0})
-#30: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#10: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 79200, Step: 0, Hole: 5, RangeCheck: 0})
+#13: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#15: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 89170, Step: 1, Hole: 0, RangeCheck: 0})
+#20: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
+#24: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#27: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9980, Step: 1, Hole: 0, RangeCheck: 0})
+#30: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 9900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 100000, Step: 10, Hole: 5, RangeCheck: 0})
-test::bar: CostTokenMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 100000, Step: 10, Hole: 5, RangeCheck: 0})
+test::bar: SmallOrderedMap({Const: 10000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 #13: 3
@@ -944,18 +944,18 @@ fn foo() -> u128 {
 }
 
 //! > gas_solution_lp
-#0: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 180, Step: 2, Hole: 0, RangeCheck: 0})
-#1: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
-#14: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#0: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 180, Step: 2, Hole: 0, RangeCheck: 0})
+#1: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 2, RangeCheck: 0})
+#14: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Bitwise: 1, Const: 990, Step: 9, Hole: 2, RangeCheck: 1})
+test::foo: SmallOrderedMap({Bitwise: 1, Const: 990, Step: 9, Hole: 2, RangeCheck: 1})
 
 //! > gas_solution_linear
-#0: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
-#1: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
-#14: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#0: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 1, EcOp: 0, AddMod: 0, MulMod: 0, Const: 90, Step: 1, Hole: 0, RangeCheck: 0})
+#1: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 1, RangeCheck: 0})
+#14: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 1680, Step: 16, Hole: 1, RangeCheck: 1})
+test::foo: SmallOrderedMap({Const: 1680, Step: 16, Hole: 1, RangeCheck: 1})
 
 //! > ap_solution_lp
 #14: 2
@@ -1073,20 +1073,20 @@ fn bar() {
 }
 
 //! > gas_solution_lp
-#4: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#14: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0})
+#4: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#14: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0})
-test::bar: CostTokenMap({Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0})
+test::bar: SmallOrderedMap({Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#4: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#14: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0})
+#4: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 9, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#14: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 3, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1310, Step: 14, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0})
-test::bar: CostTokenMap({Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Bitwise: 3, Const: 2600, Step: 26, Hole: 9, RangeCheck: 0})
+test::bar: SmallOrderedMap({Bitwise: 1, Const: 500, Step: 5, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 #12: 9
@@ -1224,22 +1224,22 @@ fn foo(cond: bool) {
 }
 
 //! > gas_solution_lp
-#1: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#6: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10470, Step: 117, Hole: 0, RangeCheck: 0})
-#28: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0})
+#1: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#6: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10470, Step: 117, Hole: 0, RangeCheck: 0})
+#28: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0})
 
-test::function_with_branch_align: CostTokenMap({Const: 710, Step: 3, Hole: 41, RangeCheck: 0})
-test::foo: CostTokenMap({Const: 13600, Step: 136, Hole: 123, RangeCheck: 0})
+test::function_with_branch_align: SmallOrderedMap({Const: 710, Step: 3, Hole: 41, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 13600, Step: 136, Hole: 123, RangeCheck: 0})
 
 //! > gas_solution_linear
-#1: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#6: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#12: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10670, Step: 119, Hole: 0, RangeCheck: 0})
-#28: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0})
+#1: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#6: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#12: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 10670, Step: 119, Hole: 0, RangeCheck: 0})
+#28: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 123, RangeCheck: 0})
 
-test::function_with_branch_align: CostTokenMap({Const: 200, Step: 2, Hole: 0, RangeCheck: 0})
-test::foo: CostTokenMap({Const: 13600, Step: 136, Hole: 123, RangeCheck: 0})
+test::function_with_branch_align: SmallOrderedMap({Const: 200, Step: 2, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 13600, Step: 136, Hole: 123, RangeCheck: 0})
 
 //! > ap_solution_lp
 #1: 41
@@ -1919,16 +1919,16 @@ fn bar() {
 test::bar 2000
 
 //! > gas_solution_lp
-#9: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#9: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 6300, Step: 6, Hole: 0, RangeCheck: 0})
-test::bar: CostTokenMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 6300, Step: 6, Hole: 0, RangeCheck: 0})
+test::bar: SmallOrderedMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#9: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
+#9: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 1900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 6300, Step: 6, Hole: 0, RangeCheck: 0})
-test::bar: CostTokenMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 6300, Step: 6, Hole: 0, RangeCheck: 0})
+test::bar: SmallOrderedMap({Const: 2000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 
@@ -2021,30 +2021,30 @@ test::bar20000 20000
 test::bar1000 1000
 
 //! > gas_solution_lp
-#0: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#4: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#8: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#9: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#13: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#4: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#8: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#9: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#13: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 43100, Step: 12, Hole: 0, RangeCheck: 0})
-test::bar20000: CostTokenMap({Const: 20000, Step: 1, Hole: 0, RangeCheck: 0})
-test::bar1000: CostTokenMap({Const: 1000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 43100, Step: 12, Hole: 0, RangeCheck: 0})
+test::bar20000: SmallOrderedMap({Const: 20000, Step: 1, Hole: 0, RangeCheck: 0})
+test::bar1000: SmallOrderedMap({Const: 1000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > gas_solution_linear
-#0: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#4: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#5: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
-#8: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0})
-#9: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0})
-#13: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0})
-#16: CostTokenMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0})
+#0: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#4: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#5: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 0, Step: 0, Hole: 0, RangeCheck: 0})
+#8: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0})
+#9: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 18700, Step: 0, Hole: 0, RangeCheck: 0})
+#13: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 19900, Step: 0, Hole: 0, RangeCheck: 0})
+#16: SmallOrderedMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, AddMod: 0, MulMod: 0, Const: 900, Step: 0, Hole: 0, RangeCheck: 0})
 
-test::foo: CostTokenMap({Const: 20500, Step: 12, Hole: 0, RangeCheck: 0})
-test::bar20000: CostTokenMap({Const: 20000, Step: 1, Hole: 0, RangeCheck: 0})
-test::bar1000: CostTokenMap({Const: 1000, Step: 1, Hole: 0, RangeCheck: 0})
+test::foo: SmallOrderedMap({Const: 20500, Step: 12, Hole: 0, RangeCheck: 0})
+test::bar20000: SmallOrderedMap({Const: 20000, Step: 1, Hole: 0, RangeCheck: 0})
+test::bar1000: SmallOrderedMap({Const: 1000, Step: 1, Hole: 0, RangeCheck: 0})
 
 //! > ap_solution_lp
 

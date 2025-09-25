@@ -13,7 +13,7 @@ fn foo(v: i64) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -76,7 +76,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1510})
+test::foo: SmallOrderedMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -132,7 +132,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 400})
 
 //! > sierra_code
 type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -185,7 +185,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 500})
+test::foo: SmallOrderedMap({Const: 500})
 
 //! > sierra_code
 type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -265,7 +265,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1040})
+test::foo: SmallOrderedMap({Const: 1040})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -344,7 +344,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1040})
+test::foo: SmallOrderedMap({Const: 1040})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -412,7 +412,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 870})
+test::foo: SmallOrderedMap({Const: 870})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -461,7 +461,7 @@ fn foo(a: i64, b: i64) -> i128 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];

@@ -22,6 +22,7 @@ serde = { workspace = true, features = ["alloc"], optional = true }
 tracing = { workspace = true, optional = true }
 tracing-log = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
+vector-map = { workspace = true, optional = true }
 
 [dev-dependencies]
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
@@ -35,6 +36,14 @@ env_logger = ["tracing"]
 parity-scale-codec = ["dep:parity-scale-codec"]
 schemars = ["dep:schemars", "serde", "std"]
 serde = ["dep:serde", "indexmap/serde", "num-bigint/serde", "smol_str/serde"]
-std = ["indexmap/std", "num-bigint/std", "num-traits/std", "salsa", "serde?/std", "smol_str/std"]
+std = [
+  "indexmap/std",
+  "num-bigint/std",
+  "num-traits/std",
+  "salsa",
+  "serde?/std",
+  "smol_str/std",
+  "vector-map",
+]
 testing = []
 tracing = ["dep:tracing", "dep:tracing-log", "dep:tracing-subscriber", "std"]

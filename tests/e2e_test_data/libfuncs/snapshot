@@ -23,8 +23,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 600})
-test::bar: CostTokenMap({})
+test::foo: SmallOrderedMap({Const: 600})
+test::bar: SmallOrderedMap({})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -89,8 +89,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1300})
-test::bar: CostTokenMap({})
+test::foo: SmallOrderedMap({Const: 1300})
+test::bar: SmallOrderedMap({})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -177,9 +177,9 @@ call rel -14;
 ret;
 
 //! > function_costs
-test::bar0: CostTokenMap({})
-test::bar1: CostTokenMap({})
-test::foo: CostTokenMap({Const: 810})
+test::bar0: SmallOrderedMap({})
+test::bar1: SmallOrderedMap({})
+test::foo: SmallOrderedMap({Const: 810})
 
 //! > sierra_code
 type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];

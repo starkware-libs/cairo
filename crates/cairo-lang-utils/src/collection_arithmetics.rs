@@ -6,6 +6,8 @@ use core::hash::{BuildHasher, Hash};
 use core::ops::{Add, Sub};
 
 use crate::ordered_hash_map::{self, OrderedHashMap};
+#[cfg(feature = "std")]
+use crate::small_ordered_map::{self, SmallOrderedMap};
 
 /// A trait for types which have a zero value.
 ///
@@ -91,6 +93,37 @@ impl<Key: Hash + Eq, Value: HasZero + Clone + Eq, BH: BuildHasher> MergeCollecti
                     }
                 }
                 ordered_hash_map::Entry::Vacant(e) => {
+                    let zero = Value::zero();
+                    if other_val != zero {
+                        e.insert(action(zero, other_val));
+                    }
+                }
+            }
+        }
+        self
+    }
+}
+
+#[cfg(feature = "std")]
+impl<Key: Eq, Value: HasZero + Clone + Eq> MergeCollection<Key, Value>
+    for SmallOrderedMap<Key, Value>
+{
+    fn merge_collection(
+        mut self,
+        other: impl IntoIterator<Item = (Key, Value)>,
+        action: impl Fn(Value, Value) -> Value,
+    ) -> Self {
+        for (key, other_val) in other {
+            match self.entry(key) {
+                small_ordered_map::Entry::Occupied(mut e) => {
+                    let new_val = action(e.get().clone(), other_val);
+                    if new_val == Value::zero() {
+                        e.remove();
+                    } else {
+                        e.insert(new_val);
+                    }
+                }
+                small_ordered_map::Entry::Vacant(e) => {
                     let zero = Value::zero();
                     if other_val != zero {
                         e.insert(action(zero, other_val));

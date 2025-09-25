@@ -30,7 +30,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 1070})
+test::foo: SmallOrderedMap({Const: 1070})
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -93,7 +93,7 @@ fn foo(reserve: gas::GasReserve) {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];

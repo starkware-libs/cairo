@@ -26,7 +26,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 600})
+test::foo: SmallOrderedMap({Const: 600})
 
 //! > sierra_code
 type IntRange<i16> = IntRange<i16> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -94,7 +94,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 970})
+test::foo: SmallOrderedMap({Const: 970})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -356,7 +356,7 @@ core::panic_with_const_felt252::<375233589013918064796019>@F2() -> (Tuple<core::
 core::panic_with_felt252@F3([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 3840})
-test::foo[11-37]: CostTokenMap({Const: 1870})
-core::panic_with_const_felt252::<375233589013918064796019>: CostTokenMap({Const: 700})
-core::panic_with_felt252: CostTokenMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 3840})
+test::foo[11-37]: SmallOrderedMap({Const: 1870})
+core::panic_with_const_felt252::<375233589013918064796019>: SmallOrderedMap({Const: 700})
+core::panic_with_felt252: SmallOrderedMap({Const: 400})

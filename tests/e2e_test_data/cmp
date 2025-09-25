@@ -25,7 +25,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 770})
+test::foo: SmallOrderedMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -91,7 +91,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 770})
+test::foo: SmallOrderedMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -157,7 +157,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 770})
+test::foo: SmallOrderedMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -223,7 +223,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 770})
+test::foo: SmallOrderedMap({Const: 770})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];

@@ -225,7 +225,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 20890})
+test::foo: SmallOrderedMap({Const: 20890})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];

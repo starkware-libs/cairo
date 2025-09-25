@@ -18,7 +18,7 @@ fn foo() -> SingleVariant {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -60,7 +60,7 @@ fn foo(e: SingleVariant) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -106,7 +106,7 @@ fn foo() -> Option {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -154,7 +154,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -211,7 +211,7 @@ fn foo() -> Color {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -254,7 +254,7 @@ fn foo() -> Color {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -307,7 +307,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -382,7 +382,7 @@ fn foo(index: BoundedInt<0, 4>) -> IndexEnum5 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 200})
+test::foo: SmallOrderedMap({Const: 200})
 
 //! > sierra_code
 type BoundedInt<0, 4> = BoundedInt<0, 4> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -431,7 +431,7 @@ fn foo(index: BoundedInt<0, 1>) -> IndexEnum2 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<0, 1> = BoundedInt<0, 1> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -479,7 +479,7 @@ fn foo(index: BoundedInt<0, 0>) -> IndexEnum1 {
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type BoundedInt<0, 0> = BoundedInt<0, 0> [storable: true, drop: true, dup: true, zero_sized: false];

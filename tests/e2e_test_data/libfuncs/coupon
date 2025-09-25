@@ -22,8 +22,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
-test::bar::<core::integer::u8, core::integer::u8Drop>: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
+test::bar::<core::integer::u8, core::integer::u8Drop>: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -93,9 +93,9 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 700})
-test::buy_coupons: CostTokenMap({Const: 200})
-test::bar::<core::integer::u8, core::integer::u8Drop>: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 700})
+test::buy_coupons: SmallOrderedMap({Const: 200})
+test::bar::<core::integer::u8, core::integer::u8Drop>: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
@@ -171,8 +171,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 300})
-test::bar::<core::integer::u8, core::integer::u8Drop>: CostTokenMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 300})
+test::bar::<core::integer::u8, core::integer::u8Drop>: SmallOrderedMap({Const: 100})
 
 //! > sierra_code
 type Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> = Coupon<user@test::bar::<core::integer::u8, core::integer::u8Drop>> [storable: true, drop: true, dup: false, zero_sized: true];
@@ -251,7 +251,7 @@ ret;
 ret;
 
 //! > function_costs
-test::destruct: CostTokenMap({Bitwise: 1, Const: 1200})
+test::destruct: SmallOrderedMap({Bitwise: 1, Const: 1200})
 
 //! > sierra_code
 type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -410,11 +410,11 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: CostTokenMap({Const: 4640})
-test::recursive_buy::<core::integer::u8>: CostTokenMap({Const: 1870})
-test::recursive_refund::<core::integer::u8>: CostTokenMap({Const: 1870})
-core::panic_with_const_felt252::<375233589013918064796019>: CostTokenMap({Const: 700})
-core::panic_with_felt252: CostTokenMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 4640})
+test::recursive_buy::<core::integer::u8>: SmallOrderedMap({Const: 1870})
+test::recursive_refund::<core::integer::u8>: SmallOrderedMap({Const: 1870})
+core::panic_with_const_felt252::<375233589013918064796019>: SmallOrderedMap({Const: 700})
+core::panic_with_felt252: SmallOrderedMap({Const: 400})
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
