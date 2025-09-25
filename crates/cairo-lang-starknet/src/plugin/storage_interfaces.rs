@@ -189,7 +189,7 @@ struct StorageInterfaceInfo<'db> {
 
 /// Code generation for the different types of storage interfaces.
 impl<'db> StorageInterfaceInfo<'db> {
-    /// Initializes the storage node info from en enum AST. Only supports sub pointers.
+    /// Initializes the storage node info from an enum AST. Only supports sub pointers.
     fn from_enum_ast(
         db: &'db dyn Database,
         enum_ast: &ast::ItemEnum<'db>,
