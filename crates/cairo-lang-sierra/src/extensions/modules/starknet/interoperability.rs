@@ -24,7 +24,7 @@ impl NoGenericArgsGenericType for ContractAddressType {
     const ZERO_SIZED: bool = false;
 }
 
-/// Libfunc for creating a constant storage address.
+/// Libfunc for creating a constant contract address.
 #[derive(Default)]
 pub struct ContractAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
