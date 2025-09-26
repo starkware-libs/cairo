@@ -260,7 +260,7 @@ pub fn get_sierra_program_for_functions<'db>(
         .context("Compilation failed without any diagnostics.")
 }
 
-/// Runs Cairo compiler.
+/// Runs Cairo compiler for specified crates.
 ///
 /// Wrapper over [`compile_prepared_db`], but this function returns [`ProgramArtifact`]
 /// with requested debug info.
@@ -279,9 +279,6 @@ pub fn compile_prepared_db_program_artifact<'db>(
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {
-    let add_statements_functions = compiler_config.add_statements_functions;
-    let add_statements_code_locations = compiler_config.add_statements_code_locations;
-
     ensure_diagnostics(db, &mut compiler_config.diagnostics_reporter)?;
 
     let executable_functions = find_executable_function_ids(db, main_crate_ids.clone());
@@ -297,7 +294,36 @@ pub fn compile_prepared_db_program_artifact<'db>(
         executable_functions.clone().into_keys().collect()
     };
 
-    let mut sierra_program_with_debug = get_sierra_program_for_functions(db, function_ids)?.clone();
+    let mut program_artifact =
+        compile_prepared_db_program_artifact_for_functions(db, function_ids, compiler_config)?;
+
+    // Calculate executable function Sierra ids.
+    let executables = collect_executables(db, executable_functions, &program_artifact.program);
+
+    let debug_info = program_artifact.debug_info.take().unwrap_or_default();
+
+    Ok(program_artifact.with_debug_info(DebugInfo { executables, ..debug_info }))
+}
+
+/// Runs Cairo compiler for specified functions.
+///
+/// Wrapper over [`compile_prepared_db`], but this function returns [`ProgramArtifact`]
+/// with requested debug info.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `requested_function_ids` - [`ConcreteFunctionWithBodyId`]s to compile.
+/// * `compiler_config` - The compiler configuration.
+/// # Returns
+/// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.
+/// * `Err(anyhow::Error)` - Compilation failed.
+pub fn compile_prepared_db_program_artifact_for_functions<'db>(
+    db: &'db dyn Database,
+    requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
+    compiler_config: CompilerConfig<'_>,
+) -> Result<ProgramArtifact> {
+    let mut sierra_program_with_debug =
+        get_sierra_program_for_functions(db, requested_function_ids)?.clone();
 
     if compiler_config.replace_ids {
         sierra_program_with_debug.program =
@@ -306,7 +332,7 @@ pub fn compile_prepared_db_program_artifact<'db>(
 
     let mut annotations = Annotations::default();
 
-    if add_statements_functions {
+    if compiler_config.add_statements_functions {
         annotations.extend(Annotations::from(
             sierra_program_with_debug
                 .debug_info
@@ -315,7 +341,7 @@ pub fn compile_prepared_db_program_artifact<'db>(
         ))
     };
 
-    if add_statements_code_locations {
+    if compiler_config.add_statements_code_locations {
         annotations.extend(Annotations::from(
             sierra_program_with_debug
                 .debug_info
@@ -332,10 +358,5 @@ pub fn compile_prepared_db_program_artifact<'db>(
         executables: Default::default(),
     };
 
-    // Calculate executable function Sierra ids.
-    let executables =
-        collect_executables(db, executable_functions, &sierra_program_with_debug.program);
-
-    Ok(ProgramArtifact::stripped(sierra_program_with_debug.program)
-        .with_debug_info(DebugInfo { executables, ..debug_info }))
+    Ok(ProgramArtifact::stripped(sierra_program_with_debug.program).with_debug_info(debug_info))
 }
