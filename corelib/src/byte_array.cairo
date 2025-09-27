@@ -65,7 +65,7 @@ pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
-const BYTES_IN_BYTES31_NONZERO: NonZero<usize> = 31;
+const BYTES_IN_BYTES31_NONZERO: NonZero<usize> = BYTES_IN_BYTES31.try_into().unwrap();
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 /// Byte array type.
