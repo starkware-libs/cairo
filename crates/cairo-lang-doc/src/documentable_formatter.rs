@@ -873,7 +873,7 @@ fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn Database) -> 
     Some(String::from(MISSING))
 }
 
-/// Formats and writes [`GenericParam`]s data into [`HirFormatter`]'s buff.
+/// Formats and writes [`GenericParam`]s data into [`HirFormatter`]'s buf.
 fn write_generic_params<'db>(
     generic_params: Vec<GenericParam<'db>>,
     f: &mut HirFormatter<'db>,
