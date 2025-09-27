@@ -1,0 +1,16 @@
+name: Block Merges into graphite-base/*
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - 'graphite-base/**'
+
+jobs:
+  block-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail the PR to block merges
+        run: |
+          echo "Merges into graphite-base/* are not allowed."
+          exit 1
