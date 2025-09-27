@@ -46,7 +46,7 @@ pub fn handle_trait<'db>(
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
                     empty_body.stable_ptr(db).untyped(),
-                    "Starknet interfaces without body are not supported.".to_string(),
+                    "Starknet interfaces without a body are not supported.".to_string(),
                 )],
                 remove_original_item: false,
             };
