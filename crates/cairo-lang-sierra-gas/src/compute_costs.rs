@@ -7,7 +7,6 @@ use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, Sta
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
@@ -180,12 +179,19 @@ fn get_branch_requirements_dependencies(
     idx: &StatementIdx,
     invocation: &Invocation,
     libfunc_cost: &[BranchCost],
-) -> OrderedHashSet<StatementIdx> {
-    let mut res: OrderedHashSet<StatementIdx> = Default::default();
+) -> Vec<StatementIdx> {
+    let mut res = vec![];
+    // Adds to the result if not already in it.
+    // Since rather small - more efficient using a Vec than a Map.
+    let mut add_to_res = |idx| {
+        if !res.contains(&idx) {
+            res.push(idx);
+        }
+    };
     for (branch_info, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
         match branch_cost {
             BranchCost::FunctionCost { const_cost: _, function, sign: _ } => {
-                res.insert(function.entry_point);
+                add_to_res(function.entry_point);
             }
             BranchCost::WithdrawGas(WithdrawGasBranchInfo {
                 success: true,
@@ -197,9 +203,8 @@ fn get_branch_requirements_dependencies(
             }
             _ => {}
         }
-        res.insert(idx.next(&branch_info.target));
+        add_to_res(idx.next(&branch_info.target));
     }
-
     res
 }
 
@@ -454,13 +459,11 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                         // Return has no dependencies.
                         vec![]
                     }
-                    Statement::Invocation(invocation) => {
-                        let libfunc_cost = &self.branch_costs[current_idx.0];
-
-                        get_branch_requirements_dependencies(current_idx, invocation, libfunc_cost)
-                            .into_iter()
-                            .collect()
-                    }
+                    Statement::Invocation(invocation) => get_branch_requirements_dependencies(
+                        current_idx,
+                        invocation,
+                        &self.branch_costs[current_idx.0],
+                    ),
                 }
             },
         )?;
@@ -674,10 +677,13 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 /// Generates a topological ordering of the statements according to the given dependencies_callback.
 ///
 /// Each statement appears in the ordering after its dependencies.
-fn compute_reverse_topological_order(
+fn compute_reverse_topological_order<
+    Dependencies: IntoIterator<Item = StatementIdx>,
+    DependenciesCallback: Fn(&StatementIdx) -> Dependencies,
+>(
     n_statements: usize,
     detect_cycles: bool,
-    dependencies_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
+    dependencies_callback: DependenciesCallback,
 ) -> Result<Vec<StatementIdx>, CostError> {
     reverse_topological_ordering(
         detect_cycles,
