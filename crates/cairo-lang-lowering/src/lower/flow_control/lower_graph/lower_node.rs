@@ -406,7 +406,7 @@ fn lower_bind_var<'db>(
     let pattern_variable = node.output.get(ctx.graph);
     let var_id = ctx.var_usage(node.input).var_id;
 
-    // Override variable location to with the location of the variable in the pattern.
+    // Override variable location with the location of the variable in the pattern.
     // TODO(lior): Consider using the location of the first instance of the pattern binding instead
     //   of overriding each time `BindVar` is visited.
     ctx.ctx.variables.variables[var_id].location =

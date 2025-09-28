@@ -8,7 +8,7 @@
 //! (or nodes) in the graph.
 //!
 //! During the construction of the graph, variables are assigned to values ([FlowControlVar]).
-//! These variable are not the ones used in the lowering process ([super::super::VariableId]).
+//! These variables are not the ones used in the lowering process ([super::super::VariableId]).
 //!
 //! For example, `if x { 1 } else { 2 }` is represented by the following graph
 //! (the root is `NodeId(2)`):
