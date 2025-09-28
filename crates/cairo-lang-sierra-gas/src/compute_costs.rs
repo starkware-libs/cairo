@@ -136,13 +136,14 @@ pub fn compute_costs<
         });
     }
 
-    context.prepare_wallet(specific_cost_context)?;
+    let prepare_wallet_order = context.prepare_wallet_order()?;
+    context.prepare_wallet(&prepare_wallet_order, specific_cost_context);
 
     // Compute the excess cost and the corresponding target value for each statement.
     context.target_values = context.compute_target_values(specific_cost_context)?;
 
     // Recompute the wallet values for each statement, after setting the target values.
-    context.prepare_wallet(specific_cost_context)?;
+    context.prepare_wallet(&prepare_wallet_order, specific_cost_context);
 
     // Check that enforcing the wallet values succeeded.
     for (idx, value) in enforced_wallet_values.iter() {
@@ -448,34 +449,31 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
     /// Prepares the values for [Self::wallet_at].
     fn prepare_wallet<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
+        order: &[StatementIdx],
         specific_cost_context: &SpecificCostContext,
-    ) -> Result<(), CostError> {
-        let rev_topological_order = compute_reverse_topological_order(
-            self.program.statements.len(),
-            true,
-            |current_idx| {
-                match &self.program.get_statement(current_idx).unwrap() {
-                    Statement::Return(_) => {
-                        // Return has no dependencies.
-                        vec![]
-                    }
-                    Statement::Invocation(invocation) => get_branch_requirements_dependencies(
-                        current_idx,
-                        invocation,
-                        &self.branch_costs[current_idx.0],
-                    ),
-                }
-            },
-        )?;
-
+    ) {
         self.costs.resize(self.program.statements.len(), Default::default());
-        for current_idx in rev_topological_order {
+        for idx in order {
             // The computation of the dependencies was completed.
-            self.costs[current_idx.0] =
-                self.no_cache_compute_wallet_at(&current_idx, specific_cost_context);
+            self.costs[idx.0] = self.no_cache_compute_wallet_at(idx, specific_cost_context);
         }
+    }
 
-        Ok(())
+    /// Returns the order for the preparation of the wallet values for [Self::prepare_wallet].
+    fn prepare_wallet_order(&self) -> Result<Vec<StatementIdx>, CostError> {
+        compute_reverse_topological_order(self.program.statements.len(), true, |current_idx| {
+            match &self.program.get_statement(current_idx).unwrap() {
+                Statement::Return(_) => {
+                    // Return has no dependencies.
+                    vec![]
+                }
+                Statement::Invocation(invocation) => get_branch_requirements_dependencies(
+                    current_idx,
+                    invocation,
+                    &self.branch_costs[current_idx.0],
+                ),
+            }
+        })
     }
 
     /// Helper function for `prepare_wallet()`.
