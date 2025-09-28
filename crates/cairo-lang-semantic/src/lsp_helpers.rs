@@ -356,8 +356,7 @@ pub fn visible_importables_in_crate<'db>(
     let crate_as_module = ModuleId::CrateRoot(crate_id);
     db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
         .iter()
-        .cloned()
-        .map(|(item_id, path)| (item_id, format!("{crate_name}::{path}")))
+        .map(|(item_id, path)| (*item_id, format!("{crate_name}::{path}")))
         .collect::<Vec<_>>()
         .into()
 }
