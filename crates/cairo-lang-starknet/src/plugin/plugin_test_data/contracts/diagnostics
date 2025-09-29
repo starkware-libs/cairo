@@ -4339,7 +4339,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 trait IContract<T>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Starknet interfaces without body are not supported.
+error: Plugin diagnostic: Starknet interfaces without a body are not supported.
  --> lib.cairo:2:19
 trait IContract<T>;
                   ^
