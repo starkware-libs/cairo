@@ -21,7 +21,7 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
         return;
     }
     let mut ctx = TopSortContext {
-        old_block_rev_order: Default::default(),
+        old_block_rev_order: Vec::with_capacity(lowered.blocks.len()),
         incoming_gotos: vec![0; lowered.blocks.len()],
         can_be_merged: vec![true; lowered.blocks.len()],
         remappings_ctx: Context::new(lowered.variables.len()),
@@ -75,10 +75,11 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
 
         let mut block = &lowered.blocks[block_id];
         loop {
-            for stmt in &block.statements {
-                statements
-                    .push(var_reassigner.rebuild_statement(&rebuilder.rebuild_statement(stmt)));
-            }
+            statements.extend(
+                block.statements.iter().map(|stmt| {
+                    var_reassigner.rebuild_statement(&rebuilder.rebuild_statement(stmt))
+                }),
+            );
             if let BlockEnd::Goto(target_block_id, remappings) = &block.end
                 && !rebuilder.block_remapping.contains_key(target_block_id)
             {
