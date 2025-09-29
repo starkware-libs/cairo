@@ -269,11 +269,7 @@ pub trait FilesGroup: Database {
 
     /// Query for the file contents. This takes overrides into consideration.
     fn file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db str> {
-        let overrides = self.file_overrides();
-        overrides.get(&file_id).map(|content| content.as_ref()).or_else(|| {
-            priv_raw_file_content(self.as_dyn_database(), file_id)
-                .map(|content| content.long(self.as_dyn_database()).as_str())
-        })
+        file_content(self.as_dyn_database(), file_id).as_ref().map(|content| content.as_ref())
     }
 
     fn file_summary<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db FileSummary> {
@@ -548,6 +544,15 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
         }
     }
     Some(FileSummary { line_offsets, last_offset: offset })
+}
+
+/// Query mplementation of [FilesGroup::file_content].
+#[salsa::tracked(returns(ref))]
+fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<str>> {
+    let overrides = db.file_overrides();
+    overrides.get(&file_id).map(|content| (**content).clone()).or_else(|| {
+        priv_raw_file_content(db, file_id).map(|content| content.long(db).clone().into())
+    })
 }
 
 /// Return a reference to the content of a file as a string.
