@@ -214,27 +214,22 @@ fn get_branch_requirements_dependencies(
 /// Rectify (see [CostTypeTrait::rectify]) is needed in case the branch cost is negative
 /// (e.g., in `coupon_refund`).
 fn get_branch_requirements<
+    'a,
     CostType: CostTypeTrait,
     SpecificCostContext: SpecificCostContextTrait<CostType>,
 >(
-    specific_context: &SpecificCostContext,
-    wallet_at_fn: &impl Fn(&StatementIdx) -> WalletInfo<CostType>,
-    idx: &StatementIdx,
-    invocation: &Invocation,
-    libfunc_cost: &[BranchCost],
+    specific_context: &'a SpecificCostContext,
+    wallet_at_fn: &'a impl Fn(&StatementIdx) -> WalletInfo<CostType>,
+    idx: &'a StatementIdx,
+    invocation: &'a Invocation,
+    libfunc_cost: &'a [BranchCost],
     rectify: bool,
-) -> Vec<WalletInfo<CostType>> {
-    zip_eq(&invocation.branches, libfunc_cost)
-        .map(|(branch_info, branch_cost)| {
-            let res = specific_context.get_branch_requirement(
-                wallet_at_fn,
-                idx,
-                branch_info,
-                branch_cost,
-            );
-            if rectify { res.rectify() } else { res }
-        })
-        .collect()
+) -> impl ExactSizeIterator<Item = WalletInfo<CostType>> + 'a {
+    zip_eq(&invocation.branches, libfunc_cost).map(move |(branch_info, branch_cost)| {
+        let res =
+            specific_context.get_branch_requirement(wallet_at_fn, idx, branch_info, branch_cost);
+        if rectify { res.rectify() } else { res }
+    })
 }
 
 /// For every `branch_align`, `withdraw_gas`, `redeposit_gas` and `coupon_refund` statements,
@@ -257,9 +252,10 @@ fn analyze_gas_statements<
         return Ok(());
     };
     let libfunc_cost = &context.branch_costs[idx.0];
-    let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
+    let wallet_at_fn = &|statement_idx: &StatementIdx| context.wallet_at(statement_idx);
+    let branch_requirements = get_branch_requirements(
         specific_context,
-        &|statement_idx| context.wallet_at(statement_idx),
+        wallet_at_fn,
         idx,
         invocation,
         libfunc_cost,
@@ -269,7 +265,7 @@ fn analyze_gas_statements<
     let wallet_value = context.wallet_at(idx).value;
 
     for (branch_info, branch_cost, branch_requirement) in
-        zip_eq3(&invocation.branches, libfunc_cost, &branch_requirements)
+        zip_eq3(&invocation.branches, libfunc_cost, branch_requirements)
     {
         if let BranchCost::WithdrawGas(WithdrawGasBranchInfo { success: true, .. }) = branch_cost {
             // Note that `idx.next(&branch_info.target)` is indeed branch align due to
@@ -359,12 +355,11 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
     /// `target_value` is the target value for this statement. See [CostContext::target_values].
     fn merge(
         branch_costs: &[BranchCost],
-        branches: Vec<Self>,
+        branches: impl ExactSizeIterator<Item = Self>,
         target_value: Option<&CostType>,
     ) -> Self {
         let n_branches = branches.len();
-        let mut max_value =
-            CostType::max(branches.iter().map(|wallet_info| wallet_info.value.clone()));
+        let mut max_value = CostType::max(branches.map(|wallet_info| wallet_info.value));
 
         // If there are multiple branches, there must be a branch_align in each of them, which
         // can be used to increase the wallet value up to the target value.
@@ -490,9 +485,10 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                 let libfunc_cost = &self.branch_costs[idx.0];
 
                 // For each branch, compute the required value for the wallet.
-                let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
+                let wallet_at_fn = &|statement_idx: &StatementIdx| self.wallet_at(statement_idx);
+                let branch_requirements = get_branch_requirements(
                     specific_cost_context,
-                    &|statement_idx| self.wallet_at(statement_idx),
+                    wallet_at_fn,
                     idx,
                     invocation,
                     libfunc_cost,
@@ -601,9 +597,10 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 
         let libfunc_cost = &self.branch_costs[idx.0];
 
+        let wallet_at_fn = &|statement_idx: &StatementIdx| self.wallet_at(statement_idx);
         let branch_requirements = get_branch_requirements(
             specific_cost_context,
-            &|statement_idx| self.wallet_at(statement_idx),
+            wallet_at_fn,
             idx,
             invocation,
             libfunc_cost,
