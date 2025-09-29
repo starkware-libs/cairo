@@ -55,7 +55,7 @@ pub fn verify_diagnostics_expectation(
     let expect_diagnostics = args.get("expect_diagnostics")?;
     require(expect_diagnostics != "*")?;
 
-    let expect_diagnostics = expect_diagnostics_input_input(expect_diagnostics);
+    let expect_diagnostics = expect_diagnostics_input(expect_diagnostics);
     let has_diagnostics = !diagnostics.trim().is_empty();
     // TODO(Gil): This is a bit of a hack, try and get the original diagnostics from the test.
     let has_errors = diagnostics.lines().any(|line| line.starts_with("error: "));
@@ -104,7 +104,7 @@ enum ExpectDiagnostics {
 
 /// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
 /// Ignores case.
-fn expect_diagnostics_input_input(input: &str) -> ExpectDiagnostics {
+fn expect_diagnostics_input(input: &str) -> ExpectDiagnostics {
     let input = input.to_lowercase();
     match input.as_str() {
         "false" => ExpectDiagnostics::None,
