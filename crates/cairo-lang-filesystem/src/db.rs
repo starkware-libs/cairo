@@ -237,7 +237,7 @@ pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
     FilesGroupInput::new(db, None, None, None, None, None)
 }
 
-// Salsa database interface.
+/// Queries over the files group.
 pub trait FilesGroup: Database {
     /// Interned version of `crate_configs_input`.
     fn crate_configs<'db>(&'db self) -> &'db OrderedHashMap<CrateId<'db>, CrateConfiguration<'db>> {
@@ -297,47 +297,6 @@ pub trait FilesGroup: Database {
     /// Create an input crate from an interned crate id.
     fn crate_input<'db>(&'db self, crt: CrateId<'db>) -> &'db CrateInput {
         crate_input(self.as_dyn_database(), crt)
-    }
-
-    /// Create an input crate configuration from a [`CrateConfiguration`].
-    fn crate_configuration_input<'db>(
-        &'db self,
-        config: CrateConfiguration<'db>,
-    ) -> &'db CrateConfigurationInput {
-        crate_configuration_input(self.as_dyn_database(), config)
-    }
-
-    /// Returns an updated file overrides input with the given file id and content.
-    fn update_file_overrides_input(
-        &self,
-        file: FileInput,
-        content: Option<Arc<str>>,
-    ) -> Arc<OrderedHashMap<FileInput, Arc<str>>> {
-        let db_ref = self.as_dyn_database();
-        let mut overrides = files_group_input(db_ref).file_overrides(db_ref).clone().unwrap();
-        match content {
-            Some(content) => overrides.insert(file.clone(), content),
-            None => overrides.swap_remove(&file),
-        };
-        Arc::new(overrides)
-    }
-
-    /// Returns an updated crate configuration input with the given crate id and root.
-    fn update_crate_configuration_input(
-        &self,
-        crt: CrateId<'_>,
-        root: Option<CrateConfiguration<'_>>,
-    ) -> OrderedHashMap<CrateInput, CrateConfigurationInput> {
-        let db_ref = self.as_dyn_database();
-        let crt = self.crate_input(crt);
-        let mut crate_configs = files_group_input(db_ref).crate_configs(db_ref).clone().unwrap();
-        match root {
-            Some(root) => {
-                crate_configs.insert(crt.clone(), crate_configuration_input(db_ref, root).clone())
-            }
-            None => crate_configs.swap_remove(crt),
-        };
-        crate_configs
     }
 
     /// Sets the given flag value. None value removes the flag.
@@ -755,3 +714,16 @@ pub fn ext_as_virtual<'db>(db: &'db dyn Database, id: salsa::Id) -> &'db Virtual
         .as_ref()
         .expect("`ext_as_virtual` was not set as input.")(db, id)
 }
+
+/// Non-pub queries over the files group.
+trait PrivFilesGroup: Database {
+    /// Create an input crate configuration from a [`CrateConfiguration`].
+    fn crate_configuration_input<'db>(
+        &'db self,
+        config: CrateConfiguration<'db>,
+    ) -> &'db CrateConfigurationInput {
+        crate_configuration_input(self.as_dyn_database(), config)
+    }
+}
+
+impl<T: Database + ?Sized> PrivFilesGroup for T {}
