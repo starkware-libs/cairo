@@ -53,7 +53,7 @@ use crate::cmp::min;
 #[allow(unused_imports)]
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[feature("bounded-int-utils")]
-use crate::internal::bounded_int::{BoundedInt, downcast};
+use crate::internal::bounded_int::{BoundedInt, downcast, upcast};
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -156,38 +156,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// assert!(ba == "12");
     /// ```
     fn append(ref self: ByteArray, other: @ByteArray) {
-        let mut other_data = other.data.span();
-
-        if self.pending_word_len == 0 {
-            self.data.append_span(other_data);
-            self.pending_word = *other.pending_word;
-            self.pending_word_len = *other.pending_word_len;
-            return;
-        }
-
-        let shift_value = self.shift_value();
-        // self.pending_word_len is in [1, 30]. This is the split index for all the full words of
-        // `other`, as for each word, this is the number of bytes left for the next word.
-        match split_info(self.pending_word_len) {
-            SplitInfo::Eq16(v) => {
-                while let Some(word) = other_data.pop_front() {
-                    self.append_shifted(v.split_u256((*word).into()), shift_value);
-                }
-            },
-            SplitInfo::Lt16(v) => {
-                while let Some(word) = other_data.pop_front() {
-                    self.append_shifted(v.split_u256((*word).into()), shift_value);
-                }
-            },
-            SplitInfo::Gt16(v) => {
-                while let Some(word) = other_data.pop_front() {
-                    self.append_shifted(v.split_u256((*word).into()), shift_value);
-                }
-            },
-            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
-        }
-        // Add the pending word of `other`.
-        self.append_word(*other.pending_word, *other.pending_word_len);
+        self.append_aligned_byte_span(other.span());
     }
 
     /// Concatenates two `ByteArray` and returns the result.
@@ -370,6 +339,43 @@ impl InternalImpl of InternalTrait {
     fn append_bytes31(ref self: ByteArray, value: felt252) {
         const ON_ERR: bytes31 = 'BA_ILLEGAL_USAGE'_u128.into();
         self.data.append(value.try_into().unwrap_or(ON_ERR));
+    }
+
+    /// Appends a word-aligned `ByteSpan`.
+    /// Requires `span.first_char_start_offset == 0`, otherwise the offset is ignored.
+    fn append_aligned_byte_span(ref self: ByteArray, span: ByteSpan) {
+        let mut other_data = span.data;
+
+        if self.pending_word_len == 0 {
+            self.data.append_span(other_data);
+            self.pending_word = span.remainder_word;
+            self.pending_word_len = upcast(span.remainder_len);
+            return;
+        }
+
+        let shift_value = self.shift_value();
+        // self.pending_word_len is in [1, 30]. This is the split index for all the full words of
+        // `other`, as for each word, this is the number of bytes left for the next word.
+        match split_info(self.pending_word_len) {
+            SplitInfo::Eq16(v) => {
+                while let Some(word) = other_data.pop_front() {
+                    self.append_shifted(v.split_u256((*word).into()), shift_value);
+                }
+            },
+            SplitInfo::Lt16(v) => {
+                while let Some(word) = other_data.pop_front() {
+                    self.append_shifted(v.split_u256((*word).into()), shift_value);
+                }
+            },
+            SplitInfo::Gt16(v) => {
+                while let Some(word) = other_data.pop_front() {
+                    self.append_shifted(v.split_u256((*word).into()), shift_value);
+                }
+            },
+            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
+        }
+        // Add the pending word of `other`.
+        self.append_word(span.remainder_word, upcast(span.remainder_len));
     }
 }
 
