@@ -5,6 +5,7 @@ use itertools::chain;
 use serde::{Deserialize, Serialize};
 
 use crate::compile::CompiledFunction;
+use crate::debug_info::DebugInfo;
 
 pub const NOT_RETURNING_HEADER_SIZE: usize = 6;
 
@@ -15,6 +16,9 @@ pub struct Executable {
     pub program: AssembledCairoProgram,
     /// The available entrypoints for the program.
     pub entrypoints: Vec<ExecutableEntryPoint>,
+    /// Debug information for the assembled program.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub debug_info: Option<DebugInfo>,
 }
 
 impl Executable {
@@ -43,6 +47,7 @@ impl Executable {
                     kind: EntryPointKind::Bootloader,
                 },
             ],
+            debug_info: Default::default(),
         }
     }
 }

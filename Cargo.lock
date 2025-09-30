@@ -619,6 +619,7 @@ dependencies = [
  "itertools 0.14.0",
  "salsa",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
