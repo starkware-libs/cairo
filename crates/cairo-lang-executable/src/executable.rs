@@ -5,7 +5,7 @@ use itertools::chain;
 use serde::{Deserialize, Serialize};
 
 use crate::compile::CompiledFunction;
-use crate::debug_info::DebugInfo;
+use crate::debug_info::{Annotations, DebugInfo, ProgramInformation};
 
 pub const NOT_RETURNING_HEADER_SIZE: usize = 6;
 
@@ -47,7 +47,17 @@ impl Executable {
                     kind: EntryPointKind::Bootloader,
                 },
             ],
-            debug_info: Default::default(),
+            debug_info: Some(DebugInfo {
+                annotations: Annotations::from(ProgramInformation {
+                    program_offset: NOT_RETURNING_HEADER_SIZE
+                        + compiled
+                            .wrapper
+                            .header
+                            .iter()
+                            .map(|inst| inst.body.op_size())
+                            .sum::<usize>(),
+                }),
+            }),
         }
     }
 }
