@@ -305,6 +305,7 @@ fn visible_importables_in_module_ex<'db>(
     module_importables!(module_impls_ids, ImportableId::Impl);
     module_importables!(module_extern_functions_ids, ImportableId::ExternFunction);
     module_importables!(module_extern_types_ids, ImportableId::ExternType);
+    module_importables!(module_macro_declarations_ids, ImportableId::MacroDeclaration);
 
     for submodule in modules_to_visit {
         for (item_id, path) in visible_importables_in_module_ex(
