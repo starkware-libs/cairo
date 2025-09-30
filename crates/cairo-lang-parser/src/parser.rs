@@ -1,4 +1,5 @@
 use std::mem;
+use std::sync::Arc;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -10,6 +11,7 @@ use cairo_lang_syntax::node::ast::*;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
+use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::{extract_matches, require};
 use salsa::Database;
 use syntax::node::green::{GreenNode, GreenNodeDetails};
@@ -17,7 +19,7 @@ use syntax::node::ids::GreenId;
 
 use crate::ParserDiagnostic;
 use crate::diagnostic::ParserDiagnosticKind;
-use crate::lexer::{Lexer, LexerTerminal};
+use crate::lexer::{LexerTerminal, tokenize_all};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
 use crate::utils::primitive_token_stream_content_and_offset;
@@ -45,11 +47,8 @@ enum MacroParsingContext {
 pub struct Parser<'a, 'mt> {
     db: &'a dyn Database,
     file_id: FileId<'a>,
-    lexer: Lexer<'a>,
-    /// The next terminal to handle.
-    next_terminal: LexerTerminal<'a>,
-    /// The terminal following [Self::next_terminal], if known.
-    next_next_terminal: Option<LexerTerminal<'a>>,
+    /// A queue of lexed tokens to be parsed.
+    terminals: Deque<LexerTerminal<'a>>,
     /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen<'a>>,
     /// The current offset, excluding the current terminal.
@@ -64,6 +63,24 @@ pub struct Parser<'a, 'mt> {
     pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
     /// An indicator if we are inside a macro rule expansion.
     macro_parsing_context: MacroParsingContext,
+}
+
+impl<'a> Parser<'a, '_> {
+    fn next_terminal(&self) -> &LexerTerminal<'a> {
+        &self.terminals[0]
+    }
+
+    fn next_next_terminal(&self) -> &LexerTerminal<'a> {
+        &self.terminals[1]
+    }
+
+    fn advance(&mut self) -> LexerTerminal<'a> {
+        self.terminals.pop_front().unwrap()
+    }
+
+    fn next_terminal_mut(&mut self) -> &mut LexerTerminal<'a> {
+        &mut self.terminals[0]
+    }
 }
 
 /// The possible results of a try_parse_* function failing to parse.
@@ -130,14 +147,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         text: &'a str,
         diagnostics: &'mt mut DiagnosticsBuilder<'a, ParserDiagnostic<'a>>,
     ) -> Self {
-        let mut lexer = Lexer::from_text(db, text);
-        let next_terminal = lexer.next().unwrap();
+        let tokens: Deque<LexerTerminal<'a>> = tokenize_all(db, (), Arc::from(text));
         Parser {
             db,
             file_id,
-            lexer,
-            next_terminal,
-            next_next_terminal: None,
+            terminals: tokens,
             pending_trivia: Vec::new(),
             offset: Default::default(),
             current_width: Default::default(),
@@ -289,7 +303,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // token, which doesn't exist.
         self.offset = self.offset.add_width(self.current_width);
 
-        let eof = self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(self.next_terminal.clone());
+        let eof =
+            self.add_trivia_to_terminal::<TerminalEndOfFile<'_>>(self.next_terminal().clone());
         SyntaxFile::new_green(self.db, items, eof)
     }
 
@@ -3517,24 +3532,22 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Peeks at the next terminal from the Lexer without taking it.
     pub fn peek(&self) -> &LexerTerminal<'a> {
-        &self.next_terminal
+        self.next_terminal()
     }
 
     /// Peeks at the token following the next one.
     /// Assumption: the next token is not EOF.
     pub fn peek_next_next_kind(&mut self) -> SyntaxKind {
-        self.next_next_terminal.get_or_insert_with(|| self.lexer.next().unwrap()).kind
+        self.next_next_terminal().kind
     }
 
-    /// Takes a terminal from the Lexer and places it in self.next_terminal.
+    /// Move forward one terminal.
     fn take_raw(&mut self) -> LexerTerminal<'a> {
         self.offset = self.offset.add_width(self.current_width);
-        self.current_width = self.next_terminal.width(self.db);
-        self.last_trivia_length = trivia_total_width(self.db, &self.next_terminal.trailing_trivia);
-
-        let next_terminal =
-            self.next_next_terminal.take().unwrap_or_else(|| self.lexer.next().unwrap());
-        std::mem::replace(&mut self.next_terminal, next_terminal)
+        self.current_width = self.next_terminal().width(self.db);
+        self.last_trivia_length =
+            trivia_total_width(self.db, &self.next_terminal().trailing_trivia);
+        self.advance()
     }
 
     /// Skips the next, non-taken, token. A skipped token is a token which is not expected where it
@@ -3737,7 +3750,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         // comment), return None and do not change the next terminal leading trivia.
         let mut has_header_doc = false;
         let mut split_index = 0;
-        for trivium in &self.next_terminal.leading_trivia {
+        for trivium in &self.next_terminal().leading_trivia {
             match trivium.0.long(self.db).kind {
                 SyntaxKind::TokenSingleLineComment | SyntaxKind::TokenSingleLineInnerComment => {
                     has_header_doc = true;
@@ -3753,10 +3766,14 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             return None;
         }
         // Split the trivia into header doc and the rest.
-        let leading_trivia = self.next_terminal.leading_trivia.split_off(split_index);
-        let header_doc = std::mem::replace(&mut self.next_terminal.leading_trivia, leading_trivia);
+        let header_doc = {
+            let next_mut = self.next_terminal_mut();
+            let leading_trivia = next_mut.leading_trivia.split_off(split_index);
+            std::mem::replace(&mut next_mut.leading_trivia, leading_trivia)
+        };
+        let empty_text_id = SmolStrId::from(self.db, "");
         let empty_lexer_terminal = LexerTerminal {
-            text: SmolStrId::from(self.db, ""),
+            text: empty_text_id,
             kind: SyntaxKind::TerminalEmpty,
             leading_trivia: header_doc,
             trailing_trivia: vec![],

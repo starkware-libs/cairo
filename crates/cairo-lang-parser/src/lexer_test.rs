@@ -1,11 +1,12 @@
+use std::sync::Arc;
+
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_test_utils::test;
 
-use super::Lexer;
-use crate::lexer::LexerTerminal;
+use crate::lexer::{LexerTerminal, tokenize_all};
 use crate::utils::SimpleParserDatabase;
 
 // TODO(spapini): Use snapshot/regression tests.
@@ -265,22 +266,22 @@ fn test_lex_single_token() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     for (kind, text) in terminal_kind_and_text() {
-        let mut lexer = Lexer::from_text(db, text);
-        let terminal = lexer.next().unwrap();
+        let terminals = tokenize_all(db, (), Arc::from(text));
+        let terminal = &terminals[0];
         // TODO(spapini): Remove calling new_root on non root elements.
         assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
         assert_eq!(terminal.text.long(db), text, "Wrong token text.");
 
         assert_eq!(
-            lexer.next().unwrap().kind,
+            terminals[1].kind,
             SyntaxKind::TerminalEndOfFile,
             "Wrong eof token, with text: \"{text}\"."
         );
-        assert!(lexer.next().is_none(), "Expected end of lexer stream.");
+        assert_eq!(terminals.len(), 2, "Expected exactly 2 terminals (token + EOF).");
     }
 }
 
-#[test]
+#[cairo_lang_proc_macros::test]
 fn test_lex_double_token() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
@@ -292,9 +293,9 @@ fn test_lex_double_token() {
             }
             for separator in separators {
                 let text = format!("{text0}{separator}{text1}");
-                let mut lexer = Lexer::from_text(db, text.as_str());
-                let terminal = lexer.next().unwrap();
-                let token_text = terminal.text.long(db);
+                let terminals = tokenize_all(db, (), Arc::from(text.as_str()));
+                let terminal = &terminals[0];
+                let token_text = terminal.text(db);
                 assert_eq!(
                     terminal.kind, kind0,
                     "Wrong first token kind: {}, expected: {kind0}. Text: \"{}\".",
@@ -306,8 +307,8 @@ fn test_lex_double_token() {
                     token_text
                 );
 
-                let terminal = lexer.next().unwrap();
-                let token_text = terminal.text.long(db);
+                let terminal = &terminals[1];
+                let token_text = terminal.text(db);
                 assert_eq!(
                     terminal.kind, kind1,
                     "Wrong second token kind {}, expected: {kind1}. Text: \"{token_text}\".",
@@ -319,11 +320,15 @@ fn test_lex_double_token() {
                 );
 
                 assert_eq!(
-                    lexer.next().unwrap().kind,
+                    terminals[2].kind,
                     SyntaxKind::TerminalEndOfFile,
                     "Wrong eof token, with text: \"{text}\".",
                 );
-                assert!(lexer.next().is_none(), "Expected end of lexer stream.");
+                assert_eq!(
+                    terminals.len(),
+                    3,
+                    "Expected exactly 3 terminals (token0 + token1 + EOF)."
+                );
             }
         }
     }
@@ -337,19 +342,19 @@ fn test_lex_token_with_trivia() {
         for leading_trivia in trivia_texts() {
             for trailing_trivia in trivia_texts() {
                 let text = format!("{leading_trivia}{expected_token_text} {trailing_trivia}");
-                let mut lexer = Lexer::from_text(db, text.as_str());
-                let terminal = lexer.next().unwrap();
-                let token_text = terminal.text.long(db);
+                let terminals = tokenize_all(db, (), Arc::from(text.as_str()));
+                let terminal = &terminals[0];
+                let token_text = terminal.text(db);
                 assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{text}\".");
                 assert_eq!(token_text, expected_token_text, "Wrong token text.");
                 // TODO: verify trivia kinds and texts
 
                 assert_eq!(
-                    lexer.next().unwrap().kind,
+                    terminals[1].kind,
                     SyntaxKind::TerminalEndOfFile,
                     "Wrong eof token, with text: \"{text}\"."
                 );
-                assert!(lexer.next().is_none(), "Expected end of lexer stream.");
+                assert_eq!(terminals.len(), 2, "Expected exactly 2 terminals (token + EOF).");
             }
         }
     }
@@ -359,9 +364,9 @@ fn test_lex_token_with_trivia() {
 fn test_cases() {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
-    let res: Vec<LexerTerminal<'_>> = Lexer::from_text(db, "let x: &T = ` 6; //  5+ 3;").collect();
+    let res = tokenize_all(db, (), Arc::from("let x: &T = ` 6; //  5+ 3;"));
     assert_eq!(
-        res,
+        res.into_iter().collect::<Vec<_>>(),
         vec![
             LexerTerminal {
                 text: SmolStrId::from(db, "let"),
@@ -446,9 +451,9 @@ fn test_bad_character() {
     let db = &db_val;
 
     let text = "`";
-    let mut lexer = Lexer::from_text(db, text);
-    let terminal = lexer.next().unwrap();
-    let token_text = terminal.text.long(db);
+    let terminals = tokenize_all(db, (), Arc::from(text));
+    let terminal = &terminals[0];
+    let token_text = terminal.text(db);
     assert_eq!(
         terminal.kind,
         SyntaxKind::TerminalBadCharacters,
@@ -457,9 +462,9 @@ fn test_bad_character() {
     assert_eq!(token_text, text, "Wrong token text.");
 
     assert_eq!(
-        lexer.next().unwrap().kind,
+        terminals[1].kind,
         SyntaxKind::TerminalEndOfFile,
         "Wrong eof token, with text: \"{text}\"."
     );
-    assert!(lexer.next().is_none(), "Expected end of lexer stream.");
+    assert_eq!(terminals.len(), 2, "Expected exactly 2 terminals (bad char + EOF).");
 }
