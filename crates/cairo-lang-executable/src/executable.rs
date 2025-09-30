@@ -5,7 +5,7 @@ use itertools::chain;
 use serde::{Deserialize, Serialize};
 
 use crate::compile::CompiledFunction;
-use crate::debug_info::DebugInfo;
+use crate::debug_info::{Annotations, DebugInfo, ProgramInformation};
 
 pub const NOT_RETURNING_HEADER_SIZE: usize = 6;
 
@@ -23,13 +23,22 @@ pub struct Executable {
 
 impl Executable {
     /// Create a new executable program from a compiled function.
-    pub fn new(compiled: CompiledFunction) -> Self {
+    pub fn new(compiled: CompiledFunction, config: ExecutableAssemblyConfig) -> Self {
         let non_returning_header = casm! {
             ap += (compiled.wrapper.builtins.len());
             call rel 4;
             jmp rel 0;
         };
         assert_eq!(non_returning_header.current_code_offset, NOT_RETURNING_HEADER_SIZE);
+        let debug_info = if config.add_program_offset_info {
+            Some(DebugInfo {
+                annotations: Annotations::from(ProgramInformation {
+                    program_offset: NOT_RETURNING_HEADER_SIZE + compiled.wrapper.header.len(),
+                }),
+            })
+        } else {
+            Default::default()
+        };
         Self {
             program: compiled.program.assemble_ex(
                 chain!(&non_returning_header.instructions, &compiled.wrapper.header),
@@ -47,9 +56,16 @@ impl Executable {
                     kind: EntryPointKind::Bootloader,
                 },
             ],
-            debug_info: Default::default(),
+            debug_info,
         }
     }
+}
+
+/// Configuration for the executable.
+#[derive(Default)]
+pub struct ExecutableAssemblyConfig {
+    /// Whether the program offsets information should be added to the debug info.
+    pub add_program_offset_info: bool,
 }
 
 /// Information about an executable entrypoint.

@@ -9,7 +9,9 @@ use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_executable::compile::{
     CompileExecutableResult, ExecutableConfig, compile_executable_in_prepared_db, prepare_db,
 };
-use cairo_lang_executable::executable::{EntryPointKind, Executable, NOT_RETURNING_HEADER_SIZE};
+use cairo_lang_executable::executable::{
+    EntryPointKind, Executable, ExecutableAssemblyConfig, NOT_RETURNING_HEADER_SIZE,
+};
 use cairo_lang_execute_utils::{program_and_hints_from_executable, user_args_from_flags};
 use cairo_lang_filesystem::ids::CrateInput;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
@@ -226,7 +228,7 @@ fn main() -> anyhow::Result<()> {
         let wrapper_len =
             compiled_function.wrapper.header.iter().map(|insn| insn.body.op_size()).sum::<usize>();
         let header_len = NOT_RETURNING_HEADER_SIZE + wrapper_len;
-        let executable = Executable::new(compiled_function);
+        let executable = Executable::new(compiled_function, ExecutableAssemblyConfig::default());
         (Some(DebugData { db, builder, debug_info, header_len }), executable)
     } else {
         (None, executable.unwrap())
