@@ -25,6 +25,7 @@ cairo-vm.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 cairo-lang-compiler = { path = "../cairo-lang-compiler" }
