@@ -33,3 +33,22 @@ pub struct DebugInfo {
 /// - `scarb.swmansion.com/v1`
 /// - `scarb.swmansion.com/build-info/v1`
 pub type Annotations = OrderedHashMap<String, serde_json::Value>;
+
+/// Program offsets information, for use by the profiler.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ProgramInformation {
+    /// The bytecode offset of the first CASM instruction after all added headers.
+    /// It is the offset of the first CASM instruction of the original CASM program (the one that
+    /// is a direct result of Sierra compilation).
+    pub program_offset: usize,
+}
+
+impl From<ProgramInformation> for Annotations {
+    fn from(value: ProgramInformation) -> Self {
+        let mapping = serde_json::to_value(value).unwrap();
+        OrderedHashMap::from([(
+            "github.com/software-mansion/cairo-profiler".to_string(),
+            serde_json::Value::from_iter([("program_info", mapping)]),
+        )])
+    }
+}
