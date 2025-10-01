@@ -50,7 +50,7 @@ struct SyntaxData<'db> {
 
 /// Parses a file and returns the result and the generated [ParserDiagnostic].
 #[salsa::tracked(returns(ref))]
-fn file_syntax_data<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> SyntaxData<'db> {
+pub fn file_syntax_data<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> SyntaxData<'db> {
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
         FileKind::Module => Parser::parse_file(db, &mut diagnostics, file_id, s).as_syntax_node(),
