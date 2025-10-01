@@ -97,7 +97,7 @@ mod hello_starknet {
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
-        legacy_map_balace: LegacyMap<usize, usize>,
+        legacy_map_balance: LegacyMap<usize, usize>,
         balance_pair: BalancePair,
         sliced_balance_trio: SlicedBalanceTrio,
         linked_list: LinkedList,
@@ -119,13 +119,13 @@ mod hello_starknet {
             self.user_balance.entry(user_id).read()
         }
         fn get_legacy_user_balance(self: @ContractState, user_id: usize) -> usize {
-            self.legacy_map_balace.read(user_id)
+            self.legacy_map_balance.read(user_id)
         }
         fn set_user_balance(ref self: ContractState, user_id: usize, balance: usize) {
             self.user_balance.as_path().entry(user_id).write(balance);
         }
         fn set_legacy_user_balance(ref self: ContractState, user_id: usize, balance: usize) {
-            self.legacy_map_balace.write(user_id, balance);
+            self.legacy_map_balance.write(user_id, balance);
         }
         fn get_user_balance_subbalance(
             self: @ContractState, user_id: usize, subbalance_id: usize,
@@ -261,7 +261,7 @@ mod hello_starknet {
         balance: usize,
         user_balance: Map<usize, usize>,
         user_balance_subbalance: Map<usize, Map<usize, usize>>,
-        legacy_map_balace: LegacyMap<usize, usize>,
+        legacy_map_balance: LegacyMap<usize, usize>,
         balance_pair: BalancePair,
         sliced_balance_trio: SlicedBalanceTrio,
         linked_list: LinkedList,
@@ -283,13 +283,13 @@ mod hello_starknet {
             self.user_balance.entry(user_id).read()
         }
         fn get_legacy_user_balance(self: @ContractState, user_id: usize) -> usize {
-            self.legacy_map_balace.read(user_id)
+            self.legacy_map_balance.read(user_id)
         }
         fn set_user_balance(ref self: ContractState, user_id: usize, balance: usize) {
             self.user_balance.as_path().entry(user_id).write(balance);
         }
         fn set_legacy_user_balance(ref self: ContractState, user_id: usize, balance: usize) {
-            self.legacy_map_balace.write(user_id, balance);
+            self.legacy_map_balance.write(user_id, balance);
         }
         fn get_user_balance_subbalance(
             self: @ContractState, user_id: usize, subbalance_id: usize,
@@ -3194,7 +3194,7 @@ pub struct Storage {
         pub balance: usize,
         pub user_balance: Map<usize, usize>,
         pub user_balance_subbalance: Map<usize, Map<usize, usize>>,
-        pub legacy_map_balace: LegacyMap<usize, usize>,
+        pub legacy_map_balance: LegacyMap<usize, usize>,
         pub balance_pair: BalancePair,
         pub sliced_balance_trio: SlicedBalanceTrio,
         pub linked_list: LinkedList,
@@ -3208,7 +3208,7 @@ pub struct StorageStorageBase {
     pub balance: starknet::storage::StorageBase<usize>,
     pub user_balance: starknet::storage::StorageBase<Map<usize, usize>>,
     pub user_balance_subbalance: starknet::storage::StorageBase<Map<usize, Map<usize, usize>>>,
-    pub legacy_map_balace: starknet::storage::StorageBase<LegacyMap<usize, usize>>,
+    pub legacy_map_balance: starknet::storage::StorageBase<LegacyMap<usize, usize>>,
     pub balance_pair: starknet::storage::StorageBase<BalancePair>,
     pub sliced_balance_trio: starknet::storage::StorageBase<SlicedBalanceTrio>,
     pub linked_list: starknet::storage::StorageBase<LinkedList>,
@@ -3222,7 +3222,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
         let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         let __user_balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_balance")};
         let __user_balance_subbalance_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_balance_subbalance")};
-        let __legacy_map_balace_value__ = starknet::storage::StorageBase {__base_address__: selector!("legacy_map_balace")};
+        let __legacy_map_balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("legacy_map_balance")};
         let __balance_pair_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance_pair")};
         let __sliced_balance_trio_value__ = starknet::storage::StorageBase {__base_address__: selector!("sliced_balance_trio")};
         let __linked_list_value__ = starknet::storage::StorageBase {__base_address__: selector!("linked_list")};
@@ -3232,7 +3232,7 @@ impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
            balance: __balance_value__,
            user_balance: __user_balance_value__,
            user_balance_subbalance: __user_balance_subbalance_value__,
-           legacy_map_balace: __legacy_map_balace_value__,
+           legacy_map_balance: __legacy_map_balance_value__,
            balance_pair: __balance_pair_value__,
            sliced_balance_trio: __sliced_balance_trio_value__,
            linked_list: __linked_list_value__,
@@ -3247,7 +3247,7 @@ pub struct StorageStorageBaseMut {
     pub balance: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
     pub user_balance: starknet::storage::StorageBase<starknet::storage::Mutable::<Map<usize, usize>>>,
     pub user_balance_subbalance: starknet::storage::StorageBase<starknet::storage::Mutable::<Map<usize, Map<usize, usize>>>>,
-    pub legacy_map_balace: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap<usize, usize>>>,
+    pub legacy_map_balance: starknet::storage::StorageBase<starknet::storage::Mutable::<LegacyMap<usize, usize>>>,
     pub balance_pair: starknet::storage::StorageBase<starknet::storage::Mutable::<BalancePair>>,
     pub sliced_balance_trio: starknet::storage::StorageBase<starknet::storage::Mutable::<SlicedBalanceTrio>>,
     pub linked_list: starknet::storage::StorageBase<starknet::storage::Mutable::<LinkedList>>,
@@ -3261,7 +3261,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
         let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
         let __user_balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_balance")};
         let __user_balance_subbalance_value__ = starknet::storage::StorageBase {__base_address__: selector!("user_balance_subbalance")};
-        let __legacy_map_balace_value__ = starknet::storage::StorageBase {__base_address__: selector!("legacy_map_balace")};
+        let __legacy_map_balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("legacy_map_balance")};
         let __balance_pair_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance_pair")};
         let __sliced_balance_trio_value__ = starknet::storage::StorageBase {__base_address__: selector!("sliced_balance_trio")};
         let __linked_list_value__ = starknet::storage::StorageBase {__base_address__: selector!("linked_list")};
@@ -3271,7 +3271,7 @@ impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
            balance: __balance_value__,
            user_balance: __user_balance_value__,
            user_balance_subbalance: __user_balance_subbalance_value__,
-           legacy_map_balace: __legacy_map_balace_value__,
+           legacy_map_balance: __legacy_map_balance_value__,
            balance_pair: __balance_pair_value__,
            sliced_balance_trio: __sliced_balance_trio_value__,
            linked_list: __linked_list_value__,
@@ -3316,7 +3316,7 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: starknet::ClassHash = 0x26adb8ccfd72d720830db9bdc718b9399f62cee2dbb74a9e8e2d33b70e8e117.try_into().unwrap();
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x3656be188a3ea1c67b67e871882de0a1f2e3b4fd7c5a974b585ef6f64cfb9d9.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
@@ -3800,6 +3800,6 @@ warning: Usage of deprecated feature `"starknet-storage-deprecation"` with no `#
                      ^^^^^^
 
 warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
- --> lib.cairo:94:28
-        legacy_map_balace: LegacyMap<usize, usize>,
-                           ^^^^^^^^^
+ --> lib.cairo:94:29
+        legacy_map_balance: LegacyMap<usize, usize>,
+                            ^^^^^^^^^
