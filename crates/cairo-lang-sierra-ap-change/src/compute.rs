@@ -191,25 +191,18 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             (0..self.program.statements.len()).map(StatementIdx),
             self.program.statements.len(),
             |idx| {
-                Ok(self.branches[idx.0]
-                    .iter()
-                    .flat_map(|(ap_change, target)| match ap_change {
-                        ApChange::Unknown => None,
-                        ApChange::FunctionCall(id) => {
-                            if self.function_ap_change.contains_key(id) {
-                                Some(*target)
-                            } else {
-                                None
-                            }
-                        }
-                        ApChange::Known(_)
-                        | ApChange::DisableApTracking
-                        | ApChange::FromMetadata
-                        | ApChange::AtLocalsFinalization(_)
-                        | ApChange::FinalizeLocals
-                        | ApChange::EnableApTracking => Some(*target),
-                    })
-                    .collect())
+                Ok(self.branches[idx.0].iter().flat_map(|(ap_change, target)| match ap_change {
+                    ApChange::Unknown => None,
+                    ApChange::FunctionCall(id) => {
+                        self.function_ap_change.contains_key(id).then_some(*target)
+                    }
+                    ApChange::Known(_)
+                    | ApChange::DisableApTracking
+                    | ApChange::FromMetadata
+                    | ApChange::AtLocalsFinalization(_)
+                    | ApChange::FinalizeLocals
+                    | ApChange::EnableApTracking => Some(*target),
+                }))
             },
             |_| unreachable!("Cycle isn't an error."),
         )
