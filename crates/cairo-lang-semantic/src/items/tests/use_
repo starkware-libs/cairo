@@ -178,3 +178,74 @@ error: `self` in `use` items is not allowed for empty path.
  --> lib.cairo:1:6
 use {self, u8};
      ^^^^
+
+//! > ==========================================================================
+
+//! > Use star on a module that was imported with use star.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    C::test();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod A {
+    pub mod B {
+        pub mod C {
+            pub fn test() {}
+        }
+    }
+}
+use A::*;
+use B::*;
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:11:5
+    C::test();
+    ^
+
+error: Global `use` item is not supported in `V2023_01` edition.
+ --> lib.cairo:8:8
+use A::*;
+       ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:9:5
+use B::*;
+    ^
+
+//! > ==========================================================================
+
+//! > Use star on a non existing module.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    C::test();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use B::*;
+
+//! > expected_diagnostics
+error[E0006]: Identifier not found.
+ --> lib.cairo:3:5
+    C::test();
+    ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:1:5
+use B::*;
+    ^

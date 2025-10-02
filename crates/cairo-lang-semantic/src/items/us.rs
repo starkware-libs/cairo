@@ -374,7 +374,7 @@ pub struct ImportInfo<'db> {
 
 /// Returns the modules that are imported with `use *` and macro calls in the current module.
 /// Query implementation of [UseSemantic::module_imported_modules].
-#[salsa::tracked(returns(ref))]
+#[salsa::tracked(returns(ref),cycle_result=module_imported_modules_cycle)]
 fn module_imported_modules<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -429,6 +429,16 @@ fn module_imported_modules<'db>(
     }
     modules
 }
+
+/// Cycle handling for [UseSemantic::module_imported_modules].
+fn module_imported_modules_cycle<'db>(
+    _db: &'db dyn Database,
+    _tracked: Tracked,
+    _module_id: ModuleId<'db>,
+) -> ImportedModules<'db> {
+    Default::default()
+}
+
 
 /// Trait for use-related semantic queries.
 pub trait UseSemantic<'db>: Database {
