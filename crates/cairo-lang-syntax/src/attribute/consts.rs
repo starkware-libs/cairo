@@ -1,4 +1,4 @@
-// Attributes which does not invoke any plugin, and thus are not declared in the plugin crate.
+// Attributes which do not invoke any plugin, and thus are not declared in the plugin crate.
 
 /// An attribute that can be used to make the formatter ignore the formatting of a statement or an
 /// item, and keep the user defined formatting.

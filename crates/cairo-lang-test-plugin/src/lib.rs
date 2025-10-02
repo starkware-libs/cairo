@@ -55,7 +55,7 @@ pub struct TestsCompilationConfig<'db> {
     pub starknet: bool,
 
     /// Contracts to compile.
-    /// If defined, only this contacts will be available in tests.
+    /// If defined, only these contracts will be available in tests.
     /// If not, all contracts from `contract_crate_ids` will be compiled.
     pub contract_declarations: Option<Vec<ContractDeclaration<'db>>>,
 
