@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
@@ -18,8 +20,10 @@ use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::items::visibility::Visibility;
+use cairo_lang_semantic::lookup_item::HasResolverData;
 use cairo_lang_semantic::{Expr, GenericArgumentId, GenericParam, Parameter, TypeId};
 use cairo_lang_syntax::attribute::structured::Attribute;
+use itertools::Itertools;
 use salsa::Database;
 
 use crate::documentable_item::DocumentableItemId;
@@ -226,6 +230,19 @@ pub(crate) fn get_trait_function_signature_data<'db>(
         .trait_function_resolver_data(item_id)
         .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
 
+    let trait_id = item_id.trait_id(db);
+    let trait_resolver_data = trait_id
+        .resolver_data(db)
+        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let trait_params_set: HashSet<_> = trait_resolver_data.generic_params.iter().collect();
+
+    let function_generic_params: Vec<GenericParamId<'_>> = resolver_data
+        .generic_params
+        .iter()
+        .filter(|param| !trait_params_set.contains(param))
+        .cloned()
+        .collect_vec();
+
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::TraitItem(Function(item_id))),
         name: item_id.name(db),
@@ -237,7 +254,7 @@ pub(crate) fn get_trait_function_signature_data<'db>(
         return_type: Some(signature.return_type),
         attributes: None,
         params: Some(signature.params.clone()),
-        resolver_generic_params: Some(resolver_data.generic_params.clone()),
+        resolver_generic_params: Some(function_generic_params),
         return_value_expr: None,
         full_path: item_id.full_path(db),
     })
