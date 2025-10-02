@@ -14,6 +14,11 @@ mod db_test;
 
 /// Interface of the parser database.
 pub trait ParserGroup: Database {
+    /// Parses a file and returns its AST as a root SyntaxNode.
+    fn file_syntax<'db>(&'db self, file_id: FileId<'db>) -> Maybe<SyntaxNode<'db>> {
+        file_syntax(self.as_dyn_database(), file_id)
+    }
+
     /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax<'db>(&'db self, file_id: FileId<'db>) -> Maybe<SyntaxFile<'db>> {
         file_module_syntax(self.as_dyn_database(), file_id)
@@ -50,7 +55,7 @@ struct SyntaxData<'db> {
 
 /// Parses a file and returns the result and the generated [ParserDiagnostic].
 #[salsa::tracked(returns(ref))]
-pub fn file_syntax_data<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> SyntaxData<'db> {
+fn file_syntax_data<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> SyntaxData<'db> {
     let mut diagnostics = DiagnosticsBuilder::default();
     let syntax = db.file_content(file_id).to_maybe().map(|s| match file_id.kind(db) {
         FileKind::Module => Parser::parse_file(db, &mut diagnostics, file_id, s).as_syntax_node(),
