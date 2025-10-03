@@ -86,7 +86,7 @@ use crate::items::structure::StructSemantic;
 use crate::items::trt::TraitSemantic;
 use crate::items::visibility;
 use crate::keyword::MACRO_CALL_SITE;
-use crate::lsp_helpers::LspHelpers;
+use crate::lsp_helpers::{LspHelpers, accumulate_inline_macro_expansion};
 use crate::resolve::{
     AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
     ResolvedGenericItem, Resolver, ResolverMacroData,
@@ -765,6 +765,7 @@ fn compute_expr_inline_macro_semantic<'db>(
         original_item_removed: true,
     })
     .intern(ctx.db);
+    accumulate_inline_macro_expansion(ctx.db, new_file_id);
     let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
@@ -835,6 +836,7 @@ fn expand_macro_for_statement<'db>(
         original_item_removed: true,
     })
     .intern(ctx.db);
+    accumulate_inline_macro_expansion(ctx.db, new_file_id);
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
         for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
