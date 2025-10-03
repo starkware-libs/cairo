@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitId,
 };
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup, default_crate_settings};
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId, Tracked};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, FileId, FileInput, SmolStrId, Tracked};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -15,6 +15,7 @@ use salsa::Database;
 
 use crate::Variant;
 use crate::corelib::{self, core_submodule, get_submodule};
+use crate::db::module_semantic_diagnostics_tracked;
 use crate::expr::inference::InferenceId;
 use crate::items::enm::EnumSemantic;
 use crate::items::functions::GenericFunctionId;
@@ -480,6 +481,11 @@ fn visible_traits_from_module_helper<'db>(
     visible_traits_from_module(db, module_id)
 }
 
+#[salsa::accumulator]
+pub struct InlineMacroExpansionAccumulator {
+    pub file: FileInput,
+}
+
 /// Trait for LSP helpers.
 pub trait LspHelpers<'db>: Database {
     /// Returns all methods in a module that match the given type filter.
@@ -537,6 +543,21 @@ pub trait LspHelpers<'db>: Database {
         module_id: ModuleId<'db>,
     ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
         visible_traits_from_module_tracked(self.as_dyn_database(), module_id)
+    }
+
+    fn inline_macro_expansion_files(&'db self, module_id: ModuleId<'db>) -> Vec<FileId<'db>> {
+        let db = self.as_dyn_database();
+        let expansions: Vec<&InlineMacroExpansionAccumulator> =
+            module_semantic_diagnostics_tracked::accumulated::<InlineMacroExpansionAccumulator>(
+                db,
+                (),
+                module_id,
+            );
+
+        expansions
+            .iter()
+            .map(|expansion| expansion.file.clone().into_file_long_id(db).intern(db))
+            .collect()
     }
 }
 impl<'db, T: Database + ?Sized> LspHelpers<'db> for T {}
