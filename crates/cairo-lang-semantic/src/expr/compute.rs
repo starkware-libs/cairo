@@ -765,6 +765,7 @@ fn compute_expr_inline_macro_semantic<'db>(
         original_item_removed: true,
     })
     .intern(ctx.db);
+    ctx.db.accumulate_inline_macro_expansion(new_file_id);
     let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
@@ -835,6 +836,7 @@ fn expand_macro_for_statement<'db>(
         original_item_removed: true,
     })
     .intern(ctx.db);
+    ctx.db.accumulate_inline_macro_expansion(new_file_id);
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
         for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
