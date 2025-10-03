@@ -4,7 +4,6 @@
 SmallE2ETestRunnerSkipAddGas
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
 fn foo(x: felt252) {
@@ -86,7 +85,6 @@ test::bar@F1() -> ();
 SmallE2ETestRunnerSkipAddGas
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
 extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 
 fn foo(x: felt252) {
