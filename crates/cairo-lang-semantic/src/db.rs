@@ -188,7 +188,7 @@ fn analyzer_plugin_overrides(
 }
 
 #[salsa::tracked]
-fn module_semantic_diagnostics_tracked<'db>(
+pub(crate) fn module_semantic_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     module_id: ModuleId<'db>,
