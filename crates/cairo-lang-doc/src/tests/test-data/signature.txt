@@ -195,7 +195,7 @@ type ShapePair;
 //! > Item documentation tokens #12
 
 //! > Item signature #13
-fn area<T, T>(self: T) -> u32
+fn area(self: T) -> u32
 
 //! > Item documentation #13
 

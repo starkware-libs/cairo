@@ -107,6 +107,10 @@ struct Glass {}
 /// When it's dropped, it shatters.
 struct Cup {}
 
+pub trait TryInto<T, S> {
+    fn try_into(self: T) -> Option<S>;
+}
+
 //! > Item signature #1
 
 //! > Item documentation #1
@@ -364,3 +368,17 @@ When it's dropped, it shatters.
 Content("This cup is droppable.")
 Content("\n")
 Content("When it's dropped, it shatters.")
+
+//! > Item signature #19
+pub trait TryInto<T, S>
+
+//! > Item documentation #19
+
+//! > Item documentation tokens #19
+
+//! > Item signature #20
+fn try_into(self: T) -> Option<S>
+
+//! > Item documentation #20
+
+//! > Item documentation tokens #20
