@@ -2,6 +2,7 @@
 //! The semantic model represents the Cairo program after type resolution and some syntax
 //! desugaring.
 
+pub mod cache;
 pub mod corelib;
 pub mod db;
 pub mod diagnostic;
