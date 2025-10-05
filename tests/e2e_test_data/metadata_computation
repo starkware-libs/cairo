@@ -225,9 +225,6 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
-extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
-
 fn foo(x: felt252) {
     // The branch_align of the external if statements should have zero value, since the value should
     // be pushed to the inner if statement.
@@ -251,7 +248,7 @@ fn foo(x: felt252) {
 
 #[inline(never)]
 fn bar() {
-    redeposit_gas()
+    core::gas::redeposit_gas()
 }
 
 //! > enforced_costs
@@ -402,9 +399,6 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
-extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
-
 fn foo(x: felt252) {
     // In this case, the failing branch is more expensive than the success branch.
     // The excess created by the external branch_align should be pushed to the next (inner)
@@ -431,7 +425,7 @@ fn foo(x: felt252) {
 
 #[inline(never)]
 fn bar() {
-    redeposit_gas()
+    core::gas::redeposit_gas()
 }
 
 //! > enforced_costs
@@ -596,9 +590,6 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
-extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
-
 fn foo(x: felt252) {
     if x == 0 {
         // Excess is created by the external `else` branch. Therefore, we don't need to withdraw
@@ -620,7 +611,7 @@ fn foo(x: felt252) {
 
 #[inline(never)]
 fn bar() {
-    redeposit_gas();
+    core::gas::redeposit_gas();
 }
 
 //! > enforced_costs
@@ -777,21 +768,18 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
-extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
-
 fn foo(x: felt252) {
     if x == 0 {
         bar();
         bar();
-        redeposit_gas();
+        core::gas::redeposit_gas();
         return ();
     } else {
-        redeposit_gas();
+        core::gas::redeposit_gas();
         if x == 1 {
             bar();
         } else {
-            redeposit_gas();
+            core::gas::redeposit_gas();
         }
         return ();
     }
@@ -799,7 +787,7 @@ fn foo(x: felt252) {
 
 #[inline(never)]
 fn bar() {
-    redeposit_gas();
+    core::gas::redeposit_gas();
 }
 
 //! > enforced_costs
@@ -1052,9 +1040,6 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
-extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
-
 fn foo(x: felt252) {
     if x == 0 {
         bar();
@@ -1062,7 +1047,7 @@ fn foo(x: felt252) {
         bar();
         return ();
     } else {
-        redeposit_gas();
+        core::gas::redeposit_gas();
         return ();
     }
 }
@@ -1898,8 +1883,6 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
-extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 extern fn coupon_buy<T>() -> T nopanic;
 impl DropCoupon of Drop<bar::Coupon>;
 
@@ -1912,7 +1895,7 @@ fn foo(x: felt252) {
 
 #[inline(never)]
 fn bar() {
-    redeposit_gas();
+    core::gas::redeposit_gas();
 }
 
 //! > enforced_costs
@@ -1985,8 +1968,6 @@ ret;
 SmallE2ETestRunnerMetadataComputation
 
 //! > cairo_code
-// TODO(lior): Use gas::redeposit_gas once it's there.
-extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
 extern fn coupon_refund<T>(c: T) nopanic;
 
 fn foo(c0: bar20000::Coupon, c1: bar20000::Coupon, c2: bar20000::Coupon) {
@@ -1994,12 +1975,12 @@ fn foo(c0: bar20000::Coupon, c1: bar20000::Coupon, c2: bar20000::Coupon) {
     coupon_refund(c0);
     bar20000();
     bar20000();
-    redeposit_gas(); // Zero redeposit.
+    core::gas::redeposit_gas(); // Zero redeposit.
 
     // Refund more than used - rest is redeposited.
     coupon_refund(c1);
     bar1000();
-    redeposit_gas();
+    core::gas::redeposit_gas();
 
     // Refund more than used - rest is wasted.
     coupon_refund(c2);
@@ -2008,12 +1989,12 @@ fn foo(c0: bar20000::Coupon, c1: bar20000::Coupon, c2: bar20000::Coupon) {
 
 #[inline(never)]
 fn bar20000() nopanic {
-    redeposit_gas();
+    core::gas::redeposit_gas();
 }
 
 #[inline(never)]
 fn bar1000() nopanic {
-    redeposit_gas();
+    core::gas::redeposit_gas();
 }
 
 //! > enforced_costs
