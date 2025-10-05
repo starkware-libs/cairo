@@ -14,8 +14,8 @@ use super::element_list::ElementList;
 use super::green::GreenNodeDetails;
 use super::kind::SyntaxKind;
 use super::{
-    GreenId, GreenNode, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId, Terminal, Token,
-    TypedStablePtr, TypedSyntaxNode,
+    GreenId, GreenNode, SyntaxNode, SyntaxStablePtrId, Terminal, Token, TypedStablePtr,
+    TypedSyntaxNode,
 };
 #[path = "ast_ext.rs"]
 mod ast_ext;
@@ -5337,20 +5337,10 @@ impl<'db> ExprFor<'db> {
 pub struct ExprForPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ExprForPtr<'db> {
     pub fn pattern_green(self, db: &'db dyn Database) -> PatternGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            PatternGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        PatternGreen(self.0.0.0.key_fields(db)[0])
     }
     pub fn identifier_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[1])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[1])
     }
 }
 impl<'db> TypedStablePtr<'db> for ExprForPtr<'db> {
@@ -6840,12 +6830,7 @@ impl<'db> StructArgSingle<'db> {
 pub struct StructArgSinglePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StructArgSinglePtr<'db> {
     pub fn identifier_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for StructArgSinglePtr<'db> {
@@ -7912,12 +7897,7 @@ impl<'db> PatternIdentifier<'db> {
 pub struct PatternIdentifierPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> PatternIdentifierPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for PatternIdentifierPtr<'db> {
@@ -10129,12 +10109,7 @@ impl<'db> StatementLet<'db> {
 pub struct StatementLetPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> StatementLetPtr<'db> {
     pub fn pattern_green(self, db: &'db dyn Database) -> PatternGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            PatternGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        PatternGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for StatementLetPtr<'db> {
@@ -11433,12 +11408,7 @@ impl<'db> Param<'db> {
 pub struct ParamPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ParamPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ParamPtr<'db> {
@@ -12649,12 +12619,7 @@ impl<'db> Member<'db> {
 pub struct MemberPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> MemberPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for MemberPtr<'db> {
@@ -12857,12 +12822,7 @@ impl<'db> Variant<'db> {
 pub struct VariantPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> VariantPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for VariantPtr<'db> {
@@ -14313,12 +14273,7 @@ impl<'db> ItemModule<'db> {
 pub struct ItemModulePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemModulePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemModulePtr<'db> {
@@ -14620,12 +14575,7 @@ impl<'db> FunctionDeclaration<'db> {
 pub struct FunctionDeclarationPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> FunctionDeclarationPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for FunctionDeclarationPtr<'db> {
@@ -14767,12 +14717,7 @@ impl<'db> ItemConstant<'db> {
 pub struct ItemConstantPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemConstantPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemConstantPtr<'db> {
@@ -14884,12 +14829,7 @@ impl<'db> FunctionWithBody<'db> {
 pub struct FunctionWithBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> FunctionWithBodyPtr<'db> {
     pub fn declaration_green(self, db: &'db dyn Database) -> FunctionDeclarationGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            FunctionDeclarationGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        FunctionDeclarationGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for FunctionWithBodyPtr<'db> {
@@ -15006,12 +14946,7 @@ impl<'db> ItemExternFunction<'db> {
 pub struct ItemExternFunctionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemExternFunctionPtr<'db> {
     pub fn declaration_green(self, db: &'db dyn Database) -> FunctionDeclarationGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            FunctionDeclarationGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        FunctionDeclarationGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemExternFunctionPtr<'db> {
@@ -15147,12 +15082,7 @@ impl<'db> ItemExternType<'db> {
 pub struct ItemExternTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemExternTypePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemExternTypePtr<'db> {
@@ -15277,12 +15207,7 @@ impl<'db> ItemTrait<'db> {
 pub struct ItemTraitPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemTraitPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemTraitPtr<'db> {
@@ -15878,12 +15803,7 @@ impl<'db> TraitItemFunction<'db> {
 pub struct TraitItemFunctionPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemFunctionPtr<'db> {
     pub fn declaration_green(self, db: &'db dyn Database) -> FunctionDeclarationGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            FunctionDeclarationGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        FunctionDeclarationGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for TraitItemFunctionPtr<'db> {
@@ -15999,12 +15919,7 @@ impl<'db> TraitItemType<'db> {
 pub struct TraitItemTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemTypePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for TraitItemTypePtr<'db> {
@@ -16122,12 +16037,7 @@ impl<'db> TraitItemConstant<'db> {
 pub struct TraitItemConstantPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemConstantPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for TraitItemConstantPtr<'db> {
@@ -16250,12 +16160,7 @@ impl<'db> TraitItemImpl<'db> {
 pub struct TraitItemImplPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> TraitItemImplPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for TraitItemImplPtr<'db> {
@@ -16491,12 +16396,7 @@ impl<'db> ItemImpl<'db> {
 pub struct ItemImplPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemImplPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemImplPtr<'db> {
@@ -17328,12 +17228,7 @@ impl<'db> ItemImplAlias<'db> {
 pub struct ItemImplAliasPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemImplAliasPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemImplAliasPtr<'db> {
@@ -17478,12 +17373,7 @@ impl<'db> ItemStruct<'db> {
 pub struct ItemStructPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemStructPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemStructPtr<'db> {
@@ -17624,12 +17514,7 @@ impl<'db> ItemEnum<'db> {
 pub struct ItemEnumPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemEnumPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemEnumPtr<'db> {
@@ -17770,12 +17655,7 @@ impl<'db> ItemTypeAlias<'db> {
 pub struct ItemTypeAliasPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemTypeAliasPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemTypeAliasPtr<'db> {
@@ -17901,12 +17781,7 @@ impl<'db> ItemUse<'db> {
 pub struct ItemUsePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemUsePtr<'db> {
     pub fn use_path_green(self, db: &'db dyn Database) -> UsePathGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            UsePathGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        UsePathGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemUsePtr<'db> {
@@ -18126,20 +18001,10 @@ impl<'db> UsePathLeaf<'db> {
 pub struct UsePathLeafPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> UsePathLeafPtr<'db> {
     pub fn ident_green(self, db: &'db dyn Database) -> PathSegmentGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            PathSegmentGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        PathSegmentGreen(self.0.0.0.key_fields(db)[0])
     }
     pub fn alias_clause_green(self, db: &'db dyn Database) -> OptionAliasClauseGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            OptionAliasClauseGreen(key_fields[1])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        OptionAliasClauseGreen(self.0.0.0.key_fields(db)[1])
     }
 }
 impl<'db> TypedStablePtr<'db> for UsePathLeafPtr<'db> {
@@ -18611,12 +18476,7 @@ impl<'db> AliasClause<'db> {
 pub struct AliasClausePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> AliasClausePtr<'db> {
     pub fn alias_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for AliasClausePtr<'db> {
@@ -20566,12 +20426,7 @@ impl<'db> GenericParamType<'db> {
 pub struct GenericParamTypePtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamTypePtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for GenericParamTypePtr<'db> {
@@ -20677,12 +20532,7 @@ impl<'db> GenericParamConst<'db> {
 pub struct GenericParamConstPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamConstPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for GenericParamConstPtr<'db> {
@@ -20799,12 +20649,7 @@ impl<'db> GenericParamImplNamed<'db> {
 pub struct GenericParamImplNamedPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> GenericParamImplNamedPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for GenericParamImplNamedPtr<'db> {
@@ -22554,12 +22399,7 @@ impl<'db> ItemMacroDeclaration<'db> {
 pub struct ItemMacroDeclarationPtr<'db>(pub SyntaxStablePtrId<'db>);
 impl<'db> ItemMacroDeclarationPtr<'db> {
     pub fn name_green(self, db: &'db dyn Database) -> TerminalIdentifierGreen<'db> {
-        let ptr = self.0.long(db);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
+        TerminalIdentifierGreen(self.0.0.0.key_fields(db)[0])
     }
 }
 impl<'db> TypedStablePtr<'db> for ItemMacroDeclarationPtr<'db> {

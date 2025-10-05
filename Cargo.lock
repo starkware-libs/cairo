@@ -1071,6 +1071,7 @@ dependencies = [
  "cairo-lang-primitive-token",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "pretty_assertions",

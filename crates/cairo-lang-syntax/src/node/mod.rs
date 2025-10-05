@@ -3,7 +3,8 @@ use core::hash::Hash;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, SmolStrId};
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
-use cairo_lang_utils::{Intern, require};
+use cairo_lang_utils::require;
+use itertools::Either;
 use salsa::Database;
 use salsa::plumbing::AsId;
 use vector_map::VecMap;
@@ -12,7 +13,6 @@ use self::ast::TriviaGreen;
 use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::kind::SyntaxKind;
-use self::stable_ptr::SyntaxStablePtr;
 use crate::node::db::SyntaxGroup;
 use crate::node::iter::{Preorder, WalkEvent};
 
@@ -44,8 +44,14 @@ struct SyntaxNodeData<'a> {
     /// syntax subtree.
     #[tracked]
     offset: TextOffset,
-    parent: Option<SyntaxNode<'a>>,
-    stable_ptr: SyntaxStablePtrId<'a>,
+    /// Parent of this node, either another node or if node is root, its file id.
+    parent: Either<SyntaxNode<'a>, FileId<'a>>,
+    /// Which fields are used is determined by each SyntaxKind.
+    /// For example, a function item might use the name of the function.
+    #[returns(ref)]
+    pub key_fields: Box<[GreenId<'a>]>,
+    /// Chronological index among all nodes with the same (parent, kind, key_fields).
+    pub index: usize,
 }
 
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
@@ -54,8 +60,9 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
         f.debug_struct("SyntaxNode")
             .field("green", &self.green(db).debug(db))
             .field("offset", &self.offset(db))
-            .field("parent", &self.parent(db).debug(db))
-            .field("stable_ptr", &self.stable_ptr(db).debug(db))
+            .field("parent", &self.parent(db).left().debug(db))
+            .field("key_fields", &self.key_fields(db).debug(db))
+            .field("index", &self.index(db))
             .finish()
     }
 }
@@ -89,12 +96,55 @@ impl<'db> SyntaxNode<'db> {
 
     /// Get the parent syntax node, if any.
     pub fn parent(self, db: &'db dyn Database) -> Option<SyntaxNode<'db>> {
+        self.0.parent(db).left()
+    }
+
+    /// Get the raw parent of syntax node data.
+    pub fn raw_parent(self, db: &'db dyn Database) -> Either<SyntaxNode<'db>, FileId<'db>> {
         self.0.parent(db)
     }
 
     /// Get the stable pointer for this syntax node.
-    pub fn stable_ptr(self, db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
-        self.0.stable_ptr(db)
+    pub fn stable_ptr(self, _db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
+        SyntaxStablePtrId(self)
+    }
+
+    /// Get the index of this syntax node within equal children of its parent.
+    pub fn index(self, db: &'db dyn Database) -> usize {
+        self.0.index(db)
+    }
+
+    /// Get the key fields of this syntax node. These define the unique identifier of the node.
+    pub fn key_fields(self, db: &'db dyn Database) -> &'db [GreenId<'db>] {
+        self.0.key_fields(db)
+    }
+
+    /// Returns the file id of the file containing this node.
+    pub fn file_id(&self, db: &'db dyn Database) -> FileId<'db> {
+        match self.0.parent(db) {
+            Either::Left(parent) => parent.file_id(db),
+            Either::Right(file_id) => file_id,
+        }
+    }
+
+    /// Returns the stable pointer of the `n`th parent of this stable pointer.
+    /// n = 0: returns itself.
+    /// n = 1: return the parent.
+    /// n = 2: return the grand parent.
+    /// And so on...
+    /// Assumes that the `n`th parent exists. Panics otherwise.
+    pub fn nth_parent<'r: 'db>(&self, db: &'r dyn Database, n: usize) -> SyntaxNode<'db> {
+        let mut ptr = *self;
+        for _ in 0..n {
+            ptr = ptr.0.parent(db).left().unwrap_or_else(|| {
+                panic!(
+                    "N'th parent did not exist. File {} Offset {:?}",
+                    self.file_id(db).long(db).full_path(db),
+                    self.offset(db)
+                )
+            });
+        }
+        ptr
     }
 }
 
@@ -103,23 +153,20 @@ pub fn new_syntax_node<'db>(
     db: &'db dyn Database,
     green: GreenId<'db>,
     offset: TextOffset,
-    parent: Option<SyntaxNode<'db>>,
-    stable_ptr: SyntaxStablePtrId<'db>,
+    parent: Either<SyntaxNode<'db>, FileId<'db>>,
+    index: usize,
 ) -> SyntaxNode<'db> {
-    SyntaxNode(SyntaxNodeData::new(db, green, offset, parent, stable_ptr))
+    let green_node = green.long(db);
+    let rng = key_fields::key_fields_range(green_node.kind);
+    let key_fields = &green_node.children()[rng];
+    SyntaxNode(SyntaxNodeData::new(db, green, offset, parent, Box::from(key_fields), index))
 }
 
 // Construction methods
 impl<'a> SyntaxNode<'a> {
     /// Create a new root syntax node.
     pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
-        Self::new_with_inner(
-            db,
-            green,
-            TextOffset::START,
-            None,
-            SyntaxStablePtr::Root(file_id, green).intern(db),
-        )
+        Self::new_with_inner(db, green, TextOffset::START, Either::Right(file_id), 0)
     }
 
     /// Create a new root syntax node with a custom initial offset.
@@ -133,8 +180,8 @@ impl<'a> SyntaxNode<'a> {
             db,
             green,
             initial_offset.unwrap_or_default(),
-            None,
-            SyntaxStablePtr::Root(file_id, green).intern(db),
+            Either::Right(file_id),
+            0,
         )
     }
 
@@ -144,10 +191,10 @@ impl<'a> SyntaxNode<'a> {
         db: &'a dyn Database,
         green: GreenId<'a>,
         offset: TextOffset,
-        parent: Option<SyntaxNode<'a>>,
-        stable_ptr: SyntaxStablePtrId<'a>,
+        parent: Either<SyntaxNode<'a>, FileId<'a>>,
+        index: usize,
     ) -> Self {
-        db.create_syntax_node(green, offset, parent, stable_ptr)
+        db.create_syntax_node(green, offset, parent, index)
     }
 
     // Basic accessors
@@ -220,16 +267,10 @@ impl<'a> SyntaxNode<'a> {
             let rng = key_fields::key_fields_range(kind);
             let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
             let key_count = key_map.entry((kind, key_fields)).or_insert(0);
-            let stable_ptr = SyntaxStablePtr::Child {
-                parent: self.stable_ptr(db),
-                kind,
-                key_fields: key_fields.into(),
-                index: *key_count,
-            }
-            .intern(db);
+            let index = *key_count;
             *key_count += 1;
             // Create the SyntaxNode view for the child.
-            res.push(db.create_syntax_node(*green_id, offset, Some(*self), stable_ptr));
+            res.push(db.create_syntax_node(*green_id, offset, Either::Left(*self), index));
 
             offset = offset.add_width(width);
         }

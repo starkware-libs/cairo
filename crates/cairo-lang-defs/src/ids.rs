@@ -32,7 +32,6 @@ use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, HasName, NameGreen};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
 use salsa::Database;
@@ -787,9 +786,10 @@ define_top_level_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
 define_language_element_id_basic!(GenericParamId, GenericParamLongId, ast::GenericParam<'db>);
 impl<'db> GenericParamLongId<'db> {
     pub fn name(&self, db: &'db dyn Database) -> Option<SmolStrId<'db>> {
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = self.1.0.long(db) else {
-            unreachable!()
-        };
+        let node = self.1.0.0;
+        assert!(node.parent(db).is_some());
+        let key_fields = node.key_fields(db);
+        let kind = node.kind(db);
         require(!matches!(
             kind,
             SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
@@ -803,7 +803,9 @@ impl<'db> GenericParamLongId<'db> {
         self.name(db).unwrap_or(SmolStrId::from(db, "_"))
     }
     pub fn kind(&self, db: &dyn Database) -> GenericKind {
-        let SyntaxStablePtr::Child { kind, .. } = self.1.0.long(db) else { unreachable!() };
+        let node = self.1.0.0;
+        assert!(node.parent(db).is_some());
+        let kind = node.kind(db);
         match kind {
             SyntaxKind::GenericParamType => GenericKind::Type,
             SyntaxKind::GenericParamConst => GenericKind::Const,
@@ -851,9 +853,10 @@ impl<'db> GenericParamId<'db> {
     }
     pub fn format(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         let long_ids = self.long(db);
-        let SyntaxStablePtr::Child { key_fields, kind, .. } = long_ids.1.0.long(db) else {
-            unreachable!()
-        };
+        let node = long_ids.1.0.0;
+        assert!(node.parent(db).is_some());
+        let key_fields = node.key_fields(db);
+        let kind = node.kind(db);
 
         if matches!(
             kind,
@@ -942,61 +945,61 @@ impl<'db> GenericItemId<'db> {
         module_file: ModuleFileId<'db>,
         stable_ptr: SyntaxStablePtrId<'db>,
     ) -> Self {
-        let SyntaxStablePtr::Child { parent: parent0, kind, .. } = stable_ptr.long(db) else {
-            panic!()
-        };
+        let node = stable_ptr.0;
+        let parent0 = node.parent(db).expect("GenericItem should have a parent");
+        let kind = node.kind(db);
         match kind {
             SyntaxKind::FunctionDeclaration => {
-                let SyntaxStablePtr::Child { parent: parent1, kind, .. } = parent0.long(db) else {
-                    panic!()
-                };
+                let parent1 = parent0.parent(db).expect("FunctionDeclaration parent should exist");
+                let kind = parent0.kind(db);
                 match kind {
                     SyntaxKind::FunctionWithBody => {
                         // `FunctionWithBody` must be at least 2 levels below the root, and thus
                         // `parent1.parent()` is safe.
-                        match parent1.parent(db).long(db) {
-                            SyntaxStablePtr::Root(_, _) => {
+                        let parent0_ptr = SyntaxStablePtrId(parent0);
+                        match parent1.parent(db).map(|p| p.kind(db)) {
+                            // SyntaxFile is root level (file level)
+                            Some(SyntaxKind::SyntaxFile) | Some(SyntaxKind::ModuleBody) => {
                                 GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
                                     FreeFunctionLongId(
                                         module_file,
-                                        ast::FunctionWithBodyPtr(*parent0),
+                                        ast::FunctionWithBodyPtr(parent0_ptr),
                                     )
                                     .intern(db),
                                 ))
                             }
-                            SyntaxStablePtr::Child { kind, .. } => match kind {
-                                SyntaxKind::ModuleBody => {
-                                    GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
-                                        FreeFunctionLongId(
-                                            module_file,
-                                            ast::FunctionWithBodyPtr(*parent0),
-                                        )
-                                        .intern(db),
-                                    ))
-                                }
-                                SyntaxKind::ImplBody => {
-                                    GenericItemId::ModuleItem(GenericModuleItemId::ImplFunc(
-                                        ImplFunctionLongId(
-                                            module_file,
-                                            ast::FunctionWithBodyPtr(*parent0),
-                                        )
-                                        .intern(db),
-                                    ))
-                                }
-                                _ => panic!(),
-                            },
+                            Some(SyntaxKind::ImplBody) => {
+                                GenericItemId::ModuleItem(GenericModuleItemId::ImplFunc(
+                                    ImplFunctionLongId(
+                                        module_file,
+                                        ast::FunctionWithBodyPtr(parent0_ptr),
+                                    )
+                                    .intern(db),
+                                ))
+                            }
+                            _ => panic!(
+                                "Got bad syntax kind @ parent of {}. {:?}",
+                                parent1.kind(db),
+                                kind
+                            ),
                         }
                     }
                     SyntaxKind::ItemExternFunction => {
                         GenericItemId::ModuleItem(GenericModuleItemId::ExternFunc(
-                            ExternFunctionLongId(module_file, ast::ItemExternFunctionPtr(*parent0))
-                                .intern(db),
+                            ExternFunctionLongId(
+                                module_file,
+                                ast::ItemExternFunctionPtr(SyntaxStablePtrId(parent0)),
+                            )
+                            .intern(db),
                         ))
                     }
                     SyntaxKind::TraitItemFunction => {
                         GenericItemId::ModuleItem(GenericModuleItemId::TraitFunc(
-                            TraitFunctionLongId(module_file, ast::TraitItemFunctionPtr(*parent0))
-                                .intern(db),
+                            TraitFunctionLongId(
+                                module_file,
+                                ast::TraitItemFunctionPtr(SyntaxStablePtrId(parent0)),
+                            )
+                            .intern(db),
                         ))
                     }
                     _ => panic!(),

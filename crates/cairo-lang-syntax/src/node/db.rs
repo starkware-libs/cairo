@@ -1,9 +1,10 @@
-use cairo_lang_filesystem::ids::Tracked;
+use cairo_lang_filesystem::ids::{FileId, Tracked};
 use cairo_lang_filesystem::span::TextOffset;
+use itertools::Either;
 use salsa::Database;
 
 use super::SyntaxNode;
-use super::ids::{GreenId, SyntaxStablePtrId};
+use super::ids::GreenId;
 use crate::node::new_syntax_node;
 
 pub trait SyntaxGroup: Database {
@@ -17,10 +18,10 @@ pub trait SyntaxGroup: Database {
         &'db self,
         green: GreenId<'db>,
         offset: TextOffset,
-        parent: Option<SyntaxNode<'db>>,
-        stable_ptr: SyntaxStablePtrId<'db>,
+        parent: Either<SyntaxNode<'db>, FileId<'db>>,
+        index: usize,
     ) -> SyntaxNode<'db> {
-        new_syntax_node(self.as_dyn_database(), green, offset, parent, stable_ptr)
+        new_syntax_node(self.as_dyn_database(), green, offset, parent, index)
     }
 }
 impl<T: Database + ?Sized> SyntaxGroup for T {}
