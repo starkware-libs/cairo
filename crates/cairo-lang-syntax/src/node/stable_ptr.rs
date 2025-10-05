@@ -1,7 +1,7 @@
-use cairo_lang_filesystem::ids::FileId;
+use salsa::Database;
 
-use super::ids::{GreenId, SyntaxStablePtrId};
-use super::kind::SyntaxKind;
+use super::ids::GreenId;
+use crate::node::SyntaxNode;
 
 /// Stable pointer to a node in the syntax tree.
 ///
@@ -12,21 +12,15 @@ use super::kind::SyntaxKind;
 /// Stable means that when the AST is changed, pointers of unchanged items tend to stay the same.
 /// For example, if a function is changed, the pointer of an unrelated function in the AST should
 /// remain the same, as much as possible.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum SyntaxStablePtr<'a> {
-    /// The root node of the tree.
-    Root(FileId<'a>, GreenId<'a>),
-    /// A child node.
-    Child {
-        /// The parent of the node.
-        parent: SyntaxStablePtrId<'a>,
-        /// The SyntaxKind of the node.
-        kind: SyntaxKind,
-        /// A list of field values for this node, to index by.
-        /// Which fields are used is determined by each SyntaxKind.
-        /// For example, a function item might use the name of the function.
-        key_fields: Box<[GreenId<'a>]>,
-        /// Chronological index among all nodes with the same (parent, kind, key_fields).
-        index: usize,
-    },
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+pub struct SyntaxStablePtr<'a>(SyntaxNode<'a>);
+
+impl<'a> SyntaxStablePtr<'a> {
+    pub fn new(node: SyntaxNode<'a>) -> Self {
+        Self(node)
+    }
+
+    pub fn key_fields(&self, db: &'a dyn Database) -> &'a [GreenId<'a>] {
+        self.0.key_fields(db)
+    }
 }
