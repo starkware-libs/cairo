@@ -6,7 +6,6 @@ use salsa::Database;
 use super::SyntaxNode;
 use super::green::GreenNode;
 use super::kind::SyntaxKind;
-use crate::node::stable_ptr::SyntaxStablePtr;
 
 define_short_id!(GreenId, GreenNode<'db>);
 impl<'a> GreenId<'a> {
@@ -19,37 +18,22 @@ impl<'a> GreenId<'a> {
     }
 }
 
-define_short_id!(SyntaxStablePtrId, SyntaxStablePtr<'db>);
+#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
+pub struct SyntaxStablePtrId<'a>(pub SyntaxNode<'a>);
+
 impl<'a> SyntaxStablePtrId<'a> {
     /// Lookups a syntax node using a stable syntax pointer.
     /// Should only be called on the root from which the stable pointer was generated.
-    pub fn lookup(&self, db: &'a dyn Database) -> SyntaxNode<'a> {
-        let ptr = self.long(db).clone();
-        match ptr {
-            SyntaxStablePtr::Root(file_id, green) => SyntaxNode::new_root(db, file_id, green),
-            SyntaxStablePtr::Child { parent, .. } => {
-                let parent = parent.lookup(db);
-                for child in parent.get_children(db).iter() {
-                    if child.stable_ptr(db) == *self {
-                        return *child;
-                    }
-                }
-                unreachable!();
-            }
-        }
+    pub fn lookup(&self, _db: &'a dyn Database) -> SyntaxNode<'a> {
+        self.0
     }
     pub fn file_id(&self, db: &'a dyn Database) -> FileId<'a> {
-        let ptr = self.long(db);
-        match ptr {
-            SyntaxStablePtr::Root(file_id, _) => *file_id,
-            SyntaxStablePtr::Child { parent, .. } => parent.file_id(db),
-        }
+        self.0.file_id(db)
     }
     /// Returns the stable pointer of the parent of this stable pointer.
     /// Assumes that the parent exists (that is, `self` is not the root). Panics otherwise.
     pub fn parent<'r: 'a>(&self, db: &'r dyn Database) -> SyntaxStablePtrId<'a> {
-        let SyntaxStablePtr::Child { parent, .. } = self.long(db).clone() else { panic!() };
-        parent
+        SyntaxStablePtrId(self.0.parent(db).unwrap())
     }
     /// Returns the stable pointer of the `n`th parent of this stable pointer.
     /// n = 0: returns itself.
@@ -58,16 +42,11 @@ impl<'a> SyntaxStablePtrId<'a> {
     /// And so on...
     /// Assumes that the `n`th parent exists. Panics otherwise.
     pub fn nth_parent<'r: 'a>(&self, db: &'r dyn Database, n: usize) -> SyntaxStablePtrId<'a> {
-        let mut ptr = *self;
-        for _ in 0..n {
-            ptr = ptr.parent(db);
-        }
-        ptr
+        SyntaxStablePtrId(self.0.nth_parent(db, n))
     }
     /// Returns the kind of this stable pointer.
     /// Assumes that `self` is not the root. Panics otherwise.
     pub fn kind(&self, db: &'a dyn Database) -> SyntaxKind {
-        let SyntaxStablePtr::Child { kind, .. } = self.long(db).clone() else { panic!() };
-        kind
+        self.0.kind(db)
     }
 }
