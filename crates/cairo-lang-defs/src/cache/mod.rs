@@ -684,7 +684,7 @@ impl<'db, T: TypedSyntaxNode<'db>> TypeSyntaxNodeCached<'db, T> {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct GenericParamCached {
     language_element: LanguageElementCached,
 }
@@ -724,13 +724,13 @@ impl ModuleFileCached {
 }
 
 #[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
-enum ModuleIdCached {
+pub enum ModuleIdCached {
     CrateRoot(CrateIdCached),
     Submodule(SubmoduleIdCached),
     MacroCall { id: MacroCallIdCached, generated_file_id: FileIdCached, is_expose: bool },
 }
 impl ModuleIdCached {
-    fn new<'db>(module_id: ModuleId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+    pub fn new<'db>(module_id: ModuleId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         match module_id {
             ModuleId::CrateRoot(crate_id) => {
                 ModuleIdCached::CrateRoot(CrateIdCached::new(crate_id, ctx))
@@ -756,7 +756,7 @@ impl ModuleIdCached {
             },
         }
     }
-    fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleId<'db> {
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleId<'db> {
         match self {
             ModuleIdCached::CrateRoot(crate_id) => ModuleId::CrateRoot(crate_id.get_embedded(data)),
             ModuleIdCached::Submodule(submodule_id) => {
@@ -848,7 +848,7 @@ impl CrateIdCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone)]
-enum ModuleItemIdCached {
+pub enum ModuleItemIdCached {
     Constant(ConstantIdCached),
     Submodule(SubmoduleIdCached),
     Use(UseIdCached),
@@ -865,7 +865,10 @@ enum ModuleItemIdCached {
 }
 
 impl ModuleItemIdCached {
-    fn new<'db>(module_item_id: ModuleItemId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+    pub fn new<'db>(
+        module_item_id: ModuleItemId<'db>,
+        ctx: &mut DefCacheSavingContext<'db>,
+    ) -> Self {
         match module_item_id {
             ModuleItemId::Constant(constant_id) => {
                 ModuleItemIdCached::Constant(ConstantIdCached::new(constant_id, ctx))
@@ -942,6 +945,29 @@ impl ModuleItemIdCached {
             }
         }
     }
+    pub fn get_embedded<'db>(&self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleItemId<'db> {
+        match self {
+            ModuleItemIdCached::Constant(id) => ModuleItemId::Constant(id.get_embedded(data)),
+            ModuleItemIdCached::Submodule(id) => ModuleItemId::Submodule(id.get_embedded(data)),
+            ModuleItemIdCached::Use(id) => ModuleItemId::Use(id.get_embedded(data)),
+            ModuleItemIdCached::FreeFunction(id) => {
+                ModuleItemId::FreeFunction(id.get_embedded(data))
+            }
+            ModuleItemIdCached::Struct(id) => ModuleItemId::Struct(id.get_embedded(data)),
+            ModuleItemIdCached::Enum(id) => ModuleItemId::Enum(id.get_embedded(data)),
+            ModuleItemIdCached::TypeAlias(id) => ModuleItemId::TypeAlias(id.get_embedded(data)),
+            ModuleItemIdCached::ImplAlias(id) => ModuleItemId::ImplAlias(id.get_embedded(data)),
+            ModuleItemIdCached::Trait(id) => ModuleItemId::Trait(id.get_embedded(data)),
+            ModuleItemIdCached::Impl(id) => ModuleItemId::Impl(id.get_embedded(data)),
+            ModuleItemIdCached::ExternType(id) => ModuleItemId::ExternType(id.get_embedded(data)),
+            ModuleItemIdCached::ExternFunction(id) => {
+                ModuleItemId::ExternFunction(id.get_embedded(data))
+            }
+            ModuleItemIdCached::MacroDeclaration(id) => {
+                ModuleItemId::MacroDeclaration(id.get_embedded(data))
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -960,7 +986,7 @@ impl ConstantCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct ConstantIdCached(usize);
+pub struct ConstantIdCached(usize);
 
 impl ConstantIdCached {
     fn new<'db>(id: ConstantId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -982,6 +1008,9 @@ impl ConstantIdCached {
         ctx.constant_ids.insert(self, id);
         id
     }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ConstantId<'db> {
+        data.constant_ids[&self]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -1000,7 +1029,7 @@ impl SubmoduleCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct SubmoduleIdCached(usize);
+pub struct SubmoduleIdCached(usize);
 
 impl SubmoduleIdCached {
     fn new<'db>(id: SubmoduleId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1043,7 +1072,7 @@ impl UseCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct UseIdCached(usize);
+pub struct UseIdCached(usize);
 
 impl UseIdCached {
     fn new<'db>(id: UseId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1064,6 +1093,9 @@ impl UseIdCached {
         let id = cached.embed(ctx).intern(ctx.db);
         ctx.use_ids.insert(self, id);
         id
+    }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> UseId<'db> {
+        data.use_ids[&self]
     }
 }
 
@@ -1086,7 +1118,7 @@ impl FreeFunctionCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct FreeFunctionIdCached(usize);
+pub struct FreeFunctionIdCached(usize);
 
 impl FreeFunctionIdCached {
     fn new<'db>(id: FreeFunctionId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1108,6 +1140,9 @@ impl FreeFunctionIdCached {
         ctx.free_function_ids.insert(self, id);
         id
     }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> FreeFunctionId<'db> {
+        data.free_function_ids[&self]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -1126,7 +1161,7 @@ impl StructCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct StructIdCached(usize);
+pub struct StructIdCached(usize);
 
 impl StructIdCached {
     fn new<'db>(id: StructId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1148,6 +1183,9 @@ impl StructIdCached {
         ctx.struct_ids.insert(self, id);
         id
     }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> StructId<'db> {
+        data.struct_ids[&self]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -1166,7 +1204,7 @@ impl EnumCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct EnumIdCached(usize);
+pub struct EnumIdCached(usize);
 
 impl EnumIdCached {
     fn new<'db>(id: EnumId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1187,6 +1225,9 @@ impl EnumIdCached {
         let id = cached.embed(ctx).intern(ctx.db);
         ctx.enum_ids.insert(self, id);
         id
+    }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> EnumId<'db> {
+        data.enum_ids[&self]
     }
 }
 
@@ -1209,7 +1250,7 @@ impl ModuleTypeAliasCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct ModuleTypeAliasIdCached(usize);
+pub struct ModuleTypeAliasIdCached(usize);
 
 impl ModuleTypeAliasIdCached {
     fn new<'db>(id: ModuleTypeAliasId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1231,6 +1272,9 @@ impl ModuleTypeAliasIdCached {
         ctx.type_alias_ids.insert(self, id);
         id
     }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleTypeAliasId<'db> {
+        data.type_alias_ids[&self]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -1249,7 +1293,7 @@ impl ImplAliasCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct ImplAliasIdCached(usize);
+pub struct ImplAliasIdCached(usize);
 
 impl ImplAliasIdCached {
     fn new<'db>(id: ImplAliasId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1271,6 +1315,9 @@ impl ImplAliasIdCached {
         ctx.impl_alias_ids.insert(self, id);
         id
     }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ImplAliasId<'db> {
+        data.impl_alias_ids[&self]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -1289,7 +1336,7 @@ impl TraitCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct TraitIdCached(usize);
+pub struct TraitIdCached(usize);
 
 impl TraitIdCached {
     fn new<'db>(id: TraitId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1310,6 +1357,9 @@ impl TraitIdCached {
         let id = cached.embed(ctx).intern(ctx.db);
         ctx.trait_ids.insert(self, id);
         id
+    }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> TraitId<'db> {
+        data.trait_ids[&self]
     }
 }
 
@@ -1374,7 +1424,7 @@ impl ExternTypeCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct ExternTypeIdCached(usize);
+pub struct ExternTypeIdCached(usize);
 
 impl ExternTypeIdCached {
     fn new<'db>(id: ExternTypeId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1395,6 +1445,9 @@ impl ExternTypeIdCached {
         let id = cached.embed(ctx).intern(ctx.db);
         ctx.extern_type_ids.insert(self, id);
         id
+    }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ExternTypeId<'db> {
+        data.extern_type_ids[&self]
     }
 }
 
@@ -1417,7 +1470,7 @@ impl ExternFunctionCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct ExternFunctionIdCached(usize);
+pub struct ExternFunctionIdCached(usize);
 
 impl ExternFunctionIdCached {
     fn new<'db>(id: ExternFunctionId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1438,6 +1491,9 @@ impl ExternFunctionIdCached {
         let id = cached.embed(ctx).intern(ctx.db);
         ctx.extern_function_ids.insert(self, id);
         id
+    }
+    pub fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ExternFunctionId<'db> {
+        data.extern_function_ids[&self]
     }
 }
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -1460,7 +1516,7 @@ impl MacroDeclarationCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct MacroDeclarationIdCached(usize);
+pub struct MacroDeclarationIdCached(usize);
 
 impl MacroDeclarationIdCached {
     fn new<'db>(id: MacroDeclarationId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
@@ -1482,6 +1538,12 @@ impl MacroDeclarationIdCached {
         ctx.macro_declaration_ids.insert(self, id);
         id
     }
+    pub fn get_embedded<'db>(
+        self,
+        data: &Arc<DefCacheLoadingData<'db>>,
+    ) -> MacroDeclarationId<'db> {
+        data.macro_declaration_ids[&self]
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -1500,7 +1562,7 @@ impl MacroCallCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct MacroCallIdCached(usize);
+pub struct MacroCallIdCached(usize);
 impl MacroCallIdCached {
     fn new<'db>(id: MacroCallId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(cached_id) = ctx.macro_call_ids.get(&id) {
@@ -1542,10 +1604,10 @@ impl GlobalUseCached {
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
-struct GlobalUseIdCached(usize);
+pub struct GlobalUseIdCached(usize);
 
 impl GlobalUseIdCached {
-    fn new<'db>(id: GlobalUseId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+    pub fn new<'db>(id: GlobalUseId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(cached_id) = ctx.global_use_ids.get(&id) {
             return *cached_id;
         }
@@ -1563,6 +1625,9 @@ impl GlobalUseIdCached {
         let id = cached.embed(ctx).intern(ctx.db);
         ctx.global_use_ids.insert(self, id);
         id
+    }
+    pub fn get_embedded<'db>(&self, data: &Arc<DefCacheLoadingData<'db>>) -> GlobalUseId<'db> {
+        data.global_use_ids[self]
     }
 }
 
@@ -1828,7 +1893,7 @@ impl FileCached {
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
-struct FileIdCached(usize);
+pub struct FileIdCached(usize);
 impl FileIdCached {
     fn new<'db>(id: FileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(cached_id) = ctx.file_ids.get(&id) {
