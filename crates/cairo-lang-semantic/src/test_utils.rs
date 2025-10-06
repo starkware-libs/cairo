@@ -32,7 +32,7 @@ pub struct SemanticDatabaseForTesting {
 }
 
 #[salsa::db]
-impl salsa::Database for SemanticDatabaseForTesting {}
+impl Database for SemanticDatabaseForTesting {}
 
 impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
@@ -61,8 +61,8 @@ impl Default for SemanticDatabaseForTesting {
         SHARED_DB.lock().unwrap().clone()
     }
 }
-impl<'db> Upcast<'db, dyn salsa::Database> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn salsa::Database {
+impl<'db> Upcast<'db, dyn Database> for SemanticDatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn Database {
         self
     }
 }

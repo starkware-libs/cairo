@@ -243,8 +243,8 @@ pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
     bail!("Corelib version mismatch: expected `{expected}`, found `{found}`{path_part}.");
 }
 
-impl<'db> Upcast<'db, dyn salsa::Database> for RootDatabase {
-    fn upcast(&self) -> &dyn salsa::Database {
+impl<'db> Upcast<'db, dyn Database> for RootDatabase {
+    fn upcast(&self) -> &dyn Database {
         self
     }
 }
