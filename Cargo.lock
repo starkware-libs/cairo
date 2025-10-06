@@ -853,6 +853,7 @@ dependencies = [
 name = "cairo-lang-semantic"
 version = "2.12.3"
 dependencies = [
+ "bincode",
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
@@ -871,6 +872,7 @@ dependencies = [
  "num-traits",
  "pretty_assertions",
  "salsa",
+ "serde",
  "sha3",
  "toml",
  "tracing",

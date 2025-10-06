@@ -17,7 +17,7 @@ use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
-use crate::db::get_resolver_data_options;
+use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
 use crate::items::imp::ImplSemantic;
@@ -50,6 +50,13 @@ fn priv_module_semantic_data<'db>(
     _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleSemanticData<'db>> {
+    if let Some((map, _)) = db.cached_crate_semantic_data(module_id.owning_crate(db)) {
+        if let Some(module_data) = map.get(&module_id) {
+            return Ok(module_data.clone());
+        } else {
+            panic!("module not found in cached modules_data {:?}", module_id.name(db));
+        }
+    };
     // We use the builder here since the items can come from different file_ids.
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut items = OrderedHashMap::default();

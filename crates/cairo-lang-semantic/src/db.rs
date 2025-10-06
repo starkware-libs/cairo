@@ -19,6 +19,7 @@ use itertools::{Itertools, chain};
 use salsa::{Database, Setter};
 
 use crate::SemanticDiagnostic;
+use crate::cache::{SemanticCacheLoadingData, load_cached_crate_modules_semantic};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::ConstantSemantic;
@@ -144,6 +145,15 @@ pub trait SemanticGroup: Database {
     /// An allow that is not in this set will be handled as an unknown allow.
     fn declared_allows<'db>(&self, crate_id: CrateId<'db>) -> Arc<OrderedHashSet<String>> {
         declared_allows(self.as_dyn_database(), crate_id)
+    }
+
+    /// Returns the [ModuleSemanticData] of all modules in the crate's cache, and the loading data
+    /// of the [SemanticGroup] in the crate.
+    fn cached_crate_semantic_data<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Option<ModuleSemanticDataCacheAndLoadingData<'db>> {
+        cached_crate_semantic_data(self.as_dyn_database(), crate_id)
     }
 }
 
@@ -636,4 +646,17 @@ pub fn module_fully_accessible_modules<'db>(
         }
     }
     result.into_iter().collect()
+}
+
+pub type ModuleSemanticDataCacheAndLoadingData<'db> = (
+    Arc<OrderedHashMap<ModuleId<'db>, ModuleSemanticData<'db>>>,
+    Arc<SemanticCacheLoadingData<'db>>,
+);
+
+#[salsa::tracked]
+fn cached_crate_semantic_data<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+) -> Option<ModuleSemanticDataCacheAndLoadingData<'db>> {
+    load_cached_crate_modules_semantic(db, crate_id)
 }
