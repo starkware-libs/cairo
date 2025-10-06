@@ -105,7 +105,7 @@ pub trait Intern<'db, Target> {
 //   usually include the short id of the entity's parent.
 #[macro_export]
 macro_rules! define_short_id {
-    ($short_id:ident, $long_id:path, $db:ident) => {
+    ($short_id:ident, $long_id:path) => {
         // 1. Modern interned struct.
         #[salsa::interned(revisions = usize::MAX)]
         pub struct $short_id<'db> {
@@ -139,17 +139,13 @@ macro_rules! define_short_id {
 
         // 4. DebugWithDb identical to old macro.
         impl<'db> cairo_lang_debug::DebugWithDb<'db> for $short_id<'db> {
-            type Db = dyn $db;
+            type Db = dyn salsa::Database;
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
                 use core::fmt::Debug;
 
-                use cairo_lang_debug::helper::Fallback;
+                use cairo_lang_debug::helper::{Fallback, HelperDebug};
 
-                cairo_lang_debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
-                    self.long(db),
-                    db,
-                )
-                .fmt(f)
+                HelperDebug::<$long_id, dyn salsa::Database>::helper_debug(self.long(db), db).fmt(f)
             }
         }
     };

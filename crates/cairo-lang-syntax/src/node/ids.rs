@@ -8,7 +8,7 @@ use super::green::GreenNode;
 use super::kind::SyntaxKind;
 use crate::node::stable_ptr::SyntaxStablePtr;
 
-define_short_id!(GreenId, GreenNode<'db>, Database);
+define_short_id!(GreenId, GreenNode<'db>);
 impl<'a> GreenId<'a> {
     /// Returns the width of the node of this green id.
     pub fn width(&self, db: &dyn Database) -> TextWidth {
@@ -19,7 +19,7 @@ impl<'a> GreenId<'a> {
     }
 }
 
-define_short_id!(SyntaxStablePtrId, SyntaxStablePtr<'db>, Database);
+define_short_id!(SyntaxStablePtrId, SyntaxStablePtr<'db>);
 impl<'a> SyntaxStablePtrId<'a> {
     /// Lookups a syntax node using a stable syntax pointer.
     /// Should only be called on the root from which the stable pointer was generated.

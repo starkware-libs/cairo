@@ -9,7 +9,7 @@ use salsa::Database;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::db::{CORELIB_CRATE_NAME, FilesGroup, ext_as_virtual};
+use crate::db::{CORELIB_CRATE_NAME, ext_as_virtual};
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -97,7 +97,7 @@ impl<'db> CrateLongId<'db> {
         CrateLongId::Real { name, discriminator: None }
     }
 }
-define_short_id!(CrateId, CrateLongId<'db>, FilesGroup);
+define_short_id!(CrateId, CrateLongId<'db>);
 impl<'db> CrateId<'db> {
     /// Gets the crate id for a real crate by name, without a discriminator.
     pub fn plain(db: &'db dyn Database, name: SmolStrId<'db>) -> Self {
@@ -126,7 +126,7 @@ impl UnstableSalsaId for CrateId<'_> {
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FlagLongId(pub String);
-define_short_id!(FlagId, FlagLongId, FilesGroup);
+define_short_id!(FlagId, FlagLongId);
 
 /// Same as `FileLongId`, but without the interning inside virtual files.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
@@ -310,7 +310,7 @@ impl<'db> FileLongId<'db> {
     }
 }
 
-define_short_id!(FileId, FileLongId<'db>, FilesGroup);
+define_short_id!(FileId, FileLongId<'db>);
 impl<'db> FileId<'db> {
     pub fn new_on_disk(db: &'db dyn Database, path: PathBuf) -> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
@@ -403,7 +403,7 @@ unsafe impl salsa::Update for ArcStr {
     }
 }
 
-define_short_id!(SmolStrId, SmolStr, Database);
+define_short_id!(SmolStrId, SmolStr);
 
 pub trait DbJoin {
     fn join(&self, db: &dyn Database, separator: &str) -> String;
@@ -499,7 +499,7 @@ impl BlobLongId {
     }
 }
 
-define_short_id!(BlobId, BlobLongId, FilesGroup);
+define_short_id!(BlobId, BlobLongId);
 
 impl<'db> BlobId<'db> {
     pub fn new_on_disk(db: &'db (dyn salsa::Database + 'db), path: PathBuf) -> Self {

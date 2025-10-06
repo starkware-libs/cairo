@@ -149,7 +149,7 @@ macro_rules! define_language_element_id_basic {
             pub ModuleFileId<'db>,
             pub <$ast_ty as TypedSyntaxNode<'db>>::StablePtr,
         );
-        define_short_id!($short_id, $long_id<'db>, Database);
+        define_short_id!($short_id, $long_id<'db>);
         impl<'db> $short_id<'db> {
             pub fn stable_ptr(
                 &self,
@@ -368,7 +368,7 @@ pub struct PluginGeneratedFileLongId<'db> {
     /// The name of the generated file to differentiate between different generated files.
     pub name: String,
 }
-define_short_id!(PluginGeneratedFileId, PluginGeneratedFileLongId<'db>, DefsGroup);
+define_short_id!(PluginGeneratedFileId, PluginGeneratedFileLongId<'db>);
 
 /// An ID allowing for interning the [`MacroPlugin`] into Salsa database.
 #[derive(Clone, Debug)]
@@ -423,7 +423,7 @@ impl Hash for MacroPluginLongId {
     }
 }
 
-define_short_id!(MacroPluginId, MacroPluginLongId, DefsGroup);
+define_short_id!(MacroPluginId, MacroPluginLongId);
 
 /// An ID allowing for interning the [`InlineMacroExprPlugin`] into Salsa database.
 #[derive(Clone, Debug)]
@@ -466,7 +466,7 @@ impl Hash for InlineMacroExprPluginLongId {
     }
 }
 
-define_short_id!(InlineMacroExprPluginId, InlineMacroExprPluginLongId, DefsGroup);
+define_short_id!(InlineMacroExprPluginId, InlineMacroExprPluginLongId);
 
 define_language_element_id_as_enum! {
     #[toplevel]

@@ -280,7 +280,7 @@ impl<'db> DebugWithDb<'db> for FunctionLongId<'db> {
     }
 }
 
-define_short_id!(FunctionId, FunctionLongId<'db>, Database);
+define_short_id!(FunctionId, FunctionLongId<'db>);
 semantic_object_for_id!(FunctionId, FunctionLongId<'a>);
 impl<'db> FunctionId<'db> {
     pub fn get_concrete(&self, db: &'db dyn Database) -> ConcreteFunction<'db> {
@@ -625,7 +625,7 @@ impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBody<'db> {
     }
 }
 
-define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'db>, Database);
+define_short_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'db>);
 semantic_object_for_id!(ConcreteFunctionWithBodyId, ConcreteFunctionWithBody<'a>);
 impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn function_with_body_id(&self, db: &'db dyn Database) -> FunctionWithBodyId<'db> {

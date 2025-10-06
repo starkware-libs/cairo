@@ -114,7 +114,7 @@ pub struct ConcreteImplLongId<'db> {
     pub impl_def_id: ImplDefId<'db>,
     pub generic_args: Vec<GenericArgumentId<'db>>,
 }
-define_short_id!(ConcreteImplId, ConcreteImplLongId<'db>, Database);
+define_short_id!(ConcreteImplId, ConcreteImplLongId<'db>);
 semantic_object_for_id!(ConcreteImplId, ConcreteImplLongId<'a>);
 impl<'db> DebugWithDb<'db> for ConcreteImplLongId<'db> {
     type Db = dyn Database;
@@ -290,7 +290,7 @@ impl<'db> DebugWithDb<'db> for ImplLongId<'db> {
     }
 }
 
-define_short_id!(ImplId, ImplLongId<'db>, Database);
+define_short_id!(ImplId, ImplLongId<'db>);
 semantic_object_for_id!(ImplId, ImplLongId<'a>);
 impl<'db> ImplId<'db> {
     pub fn concrete_trait(&self, db: &'db dyn Database) -> Maybe<ConcreteTraitId<'db>> {
@@ -322,7 +322,7 @@ impl<'db> ImplId<'db> {
     }
 }
 
-define_short_id!(GeneratedImplId, GeneratedImplLongId<'db>, Database);
+define_short_id!(GeneratedImplId, GeneratedImplLongId<'db>);
 semantic_object_for_id!(GeneratedImplId, GeneratedImplLongId<'a>);
 
 impl<'db> GeneratedImplId<'db> {
@@ -451,7 +451,7 @@ impl<'db> NegativeImplLongId<'db> {
     }
 }
 
-define_short_id!(NegativeImplId, NegativeImplLongId<'db>, Database);
+define_short_id!(NegativeImplId, NegativeImplLongId<'db>);
 impl<'db> NegativeImplId<'db> {
     pub fn concrete_trait(&self, db: &'db dyn Database) -> Maybe<ConcreteTraitId<'db>> {
         self.long(db).concrete_trait(db)
@@ -1790,7 +1790,7 @@ pub struct ImplLookupContext<'db> {
     pub negative_impls: Vec<GenericParamId<'db>>,
 }
 
-define_short_id!(ImplLookupContextId, ImplLookupContext<'db>, Database);
+define_short_id!(ImplLookupContextId, ImplLookupContext<'db>);
 
 impl<'db> ImplLookupContext<'db> {
     /// Creates a new [ImplLookupContext] from a [CrateId].
@@ -2038,7 +2038,7 @@ impl<'db> DebugWithDb<'db> for UninferredImpl<'db> {
     }
 }
 
-define_short_id!(UninferredGeneratedImplId, UninferredGeneratedImplLongId<'db>, Database);
+define_short_id!(UninferredGeneratedImplId, UninferredGeneratedImplLongId<'db>);
 impl<'db> UnstableSalsaId for UninferredGeneratedImplId<'db> {
     fn get_internal_id(&self) -> salsa::Id {
         self.0

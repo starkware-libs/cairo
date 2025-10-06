@@ -18,7 +18,7 @@ pub struct LabelLongId<'db> {
     // A unique identifier inside the function
     pub id: usize,
 }
-define_short_id!(LabelId, LabelLongId<'db>, Database);
+define_short_id!(LabelId, LabelLongId<'db>);
 
 pub struct LabelIdWithDb<'db> {
     db: &'db dyn Database,

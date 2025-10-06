@@ -140,7 +140,7 @@ pub struct LocalNegativeImplVarId(pub usize);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
 pub struct LocalConstVarId(pub usize);
 
-define_short_id!(ImplVarId, ImplVar<'db>, Database);
+define_short_id!(ImplVarId, ImplVar<'db>);
 impl<'db> ImplVarId<'db> {
     pub fn id(&self, db: &dyn Database) -> LocalImplVarId {
         self.long(db).id
@@ -154,7 +154,7 @@ impl<'db> ImplVarId<'db> {
 }
 semantic_object_for_id!(ImplVarId, ImplVar<'a>);
 
-define_short_id!(NegativeImplVarId, NegativeImplVar<'db>, Database);
+define_short_id!(NegativeImplVarId, NegativeImplVar<'db>);
 impl<'db> NegativeImplVarId<'db> {
     pub fn id(&self, db: &dyn Database) -> LocalNegativeImplVarId {
         self.long(db).id
