@@ -1131,7 +1131,6 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-runner",
  "cairo-lang-sierra",
- "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",
  "cairo-lang-test-plugin",
@@ -1140,6 +1139,7 @@ dependencies = [
  "itertools 0.14.0",
  "num-traits",
  "rayon",
+ "salsa",
  "serde_json",
  "starknet-types-core",
 ]

@@ -13,8 +13,6 @@ use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::{Intern, Upcast};
 use salsa::Database;
 
-use crate::db::DocGroup;
-
 #[salsa::db]
 #[derive(Clone)]
 pub struct TestDatabase {
@@ -47,11 +45,6 @@ impl TestDatabase {
     }
 }
 
-impl<'db> Upcast<'db, dyn DocGroup> for TestDatabase {
-    fn upcast(&self) -> &dyn DocGroup {
-        self
-    }
-}
 impl<'db> Upcast<'db, dyn Database> for TestDatabase {
     fn upcast(&self) -> &dyn Database {
         self

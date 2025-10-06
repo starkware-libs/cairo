@@ -68,7 +68,7 @@ use super::type_aliases::{
 use super::visibility::peek_visible_in;
 use super::{TraitOrImplContext, resolve_trait_path};
 use crate::corelib::{CorelibSemantic, concrete_destruct_trait, concrete_drop_trait, core_crate};
-use crate::db::{SemanticGroup, get_resolver_data_options};
+use crate::db::get_resolver_data_options;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
@@ -1782,7 +1782,7 @@ impl<'db> From<UninferredImpl<'db>> for UninferredImplById<'db> {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[debug_db(dyn Database)]
 pub struct ImplLookupContext<'db> {
     pub crate_id: CrateId<'db>,
     pub generic_params: Vec<GenericParamId<'db>>,

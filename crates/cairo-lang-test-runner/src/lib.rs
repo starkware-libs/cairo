@@ -17,7 +17,6 @@ use cairo_lang_runner::{
     CairoHintProcessor, ProfilingInfoCollectionConfig, RunResultValue, RunnerError,
     SierraCasmRunner, StarknetExecutionResources,
 };
-use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
@@ -30,6 +29,7 @@ use colored::Colorize;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use salsa::Database;
 
 #[cfg(test)]
 mod test;
@@ -142,7 +142,7 @@ impl<'db> CompiledTestRunner<'db> {
         );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
-            opt_db.map(|db| db as &dyn SierraGenGroup),
+            opt_db.map(|db| db as &dyn Database),
             compiled,
             &self.config,
             self.custom_hint_processor_factory,
@@ -331,7 +331,7 @@ pub struct TestsSummary {
 
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
-    opt_db: Option<&dyn SierraGenGroup>,
+    opt_db: Option<&dyn Database>,
     compiled: TestCompilation<'_>,
     config: &TestRunConfig,
     custom_hint_processor_factory: Option<ArcCustomHintProcessorFactory>,

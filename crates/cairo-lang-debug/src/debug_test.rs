@@ -52,7 +52,7 @@ impl<'db> Upcast<'db, dyn Database> for dyn TestGroup {
 }
 
 #[derive(DebugWithDb)]
-#[debug_db(dyn TestGroup)]
+#[debug_db(dyn Database)]
 struct ComplexStruct<'db> {
     a: Option<usize>,
     b: Dummy<'db>,
