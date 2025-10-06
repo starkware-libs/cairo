@@ -5,9 +5,9 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use salsa::Database;
 
 use super::fmt::ExprFormatter;
-use crate::db::SemanticGroup;
 use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::{
     ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternArena, PatternId,
@@ -120,10 +120,10 @@ impl<'a> PatternVariablesQueryable<'a> for PatternArena<'a> {
 
 /// Query a function for variables of patterns defined within it.
 ///
-/// This is a wrapper over [`SemanticGroup`] that takes [`FunctionWithBodyId`]
+/// This is a wrapper over [`Database`] that takes [`FunctionWithBodyId`]
 /// and relays queries to [`FunctionWithBodySemantic::pattern_semantic`].
 pub struct QueryPatternVariablesFromDb<'a>(
-    pub &'a (dyn SemanticGroup + 'static),
+    pub &'a (dyn Database + 'static),
     pub FunctionWithBodyId<'a>,
 );
 

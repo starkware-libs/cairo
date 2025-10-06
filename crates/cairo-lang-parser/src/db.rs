@@ -14,6 +14,11 @@ mod db_test;
 
 /// Interface of the parser database.
 pub trait ParserGroup: Database {
+    /// Parses a file and returns its AST as a root SyntaxNode.
+    fn file_syntax<'db>(&'db self, file_id: FileId<'db>) -> Maybe<SyntaxNode<'db>> {
+        file_syntax(self.as_dyn_database(), file_id)
+    }
+
     /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax<'db>(&'db self, file_id: FileId<'db>) -> Maybe<SyntaxFile<'db>> {
         file_module_syntax(self.as_dyn_database(), file_id)
