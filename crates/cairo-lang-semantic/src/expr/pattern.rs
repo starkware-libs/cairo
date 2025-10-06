@@ -120,7 +120,7 @@ impl<'a> PatternVariablesQueryable<'a> for PatternArena<'a> {
 
 /// Query a function for variables of patterns defined within it.
 ///
-/// This is a wrapper over [`SemanticGroup`] that takes [`FunctionWithBodyId`]
+/// This is a wrapper over [`Database`] that takes [`FunctionWithBodyId`]
 /// and relays queries to [`FunctionWithBodySemantic::pattern_semantic`].
 pub struct QueryPatternVariablesFromDb<'a>(
     pub &'a (dyn Database + 'static),
