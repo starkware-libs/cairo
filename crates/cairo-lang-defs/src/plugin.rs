@@ -26,6 +26,23 @@ pub trait GeneratedFileAuxData: std::fmt::Debug + Sync + Send {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DynGeneratedFileAuxData(pub Arc<dyn GeneratedFileAuxData>);
+unsafe impl salsa::Update for DynGeneratedFileAuxData {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_aux_data: &mut Self = unsafe { &mut *old_pointer };
+
+        // Fast path: same allocation => unchanged.
+        if Arc::ptr_eq(&old_aux_data.0, &new_value.0) {
+            return false;
+        }
+        // Content-equal => unchanged.
+        if GeneratedFileAuxData::eq(&*old_aux_data.0, &*new_value.0) {
+            return false;
+        }
+        // Otherwise, replace the Arc.
+        *old_aux_data = new_value;
+        true
+    }
+}
 impl DynGeneratedFileAuxData {
     pub fn new<T: GeneratedFileAuxData + 'static>(aux_data: T) -> Self {
         DynGeneratedFileAuxData(Arc::new(aux_data))
