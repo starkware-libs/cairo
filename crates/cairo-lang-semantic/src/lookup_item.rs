@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
-    FunctionWithBodyId, ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplImplDefId,
-    ImplItemId, ImplTypeDefId, LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId,
-    ModuleId, ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId, TraitConstantId,
-    TraitFunctionId, TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
+    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId,
+    ImplTypeDefId, LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleId,
+    ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId, TraitConstantId, TraitFunctionId,
+    TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 use salsa::Database;
@@ -115,7 +115,7 @@ impl<'db> HasResolverData<'db> for ConstantId<'db> {
 impl<'db> HasResolverData<'db> for SubmoduleId<'db> {
     fn resolver_data(&self, _db: &'db dyn Database) -> Maybe<Arc<ResolverData<'db>>> {
         let module_id = ModuleId::Submodule(*self);
-        let module_file_id = ModuleFileId(module_id, FileIndex(0));
+        let module_file_id = ModuleFileId(module_id);
         let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
             ModuleItemId::Submodule(*self),
         ));

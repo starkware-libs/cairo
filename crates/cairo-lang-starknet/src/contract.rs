@@ -76,7 +76,7 @@ pub fn module_contract<'db>(
     //    }
     // }
     // Then we want lookup b inside a and not inside b.
-    all_aux_data.iter().skip(1).find_map(|aux_data| {
+    all_aux_data.values().skip(1).find_map(|aux_data| {
         let StarknetContractAuxData { contract_name } =
             aux_data.as_ref()?.as_any().downcast_ref()?;
         if let ModuleId::Submodule(submodule_id) = module_id {

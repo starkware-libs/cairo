@@ -866,7 +866,7 @@ fn fetch_event_data<'db>(db: &'db dyn Database, event_type_id: TypeId<'db>) -> O
     // Attempt to extract the event data from the aux data from the impl generation.
     let module_file = impl_def_id.module_file_id(db);
     let all_aux_data = module_file.0.module_data(db).ok()?.generated_file_aux_data(db);
-    let aux_data = all_aux_data.get(module_file.1.0)?.as_ref()?;
+    let aux_data = all_aux_data.get(&impl_def_id.stable_ptr(db).untyped().file_id(db))?.as_ref()?;
     Some(aux_data.0.as_any().downcast_ref::<StarknetEventAuxData>()?.event_data.clone())
 }
 

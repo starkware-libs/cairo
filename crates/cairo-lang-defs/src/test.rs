@@ -17,7 +17,7 @@ use salsa::{Database, Setter};
 
 use crate::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
 use crate::ids::{
-    FileIndex, GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
+    GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
     NamedLanguageElementId, SubmoduleLongId,
 };
 use crate::plugin::{
@@ -63,7 +63,7 @@ fn test_generic_item_id(
     setup_test_module(&mut db_val, inputs["module_code"].as_str());
     let module_id = ModuleId::CrateRoot(get_crate_id(&db_val));
 
-    let module_file_id = ModuleFileId(module_id, FileIndex(0));
+    let module_file_id = ModuleFileId(module_id);
     let file_id = db_val.module_main_file(module_id).unwrap();
     let file_syntax = db_val.file_module_syntax(file_id).unwrap();
     let mut output = String::new();
@@ -79,7 +79,7 @@ fn test_generic_item_id(
                 let submodule_id =
                     SubmoduleLongId(module_file_id, ast::ItemModulePtr(node.stable_ptr(db)))
                         .intern(db);
-                module_file_id = ModuleFileId(ModuleId::Submodule(submodule_id), FileIndex(0));
+                module_file_id = ModuleFileId(ModuleId::Submodule(submodule_id));
             }
             SyntaxKind::GenericParamType
             | SyntaxKind::GenericParamConst

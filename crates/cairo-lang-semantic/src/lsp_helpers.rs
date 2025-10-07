@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FileIndex, GenericTypeId, ImportableId, LanguageElementId, ModuleFileId, ModuleId,
-    NamedLanguageElementId, TraitFunctionId, TraitId,
+    GenericTypeId, ImportableId, LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId,
+    TraitFunctionId, TraitId,
 };
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId, Tracked};
@@ -183,10 +183,7 @@ fn visible_importables_in_module_ex<'db>(
         let (resolved_item, name) = match resolved_item {
             ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)) => {
                 result.extend_from_slice(
-                    &db.visible_importables_in_crate(
-                        crate_id,
-                        ModuleFileId(module_id, FileIndex(0)),
-                    )[..],
+                    &db.visible_importables_in_crate(crate_id, ModuleFileId(module_id))[..],
                 );
 
                 (ImportableId::Crate(crate_id), crate_id.long(db).name().long(db))
@@ -384,7 +381,7 @@ pub fn visible_importables_from_module<'db>(
         db.crate_config(current_crate_id)?.settings.edition.prelude_submodule_name(db);
     let core_prelude_submodule = core_submodule(db, SmolStrId::from(db, "prelude"));
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
-    let prelude_submodule_file_id = ModuleFileId(prelude_submodule, FileIndex(0));
+    let prelude_submodule_file_id = ModuleFileId(prelude_submodule);
 
     let mut module_visible_importables = Vec::new();
     // Collect importables from the prelude.

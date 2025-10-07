@@ -1,9 +1,8 @@
 use std::fmt::Write;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::LanguageElementId;
-use cairo_lang_syntax::node::TypedStablePtr;
+use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -35,7 +34,8 @@ fn test_function_usage(
     )
     .split();
 
-    let file_id = db.module_file(test_function.function_id.module_file_id(db)).unwrap();
+    let file_id =
+        test_function.function_id.name_identifier(db).stable_ptr(db).untyped().file_id(db);
 
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     let function_def =

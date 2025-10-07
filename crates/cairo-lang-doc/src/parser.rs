@@ -3,7 +3,7 @@ use std::fmt;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FileIndex, GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
+    GenericTypeId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, TraitItemId,
 };
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::FilesGroup;
@@ -386,8 +386,7 @@ impl<'db> DocumentationCommentParser<'db> {
         node: &SyntaxNode<'db>,
     ) -> Option<ModuleFileId<'db>> {
         let module_id = self.find_module_containing_node(node)?;
-        let file_index = FileIndex(0);
-        Some(ModuleFileId(module_id, file_index))
+        Some(ModuleFileId(module_id))
     }
     /// Finds a [`ModuleId`] containing the node.
     ///
