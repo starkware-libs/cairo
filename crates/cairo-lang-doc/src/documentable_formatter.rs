@@ -463,8 +463,8 @@ impl<'db> HirDisplay<'db> for ImplConstantDefId<'db> {
 
 impl<'db> HirDisplay<'db> for TraitFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let free_function_full_signature = get_trait_function_signature_data(f.db, *self)?;
-        write_function_signature(f, free_function_full_signature, "".to_string())
+        let trait_function_full_signature = get_trait_function_signature_data(f.db, *self)?;
+        write_function_signature(f, trait_function_full_signature, "".to_string())
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
         Ok(())
