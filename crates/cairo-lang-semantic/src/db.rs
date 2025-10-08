@@ -395,7 +395,8 @@ fn add_unused_import_diagnostics<'db>(
     use_id: UseId<'db>,
     diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
 ) {
-    let _iife = (|| {
+    // Explicitly discard the result of the IIFE to satisfy must_use and improve readability.
+    let _ = (|| {
         let item = db.use_resolved_item(use_id).ok()?;
         // TODO(orizi): Properly handle usages of impls, and than add warnings on their usages as
         // well.
