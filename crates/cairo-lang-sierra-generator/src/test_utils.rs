@@ -32,7 +32,7 @@ pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }
 #[salsa::db]
-impl salsa::Database for SierraGenDatabaseForTesting {}
+impl Database for SierraGenDatabaseForTesting {}
 
 pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));
@@ -75,8 +75,8 @@ impl Default for SierraGenDatabaseForTesting {
         SHARED_DB.lock().unwrap().snapshot()
     }
 }
-impl<'db> Upcast<'db, dyn salsa::Database> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn salsa::Database {
+impl<'db> Upcast<'db, dyn Database> for SierraGenDatabaseForTesting {
+    fn upcast(&'db self) -> &'db dyn Database {
         self
     }
 }
