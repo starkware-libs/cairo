@@ -157,9 +157,10 @@ impl<'db> SyntaxNode<'db> {
     }
 }
 
-/// Create a new syntax node.
-#[salsa::tracked]
-pub fn new_syntax_node<'db>(
+/// Internal function for creating syntax nodes without tracking.
+/// This should only be called from within tracked functions (like `new_root` or `get_children`).
+/// Not public to prevent untracked creation paths.
+pub(crate) fn new_syntax_node<'db>(
     db: &'db dyn Database,
     green: GreenId<'db>,
     offset: TextOffset,
@@ -168,11 +169,24 @@ pub fn new_syntax_node<'db>(
     SyntaxNode(SyntaxNodeData::new(db, green, offset, id))
 }
 
+/// Tracked function for creating syntax nodes.
+/// This ensures all SyntaxNode creation happens within a tracked context.
+#[salsa::tracked]
+fn new_tracked_impl<'db>(
+    db: &'db dyn Database,
+    green: GreenId<'db>,
+    offset: TextOffset,
+    id: SyntaxNodeId<'db>,
+) -> SyntaxNode<'db> {
+    new_syntax_node(db, green, offset, id)
+}
+
 // Construction methods
 impl<'a> SyntaxNode<'a> {
     /// Create a new root syntax node.
+    /// This is the main public API for creating syntax nodes.
     pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
-        new_syntax_node(db, green, TextOffset::START, SyntaxNodeId::Root(file_id))
+        new_tracked_impl(db, green, TextOffset::START, SyntaxNodeId::Root(file_id))
     }
 
     /// Create a new root syntax node with a custom initial offset.
@@ -182,7 +196,22 @@ impl<'a> SyntaxNode<'a> {
         green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
     ) -> Self {
-        new_syntax_node(db, green, initial_offset.unwrap_or_default(), SyntaxNodeId::Root(file_id))
+        new_tracked_impl(
+            db,
+            green,
+            initial_offset.unwrap_or(TextOffset::START),
+            SyntaxNodeId::Root(file_id),
+        )
+    }
+
+    /// Create a new syntax node using a tracked function.
+    pub fn new_tracked(
+        db: &'a dyn Database,
+        green: GreenId<'a>,
+        offset: TextOffset,
+        id: SyntaxNodeId<'a>,
+    ) -> Self {
+        new_tracked_impl(db, green, offset, id)
     }
 
     // Basic accessors
@@ -258,6 +287,7 @@ impl<'a> SyntaxNode<'a> {
             let index = *key_count;
             *key_count += 1;
             // Create the SyntaxNode view for the child.
+            // Use untracked creation since we're already in a tracked context (get_children).
             res.push(new_syntax_node(
                 db,
                 *green_id,

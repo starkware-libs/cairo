@@ -18,7 +18,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::green::{GreenNode, GreenNodeDetails};
 use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, SyntaxNodeId, TypedSyntaxNode, ast, new_syntax_node};
+use cairo_lang_syntax::node::{SyntaxNode, SyntaxNodeId, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
@@ -1690,7 +1690,7 @@ impl SyntaxNodeCached {
         let green = inner.green.embed(ctx);
         let id = inner.id.embed(ctx);
         let offset = inner.offset;
-        let node = new_syntax_node(ctx.db, green, offset, id);
+        let node = SyntaxNode::new_tracked(ctx.db, green, offset, id);
         ctx.syntax_nodes.insert(*self, node);
         node
     }
