@@ -5,8 +5,8 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::{
-    CorelibSemantic, ErrorPropagationType, get_enum_concrete_variant, try_get_ty_by_name,
-    unwrap_error_propagation_type,
+    CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
+    try_get_ty_by_name, unwrap_error_propagation_type,
 };
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::functions::{
@@ -1082,7 +1082,7 @@ fn add_pending_word<'db>(
 ) -> (VarUsage<'db>, VarUsage<'db>) {
     let expr_stable_ptr = expr.stable_ptr.untyped();
 
-    let u32_ty = ctx.db.core_info().u32;
+    let pending_word_len_ty = bounded_int_ty(ctx.db, BigInt::ZERO, 30.into());
     let felt252_ty = ctx.db.core_info().felt252;
 
     let pending_word_usage = generators::Const {
@@ -1095,8 +1095,8 @@ fn add_pending_word<'db>(
 
     let pending_word_len = expr.value.len() % 31;
     let pending_word_len_usage = generators::Const {
-        value: ConstValue::Int(pending_word_len.into(), u32_ty).intern(ctx.db),
-        ty: u32_ty,
+        value: ConstValue::Int(pending_word_len.into(), pending_word_len_ty).intern(ctx.db),
+        ty: pending_word_len_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
     .add(ctx, &mut builder.statements);

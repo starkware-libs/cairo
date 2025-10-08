@@ -351,7 +351,7 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v1: core::felt252) <- 0
-  (v2: core::integer::u32) <- 0
+  (v2: core::internal::bounded_int::BoundedInt::<0, 30>) <- 0
   (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
   (v4: core::byte_array::ByteArray, v5: @core::byte_array::ByteArray) <- snapshot(v3)
   (v6: core::never) <- core::panics::panic_with_byte_array(v5)
@@ -404,7 +404,7 @@ blk1:
 Statements:
   (v5: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v6: core::felt252) <- 0
-  (v7: core::integer::u32) <- 0
+  (v7: core::internal::bounded_int::BoundedInt::<0, 30>) <- 0
   (v8: core::byte_array::ByteArray) <- struct_construct(v5, v6, v7)
   (v9: core::byte_array::ByteArray, v10: @core::byte_array::ByteArray) <- snapshot(v8)
   (v11: core::never) <- core::panics::panic_with_byte_array(v10)
@@ -474,7 +474,7 @@ blk2:
 Statements:
   (v4: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v5: core::felt252) <- 0
-  (v6: core::integer::u32) <- 0
+  (v6: core::internal::bounded_int::BoundedInt::<0, 30>) <- 0
   (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
   (v8: core::byte_array::ByteArray, v9: @core::byte_array::ByteArray) <- snapshot(v7)
   (v10: core::never) <- core::panics::panic_with_byte_array(v9)
@@ -611,7 +611,7 @@ blk1:
 Statements:
   (v4: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v5: core::felt252) <- 0
-  (v6: core::integer::u32) <- 0
+  (v6: core::internal::bounded_int::BoundedInt::<0, 30>) <- 0
   (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
   (v8: core::byte_array::ByteArray, v9: @core::byte_array::ByteArray) <- snapshot(v7)
   (v10: core::never) <- core::panics::panic_with_byte_array(v9)
