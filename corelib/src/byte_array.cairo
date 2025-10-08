@@ -911,6 +911,26 @@ impl ByteSpanGetRangeInclusive of crate::ops::Get<ByteSpan, crate::ops::RangeInc
     }
 }
 
+#[feature("byte-span")]
+impl ByteSpanIndexViewRange of crate::ops::IndexView<ByteSpan, crate::ops::Range<usize>> {
+    type Target = ByteSpan;
+
+    fn index(self: @ByteSpan, index: crate::ops::Range<usize>) -> ByteSpan {
+        crate::ops::Get::get(self, index).expect('Index out of bounds')
+    }
+}
+
+#[feature("byte-span")]
+impl ByteSpanIndexViewRangeInclusive of crate::ops::IndexView<
+    ByteSpan, crate::ops::RangeInclusive<usize>,
+> {
+    type Target = ByteSpan;
+
+    fn index(self: @ByteSpan, index: crate::ops::RangeInclusive<usize>) -> ByteSpan {
+        crate::ops::Get::get(self, index).expect('Index out of bounds')
+    }
+}
+
 /// Trait for types that can be converted into a `ByteSpan`.
 #[unstable(feature: "byte-span")]
 pub trait ToByteSpanTrait<C> {
