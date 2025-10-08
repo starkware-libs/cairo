@@ -12,7 +12,7 @@ use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_gro
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::OptimizationConfig;
@@ -73,11 +73,6 @@ impl SierraGenDatabaseForTesting {
 impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
-    }
-}
-impl<'db> Upcast<'db, dyn Database> for SierraGenDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn Database {
-        self
     }
 }
 

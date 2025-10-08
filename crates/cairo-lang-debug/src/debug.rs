@@ -8,7 +8,6 @@ use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use cairo_lang_utils::Upcast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
@@ -31,6 +30,16 @@ pub trait DebugWithDb<'db> {
     }
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result;
+}
+
+/// A trait that allows upcasting the database to the type T.
+pub trait DebugDbUpcast<'db, T: ?Sized> {
+    fn debug_db_upcast(&'db self) -> &'db T;
+}
+impl<'db, T: ?Sized> DebugDbUpcast<'db, T> for T {
+    fn debug_db_upcast(&'db self) -> &'db T {
+        self
+    }
 }
 
 pub struct DebugWith<'me, 'db, Db: ?Sized> {
@@ -192,11 +201,14 @@ impl<'db, A, B> DebugWithDb<'db> for (A, B)
 where
     A: DebugWithDb<'db>,
     B: DebugWithDb<'db> + 'db,
-    A::Db: Upcast<'db, B::Db>,
+    A::Db: DebugDbUpcast<'db, B::Db>,
 {
     type Db = A::Db;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
-        f.debug_tuple("").field(&self.0.debug(db)).field(&self.1.debug(db.upcast())).finish()
+        f.debug_tuple("")
+            .field(&self.0.debug(db))
+            .field(&self.1.debug(db.debug_db_upcast()))
+            .finish()
     }
 }
 
@@ -205,15 +217,15 @@ where
     A: DebugWithDb<'db>,
     B: DebugWithDb<'db> + 'db,
     C: DebugWithDb<'db> + 'db,
-    A::Db: Upcast<'db, B::Db>,
-    A::Db: Upcast<'db, C::Db>,
+    A::Db: DebugDbUpcast<'db, B::Db>,
+    A::Db: DebugDbUpcast<'db, C::Db>,
 {
     type Db = A::Db;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
         f.debug_tuple("")
             .field(&self.0.debug(db))
-            .field(&self.1.debug(db.upcast()))
-            .field(&self.2.debug(db.upcast()))
+            .field(&self.1.debug(db.debug_db_upcast()))
+            .field(&self.2.debug(db.debug_db_upcast()))
             .finish()
     }
 }
@@ -278,9 +290,7 @@ pub mod helper {
     use std::fmt;
     use std::marker::PhantomData;
 
-    use cairo_lang_utils::Upcast;
-
-    use super::{DebugWith, DebugWithDb};
+    use super::{DebugDbUpcast, DebugWith, DebugWithDb};
 
     pub trait Fallback<'db, T: fmt::Debug, Db: ?Sized> {
         fn helper_debug(a: &'db T, _db: &'db Db) -> &'db dyn fmt::Debug {
@@ -290,10 +300,10 @@ pub mod helper {
 
     pub struct HelperDebug<T, Db: ?Sized>(PhantomData<T>, PhantomData<Db>);
 
-    impl<'db, T: DebugWithDb<'db>, Db: ?Sized + Upcast<'db, T::Db>> HelperDebug<T, Db> {
+    impl<'db, T: DebugWithDb<'db>, Db: ?Sized + DebugDbUpcast<'db, T::Db>> HelperDebug<T, Db> {
         #[allow(dead_code)]
         pub fn helper_debug<'me>(a: &'me T, db: &'db Db) -> DebugWith<'me, 'db, T::Db> {
-            a.debug(db.upcast())
+            a.debug(db.debug_db_upcast())
         }
     }
 

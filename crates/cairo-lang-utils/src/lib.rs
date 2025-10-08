@@ -161,19 +161,3 @@ macro_rules! define_short_id {
 pub fn require(condition: bool) -> Option<()> {
     condition.then_some(())
 }
-
-pub trait Upcast<'db, T: ?Sized> {
-    fn upcast(&'db self) -> &'db T;
-}
-
-impl<'db, T: ?Sized> Upcast<'db, T> for T {
-    fn upcast(&'db self) -> &'db T {
-        self
-    }
-}
-
-impl<'db, T: ?Sized> Upcast<'db, T> for &'db T {
-    fn upcast(&'db self) -> &'db T {
-        self
-    }
-}

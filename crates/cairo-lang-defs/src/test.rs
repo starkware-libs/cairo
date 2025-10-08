@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
 use indoc::indoc;
 use salsa::{Database, Setter};
 
@@ -44,11 +44,6 @@ impl Default for DatabaseForTesting {
             MacroPluginLongId(Arc::new(DummyPlugin)),
         ]));
         res
-    }
-}
-impl<'db> Upcast<'db, dyn Database> for DatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn Database {
-        self
     }
 }
 

@@ -7,7 +7,7 @@ use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
 use cairo_lang_syntax::node::ast::SyntaxFile;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use itertools::chain;
 
 use crate::ParserDiagnostic;
@@ -26,12 +26,6 @@ impl Default for SimpleParserDatabase {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res
-    }
-}
-
-impl<'db> Upcast<'db, dyn salsa::Database> for SimpleParserDatabase {
-    fn upcast(&'db self) -> &'db dyn salsa::Database {
-        self
     }
 }
 

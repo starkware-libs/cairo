@@ -14,7 +14,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, OptionFrom, Upcast, extract_matches};
+use cairo_lang_utils::{Intern, OptionFrom, extract_matches};
 use salsa::Database;
 
 use crate::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
@@ -59,11 +59,6 @@ pub static SHARED_DB: LazyLock<Mutex<SemanticDatabaseForTesting>> =
 impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().clone()
-    }
-}
-impl<'db> Upcast<'db, dyn Database> for SemanticDatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn Database {
-        self
     }
 }
 

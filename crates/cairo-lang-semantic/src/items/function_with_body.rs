@@ -7,8 +7,8 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::{IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Upcast, try_extract_matches};
 use itertools::{Itertools, chain};
 use salsa::Database;
 
@@ -108,10 +108,10 @@ pub trait SemanticExprLookup<'db>: Database {
         ptr: ast::ExprPtr<'db>,
     ) -> Maybe<ExprId> {
         let body_data = match function_id {
-            FunctionWithBodyId::Free(id) => self.upcast().priv_free_function_body_data(id)?,
-            FunctionWithBodyId::Impl(id) => self.upcast().priv_impl_function_body_data(id)?,
+            FunctionWithBodyId::Free(id) => self.priv_free_function_body_data(id)?,
+            FunctionWithBodyId::Impl(id) => self.priv_impl_function_body_data(id)?,
             FunctionWithBodyId::Trait(id) => {
-                self.upcast().priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?
+                self.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?
             }
         };
         body_data.expr_lookup.get(&ptr).copied().to_maybe()
@@ -122,10 +122,10 @@ pub trait SemanticExprLookup<'db>: Database {
         ptr: ast::PatternPtr<'db>,
     ) -> Maybe<PatternId> {
         let body_data = match function_id {
-            FunctionWithBodyId::Free(id) => self.upcast().priv_free_function_body_data(id)?,
-            FunctionWithBodyId::Impl(id) => self.upcast().priv_impl_function_body_data(id)?,
+            FunctionWithBodyId::Free(id) => self.priv_free_function_body_data(id)?,
+            FunctionWithBodyId::Impl(id) => self.priv_impl_function_body_data(id)?,
             FunctionWithBodyId::Trait(id) => {
-                self.upcast().priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?
+                self.priv_trait_function_body_data(id)?.ok_or(DiagnosticAdded)?
             }
         };
         body_data.pattern_lookup.get(&ptr).copied().to_maybe()
