@@ -38,20 +38,20 @@ fn extern_type_declaration_generic_params_data<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = extern_type_id.module_file_id(db);
+    let module_id = extern_type_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?;
 
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
         ModuleItemId::ExternType(extern_type_id),
     ));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     resolver.set_feature_config(&extern_type_id, &extern_type_syntax, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &extern_type_syntax.generic_params(db),
     );
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {

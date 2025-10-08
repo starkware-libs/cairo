@@ -295,20 +295,20 @@ fn trait_generic_params_data<'db>(
     trait_id: TraitId<'db>,
     in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = trait_id.module_file_id(db);
+    let module_id = trait_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_ast = db.module_trait_by_id(trait_id)?;
 
     // Generic params.
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     resolver.set_feature_config(&trait_id, &trait_ast, &mut diagnostics);
     let generic_params = semantic_generic_params_ex(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &trait_ast.generic_params(db),
         in_cycle,
     );
@@ -347,7 +347,7 @@ fn trait_generic_params_ids<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<Vec<GenericParamId<'db>>> {
-    let module_file_id = trait_id.module_file_id(db);
+    let module_id = trait_id.module_id(db);
     let trait_ast = db.module_trait_by_id(trait_id)?;
 
     let generic_params = &trait_ast.generic_params(db);
@@ -359,7 +359,7 @@ fn trait_generic_params_ids<'db>(
             .generic_params(syntax_db)
             .elements(syntax_db)
             .map(|param_syntax| {
-                GenericParamLongId(module_file_id, param_syntax.stable_ptr(syntax_db)).intern(db)
+                GenericParamLongId(module_id, param_syntax.stable_ptr(syntax_db)).intern(db)
             })
             .collect(),
     })
@@ -595,7 +595,7 @@ fn priv_trait_definition_data<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<TraitDefinitionData<'db>> {
-    let module_file_id = trait_id.module_file_id(db);
+    let module_id = trait_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -615,7 +615,7 @@ fn priv_trait_definition_data<'db>(
             match item {
                 ast::TraitItem::Function(func) => {
                     let trait_func_id =
-                        TraitFunctionLongId(module_file_id, func.stable_ptr(db)).intern(db);
+                        TraitFunctionLongId(module_id, func.stable_ptr(db)).intern(db);
                     let name_node = func.declaration(db).name(db);
                     let name = name_node.text(db);
                     let attributes = func.attributes(db);
@@ -638,8 +638,7 @@ fn priv_trait_definition_data<'db>(
                     function_asts.insert(trait_func_id, func);
                 }
                 ast::TraitItem::Type(ty) => {
-                    let trait_type_id =
-                        TraitTypeLongId(module_file_id, ty.stable_ptr(db)).intern(db);
+                    let trait_type_id = TraitTypeLongId(module_id, ty.stable_ptr(db)).intern(db);
                     let name_node = ty.name(db);
                     let name = name_node.text(db);
                     let attributes = ty.attributes(db);
@@ -660,7 +659,7 @@ fn priv_trait_definition_data<'db>(
                 }
                 ast::TraitItem::Constant(constant) => {
                     let trait_constant =
-                        TraitConstantLongId(module_file_id, constant.stable_ptr(db)).intern(db);
+                        TraitConstantLongId(module_id, constant.stable_ptr(db)).intern(db);
 
                     let name_node = constant.name(db);
                     let name = name_node.text(db);
@@ -684,7 +683,7 @@ fn priv_trait_definition_data<'db>(
                     item_constant_asts.insert(trait_constant, constant);
                 }
                 ast::TraitItem::Impl(imp) => {
-                    let trait_impl = TraitImplLongId(module_file_id, imp.stable_ptr(db)).intern(db);
+                    let trait_impl = TraitImplLongId(module_id, imp.stable_ptr(db)).intern(db);
 
                     let name_node = imp.name(db);
                     let name = name_node.text(db);
@@ -735,7 +734,7 @@ fn priv_trait_type_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = trait_type_id.module_file_id(db);
+    let module_id = trait_type_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_type_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
@@ -753,7 +752,7 @@ fn priv_trait_type_generic_params_data<'db>(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &generic_params_node,
     );
     let type_generic_params = resolver.inference().rewrite(type_generic_params).no_err();
@@ -940,7 +939,7 @@ fn priv_trait_function_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = trait_function_id.module_file_id(db);
+    let module_id = trait_function_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
@@ -960,7 +959,7 @@ fn priv_trait_function_generic_params_data<'db>(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &declaration.generic_params(db),
     );
     let function_generic_params = resolver.inference().rewrite(function_generic_params).no_err();

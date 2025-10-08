@@ -77,7 +77,7 @@ fn struct_generic_params_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = struct_id.module_file_id(db);
+    let module_id = struct_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -87,13 +87,13 @@ fn struct_generic_params_data<'db>(
     // Generic params.
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id)));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     resolver.set_feature_config(&struct_id, &struct_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &struct_ast.generic_params(db),
     );
     let inference = &mut resolver.inference();
@@ -127,8 +127,8 @@ fn struct_definition_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<StructDefinitionData<'db>> {
-    let module_file_id = struct_id.module_file_id(db);
-    let crate_id = module_file_id.0.owning_crate(db);
+    let module_id = struct_id.module_id(db);
+    let crate_id = module_id.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -152,7 +152,7 @@ fn struct_definition_data<'db>(
     for member in struct_ast.members(db).elements(db) {
         let feature_restore =
             resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &member);
-        let id = MemberLongId(module_file_id, member.stable_ptr(db)).intern(db);
+        let id = MemberLongId(module_id, member.stable_ptr(db)).intern(db);
         let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
         let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
         let member_name = member.name(db).text(db);
@@ -185,7 +185,7 @@ fn struct_definition_diagnostics<'db>(
         return Default::default();
     };
 
-    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db);
+    let crate_id = data.resolver_data.module_id.owning_crate(db);
 
     // If the struct is a phantom type, no need to check if its members are fully valid types, as
     // they won't be used.

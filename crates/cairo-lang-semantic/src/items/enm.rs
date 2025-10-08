@@ -75,20 +75,20 @@ fn enum_generic_params_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = enum_id.module_file_id(db);
+    let module_id = enum_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
     let inference_id =
         InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     resolver.set_feature_config(&enum_id, &enum_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &enum_ast.generic_params(db),
     );
     let inference = &mut resolver.inference();
@@ -150,8 +150,8 @@ fn enum_definition_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDefinitionData<'db>> {
-    let module_file_id = enum_id.module_file_id(db);
-    let crate_id = module_file_id.0.owning_crate(db);
+    let module_id = enum_id.module_id(db);
+    let crate_id = module_id.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -174,7 +174,7 @@ fn enum_definition_data<'db>(
     for (variant_idx, variant) in enum_ast.variants(db).elements(db).enumerate() {
         let feature_restore =
             resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &variant);
-        let id = VariantLongId(module_file_id, variant.stable_ptr(db)).intern(db);
+        let id = VariantLongId(module_id, variant.stable_ptr(db)).intern(db);
         let ty = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => unit_ty(db),
             ast::OptionTypeClause::TypeClause(type_clause) => {
@@ -217,7 +217,7 @@ fn enum_definition_diagnostics<'db>(
         return Default::default();
     };
 
-    let crate_id = data.resolver_data.module_file_id.0.owning_crate(db);
+    let crate_id = data.resolver_data.module_id.owning_crate(db);
 
     // If the enum is a phantom type, no need to check if its variants are fully valid types, as
     // they won't be used.

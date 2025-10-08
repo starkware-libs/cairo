@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
-    ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
+    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleId,
+    ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{
@@ -179,7 +179,7 @@ enum MacroContextModifier {
 #[debug_db(dyn Database)]
 pub struct ResolverData<'db> {
     /// Current module in which to resolve the path.
-    pub module_file_id: ModuleFileId<'db>,
+    pub module_id: ModuleId<'db>,
     /// Named generic parameters accessible to the resolver.
     generic_param_by_name: OrderedHashMap<SmolStrId<'db>, GenericParamId<'db>>,
     /// All generic parameters accessible to the resolver.
@@ -198,9 +198,9 @@ pub struct ResolverData<'db> {
     pub used_uses: OrderedHashSet<UseId<'db>>,
 }
 impl<'db> ResolverData<'db> {
-    pub fn new(module_file_id: ModuleFileId<'db>, inference_id: InferenceId<'db>) -> Self {
+    pub fn new(module_id: ModuleId<'db>, inference_id: InferenceId<'db>) -> Self {
         Self {
-            module_file_id,
+            module_id,
             generic_param_by_name: Default::default(),
             generic_params: Default::default(),
             type_enriched_members: Default::default(),
@@ -217,7 +217,7 @@ impl<'db> ResolverData<'db> {
         inference_id: InferenceId<'db>,
     ) -> Self {
         Self {
-            module_file_id: self.module_file_id,
+            module_id: self.module_id,
             generic_param_by_name: self.generic_param_by_name.clone(),
             generic_params: self.generic_params.clone(),
             type_enriched_members: self.type_enriched_members.clone(),
@@ -261,7 +261,7 @@ struct MacroResolutionInfo<'db> {
 impl<'db> MacroResolutionInfo<'db> {
     fn from_resolver(resolver: &Resolver<'db>) -> Self {
         Self {
-            base: resolver.data.module_file_id.0,
+            base: resolver.data.module_id,
             data: resolver.macro_call_data.clone(),
             modifier: MacroContextModifier::None,
         }
@@ -410,15 +410,15 @@ impl<'db> AsSegments<'db> for UseAsPathSegments<'db> {
 impl<'db> Resolver<'db> {
     pub fn new(
         db: &'db dyn Database,
-        module_file_id: ModuleFileId<'db>,
+        module_id: ModuleId<'db>,
         inference_id: InferenceId<'db>,
     ) -> Self {
-        Self::with_data(db, ResolverData::new(module_file_id, inference_id))
+        Self::with_data(db, ResolverData::new(module_id, inference_id))
     }
 
     pub fn with_data(db: &'db dyn Database, data: ResolverData<'db>) -> Self {
-        let owning_crate_id = data.module_file_id.0.owning_crate(db);
-        let macro_call_data = match data.module_file_id.0 {
+        let owning_crate_id = data.module_id.owning_crate(db);
+        let macro_call_data = match data.module_id {
             ModuleId::CrateRoot(_) | ModuleId::Submodule(_) => None,
             ModuleId::MacroCall { id, .. } => match db.priv_macro_call_data(id) {
                 Ok(data) => Some(
@@ -464,7 +464,7 @@ impl<'db> Resolver<'db> {
         self.default_module_allowed = default_module_allowed;
     }
 
-    /// Return the module_file_id, with respect to the macro context modifier, see
+    /// Return the module_id, with respect to the macro context modifier, see
     /// [`MacroContextModifier`].
     fn active_module_id(&self, info: &MacroResolutionInfo<'db>) -> ModuleId<'db> {
         if let Some(data) = &info.data {
@@ -479,7 +479,7 @@ impl<'db> Resolver<'db> {
         }
     }
 
-    /// Return the module_file_id, with respect to the macro context modifier, see
+    /// Return the module_id, with respect to the macro context modifier, see
     /// [`MacroContextModifier`].
     fn try_get_active_module_id(&self, info: &MacroResolutionInfo<'db>) -> Option<ModuleId<'db>> {
         if let Some(data) = &info.data {
@@ -1710,7 +1710,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
         let elements_vec = path.to_segments(db);
         let mut segments = elements_vec.into_iter().peekable();
         let mut cur_macro_call_data = resolver.macro_call_data.as_ref();
-        let mut path_defining_module = resolver.data.module_file_id.0;
+        let mut path_defining_module = resolver.data.module_id;
         // Climb up the macro call data while the current resolved path is being mapped to an
         // argument of a macro call.
         while let Some(macro_call_data) = &cur_macro_call_data {

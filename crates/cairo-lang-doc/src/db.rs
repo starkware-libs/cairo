@@ -120,8 +120,8 @@ fn get_crate_root_module_documentation<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
 ) -> Option<String> {
-    let module_file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).ok()?;
-    extract_item_module_level_documentation_from_file(db, module_file_id)
+    let module_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).ok()?;
+    extract_item_module_level_documentation_from_file(db, module_id)
 }
 
 /// Gets the "//!" inner comment of the item (if only item supports inner comments).
@@ -178,8 +178,8 @@ fn extract_item_module_level_documentation<'db>(
             if db.is_submodule_inline(submodule_id) {
                 return None;
             }
-            let module_file_id = db.module_main_file(ModuleId::Submodule(submodule_id)).ok()?;
-            extract_item_module_level_documentation_from_file(db, module_file_id)
+            let module_id = db.module_main_file(ModuleId::Submodule(submodule_id)).ok()?;
+            extract_item_module_level_documentation_from_file(db, module_id)
         }
         _ => None,
     }

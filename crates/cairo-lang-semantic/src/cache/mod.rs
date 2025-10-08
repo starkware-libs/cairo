@@ -471,10 +471,9 @@ impl ExprVarMemberPathCached {
                 ty,
             } => {
                 let parent = Box::new(parent.get_embedded(data, db));
-                let (module_file_id, member_stable_ptr) =
+                let (module_id, member_stable_ptr) =
                     member_id.get_embedded(&data.defs_loading_data);
-                let member_id =
-                    MemberLongId(module_file_id, MemberPtr(member_stable_ptr)).intern(db);
+                let member_id = MemberLongId(module_id, MemberPtr(member_stable_ptr)).intern(db);
                 ExprVarMemberPath::Member {
                     parent,
                     member_id,
@@ -606,15 +605,15 @@ impl SemanticStatementItemIdCached {
     ) -> StatementItemId<'db> {
         match self {
             SemanticStatementItemIdCached::Constant(id) => {
-                let (module_file_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
+                let (module_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
                 StatementItemId::Constant(
-                    StatementConstLongId(module_file_id, ItemConstantPtr(stable_ptr)).intern(db),
+                    StatementConstLongId(module_id, ItemConstantPtr(stable_ptr)).intern(db),
                 )
             }
             SemanticStatementItemIdCached::Use(id) => {
-                let (module_file_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
+                let (module_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
                 StatementItemId::Use(
-                    StatementUseLongId(module_file_id, UsePathLeafPtr(stable_ptr)).intern(db),
+                    StatementUseLongId(module_id, UsePathLeafPtr(stable_ptr)).intern(db),
                 )
             }
         }
@@ -923,10 +922,9 @@ impl GenericFunctionCached {
             }
             GenericFunctionCached::Impl(id, name) => {
                 let impl_id = id.embed(ctx);
-                let (module_file_id, stable_ptr) = name.get_embedded(&ctx.defs_loading_data);
+                let (module_id, stable_ptr) = name.get_embedded(&ctx.defs_loading_data);
                 let trait_function_id =
-                    TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
-                        .intern(ctx.db);
+                    TraitFunctionLongId(module_id, TraitItemFunctionPtr(stable_ptr)).intern(ctx.db);
 
                 GenericFunctionId::Impl(ImplGenericFunctionId {
                     impl_id,
@@ -1018,13 +1016,12 @@ impl GenericFunctionWithBodyCached {
                 })
             }
             GenericFunctionWithBodyCached::Trait(id, name) => {
-                let (module_file_id, stable_ptr) = name.get_embedded(&data.defs_loading_data);
+                let (module_id, stable_ptr) = name.get_embedded(&data.defs_loading_data);
                 GenericFunctionWithBodyId::Trait(
                     ConcreteTraitGenericFunctionLongId::new(
                         db,
                         id.get_embedded(data, db),
-                        TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
-                            .intern(db),
+                        TraitFunctionLongId(module_id, TraitItemFunctionPtr(stable_ptr)).intern(db),
                     )
                     .intern(db),
                 )
@@ -1059,16 +1056,15 @@ impl ImplFunctionBodyCached {
     ) -> ImplFunctionBodyId<'db> {
         match self {
             ImplFunctionBodyCached::Impl(id) => {
-                let (module_file_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
+                let (module_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
                 ImplFunctionBodyId::Impl(
-                    ImplFunctionLongId(module_file_id, FunctionWithBodyPtr(stable_ptr)).intern(db),
+                    ImplFunctionLongId(module_id, FunctionWithBodyPtr(stable_ptr)).intern(db),
                 )
             }
             ImplFunctionBodyCached::Trait(id) => {
-                let (module_file_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
+                let (module_id, stable_ptr) = id.get_embedded(&data.defs_loading_data);
                 ImplFunctionBodyId::Trait(
-                    TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
-                        .intern(db),
+                    TraitFunctionLongId(module_id, TraitItemFunctionPtr(stable_ptr)).intern(db),
                 )
             }
         }
@@ -1333,9 +1329,8 @@ impl TraitTypeCached {
         Self { language_element: LanguageElementCached::new(trait_type_id, &mut ctx.defs_ctx) }
     }
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> TraitTypeId<'db> {
-        let (module_file_id, stable_ptr) =
-            self.language_element.get_embedded(&ctx.defs_loading_data);
-        TraitTypeLongId(module_file_id, TraitItemTypePtr(stable_ptr)).intern(ctx.db)
+        let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
+        TraitTypeLongId(module_id, TraitItemTypePtr(stable_ptr)).intern(ctx.db)
     }
 }
 
@@ -1491,9 +1486,8 @@ impl TraitImplCached {
         Self { language_element: LanguageElementCached::new(trait_impl_id, &mut ctx.defs_ctx) }
     }
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> TraitImplId<'db> {
-        let (module_file_id, stable_ptr) =
-            self.language_element.get_embedded(&ctx.defs_loading_data);
-        TraitImplLongId(module_file_id, TraitItemImplPtr(stable_ptr)).intern(ctx.db)
+        let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
+        TraitImplLongId(module_id, TraitItemImplPtr(stable_ptr)).intern(ctx.db)
     }
 }
 
@@ -1756,9 +1750,9 @@ impl ConcreteVariantCached {
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ConcreteVariant<'db> {
         let concrete_enum_id = self.concrete_enum_id.embed(ctx);
         let ty = self.ty.embed(ctx);
-        let (module_file_id, stable_ptr) = self.id.get_embedded(&ctx.defs_loading_data);
+        let (module_id, stable_ptr) = self.id.get_embedded(&ctx.defs_loading_data);
 
-        let id = VariantLongId(module_file_id, VariantPtr(stable_ptr)).intern(ctx.db);
+        let id = VariantLongId(module_id, VariantPtr(stable_ptr)).intern(ctx.db);
         ConcreteVariant { concrete_enum_id, id, ty, idx: self.idx }
     }
     pub fn get_embedded<'db>(
@@ -1768,8 +1762,8 @@ impl ConcreteVariantCached {
     ) -> ConcreteVariant<'db> {
         let concrete_enum_id = self.concrete_enum_id.get_embedded(data, db);
         let ty = self.ty.get_embedded(data);
-        let (module_file_id, stable_ptr) = self.id.get_embedded(&data.defs_loading_data);
-        let id = VariantLongId(module_file_id, VariantPtr(stable_ptr)).intern(db);
+        let (module_id, stable_ptr) = self.id.get_embedded(&data.defs_loading_data);
+        let id = VariantLongId(module_id, VariantPtr(stable_ptr)).intern(db);
         ConcreteVariant { concrete_enum_id, id, ty, idx: self.idx }
     }
 }
@@ -1797,10 +1791,10 @@ impl ConcreteEnumCached {
         }
     }
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ConcreteEnumId<'db> {
-        let (module_file_id, stable_ptr) = self.enum_id.get_embedded(&ctx.defs_loading_data);
+        let (module_id, stable_ptr) = self.enum_id.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteEnumLongId {
-            enum_id: EnumLongId(module_file_id, ItemEnumPtr(stable_ptr)).intern(ctx.db),
+            enum_id: EnumLongId(module_id, ItemEnumPtr(stable_ptr)).intern(ctx.db),
             generic_args: self.generic_args.into_iter().map(|arg| arg.embed(ctx)).collect(),
         };
         long_id.intern(ctx.db)
@@ -1810,8 +1804,8 @@ impl ConcreteEnumCached {
         data: &Arc<SemanticCacheLoadingData<'db>>,
         db: &'db dyn Database,
     ) -> ConcreteEnumId<'db> {
-        let (module_file_id, stable_ptr) = self.enum_id.get_embedded(&data.defs_loading_data);
-        let id = EnumLongId(module_file_id, ItemEnumPtr(stable_ptr)).intern(db);
+        let (module_id, stable_ptr) = self.enum_id.get_embedded(&data.defs_loading_data);
+        let id = EnumLongId(module_id, ItemEnumPtr(stable_ptr)).intern(db);
         ConcreteEnumLongId {
             enum_id: id,
             generic_args: self
@@ -1846,10 +1840,10 @@ impl ConcreteStructCached {
         }
     }
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ConcreteStructId<'db> {
-        let (module_file_id, stable_ptr) = self.struct_id.get_embedded(&ctx.defs_loading_data);
+        let (module_id, stable_ptr) = self.struct_id.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteStructLongId {
-            struct_id: StructLongId(module_file_id, ItemStructPtr(stable_ptr)).intern(ctx.db),
+            struct_id: StructLongId(module_id, ItemStructPtr(stable_ptr)).intern(ctx.db),
             generic_args: self.generic_args.into_iter().map(|arg| arg.embed(ctx)).collect(),
         };
         long_id.intern(ctx.db)
@@ -1859,9 +1853,9 @@ impl ConcreteStructCached {
         data: &Arc<SemanticCacheLoadingData<'db>>,
         db: &'db dyn Database,
     ) -> ConcreteStructId<'db> {
-        let (module_file_id, stable_ptr) = self.struct_id.get_embedded(&data.defs_loading_data);
+        let (module_id, stable_ptr) = self.struct_id.get_embedded(&data.defs_loading_data);
         let long_id = ConcreteStructLongId {
-            struct_id: StructLongId(module_file_id, ItemStructPtr(stable_ptr)).intern(db),
+            struct_id: StructLongId(module_id, ItemStructPtr(stable_ptr)).intern(db),
             generic_args: self
                 .generic_args
                 .into_iter()
@@ -1894,11 +1888,10 @@ impl ConcreteExternTypeCached {
         }
     }
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ConcreteExternTypeId<'db> {
-        let (module_file_id, stable_ptr) =
-            self.language_element.get_embedded(&ctx.defs_loading_data);
+        let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteExternTypeLongId {
-            extern_type_id: ExternTypeLongId(module_file_id, ItemExternTypePtr(stable_ptr))
+            extern_type_id: ExternTypeLongId(module_id, ItemExternTypePtr(stable_ptr))
                 .intern(ctx.db),
             generic_args: self.generic_args.into_iter().map(|arg| arg.embed(ctx)).collect(),
         };
@@ -1929,10 +1922,10 @@ impl ConcreteTraitCached {
         }
     }
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ConcreteTraitId<'db> {
-        let (module_file_id, stable_ptr) = self.trait_id.get_embedded(&ctx.defs_loading_data);
+        let (module_id, stable_ptr) = self.trait_id.get_embedded(&ctx.defs_loading_data);
 
         let long_id = ConcreteTraitLongId {
-            trait_id: TraitLongId(module_file_id, ItemTraitPtr(stable_ptr)).intern(ctx.db),
+            trait_id: TraitLongId(module_id, ItemTraitPtr(stable_ptr)).intern(ctx.db),
             generic_args: self.generic_args.into_iter().map(|arg| arg.embed(ctx)).collect(),
         };
         long_id.intern(ctx.db)
@@ -1942,9 +1935,9 @@ impl ConcreteTraitCached {
         data: &Arc<SemanticCacheLoadingData<'db>>,
         db: &'db dyn Database,
     ) -> ConcreteTraitId<'db> {
-        let (module_file_id, stable_ptr) = self.trait_id.get_embedded(&data.defs_loading_data);
+        let (module_id, stable_ptr) = self.trait_id.get_embedded(&data.defs_loading_data);
         let long_id = ConcreteTraitLongId {
-            trait_id: TraitLongId(module_file_id, ItemTraitPtr(stable_ptr)).intern(db),
+            trait_id: TraitLongId(module_id, ItemTraitPtr(stable_ptr)).intern(db),
             generic_args: self
                 .generic_args
                 .into_iter()

@@ -12,7 +12,7 @@ use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_fl
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericKind, LanguageElementId, LocalVarLongId, LookupItemId, MemberId,
-    ModuleFileId, ModuleItemId, NamedLanguageElementId, StatementConstLongId, StatementItemId,
+    ModuleId, ModuleItemId, NamedLanguageElementId, StatementConstLongId, StatementItemId,
     StatementUseLongId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
@@ -692,8 +692,8 @@ fn expand_inline_macro<'db>(
             vars_to_expose: vec![],
         };
         ctx.resolver.macro_call_data = Some(Arc::new(ResolverMacroData {
-            defsite_module_id: macro_defsite_resolver_data.module_file_id.0,
-            callsite_module_id: callsite_resolver.module_file_id.0,
+            defsite_module_id: macro_defsite_resolver_data.module_id,
+            callsite_module_id: callsite_resolver.module_id,
             expansion_mappings: info.mappings.clone(),
             parent_macro_call_data,
         }));
@@ -2059,8 +2059,7 @@ fn compute_expr_for_semantic<'db>(
     )?;
 
     let into_iter_variable =
-        LocalVarLongId(ctx.resolver.module_file_id, syntax.identifier(db).stable_ptr(db))
-            .intern(ctx.db);
+        LocalVarLongId(ctx.resolver.module_id, syntax.identifier(db).stable_ptr(db)).intern(ctx.db);
 
     let into_iter_expr = Expr::Var(ExprVar {
         var: VarId::Local(into_iter_variable),
@@ -3132,9 +3131,7 @@ fn create_variable_pattern<'db>(
 
     let var_id = match or_pattern_variables_map.get(&identifier.text(db)) {
         Some(var) => var.id,
-        None => {
-            LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr(db)).intern(ctx.db)
-        }
+        None => LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr(db)).intern(ctx.db),
     };
     let is_mut = match compute_mutability(ctx.diagnostics, db, modifier_list) {
         Mutability::Immutable => false,
@@ -3490,7 +3487,7 @@ fn traits_in_context<'db>(
 ) -> OrderedHashMap<TraitId<'db>, LookupItemId<'db>> {
     let mut traits = ctx.db.module_usable_trait_ids(ctx.resolver.prelude_submodule()).clone();
     traits.extend(
-        ctx.db.module_usable_trait_ids(ctx.resolver.module_file_id.0).iter().map(|(k, v)| (*k, *v)),
+        ctx.db.module_usable_trait_ids(ctx.resolver.module_id).iter().map(|(k, v)| (*k, *v)),
     );
     traits
 }
@@ -3535,7 +3532,7 @@ fn method_call_expr<'db>(
     }
 
     // Extracting the possible traits that should be imported, in order to use the method.
-    let module_file_id = ctx.resolver.module_file_id;
+    let module_id = ctx.resolver.module_id;
     let lookup_context = ctx.resolver.impl_lookup_context();
     let lexpr_clone = lexpr.clone();
     let db = ctx.db;
@@ -3556,7 +3553,7 @@ fn method_call_expr<'db>(
                         ty,
                         method_name,
                         lookup_context,
-                        module_file_id,
+                        module_id,
                         lexpr_clone.stable_ptr().untyped(),
                     )
                 };
@@ -4085,7 +4082,7 @@ fn maybe_pop_coupon_argument<'db>(
 ) -> Option<ExprId> {
     let mut coupon_arg: Option<ExprId> = None;
     if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
-        let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_file_id.0);
+        let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_id);
         if name_terminal.text(ctx.db).long(ctx.db) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
             let expected_ty = TypeLongId::Coupon(function_id).intern(ctx.db);
@@ -4428,10 +4425,8 @@ pub fn compute_and_append_statement_semantic<'db>(
                     );
                     let name_syntax = const_syntax.name(db);
                     let name = name_syntax.text(db);
-                    let rhs_id = StatementConstLongId(
-                        ctx.resolver.module_file_id,
-                        const_syntax.stable_ptr(db),
-                    );
+                    let rhs_id =
+                        StatementConstLongId(ctx.resolver.module_id, const_syntax.stable_ptr(db));
                     let var_def = Binding::LocalItem(LocalItem {
                         id: StatementItemId::Constant(rhs_id.intern(db)),
                         kind: StatementItemKind::Constant(
@@ -4455,7 +4450,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                             ResolutionContext::Statement(&mut ctx.environment),
                         )?;
                         let var_def_id = StatementItemId::Use(
-                            StatementUseLongId(ctx.resolver.module_file_id, stable_ptr).intern(db),
+                            StatementUseLongId(ctx.resolver.module_id, stable_ptr).intern(db),
                         );
                         let name = var_def_id.name(db);
                         match resolved_item {
@@ -4594,7 +4589,7 @@ fn check_struct_member_is_visible<'db>(
     if ctx.resolver.ignore_visibility_checks(containing_module_id) {
         return;
     }
-    let user_module_id = ctx.resolver.module_file_id.0;
+    let user_module_id = ctx.resolver.module_id;
     if !visibility::peek_visible_in(db, member.visibility, containing_module_id, user_module_id) {
         ctx.diagnostics.report(stable_ptr, MemberNotVisible(member_name));
     }
@@ -4640,11 +4635,11 @@ fn match_method_to_traits<'db>(
     ty: semantic::TypeId<'db>,
     method_name: SmolStrId<'db>,
     lookup_context: ImplLookupContextId<'db>,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
     stable_ptr: SyntaxStablePtrId<'db>,
 ) -> Vec<String> {
     let visible_traits = db
-        .visible_traits_from_module(module_file_id)
+        .visible_traits_from_module(module_id)
         .unwrap_or_else(|| Arc::new(OrderedHashMap::default()));
 
     visible_traits

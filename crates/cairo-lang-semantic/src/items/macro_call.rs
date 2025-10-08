@@ -40,8 +40,8 @@ fn priv_macro_call_data<'db>(
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
     let inference_id = InferenceId::MacroCall(macro_call_id);
-    let module_file_id = macro_call_id.module_file_id(db);
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let module_id = macro_call_id.module_id(db);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
     // Resolve the macro call path, and report diagnostics if it finds no match or
     // the resolved item is not a macro declaration.

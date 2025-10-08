@@ -204,7 +204,7 @@ fn module_semantic_diagnostics<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (_module_file_id, plugin_diag) in
+    for (_module_id, plugin_diag) in
         module_id.module_data(db)?.plugin_diagnostics(db).iter().cloned()
     {
         diagnostics.add(SemanticDiagnostic::new(

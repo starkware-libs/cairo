@@ -351,23 +351,23 @@ impl DefsFunctionWithBodyIdCached {
     ) -> defs::ids::FunctionWithBodyId<'db> {
         match self {
             DefsFunctionWithBodyIdCached::Free(id) => {
-                let (module_file_id, function_stable_ptr) = id.get_embedded(defs_loading_data);
+                let (module_id, function_stable_ptr) = id.get_embedded(defs_loading_data);
                 defs::ids::FunctionWithBodyId::Free(
-                    FreeFunctionLongId(module_file_id, FunctionWithBodyPtr(function_stable_ptr))
+                    FreeFunctionLongId(module_id, FunctionWithBodyPtr(function_stable_ptr))
                         .intern(db),
                 )
             }
             DefsFunctionWithBodyIdCached::Impl(id) => {
-                let (module_file_id, function_stable_ptr) = id.get_embedded(defs_loading_data);
+                let (module_id, function_stable_ptr) = id.get_embedded(defs_loading_data);
                 defs::ids::FunctionWithBodyId::Impl(
-                    ImplFunctionLongId(module_file_id, FunctionWithBodyPtr(function_stable_ptr))
+                    ImplFunctionLongId(module_id, FunctionWithBodyPtr(function_stable_ptr))
                         .intern(db),
                 )
             }
             DefsFunctionWithBodyIdCached::Trait(id) => {
-                let (module_file_id, function_stable_ptr) = id.get_embedded(defs_loading_data);
+                let (module_id, function_stable_ptr) = id.get_embedded(defs_loading_data);
                 defs::ids::FunctionWithBodyId::Trait(
-                    TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(function_stable_ptr))
+                    TraitFunctionLongId(module_id, TraitItemFunctionPtr(function_stable_ptr))
                         .intern(db),
                 )
             }
@@ -1099,11 +1099,10 @@ impl GeneratedFunctionKeyCached {
                 id.get_embedded(&ctx.semantic_loading_data.defs_loading_data),
             )),
             GeneratedFunctionKeyCached::TraitFunc(id, stable_location) => {
-                let (module_file_id, stable_ptr) =
+                let (module_id, stable_ptr) =
                     id.get_embedded(&ctx.semantic_loading_data.defs_loading_data);
                 GeneratedFunctionKey::TraitFunc(
-                    TraitFunctionLongId(module_file_id, TraitItemFunctionPtr(stable_ptr))
-                        .intern(ctx.db),
+                    TraitFunctionLongId(module_id, TraitItemFunctionPtr(stable_ptr)).intern(ctx.db),
                     StableLocation::new(
                         stable_location.get_embedded(&ctx.semantic_loading_data.defs_loading_data),
                     ),
