@@ -1042,7 +1042,7 @@ mod a {
 //! > expected_semantics
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'use' items.
+error: cannot glob-import a module into itself
  --> lib.cairo:2:21
     use a::a::a::a::*;
                     ^
