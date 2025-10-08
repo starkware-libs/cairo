@@ -18,7 +18,6 @@ use salsa::Database;
 use super::module::get_module_global_uses;
 use super::visibility::peek_visible_in;
 use crate::SemanticDiagnostic;
-use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder,
@@ -28,7 +27,7 @@ use crate::items::macro_call::module_macro_modules;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverData};
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, salsa::Update)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[debug_db(dyn Database)]
 pub struct UseData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     resolved_item: Maybe<ResolvedGenericItem<'db>>,

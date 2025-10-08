@@ -23,7 +23,6 @@ use salsa::Database;
 use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{Ambiguity, SolutionSet, enrich_lookup_context};
 use crate::corelib::CorelibSemantic;
-use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
@@ -120,7 +119,7 @@ impl<'db> ImplVar<'db> {
 
 /// A negative impl variable
 #[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, salsa::Update)]
-#[debug_db(dyn SemanticGroup)]
+#[debug_db(dyn Database)]
 pub struct NegativeImplVar<'db> {
     pub inference_id: InferenceId<'db>,
     #[dont_rewrite]
@@ -155,15 +154,15 @@ impl<'db> ImplVarId<'db> {
 }
 semantic_object_for_id!(ImplVarId, ImplVar<'a>);
 
-define_short_id!(NegativeImplVarId, NegativeImplVar<'db>, SemanticGroup);
+define_short_id!(NegativeImplVarId, NegativeImplVar<'db>, Database);
 impl<'db> NegativeImplVarId<'db> {
-    pub fn id(&self, db: &dyn SemanticGroup) -> LocalNegativeImplVarId {
+    pub fn id(&self, db: &dyn Database) -> LocalNegativeImplVarId {
         self.long(db).id
     }
-    pub fn concrete_trait_id(&self, db: &'db dyn SemanticGroup) -> ConcreteTraitId<'db> {
+    pub fn concrete_trait_id(&self, db: &'db dyn Database) -> ConcreteTraitId<'db> {
         self.long(db).concrete_trait_id
     }
-    pub fn lookup_context(&self, db: &'db dyn SemanticGroup) -> ImplLookupContextId<'db> {
+    pub fn lookup_context(&self, db: &'db dyn Database) -> ImplLookupContextId<'db> {
         self.long(db).lookup_context
     }
 }
