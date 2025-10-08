@@ -230,7 +230,7 @@ fn build_u128_mul_guarantee_verify(
     ))
 }
 
-/// Handles a casting a felt252 into u128.
+/// Handles casting a felt252 into u128.
 fn build_u128_from_felt252(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
