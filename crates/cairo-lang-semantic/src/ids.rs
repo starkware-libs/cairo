@@ -46,4 +46,4 @@ impl Hash for AnalyzerPluginLongId {
     }
 }
 
-define_short_id!(AnalyzerPluginId, AnalyzerPluginLongId, Database);
+define_short_id!(AnalyzerPluginId, AnalyzerPluginLongId);

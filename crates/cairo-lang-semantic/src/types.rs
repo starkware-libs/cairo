@@ -67,7 +67,7 @@ impl<'db> OptionFrom<TypeLongId<'db>> for ConcreteTypeId<'db> {
     }
 }
 
-define_short_id!(TypeId, TypeLongId<'db>, Database);
+define_short_id!(TypeId, TypeLongId<'db>);
 semantic_object_for_id!(TypeId, TypeLongId<'a>);
 impl<'db> TypeId<'db> {
     pub fn missing(db: &'db dyn Database, diag_added: DiagnosticAdded) -> Self {
@@ -346,7 +346,7 @@ pub struct ConcreteStructLongId<'db> {
     pub struct_id: StructId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
-define_short_id!(ConcreteStructId, ConcreteStructLongId<'db>, Database);
+define_short_id!(ConcreteStructId, ConcreteStructLongId<'db>);
 semantic_object_for_id!(ConcreteStructId, ConcreteStructLongId<'a>);
 impl<'db> ConcreteStructId<'db> {
     pub fn struct_id(&self, db: &'db dyn Database) -> StructId<'db> {
@@ -374,7 +374,7 @@ impl<'db> DebugWithDb<'db> for ConcreteEnumLongId<'db> {
     }
 }
 
-define_short_id!(ConcreteEnumId, ConcreteEnumLongId<'db>, Database);
+define_short_id!(ConcreteEnumId, ConcreteEnumLongId<'db>);
 semantic_object_for_id!(ConcreteEnumId, ConcreteEnumLongId<'a>);
 impl<'db> ConcreteEnumId<'db> {
     pub fn enum_id(&self, db: &'db dyn Database) -> EnumId<'db> {
@@ -387,7 +387,7 @@ pub struct ConcreteExternTypeLongId<'db> {
     pub extern_type_id: ExternTypeId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
 }
-define_short_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'db>, Database);
+define_short_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'db>);
 semantic_object_for_id!(ConcreteExternTypeId, ConcreteExternTypeLongId<'a>);
 impl<'db> ConcreteExternTypeId<'db> {
     pub fn extern_type_id(&self, db: &'db dyn Database) -> ExternTypeId<'db> {

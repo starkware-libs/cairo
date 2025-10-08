@@ -34,7 +34,7 @@ use super::generics::{
     semantic_generic_params_ex,
 };
 use super::imp::{GenericsHeadFilter, ImplLongId, TraitFilter};
-use crate::db::{SemanticGroup, get_resolver_data_options};
+use crate::db::get_resolver_data_options;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
@@ -69,7 +69,7 @@ impl<'db> DebugWithDb<'db> for ConcreteTraitLongId<'db> {
     }
 }
 
-define_short_id!(ConcreteTraitId, ConcreteTraitLongId<'db>, Database);
+define_short_id!(ConcreteTraitId, ConcreteTraitLongId<'db>);
 semantic_object_for_id!(ConcreteTraitId, ConcreteTraitLongId<'a>);
 impl<'db> ConcreteTraitId<'db> {
     pub fn trait_id(&self, db: &'db dyn Database) -> TraitId<'db> {
@@ -133,11 +133,7 @@ impl<'db> ConcreteTraitGenericFunctionLongId<'db> {
         Self { concrete_trait, trait_function }
     }
 }
-define_short_id!(
-    ConcreteTraitGenericFunctionId,
-    ConcreteTraitGenericFunctionLongId<'db>,
-    SemanticGroup
-);
+define_short_id!(ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId<'db>);
 semantic_object_for_id!(ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId<'a>);
 impl<'db> ConcreteTraitGenericFunctionId<'db> {
     pub fn new_from_data(
@@ -179,7 +175,7 @@ impl<'db> ConcreteTraitTypeLongId<'db> {
         Self { concrete_trait, trait_type }
     }
 }
-define_short_id!(ConcreteTraitTypeId, ConcreteTraitTypeLongId<'db>, Database);
+define_short_id!(ConcreteTraitTypeId, ConcreteTraitTypeLongId<'db>);
 semantic_object_for_id!(ConcreteTraitTypeId, ConcreteTraitTypeLongId<'a>);
 impl<'db> ConcreteTraitTypeId<'db> {
     pub fn new_from_data(
@@ -221,7 +217,7 @@ impl<'db> ConcreteTraitConstantLongId<'db> {
         Self { concrete_trait, trait_constant }
     }
 }
-define_short_id!(ConcreteTraitConstantId, ConcreteTraitConstantLongId<'db>, Database);
+define_short_id!(ConcreteTraitConstantId, ConcreteTraitConstantLongId<'db>);
 semantic_object_for_id!(ConcreteTraitConstantId, ConcreteTraitConstantLongId<'a>);
 impl<'db> ConcreteTraitConstantId<'db> {
     pub fn new_from_data(
@@ -263,7 +259,7 @@ impl<'db> ConcreteTraitImplLongId<'db> {
         Self { concrete_trait, trait_impl }
     }
 }
-define_short_id!(ConcreteTraitImplId, ConcreteTraitImplLongId<'db>, Database);
+define_short_id!(ConcreteTraitImplId, ConcreteTraitImplLongId<'db>);
 semantic_object_for_id!(ConcreteTraitImplId, ConcreteTraitImplLongId<'a>);
 impl<'db> ConcreteTraitImplId<'db> {
     pub fn new_from_data(

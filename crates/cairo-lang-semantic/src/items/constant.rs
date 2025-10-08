@@ -95,7 +95,7 @@ pub struct ConstantData<'db> {
     pub resolver_data: Arc<ResolverData<'db>>,
 }
 
-define_short_id!(ConstValueId, ConstValue<'db>, Database);
+define_short_id!(ConstValueId, ConstValue<'db>);
 semantic_object_for_id!(ConstValueId, ConstValue<'a>);
 impl<'db> ConstValueId<'db> {
     pub fn format(&self, db: &dyn Database) -> String {
