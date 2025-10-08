@@ -148,8 +148,24 @@ impl<'db> SyntaxNode<'db> {
     }
 }
 
+/// Internal function for creating syntax nodes without tracking.
+/// This should only be called from within tracked functions (like `new_root` or `get_children`).
+/// Not public to prevent untracked creation paths.
+pub(crate) fn new_syntax_node<'db>(
+    db: &'db dyn Database,
+    green: GreenId<'db>,
+    offset: TextOffset,
+    parent: Either<SyntaxNode<'db>, FileId<'db>>,
+    key_fields: &[GreenId<'db>],
+    index: usize,
+) -> SyntaxNode<'db> {
+    SyntaxNode(SyntaxNodeData::new(db, green, offset, parent, Box::from(key_fields), index))
+}
+
+/// Tracked function for creating syntax nodes.
+/// This ensures all SyntaxNode creation happens within a tracked context.
 #[salsa::tracked]
-pub fn new_syntax_node<'db>(
+fn new_tracked_impl<'db>(
     db: &'db dyn Database,
     green: GreenId<'db>,
     offset: TextOffset,
@@ -159,14 +175,15 @@ pub fn new_syntax_node<'db>(
     let green_node = green.long(db);
     let rng = key_fields::key_fields_range(green_node.kind);
     let key_fields = &green_node.children()[rng];
-    SyntaxNode(SyntaxNodeData::new(db, green, offset, parent, Box::from(key_fields), index))
+    new_syntax_node(db, green, offset, parent, key_fields, index)
 }
 
 // Construction methods
 impl<'a> SyntaxNode<'a> {
     /// Create a new root syntax node.
+    /// This is the main public API for creating syntax nodes.
     pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
-        Self::new_with_inner(db, green, TextOffset::START, Either::Right(file_id), 0)
+        new_tracked_impl(db, green, TextOffset::START, Either::Right(file_id), 0)
     }
 
     /// Create a new root syntax node with a custom initial offset.
@@ -176,25 +193,18 @@ impl<'a> SyntaxNode<'a> {
         green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
     ) -> Self {
-        Self::new_with_inner(
-            db,
-            green,
-            initial_offset.unwrap_or_default(),
-            Either::Right(file_id),
-            0,
-        )
+        new_tracked_impl(db, green, initial_offset.unwrap_or_default(), Either::Right(file_id), 0)
     }
 
-    /// Create a syntax node with the given parameters.
-    /// This delegates to a tracked function to ensure proper Salsa tracking.
-    pub fn new_with_inner(
-        db: &'a dyn Database,
-        green: GreenId<'a>,
+    /// Create a new syntax node using a tracked function, leading to interning.
+    pub fn new_tracked<'db>(
+        db: &'db dyn Database,
+        green: GreenId<'db>,
         offset: TextOffset,
-        parent: Either<SyntaxNode<'a>, FileId<'a>>,
+        parent: Either<SyntaxNode<'db>, FileId<'db>>,
         index: usize,
-    ) -> Self {
-        db.create_syntax_node(green, offset, parent, index)
+    ) -> SyntaxNode<'db> {
+        new_tracked_impl(db, green, offset, parent, index)
     }
 
     // Basic accessors
@@ -270,7 +280,15 @@ impl<'a> SyntaxNode<'a> {
             let index = *key_count;
             *key_count += 1;
             // Create the SyntaxNode view for the child.
-            res.push(db.create_syntax_node(*green_id, offset, Either::Left(*self), index));
+            // Use untracked creation since we're already in a tracked context (get_children).
+            res.push(new_syntax_node(
+                db,
+                *green_id,
+                offset,
+                Either::Left(*self),
+                key_fields,
+                index,
+            ));
 
             offset = offset.add_width(width);
         }

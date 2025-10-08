@@ -1607,7 +1607,7 @@ impl SyntaxNodeCached {
         };
         let offset = inner.offset;
         let index = inner.index;
-        let node = SyntaxNode::new_with_inner(ctx.db, green, offset, parent, index);
+        let node = SyntaxNode::new_tracked(ctx.db, green, offset, parent, index);
         ctx.syntax_nodes.insert(*self, node);
         node
     }
