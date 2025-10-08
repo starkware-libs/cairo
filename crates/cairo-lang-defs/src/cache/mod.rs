@@ -31,7 +31,7 @@ use crate::db::{
 };
 use crate::ids::{
     ConstantId, ConstantLongId, EnumId, EnumLongId, ExternFunctionId, ExternFunctionLongId,
-    ExternTypeId, ExternTypeLongId, FileIndex, FreeFunctionId, FreeFunctionLongId, GenericParamId,
+    ExternTypeId, ExternTypeLongId, FreeFunctionId, FreeFunctionLongId, GenericParamId,
     GenericParamLongId, GlobalUseId, GlobalUseLongId, ImplAliasId, ImplAliasLongId, ImplDefId,
     ImplDefLongId, LanguageElementId, MacroCallId, MacroCallLongId, MacroDeclarationId,
     MacroDeclarationLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId,
@@ -412,7 +412,7 @@ pub struct ModuleDataCached<'db> {
 
     files: Vec<FileIdCached>,
 
-    generated_file_aux_data: Vec<Option<DynGeneratedFileAuxData>>,
+    generated_file_aux_data: OrderedHashMap<FileIdCached, Option<DynGeneratedFileAuxData>>,
     plugin_diagnostics: Vec<(ModuleFileCached, PluginDiagnosticCached)>,
     diagnostics_notes: PluginFileDiagnosticNotesCached,
 }
@@ -552,7 +552,11 @@ impl<'db> ModuleDataCached<'db> {
                 })
                 .collect(),
             files: module_data.files(db).iter().map(|id| FileIdCached::new(*id, ctx)).collect(),
-            generated_file_aux_data: module_data.generated_file_aux_data(db).to_vec(),
+            generated_file_aux_data: module_data
+                .generated_file_aux_data(db)
+                .iter()
+                .map(|(file, aux_data)| (FileIdCached::new(*file, ctx), aux_data.clone()))
+                .collect(),
 
             plugin_diagnostics: module_data
                 .plugin_diagnostics(db)
@@ -628,7 +632,10 @@ impl<'db> ModuleDataCached<'db> {
             ModuleFilesData::new(
                 ctx.db,
                 self.files.iter().map(|id| id.embed(ctx)).collect(),
-                self.generated_file_aux_data,
+                self.generated_file_aux_data
+                    .into_iter()
+                    .map(|(file, aux_data)| (file.embed(ctx), aux_data))
+                    .collect(),
                 self.plugin_diagnostics
                     .into_iter()
                     .map(|(file_id, diagnostic)| (file_id.embed(ctx), diagnostic.embed(ctx)))
@@ -709,17 +716,16 @@ impl GenericParamCached {
 #[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
 struct ModuleFileCached {
     module: ModuleIdCached,
-    file_index: usize,
 }
 impl ModuleFileCached {
     fn new<'db>(module_file_id: ModuleFileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
-        Self { module: ModuleIdCached::new(module_file_id.0, ctx), file_index: module_file_id.1.0 }
+        Self { module: ModuleIdCached::new(module_file_id.0, ctx) }
     }
     fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleFileId<'db> {
-        ModuleFileId(self.module.embed(ctx), FileIndex(self.file_index))
+        ModuleFileId(self.module.embed(ctx))
     }
     fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleFileId<'db> {
-        ModuleFileId(self.module.get_embedded(data), FileIndex(self.file_index))
+        ModuleFileId(self.module.get_embedded(data))
     }
 }
 
