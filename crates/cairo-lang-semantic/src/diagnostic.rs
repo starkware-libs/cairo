@@ -748,6 +748,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::NonPrivateUseStar => {
                 "`pub` not supported for global `use`.".into()
             }
+            SemanticDiagnosticKind::SelfGlobalUse => {
+                "cannot glob-import a module into itself".into()
+            }
             SemanticDiagnosticKind::NamedArgumentsAreNotSupported => {
                 "Named arguments are not supported in this context.".into()
             }
@@ -1428,6 +1431,7 @@ pub enum SemanticDiagnosticKind<'db> {
     PluginDiagnostic(PluginDiagnostic<'db>),
     NameDefinedMultipleTimes(SmolStrId<'db>),
     NonPrivateUseStar,
+    SelfGlobalUse,
     NamedArgumentsAreNotSupported,
     ArgPassedToNegativeImpl,
     UnnamedArgumentFollowsNamed,

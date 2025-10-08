@@ -293,16 +293,51 @@ fn priv_global_use_semantic_data<'db>(
                 UnexpectedElement { expected: vec![ElementKind::Module], actual: other.into() },
             )),
         });
+    if imported_module == Ok(module_id) {
+        diagnostics.report(star_ast.stable_ptr(db), SelfGlobalUse);
+    }
     Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module })
 }
 
 /// Query implementation of [UseSemantic::priv_global_use_semantic_data].
-#[salsa::tracked(cycle_result=priv_global_use_semantic_data_cycle)]
+#[salsa::tracked(cycle_fn=priv_global_use_semantic_data_tracked_cycle_fn, cycle_initial=priv_global_use_semantic_data_tracked_initial)]
 fn priv_global_use_semantic_data_tracked<'db>(
     db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     priv_global_use_semantic_data(db, global_use_id)
+}
+
+/// Cycle handling for [UseSemantic::priv_global_use_semantic_data].
+fn priv_global_use_semantic_data_tracked_cycle_fn<'db>(
+    _db: &'db dyn Database,
+    _value: &Maybe<UseGlobalData<'db>>,
+    _count: u32,
+    _global_use_id: GlobalUseId<'db>,
+) -> salsa::CycleRecoveryAction<Maybe<UseGlobalData<'db>>> {
+    salsa::CycleRecoveryAction::Iterate
+}
+
+/// Cycle handling for [UseSemantic::priv_global_use_semantic_data].
+fn priv_global_use_semantic_data_tracked_initial<'db>(
+    db: &'db dyn Database,
+    global_use_id: GlobalUseId<'db>,
+) -> Maybe<UseGlobalData<'db>> {
+    let mut diagnostics = SemanticDiagnostics::default();
+    let global_use_ast = db.module_global_use_by_id(global_use_id)?;
+    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);
+    let segments = get_use_path_segments(db, star_ast)?;
+    let err = if segments.segments.len() == 1 {
+        // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
+        // uses, which includes the global use `use bad_name::*` (itself) - but we don't want to report a cycle in this case.
+        diagnostics.report(
+            segments.segments.last().unwrap().stable_ptr(db),
+            PathNotFound(NotFoundItemType::Identifier),
+        )
+    } else {
+        diagnostics.report(global_use_ast.stable_ptr(db), UseCycle)
+    };
+    Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
 }
 
 /// Implementation of [UseSemantic::priv_global_use_imported_module].
@@ -339,28 +374,6 @@ fn global_use_semantic_diagnostics_tracked<'db>(
     global_use_semantic_diagnostics(db, global_use_id)
 }
 
-/// Cycle handling for [UseSemantic::priv_global_use_semantic_data].
-fn priv_global_use_semantic_data_cycle<'db>(
-    db: &'db dyn Database,
-    global_use_id: GlobalUseId<'db>,
-) -> Maybe<UseGlobalData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
-    let global_use_ast = db.module_global_use_by_id(global_use_id)?;
-    let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);
-    let segments = get_use_path_segments(db, star_ast)?;
-    let err = if segments.segments.len() == 1 {
-        // `use bad_name::*`, will attempt to find `bad_name` in the current module's global
-        // uses, but which includes itself - but we don't want to report a cycle in this case.
-        diagnostics.report(
-            segments.segments.last().unwrap().stable_ptr(db),
-            PathNotFound(NotFoundItemType::Identifier),
-        )
-    } else {
-        diagnostics.report(global_use_ast.stable_ptr(db), UseCycle)
-    };
-    Ok(UseGlobalData { diagnostics: diagnostics.build(), imported_module: Err(err) })
-}
-
 /// The modules that are imported by a module, using global uses and macro calls.
 pub type ImportedModules<'db> = OrderedHashMap<ModuleId<'db>, ImportInfo<'db>>;
 
@@ -373,7 +386,7 @@ pub struct ImportInfo<'db> {
 
 /// Returns the modules that are imported with `use *` and macro calls in the current module.
 /// Query implementation of [UseSemantic::module_imported_modules].
-#[salsa::tracked(returns(ref),cycle_result=module_imported_modules_cycle)]
+#[salsa::tracked(returns(ref),cycle_fn=module_imported_modules_cycle_fn, cycle_initial=module_imported_modules_initial)]
 fn module_imported_modules<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
@@ -430,7 +443,18 @@ fn module_imported_modules<'db>(
 }
 
 /// Cycle handling for [UseSemantic::module_imported_modules].
-fn module_imported_modules_cycle<'db>(
+fn module_imported_modules_cycle_fn<'db>(
+    _db: &dyn Database,
+    _value: &ImportedModules<'db>,
+    _count: u32,
+    _tracked: Tracked,
+    _module_id: ModuleId<'db>,
+) -> salsa::CycleRecoveryAction<ImportedModules<'db>> {
+    salsa::CycleRecoveryAction::Iterate
+}
+
+/// Cycle handling for [UseSemantic::module_imported_modules].
+fn module_imported_modules_initial<'db>(
     _db: &'db dyn Database,
     _tracked: Tracked,
     _module_id: ModuleId<'db>,
