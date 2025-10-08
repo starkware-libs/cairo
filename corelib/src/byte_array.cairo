@@ -75,7 +75,7 @@ const BYTES_IN_BYTES31_NONZERO: NonZero<usize> = BYTES_IN_BYTES31.try_into().unw
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 /// Byte array type.
-#[derive(Drop, Clone, PartialEq, Serde, Default)]
+#[derive(Drop, Clone, PartialEq, Serde)]
 pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
     /// The first byte of each word in the byte array is the most significant byte in the word.
@@ -86,7 +86,12 @@ pub struct ByteArray {
     pub(crate) pending_word: felt252,
     /// The number of bytes in `pending_word`.
     /// Its value should be in the range [0, 30].
-    pub(crate) pending_word_len: usize,
+    pub(crate) pending_word_len: Bytes31Index,
+}
+impl ByteArrayDefault of Default<ByteArray> {
+    fn default() -> ByteArray {
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+    }
 }
 
 pub(crate) impl ByteArrayStringLiteral of crate::string::StringLiteral<ByteArray>;
@@ -115,7 +120,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         if len == 0 {
             return;
         }
-        let total_pending_bytes = self.pending_word_len + len;
+        let total_pending_bytes = upcast(self.pending_word_len) + len;
 
         // The split index is the number of bytes left for the next word (new pending_word of the
         // modified ByteArray).
@@ -123,7 +128,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             total_pending_bytes, BYTES_IN_BYTES31,
         ) else {
             self.pending_word = word + self.pending_word * one_shift_left_bytes_felt252(len);
-            self.pending_word_len = total_pending_bytes;
+            // Always succeeds because total_pending_bytes is always less than BYTES_IN_BYTES31.
+            if let Some(pending_word_len) = downcast(total_pending_bytes) {
+                self.pending_word_len = pending_word_len;
+            }
             return;
         };
 
@@ -134,6 +142,10 @@ pub impl ByteArrayImpl of ByteArrayTrait {
             self.pending_word_len = 0;
             return;
         }
+        let split_index: Bytes31Index = match downcast(split_index) {
+            Some(split_index) => split_index,
+            None => crate::panic_with_felt252('bad append len'),
+        };
         let word_as_u256 = word.into();
         let to_append = match split_info(split_index) {
             SplitInfo::Eq16(v) => v.split_u256(word_as_u256),
@@ -193,9 +205,9 @@ pub impl ByteArrayImpl of ByteArrayTrait {
 
         let new_pending = self.pending_word * POW_2_8.into() + byte.into();
 
-        if self.pending_word_len != BYTES_IN_BYTES31_MINUS_ONE {
+        if let Some(pending_word_len) = helpers::byte31_index_inc(self.pending_word_len) {
             self.pending_word = new_pending;
-            self.pending_word_len += 1;
+            self.pending_word_len = pending_word_len;
             return;
         }
 
@@ -216,7 +228,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// ```
     #[must_use]
     fn len(self: @ByteArray) -> usize {
-        self.data.len() * BYTES_IN_BYTES31 + *self.pending_word_len
+        helpers::calc_bytearray_len(self)
     }
 
     /// Returns an option of the byte at the given index of `self`
@@ -230,15 +242,18 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// assert!(byte == 98);
     /// ```
     fn at(self: @ByteArray, index: usize) -> Option<u8> {
-        let (word_index, index_in_word) = DivRem::div_rem(index, BYTES_IN_BYTES31_NONZERO);
+        let (word_index, index_in_word) = len_parts(index);
+        let index_in_word: usize = upcast(index_in_word);
         if word_index == self.data.len() {
             // Index is in pending word.
-            if index_in_word >= *self.pending_word_len {
+            if index_in_word >= upcast(*self.pending_word_len) {
                 return None;
             }
             // index_in_word is from MSB, we need index from LSB.
             return Some(
-                u8_at_u256((*self.pending_word).into(), *self.pending_word_len - 1 - index_in_word),
+                u8_at_u256(
+                    (*self.pending_word).into(), upcast(*self.pending_word_len) - 1 - index_in_word,
+                ),
             );
         }
 
@@ -259,7 +274,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     fn rev(self: @ByteArray) -> ByteArray {
         let mut result = Default::default();
 
-        result.append_word_rev(*self.pending_word, *self.pending_word_len);
+        result.append_word_rev(*self.pending_word, upcast(*self.pending_word_len));
 
         let mut data = self.data.span();
         while let Some(current_word) = data.pop_back() {
@@ -329,7 +344,40 @@ impl InternalImpl of InternalTrait {
     /// The value to shift the current pending word to add the remaining bytes to it.
     #[inline]
     fn shift_value(ref self: ByteArray) -> felt252 {
-        one_shift_left_bytes_felt252(BYTES_IN_BYTES31 - self.pending_word_len)
+        match self.pending_word_len {
+            30 => 0x100,
+            29 => 0x10000,
+            28 => 0x1000000,
+            27 => 0x100000000,
+            26 => 0x10000000000,
+            25 => 0x1000000000000,
+            24 => 0x100000000000000,
+            23 => 0x10000000000000000,
+            22 => 0x1000000000000000000,
+            21 => 0x100000000000000000000,
+            20 => 0x10000000000000000000000,
+            19 => 0x1000000000000000000000000,
+            18 => 0x100000000000000000000000000,
+            17 => 0x10000000000000000000000000000,
+            16 => 0x1000000000000000000000000000000,
+            15 => 0x100000000000000000000000000000000,
+            14 => 0x10000000000000000000000000000000000,
+            13 => 0x1000000000000000000000000000000000000,
+            12 => 0x100000000000000000000000000000000000000,
+            11 => 0x10000000000000000000000000000000000000000,
+            10 => 0x1000000000000000000000000000000000000000000,
+            9 => 0x100000000000000000000000000000000000000000000,
+            8 => 0x10000000000000000000000000000000000000000000000,
+            7 => 0x1000000000000000000000000000000000000000000000000,
+            6 => 0x100000000000000000000000000000000000000000000000000,
+            5 => 0x10000000000000000000000000000000000000000000000000000,
+            4 => 0x1000000000000000000000000000000000000000000000000000000,
+            3 => 0x100000000000000000000000000000000000000000000000000000000,
+            2 => 0x10000000000000000000000000000000000000000000000000000000000,
+            1 => 0x1000000000000000000000000000000000000000000000000000000000000,
+            0 => 0x100000000000000000000000000000000000000000000000000000000000000,
+            _ => crate::panic_with_felt252('unreachable'),
+        }
     }
 
     /// Appends a `felt252` value assumed to be `bytes31`.
@@ -346,7 +394,7 @@ impl InternalImpl of InternalTrait {
         ref self: ByteArray,
         mut data: Span<bytes31>,
         pending_word: felt252,
-        pending_word_len: usize,
+        pending_word_len: Bytes31Index,
     ) {
         if self.pending_word_len == 0 {
             self.data.append_span(data);
@@ -451,7 +499,7 @@ impl Gt16SplitInfoSplitValue of SplitValue<Gt16SplitInfo> {
 }
 
 /// Extracts the split info from the given index.
-fn split_info(split_index: usize) -> SplitInfo {
+fn split_info(split_index: Bytes31Index) -> SplitInfo {
     match split_index {
         1 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x100, high_shift: 0x1000000000000000000000000000000 },
@@ -670,14 +718,12 @@ pub impl ByteSpanImpl of ByteSpanTrait {
         let remainder_len = upcast(self.remainder_len);
         let Some(first_word) = self.data.pop_front() else {
             // Slice is included entirely in the remainder word.
-            let len_without_offset: usize = remainder_len - upcast(self.first_char_start_offset);
-            let (start_offset_trimmed, _) = split_bytes31(
-                self.remainder_word, remainder_len, len_without_offset,
+            let pending_word_len: usize = remainder_len - upcast(self.first_char_start_offset);
+            let (pending_word, _) = split_bytes31(
+                self.remainder_word, remainder_len, pending_word_len,
             );
             return ByteArray {
-                data: array![],
-                pending_word: start_offset_trimmed,
-                pending_word_len: upcast(len_without_offset),
+                data: array![], pending_word, pending_word_len: downcast(pending_word_len).unwrap(),
             };
         };
 
@@ -734,7 +780,7 @@ mod helpers {
     use crate::bytes_31::BYTES_IN_BYTES31;
     #[feature("bounded-int-utils")]
     use crate::internal::bounded_int::{
-        self, AddHelper, BoundedInt, MulHelper, SubHelper, UnitInt, downcast,
+        self, AddHelper, BoundedInt, MulHelper, SubHelper, UnitInt, downcast, upcast,
     };
     use super::{BYTES_IN_BYTES31_MINUS_ONE, ByteSpan, Bytes31Index};
 
@@ -767,4 +813,40 @@ mod helpers {
 
         downcast(span_bytes).unwrap()
     }
+
+    /// Calculates the length of a `ByteSpan` in bytes.
+    pub fn calc_bytearray_len(arr: @ByteArray) -> usize {
+        let data_bytes = bounded_int::mul(arr.data.len(), BYTES_IN_BYTES31_UNIT_INT);
+        let arr_bytes = bounded_int::add(*arr.pending_word_len, data_bytes);
+
+        downcast(arr_bytes).unwrap()
+    }
+
+    impl DivRemU32ByB31 of bounded_int::DivRemHelper<u32, BytesInBytes31Typed> {
+        type DivT = BoundedInt<0, 0x8421084>;
+        type RemT = Bytes31Index;
+    }
+
+    /// Returns the length of a `ByteArray` in full words and additional bytes in the pending word.
+    pub fn len_parts(length: usize) -> (usize, Bytes31Index) {
+        let (div, rem) = bounded_int::div_rem::<_, _, DivRemU32ByB31>(length, 31);
+        (upcast(div), rem)
+    }
+
+    impl TrimMaxBytes31Index of bounded_int::TrimMaxHelper<Bytes31Index> {
+        type Target = BoundedInt<0, 29>;
+    }
+    impl AddBytes31Index of AddHelper<BoundedInt<0, 29>, UnitInt<1>> {
+        type Result = BoundedInt<1, 30>;
+    }
+
+    /// Increments the index by one, or returns `None` if not in range.
+    pub fn byte31_index_inc(index: Bytes31Index) -> Option<Bytes31Index> {
+        if let crate::internal::OptionRev::Some(trimmed) = bounded_int::trim_max(index) {
+            Some(upcast(bounded_int::add(trimmed, 1)))
+        } else {
+            None
+        }
+    }
 }
+pub(crate) use helpers::len_parts;
