@@ -787,8 +787,7 @@ define_language_element_id_basic!(GenericParamId, GenericParamLongId, ast::Gener
 impl<'db> GenericParamLongId<'db> {
     pub fn name(&self, db: &'db dyn Database) -> Option<SmolStrId<'db>> {
         let node = self.1.0.0;
-        // TODO(eytan-starkware): have a non-query accessor to parent and use it here.
-        assert!(node.parent(db).is_some());
+        assert!(!node.is_root());
         let key_fields = node.key_fields(db);
         let kind = node.kind(db);
         require(!matches!(
@@ -805,7 +804,7 @@ impl<'db> GenericParamLongId<'db> {
     }
     pub fn kind(&self, db: &dyn Database) -> GenericKind {
         let node = self.1.0.0;
-        assert!(node.parent(db).is_some());
+        assert!(!node.is_root());
         let kind = node.kind(db);
         match kind {
             SyntaxKind::GenericParamType => GenericKind::Type,
@@ -855,7 +854,7 @@ impl<'db> GenericParamId<'db> {
     pub fn format(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         let long_ids = self.long(db);
         let node = long_ids.1.0.0;
-        assert!(node.parent(db).is_some());
+        assert!(!node.is_root());
         let key_fields = node.key_fields(db);
         let kind = node.kind(db);
 
