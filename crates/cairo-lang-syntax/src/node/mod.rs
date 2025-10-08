@@ -65,6 +65,16 @@ struct SyntaxNodeData<'a> {
     id: SyntaxNodeId<'a>,
 }
 
+impl<'db> SyntaxNodeData<'db> {
+    /// Gets the kind of the given node's parent if it exists.
+    pub fn parent(&self, db: &'db dyn Database) -> Option<SyntaxNode<'db>> {
+        match self.id(db) {
+            SyntaxNodeId::Root(_) => None,
+            SyntaxNodeId::Child { parent, .. } => Some(*parent),
+        }
+    }
+}
+
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
@@ -82,33 +92,48 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNodeData<'db> {
 /// tracked functions to ensure uniqueness of SyntaxNodes.
 /// Use `SyntaxNode::new_root` or `SyntaxNode::new_root_with_offset` to create root nodes.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, salsa::Update)]
-pub struct SyntaxNode<'a>(SyntaxNodeData<'a>);
+pub struct SyntaxNode<'a> {
+    data: SyntaxNodeData<'a>,
+    /// Cached parent data to avoid database lookups. None for root nodes.
+    parent: Option<SyntaxNodeData<'a>>,
+}
 
 impl<'db> std::fmt::Debug for SyntaxNode<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "SyntaxNode({:x})", self.0.as_id().index())
+        write!(f, "SyntaxNode({:x})", self.data.as_id().index())
     }
 }
 
 impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNode<'db> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
-        self.0.fmt(f, db)
+        self.data.fmt(f, db)
     }
 }
 
 impl<'db> SyntaxNode<'db> {
     /// Get the offset of this syntax node from the beginning of the file.
     pub fn offset(self, db: &'db dyn Database) -> TextOffset {
-        self.0.offset(db)
+        self.data.offset(db)
     }
 
     /// Get the parent syntax node, if any.
     pub fn parent(self, db: &'db dyn Database) -> Option<SyntaxNode<'db>> {
-        match self.0.id(db) {
+        match self.data.id(db) {
             SyntaxNodeId::Child { parent, .. } => Some(*parent),
             SyntaxNodeId::Root(_) => None,
         }
+    }
+
+    /// Get the grandparent syntax node, if any.
+    /// This uses a cached parent when available, avoiding some database lookups.
+    pub fn grandparent(self, db: &'db dyn Database) -> Option<SyntaxNode<'db>> {
+        self.parent?.parent(db)
+    }
+
+    /// Check if this syntax node is the root of the syntax tree.
+    pub fn is_root(self) -> bool {
+        self.parent.is_none()
     }
 
     /// Get the stable pointer for this syntax node.
@@ -117,12 +142,12 @@ impl<'db> SyntaxNode<'db> {
     }
 
     pub fn raw_id(&self, db: &'db dyn Database) -> &'db SyntaxNodeId<'db> {
-        self.0.id(db)
+        self.data.id(db)
     }
 
     /// Get the key fields of this syntax node. These define the unique identifier of the node.
     pub fn key_fields(self, db: &'db dyn Database) -> &'db [GreenId<'db>] {
-        match self.0.id(db) {
+        match self.data.id(db) {
             SyntaxNodeId::Child { key_fields, .. } => key_fields,
             SyntaxNodeId::Root(_) => &[],
         }
@@ -130,9 +155,18 @@ impl<'db> SyntaxNode<'db> {
 
     /// Returns the file id of the file containing this node.
     pub fn file_id(&self, db: &'db dyn Database) -> FileId<'db> {
-        match self.0.id(db) {
-            SyntaxNodeId::Child { parent, .. } => parent.file_id(db),
+        // Use cached parent if available to avoid database lookup
+        if let Some(parent_data) = self.parent {
+            return match parent_data.id(db) {
+                SyntaxNodeId::Child { parent, .. } => parent.file_id(db),
+                SyntaxNodeId::Root(file_id) => *file_id,
+            };
+        }
+        match self.data.id(db) {
             SyntaxNodeId::Root(file_id) => *file_id,
+            SyntaxNodeId::Child { .. } => {
+                unreachable!("Parent already checked and found to not exist.")
+            }
         }
     }
 
@@ -142,18 +176,22 @@ impl<'db> SyntaxNode<'db> {
     /// n = 2: return the grand parent.
     /// And so on...
     /// Assumes that the `n`th parent exists. Panics otherwise.
-    pub fn nth_parent<'r: 'db>(&self, db: &'r dyn Database, n: usize) -> SyntaxNode<'db> {
-        let mut ptr = *self;
-        for _ in 0..n {
-            ptr = ptr.parent(db).unwrap_or_else(|| {
-                panic!(
-                    "N'th parent did not exist. File {} Offset {:?}",
-                    self.file_id(db).long(db).full_path(db),
-                    self.offset(db)
-                )
-            });
+    pub fn nth_parent<'r: 'db>(&self, db: &'r dyn Database, mut n: usize) -> SyntaxNode<'db> {
+        let mut ptr = Some(*self);
+        while ptr.is_some() && n > 1 {
+            ptr = ptr.and_then(|p| p.grandparent(db));
+            n -= 2;
         }
-        ptr
+        if n == 1 {
+            ptr = ptr.and_then(|p| p.parent(db));
+        }
+        ptr.unwrap_or_else(|| {
+            panic!(
+                "N'th parent did not exist. File {} Offset {:?}",
+                self.file_id(db).long(db).full_path(db),
+                self.offset(db)
+            )
+        })
     }
 }
 
@@ -165,7 +203,12 @@ pub fn new_syntax_node<'db>(
     offset: TextOffset,
     id: SyntaxNodeId<'db>,
 ) -> SyntaxNode<'db> {
-    SyntaxNode(SyntaxNodeData::new(db, green, offset, id))
+    let parent = match &id {
+        SyntaxNodeId::Child { parent, .. } => Some(parent.data),
+        SyntaxNodeId::Root(_) => None,
+    };
+    let data = SyntaxNodeData::new(db, green, offset, id);
+    SyntaxNode { data, parent }
 }
 
 // Construction methods
@@ -212,7 +255,7 @@ impl<'a> SyntaxNode<'a> {
 
     /// Returns the green node of the syntax node.
     pub fn green_node(&self, db: &'a dyn Database) -> &'a GreenNode<'a> {
-        self.0.green(db).long(db)
+        self.data.green(db).long(db)
     }
 
     /// Returns the span of the syntax node without trivia.
@@ -507,17 +550,17 @@ impl<'a> SyntaxNode<'a> {
 
     /// Gets the kind of the given node's parent if it exists.
     pub fn parent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
-        Some(self.parent(db)?.kind(db))
+        Some(self.parent?.green(db).long(db).kind)
     }
 
     /// Gets the kind of the given node's grandparent if it exists.
     pub fn grandparent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
-        Some(self.parent(db)?.parent(db)?.kind(db))
+        self.parent(db)?.parent_kind(db)
     }
 
     /// Gets the kind of the given node's grandgrandparent if it exists.
     pub fn grandgrandparent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
-        Some(self.parent(db)?.parent(db)?.parent(db)?.kind(db))
+        self.grandparent(db)?.parent_kind(db)
     }
 }
 
