@@ -164,7 +164,7 @@ fn priv_macro_call_data<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::priv_macro_call_data].
-#[salsa::tracked(cycle_result=priv_macro_call_data_cycle)]
+#[salsa::tracked(cycle_fn=priv_macro_call_data_cycle, cycle_initial=priv_macro_call_data_initial)]
 fn priv_macro_call_data_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
@@ -198,8 +198,17 @@ pub fn expose_content_and_mapping<'db>(
     ))
 }
 
-/// Cycle handling for the `priv_macro_call_data` query.
+/// Cycle handling for [MacroCallSemantic::priv_macro_call_data].
 fn priv_macro_call_data_cycle<'db>(
+    _db: &'db dyn Database,
+    _value: &Maybe<MacroCallData<'db>>,
+    _count: u32,
+    _macro_call_id: MacroCallId<'db>,
+) -> salsa::CycleRecoveryAction<Maybe<MacroCallData<'db>>> {
+    salsa::CycleRecoveryAction::Iterate
+}
+/// Cycle handling for the `priv_macro_call_data` query.
+fn priv_macro_call_data_initial<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
@@ -231,24 +240,16 @@ fn macro_call_diagnostics<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    priv_macro_call_data(db, macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_macro_call_data(macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [MacroCallSemantic::macro_call_diagnostics].
-#[salsa::tracked(cycle_result=macro_call_diagnostics_cycle)]
+#[salsa::tracked]
 fn macro_call_diagnostics_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
     macro_call_diagnostics(db, macro_call_id)
-}
-
-/// Cycle handling for the `macro_call_diagnostics` query.
-fn macro_call_diagnostics_cycle<'db>(
-    db: &'db dyn Database,
-    macro_call_id: MacroCallId<'db>,
-) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    priv_macro_call_data(db, macro_call_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Implementation of [MacroCallSemantic::macro_call_module_id].
@@ -260,15 +261,23 @@ fn macro_call_module_id<'db>(
 }
 
 /// Query implementation of [MacroCallSemantic::macro_call_module_id].
-#[salsa::tracked(cycle_result=macro_call_module_id_cycle)]
+#[salsa::tracked(cycle_fn=macro_call_module_id_cycle, cycle_initial=macro_call_module_id_initial)]
 fn macro_call_module_id_tracked<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
     macro_call_module_id(db, macro_call_id)
 }
-/// Cycle handling for the `macro_call_module_id` query.
 fn macro_call_module_id_cycle<'db>(
+    _db: &'db dyn Database,
+    _value: &Maybe<ModuleId<'db>>,
+    _count: u32,
+    _macro_call_id: MacroCallId<'db>,
+) -> salsa::CycleRecoveryAction<Maybe<ModuleId<'db>>> {
+    salsa::CycleRecoveryAction::Iterate
+}
+/// Cycle handling for the `macro_call_module_id` query.
+fn macro_call_module_id_initial<'db>(
     _db: &'db dyn Database,
     _macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
