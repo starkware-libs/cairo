@@ -96,6 +96,10 @@ pub struct SyntaxNode<'a> {
     data: SyntaxNodeData<'a>,
     /// Cached parent data to avoid database lookups. None for root nodes.
     parent: Option<SyntaxNodeData<'a>>,
+    /// Cached kind to avoid database lookups.
+    kind: SyntaxKind,
+    /// Cached parent kind to avoid database lookups. None for root nodes.
+    parent_kind: Option<SyntaxKind>,
 }
 
 impl<'db> std::fmt::Debug for SyntaxNode<'db> {
@@ -202,20 +206,22 @@ pub fn new_syntax_node<'db>(
     green: GreenId<'db>,
     offset: TextOffset,
     id: SyntaxNodeId<'db>,
+    kind: SyntaxKind,
 ) -> SyntaxNode<'db> {
-    let parent = match &id {
-        SyntaxNodeId::Child { parent, .. } => Some(parent.data),
-        SyntaxNodeId::Root(_) => None,
+    let (parent, parent_kind) = match &id {
+        SyntaxNodeId::Child { parent, .. } => (Some(parent.data), Some(parent.kind)),
+        SyntaxNodeId::Root(_) => (None, None),
     };
     let data = SyntaxNodeData::new(db, green, offset, id);
-    SyntaxNode { data, parent }
+    SyntaxNode { data, parent, kind, parent_kind }
 }
 
 // Construction methods
 impl<'a> SyntaxNode<'a> {
     /// Create a new root syntax node.
     pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
-        new_syntax_node(db, green, TextOffset::START, SyntaxNodeId::Root(file_id))
+        let kind = green.long(db).kind;
+        new_syntax_node(db, green, TextOffset::START, SyntaxNodeId::Root(file_id), kind)
     }
 
     /// Create a new root syntax node with a custom initial offset.
@@ -225,7 +231,14 @@ impl<'a> SyntaxNode<'a> {
         green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
     ) -> Self {
-        new_syntax_node(db, green, initial_offset.unwrap_or_default(), SyntaxNodeId::Root(file_id))
+        let kind = green.long(db).kind;
+        new_syntax_node(
+            db,
+            green,
+            initial_offset.unwrap_or_default(),
+            SyntaxNodeId::Root(file_id),
+            kind,
+        )
     }
 
     // Basic accessors
@@ -236,8 +249,8 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Get the syntax kind of this node.
-    pub fn kind(&self, db: &dyn Database) -> SyntaxKind {
-        self.green_node(db).kind
+    pub fn kind(&self, _db: &dyn Database) -> SyntaxKind {
+        self.kind
     }
 
     /// Get the span of this syntax node.
@@ -306,6 +319,7 @@ impl<'a> SyntaxNode<'a> {
                 *green_id,
                 offset,
                 SyntaxNodeId::Child { parent: *self, index, key_fields: Box::from(key_fields) },
+                kind,
             ));
 
             offset = offset.add_width(width);
@@ -549,8 +563,8 @@ impl<'a> SyntaxNode<'a> {
     }
 
     /// Gets the kind of the given node's parent if it exists.
-    pub fn parent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
-        Some(self.parent?.green(db).long(db).kind)
+    pub fn parent_kind(&self, _db: &dyn Database) -> Option<SyntaxKind> {
+        self.parent_kind
     }
 
     /// Gets the kind of the given node's grandparent if it exists.
