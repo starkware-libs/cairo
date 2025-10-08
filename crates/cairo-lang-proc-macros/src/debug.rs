@@ -55,9 +55,9 @@ fn emit_struct_debug(
         impl #impl_g #crt::debug::DebugWithDb<'db> for #name #ty_g #where_g {
             type Db = #db;
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db #db) -> std::fmt::Result {
+                use #crt::debug::DebugDbUpcast;
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
-                use cairo_lang_utils::Upcast;
 
                 let #name #pat = self;
                 #prints
@@ -95,9 +95,9 @@ fn emit_enum_debug(
         impl #impl_g #crt::debug::DebugWithDb<'db> for #name #ty_g #where_g {
             type Db = #db;
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db #db) -> std::fmt::Result {
+                use #crt::debug::DebugDbUpcast;
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
-                use cairo_lang_utils::Upcast;
 
                 match self {
                     #arms

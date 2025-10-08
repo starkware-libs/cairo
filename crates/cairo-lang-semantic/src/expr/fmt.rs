@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_debug::debug::DebugDbUpcast;
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_utils::Upcast;
 use salsa::Database;
 
 use crate::items::function_with_body::FunctionWithBodySemantic;
@@ -13,9 +13,9 @@ pub struct ExprFormatter<'db> {
     pub function_id: FunctionWithBodyId<'db>,
 }
 
-impl<'db> Upcast<'db, dyn Database> for ExprFormatter<'db> {
-    fn upcast(&'db self) -> &'db dyn Database {
-        self.db.upcast()
+impl<'db> DebugDbUpcast<'db, dyn Database> for ExprFormatter<'db> {
+    fn debug_db_upcast(&'db self) -> &'db dyn Database {
+        self.db
     }
 }
 

@@ -6,9 +6,9 @@ use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{self as semantic, Expr, Statement, StatementId};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Upcast, extract_matches};
 use itertools::Itertools;
 
 use super::block_builder::{BlockBuilder, merge_block_builders};
@@ -80,7 +80,7 @@ fn test_merge_block_builders(
         .map(|_| ctx.new_var(VarRequest { ty: unit_ty(ctx.db), location: dummy_location }))
         .collect();
 
-    let expr_formatter = ExprFormatter { db: db.upcast(), function_id: test_function.function_id };
+    let expr_formatter = ExprFormatter { db: &db, function_id: test_function.function_id };
 
     let input_blocks = create_block_builders(&mut ctx, &test_function, &lowering_vars);
     let input_blocks_str =
@@ -89,7 +89,7 @@ fn test_merge_block_builders(
     // Invoke [merge_block_builders] on the input blocks.
     let merged_block = merge_block_builders(&mut ctx, input_blocks, dummy_location);
 
-    let lowered_formatter = LoweredFormatter::new(db.upcast(), &ctx.variables.variables);
+    let lowered_formatter = LoweredFormatter::new(&db, &ctx.variables.variables);
     let lowered_blocks = ctx.blocks.build().unwrap();
     let lowered_str = lowered_blocks
         .iter()

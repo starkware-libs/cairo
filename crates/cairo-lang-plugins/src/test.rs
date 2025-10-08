@@ -19,8 +19,8 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
+use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{Intern, Upcast};
 use itertools::{Itertools, chain};
 use salsa::{AsDynDatabase, Database, Setter};
 
@@ -68,11 +68,6 @@ impl Default for DatabaseForTesting {
             .set_default_macro_plugins(&mut res)
             .to(Some(get_base_plugins().into_iter().map(MacroPluginLongId).collect()));
         res
-    }
-}
-impl<'db> Upcast<'db, dyn Database> for DatabaseForTesting {
-    fn upcast(&'db self) -> &'db dyn Database {
-        self
     }
 }
 

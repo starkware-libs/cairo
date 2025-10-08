@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId};
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_test_utils::test;
-use cairo_lang_utils::{Upcast, extract_matches};
+use cairo_lang_utils::extract_matches;
 use pretty_assertions::assert_eq;
 
 use crate::expr::fmt::ExprFormatter;
@@ -39,7 +39,7 @@ fn test_expr_lookup() {
     let mut expr_debugs = Vec::new();
     for (expr_id, expr) in &db.function_body(function_id).unwrap().arenas.exprs {
         assert_eq!(db.lookup_expr_by_ptr(function_id, expr.stable_ptr()), Ok(expr_id));
-        expr_debugs.push(format!("{:?}", expr.debug(expr_formatter.upcast())));
+        expr_debugs.push(format!("{:?}", expr.debug(&expr_formatter)));
     }
     expr_debugs.sort();
     assert_eq!(

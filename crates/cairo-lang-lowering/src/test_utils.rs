@@ -6,7 +6,6 @@ use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
-use cairo_lang_utils::Upcast;
 use salsa::Database;
 
 use crate::Lowered;
@@ -49,12 +48,6 @@ pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
-    }
-}
-
-impl<'db> Upcast<'db, dyn Database> for LoweringDatabaseForTesting {
-    fn upcast(&self) -> &dyn Database {
-        self
     }
 }
 

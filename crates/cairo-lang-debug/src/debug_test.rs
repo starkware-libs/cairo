@@ -1,6 +1,5 @@
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_test_utils::test;
-use cairo_lang_utils::Upcast;
 use salsa::{Database, Storage};
 
 use crate::debug::DebugWithDb;
@@ -30,24 +29,6 @@ impl<'db> DebugWithDb<'db> for Dummy<'db> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
         write!(f, "Dummy({})", self.id(db))
-    }
-}
-
-impl<'db> Upcast<'db, dyn TestGroup> for DummyDb {
-    fn upcast(&'db self) -> &'db dyn TestGroup {
-        self
-    }
-}
-
-impl<'db> Upcast<'db, ()> for dyn TestGroup {
-    fn upcast(&'db self) -> &'db () {
-        &()
-    }
-}
-
-impl<'db> Upcast<'db, dyn Database> for dyn TestGroup {
-    fn upcast(&'db self) -> &'db dyn Database {
-        self
     }
 }
 

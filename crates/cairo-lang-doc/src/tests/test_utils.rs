@@ -10,7 +10,7 @@ use cairo_lang_filesystem::{override_file_content, set_crate_config};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::plugin::PluginSuite;
-use cairo_lang_utils::{Intern, Upcast};
+use cairo_lang_utils::Intern;
 use salsa::Database;
 
 #[salsa::db]
@@ -42,12 +42,6 @@ impl TestDatabase {
             detect_corelib().ok_or_else(|| anyhow!("Failed to find development corelib."))?;
         init_dev_corelib(&mut db, path);
         Ok(db)
-    }
-}
-
-impl<'db> Upcast<'db, dyn Database> for TestDatabase {
-    fn upcast(&self) -> &dyn Database {
-        self
     }
 }
 
