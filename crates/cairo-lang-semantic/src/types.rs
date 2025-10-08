@@ -151,21 +151,21 @@ impl<'db> TypeLongId<'db> {
         match self {
             TypeLongId::Concrete(id) => match id {
                 ConcreteTypeId::Struct(id) => {
-                    let crate_id = id.struct_id(db).long(db).0.0.owning_crate(db);
+                    let crate_id = id.struct_id(db).long(db).0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
                         .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
                 }
                 ConcreteTypeId::Enum(id) => {
-                    let crate_id = id.enum_id(db).long(db).0.0.owning_crate(db);
+                    let crate_id = id.enum_id(db).long(db).0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
                         .any(|attr| id.has_attr(db, attr.long(db)).unwrap_or_default())
                 }
                 ConcreteTypeId::Extern(id) => {
-                    let crate_id = id.extern_type_id(db).long(db).0.0.owning_crate(db);
+                    let crate_id = id.extern_type_id(db).long(db).0.owning_crate(db);
 
                     db.declared_phantom_type_attributes(crate_id)
                         .iter()
@@ -194,22 +194,16 @@ impl<'db> TypeLongId<'db> {
             }
             TypeLongId::GenericParameter(_) => None,
             TypeLongId::Var(_) => None,
-            TypeLongId::Coupon(function_id) => function_id
-                .get_concrete(db)
-                .generic_function
-                .module_file_id(db)
-                .map(|module_file_id| module_file_id.0),
+            TypeLongId::Coupon(function_id) => {
+                function_id.get_concrete(db).generic_function.module_id(db)
+            }
             TypeLongId::Missing(_) => None,
             TypeLongId::Tuple(_) => Some(db.core_info().tuple_submodule),
             TypeLongId::ImplType(_) => None,
             TypeLongId::FixedSizeArray { .. } => Some(db.core_info().fixed_size_array_submodule),
             TypeLongId::Closure(closure) => {
                 if let Ok(function_id) = closure.parent_function {
-                    function_id
-                        .get_concrete(db)
-                        .generic_function
-                        .module_file_id(db)
-                        .map(|module_file_id| module_file_id.0)
+                    function_id.get_concrete(db).generic_function.module_id(db)
                 } else {
                     None
                 }
@@ -604,7 +598,7 @@ impl<'db> ShallowGenericArg<'db> {
     pub fn module_id(&self, db: &'db dyn Database) -> Option<ModuleId<'db>> {
         match self {
             ShallowGenericArg::GenericParameter(_) => None,
-            ShallowGenericArg::GenericType(ty) => Some(ty.module_file_id(db).0),
+            ShallowGenericArg::GenericType(ty) => Some(ty.module_id(db)),
             ShallowGenericArg::Snapshot(inner) => inner.module_id(db),
             ShallowGenericArg::Tuple => TypeLongId::Tuple(vec![]).module_id(db),
             ShallowGenericArg::FixedSizeArray => TypeLongId::FixedSizeArray {

@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
-    LanguageElementId, ModuleFileId, ModuleItemId, NamedLanguageElementId, ParamLongId,
+    LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementId, ParamLongId,
     TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
@@ -180,17 +180,17 @@ impl<'db> GenericFunctionId<'db> {
             GenericFunctionId::Impl(impl_function) => impl_function.format(db),
         }
     }
-    /// Returns the ModuleFileId of the function's definition if possible.
-    pub fn module_file_id(&self, db: &'db dyn Database) -> Option<ModuleFileId<'db>> {
+    /// Returns the ModuleId of the function's definition if possible.
+    pub fn module_id(&self, db: &'db dyn Database) -> Option<ModuleId<'db>> {
         match self {
-            GenericFunctionId::Free(free_function) => Some(free_function.module_file_id(db)),
-            GenericFunctionId::Extern(extern_function) => Some(extern_function.module_file_id(db)),
+            GenericFunctionId::Free(free_function) => Some(free_function.module_id(db)),
+            GenericFunctionId::Extern(extern_function) => Some(extern_function.module_id(db)),
             GenericFunctionId::Impl(impl_generic_function_id) => {
                 // Return the module file of the impl containing the function.
                 if let ImplLongId::Concrete(concrete_impl_id) =
                     impl_generic_function_id.impl_id.long(db)
                 {
-                    Some(concrete_impl_id.impl_def_id(db).module_file_id(db))
+                    Some(concrete_impl_id.impl_def_id(db).module_id(db))
                 } else {
                     None
                 }
@@ -894,7 +894,7 @@ fn ast_param_to_semantic<'db>(
 ) -> semantic::Parameter<'db> {
     let name = ast_param.name(db);
 
-    let id = ParamLongId(resolver.module_file_id, ast_param.stable_ptr(db)).intern(db);
+    let id = ParamLongId(resolver.module_id, ast_param.stable_ptr(db)).intern(db);
 
     let ty = match ast_param.type_clause(db) {
         ast::OptionTypeClause::Empty(missing) => {

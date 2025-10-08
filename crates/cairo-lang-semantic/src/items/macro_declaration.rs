@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleItemId,
+    LanguageElementId, LookupItemId, MacroDeclarationId, ModuleId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -111,9 +111,9 @@ fn priv_macro_declaration_data<'db>(
 ) -> Maybe<MacroDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
 
-    let module_file_id = macro_declaration_id.module_file_id(db);
+    let module_id = macro_declaration_id.module_id(db);
     let macro_declaration_syntax = db.module_macro_declaration_by_id(macro_declaration_id)?;
-    if !are_user_defined_inline_macros_enabled(db, module_file_id) {
+    if !are_user_defined_inline_macros_enabled(db, module_id) {
         diagnostics.report(
             macro_declaration_syntax.stable_ptr(db).untyped(),
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled,
@@ -124,7 +124,7 @@ fn priv_macro_declaration_data<'db>(
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::MacroDeclaration(macro_declaration_id),
     ));
-    let resolver = Resolver::new(db, module_file_id, inference_id);
+    let resolver = Resolver::new(db, module_id, inference_id);
 
     // TODO(Dean): Verify uniqueness of param names.
     // TODO(Dean): Verify consistency bracket terminals.
@@ -694,9 +694,9 @@ fn macro_declaration_rules_tracked<'db>(
 /// Returns true if user defined user macros are enabled for the given module.
 fn are_user_defined_inline_macros_enabled<'db>(
     db: &dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
 ) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db);
+    let owning_crate = module_id.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.user_defined_inline_macros
 }

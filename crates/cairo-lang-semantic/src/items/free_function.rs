@@ -37,7 +37,7 @@ fn free_function_generic_params_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = free_function_id.module_file_id(db);
+    let module_id = free_function_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     let declaration = free_function_syntax.declaration(db);
@@ -46,13 +46,13 @@ fn free_function_generic_params_data<'db>(
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
         ModuleItemId::FreeFunction(free_function_id),
     ));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     resolver.set_feature_config(&free_function_id, &free_function_syntax, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &declaration.generic_params(db),
     );
 

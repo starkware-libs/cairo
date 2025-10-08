@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    GenericTypeId, ImportableId, LanguageElementId, ModuleFileId, ModuleId, NamedLanguageElementId,
+    GenericTypeId, ImportableId, LanguageElementId, ModuleId, NamedLanguageElementId,
     TraitFunctionId, TraitId,
 };
 use cairo_lang_filesystem::db::{CORELIB_CRATE_NAME, FilesGroup, default_crate_settings};
@@ -123,14 +123,14 @@ pub fn methods_in_crate_tracked<'db>(
 pub fn visible_importables_in_module<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    user_module_file_id: ModuleFileId<'db>,
+    user_module_id: ModuleId<'db>,
     include_parent: bool,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
     let mut visited_modules = UnorderedHashSet::default();
     visible_importables_in_module_ex(
         db,
         module_id,
-        user_module_file_id,
+        user_module_id,
         include_parent,
         &mut visited_modules,
     )
@@ -142,10 +142,10 @@ pub fn visible_importables_in_module<'db>(
 pub fn visible_importables_in_module_tracked<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    user_module_file_id: ModuleFileId<'db>,
+    user_module_id: ModuleId<'db>,
     include_parent: bool,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
-    visible_importables_in_module(db, module_id, user_module_file_id, include_parent)
+    visible_importables_in_module(db, module_id, user_module_id, include_parent)
 }
 
 /// Returns the visible importables in a module, including the importables in the parent module if
@@ -153,7 +153,7 @@ pub fn visible_importables_in_module_tracked<'db>(
 fn visible_importables_in_module_ex<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    user_module_file_id: ModuleFileId<'db>,
+    user_module_id: ModuleId<'db>,
     include_parent: bool,
     visited_modules: &mut UnorderedHashSet<ModuleId<'db>>,
 ) -> Option<Arc<Vec<(ImportableId<'db>, String)>>> {
@@ -162,12 +162,12 @@ fn visible_importables_in_module_ex<'db>(
         return Some(result.into());
     }
 
-    let resolver = Resolver::new(db, user_module_file_id, InferenceId::NoContext);
+    let resolver = Resolver::new(db, user_module_id, InferenceId::NoContext);
 
     // Check if an item in the current module is visible from the user module.
     let is_visible = |item_name: SmolStrId<'_>| {
         let item_info = db.module_item_info_by_name(module_id, item_name).ok()??;
-        Some(resolver.is_item_visible(module_id, &item_info, user_module_file_id.0))
+        Some(resolver.is_item_visible(module_id, &item_info, user_module_id))
     };
     visited_modules.insert(module_id);
     let mut modules_to_visit = vec![];
@@ -182,9 +182,7 @@ fn visible_importables_in_module_ex<'db>(
 
         let (resolved_item, name) = match resolved_item {
             ResolvedGenericItem::Module(ModuleId::CrateRoot(crate_id)) => {
-                result.extend_from_slice(
-                    &db.visible_importables_in_crate(crate_id, ModuleFileId(module_id))[..],
-                );
+                result.extend_from_slice(&db.visible_importables_in_crate(crate_id, module_id)[..]);
 
                 (ImportableId::Crate(crate_id), crate_id.long(db).name().long(db))
             }
@@ -305,15 +303,10 @@ fn visible_importables_in_module_ex<'db>(
     module_importables!(module_macro_declarations_ids, ImportableId::MacroDeclaration);
 
     for submodule in modules_to_visit {
-        for (item_id, path) in visible_importables_in_module_ex(
-            db,
-            submodule,
-            user_module_file_id,
-            false,
-            visited_modules,
-        )
-        .unwrap_or_default()
-        .iter()
+        for (item_id, path) in
+            visible_importables_in_module_ex(db, submodule, user_module_id, false, visited_modules)
+                .unwrap_or_default()
+                .iter()
         {
             result.push((*item_id, format!("{}::{}", submodule.name(db).long(db), path)));
         }
@@ -327,7 +320,7 @@ fn visible_importables_in_module_ex<'db>(
                 for (item_id, path) in visible_importables_in_module_ex(
                     db,
                     parent_module_id,
-                    user_module_file_id,
+                    user_module_id,
                     include_parent,
                     visited_modules,
                 )
@@ -347,12 +340,12 @@ fn visible_importables_in_module_ex<'db>(
 pub fn visible_importables_in_crate<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
-    user_module_file_id: ModuleFileId<'db>,
+    user_module_id: ModuleId<'db>,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
-    let is_current_crate = user_module_file_id.0.owning_crate(db) == crate_id;
+    let is_current_crate = user_module_id.owning_crate(db) == crate_id;
     let crate_name = if is_current_crate { "crate" } else { crate_id.long(db).name().long(db) };
     let crate_as_module = ModuleId::CrateRoot(crate_id);
-    db.visible_importables_in_module(crate_as_module, user_module_file_id, false)
+    db.visible_importables_in_module(crate_as_module, user_module_id, false)
         .iter()
         .map(|(item_id, path)| (*item_id, format!("{crate_name}::{path}")))
         .collect::<Vec<_>>()
@@ -364,29 +357,26 @@ pub fn visible_importables_in_crate<'db>(
 pub fn visible_importables_in_crate_tracked<'db>(
     db: &'db dyn Database,
     crate_id: CrateId<'db>,
-    user_module_file_id: ModuleFileId<'db>,
+    user_module_id: ModuleId<'db>,
 ) -> Arc<Vec<(ImportableId<'db>, String)>> {
-    visible_importables_in_crate(db, crate_id, user_module_file_id)
+    visible_importables_in_crate(db, crate_id, user_module_id)
 }
 
 /// Implementation of [LspHelpers::visible_importables_from_module].
 pub fn visible_importables_from_module<'db>(
     db: &'db dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
-    let module_id = module_file_id.0;
-
     let current_crate_id = module_id.owning_crate(db);
     let prelude_submodule_name =
         db.crate_config(current_crate_id)?.settings.edition.prelude_submodule_name(db);
     let core_prelude_submodule = core_submodule(db, SmolStrId::from(db, "prelude"));
     let prelude_submodule = get_submodule(db, core_prelude_submodule, prelude_submodule_name)?;
-    let prelude_submodule_file_id = ModuleFileId(prelude_submodule);
 
     let mut module_visible_importables = Vec::new();
     // Collect importables from the prelude.
     module_visible_importables.extend_from_slice(
-        &db.visible_importables_in_module(prelude_submodule, prelude_submodule_file_id, false)[..],
+        &db.visible_importables_in_module(prelude_submodule, prelude_submodule, false)[..],
     );
     // Collect importables from all dependency crates, including the current crate and corelib.
     let settings = db
@@ -405,14 +395,14 @@ pub fn visible_importables_from_module<'db>(
         })
     ) {
         module_visible_importables
-            .extend_from_slice(&db.visible_importables_in_crate(crate_id, module_file_id)[..]);
+            .extend_from_slice(&db.visible_importables_in_crate(crate_id, module_id)[..]);
         module_visible_importables
             .push((ImportableId::Crate(crate_id), crate_id.long(db).name().to_string(db)));
     }
 
     // Collect importables visible in the current module.
     module_visible_importables
-        .extend_from_slice(&db.visible_importables_in_module(module_id, module_file_id, true)[..]);
+        .extend_from_slice(&db.visible_importables_in_module(module_id, module_id, true)[..]);
 
     // Deduplicate importables, preferring shorter paths.
     // This is the reason for searching in the crates before the current module - to prioritize
@@ -437,26 +427,26 @@ pub fn visible_importables_from_module<'db>(
 /// Query implementation of [LspHelpers::visible_importables_from_module].
 pub fn visible_importables_from_module_tracked<'db>(
     db: &'db dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
-    visible_importables_from_module_helper(db, (), module_file_id)
+    visible_importables_from_module_helper(db, (), module_id)
 }
 
 #[salsa::tracked]
 fn visible_importables_from_module_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
 ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
-    visible_importables_from_module(db, module_file_id)
+    visible_importables_from_module(db, module_id)
 }
 
 /// Implementation of [LspHelpers::visible_traits_from_module].
 pub fn visible_traits_from_module<'db>(
     db: &'db dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
-    let importables = db.visible_importables_from_module(module_file_id)?;
+    let importables = db.visible_importables_from_module(module_id)?;
 
     let traits = importables
         .iter()
@@ -476,18 +466,18 @@ pub fn visible_traits_from_module<'db>(
 /// Query implementation of [LspHelpers::visible_traits_from_module].
 fn visible_traits_from_module_tracked<'db>(
     db: &'db dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
-    visible_traits_from_module_helper(db, (), module_file_id)
+    visible_traits_from_module_helper(db, (), module_id)
 }
 
 #[salsa::tracked]
 fn visible_traits_from_module_helper<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
 ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
-    visible_traits_from_module(db, module_file_id)
+    visible_traits_from_module(db, module_id)
 }
 
 /// Trait for LSP helpers.
@@ -512,39 +502,39 @@ pub trait LspHelpers<'db>: Database {
     /// trait.
     fn visible_importables_from_module(
         &'db self,
-        module_id: ModuleFileId<'db>,
+        module_id: ModuleId<'db>,
     ) -> Option<Arc<OrderedHashMap<ImportableId<'db>, String>>> {
         visible_importables_from_module_tracked(self.as_dyn_database(), module_id)
     }
     /// Returns all visible importables in a module, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables should be visible. If
+    /// `user_module_id` is the module from which the importables should be visible. If
     /// `include_parent` is true, the parent module of `module_id` is also considered.
     fn visible_importables_in_module(
         &'db self,
         module_id: ModuleId<'db>,
-        user_module_file_id: ModuleFileId<'db>,
+        user_module_id: ModuleId<'db>,
         include_parent: bool,
     ) -> Arc<Vec<(ImportableId<'db>, String)>> {
         visible_importables_in_module_tracked(
             self.as_dyn_database(),
             module_id,
-            user_module_file_id,
+            user_module_id,
             include_parent,
         )
     }
     /// Returns all visible importables in a crate, alongside a visible use path to the trait.
-    /// `user_module_file_id` is the module from which the importables should be visible.
+    /// `user_module_id` is the module from which the importables should be visible.
     fn visible_importables_in_crate(
         &'db self,
         crate_id: CrateId<'db>,
-        user_module_file_id: ModuleFileId<'db>,
+        user_module_id: ModuleId<'db>,
     ) -> Arc<Vec<(ImportableId<'db>, String)>> {
-        visible_importables_in_crate_tracked(self.as_dyn_database(), crate_id, user_module_file_id)
+        visible_importables_in_crate_tracked(self.as_dyn_database(), crate_id, user_module_id)
     }
     /// Returns all the traits visible from a module, alongside a visible use path to the trait.
     fn visible_traits_from_module(
         &'db self,
-        module_id: ModuleFileId<'db>,
+        module_id: ModuleId<'db>,
     ) -> Option<Arc<OrderedHashMap<TraitId<'db>, String>>> {
         visible_traits_from_module_tracked(self.as_dyn_database(), module_id)
     }

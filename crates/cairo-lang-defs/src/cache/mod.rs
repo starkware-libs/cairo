@@ -34,9 +34,9 @@ use crate::ids::{
     ExternTypeId, ExternTypeLongId, FreeFunctionId, FreeFunctionLongId, GenericParamId,
     GenericParamLongId, GlobalUseId, GlobalUseLongId, ImplAliasId, ImplAliasLongId, ImplDefId,
     ImplDefLongId, LanguageElementId, MacroCallId, MacroCallLongId, MacroDeclarationId,
-    MacroDeclarationLongId, ModuleFileId, ModuleId, ModuleItemId, ModuleTypeAliasId,
-    ModuleTypeAliasLongId, PluginGeneratedFileId, PluginGeneratedFileLongId, StructId,
-    StructLongId, SubmoduleId, SubmoduleLongId, TraitId, TraitLongId, UseId, UseLongId,
+    MacroDeclarationLongId, ModuleId, ModuleItemId, ModuleTypeAliasId, ModuleTypeAliasLongId,
+    PluginGeneratedFileId, PluginGeneratedFileLongId, StructId, StructLongId, SubmoduleId,
+    SubmoduleLongId, TraitId, TraitLongId, UseId, UseLongId,
 };
 use crate::plugin::{DynGeneratedFileAuxData, PluginDiagnostic};
 
@@ -413,7 +413,7 @@ pub struct ModuleDataCached<'db> {
     files: Vec<FileIdCached>,
 
     generated_file_aux_data: OrderedHashMap<FileIdCached, Option<DynGeneratedFileAuxData>>,
-    plugin_diagnostics: Vec<(ModuleFileCached, PluginDiagnosticCached)>,
+    plugin_diagnostics: Vec<(ModuleIdCached, PluginDiagnosticCached)>,
     diagnostics_notes: PluginFileDiagnosticNotesCached,
 }
 impl<'db> ModuleDataCached<'db> {
@@ -563,7 +563,7 @@ impl<'db> ModuleDataCached<'db> {
                 .iter()
                 .map(|(file_id, diagnostic)| {
                     (
-                        ModuleFileCached::new(*file_id, ctx),
+                        ModuleIdCached::new(*file_id, ctx),
                         PluginDiagnosticCached::new(diagnostic, ctx),
                     )
                 })
@@ -708,24 +708,8 @@ impl GenericParamCached {
         data: &Arc<DefCacheLoadingData<'db>>,
         db: &'db dyn Database,
     ) -> GenericParamId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.get_embedded(data);
-        GenericParamLongId(module_file_id, GenericParamPtr(stable_ptr)).intern(db)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
-struct ModuleFileCached {
-    module: ModuleIdCached,
-}
-impl ModuleFileCached {
-    fn new<'db>(module_file_id: ModuleFileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
-        Self { module: ModuleIdCached::new(module_file_id.0, ctx) }
-    }
-    fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleFileId<'db> {
-        ModuleFileId(self.module.embed(ctx))
-    }
-    fn get_embedded<'db>(self, data: &Arc<DefCacheLoadingData<'db>>) -> ModuleFileId<'db> {
-        ModuleFileId(self.module.get_embedded(data))
+        let (module_id, stable_ptr) = self.language_element.get_embedded(data);
+        GenericParamLongId(module_id, GenericParamPtr(stable_ptr)).intern(db)
     }
 }
 
@@ -985,9 +969,9 @@ impl ConstantCached {
         Self { language_element: LanguageElementCached::new(constant_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ConstantLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        ConstantLongId(module_file_id, ItemConstantPtr(stable_ptr))
+        ConstantLongId(module_id, ItemConstantPtr(stable_ptr))
     }
 }
 
@@ -1028,9 +1012,9 @@ impl SubmoduleCached {
         Self { language_element: LanguageElementCached::new(submodule_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> SubmoduleLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        SubmoduleLongId(module_file_id, ItemModulePtr(stable_ptr))
+        SubmoduleLongId(module_id, ItemModulePtr(stable_ptr))
     }
 }
 
@@ -1071,9 +1055,9 @@ impl UseCached {
         Self { language_element: LanguageElementCached::new(use_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> UseLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        UseLongId(module_file_id, UsePathLeafPtr(stable_ptr))
+        UseLongId(module_id, UsePathLeafPtr(stable_ptr))
     }
 }
 
@@ -1117,9 +1101,9 @@ impl FreeFunctionCached {
         Self { language_element: LanguageElementCached::new(free_function_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> FreeFunctionLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        FreeFunctionLongId(module_file_id, FunctionWithBodyPtr(stable_ptr))
+        FreeFunctionLongId(module_id, FunctionWithBodyPtr(stable_ptr))
     }
 }
 
@@ -1160,9 +1144,9 @@ impl StructCached {
         Self { language_element: LanguageElementCached::new(struct_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> StructLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        StructLongId(module_file_id, ItemStructPtr(stable_ptr))
+        StructLongId(module_id, ItemStructPtr(stable_ptr))
     }
 }
 
@@ -1203,9 +1187,9 @@ impl EnumCached {
         Self { language_element: LanguageElementCached::new(enum_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> EnumLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        EnumLongId(module_file_id, ItemEnumPtr(stable_ptr))
+        EnumLongId(module_id, ItemEnumPtr(stable_ptr))
     }
 }
 
@@ -1249,9 +1233,9 @@ impl ModuleTypeAliasCached {
         Self { language_element: LanguageElementCached::new(type_alias_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ModuleTypeAliasLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        ModuleTypeAliasLongId(module_file_id, ItemTypeAliasPtr(stable_ptr))
+        ModuleTypeAliasLongId(module_id, ItemTypeAliasPtr(stable_ptr))
     }
 }
 
@@ -1292,9 +1276,9 @@ impl ImplAliasCached {
         Self { language_element: LanguageElementCached::new(impl_alias_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ImplAliasLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        ImplAliasLongId(module_file_id, ItemImplAliasPtr(stable_ptr))
+        ImplAliasLongId(module_id, ItemImplAliasPtr(stable_ptr))
     }
 }
 
@@ -1335,9 +1319,9 @@ impl TraitCached {
         Self { language_element: LanguageElementCached::new(trait_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> TraitLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        TraitLongId(module_file_id, ItemTraitPtr(stable_ptr))
+        TraitLongId(module_id, ItemTraitPtr(stable_ptr))
     }
 }
 
@@ -1378,9 +1362,9 @@ impl ImplDefCached {
         Self { language_element: LanguageElementCached::new(impl_def_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ImplDefLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        ImplDefLongId(module_file_id, ItemImplPtr(stable_ptr))
+        ImplDefLongId(module_id, ItemImplPtr(stable_ptr))
     }
 }
 
@@ -1423,9 +1407,9 @@ impl ExternTypeCached {
         Self { language_element: LanguageElementCached::new(extern_type_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ExternTypeLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        ExternTypeLongId(module_file_id, ItemExternTypePtr(stable_ptr))
+        ExternTypeLongId(module_id, ItemExternTypePtr(stable_ptr))
     }
 }
 
@@ -1469,9 +1453,9 @@ impl ExternFunctionCached {
         Self { language_element: LanguageElementCached::new(extern_function_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> ExternFunctionLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        ExternFunctionLongId(module_file_id, ItemExternFunctionPtr(stable_ptr))
+        ExternFunctionLongId(module_id, ItemExternFunctionPtr(stable_ptr))
     }
 }
 
@@ -1515,9 +1499,9 @@ impl MacroDeclarationCached {
         Self { language_element: LanguageElementCached::new(macro_declaration_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> MacroDeclarationLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        MacroDeclarationLongId(module_file_id, ItemMacroDeclarationPtr(stable_ptr))
+        MacroDeclarationLongId(module_id, ItemMacroDeclarationPtr(stable_ptr))
     }
 }
 
@@ -1562,8 +1546,8 @@ impl MacroCallCached {
     }
 
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> MacroCallLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
-        MacroCallLongId(module_file_id, ItemInlineMacroPtr(stable_ptr))
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
+        MacroCallLongId(module_id, ItemInlineMacroPtr(stable_ptr))
     }
 }
 
@@ -1603,9 +1587,9 @@ impl GlobalUseCached {
         Self { language_element: LanguageElementCached::new(global_use_id, ctx) }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> GlobalUseLongId<'db> {
-        let (module_file_id, stable_ptr) = self.language_element.embed(ctx);
+        let (module_id, stable_ptr) = self.language_element.embed(ctx);
 
-        GlobalUseLongId(module_file_id, UsePathStarPtr(stable_ptr))
+        GlobalUseLongId(module_id, UsePathStarPtr(stable_ptr))
     }
 }
 
@@ -1670,7 +1654,7 @@ impl SyntaxNodeCached {
 
 #[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
 pub struct LanguageElementCached {
-    module_file_id: ModuleFileCached,
+    module_id: ModuleIdCached,
     stable_ptr: SyntaxStablePtrIdCached,
 }
 impl LanguageElementCached {
@@ -1679,7 +1663,7 @@ impl LanguageElementCached {
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
         Self {
-            module_file_id: ModuleFileCached::new(language_element.module_file_id(ctx.db), ctx),
+            module_id: ModuleIdCached::new(language_element.module_id(ctx.db), ctx),
             stable_ptr: SyntaxStablePtrIdCached::new(
                 language_element.untyped_stable_ptr(ctx.db),
                 ctx,
@@ -1689,18 +1673,18 @@ impl LanguageElementCached {
     fn embed<'db>(
         self,
         ctx: &mut DefCacheLoadingContext<'db>,
-    ) -> (ModuleFileId<'db>, SyntaxStablePtrId<'db>) {
-        let module_file_id = self.module_file_id.embed(ctx);
+    ) -> (ModuleId<'db>, SyntaxStablePtrId<'db>) {
+        let module_id = self.module_id.embed(ctx);
         let stable_ptr = self.stable_ptr.embed(ctx);
-        (module_file_id, stable_ptr)
+        (module_id, stable_ptr)
     }
     pub fn get_embedded<'db>(
         self,
         data: &Arc<DefCacheLoadingData<'db>>,
-    ) -> (ModuleFileId<'db>, SyntaxStablePtrId<'db>) {
-        let module_file_id = self.module_file_id.get_embedded(data);
+    ) -> (ModuleId<'db>, SyntaxStablePtrId<'db>) {
+        let module_id = self.module_id.get_embedded(data);
         let stable_ptr = self.stable_ptr.get_embedded(data);
-        (module_file_id, stable_ptr)
+        (module_id, stable_ptr)
     }
 }
 

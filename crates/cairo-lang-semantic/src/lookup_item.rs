@@ -3,9 +3,9 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
     ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId,
-    ImplTypeDefId, LanguageElementId, LookupItemId, MacroDeclarationId, ModuleFileId, ModuleId,
-    ModuleItemId, ModuleTypeAliasId, StructId, SubmoduleId, TraitConstantId, TraitFunctionId,
-    TraitId, TraitImplId, TraitItemId, TraitTypeId, UseId,
+    ImplTypeDefId, LanguageElementId, LookupItemId, MacroDeclarationId, ModuleId, ModuleItemId,
+    ModuleTypeAliasId, StructId, SubmoduleId, TraitConstantId, TraitFunctionId, TraitId,
+    TraitImplId, TraitItemId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 use salsa::Database;
@@ -65,9 +65,8 @@ impl<'db> LookupItemEx<'db> for LookupItemId<'db> {
             }
             LookupItemId::ModuleItem(item) => {
                 // Top level does not have an outer context, create an empty resolver data.
-                let module_file_id = item.module_file_id(db);
-                let resolver_data =
-                    Arc::new(ResolverData::new(module_file_id, InferenceId::NoContext));
+                let module_id = item.module_id(db);
+                let resolver_data = Arc::new(ResolverData::new(module_id, InferenceId::NoContext));
                 Ok(resolver_data)
             }
         }
@@ -115,11 +114,10 @@ impl<'db> HasResolverData<'db> for ConstantId<'db> {
 impl<'db> HasResolverData<'db> for SubmoduleId<'db> {
     fn resolver_data(&self, _db: &'db dyn Database) -> Maybe<Arc<ResolverData<'db>>> {
         let module_id = ModuleId::Submodule(*self);
-        let module_file_id = ModuleFileId(module_id);
         let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
             ModuleItemId::Submodule(*self),
         ));
-        Ok(Arc::new(ResolverData::new(module_file_id, inference_id)))
+        Ok(Arc::new(ResolverData::new(module_id, inference_id)))
     }
 }
 
@@ -146,7 +144,7 @@ impl<'db> HasResolverData<'db> for ExternTypeId<'db> {
         let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
             ModuleItemId::ExternType(*self),
         ));
-        Ok(Arc::new(ResolverData::new(self.module_file_id(db), inference_id)))
+        Ok(Arc::new(ResolverData::new(self.module_id(db), inference_id)))
     }
 }
 

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LookupItemId, ModuleFileId};
+use cairo_lang_defs::ids::{LookupItemId, ModuleId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -28,7 +28,7 @@ pub struct TypeAliasData<'db> {
 /// Computes data about the generic parameters of a type-alias item.
 pub fn type_alias_generic_params_data_helper<'db>(
     db: &'db dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
     type_alias_ast: &ast::ItemTypeAlias<'db>,
     lookup_item_id: LookupItemId<'db>,
     parent_resolver_data: Option<Arc<ResolverData<'db>>>,
@@ -40,14 +40,14 @@ pub fn type_alias_generic_params_data_helper<'db>(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, module_file_id, inference_id),
+        None => Resolver::new(db, module_id, inference_id),
     };
     resolver.set_feature_config(&lookup_item_id, type_alias_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &type_alias_ast.generic_params(db),
     );
 

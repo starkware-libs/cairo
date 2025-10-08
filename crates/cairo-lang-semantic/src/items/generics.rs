@@ -5,7 +5,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     GenericItemId, GenericKind, GenericModuleItemId, GenericParamId, GenericParamLongId,
-    LanguageElementId, LookupItemId, ModuleFileId, TraitId, TraitTypeId,
+    LanguageElementId, LookupItemId, ModuleId, TraitId, TraitTypeId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -235,7 +235,7 @@ fn generic_impl_param_trait<'db>(
     db: &'db dyn Database,
     generic_param_id: GenericParamId<'db>,
 ) -> Maybe<TraitId<'db>> {
-    let module_file_id = generic_param_id.module_file_id(db);
+    let module_id = generic_param_id.module_id(db);
     let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
     let generic_params_syntax = extract_matches!(
         option_generic_params_syntax,
@@ -245,7 +245,7 @@ fn generic_impl_param_trait<'db>(
         .generic_params(db)
         .elements(db)
         .find(|param_syntax| {
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db)
+            GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db)
                 == generic_param_id
         })
         .unwrap();
@@ -263,7 +263,7 @@ fn generic_impl_param_trait<'db>(
     // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
     // in the context.
     // Remove also GenericImplParamTrait.
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
 
     resolve_trait_path(db, &mut diagnostics, &mut resolver, &trait_path_syntax)
 }
@@ -276,7 +276,7 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
     generic_param_id: GenericParamId<'db>,
 ) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
     let db: &dyn Database = db;
-    let module_file_id = generic_param_id.module_file_id(db);
+    let module_id = generic_param_id.module_id(db);
     let mut diagnostics: cairo_lang_diagnostics::DiagnosticsBuilder<'_, SemanticDiagnostic<'_>> =
         SemanticDiagnostics::default();
     let parent_item_id = generic_param_id.generic_item(db);
@@ -298,7 +298,7 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
     let mut opt_generic_param_syntax = None;
     for param_syntax in generic_params_syntax.generic_params(db).elements(db) {
         let cur_generic_param_id =
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
+            GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
         resolver.add_generic_param(cur_generic_param_id);
 
         if cur_generic_param_id == generic_param_id {
@@ -334,7 +334,7 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
         .trait_generic_params_ids(trait_id)?
         .iter()
         .map(|param_syntax| {
-            GenericParamLongId(trait_id.module_file_id(db), param_syntax.stable_ptr(db)).intern(db)
+            GenericParamLongId(trait_id.module_id(db), param_syntax.stable_ptr(db)).intern(db)
         })
         .collect::<Vec<_>>();
 
@@ -391,12 +391,12 @@ fn generic_param_data<'db>(
             )),
             diagnostics: diagnostics.build(),
             resolver_data: Arc::new(ResolverData::new(
-                generic_param_id.module_file_id(db),
+                generic_param_id.module_id(db),
                 InferenceId::GenericParam(generic_param_id),
             )),
         });
     }
-    let module_file_id = generic_param_id.module_file_id(db);
+    let module_id = generic_param_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let parent_item_id = generic_param_id.generic_item(db);
     let lookup_item: LookupItemId<'_> = parent_item_id.into();
@@ -417,7 +417,7 @@ fn generic_param_data<'db>(
     let mut opt_generic_param_syntax = None;
     for param_syntax in generic_params_syntax.generic_params(db).elements(db) {
         let cur_generic_param_id =
-            GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
+            GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
         resolver.add_generic_param(cur_generic_param_id);
 
         if cur_generic_param_id == generic_param_id {
@@ -430,7 +430,7 @@ fn generic_param_data<'db>(
         db,
         &mut resolver,
         &mut diagnostics,
-        module_file_id,
+        module_id,
         &generic_param_syntax,
         parent_item_id,
     );
@@ -513,17 +513,17 @@ pub fn semantic_generic_params<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
     generic_params: &ast::OptionWrappedGenericParamList<'db>,
 ) -> Vec<GenericParam<'db>> {
-    semantic_generic_params_ex(db, diagnostics, resolver, module_file_id, generic_params, false)
+    semantic_generic_params_ex(db, diagnostics, resolver, module_id, generic_params, false)
 }
 
 pub fn semantic_generic_params_ex<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,
     resolver: &mut Resolver<'db>,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
     generic_params: &ast::OptionWrappedGenericParamList<'db>,
     in_cycle: bool,
 ) -> Vec<GenericParam<'db>> {
@@ -534,7 +534,7 @@ pub fn semantic_generic_params_ex<'db>(
             .elements(db)
             .filter_map(|param_syntax| {
                 let generic_param_id =
-                    GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
+                    GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
                 let data = generic_param_data(db, generic_param_id, in_cycle).as_ref().ok()?;
                 let generic_param = data.generic_param.clone();
                 diagnostics.extend(data.diagnostics.clone());
@@ -547,18 +547,15 @@ pub fn semantic_generic_params_ex<'db>(
 }
 
 /// Returns true if negative impls are enabled in the module.
-fn are_negative_impls_enabled<'db>(db: &dyn Database, module_file_id: ModuleFileId<'db>) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db);
+fn are_negative_impls_enabled<'db>(db: &dyn Database, module_id: ModuleId<'db>) -> bool {
+    let owning_crate = module_id.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.negative_impls
 }
 
 /// Returns true if associated_item_constraints is enabled in the module.
-fn is_associated_item_constraints_enabled(
-    db: &dyn Database,
-    module_file_id: ModuleFileId<'_>,
-) -> bool {
-    let owning_crate = module_file_id.0.owning_crate(db);
+fn is_associated_item_constraints_enabled(db: &dyn Database, module_id: ModuleId<'_>) -> bool {
+    let owning_crate = module_id.owning_crate(db);
     db.crate_config(owning_crate)
         .is_some_and(|c| c.settings.experimental_features.associated_item_constraints)
 }
@@ -568,15 +565,15 @@ fn semantic_from_generic_param_ast<'db>(
     db: &'db dyn Database,
     resolver: &mut Resolver<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
     param_syntax: &ast::GenericParam<'db>,
     parent_item_id: GenericItemId<'db>,
 ) -> GenericParam<'db> {
-    let id = GenericParamLongId(module_file_id, param_syntax.stable_ptr(db)).intern(db);
+    let id = GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
     let mut item_constraints_into_option = |constraint| match constraint {
         OptionAssociatedItemConstraints::Empty(_) => None,
         OptionAssociatedItemConstraints::AssociatedItemConstraints(associated_type_args) => {
-            if !is_associated_item_constraints_enabled(db, module_file_id) {
+            if !is_associated_item_constraints_enabled(db, module_id) {
                 diagnostics.report(
                     associated_type_args.stable_ptr(db),
                     SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled,
@@ -616,7 +613,7 @@ fn semantic_from_generic_param_ast<'db>(
             ))
         }
         ast::GenericParam::NegativeImpl(syntax) => {
-            if !are_negative_impls_enabled(db, module_file_id) {
+            if !are_negative_impls_enabled(db, module_id) {
                 diagnostics.report(
                     param_syntax.stable_ptr(db),
                     SemanticDiagnosticKind::NegativeImplsNotEnabled,

@@ -53,11 +53,11 @@ fn priv_use_semantic_data<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
-    let module_file_id = use_id.module_file_id(db);
+    let module_id = use_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let module_item_id = ModuleItemId::Use(use_id);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(module_item_id));
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -180,7 +180,7 @@ fn priv_use_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
-    let module_file_id = use_id.module_file_id(db);
+    let module_id = use_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let use_ast = db.module_use_by_id(use_id)?;
     let err = Err(diagnostics.report(use_ast.stable_ptr(db), UseCycle));
@@ -189,7 +189,7 @@ fn priv_use_semantic_data_cycle<'db>(
     Ok(Arc::new(UseData {
         diagnostics: diagnostics.build(),
         resolved_item: err,
-        resolver_data: Arc::new(ResolverData::new(module_file_id, inference_id)),
+        resolver_data: Arc::new(ResolverData::new(module_id, inference_id)),
     }))
 }
 
@@ -260,11 +260,11 @@ fn priv_global_use_semantic_data<'db>(
     db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
-    let module_file_id = global_use_id.module_file_id(db);
+    let module_id = global_use_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     let edition = resolver.settings.edition;
     if edition.ignore_visibility() {
         // We block support for global use where visibility is ignored.

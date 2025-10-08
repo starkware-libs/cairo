@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
+    ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -138,11 +138,11 @@ fn impl_alias_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_file_id = impl_alias_id.module_file_id(db);
+    let module_id = impl_alias_id.module_id(db);
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     impl_alias_generic_params_data_helper(
         db,
-        module_file_id,
+        module_id,
         &impl_alias_ast,
         LookupItemId::ModuleItem(ModuleItemId::ImplAlias(impl_alias_id)),
         None,
@@ -152,7 +152,7 @@ fn impl_alias_generic_params_data<'db>(
 /// Computes data about the generic parameters of an impl-alias item.
 pub fn impl_alias_generic_params_data_helper<'db>(
     db: &'db dyn Database,
-    module_file_id: ModuleFileId<'db>,
+    module_id: ModuleId<'db>,
     impl_alias_ast: &ast::ItemImplAlias<'db>,
     lookup_item_id: LookupItemId<'db>,
     parent_resolver_data: Option<Arc<ResolverData<'db>>>,
@@ -164,14 +164,14 @@ pub fn impl_alias_generic_params_data_helper<'db>(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, module_file_id, inference_id),
+        None => Resolver::new(db, module_id, inference_id),
     };
     resolver.set_feature_config(&lookup_item_id, impl_alias_ast, &mut diagnostics);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
-        module_file_id,
+        module_id,
         &impl_alias_ast.generic_params(db),
     );
 
@@ -189,12 +189,12 @@ fn impl_alias_impl_def<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplDefId<'db>> {
-    let module_file_id = impl_alias_id.module_file_id(db);
+    let module_id = impl_alias_id.module_id(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 
-    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+    let mut resolver = Resolver::new(db, module_id, inference_id);
     resolver.set_feature_config(&impl_alias_id, &impl_alias_ast, &mut diagnostics);
 
     let impl_path_syntax = impl_alias_ast.impl_path(db);

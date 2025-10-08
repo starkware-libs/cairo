@@ -17,8 +17,8 @@ use salsa::{Database, Setter};
 
 use crate::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
 use crate::ids::{
-    GenericParamLongId, MacroPluginLongId, ModuleFileId, ModuleId, ModuleItemId,
-    NamedLanguageElementId, SubmoduleLongId,
+    GenericParamLongId, MacroPluginLongId, ModuleId, ModuleItemId, NamedLanguageElementId,
+    SubmoduleLongId,
 };
 use crate::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
@@ -63,30 +63,28 @@ fn test_generic_item_id(
     setup_test_module(&mut db_val, inputs["module_code"].as_str());
     let module_id = ModuleId::CrateRoot(get_crate_id(&db_val));
 
-    let module_file_id = ModuleFileId(module_id);
     let file_id = db_val.module_main_file(module_id).unwrap();
     let file_syntax = db_val.file_module_syntax(file_id).unwrap();
     let mut output = String::new();
 
     fn find_generics<'db>(
         db: &'db dyn Database,
-        mut module_file_id: ModuleFileId<'db>,
+        mut module_id: ModuleId<'db>,
         node: &SyntaxNode<'db>,
         output: &mut String,
     ) {
         match node.kind(db) {
             SyntaxKind::ItemModule => {
                 let submodule_id =
-                    SubmoduleLongId(module_file_id, ast::ItemModulePtr(node.stable_ptr(db)))
-                        .intern(db);
-                module_file_id = ModuleFileId(ModuleId::Submodule(submodule_id));
+                    SubmoduleLongId(module_id, ast::ItemModulePtr(node.stable_ptr(db))).intern(db);
+                module_id = ModuleId::Submodule(submodule_id);
             }
             SyntaxKind::GenericParamType
             | SyntaxKind::GenericParamConst
             | SyntaxKind::GenericParamImplNamed
             | SyntaxKind::GenericParamImplAnonymous => {
                 let param_id =
-                    GenericParamLongId(module_file_id, ast::GenericParamPtr(node.stable_ptr(db)))
+                    GenericParamLongId(module_id, ast::GenericParamPtr(node.stable_ptr(db)))
                         .intern(db);
                 let generic_item = param_id.generic_item(db);
                 writeln!(output, "{:?} -> {:?}", param_id.debug(db), generic_item.debug(db))
@@ -95,10 +93,10 @@ fn test_generic_item_id(
             _ => {}
         }
         for child in node.get_children(db).iter() {
-            find_generics(db, module_file_id, child, output);
+            find_generics(db, module_id, child, output);
         }
     }
-    find_generics(&db_val, module_file_id, &file_syntax.as_syntax_node(), &mut output);
+    find_generics(&db_val, module_id, &file_syntax.as_syntax_node(), &mut output);
 
     TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }

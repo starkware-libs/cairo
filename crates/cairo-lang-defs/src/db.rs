@@ -715,7 +715,7 @@ pub struct ModuleFilesData<'db> {
     #[returns(ref)]
     generated_file_aux_data: OrderedHashMap<FileId<'db>, Option<DynGeneratedFileAuxData>>,
     #[returns(ref)]
-    plugin_diagnostics: Vec<(ModuleFileId<'db>, PluginDiagnostic<'db>)>,
+    plugin_diagnostics: Vec<(ModuleId<'db>, PluginDiagnostic<'db>)>,
     /// Diagnostic notes for diagnostics originating in the plugin generated files identified by
     /// [`FileId`].
     /// Diagnostic notes are added with `note: ` prefix at the end of diagnostic display.
@@ -849,7 +849,7 @@ impl<'db> ModuleData<'db> {
     pub fn plugin_diagnostics(
         &self,
         db: &'db dyn Database,
-    ) -> &'db Vec<(ModuleFileId<'db>, PluginDiagnostic<'db>)> {
+    ) -> &'db Vec<(ModuleId<'db>, PluginDiagnostic<'db>)> {
         self.files_data(db).plugin_diagnostics(db)
     }
 
@@ -939,14 +939,13 @@ fn priv_module_data_helper<'db>(
     let mut items = vec![];
     aux_data.insert(module_file, main_file_aux_data);
     while let Some(file_id) = file_queue.pop_front() {
-        let module_file_id = ModuleFileId(module_id);
         files.push(file_id);
 
         let priv_module_data = module_sub_files(db, module_id, file_id).maybe_as_ref()?;
         diagnostics_notes.extend(priv_module_data.diagnostics_notes.clone().into_iter());
         file_queue.extend(priv_module_data.files.keys().copied());
         for diag in &priv_module_data.plugin_diagnostics {
-            plugin_diagnostics.push((module_file_id, diag.clone()));
+            plugin_diagnostics.push((module_id, diag.clone()));
         }
         aux_data.extend(
             priv_module_data.aux_data.iter().map(|(file, aux_data)| (*file, aux_data.clone())),
@@ -954,88 +953,84 @@ fn priv_module_data_helper<'db>(
         for item_ast in &priv_module_data.items {
             match item_ast.clone() {
                 ast::ModuleItem::Constant(constant) => {
-                    let item_id =
-                        ConstantLongId(module_file_id, constant.stable_ptr(db)).intern(db);
+                    let item_id = ConstantLongId(module_id, constant.stable_ptr(db)).intern(db);
                     constants.insert(item_id, constant);
                     items.push(ModuleItemId::Constant(item_id));
                 }
                 ast::ModuleItem::Module(module) => {
-                    let item_id = SubmoduleLongId(module_file_id, module.stable_ptr(db)).intern(db);
+                    let item_id = SubmoduleLongId(module_id, module.stable_ptr(db)).intern(db);
                     submodules.insert(item_id, module);
                     items.push(ModuleItemId::Submodule(item_id));
                 }
                 ast::ModuleItem::Use(us) => {
                     for leaf in get_all_path_leaves(db, &us) {
-                        let id = UseLongId(module_file_id, leaf.stable_ptr(db)).intern(db);
+                        let id = UseLongId(module_id, leaf.stable_ptr(db)).intern(db);
                         uses.insert(id, leaf);
                         items.push(ModuleItemId::Use(id));
                     }
                     for star in get_all_path_stars(db, &us) {
-                        let id = GlobalUseLongId(module_file_id, star.stable_ptr(db)).intern(db);
+                        let id = GlobalUseLongId(module_id, star.stable_ptr(db)).intern(db);
                         global_uses.insert(id, star);
                     }
                 }
                 ast::ModuleItem::FreeFunction(function) => {
-                    let item_id =
-                        FreeFunctionLongId(module_file_id, function.stable_ptr(db)).intern(db);
+                    let item_id = FreeFunctionLongId(module_id, function.stable_ptr(db)).intern(db);
                     free_functions.insert(item_id, function);
                     items.push(ModuleItemId::FreeFunction(item_id));
                 }
                 ast::ModuleItem::ExternFunction(extern_function) => {
                     let item_id =
-                        ExternFunctionLongId(module_file_id, extern_function.stable_ptr(db))
-                            .intern(db);
+                        ExternFunctionLongId(module_id, extern_function.stable_ptr(db)).intern(db);
                     extern_functions.insert(item_id, extern_function);
                     items.push(ModuleItemId::ExternFunction(item_id));
                 }
                 ast::ModuleItem::ExternType(extern_type) => {
                     let item_id =
-                        ExternTypeLongId(module_file_id, extern_type.stable_ptr(db)).intern(db);
+                        ExternTypeLongId(module_id, extern_type.stable_ptr(db)).intern(db);
                     extern_types.insert(item_id, extern_type);
                     items.push(ModuleItemId::ExternType(item_id));
                 }
                 ast::ModuleItem::Trait(trt) => {
-                    let item_id = TraitLongId(module_file_id, trt.stable_ptr(db)).intern(db);
+                    let item_id = TraitLongId(module_id, trt.stable_ptr(db)).intern(db);
                     traits.insert(item_id, trt);
                     items.push(ModuleItemId::Trait(item_id));
                 }
                 ast::ModuleItem::Impl(imp) => {
-                    let item_id = ImplDefLongId(module_file_id, imp.stable_ptr(db)).intern(db);
+                    let item_id = ImplDefLongId(module_id, imp.stable_ptr(db)).intern(db);
                     impls.insert(item_id, imp);
                     items.push(ModuleItemId::Impl(item_id));
                 }
                 ast::ModuleItem::Struct(structure) => {
-                    let item_id = StructLongId(module_file_id, structure.stable_ptr(db)).intern(db);
+                    let item_id = StructLongId(module_id, structure.stable_ptr(db)).intern(db);
                     structs.insert(item_id, structure);
                     items.push(ModuleItemId::Struct(item_id));
                 }
                 ast::ModuleItem::Enum(enm) => {
-                    let item_id = EnumLongId(module_file_id, enm.stable_ptr(db)).intern(db);
+                    let item_id = EnumLongId(module_id, enm.stable_ptr(db)).intern(db);
                     enums.insert(item_id, enm);
                     items.push(ModuleItemId::Enum(item_id));
                 }
                 ast::ModuleItem::TypeAlias(type_alias) => {
                     let item_id =
-                        ModuleTypeAliasLongId(module_file_id, type_alias.stable_ptr(db)).intern(db);
+                        ModuleTypeAliasLongId(module_id, type_alias.stable_ptr(db)).intern(db);
                     type_aliases.insert(item_id, type_alias);
                     items.push(ModuleItemId::TypeAlias(item_id));
                 }
                 ast::ModuleItem::ImplAlias(impl_alias) => {
-                    let item_id =
-                        ImplAliasLongId(module_file_id, impl_alias.stable_ptr(db)).intern(db);
+                    let item_id = ImplAliasLongId(module_id, impl_alias.stable_ptr(db)).intern(db);
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
                 ast::ModuleItem::MacroDeclaration(macro_declaration) => {
                     let item_id =
-                        MacroDeclarationLongId(module_file_id, macro_declaration.stable_ptr(db))
+                        MacroDeclarationLongId(module_id, macro_declaration.stable_ptr(db))
                             .intern(db);
                     macro_declarations.insert(item_id, macro_declaration);
                     items.push(ModuleItemId::MacroDeclaration(item_id));
                 }
                 ast::ModuleItem::InlineMacro(inline_macro_ast) => {
                     let item_id =
-                        MacroCallLongId(module_file_id, inline_macro_ast.stable_ptr(db)).intern(db);
+                        MacroCallLongId(module_id, inline_macro_ast.stable_ptr(db)).intern(db);
                     macro_calls.insert(item_id, inline_macro_ast.clone());
                 }
                 ast::ModuleItem::HeaderDoc(_) => {}
