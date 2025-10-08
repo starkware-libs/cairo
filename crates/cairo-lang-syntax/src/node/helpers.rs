@@ -300,7 +300,7 @@ pub trait QueryAttrs<'a> {
         })
     }
 
-    /// Find first attribute named exactly `attr` attached do this node.
+    /// Find first attribute named exactly `attr` attached to this node.
     fn find_attr(&self, db: &'a dyn Database, attr: &'a str) -> Option<Attribute<'a>> {
         self.query_attr(db, attr).next()
     }
