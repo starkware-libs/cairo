@@ -8,7 +8,7 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use salsa::{AsDynDatabase, Database};
+use salsa::Database;
 
 use crate::error_code::{ErrorCode, OptionErrorCodeExt};
 use crate::location_marks::get_location_marks;
@@ -35,10 +35,9 @@ impl fmt::Display for Severity {
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
 pub trait DiagnosticEntry<'db>: Clone + fmt::Debug + Eq + Hash {
-    type DbType: Database + ?Sized;
-    fn format(&self, db: &Self::DbType) -> String;
-    fn location(&self, db: &'db Self::DbType) -> DiagnosticLocation<'db>;
-    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote<'_>] {
+    fn format(&self, db: &'db dyn Database) -> String;
+    fn location(&self, db: &'db dyn Database) -> DiagnosticLocation<'db>;
+    fn notes(&self, _db: &'db dyn Database) -> &[DiagnosticNote<'_>] {
         &[]
     }
     fn severity(&self) -> Severity {
@@ -340,12 +339,12 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
     /// Format entries to pairs of severity and message.
     pub fn format_with_severity(
         &self,
-        db: &'db TEntry::DbType,
+        db: &'db dyn Database,
         file_notes: &OrderedHashMap<FileId<'db>, DiagnosticNote<'db>>,
     ) -> Vec<FormattedDiagnosticEntry> {
         let mut res: Vec<FormattedDiagnosticEntry> = Vec::new();
 
-        let files_db = db.as_dyn_database();
+        let files_db: &'db dyn Database = db;
         for entry in &self.get_diagnostics_without_duplicates(db) {
             let mut msg = String::new();
             let diag_location = entry.location(db);
@@ -379,7 +378,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
     }
 
     /// Format entries to a [`String`] with messages prefixed by severity.
-    pub fn format(&self, db: &'db TEntry::DbType) -> String {
+    pub fn format(&self, db: &'db dyn Database) -> String {
         self.format_with_severity(db, &Default::default()).iter().map(ToString::to_string).join("")
     }
 
@@ -389,7 +388,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
     }
 
     /// Same as [Self::expect], except that the diagnostics are formatted.
-    pub fn expect_with_db(&self, db: &'db TEntry::DbType, error_message: &str) {
+    pub fn expect_with_db(&self, db: &'db dyn Database, error_message: &str) {
         assert!(self.is_empty(), "{}\n{}", error_message, self.format(db));
     }
 
@@ -407,12 +406,12 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
     ///
     /// Two diagnostics are considered duplicated if both point to
     /// the same location in the user code, and are of the same kind.
-    pub fn get_diagnostics_without_duplicates(&self, db: &'db TEntry::DbType) -> Vec<TEntry> {
+    pub fn get_diagnostics_without_duplicates(&self, db: &'db dyn Database) -> Vec<TEntry> {
         let diagnostic_with_dup = self.get_all();
         if diagnostic_with_dup.is_empty() {
             return diagnostic_with_dup;
         }
-        let files_db = db.as_dyn_database();
+        let files_db: &'db dyn Database = db;
         let mut indexed_dup_diagnostic =
             diagnostic_with_dup.iter().enumerate().sorted_by_cached_key(|(idx, diag)| {
                 (diag.location(db).user_location(files_db).span, diag.format(db), *idx)

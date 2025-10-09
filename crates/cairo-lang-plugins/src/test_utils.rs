@@ -73,11 +73,10 @@ pub fn expand_module_text<'db>(
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 struct TestDiagnosticEntry<'a>(pub PluginDiagnostic<'a>);
 impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
-    type DbType = dyn Database;
-    fn format(&self, _db: &Self::DbType) -> String {
+    fn format(&self, _db: &dyn Database) -> String {
         self.0.message.to_string()
     }
-    fn location(&self, db: &'a Self::DbType) -> DiagnosticLocation<'a> {
+    fn location(&self, db: &'a dyn Database) -> DiagnosticLocation<'a> {
         match self.0.inner_span {
             Some(inner_span) => StableLocation::with_inner_span(self.0.stable_ptr, inner_span)
                 .diagnostic_location(db),

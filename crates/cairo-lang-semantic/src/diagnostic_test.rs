@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use salsa::{AsDynDatabase, Database, Setter};
+use salsa::{Database, Setter};
 
 use crate::db::{SemanticGroup, semantic_group_input};
 use crate::ids::AnalyzerPluginLongId;
@@ -259,7 +259,7 @@ impl AnalyzerPlugin for NoU128RenameAnalyzerPlugin {
 fn test_analyzer_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    let db_ref = db.as_dyn_database_mut();
+    let db_ref: &mut dyn Database = db;
     semantic_group_input(db_ref)
         .set_default_analyzer_plugins(db_ref)
         .to(Some(vec![AnalyzerPluginLongId(Arc::new(NoU128RenameAnalyzerPlugin))]));

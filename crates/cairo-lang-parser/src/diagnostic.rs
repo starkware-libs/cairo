@@ -130,9 +130,7 @@ pub enum ParserDiagnosticKind {
 }
 
 impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
-    type DbType = dyn Database;
-
-    fn format(&self, _db: &dyn Database) -> String {
+    fn format(&self, _db: &'a dyn Database) -> String {
         match &self.kind {
             ParserDiagnosticKind::InvalidParamKindInMacroExpansion => {
                 "Parameter kinds are not allowed in macro expansion.".to_string()

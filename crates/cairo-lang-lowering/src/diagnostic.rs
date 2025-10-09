@@ -43,9 +43,7 @@ pub struct LoweringDiagnostic<'db> {
 }
 
 impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
-    type DbType = dyn Database;
-
-    fn format(&self, db: &Self::DbType) -> String {
+    fn format(&self, db: &'db dyn Database) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::VariableMoved { .. } => "Variable was previously moved.".into(),
@@ -96,11 +94,11 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
         }
     }
 
-    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote<'_>] {
+    fn notes(&self, _db: &dyn Database) -> &[DiagnosticNote<'_>] {
         &self.location.notes
     }
 
-    fn location(&self, db: &'db Self::DbType) -> DiagnosticLocation<'db> {
+    fn location(&self, db: &'db dyn Database) -> DiagnosticLocation<'db> {
         if let LoweringDiagnosticKind::Unreachable { block_end_ptr } = &self.kind {
             return self.location.stable_location.diagnostic_location_until(db, *block_end_ptr);
         }
