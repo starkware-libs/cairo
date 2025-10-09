@@ -26,7 +26,7 @@ impl<'a> ToPrimitiveTokenStream for SyntaxNodeWithDb<'a> {
 
 pub struct SyntaxNodeWithDbIterator<'a> {
     /// Stack used for driving iterative depth-first traversal of the syntax tree.
-    iter_stack: Vec<&'a SyntaxNode<'a>>,
+    iter_stack: Vec<SyntaxNode<'a>>,
     /// Each step of the traversal may yield up to three tokens, so we collect them in this buffer.
     /// **INVARIANT**: The collection to the buffer only happens when the buffer was previously
     /// empty.
@@ -36,7 +36,7 @@ pub struct SyntaxNodeWithDbIterator<'a> {
 
 impl<'a> SyntaxNodeWithDbIterator<'a> {
     pub fn new(db: &'a dyn Database, node: &'a SyntaxNode<'a>) -> Self {
-        Self { db, buffer: Vec::with_capacity(3), iter_stack: vec![node] }
+        Self { db, buffer: Vec::with_capacity(3), iter_stack: vec![*node] }
     }
 }
 
@@ -59,9 +59,11 @@ impl<'a> Iterator for SyntaxNodeWithDbIterator<'a> {
             // If the node is a terminal, it creates and saves token representation of it.
             // Otherwise, it pushes all children of the node onto the iteration stack.
             if node.green_node(self.db).kind.is_terminal() {
-                token_from_syntax_node(node, self.db, &mut self.buffer);
+                token_from_syntax_node(&node, self.db, &mut self.buffer);
             } else {
-                self.iter_stack.extend(node.get_children(self.db).iter().rev());
+                for child in node.get_children(self.db).rev() {
+                    self.iter_stack.push(child);
+                }
             }
         }
     }

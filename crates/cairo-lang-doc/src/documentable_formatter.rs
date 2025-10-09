@@ -865,7 +865,7 @@ fn write_function_signature<'db>(
 
 /// Retrieves [`SyntaxKind::TypeClause`] text from [`SyntaxNode`].
 fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn Database) -> Option<String> {
-    for child in syntax_node.get_children(db).iter() {
+    for child in syntax_node.get_children(db) {
         if child.kind(db) == SyntaxKind::TypeClause {
             return Some(child.get_text_without_all_comment_trivia(db));
         }
@@ -959,7 +959,7 @@ fn write_struct_attributes_syntax<'db>(
 ) -> Result<(), fmt::Error> {
     for attribute in attributes {
         let syntax_node = attribute.stable_ptr.lookup(f.db).as_syntax_node();
-        for child in syntax_node.get_children(f.db).iter() {
+        for child in syntax_node.get_children(f.db) {
             let to_text = child.get_text_without_all_comment_trivia(f.db);
             let cleaned_text = to_text.replace("\n", "");
             f.write_str(&cleaned_text)?;
@@ -978,7 +978,7 @@ fn write_syntactic_evaluation<'db>(
         let syntax_node = stable_location.syntax_node(f.db);
         if matches!(&syntax_node.green_node(f.db).details, green::GreenNodeDetails::Node { .. }) {
             let mut is_after_evaluation_value = false;
-            for child in syntax_node.get_children(f.db).iter() {
+            for child in syntax_node.get_children(f.db) {
                 let kind = child.kind(f.db);
                 if !matches!(kind, SyntaxKind::Trivia) {
                     if matches!(kind, SyntaxKind::TerminalSemicolon) {
@@ -987,7 +987,7 @@ fn write_syntactic_evaluation<'db>(
                     }
                     if is_after_evaluation_value {
                         f.buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
-                            child, f.db,
+                            &child, f.db,
                         ))?;
                     };
                     if matches!(kind, SyntaxKind::TerminalEq) {
