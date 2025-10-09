@@ -401,9 +401,9 @@ error: Variable was previously moved.
     panic(arr);
           ^^^
 note: variable was previously used here:
-  --> lib.cairo:4:5
-    b.append('bla');
-    ^
+  --> lib.cairo:3:17
+    let mut b = arr;
+                ^^^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
 //! > lowering
@@ -415,10 +415,10 @@ Statements:
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`'err_code'`})
   (v4: core::felt252) <- 6450273
   (v6: core::array::Array::<core::felt252>, v5: ()) <- core::array::ArrayImpl::<core::felt252>::append(v3{`b`}, v4{`'bla'`})
-  (v7: core::panics::Panic) <- struct_construct()
-  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7{`panic(arr)`}, v3{`arr`})
+  (v8: core::panics::Panic) <- struct_construct()
+  (v9: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v8{`panic(arr)`}, v7{`arr`})
 End:
-  Panic(v8)
+  Panic(v9)
 
 //! > ==========================================================================
 
@@ -915,9 +915,8 @@ test_borrow_check
 
 //! > function
 fn foo(x: MyStruct) -> MyStruct {
-    let y = x;
     consume(x.b);
-    y
+    x
 }
 
 //! > function_name
@@ -937,14 +936,14 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:12:5
-    y
+ --> lib.cairo:11:5
+    x
     ^
 note: variable was previously used here:
-  --> lib.cairo:11:13
+  --> lib.cairo:10:13
     consume(x.b);
             ^^^
-note: Trait has no implementation in context: core::traits::Copy::<test::MyStruct>.
+note: Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -953,7 +952,7 @@ Statements:
   (v1: core::felt252, v2: test::NonCopy) <- struct_destructure(v0{`x.b`})
   () <- test::consume(v2{`x.b`})
 End:
-  Return(v0)
+  Return(v3)
 
 //! > ==========================================================================
 
