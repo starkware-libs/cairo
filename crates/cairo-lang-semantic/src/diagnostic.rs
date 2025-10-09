@@ -108,9 +108,7 @@ impl<'db> SemanticDiagnostic<'db> {
     }
 }
 impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
-    type DbType = dyn Database;
-
-    fn format(&self, db: &Self::DbType) -> String {
+    fn format(&self, db: &dyn Database) -> String {
         match &self.kind {
             SemanticDiagnosticKind::ModuleFileNotFound(path) => {
                 format!("Module file not found. Expected path: {path}")
@@ -1101,7 +1099,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             .into(),
         }
     }
-    fn location(&self, db: &'db Self::DbType) -> DiagnosticLocation<'db> {
+    fn location(&self, db: &'db dyn Database) -> DiagnosticLocation<'db> {
         if let SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) =
             &self.kind
         {
@@ -1141,7 +1139,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
         }
     }
 
-    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote<'_>] {
+    fn notes(&self, _db: &dyn Database) -> &[DiagnosticNote<'_>] {
         if let SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) = &self.kind {
             notes
         } else {

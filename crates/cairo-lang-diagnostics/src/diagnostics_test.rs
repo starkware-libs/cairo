@@ -14,8 +14,6 @@ struct SimpleDiag<'db> {
     file_id: FileId<'db>,
 }
 impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
-    type DbType = dyn Database;
-
     fn format(&self, _db: &dyn Database) -> String {
         "Simple diagnostic.".into()
     }

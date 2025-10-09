@@ -234,7 +234,7 @@ impl<'a> DiagnosticsReporter<'a> {
     /// callback as strings. Returns `true` if diagnostics were found.
     fn check_diag_group<'db, TEntry: DiagnosticEntry<'db> + salsa::Update>(
         &mut self,
-        db: &'db TEntry::DbType,
+        db: &'db dyn Database,
         group: Diagnostics<'db, TEntry>,
         skip_warnings: bool,
         file_notes: &PluginFileDiagnosticNotes<'db>,
