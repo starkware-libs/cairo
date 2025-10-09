@@ -89,10 +89,9 @@ impl<'db> BlockBuilder<'db> {
         &mut self,
         ctx: &mut LoweringContext<'db, '_>,
         member_path: &ExprVarMemberPath<'db>,
-        dont_mark_as_used: bool,
     ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.get_ref_raw(ctx, &member_path.into(), location, None, dont_mark_as_used)
+        self.get_ref_raw(ctx, &member_path.into(), location, None)
     }
 
     /// Returns the [VarUsage] for a given `member_path`.
@@ -111,7 +110,7 @@ impl<'db> BlockBuilder<'db> {
         expected_ty: semantic::TypeId<'db>,
     ) -> Option<VarUsage<'db>> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.get_ref_raw(ctx, &member_path.into(), location, Some(expected_ty), false)
+        self.get_ref_raw(ctx, &member_path.into(), location, Some(expected_ty))
     }
 
     /// Returns the [VarUsage] for a given `member_path`.
@@ -129,7 +128,6 @@ impl<'db> BlockBuilder<'db> {
         member_path: &MemberPath<'db>,
         location: LocationId<'db>,
         expected_ty: Option<semantic::TypeId<'db>>,
-        dont_mark_as_used: bool,
     ) -> Option<VarUsage<'db>> {
         // Fetch the variable from the semantics.
         let res = self.semantics.get(
@@ -151,9 +149,7 @@ impl<'db> BlockBuilder<'db> {
                 let copyable = var.info.copyable.clone();
                 let ty = var.ty;
 
-                if let Err(inference_error) = copyable
-                    && !dont_mark_as_used
-                {
+                if let Err(inference_error) = copyable {
                     self.semantics.mark_as_used(
                         BlockStructRecomposer { statements: &mut self.statements, ctx, location },
                         member_path,
@@ -284,7 +280,7 @@ impl<'db> BlockBuilder<'db> {
             .extra_rets
             .clone()
             .iter()
-            .map(|member_path| self.get_ref(ctx, member_path, false))
+            .map(|member_path| self.get_ref(ctx, member_path))
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
