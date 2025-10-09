@@ -28,8 +28,8 @@ impl ColoredPrinter<'_> {
                 } else if self.verbose && is_empty_kind(node.kind) {
                     self.result.push_str(format!("{}", "<e>".red()).as_str());
                 } else {
-                    for child in syntax_node.get_children(self.db).iter() {
-                        self.print(child);
+                    for child in syntax_node.get_children(self.db) {
+                        self.print(&child);
                     }
                 }
             }

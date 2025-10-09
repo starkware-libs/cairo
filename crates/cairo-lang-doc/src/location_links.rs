@@ -36,8 +36,8 @@ fn collect_green_nodes<'db>(
         GreenNodeDetails::Token(text) => green_nodes.push((green_node.kind, text.to_string(db))),
         GreenNodeDetails::Node { .. } => {
             let syntax_node_children = syntax_node.get_children(db);
-            syntax_node_children.iter().for_each(|child| {
-                collect_green_nodes(db, child, green_nodes);
+            syntax_node_children.for_each(|child| {
+                collect_green_nodes(db, &child, green_nodes);
             });
         }
     }

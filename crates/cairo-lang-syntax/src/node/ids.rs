@@ -1,3 +1,6 @@
+use std::ops::Deref;
+use std::sync::Arc;
+
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::define_short_id;
@@ -15,6 +18,39 @@ impl<'a> GreenId<'a> {
             super::green::GreenNodeDetails::Token(text) => TextWidth::from_str(text.long(db)),
             super::green::GreenNodeDetails::Node { width, .. } => *width,
         }
+    }
+}
+
+#[derive(Debug, Clone, Hash)]
+pub struct ArcGreenIds<'db> {
+    pub ids: Arc<[GreenId<'db>]>,
+}
+
+impl PartialEq for ArcGreenIds<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.ids, &other.ids)
+            || self.ids.iter().zip(other.ids.iter()).all(|(old_id, new_id)| old_id == new_id)
+    }
+}
+
+impl<'db> Deref for ArcGreenIds<'db> {
+    type Target = [GreenId<'db>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.ids
+    }
+}
+
+impl Eq for ArcGreenIds<'_> {}
+
+unsafe impl<'db> salsa::Update for ArcGreenIds<'db> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_arc: Self) -> bool {
+        let old_arc: &mut Self = unsafe { &mut *old_pointer };
+        if old_arc == &new_arc {
+            return false;
+        }
+        *old_arc = new_arc;
+        true
     }
 }
 
