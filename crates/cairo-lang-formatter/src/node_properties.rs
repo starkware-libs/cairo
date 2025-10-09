@@ -140,7 +140,6 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         .parent(db)
                         .unwrap()
                         .get_children(db)
-                        .iter()
                         .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
             {
                 true
@@ -931,8 +930,6 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
     }
 
     fn should_skip_terminal(&self, db: &dyn Database) -> bool {
-        let is_last =
-            |node: &SyntaxNode<'_>, siblings: &[SyntaxNode<'_>]| siblings.last() == Some(node);
         // Check for TerminalComma with specific conditions on list types and position.
         if self.kind(db) == SyntaxKind::TerminalComma
             && matches!(
@@ -961,9 +958,10 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 self.parent_kind(db),
                 Some(SyntaxKind::ExprList | SyntaxKind::PatternList)
             );
-            if (!is_expr_or_pattern_list || children.len() > 2)
+            let len = children.len();
+            if (!is_expr_or_pattern_list || len > 2)
             // Ensure that this node is the last element in the list.
-            && is_last(self, children)
+            && children.last() == Some(*self)
             {
                 return true;
             }
@@ -978,11 +976,11 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             let statements_node = statement_node.parent(db).unwrap();
             // Checking if not the last statement, as `;` may be there to prevent the block from
             // returning the value of the current block.
-            let not_last = !is_last(&statement_node, statements_node.get_children(db));
-            let children = statement_node.get_children(db);
+            let statements_children = statements_node.get_children(db);
+            let not_last = statements_children.last() != Some(statement_node);
             if not_last
                 && matches!(
-                    children[1].kind(db),
+                    statement_node.get_child(db, 1).kind(db),
                     SyntaxKind::ExprBlock
                         | SyntaxKind::ExprIf
                         | SyntaxKind::ExprMatch
@@ -999,7 +997,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
         {
             let path_segment_node = self.parent(db).unwrap();
             let path_node = path_segment_node.parent(db).unwrap();
-            if !is_last(&path_segment_node, path_node.get_children(db)) {
+            if path_node.get_children(db).last() != Some(path_segment_node) {
                 false
             } else {
                 matches!(

@@ -315,7 +315,7 @@ fn remove_generics_from_path<'db>(
     trait_path: &ast::ExprPath<'db>,
 ) -> RewriteNode<'db> {
     let segments = trait_path.segments(db);
-    let mut elements = segments.elements(db);
+    let mut elements = segments.elements(db).collect_vec().into_iter();
     let last = elements.next_back().unwrap();
     let last_without_generics = RewriteNode::from_ast_trimmed(&last.identifier_ast(db));
 

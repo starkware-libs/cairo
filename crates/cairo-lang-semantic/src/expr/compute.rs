@@ -3319,15 +3319,15 @@ fn statements_and_tail<'a>(
     db: &'a dyn Database,
     syntax: ast::StatementList<'a>,
 ) -> (impl Iterator<Item = ast::Statement<'a>> + 'a, Option<ast::StatementExpr<'a>>) {
-    let mut statements = syntax.elements(db);
-    let last = statements.next_back();
+    let mut statements = syntax.elements_vec(db);
+    let last = statements.pop();
     if let Some(ast::Statement::Expr(expr)) = &last {
         // If the last statement is an expression, check if it is a tail expression.
         if matches!(expr.semicolon(db), ast::OptionTerminalSemicolon::Empty(_)) {
-            return (chain!(statements, None), Some(expr.clone()));
+            return (chain!(statements.into_iter(), None), Some(expr.clone()));
         }
     }
-    (chain!(statements, last), None)
+    (chain!(statements.into_iter(), last), None)
 }
 
 /// Creates a new numeric literal expression.

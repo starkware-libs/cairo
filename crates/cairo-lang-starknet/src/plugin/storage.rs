@@ -3,7 +3,7 @@ use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
-use itertools::zip_eq;
+use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
@@ -155,7 +155,7 @@ fn get_substorage_member_code<'db>(
     match member.type_clause(db).ty(db) {
         ast::Expr::Path(type_path) => {
             let segments = type_path.segments(db);
-            let mut elements = segments.elements(db);
+            let mut elements = segments.elements(db).collect_vec().into_iter();
             // The path has at least one element.
             let last = elements.next_back().unwrap();
             match last {

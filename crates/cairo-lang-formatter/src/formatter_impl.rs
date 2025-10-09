@@ -1033,7 +1033,7 @@ impl<'a> FormatterImpl<'a> {
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
         // TODO(ilya): consider not copying here.
-        let mut children = syntax_node.get_children(self.db).to_vec();
+        let mut children: Vec<_> = syntax_node.get_children(self.db).collect();
         let n_children = children.len();
 
         if self.config.merge_use_items {
@@ -1118,8 +1118,8 @@ impl<'a> FormatterImpl<'a> {
                 );
 
                 // Add merged children to the new_children list.
-                if let Some(child) = merged_node.get_children(self.db).iter().next() {
-                    new_children.extend(child.get_children(self.db).iter().copied());
+                if let Some(child) = merged_node.get_children(self.db).next() {
+                    new_children.extend(child.get_children(self.db));
                 }
             }
         }
@@ -1211,16 +1211,16 @@ impl<'a> FormatterImpl<'a> {
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode<'a>) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
-        let children = syntax_node.get_children(self.db);
-        let [leading, token, trailing] = children else {
-            panic!("Terminal node should have 3 children.");
-        };
+        let mut children = syntax_node.get_children(self.db);
+        let leading = children.next().unwrap();
+        let token = children.next().unwrap();
+        let trailing = children.next().unwrap();
         // The first newlines is the leading trivia correspond exactly to empty lines.
-        self.format_trivia(ast::Trivia::from_syntax_node(self.db, *leading), true);
+        self.format_trivia(ast::Trivia::from_syntax_node(self.db, leading), true);
         if !syntax_node.should_skip_terminal(self.db) {
-            self.format_token(token);
+            self.format_token(&token);
         }
-        self.format_trivia(ast::Trivia::from_syntax_node(self.db, *trailing), false);
+        self.format_trivia(ast::Trivia::from_syntax_node(self.db, trailing), false);
     }
     /// Appends a trivia node (if needed) to the result.
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia<'a>, is_leading: bool) {

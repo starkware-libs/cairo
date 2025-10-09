@@ -1350,9 +1350,8 @@ pub fn get_all_path_leaves<'db>(
         match use_path {
             ast::UsePath::Leaf(use_path) => res.push(use_path),
             ast::UsePath::Single(use_path) => stack.push(use_path.use_path(db)),
-            ast::UsePath::Multi(use_path) => {
-                stack.extend(use_path.use_paths(db).elements(db).rev())
-            }
+            ast::UsePath::Multi(use_path) => stack
+                .extend(use_path.use_paths(db).elements(db).collect::<Vec<_>>().into_iter().rev()),
             ast::UsePath::Star(_) => {}
         }
     }
@@ -1370,9 +1369,8 @@ pub fn get_all_path_stars<'db>(
         match use_path {
             ast::UsePath::Leaf(_) => {}
             ast::UsePath::Single(use_path) => stack.push(use_path.use_path(db)),
-            ast::UsePath::Multi(use_path) => {
-                stack.extend(use_path.use_paths(db).elements(db).rev())
-            }
+            ast::UsePath::Multi(use_path) => stack
+                .extend(use_path.use_paths(db).elements(db).collect::<Vec<_>>().into_iter().rev()),
             ast::UsePath::Star(use_path) => res.push(use_path),
         }
     }

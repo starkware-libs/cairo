@@ -110,7 +110,7 @@ impl<'a> GetIdentifier<'a> for ast::TerminalIdentifierGreen<'a> {
 impl<'a> GetIdentifier<'a> for ast::ExprPath<'a> {
     /// Retrieves the identifier of the last segment of the path.
     fn identifier(&self, db: &'a dyn Database) -> SmolStrId<'a> {
-        self.segments(db).elements(db).next_back().unwrap().identifier(db)
+        self.segments(db).elements(db).last().unwrap().identifier(db)
     }
 }
 
@@ -286,7 +286,7 @@ pub trait QueryAttrs<'a> {
 
     /// Generic call to `self.attributes(db).elements(db)`.
     fn attributes_elements(&self, db: &'a dyn Database) -> impl Iterator<Item = Attribute<'a>> {
-        self.try_attributes(db).into_iter().flat_map(move |attrs| attrs.elements(db))
+        self.try_attributes(db).into_iter().flat_map(move |attrs| attrs.elements_vec(db))
     }
 
     /// Collect all attributes named exactly `attr` attached to this node.
@@ -678,21 +678,21 @@ pub trait BodyItems<'a> {
 impl<'a> BodyItems<'a> for ast::ModuleBody<'a> {
     type Item = ModuleItem<'a>;
     fn iter_items(&self, db: &'a dyn Database) -> impl Iterator<Item = Self::Item> + 'a {
-        self.items(db).elements(db)
+        self.items(db).elements_vec(db).into_iter()
     }
 }
 
 impl<'a> BodyItems<'a> for ast::TraitBody<'a> {
     type Item = TraitItem<'a>;
     fn iter_items(&self, db: &'a dyn Database) -> impl Iterator<Item = Self::Item> + 'a {
-        self.items(db).elements(db)
+        self.items(db).elements_vec(db).into_iter()
     }
 }
 
 impl<'a> BodyItems<'a> for ast::ImplBody<'a> {
     type Item = ImplItem<'a>;
     fn iter_items(&self, db: &'a dyn Database) -> impl Iterator<Item = Self::Item> + 'a {
-        self.items(db).elements(db)
+        self.items(db).elements_vec(db).into_iter()
     }
 }
 

@@ -72,8 +72,7 @@ impl<'db> ComponentsGenerationData<'db> {
             }
             // TODO(yuval): consider supporting 2 components with the same name and different paths.
             // Currently it doesn't work as the name of the impl is the same.
-            let Some(component_segment) = component_path.segments(db).elements(db).next_back()
-            else {
+            let Some(component_segment) = component_path.segments(db).elements(db).last() else {
                 diagnostics.push(PluginDiagnostic::error_with_inner_span(
                     db,
                     node.stable_ptr(db),
@@ -618,7 +617,7 @@ fn handle_embed_impl_alias<'db>(
         return;
     }
     let segments = alias_ast.impl_path(db).segments(db);
-    let mut elements = segments.elements(db);
+    let mut elements = segments.elements(db).collect_vec().into_iter();
     let Some(impl_final_part) = elements.next_back() else {
         unreachable!("impl_path should have at least one segment")
     };
@@ -792,9 +791,9 @@ fn try_extract_named_macro_argument<'db>(
                         return Some(path);
                     }
                     let segments = path.segments(db);
-                    let mut elements = segments.elements(db);
+                    let elements = segments.elements(db).collect_vec().into_iter();
                     if elements.len() != 1
-                        || !matches!(elements.next_back().unwrap(), ast::PathSegment::Simple(_))
+                        || !matches!(elements.last().unwrap(), ast::PathSegment::Simple(_))
                     {
                         diagnostics.push(PluginDiagnostic::error_with_inner_span(
                             db,

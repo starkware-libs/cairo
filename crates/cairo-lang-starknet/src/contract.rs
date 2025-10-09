@@ -199,8 +199,8 @@ fn get_impl_aliases_abi_functions<'db>(
         );
 
         let impl_segments = impl_alias.impl_path(db).segments(db);
-        let mut impl_path_elements = impl_segments.elements(db);
-        let Some(impl_final_part) = impl_path_elements.next_back() else {
+        let mut impl_path_elements = impl_segments.elements(db).collect_vec();
+        let Some(impl_final_part) = impl_path_elements.pop() else {
             unreachable!("impl_path should have at least one segment")
         };
         let impl_name = impl_final_part.identifier(db);
@@ -208,7 +208,7 @@ fn get_impl_aliases_abi_functions<'db>(
         let ResolvedConcreteItem::Module(impl_module) = resolver
             .resolve_concrete_path(
                 &mut diagnostics,
-                impl_path_elements.collect_vec(),
+                impl_path_elements,
                 NotFoundItemType::Identifier,
             )
             .to_option()
