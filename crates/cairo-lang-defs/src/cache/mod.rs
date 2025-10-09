@@ -1635,7 +1635,7 @@ impl SyntaxNodeIdCached {
             SyntaxNodeId::Root(file_id) => Self::Root(FileIdCached::new(*file_id, ctx)),
             SyntaxNodeId::Child { parent, key_fields, index } => Self::Child {
                 parent: SyntaxNodeCached::new(*parent, ctx),
-                key_fields: key_fields.into_iter().map(|id| GreenIdCached::new(*id, ctx)).collect(),
+                key_fields: key_fields.iter().map(|id| GreenIdCached::new(*id, ctx)).collect(),
                 index: *index,
             },
         }
@@ -1646,7 +1646,7 @@ impl SyntaxNodeIdCached {
             SyntaxNodeIdCached::Root(file_id) => SyntaxNodeId::Root(file_id.embed(ctx)),
             SyntaxNodeIdCached::Child { parent, key_fields, index } => SyntaxNodeId::Child {
                 parent: parent.embed(ctx),
-                key_fields: Box::from_iter(key_fields.iter().map(|id| id.embed(ctx))),
+                key_fields: Arc::from_iter(key_fields.iter().map(|id| id.embed(ctx))),
                 index: *index,
             },
         }

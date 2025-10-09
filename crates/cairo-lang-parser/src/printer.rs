@@ -209,17 +209,17 @@ impl<'a> Printer<'a> {
             NodeKind::Struct { members: expected_children }
             | NodeKind::Terminal { members: expected_children, .. } => {
                 self.print_internal_struct(
-                    children,
+                    syntax_node.get_children(self.db),
                     &expected_children,
                     indent.as_str(),
                     under_top_level,
                 );
             }
             NodeKind::List { .. } => {
-                for (i, child) in children.iter().enumerate() {
+                for (i, child) in syntax_node.get_children(self.db).enumerate() {
                     self.print_tree(
                         format!("child #{i}").as_str(),
-                        child,
+                        &child,
                         indent.as_str(),
                         i == num_children - 1,
                         under_top_level,
@@ -227,11 +227,11 @@ impl<'a> Printer<'a> {
                 }
             }
             NodeKind::SeparatedList { .. } => {
-                for (i, child) in children.iter().enumerate() {
+                for (i, child) in syntax_node.get_children(self.db).enumerate() {
                     let description = if i.is_multiple_of(2) { "item" } else { "separator" };
                     self.print_tree(
                         format!("{description} #{}", i / 2).as_str(),
-                        child,
+                        &child,
                         indent.as_str(),
                         i == num_children - 1,
                         under_top_level,
@@ -244,20 +244,20 @@ impl<'a> Printer<'a> {
 
     /// Assumes children and expected children are non-empty of the same length.
     /// `under_top_level`: whether we are in a subtree of the top-level kind.
-    fn print_internal_struct(
+    fn print_internal_struct<'b>(
         &mut self,
-        children: &[SyntaxNode<'_>],
+        children: impl ExactSizeIterator<Item = SyntaxNode<'b>>,
         expected_children: &[Member],
         indent: &str,
         under_top_level: bool,
     ) {
-        let (last_child, non_last_children) = children.split_last().unwrap();
-        let (last_expected_child, non_last_expected_children) =
-            expected_children.split_last().unwrap();
-        for (child, expected_child) in zip_eq(non_last_children, non_last_expected_children) {
-            self.print_tree(&expected_child.name, child, indent, false, under_top_level);
+        let mut iter = zip_eq(children, expected_children);
+        for _ in 1..iter.len() {
+            let (child, expected_child) = iter.next().unwrap();
+            self.print_tree(&expected_child.name, &child, indent, false, under_top_level);
         }
-        self.print_tree(&last_expected_child.name, last_child, indent, true, under_top_level);
+        let (last_child, last_expected_child) = iter.next().unwrap();
+        self.print_tree(&last_expected_child.name, &last_child, indent, true, under_top_level);
     }
 
     fn get_node_kind(&self, name: String) -> NodeKind {

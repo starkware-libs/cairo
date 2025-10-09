@@ -1,4 +1,5 @@
 use core::hash::Hash;
+use std::sync::Arc;
 
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, SmolStrId};
@@ -34,7 +35,7 @@ mod ast_test;
 mod test_utils;
 
 /// Private enum for syntax node id. This holds data used to identify the node.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, DebugWithDb, salsa::Update)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, DebugWithDb)]
 #[debug_db(dyn Database)]
 pub enum SyntaxNodeId<'db> {
     Root(FileId<'db>),
@@ -45,8 +46,76 @@ pub enum SyntaxNodeId<'db> {
         index: usize,
         /// Which fields are used is determined by each SyntaxKind.
         /// For example, a function item might use the name of the function.
-        key_fields: Box<[GreenId<'db>]>,
+        key_fields: Arc<[GreenId<'db>]>,
     },
+}
+
+unsafe impl<'db> salsa::Update for SyntaxNodeId<'db> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_id: &mut Self = unsafe { &mut *old_pointer };
+
+        match (&mut *old_id, &new_value) {
+            (SyntaxNodeId::Root(old_file), SyntaxNodeId::Root(new_file)) => unsafe {
+                FileId::maybe_update(old_file, *new_file)
+            },
+            (
+                SyntaxNodeId::Child {
+                    parent: old_parent,
+                    index: old_index,
+                    key_fields: old_key_fields,
+                },
+                SyntaxNodeId::Child {
+                    parent: new_parent,
+                    index: new_index,
+                    key_fields: new_key_fields,
+                },
+            ) => {
+                let changed = unsafe { SyntaxNode::maybe_update(old_parent, *new_parent) }
+                    || old_index != new_index
+                    || old_key_fields.iter().zip(new_key_fields.iter()).any(|(a, b)| a != b);
+
+                if changed {
+                    *old_id = new_value;
+                }
+
+                changed
+            }
+            _ => {
+                *old_id = new_value;
+                true
+            }
+        }
+    }
+}
+
+/// Data used to create a syntax node.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+struct ChildKeyData<'db> {
+    key_index: usize,
+    /// Offset of the child relative to the parent start position.
+    start: TextWidth,
+    green_id: GreenId<'db>,
+    kind: SyntaxKind,
+    key_fields: Arc<[GreenId<'db>]>,
+}
+
+unsafe impl<'db> salsa::Update for ChildKeyData<'db> {
+    unsafe fn maybe_update(old_pointer: *mut Self, new_value: Self) -> bool {
+        let old_data: &mut Self = unsafe { &mut *old_pointer };
+
+        // Check if any field changed. Note: key_fields depends on green_id,
+        // so if green_id is unchanged, key_fields will be unchanged too.
+        let changed = old_data.key_index != new_value.key_index
+            || unsafe { TextWidth::maybe_update(&mut old_data.start, new_value.start) }
+            || unsafe { GreenId::maybe_update(&mut old_data.green_id, new_value.green_id) }
+            || unsafe { SyntaxKind::maybe_update(&mut old_data.kind, new_value.kind) };
+
+        if changed {
+            *old_data = new_value;
+        }
+
+        changed
+    }
 }
 
 /// Private tracked struct containing the actual SyntaxNode data.
@@ -63,6 +132,74 @@ struct SyntaxNodeData<'a> {
     /// Unique identifier for this node.
     #[returns(ref)]
     id: SyntaxNodeId<'a>,
+}
+
+/// Concrete iterator type for iterating over syntax node children.
+/// This struct holds all the state needed to lazily iterate through children.
+pub struct ChildrenIter<'a> {
+    parent: SyntaxNode<'a>,
+    db: &'a dyn Database,
+    parent_offset: TextOffset,
+    metadata: &'a [ChildKeyData<'a>],
+    front: usize,
+    back: usize,
+}
+
+impl<'a> Iterator for ChildrenIter<'a> {
+    type Item = SyntaxNode<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.front == self.back {
+            return None;
+        }
+        let index = self.front;
+        self.front += 1;
+        Some(self.build_child(index))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self.remaining();
+        (remaining, Some(remaining))
+    }
+}
+
+impl<'a> ExactSizeIterator for ChildrenIter<'a> {
+    fn len(&self) -> usize {
+        self.remaining()
+    }
+}
+
+impl<'a> DoubleEndedIterator for ChildrenIter<'a> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.front == self.back {
+            return None;
+        }
+        self.back -= 1;
+        Some(self.build_child(self.back))
+    }
+}
+
+impl<'a> ChildrenIter<'a> {
+    fn remaining(&self) -> usize {
+        self.back - self.front
+    }
+
+    fn build_child(&self, index: usize) -> SyntaxNode<'a> {
+        let entry = &self.metadata[index];
+        let offset = self.parent_offset.add_width(entry.start);
+
+        new_syntax_node(
+            self.db,
+            entry.green_id,
+            offset,
+            SyntaxNodeId::Child {
+                parent: self.parent,
+                index: entry.key_index,
+                key_fields: entry.key_fields.clone(),
+            },
+            entry.kind,
+        )
+    }
 }
 
 impl<'db> SyntaxNodeData<'db> {
@@ -291,44 +428,60 @@ impl<'a> SyntaxNode<'a> {
         let green_node = self.green_node(db);
         require(green_node.kind.is_terminal())?;
         // At this point we know we should have a second child which is the token.
-        self.get_children(db).get(1).copied()
+        Some(self.get_child(db, 1))
     }
 
     // Children and tree navigation
 
     /// Gets the children syntax nodes of the current node.
-    pub fn get_children(&self, db: &'a dyn Database) -> &'a [SyntaxNode<'a>] {
+    pub fn get_children(&self, db: &'a dyn Database) -> ChildrenIter<'a> {
         db.get_children(*self)
     }
 
-    /// Implementation of [SyntaxNode::get_children].
-    pub(crate) fn get_children_impl(&self, db: &'a dyn Database) -> Vec<SyntaxNode<'a>> {
-        let mut offset = self.offset(db);
-        let self_green = self.green_node(db);
-        let children = self_green.children();
-        let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
-        let mut key_map = VecMap::<_, usize>::new();
-        for green_id in children {
-            let green = green_id.long(db);
-            let width = green.width(db);
-            let kind = green.kind;
-            let rng = key_fields::key_fields_range(kind);
-            let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
-            let key_count = key_map.entry((kind, key_fields)).or_insert(0);
-            let index = *key_count;
-            *key_count += 1;
-            // Create the SyntaxNode view for the child.
-            res.push(new_syntax_node(
-                db,
-                *green_id,
-                offset,
-                SyntaxNodeId::Child { parent: *self, index, key_fields: Box::from(key_fields) },
-                kind,
-            ));
+    /// Gets a single child syntax node at the specified index.
+    /// This is more efficient than `get_children` when you only need one child.
+    pub fn get_child(&self, db: &'a dyn Database, index: usize) -> SyntaxNode<'a> {
+        db.get_child(*self, index)
+    }
 
-            offset = offset.add_width(width);
+    /// Implementation of [SyntaxNode::get_children].
+    pub(crate) fn get_children_impl(self, db: &'a dyn Database) -> ChildrenIter<'a> {
+        let offset = self.offset(db);
+        let green_id = self.data.green(db);
+        let metadata = syntax_node_children_key_data(db, green_id);
+        ChildrenIter {
+            parent: self,
+            db,
+            parent_offset: offset,
+            metadata,
+            front: 0,
+            back: metadata.len(),
         }
-        res
+    }
+
+    /// Implementation of [SyntaxNode::get_child].
+    pub(crate) fn get_child_impl(
+        &self,
+        db: &'a dyn Database,
+        target_index: usize,
+    ) -> SyntaxNode<'a> {
+        let green_id = self.data.green(db);
+        let metadata = syntax_node_children_key_data(db, green_id);
+        if let Some(entry) = metadata.get(target_index) {
+            let offset = self.offset(db).add_width(entry.start);
+            return new_syntax_node(
+                db,
+                entry.green_id,
+                offset,
+                SyntaxNodeId::Child {
+                    parent: *self,
+                    index: entry.key_index,
+                    key_fields: entry.key_fields.clone(),
+                },
+                entry.kind,
+            );
+        }
+        panic!("Child index {} out of bounds", target_index)
     }
 
     // Text and span utilities
@@ -349,7 +502,7 @@ impl<'a> SyntaxNode<'a> {
 
     /// Lookups a syntax node using an offset.
     pub fn lookup_offset(&self, db: &'a dyn Database, offset: TextOffset) -> SyntaxNode<'a> {
-        for child in self.get_children(db).iter() {
+        for child in self.get_children(db) {
             if child.offset(db).add_width(child.width(db)) > offset {
                 return child.lookup_offset(db, offset);
             }
@@ -386,7 +539,7 @@ impl<'a> SyntaxNode<'a> {
         match &self.green_node(db).details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text.long(db)),
             green::GreenNodeDetails::Node { .. } => {
-                for child in self.get_children(db).iter() {
+                for child in self.get_children(db) {
                     let kind = child.kind(db);
 
                     // Checks all the items that the inner comment can be bubbled to (implementation
@@ -398,7 +551,7 @@ impl<'a> SyntaxNode<'a> {
                             | SyntaxKind::TraitItemFunction
                     ) {
                         buffer.push_str(&SyntaxNode::get_text_without_inner_commentable_children(
-                            child, db,
+                            &child, db,
                         ));
                     }
                 }
@@ -415,8 +568,8 @@ impl<'a> SyntaxNode<'a> {
         match &self.green_node(db).details {
             green::GreenNodeDetails::Token(text) => buffer.push_str(text.long(db)),
             green::GreenNodeDetails::Node { .. } => {
-                for child in self.get_children(db).iter() {
-                    if let Some(trivia) = ast::Trivia::cast(db, *child) {
+                for child in self.get_children(db) {
+                    if let Some(trivia) = ast::Trivia::cast(db, child) {
                         trivia.elements(db).for_each(|element| {
                             if !matches!(
                                 element,
@@ -433,7 +586,7 @@ impl<'a> SyntaxNode<'a> {
                         });
                     } else {
                         buffer
-                            .push_str(&SyntaxNode::get_text_without_all_comment_trivia(child, db));
+                            .push_str(&SyntaxNode::get_text_without_all_comment_trivia(&child, db));
                     }
                 }
             }
@@ -580,6 +733,39 @@ impl<'a> SyntaxNode<'a> {
     pub fn grandgrandparent_kind(&self, db: &dyn Database) -> Option<SyntaxKind> {
         self.grandparent(db)?.parent_kind(db)
     }
+}
+
+/// Calculates the key data for the given node's children. Used to create a syntax node.
+#[salsa::tracked(returns(ref))]
+fn syntax_node_children_key_data<'db>(
+    db: &'db dyn Database,
+    green: GreenId<'db>,
+) -> Vec<ChildKeyData<'db>> {
+    let mut key_map = VecMap::new();
+    let mut cumulative = TextWidth::default();
+    green
+        .long(db)
+        .children()
+        .iter()
+        .map(|child| {
+            let long = child.long(db);
+            let kind = long.kind;
+            let rng = key_fields::key_fields_range(kind);
+            let key_fields: Arc<[GreenId<'db>]> = Arc::from(&long.children()[rng]);
+            let key_count = key_map.entry((kind, Arc::clone(&key_fields))).or_insert(0);
+            let index = *key_count;
+            *key_count += 1;
+            let entry = ChildKeyData {
+                key_index: index,
+                start: cumulative,
+                green_id: *child,
+                kind,
+                key_fields,
+            };
+            cumulative = cumulative + long.width(db);
+            entry
+        })
+        .collect()
 }
 
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under

@@ -617,7 +617,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         params.extend(quote! {$name: $(&child_green)<'db>,});
         body.extend(quote! {
             pub fn $name(&self, db: &'db dyn Database) -> $kind<'db> {
-                $kind::from_syntax_node(db, self.node.get_children(db)[$i])
+                $kind::from_syntax_node(db, self.node.get_child(db, $i))
             }
         });
         args_for_missing.extend(quote! {$kind::missing(db).0,});
