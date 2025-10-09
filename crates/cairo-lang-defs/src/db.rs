@@ -1783,7 +1783,7 @@ pub trait DefsGroupEx: DefsGroup {
         let mut overrides = self.macro_plugin_overrides_input().clone();
         let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect();
         overrides.insert(crate_input.clone(), plugins);
-        defs_group_input(self.as_dyn_database_mut())
+        defs_group_input(self.as_dyn_database())
             .set_macro_plugin_overrides(self)
             .to(Some(overrides));
     }
@@ -1805,7 +1805,7 @@ pub trait DefsGroupEx: DefsGroup {
                 .collect(),
         );
         overrides.insert(crate_input.clone(), plugins);
-        defs_group_input(self.as_dyn_database_mut())
+        defs_group_input(self.as_dyn_database())
             .set_inline_macro_plugin_overrides(self)
             .to(Some(overrides));
     }

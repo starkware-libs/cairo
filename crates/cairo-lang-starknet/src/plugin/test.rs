@@ -14,7 +14,6 @@ use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use salsa::AsDynDatabase;
 
 use crate::test_utils::{SHARED_DB, SHARED_DB_WITH_CONTRACTS};
 
@@ -52,7 +51,7 @@ impl TestFileRunner for ExpandContractTestRunner {
             let content = db.file_content(file_id).unwrap();
             let content_location =
                 DiagnosticLocation { file_id, span: TextSpan::from_str(content) };
-            let db = db.as_dyn_database();
+            let db = &db;
             let original_location = content_location.user_location(db);
             let origin = if content_location == original_location {
                 "".to_string()

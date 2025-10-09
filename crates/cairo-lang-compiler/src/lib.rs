@@ -24,7 +24,7 @@ use cairo_lang_sierra_generator::program_generator::{
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use salsa::{Database, par_map};
+use salsa::{Database, join, par_map};
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{DiagnosticsError, DiagnosticsReporter};
@@ -184,12 +184,11 @@ pub fn ensure_diagnostics(
 ) -> std::result::Result<(), DiagnosticsError> {
     if should_warmup() {
         let crates = diagnostic_reporter.crates_of_interest(db);
-        let db_fork = db.fork_db();
-        rayon::spawn(move || {
-            warmup_diagnostics_blocking(db_fork.as_ref(), crates);
-        });
+        join(db, |db| warmup_diagnostics_blocking(db, crates), |db| diagnostic_reporter.ensure(db))
+            .1
+    } else {
+        diagnostic_reporter.ensure(db)
     }
-    diagnostic_reporter.ensure(db)
 }
 
 /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
@@ -251,9 +250,7 @@ pub fn get_sierra_program_for_functions<'db>(
 ) -> Result<&'db SierraProgramWithDebug<'db>> {
     if should_warmup() {
         let requested_function_ids = requested_function_ids.clone();
-        let db_fork = db.fork_db();
-        // TODO(orizi): Avoid blocking the main thread.
-        rayon::scope(move |_| warmup_functions_blocking(db_fork.as_view(), requested_function_ids));
+        warmup_functions_blocking(db, requested_function_ids);
     }
     db.get_sierra_program_for_functions(requested_function_ids)
         .to_option()

@@ -22,7 +22,7 @@ use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{Itertools, chain};
-use salsa::{AsDynDatabase, Database, Setter};
+use salsa::{Database, Setter};
 
 use crate::get_base_plugins;
 use crate::test_utils::expand_module_text;
@@ -104,7 +104,7 @@ pub fn test_expand_plugin_inner(
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
     if let Some(cfg_set) = cfg_set {
-        files_group_input(db.as_dyn_database()).set_cfg_set(&mut db).to(Some(cfg_set));
+        files_group_input(&db).set_cfg_set(&mut db).to(Some(cfg_set));
     }
 
     let cairo_code = &inputs["cairo_code"];

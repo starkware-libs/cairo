@@ -297,21 +297,21 @@ pub trait FilesGroup: Database {
 
     /// Sets the given flag value. None value removes the flag.
     fn set_flag(&mut self, flag: FlagLongId, value: Option<Arc<Flag>>) {
-        let db_ref = self.as_dyn_database_mut();
+        let db_ref = self.as_dyn_database();
         let mut flags = files_group_input(db_ref).flags(db_ref).clone().unwrap();
         match value {
             Some(value) => flags.insert(flag, value),
             None => flags.swap_remove(&flag),
         };
-        files_group_input(db_ref).set_flags(db_ref).to(Some(flags));
+        files_group_input(db_ref).set_flags(self).to(Some(flags));
     }
 
     /// Merges specified [`CfgSet`] into one already stored in this db.
     fn use_cfg(&mut self, cfg_set: &CfgSet) {
-        let db_ref = self.as_dyn_database_mut();
+        let db_ref = self.as_dyn_database();
         let existing = cfg_set_helper(db_ref);
         let merged = existing.union(cfg_set);
-        files_group_input(db_ref).set_cfg_set(db_ref).to(Some(merged));
+        files_group_input(db_ref).set_cfg_set(self).to(Some(merged));
     }
 
     /// Returns the cfg set.
@@ -415,7 +415,7 @@ pub fn init_dev_corelib(db: &mut dyn salsa::Database, core_lib_dir: PathBuf) {
         cache_file: None,
     };
     let crate_configs = update_crate_configuration_input_helper(db, core, Some(root));
-    set_crate_configs_input(db.as_dyn_database_mut(), Some(crate_configs));
+    set_crate_configs_input(db, Some(crate_configs));
 }
 
 /// Updates crate configuration input for standalone use.

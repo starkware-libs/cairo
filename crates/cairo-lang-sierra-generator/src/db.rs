@@ -66,7 +66,7 @@ fn lookup_concrete_lib_func(
     db: &dyn Database,
     id: ConcreteLibfuncHandle,
 ) -> cairo_lang_sierra::program::ConcreteLibfuncLongId {
-    let interned = ConcreteLibfuncIdLongWrapper::from_id(unsafe { Id::from_bits(id.0) });
+    let interned = ConcreteLibfuncIdLongWrapper::from_id(Id::from_bits(id.0));
     interned.id(db)
 }
 
@@ -82,7 +82,7 @@ fn lookup_concrete_type<'db>(
     db: &'db dyn Database,
     id: ConcreteTypeHandle,
 ) -> SierraGeneratorTypeLongId<'db> {
-    let interned = SierraGeneratorTypeLongIdWrapper::from_id(unsafe { Id::from_bits(id.0) });
+    let interned = SierraGeneratorTypeLongIdWrapper::from_id(Id::from_bits(id.0));
     interned.id(db)
 }
 
@@ -93,7 +93,7 @@ fn intern_sierra_function<'db>(
 }
 
 fn lookup_sierra_function<'db>(id: FunctionHandle) -> lowering::ids::FunctionId<'db> {
-    lowering::ids::FunctionId::from_id(unsafe { Id::from_bits(id.0) })
+    lowering::ids::FunctionId::from_id(Id::from_bits(id.0))
 }
 
 pub trait SierraGenGroup: Database {

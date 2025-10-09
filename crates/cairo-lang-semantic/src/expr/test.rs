@@ -7,7 +7,7 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use salsa::{AsDynDatabase, Database};
+use salsa::Database;
 
 use crate::expr::fmt::ExprFormatter;
 use crate::items::function_with_body::FunctionWithBodySemantic;
@@ -110,7 +110,7 @@ fn test_expand_expr(
         inputs.get("crate_settings").map(|x| x.as_str()),
     )
     .split();
-    let sdb = db.as_dyn_database();
+    let sdb: &dyn Database = db;
     let expr = sdb.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     let error = verify_diagnostics_expectation(args, &diagnostics);
@@ -213,7 +213,7 @@ fn test_expr_var() {
     .unwrap();
     let db = &db_val;
 
-    let sdb = db.as_dyn_database();
+    let sdb: &dyn Database = db;
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
         sdb.expr_semantic(test_function.function_id, test_function.body),
         crate::Expr::Block
@@ -247,7 +247,7 @@ fn test_expr_call_failures() {
 
         "}
     );
-    let sdb = db.as_dyn_database();
+    let sdb: &dyn Database = db;
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(
@@ -280,7 +280,7 @@ fn test_function_body() {
 
     let function_id =
         FunctionWithBodyId::Free(extract_matches!(item_id, ModuleItemId::FreeFunction));
-    let sdb = db.as_dyn_database();
+    let sdb: &dyn Database = db;
     let body = sdb.function_body_expr(function_id).unwrap();
 
     // Test the resulting semantic function body.
