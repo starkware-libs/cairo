@@ -1012,16 +1012,49 @@ Inlined at:
 In function: println_macro::println_macro
 store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 store_temp<core::byte_array::ByteArray>([20]) -> ([20])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-function_call<user@core::byte_array::ByteArrayImpl::append_word{None, 33812444595910922, 7, }>([0], [20]) -> ([7], [21])
+function_call<user@core::byte_array::InternalImpl::append_word_ex{None, 33812444595910922, 7, }>([0], [20]) -> ([7], [21])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
@@ -1469,11 +1502,33 @@ Inlined at:
 In function: println_macro::println_macro
 store_temp<RangeCheck>([7]) -> ([43])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 jump() { label_test::foo::5() }
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
@@ -1662,16 +1717,49 @@ Inlined at:
 In function: println_macro::println_macro
 store_temp<RangeCheck>([0]) -> ([0])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 store_temp<core::byte_array::ByteArray>([48]) -> ([48])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-function_call<user@core::byte_array::ByteArrayImpl::append_word{None, 33812324336826634, 7, }>([0], [48]) -> ([1], [49])
+function_call<user@core::byte_array::InternalImpl::append_word_ex{None, 33812324336826634, 7, }>([0], [48]) -> ([1], [49])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
@@ -2119,21 +2207,65 @@ Inlined at:
 In function: println_macro::println_macro
 store_temp<RangeCheck>([1]) -> ([43])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 label_test::foo::5:
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 struct_construct<Unit>() -> ([71])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 struct_construct<Tuple<Unit>>([71]) -> ([72])
 Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro

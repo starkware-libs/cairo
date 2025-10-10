@@ -54,7 +54,7 @@ use crate::cmp::min;
 #[allow(unused_imports)]
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[feature("bounded-int-utils")]
-use crate::internal::bounded_int::{BoundedInt, downcast, upcast};
+use crate::internal::bounded_int::{self, BoundedInt, downcast, upcast};
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -117,44 +117,13 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// assert!(ba == "word");
     /// ```
     fn append_word(ref self: ByteArray, word: felt252, len: usize) {
-        if len == 0 {
-            return;
-        }
-        let total_pending_bytes = upcast(self.pending_word_len) + len;
-
-        // The split index is the number of bytes left for the next word (new pending_word of the
-        // modified ByteArray).
-        let Some(split_index) = crate::num::traits::CheckedSub::checked_sub(
-            total_pending_bytes, BYTES_IN_BYTES31,
-        ) else {
-            self.pending_word = word + self.pending_word * one_shift_left_bytes_felt252(len);
-            // Always succeeds because total_pending_bytes is always less than BYTES_IN_BYTES31.
-            if let Some(pending_word_len) = downcast(total_pending_bytes) {
-                self.pending_word_len = pending_word_len;
-            }
+        let crate::internal::OptionRev::Some(len) = bounded_int::trim_min(len) else {
             return;
         };
-
-        let shift_value = self.shift_value();
-
-        if split_index == 0 {
-            self.append_shifted(SplitToAddResult { to_add: word, remainder: 0 }, shift_value);
-            self.pending_word_len = 0;
-            return;
-        }
-        let split_index: Bytes31Index = match downcast(split_index) {
-            Some(split_index) => split_index,
+        match downcast(len) {
+            Some(len) => self.append_word_ex(word, len),
             None => crate::panic_with_felt252('bad append len'),
-        };
-        let word_as_u256 = word.into();
-        let to_append = match split_info(split_index) {
-            SplitInfo::Eq16(v) => v.split_u256(word_as_u256),
-            SplitInfo::Lt16(v) => v.split_u256(word_as_u256),
-            SplitInfo::Gt16(v) => v.split_u256(word_as_u256),
-            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
-        };
-        self.append_shifted(to_append, shift_value);
-        self.pending_word_len = split_index;
+        }
     }
 
     /// Appends a `ByteArray` to the end of another `ByteArray`.
@@ -327,6 +296,38 @@ pub impl ByteArrayImpl of ByteArrayTrait {
 /// Internal functions associated with the `ByteArray` type.
 #[generate_trait]
 impl InternalImpl of InternalTrait {
+    /// Internal implementation of `ByteArrayTrait::append_word`.
+    fn append_word_ex(ref self: ByteArray, word: felt252, len: BoundedInt<1, 31>) {
+        // The split index is the number of bytes left for the next word (new pending_word of the
+        // modified ByteArray).
+        let split_index = match helpers::append_word_info(self.pending_word_len, len) {
+            helpers::AppendWordInfo::InPending(pending_word_len) => {
+                self.pending_word = word
+                    + self.pending_word * one_shift_left_bytes_felt252(upcast(len));
+                self.pending_word_len = pending_word_len;
+                return;
+            },
+            helpers::AppendWordInfo::FilledPending(split_index) => split_index,
+        };
+
+        let shift_value = self.shift_value();
+
+        if split_index == 0 {
+            self.append_shifted(SplitToAddResult { to_add: word, remainder: 0 }, shift_value);
+            self.pending_word_len = 0;
+            return;
+        }
+        let word_as_u256 = word.into();
+        let to_append = match split_info(split_index) {
+            SplitInfo::Eq16(v) => v.split_u256(word_as_u256),
+            SplitInfo::Lt16(v) => v.split_u256(word_as_u256),
+            SplitInfo::Gt16(v) => v.split_u256(word_as_u256),
+            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
+        };
+        self.append_shifted(to_append, shift_value);
+        self.pending_word_len = split_index;
+    }
+
     /// Appends a split word to the end of `self`.
     ///
     /// `value` is the value to add to the byte array, including `to_add` and `remainder`.
@@ -425,7 +426,10 @@ impl InternalImpl of InternalTrait {
             SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
         }
         // Add the pending word of `other`.
-        self.append_word(pending_word, upcast(pending_word_len));
+        if let crate::internal::OptionRev::Some(pending_word_len) =
+            bounded_int::trim_min::<_, helpers::TrimMinBytes31Index>(pending_word_len) {
+            self.append_word_ex(pending_word, upcast(pending_word_len));
+        }
     }
 }
 
@@ -780,7 +784,8 @@ mod helpers {
     use crate::bytes_31::BYTES_IN_BYTES31;
     #[feature("bounded-int-utils")]
     use crate::internal::bounded_int::{
-        self, AddHelper, BoundedInt, MulHelper, SubHelper, UnitInt, downcast, upcast,
+        self, AddHelper, BoundedInt, ConstrainHelper, MulHelper, SubHelper, UnitInt, downcast,
+        upcast,
     };
     use super::{BYTES_IN_BYTES31_MINUS_ONE, ByteSpan, Bytes31Index};
 
@@ -847,6 +852,43 @@ mod helpers {
         } else {
             None
         }
+    }
+
+    /// The information about the new pending word length and the split index.
+    pub enum AppendWordInfo {
+        /// The new pending word length is less than 31, and fits in the current pending word.
+        InPending: Bytes31Index,
+        /// The new pending word length is greater than 31, and the current pending word is filled.
+        FilledPending: Bytes31Index,
+    }
+
+    impl Bytes31IndexAdd of AddHelper<Bytes31Index, BoundedInt<1, 31>> {
+        type Result = BoundedInt<1, 61>;
+    }
+    impl Constrain31Bytes31IndexAddResult of ConstrainHelper<Bytes31IndexAdd::Result, 31> {
+        type LowT = BoundedInt<1, 30>;
+        type HighT = BoundedInt<31, 61>;
+    }
+    impl Sub31Bytes31IndexAddResult of SubHelper<BoundedInt<31, 61>, BytesInBytes31Typed> {
+        type Result = Bytes31Index;
+    }
+
+    /// Returns the information about the new pending word length and the split index.
+    pub fn append_word_info(
+        pending_bytes: Bytes31Index, new_word_bytes: BoundedInt<1, 31>,
+    ) -> AppendWordInfo {
+        let total_pending_bytes = bounded_int::add(pending_bytes, new_word_bytes);
+        match bounded_int::constrain::<_, 31>(total_pending_bytes) {
+            Ok(lt31) => AppendWordInfo::InPending(upcast(lt31)),
+            Err(ge31) => AppendWordInfo::FilledPending(
+                bounded_int::sub(ge31, BYTES_IN_BYTES31_UNIT_INT),
+            ),
+        }
+    }
+
+    /// Impl for trimming the minimum value of a `Bytes31Index`.
+    pub impl TrimMinBytes31Index of bounded_int::TrimMinHelper<Bytes31Index> {
+        type Target = BoundedInt<1, 30>;
     }
 }
 pub(crate) use helpers::len_parts;
