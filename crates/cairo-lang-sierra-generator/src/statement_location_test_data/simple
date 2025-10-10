@@ -1147,8 +1147,8 @@ Originating location:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([30]) -> ([31], [11], [9])
 Originating location:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-                                                        ^^^^
+        Serde::serialize(self.data, ref output);
+                         ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1168,8 +1168,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1189,8 +1189,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1214,8 +1214,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1239,8 +1239,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1264,8 +1264,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1289,8 +1289,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1306,8 +1306,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1323,8 +1323,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1340,8 +1340,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1357,8 +1357,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1374,8 +1374,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1391,8 +1391,8 @@ Originating location:
                        ^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1412,8 +1412,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1429,8 +1429,8 @@ Originating location:
                             ^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1450,8 +1450,8 @@ Inlined at:
                           ^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1471,8 +1471,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1852,8 +1852,8 @@ Originating location:
 In function: println_macro::println_macro
 struct_snapshot_deconstruct<core::byte_array::ByteArray>([58]) -> ([59], [5], [3])
 Originating location:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-                                                        ^^^^
+        Serde::serialize(self.data, ref output);
+                         ^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1873,8 +1873,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1894,8 +1894,8 @@ Inlined at:
         ^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1919,8 +1919,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1944,8 +1944,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1969,8 +1969,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1994,8 +1994,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2011,8 +2011,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2028,8 +2028,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2045,8 +2045,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2062,8 +2062,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2079,8 +2079,8 @@ Originating location:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::array::ArraySerde::serialize
 Inlined at:
-        core::serde::Serde::<Array<bytes31>>::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2096,8 +2096,8 @@ Originating location:
                        ^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2117,8 +2117,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^^^^
 In function: core::Felt252Serde::serialize
 Inlined at:
-        core::serde::Serde::<felt252>::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2134,8 +2134,8 @@ Originating location:
                             ^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2155,8 +2155,8 @@ Inlined at:
                           ^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2176,8 +2176,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
