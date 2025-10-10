@@ -502,7 +502,7 @@ fn gen_enum_code(
                 }
             }
             fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-                $(&ptr_name)(self.as_syntax_node().long(db).stable_ptr)
+                $(&ptr_name)(self.as_syntax_node().stable_ptr(db))
             }
         }
         impl<'db> $(&name)<'db> {
@@ -532,7 +532,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }.intern(db))
             }
             fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
-                *extract_matches!(&self.node.long(db).green.long(db).details,
+                *extract_matches!(&self.node.green_node(db).details,
                     GreenNodeDetails::Token)
             }
         }
@@ -570,7 +570,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }.intern(db))
             }
             fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-                match node.long(db).green.long(db).details {
+                match node.green_node(db).details {
                     GreenNodeDetails::Token(_) => Self { node },
                     GreenNodeDetails::Node { .. } => panic!(
                         "Expected a token {:?}, not an internal node",
@@ -579,7 +579,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                 }
             }
             fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-                match node.long(db).green.long(db).details {
+                match node.green_node(db).details {
                     GreenNodeDetails::Token(_) => Some(Self { node }),
                     GreenNodeDetails::Node { .. } => None,
                 }
@@ -658,7 +658,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                     }.intern(db))
                 }
                 fn text(&self, db: &'db dyn Database) -> SmolStrId<'db> {
-                    let GreenNodeDetails::Node{children,..} = &self.node.long(db).green.long(db).details else {
+                    let GreenNodeDetails::Node{children,..} = &self.node.green_node(db).details else {
                         unreachable!("Expected a node, not a token");
                     };
                     *extract_matches!(&children[1].long(db).details, GreenNodeDetails::Token)
