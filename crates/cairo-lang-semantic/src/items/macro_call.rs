@@ -9,7 +9,7 @@ use cairo_lang_filesystem::ids::{
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
-use salsa::Database;
+use salsa::{Accumulator, Database};
 
 use crate::SemanticDiagnostic;
 use crate::diagnostic::{
@@ -20,6 +20,7 @@ use crate::items::macro_declaration::{
     MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::module::ModuleSemantic;
+use crate::lsp_helpers::InlineMacroExpansionAccumulator;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
 /// The data associated with a macro call in item context.
@@ -64,6 +65,8 @@ fn priv_macro_call_data<'db>(
             original_item_removed: false,
         })
         .intern(db);
+        InlineMacroExpansionAccumulator { file: generated_file_id.long(db).into_file_input(db) }
+            .accumulate(db);
         let macro_call_module =
             ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: true };
         return Ok(MacroCallData {
@@ -151,6 +154,8 @@ fn priv_macro_call_data<'db>(
         original_item_removed: false,
     })
     .intern(db);
+    InlineMacroExpansionAccumulator { file: generated_file_id.long(db).into_file_input(db) }
+        .accumulate(db);
     let macro_call_module =
         ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: false };
     Ok(MacroCallData {

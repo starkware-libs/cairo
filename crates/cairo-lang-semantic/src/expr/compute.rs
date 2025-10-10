@@ -44,7 +44,7 @@ use cairo_lang_utils::{
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use salsa::Database;
+use salsa::{Accumulator, Database};
 
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
@@ -86,7 +86,7 @@ use crate::items::structure::StructSemantic;
 use crate::items::trt::TraitSemantic;
 use crate::items::visibility;
 use crate::keyword::MACRO_CALL_SITE;
-use crate::lsp_helpers::LspHelpers;
+use crate::lsp_helpers::{InlineMacroExpansionAccumulator, LspHelpers};
 use crate::resolve::{
     AsSegments, EnrichedMembers, EnrichedTypeMemberAccess, ResolutionContext, ResolvedConcreteItem,
     ResolvedGenericItem, Resolver, ResolverMacroData,
@@ -765,6 +765,8 @@ fn compute_expr_inline_macro_semantic<'db>(
         original_item_removed: true,
     })
     .intern(ctx.db);
+    InlineMacroExpansionAccumulator { file: new_file_id.long(ctx.db).into_file_input(ctx.db) }
+        .accumulate(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
@@ -835,6 +837,8 @@ fn expand_macro_for_statement<'db>(
         original_item_removed: true,
     })
     .intern(ctx.db);
+    InlineMacroExpansionAccumulator { file: new_file_id.long(ctx.db).into_file_input(ctx.db) }
+        .accumulate(ctx.db);
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
         for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
