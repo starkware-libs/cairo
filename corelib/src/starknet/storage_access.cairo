@@ -26,7 +26,6 @@
 use core::RangeCheck;
 use core::array::ArrayTrait;
 use core::byte_array::ByteArrayTrait;
-use core::bytes_31::BYTES_IN_BYTES31;
 use core::option::OptionTrait;
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
@@ -876,9 +875,7 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
         .try_into() else {
         return Err(array!['Invalid ByteArray length']);
     };
-    let (mut remaining_full_words, pending_word_len) = core::DivRem::div_rem(
-        len, BYTES_IN_BYTES31.try_into().unwrap(),
-    );
+    let (mut remaining_full_words, pending_word_len) = crate::byte_array::len_parts(len);
     let mut chunk = 0;
     let mut chunk_base = inner_byte_array_pointer(address, chunk);
     let mut index_in_chunk = 0_u8;

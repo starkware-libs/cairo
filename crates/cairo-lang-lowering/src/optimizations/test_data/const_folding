@@ -6033,7 +6033,7 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v1: core::felt252) <- 126207244316550804821666916
-  (v2: core::integer::u32) <- 11
+  (v2: core::internal::bounded_int::BoundedInt::<0, 30>) <- 11
   (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
   (v4: core::byte_array::ByteArray, v5: @core::byte_array::ByteArray) <- snapshot(v3)
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panics::panic_with_byte_array(v5)
@@ -6057,7 +6057,7 @@ Statements:
   (v17: core::panics::Panic) <- struct_construct()
   (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v1: core::felt252) <- 126207244316550804821666916
-  (v2: core::integer::u32) <- 11
+  (v2: core::internal::bounded_int::BoundedInt::<0, 30>) <- 11
   (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
   (v4: core::byte_array::ByteArray, v5: @core::byte_array::ByteArray) <- snapshot(v3)
   (v6: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v17, v16)

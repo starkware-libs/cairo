@@ -24,7 +24,7 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v1: core::felt252) <- 448378203247
-  (v2: core::integer::u32) <- 5
+  (v2: core::internal::bounded_int::BoundedInt::<0, 30>) <- 5
   (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
 End:
   Return(v3)
@@ -58,7 +58,7 @@ Statements:
   (v1: core::bytes_31::bytes31) <- 149135777980097582634002139252429040475994949483886278789328970947115426081
   (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_append::<core::bytes_31::bytes31>(v0, v1)
   (v3: core::felt252) <- 0
-  (v4: core::integer::u32) <- 0
+  (v4: core::internal::bounded_int::BoundedInt::<0, 30>) <- 0
   (v5: core::byte_array::ByteArray) <- struct_construct(v2, v3, v4)
 End:
   Return(v5)
@@ -92,7 +92,7 @@ Statements:
   (v1: core::bytes_31::bytes31) <- 149135777980097582634002139252429040475994889373844716668334467060223456049
   (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_append::<core::bytes_31::bytes31>(v0, v1)
   (v3: core::felt252) <- 10023696894115262225051710254
-  (v4: core::integer::u32) <- 12
+  (v4: core::internal::bounded_int::BoundedInt::<0, 30>) <- 12
   (v5: core::byte_array::ByteArray) <- struct_construct(v2, v3, v4)
 End:
   Return(v5)
@@ -128,7 +128,7 @@ Statements:
   (v3: core::bytes_31::bytes31) <- 81497801168569000366308429866993893991598961463881166117681206773816718437
   (v4: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_append::<core::bytes_31::bytes31>(v2, v3)
   (v5: core::felt252) <- 7500577
-  (v6: core::integer::u32) <- 3
+  (v6: core::internal::bounded_int::BoundedInt::<0, 30>) <- 3
   (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
 End:
   Return(v7)
@@ -161,7 +161,7 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v1: core::felt252) <- 0
-  (v2: core::integer::u32) <- 0
+  (v2: core::internal::bounded_int::BoundedInt::<0, 30>) <- 0
   (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
 End:
   Return(v3)
@@ -194,10 +194,10 @@ blk0 (root):
 Statements:
   (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v3: core::felt252) <- 448378203247
-  (v4: core::integer::u32) <- 5
+  (v4: core::internal::bounded_int::BoundedInt::<0, 30>) <- 5
   (v5: core::byte_array::ByteArray) <- struct_construct(v2, v3, v4)
   (v6: core::byte_array::ByteArray, v7: @core::byte_array::ByteArray) <- snapshot(v5)
-  (v8: @core::array::Array::<core::bytes_31::bytes31>, v9: @core::felt252, v10: @core::integer::u32) <- struct_destructure(v7)
+  (v8: @core::array::Array::<core::bytes_31::bytes31>, v9: @core::felt252, v10: @core::internal::bounded_int::BoundedInt::<0, 30>) <- struct_destructure(v7)
   (v11: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v12: core::array::Span::<core::bytes_31::bytes31>) <- struct_construct(v8)
   (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(core::array::Span::<core::bytes_31::bytes31>, core::array::Array::<core::bytes_31::bytes31>, ())>) <- core::array::ArrayTCloneImpl::clone[120-295](v0, v1, v12, v11)
@@ -211,12 +211,12 @@ blk1:
 Statements:
   (v18: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v19: core::felt252) <- 35697342966884
-  (v20: core::integer::u32) <- 6
+  (v20: core::internal::bounded_int::BoundedInt::<0, 30>) <- 6
   (v21: core::byte_array::ByteArray) <- struct_construct(v18, v19, v20)
   (v22: core::byte_array::ByteArray, v23: @core::byte_array::ByteArray) <- snapshot(v21)
   (v24: core::array::Span::<core::bytes_31::bytes31>, v25: core::array::Array::<core::bytes_31::bytes31>, v26: ()) <- struct_destructure(v16)
   (v27: core::felt252) <- desnap(v9)
-  (v28: core::integer::u32) <- desnap(v10)
+  (v28: core::internal::bounded_int::BoundedInt::<0, 30>) <- desnap(v10)
   (v29: core::byte_array::ByteArray) <- struct_construct(v25, v27, v28)
   (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v32: core::panics::PanicResult::<(core::byte_array::ByteArray, ())>) <- core::byte_array::ByteArrayImpl::append(v13, v14, v29, v23)
 End:

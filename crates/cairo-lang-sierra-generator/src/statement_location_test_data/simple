@@ -837,10 +837,10 @@ foo
 //! > sierra_code
 label_test::foo::0:
 alloc_local<RangeCheck>() -> ([2])
-alloc_local<u32>() -> ([4])
+alloc_local<BoundedInt<0, 30>>() -> ([4])
 alloc_local<felt252>() -> ([6])
 alloc_local<RangeCheck>() -> ([8])
-alloc_local<u32>() -> ([10])
+alloc_local<BoundedInt<0, 30>>() -> ([10])
 alloc_local<felt252>() -> ([12])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
@@ -908,7 +908,7 @@ Inlined at:
     if x == y { // highlighted
        ^^^^^^
 In function: lib.cairo::foo
-drop<Uninitialized<u32>>([4]) -> ()
+drop<Uninitialized<BoundedInt<0, 30>>>([4]) -> ()
 Originating location:
             0 => true,
             ^
@@ -936,8 +936,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -957,8 +957,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -968,7 +968,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<u32, 0>>() -> ([19])
+const_as_immediate<Const<BoundedInt<0, 30>, 0>>() -> ([19])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -978,8 +978,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -999,8 +999,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -1318,7 +1318,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_local<u32>([10], [9]) -> ([9])
+store_local<BoundedInt<0, 30>>([10], [9]) -> ([9])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1390,14 +1390,14 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<u32>([9]) -> ([40])
+rename<BoundedInt<0, 30>>([9]) -> ([40])
 Originating location:
             output.append((*self).into());
                             ^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1407,18 +1407,18 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-u32_to_felt252([40]) -> ([41])
+upcast<BoundedInt<0, 30>, felt252>([40]) -> ([41])
 Originating location:
-        u32_to_felt252(self)
-        ^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32IntoFelt252::into
+        upcast(self)
+        ^^^^^^^^^^^^
+In function: core::internal::bounded_int::BoundedIntIntoFelt252::into
 Inlined at:
             output.append((*self).into());
                           ^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1438,8 +1438,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -1487,7 +1487,7 @@ Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-drop<Uninitialized<u32>>([10]) -> ()
+drop<Uninitialized<BoundedInt<0, 30>>>([10]) -> ()
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1558,7 +1558,7 @@ Inlined at:
     if x == y { // highlighted
        ^^^^^^
 In function: lib.cairo::foo
-drop<Uninitialized<u32>>([10]) -> ()
+drop<Uninitialized<BoundedInt<0, 30>>>([10]) -> ()
 Originating location:
             0 => true,
             ^
@@ -1586,8 +1586,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -1607,8 +1607,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -1618,7 +1618,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<u32, 0>>() -> ([47])
+const_as_immediate<Const<BoundedInt<0, 30>, 0>>() -> ([47])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -1628,8 +1628,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -1649,8 +1649,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -1968,7 +1968,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_local<u32>([4], [3]) -> ([3])
+store_local<BoundedInt<0, 30>>([4], [3]) -> ([3])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2040,14 +2040,14 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<u32>([3]) -> ([68])
+rename<BoundedInt<0, 30>>([3]) -> ([68])
 Originating location:
             output.append((*self).into());
                             ^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2057,18 +2057,18 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-u32_to_felt252([68]) -> ([69])
+upcast<BoundedInt<0, 30>, felt252>([68]) -> ([69])
 Originating location:
-        u32_to_felt252(self)
-        ^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32IntoFelt252::into
+        upcast(self)
+        ^^^^^^^^^^^^
+In function: core::internal::bounded_int::BoundedIntIntoFelt252::into
 Inlined at:
             output.append((*self).into());
                           ^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2088,8 +2088,8 @@ Inlined at:
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::serde::into_felt252_based::SerdeImpl::serialize
 Inlined at:
-        core::serde::Serde::<usize>::serialize(self.pending_word_len, ref output)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        core::serde::Serde::<Bytes31Index>::serialize(self.pending_word_len, ref output)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArraySerde::serialize
 Inlined at:
     self.serialize(ref serialized);
@@ -2171,7 +2171,7 @@ Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-drop<Uninitialized<u32>>([4]) -> ()
+drop<Uninitialized<BoundedInt<0, 30>>>([4]) -> ()
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2760,8 +2760,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
@@ -2781,8 +2781,8 @@ Inlined at:
         ^^^^^^^^^^^^^^^^^
 In function: core::array::ArrayDefault::default
 Inlined at:
-        let data = core::internal::InferDestruct::<Array<bytes31>> { value: core::traits::Default::<Array<bytes31>>::default() };
-                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
 In function: core::byte_array::ByteArrayDefault::default
 Inlined at:
         let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };

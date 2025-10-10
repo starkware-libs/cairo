@@ -126,7 +126,7 @@ Statements:
   (v1: {closure@lib.cairo:11:5: 11:7}) <- struct_construct(v0)
   (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
   (v3: core::felt252) <- 345232009571
-  (v4: core::integer::u32) <- 5
+  (v4: core::internal::bounded_int::BoundedInt::<0, 30>) <- 5
   (v5: core::byte_array::ByteArray) <- struct_construct(v2, v3, v4)
   (v6: core::byte_array::ByteArray, v7: @core::byte_array::ByteArray) <- snapshot(v5)
   (v8: core::never) <- core::panics::panic_with_byte_array(v7)
