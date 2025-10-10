@@ -64,7 +64,7 @@ mod function;
 pub use function::{Fn, FnOnce};
 
 pub mod index;
-pub use index::{Index, IndexView};
+pub use index::{Index, IndexView, SliceIndex};
 
 mod range;
 pub use range::{
