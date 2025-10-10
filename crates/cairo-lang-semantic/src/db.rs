@@ -161,10 +161,7 @@ impl<T: Database + ?Sized> SemanticGroup for T {}
 
 /// Initializes the [`SemanticGroup`] database to a proper state.
 pub fn init_semantic_group(db: &mut dyn Database) {
-    let db_ref = db.as_dyn_database_mut();
-    semantic_group_input(db_ref)
-        .set_analyzer_plugin_overrides(db_ref)
-        .to(Some(OrderedHashMap::default()));
+    semantic_group_input(db).set_analyzer_plugin_overrides(db).to(Some(OrderedHashMap::default()));
 }
 
 #[salsa::tracked]
@@ -515,7 +512,7 @@ pub fn get_resolver_data_options<'db>(
     .collect()
 }
 
-pub trait SemanticGroupEx: SemanticGroup {
+pub trait SemanticGroupEx: Database {
     /// Overrides the default analyzer plugins available for [`CrateId`] with `plugins`.
     ///
     /// *Note*: Sets the following Salsa input: `SemanticGroup::analyzer_plugin_overrides`.
@@ -527,14 +524,14 @@ pub trait SemanticGroupEx: SemanticGroup {
         let mut overrides = self.analyzer_plugin_overrides_input().clone();
         let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect_vec();
         overrides.insert(self.crate_input(crate_id).clone(), Arc::from(plugins));
-        let db_ref = self.as_dyn_database_mut();
-        semantic_group_input(db_ref).set_analyzer_plugin_overrides(db_ref).to(Some(overrides));
+        let db_ref = self.as_dyn_database();
+        semantic_group_input(db_ref).set_analyzer_plugin_overrides(self).to(Some(overrides));
     }
 }
-impl<T: SemanticGroup + ?Sized> SemanticGroupEx for T {}
+impl<T: Database + ?Sized> SemanticGroupEx for T {}
 
 /// An extension trait for [`SemanticGroup`] to manage plugin setters.
-pub trait PluginSuiteInput: SemanticGroup {
+pub trait PluginSuiteInput: Database {
     /// Interns each plugin from the [`PluginSuite`] into the database.
     fn intern_plugin_suite<'r>(&'r mut self, suite: PluginSuite) -> InternedPluginSuite<'r> {
         let PluginSuite { plugins, inline_macro_plugins, analyzer_plugins } = suite;
@@ -581,13 +578,14 @@ pub trait PluginSuiteInput: SemanticGroup {
         let analyzer_plugins =
             analyzer_plugins.into_iter().map(AnalyzerPluginLongId).collect::<Vec<_>>();
 
-        let db_ref = self.as_dyn_database_mut();
-        defs_group_input(db_ref).set_default_macro_plugins(db_ref).to(Some(macro_plugins));
-        defs_group_input(db_ref)
-            .set_default_inline_macro_plugins(db_ref)
+        defs_group_input(self.as_dyn_database())
+            .set_default_macro_plugins(self)
+            .to(Some(macro_plugins));
+        defs_group_input(self.as_dyn_database())
+            .set_default_inline_macro_plugins(self)
             .to(Some(inline_macro_plugins));
-        semantic_group_input(db_ref)
-            .set_default_analyzer_plugins(db_ref)
+        semantic_group_input(self.as_dyn_database())
+            .set_default_analyzer_plugins(self)
             .to(Some(analyzer_plugins));
     }
 
@@ -610,7 +608,7 @@ pub trait PluginSuiteInput: SemanticGroup {
     }
 }
 
-impl<T: SemanticGroup + ?Sized> PluginSuiteInput for T {}
+impl<T: Database + ?Sized> PluginSuiteInput for T {}
 
 /// Returns all ancestors (parents) of the given module, including the module itself, in order from
 /// closest to farthest.
