@@ -21,11 +21,15 @@ enum TopologicalOrderStatus {
 /// `out_of_bounds_err` - a function that returns an error for a node is out of bounds.
 /// `cycle_err` - a function that returns an error for a node that is part of a cycle.
 /// Note: Will only work properly if the nodes are in the range [0, node_count).
-pub fn reverse_topological_ordering<E>(
+pub fn reverse_topological_ordering<
+    E,
+    Children: IntoIterator<Item = StatementIdx>,
+    GetChildren: Fn(StatementIdx) -> Result<Children, E>,
+>(
     detect_cycles: bool,
     roots: impl Iterator<Item = StatementIdx>,
     node_count: usize,
-    get_children: impl Fn(StatementIdx) -> Result<Vec<StatementIdx>, E>,
+    get_children: GetChildren,
     cycle_err: impl Fn(StatementIdx) -> E,
 ) -> Result<Vec<StatementIdx>, E> {
     let mut ordering = vec![];
@@ -45,12 +49,16 @@ pub fn reverse_topological_ordering<E>(
 
 /// Calculates the reverse topological ordering starting from `root`. For more info see
 /// `reverse_topological_ordering`.
-fn calculate_reverse_topological_ordering<E>(
+fn calculate_reverse_topological_ordering<
+    E,
+    Children: IntoIterator<Item = StatementIdx>,
+    GetChildren: Fn(StatementIdx) -> Result<Children, E>,
+>(
     detect_cycles: bool,
     ordering: &mut Vec<StatementIdx>,
     status: &mut [TopologicalOrderStatus],
     root: StatementIdx,
-    get_children: &impl Fn(StatementIdx) -> Result<Vec<StatementIdx>, E>,
+    get_children: &GetChildren,
     cycle_err: &impl Fn(StatementIdx) -> E,
 ) -> Result<(), E> {
     // A stack of statements to visit.
