@@ -92,8 +92,8 @@ pub fn priv_never_inline<'db>(
     Ok(matches!(function_inline_config(db, function_id)?, InlineConfiguration::Never(_)))
 }
 
-/// Query implementation of [LoweringGroup::priv_never_inline].
-pub fn function_inline_config<'db>(
+/// Returns the [InlineConfiguration] of a function.
+fn function_inline_config<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<InlineConfiguration<'db>> {
