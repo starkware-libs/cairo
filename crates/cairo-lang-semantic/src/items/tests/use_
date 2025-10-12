@@ -184,7 +184,10 @@ use {self, u8};
 //! > Use star on a module that was imported with use star.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
 
 //! > function
 fn foo() {
@@ -206,24 +209,13 @@ use A::*;
 use B::*;
 
 //! > expected_diagnostics
-error[E0006]: Identifier not found.
- --> lib.cairo:11:5
-    C::test();
-    ^
-
-error: Global `use` item is not supported in `V2023_01` edition.
- --> lib.cairo:8:8
-use A::*;
-       ^
-
-error[E0006]: Identifier not found.
- --> lib.cairo:9:5
-use B::*;
-    ^
 
 //! > ==========================================================================
 
 //! > Use star on a non existing module.
+
+//! > crate_settings
+edition = "2024_07"
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
@@ -249,3 +241,33 @@ error[E0006]: Identifier not found.
  --> lib.cairo:1:5
 use B::*;
     ^
+
+//! > ==========================================================================
+
+//! > Use cycle with global use.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+mod a {
+    pub use super::b::*;
+}
+mod b {
+    pub use super::a::a;
+}
+
+//! > expected_diagnostics
+error: Cycle detected while resolving 'use' items.
+ --> lib.cairo:5:23
+    pub use super::a::a;
+                      ^
