@@ -89,7 +89,7 @@ fn file_statement_list_syntax<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
 ) -> Maybe<StatementList<'db>> {
-    assert_eq!(file_id.kind(db), FileKind::StatementList, "file_id must be a for a statement list");
+    assert_eq!(file_id.kind(db), FileKind::StatementList, "file_id must be a statement list");
     Ok(StatementList::from_syntax_node(db, file_syntax(db, file_id)?))
 }
 
