@@ -18,6 +18,54 @@ pub trait SubPointersMut<T> {
     fn sub_pointers_mut(self: StoragePointer<Mutable<T>>) -> Self::SubPointersType;
 }
 
+impl OptionSubPointers<T> of SubPointers<Option<T>> {
+    type SubPointersType = Option<StoragePointer<T>>;
+    fn sub_pointers(self: StoragePointer<Option<T>>) -> Option<StoragePointer<T>> {
+        let selector_storage_pointer = starknet::storage::StoragePointer::<
+            felt252,
+        > {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__,
+        };
+        let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+        match selector {
+            0 => None,
+            1 => Some(
+                starknet::storage::StoragePointer {
+                    __storage_pointer_address__: self.__storage_pointer_address__,
+                    __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+                },
+            ),
+            _ => panic!("Invalid selector value"),
+        }
+    }
+}
+
+impl OptionSubPointersMut<T> of SubPointersMut<Option<T>> {
+    type SubPointersType = Option<StoragePointer<Mutable<T>>>;
+    fn sub_pointers_mut(
+        self: StoragePointer<Mutable<Option<T>>>,
+    ) -> Option<StoragePointer<Mutable<T>>> {
+        let selector_storage_pointer = starknet::storage::StoragePointer::<
+            felt252,
+        > {
+            __storage_pointer_address__: self.__storage_pointer_address__,
+            __storage_pointer_offset__: self.__storage_pointer_offset__,
+        };
+        let selector = starknet::storage::StoragePointerReadAccess::read(@selector_storage_pointer);
+        match selector {
+            0 => None,
+            1 => Some(
+                starknet::storage::StoragePointer {
+                    __storage_pointer_address__: self.__storage_pointer_address__,
+                    __storage_pointer_offset__: self.__storage_pointer_offset__ + 1,
+                },
+            ),
+            _ => panic!("Invalid selector value"),
+        }
+    }
+}
+
 /// A trait for implementing `SubPointers` for types which are not a `StoragePointer`, such as
 /// `StorageBase` and `StoragePath`.
 pub trait SubPointersForward<T> {

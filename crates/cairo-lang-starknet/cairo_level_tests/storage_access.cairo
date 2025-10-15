@@ -108,6 +108,7 @@ mod test_contract {
         pub non_zeros: super::NonZeros,
         pub vecs: super::Vecs,
         pub queryable_enum: super::QueryableEnum,
+        pub option_value: Option<u32>,
     }
 }
 
@@ -260,6 +261,24 @@ fn test_enum_sub_pointers() {
     };
     assert_eq!(ptr.low.read(), 789);
     assert_eq!(ptr.high.read(), 0);
+}
+
+#[test]
+fn test_option_sub_pointers() {
+    let mut state = test_contract::contract_state_for_testing();
+    assert!((@state).option_value.sub_pointers().is_none());
+    state.option_value.write(Some(123_u32));
+    let Some(ptr) = (@state).option_value.sub_pointers() else {
+        panic!("expected Some(_)");
+    };
+    assert_eq!(ptr.read(), 123);
+
+    let Some(ptr) = state.option_value.sub_pointers_mut() else {
+        panic!("expected Some(_)");
+    };
+    assert_eq!(ptr.read(), 123);
+    ptr.write(234);
+    assert_eq!(state.option_value.read(), Some(234));
 }
 
 #[test]
