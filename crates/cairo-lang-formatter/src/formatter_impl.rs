@@ -1033,7 +1033,7 @@ impl<'a> FormatterImpl<'a> {
         let internal_break_line_points_positions =
             syntax_node.get_internal_break_line_point_properties(self.db, &self.config);
         // TODO(ilya): consider not copying here.
-        let mut children: Vec<_> = syntax_node.get_children(self.db).collect();
+        let mut children: Vec<_> = syntax_node.get_children(self.db).nodes(self.db).collect();
         let n_children = children.len();
 
         if self.config.merge_use_items {
@@ -1119,7 +1119,7 @@ impl<'a> FormatterImpl<'a> {
 
                 // Add merged children to the new_children list.
                 if let Some(child) = merged_node.get_children(self.db).next() {
-                    new_children.extend(child.get_children(self.db));
+                    new_children.extend(child.build(self.db).get_children(self.db).nodes(self.db));
                 }
             }
         }
@@ -1217,11 +1217,11 @@ impl<'a> FormatterImpl<'a> {
         };
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
-        self.format_trivia(ast::Trivia::from_syntax_node(self.db, leading), true);
+        self.format_trivia(ast::Trivia::from_syntax_node(self.db, leading.build(self.db)), true);
         if !syntax_node.should_skip_terminal(self.db) {
-            self.format_token(&token);
+            self.format_token(&token.build(self.db));
         }
-        self.format_trivia(ast::Trivia::from_syntax_node(self.db, trailing), false);
+        self.format_trivia(ast::Trivia::from_syntax_node(self.db, trailing.build(self.db)), false);
     }
     /// Appends a trivia node (if needed) to the result.
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia<'a>, is_leading: bool) {

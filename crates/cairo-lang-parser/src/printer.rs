@@ -209,14 +209,14 @@ impl<'a> Printer<'a> {
             NodeKind::Struct { members: expected_children }
             | NodeKind::Terminal { members: expected_children, .. } => {
                 self.print_internal_struct(
-                    syntax_node.get_children(self.db),
+                    syntax_node.get_children(self.db).nodes(self.db),
                     &expected_children,
                     indent.as_str(),
                     under_top_level,
                 );
             }
             NodeKind::List { .. } => {
-                for (i, child) in syntax_node.get_children(self.db).enumerate() {
+                for (i, child) in syntax_node.get_children(self.db).nodes(self.db).enumerate() {
                     self.print_tree(
                         format!("child #{i}").as_str(),
                         &child,
@@ -227,7 +227,7 @@ impl<'a> Printer<'a> {
                 }
             }
             NodeKind::SeparatedList { .. } => {
-                for (i, child) in syntax_node.get_children(self.db).enumerate() {
+                for (i, child) in syntax_node.get_children(self.db).nodes(self.db).enumerate() {
                     let description = if i.is_multiple_of(2) { "item" } else { "separator" };
                     self.print_tree(
                         format!("{description} #{}", i / 2).as_str(),

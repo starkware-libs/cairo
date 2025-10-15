@@ -65,7 +65,10 @@ impl<'db> RewriteNode<'db> {
         match self {
             RewriteNode::Copied(syntax_node) => {
                 *self = RewriteNode::new_modified(
-                    syntax_node.get_children(db).map(RewriteNode::Copied).collect(),
+                    syntax_node
+                        .get_children(db)
+                        .map(|child| RewriteNode::Copied(child.build(db)))
+                        .collect(),
                 );
                 extract_matches!(self, RewriteNode::Modified)
             }
@@ -75,16 +78,17 @@ impl<'db> RewriteNode<'db> {
                 let mut new_children = Vec::new();
 
                 // Get the index of the leftmost nonempty child.
-                let Some((left_idx, first_syntax)) =
+                let Some((left_idx, first_syntax_builder)) =
                     children.find(|(_, child)| child.width(db) != TextWidth::default())
                 else {
                     *self = RewriteNode::Modified(ModifiedNode { children: None });
                     return extract_matches!(self, RewriteNode::Modified);
                 };
+                let first_syntax = first_syntax_builder.build(db);
                 // Get the index of the rightmost nonempty child.
-                let (right_idx, last_syntax) = children
+                let (right_idx, last_syntax_builder) = children
                     .rfind(|(_, child)| child.width(db) != TextWidth::default())
-                    .unwrap_or((left_idx, first_syntax));
+                    .unwrap_or((left_idx, first_syntax_builder));
                 new_children.extend(itertools::repeat_n(
                     RewriteNode::Modified(ModifiedNode { children: None }),
                     left_idx,
@@ -107,10 +111,10 @@ impl<'db> RewriteNode<'db> {
                             trim_right: false,
                         });
                         for (_, child) in children {
-                            new_children.push(RewriteNode::Copied(child));
+                            new_children.push(RewriteNode::Copied(child.build(db)));
                         }
                         new_children.push(RewriteNode::Trimmed {
-                            node: last_syntax,
+                            node: last_syntax_builder.build(db),
                             trim_left: false,
                             trim_right: *trim_right,
                         });

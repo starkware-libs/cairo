@@ -866,7 +866,8 @@ fn write_function_signature<'db>(
 /// Retrieves [`SyntaxKind::TypeClause`] text from [`SyntaxNode`].
 fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn Database) -> Option<String> {
     for child in syntax_node.get_children(db) {
-        if child.kind(db) == SyntaxKind::TypeClause {
+        if child.kind() == SyntaxKind::TypeClause {
+            let child = child.build(db);
             return Some(child.get_text_without_all_comment_trivia(db));
         }
     }
@@ -960,7 +961,7 @@ fn write_struct_attributes_syntax<'db>(
     for attribute in attributes {
         let syntax_node = attribute.stable_ptr.lookup(f.db).as_syntax_node();
         for child in syntax_node.get_children(f.db) {
-            let to_text = child.get_text_without_all_comment_trivia(f.db);
+            let to_text = child.build(f.db).get_text_without_all_comment_trivia(f.db);
             let cleaned_text = to_text.replace("\n", "");
             f.write_str(&cleaned_text)?;
         }
@@ -979,20 +980,20 @@ fn write_syntactic_evaluation<'db>(
         if matches!(&syntax_node.green_node(f.db).details, green::GreenNodeDetails::Node { .. }) {
             let mut is_after_evaluation_value = false;
             for child in syntax_node.get_children(f.db) {
-                let kind = child.kind(f.db);
-                if !matches!(kind, SyntaxKind::Trivia) {
-                    if matches!(kind, SyntaxKind::TerminalSemicolon) {
-                        f.buf.write_str(";")?;
-                        return Ok(());
-                    }
-                    if is_after_evaluation_value {
-                        f.buf.write_str(&SyntaxNode::get_text_without_all_comment_trivia(
-                            &child, f.db,
-                        ))?;
-                    };
-                    if matches!(kind, SyntaxKind::TerminalEq) {
-                        is_after_evaluation_value = true;
-                    }
+                let kind = child.kind();
+                if matches!(kind, SyntaxKind::Trivia) {
+                    continue;
+                }
+                if matches!(kind, SyntaxKind::TerminalSemicolon) {
+                    f.buf.write_str(";")?;
+                    return Ok(());
+                }
+                if is_after_evaluation_value {
+                    f.buf
+                        .write_str(&child.build(f.db).get_text_without_all_comment_trivia(f.db))?;
+                }
+                if matches!(kind, SyntaxKind::TerminalEq) {
+                    is_after_evaluation_value = true;
                 }
             }
         };

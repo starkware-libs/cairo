@@ -43,6 +43,8 @@ impl<'a> SyntaxNodeWithDbIterator<'a> {
 impl<'a> Iterator for SyntaxNodeWithDbIterator<'a> {
     type Item = PrimitiveToken;
 
+    // TODO(eytan-starkware): We can remove syntaxnode build here and work directly with
+    // green/syntaxnodebuilder.
     fn next(&mut self) -> Option<Self::Item> {
         // If the buffer is empty, perform a single step of the depth-first traversal.
         // This will fill the buffer with up to three tokens from the current node.
@@ -61,7 +63,7 @@ impl<'a> Iterator for SyntaxNodeWithDbIterator<'a> {
             if node.green_node(self.db).kind.is_terminal() {
                 token_from_syntax_node(&node, self.db, &mut self.buffer);
             } else {
-                for child in node.get_children(self.db).rev() {
+                for child in node.get_children(self.db).nodes(self.db).rev() {
                     self.iter_stack.push(child);
                 }
             }

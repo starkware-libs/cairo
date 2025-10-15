@@ -227,7 +227,7 @@ fn collect_expansion_placeholders<'db>(
         return placeholders;
     }
     if !node.kind(db).is_terminal() {
-        for child in node.get_children(db) {
+        for child in node.get_children(db).nodes(db) {
             placeholders.extend(collect_expansion_placeholders(db, child));
         }
     }
@@ -571,7 +571,7 @@ fn expand_macro_rule_ex(
                 return Ok(());
             }
 
-            for child in node.get_children(db) {
+            for child in node.get_children(db).nodes(db) {
                 expand_macro_rule_ex(db, child, matcher_ctx, res_buffer, code_mappings)?;
             }
             return Ok(());
@@ -581,7 +581,7 @@ fn expand_macro_rule_ex(
         res_buffer.push_str(node.get_text(db));
         return Ok(());
     }
-    for child in node.get_children(db) {
+    for child in node.get_children(db).nodes(db) {
         expand_macro_rule_ex(db, child, matcher_ctx, res_buffer, code_mappings)?;
     }
     Ok(())

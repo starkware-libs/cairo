@@ -30,17 +30,25 @@ fn collect_green_nodes<'db>(
     syntax_node: &SyntaxNode<'db>,
     green_nodes: &mut Vec<(SyntaxKind, String)>,
 ) -> Vec<(SyntaxKind, String)> {
-    let green_node = syntax_node.green_node(db);
-
-    match &green_node.details {
-        GreenNodeDetails::Token(text) => green_nodes.push((green_node.kind, text.to_string(db))),
-        GreenNodeDetails::Node { .. } => {
-            let syntax_node_children = syntax_node.get_children(db);
-            syntax_node_children.for_each(|child| {
-                collect_green_nodes(db, &child, green_nodes);
-            });
+    fn collect_from_green<'db>(
+        db: &'db dyn Database,
+        green_node: &cairo_lang_syntax::node::green::GreenNode<'db>,
+        green_nodes: &mut Vec<(SyntaxKind, String)>,
+    ) {
+        match &green_node.details {
+            GreenNodeDetails::Token(text) => {
+                green_nodes.push((green_node.kind, text.to_string(db)));
+            }
+            GreenNodeDetails::Node { children, .. } => {
+                for child in children {
+                    collect_from_green(db, child.long(db), green_nodes);
+                }
+            }
         }
     }
+
+    let green_node = syntax_node.green_node(db);
+    collect_from_green(db, green_node, green_nodes);
     green_nodes.to_owned()
 }
 
