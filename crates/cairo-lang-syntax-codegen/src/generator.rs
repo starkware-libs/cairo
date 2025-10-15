@@ -198,7 +198,7 @@ fn generate_ast_code() -> rust::Tokens {
         use super::green::GreenNodeDetails;
         use super::kind::SyntaxKind;
         use super::{
-            GreenId, GreenNode, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId, Terminal, Token, TypedStablePtr,
+            GreenId, GreenNode, SyntaxNode, SyntaxStablePtrId, Terminal, Token, TypedStablePtr,
             TypedSyntaxNode,
         };
         #[path = "ast_ext.rs"]
@@ -625,12 +625,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         if *key {
             ptr_getters.extend(quote! {
                 pub fn $(&key_name_green)(self, db: &'db dyn Database) -> $(&child_green)<'db> {
-                    let ptr = self.0.long(db);
-                    if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-                        $(&child_green)(key_fields[$key_field_index])
-                    } else {
-                        panic!("Unexpected key field query on root.");
-                    }
+                    $(&child_green)(self.0.0.key_fields(db)[$key_field_index])
                 }
             });
             key_field_index += 1;
