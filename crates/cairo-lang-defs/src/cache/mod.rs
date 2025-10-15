@@ -1680,7 +1680,8 @@ impl SyntaxNodeCached {
         let green = inner.green.embed(ctx);
         let id = inner.id.embed(ctx);
         let offset = inner.offset;
-        let node = new_syntax_node(ctx.db, green, offset, id);
+        let kind = green.long(ctx.db).kind;
+        let node = new_syntax_node(ctx.db, green, offset, id, kind);
         ctx.syntax_nodes.insert(*self, node);
         node
     }
