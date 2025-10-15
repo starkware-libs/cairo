@@ -110,14 +110,12 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
         program.statements.len(),
         |idx| {
             Ok(match program.get_statement(&idx).unwrap() {
-                Statement::Invocation(invocation) => invocation
-                    .branches
-                    .iter()
-                    .rev()
-                    .map(|branch| idx.next(&branch.target))
-                    .collect(),
-                Statement::Return(_) => vec![],
-            })
+                Statement::Invocation(invocation) => invocation.branches.as_slice(),
+                Statement::Return(_) => &[],
+            }
+            .iter()
+            .rev()
+            .map(move |branch| idx.next(&branch.target)))
         },
         |_| unreachable!("Cycles are not detected."),
     )
