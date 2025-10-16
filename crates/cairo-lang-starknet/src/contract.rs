@@ -6,29 +6,30 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
-use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use cairo_lang_semantic::diagnostic::SemanticDiagnostics;
 use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::expr::inference::canonic::ResultNoErrEx;
 use cairo_lang_semantic::items::constant::ConstantSemantic;
 use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBodyId as SemanticConcreteFunctionWithBodyId, GenericFunctionId,
 };
+use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::impl_alias::ImplAliasSemantic;
 use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::us::SemanticUseEx;
-use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::substitution::SemanticRewriter;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
-use itertools::{Itertools, chain};
+use itertools::chain;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
@@ -184,43 +185,31 @@ fn get_impl_aliases_abi_functions<'db>(
         if !impl_alias.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG) {
             continue;
         }
-        let resolver_data = db
-            .impl_alias_resolver_data(*impl_alias_id)
-            .to_option()
-            .with_context(|| "Internal error: Failed to get impl alias resolver data.")?;
-        let mut resolver = Resolver::with_data(
-            db,
-            resolver_data.clone_with_inference_id(
-                db,
-                InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
-                    ModuleItemId::ImplAlias(*impl_alias_id),
-                )),
-            ),
-        );
-
-        let impl_segments = impl_alias.impl_path(db).segments(db);
-        let mut impl_path_elements = impl_segments.elements(db);
-        let Some(impl_final_part) = impl_path_elements.next_back() else {
-            unreachable!("impl_path should have at least one segment")
+        let Ok(resolved_impl) = db.impl_alias_resolved_impl(*impl_alias_id) else {
+            bail!("Internal error: Failed to get impl alias solution.");
         };
-        let impl_name = impl_final_part.identifier(db);
-        let generic_args = impl_final_part.generic_args(db).unwrap_or_default();
-        let ResolvedConcreteItem::Module(impl_module) = resolver
-            .resolve_concrete_path(
-                &mut diagnostics,
-                impl_path_elements.collect_vec(),
-                NotFoundItemType::Identifier,
-            )
-            .to_option()
-            .with_context(|| "Internal error: Failed to resolve impl module.")?
-        else {
-            bail!("Internal error: Impl alias pointed to an object with non module parent.");
+        let ImplLongId::Concrete(concrete) = resolved_impl.long(db) else {
+            bail!("Internal error: Solved impl alias is not an impl.");
         };
+        let impl_def_id = concrete.long(db).impl_def_id;
+        let impl_module = impl_def_id.parent_module(db);
+        let impl_name = impl_def_id.name_identifier(db).text(db).long(db);
         let module_id = get_submodule_id(
             db,
             impl_module,
-            SmolStrId::from(db, format!("{}_{}", module_prefix.long(db), impl_name.long(db))),
+            SmolStrId::from(db, format!("{}_{impl_name}", module_prefix.long(db))),
         )?;
+        let mut resolver = Resolver::new(
+            db,
+            impl_alias_id.parent_module(db),
+            InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
+                *impl_alias_id,
+            ))),
+        );
+        let Some(last_segment) = impl_alias.impl_path(db).segments(db).elements(db).last() else {
+            unreachable!("impl_path should have at least one segment");
+        };
+        let generic_args = last_segment.generic_args(db).unwrap_or_default();
         for abi_function in get_module_aliased_functions(db, module_id)? {
             all_abi_functions.extend(abi_function.try_map(|f| {
                 let concrete_wrapper = resolver
