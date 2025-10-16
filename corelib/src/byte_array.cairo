@@ -42,12 +42,11 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
-use crate::array::{ArrayTrait, Span, SpanTrait};
-use crate::bytes_31::split_bytes31;
+use crate::array::{ArrayTrait, Span, SpanIter, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
-    one_shift_left_bytes_u128, split_u128, u8_at_u256,
+    one_shift_left_bytes_u128, split_bytes31, split_u128, u8_at_u256,
 };
 use crate::clone::Clone;
 use crate::cmp::min;
@@ -707,7 +706,7 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
     }
 }
 
-// TODO: Implement a more efficient version of this iterator.
+// TODO(giladchase): Delegate to byte span iterator instead of current at-based implementation.
 /// An iterator struct over a ByteArray.
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
@@ -717,6 +716,7 @@ pub struct ByteArrayIter {
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
     type Item = u8;
+
     fn next(ref self: ByteArrayIter) -> Option<u8> {
         self.ba.at(self.current_index.next()?)
     }
@@ -955,6 +955,102 @@ impl ByteSpanToByteSpan of ToByteSpanTrait<ByteSpan> {
     }
 }
 
+/// An iterator struct over a ByteSpan.
+#[derive(Drop, Clone)]
+pub struct ByteSpanIter {
+    iterator_exhausted: bool,
+    data_iter: SpanIter<bytes31>,
+    current_word: ShortString,
+    // `ShortString.end_index` acts like `len` for the remainder, rather than `len` - 1.
+    remainder: ShortString,
+}
+
+impl ByteSpanIterator of crate::iter::Iterator<ByteSpanIter> {
+    type Item = u8;
+
+    fn next(ref self: ByteSpanIter) -> Option<u8> {
+        if self.iterator_exhausted {
+            return None;
+        }
+
+        let byte = self.current_word.first();
+        // If still in the current word, return.
+        if self.current_word.pop_first() {
+            return Some(byte);
+        }
+
+        // Current word exhausted, try advancing to the next word from the data iterator.
+        let Some(word) = self.data_iter.next() else {
+            if self.remainder.end_index == 0 { // Remainder is consumed.
+                self.iterator_exhausted = true;
+                return Some(byte);
+            }
+
+            self.current_word.word = self.remainder.word;
+            self
+                .current_word
+                .end_index = helpers::byte31_index_dec(self.remainder.end_index)
+                .unwrap();
+            self.remainder.end_index = 0; // Mark remainder as consumed.
+            return Some(byte);
+        };
+
+        self.current_word.word = (*word).into();
+        self.current_word.end_index = downcast(BYTES_IN_BYTES31_MINUS_ONE).unwrap();
+        Some(byte)
+    }
+}
+
+impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
+    type IntoIter = ByteSpanIter;
+
+    /// Creates an iterator over the bytes in the `ByteSpan`.
+    fn into_iter(self: ByteSpan) -> Self::IntoIter {
+        let mut data_iter = self.data.into_iter();
+
+        // Get first word in data array if exists, otherwise iterate on the remainder word.
+        let Some(first_word) = data_iter.next() else {
+            if self.remainder_len == 0 {
+                return ByteSpanIter {
+                    iterator_exhausted: true,
+                    data_iter,
+                    current_word: Default::default(),
+                    remainder: Default::default(),
+                };
+            }
+
+            // If remainder length is nonzero then it's strictly larger than the start offset.
+            let byte_in_word_lsb_index: usize = upcast(self.remainder_len)
+                - upcast(
+                    helpers::byte31_index_inc(self.first_char_start_offset)
+                        .expect('offset is < 30 in remainder'),
+                );
+
+            return ByteSpanIter {
+                data_iter,
+                current_word: ShortString {
+                    word: self.remainder_word, end_index: downcast(byte_in_word_lsb_index).unwrap(),
+                },
+                iterator_exhausted: false,
+                remainder: Default::default(),
+            };
+        };
+
+        let byte_in_word_lsb_index = helpers::byte31_index_inc(self.first_char_start_offset)
+            .map(|offset_inc| BYTES_IN_BYTES31 - upcast(offset_inc))
+            .unwrap_or_default();
+        ByteSpanIter {
+            data_iter,
+            current_word: ShortString {
+                word: (*first_word).into(), end_index: downcast(byte_in_word_lsb_index).unwrap(),
+            },
+            iterator_exhausted: false,
+            remainder: ShortString { word: self.remainder_word, end_index: self.remainder_len },
+        }
+    }
+}
+
+
 /// Shifts a word right by `n_bytes`.
 /// The input `bytes31` and the output `bytes31`s are represented using `felt252`s to improve
 /// performance.
@@ -968,6 +1064,38 @@ impl ByteSpanToByteSpan of ToByteSpanTrait<ByteSpan> {
 fn shift_right(word: felt252, word_len: usize, n_bytes: usize) -> felt252 {
     let (_shifted_out, after_shift_right) = split_bytes31(word, word_len, n_bytes);
     after_shift_right
+}
+
+#[derive(Drop, Clone, Copy)]
+struct ShortString {
+    word: felt252,
+    end_index: Bytes31Index,
+}
+
+#[generate_trait]
+impl ShortStringImpl of ShortStringTrait {
+    /// Returns the first element of the string.
+    fn first(self: ShortString) -> u8 {
+        // Strings are indexed by lsb, so the first char is at the end.
+        u8_at_u256(self.word.into(), upcast(self.end_index))
+    }
+
+    /// Remove the first char from the string and return true, or false if the string is empty.
+    fn pop_first(ref self: ShortString) -> bool {
+        match helpers::byte31_index_dec(self.end_index) {
+            Some(next_index) => {
+                self.end_index = next_index;
+                true
+            },
+            None => false,
+        }
+    }
+}
+
+impl ShortStringDefault of Default<ShortString> {
+    fn default() -> ShortString {
+        ShortString { word: 0, end_index: 0 }
+    }
 }
 
 mod helpers {
@@ -1092,6 +1220,15 @@ mod helpers {
         }
     }
 
+    /// Decrements the index by one, or returns `None` if the index is zero.
+    pub fn byte31_index_dec(index: Bytes31Index) -> Option<Bytes31Index> {
+        if let crate::internal::OptionRev::Some(trimmed) = bounded_int::trim_min(index) {
+            Some(upcast(bounded_int::sub(trimmed, 1)))
+        } else {
+            None
+        }
+    }
+
     /// The information about the new pending word length and the split index.
     pub enum AppendWordInfo {
         /// The new pending word length is less than 31, and fits in the current pending word.
@@ -1111,6 +1248,7 @@ mod helpers {
         type Result = Bytes31Index;
     }
 
+
     /// Returns the information about the new pending word length and the split index.
     pub fn append_word_info(
         pending_bytes: Bytes31Index, new_word_bytes: BoundedInt<1, 31>,
@@ -1127,6 +1265,9 @@ mod helpers {
     /// Impl for trimming the minimum value of a `Bytes31Index`.
     pub impl TrimMinBytes31Index of bounded_int::TrimMinHelper<Bytes31Index> {
         type Target = BoundedInt<1, 30>;
+    }
+    impl SubBytes31Index of SubHelper<BoundedInt<1, 30>, UnitInt<1>> {
+        type Result = BoundedInt<0, 29>;
     }
 
     impl LengthToBytes31Index of SubHelper<BoundedInt<1, 31>, UnitInt<1>> {
