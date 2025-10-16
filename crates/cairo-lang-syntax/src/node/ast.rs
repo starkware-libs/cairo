@@ -874,10 +874,10 @@ impl<'db> Arg<'db> {
 }
 impl<'db> Arg<'db> {
     pub fn modifiers(&self, db: &'db dyn Database) -> ModifierList<'db> {
-        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
+        ModifierList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arg_clause(&self, db: &'db dyn Database) -> ArgClause<'db> {
-        ArgClause::from_syntax_node(db, self.node.get_children(db)[1])
+        ArgClause::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -1077,13 +1077,13 @@ impl<'db> ArgClauseNamed<'db> {
 }
 impl<'db> ArgClauseNamed<'db> {
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn value(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[2])
+        Expr::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -1172,7 +1172,7 @@ impl<'db> ArgClauseUnnamed<'db> {
 }
 impl<'db> ArgClauseUnnamed<'db> {
     pub fn value(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
+        Expr::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -1261,10 +1261,10 @@ impl<'db> ArgClauseFieldInitShorthand<'db> {
 }
 impl<'db> ArgClauseFieldInitShorthand<'db> {
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> ExprFieldInitShorthand<'db> {
-        ExprFieldInitShorthand::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprFieldInitShorthand::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -1352,7 +1352,7 @@ impl<'db> ExprFieldInitShorthand<'db> {
 }
 impl<'db> ExprFieldInitShorthand<'db> {
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -1723,7 +1723,7 @@ impl<'db> PathSegmentSimple<'db> {
 }
 impl<'db> PathSegmentSimple<'db> {
     pub fn ident(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -1986,13 +1986,13 @@ impl<'db> PathSegmentWithGenericArgs<'db> {
 }
 impl<'db> PathSegmentWithGenericArgs<'db> {
     pub fn ident(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn separator(&self, db: &'db dyn Database) -> OptionTerminalColonColon<'db> {
-        OptionTerminalColonColon::from_syntax_node(db, self.node.get_children(db)[1])
+        OptionTerminalColonColon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn generic_args(&self, db: &'db dyn Database) -> GenericArgs<'db> {
-        GenericArgs::from_syntax_node(db, self.node.get_children(db)[2])
+        GenericArgs::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -2086,10 +2086,10 @@ impl<'db> ExprPath<'db> {
 }
 impl<'db> ExprPath<'db> {
     pub fn dollar(&self, db: &'db dyn Database) -> OptionTerminalDollar<'db> {
-        OptionTerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
+        OptionTerminalDollar::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn segments(&self, db: &'db dyn Database) -> ExprPathInner<'db> {
-        ExprPathInner::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprPathInner::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -2345,7 +2345,7 @@ impl<'db> PathSegmentMissing<'db> {
 }
 impl<'db> PathSegmentMissing<'db> {
     pub fn ident(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -2536,13 +2536,13 @@ impl<'db> ExprParenthesized<'db> {
 }
 impl<'db> ExprParenthesized<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -2636,10 +2636,10 @@ impl<'db> ExprUnary<'db> {
 }
 impl<'db> ExprUnary<'db> {
     pub fn op(&self, db: &'db dyn Database) -> UnaryOperator<'db> {
-        UnaryOperator::from_syntax_node(db, self.node.get_children(db)[0])
+        UnaryOperator::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -2873,13 +2873,13 @@ impl<'db> ExprBinary<'db> {
 }
 impl<'db> ExprBinary<'db> {
     pub fn lhs(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
+        Expr::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn op(&self, db: &'db dyn Database) -> BinaryOperator<'db> {
-        BinaryOperator::from_syntax_node(db, self.node.get_children(db)[1])
+        BinaryOperator::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rhs(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[2])
+        Expr::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -3495,13 +3495,13 @@ impl<'db> ExprListParenthesized<'db> {
 }
 impl<'db> ExprListParenthesized<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn expressions(&self, db: &'db dyn Database) -> ExprList<'db> {
-        ExprList::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -3595,10 +3595,10 @@ impl<'db> ExprFunctionCall<'db> {
 }
 impl<'db> ExprFunctionCall<'db> {
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> ArgListParenthesized<'db> {
-        ArgListParenthesized::from_syntax_node(db, self.node.get_children(db)[1])
+        ArgListParenthesized::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -3689,13 +3689,13 @@ impl<'db> ArgListParenthesized<'db> {
 }
 impl<'db> ArgListParenthesized<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> ArgList<'db> {
-        ArgList::from_syntax_node(db, self.node.get_children(db)[1])
+        ArgList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -3966,10 +3966,10 @@ impl<'db> ExprStructCtorCall<'db> {
 }
 impl<'db> ExprStructCtorCall<'db> {
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> StructArgListBraced<'db> {
-        StructArgListBraced::from_syntax_node(db, self.node.get_children(db)[1])
+        StructArgListBraced::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -4060,13 +4060,13 @@ impl<'db> StructArgListBraced<'db> {
 }
 impl<'db> StructArgListBraced<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> StructArgList<'db> {
-        StructArgList::from_syntax_node(db, self.node.get_children(db)[1])
+        StructArgList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -4162,13 +4162,13 @@ impl<'db> ExprBlock<'db> {
 }
 impl<'db> ExprBlock<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn statements(&self, db: &'db dyn Database) -> StatementList<'db> {
-        StatementList::from_syntax_node(db, self.node.get_children(db)[1])
+        StatementList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -4264,19 +4264,19 @@ impl<'db> ExprMatch<'db> {
 }
 impl<'db> ExprMatch<'db> {
     pub fn match_kw(&self, db: &'db dyn Database) -> TerminalMatch<'db> {
-        TerminalMatch::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalMatch::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn arms(&self, db: &'db dyn Database) -> MatchArms<'db> {
-        MatchArms::from_syntax_node(db, self.node.get_children(db)[3])
+        MatchArms::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -4470,13 +4470,13 @@ impl<'db> MatchArm<'db> {
 }
 impl<'db> MatchArm<'db> {
     pub fn patterns(&self, db: &'db dyn Database) -> PatternListOr<'db> {
-        PatternListOr::from_syntax_node(db, self.node.get_children(db)[0])
+        PatternListOr::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arrow(&self, db: &'db dyn Database) -> TerminalMatchArrow<'db> {
-        TerminalMatchArrow::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalMatchArrow::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn expression(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[2])
+        Expr::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -4570,16 +4570,16 @@ impl<'db> ExprIf<'db> {
 }
 impl<'db> ExprIf<'db> {
     pub fn if_kw(&self, db: &'db dyn Database) -> TerminalIf<'db> {
-        TerminalIf::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIf::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn conditions(&self, db: &'db dyn Database) -> ConditionListAnd<'db> {
-        ConditionListAnd::from_syntax_node(db, self.node.get_children(db)[1])
+        ConditionListAnd::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn if_block(&self, db: &'db dyn Database) -> ExprBlock<'db> {
-        ExprBlock::from_syntax_node(db, self.node.get_children(db)[2])
+        ExprBlock::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn else_clause(&self, db: &'db dyn Database) -> OptionElseClause<'db> {
-        OptionElseClause::from_syntax_node(db, self.node.get_children(db)[3])
+        OptionElseClause::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -4860,16 +4860,16 @@ impl<'db> ConditionLet<'db> {
 }
 impl<'db> ConditionLet<'db> {
     pub fn let_kw(&self, db: &'db dyn Database) -> TerminalLet<'db> {
-        TerminalLet::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLet::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn patterns(&self, db: &'db dyn Database) -> PatternListOr<'db> {
-        PatternListOr::from_syntax_node(db, self.node.get_children(db)[1])
+        PatternListOr::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn eq(&self, db: &'db dyn Database) -> TerminalEq<'db> {
-        TerminalEq::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalEq::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[3])
+        Expr::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -4955,7 +4955,7 @@ impl<'db> ConditionExpr<'db> {
 }
 impl<'db> ConditionExpr<'db> {
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
+        Expr::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5126,10 +5126,10 @@ impl<'db> ExprLoop<'db> {
 }
 impl<'db> ExprLoop<'db> {
     pub fn loop_kw(&self, db: &'db dyn Database) -> TerminalLoop<'db> {
-        TerminalLoop::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLoop::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn body(&self, db: &'db dyn Database) -> ExprBlock<'db> {
-        ExprBlock::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprBlock::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5216,13 +5216,13 @@ impl<'db> ExprWhile<'db> {
 }
 impl<'db> ExprWhile<'db> {
     pub fn while_kw(&self, db: &'db dyn Database) -> TerminalWhile<'db> {
-        TerminalWhile::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalWhile::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn conditions(&self, db: &'db dyn Database) -> ConditionListAnd<'db> {
-        ConditionListAnd::from_syntax_node(db, self.node.get_children(db)[1])
+        ConditionListAnd::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn body(&self, db: &'db dyn Database) -> ExprBlock<'db> {
-        ExprBlock::from_syntax_node(db, self.node.get_children(db)[2])
+        ExprBlock::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5318,19 +5318,19 @@ impl<'db> ExprFor<'db> {
 }
 impl<'db> ExprFor<'db> {
     pub fn for_kw(&self, db: &'db dyn Database) -> TerminalFor<'db> {
-        TerminalFor::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalFor::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn pattern(&self, db: &'db dyn Database) -> Pattern<'db> {
-        Pattern::from_syntax_node(db, self.node.get_children(db)[1])
+        Pattern::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn identifier(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[3])
+        Expr::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn body(&self, db: &'db dyn Database) -> ExprBlock<'db> {
-        ExprBlock::from_syntax_node(db, self.node.get_children(db)[4])
+        ExprBlock::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5429,10 +5429,10 @@ impl<'db> ElseClause<'db> {
 }
 impl<'db> ElseClause<'db> {
     pub fn else_kw(&self, db: &'db dyn Database) -> TerminalElse<'db> {
-        TerminalElse::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalElse::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn else_block_or_if(&self, db: &'db dyn Database) -> BlockOrIf<'db> {
-        BlockOrIf::from_syntax_node(db, self.node.get_children(db)[1])
+        BlockOrIf::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5689,10 +5689,10 @@ impl<'db> ExprErrorPropagate<'db> {
 }
 impl<'db> ExprErrorPropagate<'db> {
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
+        Expr::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn op(&self, db: &'db dyn Database) -> TerminalQuestionMark<'db> {
-        TerminalQuestionMark::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalQuestionMark::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5785,16 +5785,16 @@ impl<'db> ExprIndexed<'db> {
 }
 impl<'db> ExprIndexed<'db> {
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
+        Expr::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn index_expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[2])
+        Expr::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5889,16 +5889,16 @@ impl<'db> ExprFixedSizeArray<'db> {
 }
 impl<'db> ExprFixedSizeArray<'db> {
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn exprs(&self, db: &'db dyn Database) -> ExprList<'db> {
-        ExprList::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn size(&self, db: &'db dyn Database) -> OptionFixedSizeArraySize<'db> {
-        OptionFixedSizeArraySize::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionFixedSizeArraySize::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -5993,10 +5993,10 @@ impl<'db> FixedSizeArraySize<'db> {
 }
 impl<'db> FixedSizeArraySize<'db> {
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn size(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -6261,16 +6261,16 @@ impl<'db> ExprClosure<'db> {
 }
 impl<'db> ExprClosure<'db> {
     pub fn wrapper(&self, db: &'db dyn Database) -> ClosureParamWrapper<'db> {
-        ClosureParamWrapper::from_syntax_node(db, self.node.get_children(db)[0])
+        ClosureParamWrapper::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn ret_ty(&self, db: &'db dyn Database) -> OptionReturnTypeClause<'db> {
-        OptionReturnTypeClause::from_syntax_node(db, self.node.get_children(db)[1])
+        OptionReturnTypeClause::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn optional_no_panic(&self, db: &'db dyn Database) -> OptionTerminalNoPanic<'db> {
-        OptionTerminalNoPanic::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionTerminalNoPanic::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[3])
+        Expr::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -6456,13 +6456,13 @@ impl<'db> ClosureParamWrapperNAry<'db> {
 }
 impl<'db> ClosureParamWrapperNAry<'db> {
     pub fn leftor(&self, db: &'db dyn Database) -> TerminalOr<'db> {
-        TerminalOr::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalOr::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn params(&self, db: &'db dyn Database) -> ParamList<'db> {
-        ParamList::from_syntax_node(db, self.node.get_children(db)[1])
+        ParamList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rightor(&self, db: &'db dyn Database) -> TerminalOr<'db> {
-        TerminalOr::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalOr::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -6556,10 +6556,10 @@ impl<'db> StructArgExpr<'db> {
 }
 impl<'db> StructArgExpr<'db> {
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -6820,10 +6820,10 @@ impl<'db> StructArgSingle<'db> {
 }
 impl<'db> StructArgSingle<'db> {
     pub fn identifier(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arg_expr(&self, db: &'db dyn Database) -> OptionStructArgExpr<'db> {
-        OptionStructArgExpr::from_syntax_node(db, self.node.get_children(db)[1])
+        OptionStructArgExpr::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -6920,10 +6920,10 @@ impl<'db> StructArgTail<'db> {
 }
 impl<'db> StructArgTail<'db> {
     pub fn dotdot(&self, db: &'db dyn Database) -> TerminalDotDot<'db> {
-        TerminalDotDot::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalDotDot::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn expression(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -7204,13 +7204,13 @@ impl<'db> ArgListBraced<'db> {
 }
 impl<'db> ArgListBraced<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> ArgList<'db> {
-        ArgList::from_syntax_node(db, self.node.get_children(db)[1])
+        ArgList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -7306,13 +7306,13 @@ impl<'db> ArgListBracketed<'db> {
 }
 impl<'db> ArgListBracketed<'db> {
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> ArgList<'db> {
-        ArgList::from_syntax_node(db, self.node.get_children(db)[1])
+        ArgList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -7887,10 +7887,10 @@ impl<'db> PatternIdentifier<'db> {
 }
 impl<'db> PatternIdentifier<'db> {
     pub fn modifiers(&self, db: &'db dyn Database) -> ModifierList<'db> {
-        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
+        ModifierList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -7988,16 +7988,16 @@ impl<'db> PatternStruct<'db> {
 }
 impl<'db> PatternStruct<'db> {
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn params(&self, db: &'db dyn Database) -> PatternStructParamList<'db> {
-        PatternStructParamList::from_syntax_node(db, self.node.get_children(db)[2])
+        PatternStructParamList::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -8196,13 +8196,13 @@ impl<'db> PatternTuple<'db> {
 }
 impl<'db> PatternTuple<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn patterns(&self, db: &'db dyn Database) -> PatternList<'db> {
-        PatternList::from_syntax_node(db, self.node.get_children(db)[1])
+        PatternList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -8294,13 +8294,13 @@ impl<'db> PatternFixedSizeArray<'db> {
 }
 impl<'db> PatternFixedSizeArray<'db> {
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn patterns(&self, db: &'db dyn Database) -> PatternList<'db> {
-        PatternList::from_syntax_node(db, self.node.get_children(db)[1])
+        PatternList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -8714,16 +8714,16 @@ impl<'db> PatternStructParamWithExpr<'db> {
 }
 impl<'db> PatternStructParamWithExpr<'db> {
     pub fn modifiers(&self, db: &'db dyn Database) -> ModifierList<'db> {
-        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
+        ModifierList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn pattern(&self, db: &'db dyn Database) -> Pattern<'db> {
-        Pattern::from_syntax_node(db, self.node.get_children(db)[3])
+        Pattern::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -8818,10 +8818,10 @@ impl<'db> PatternEnum<'db> {
 }
 impl<'db> PatternEnum<'db> {
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn pattern(&self, db: &'db dyn Database) -> OptionPatternEnumInnerPattern<'db> {
-        OptionPatternEnumInnerPattern::from_syntax_node(db, self.node.get_children(db)[1])
+        OptionPatternEnumInnerPattern::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -8912,13 +8912,13 @@ impl<'db> PatternEnumInnerPattern<'db> {
 }
 impl<'db> PatternEnumInnerPattern<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn pattern(&self, db: &'db dyn Database) -> Pattern<'db> {
-        Pattern::from_syntax_node(db, self.node.get_children(db)[1])
+        Pattern::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -9197,10 +9197,10 @@ impl<'db> TypeClause<'db> {
 }
 impl<'db> TypeClause<'db> {
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn ty(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -9457,10 +9457,10 @@ impl<'db> ReturnTypeClause<'db> {
 }
 impl<'db> ReturnTypeClause<'db> {
     pub fn arrow(&self, db: &'db dyn Database) -> TerminalArrow<'db> {
-        TerminalArrow::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalArrow::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn ty(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -10081,28 +10081,28 @@ impl<'db> StatementLet<'db> {
 }
 impl<'db> StatementLet<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn let_kw(&self, db: &'db dyn Database) -> TerminalLet<'db> {
-        TerminalLet::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalLet::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn pattern(&self, db: &'db dyn Database) -> Pattern<'db> {
-        Pattern::from_syntax_node(db, self.node.get_children(db)[2])
+        Pattern::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn type_clause(&self, db: &'db dyn Database) -> OptionTypeClause<'db> {
-        OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[3])
+        OptionTypeClause::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn eq(&self, db: &'db dyn Database) -> TerminalEq<'db> {
-        TerminalEq::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalEq::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn rhs(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[5])
+        Expr::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn let_else_clause(&self, db: &'db dyn Database) -> OptionLetElseClause<'db> {
-        OptionLetElseClause::from_syntax_node(db, self.node.get_children(db)[6])
+        OptionLetElseClause::from_syntax_node(db, self.node.get_child(db, 6))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 7))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -10201,10 +10201,10 @@ impl<'db> LetElseClause<'db> {
 }
 impl<'db> LetElseClause<'db> {
     pub fn else_kw(&self, db: &'db dyn Database) -> TerminalElse<'db> {
-        TerminalElse::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalElse::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn else_block(&self, db: &'db dyn Database) -> ExprBlock<'db> {
-        ExprBlock::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprBlock::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -10639,13 +10639,13 @@ impl<'db> StatementExpr<'db> {
 }
 impl<'db> StatementExpr<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+        Expr::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> OptionTerminalSemicolon<'db> {
-        OptionTerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionTerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -10741,13 +10741,13 @@ impl<'db> StatementContinue<'db> {
 }
 impl<'db> StatementContinue<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn continue_kw(&self, db: &'db dyn Database) -> TerminalContinue<'db> {
-        TerminalContinue::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalContinue::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -10836,7 +10836,7 @@ impl<'db> ExprClause<'db> {
 }
 impl<'db> ExprClause<'db> {
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
+        Expr::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -11097,16 +11097,16 @@ impl<'db> StatementReturn<'db> {
 }
 impl<'db> StatementReturn<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn return_kw(&self, db: &'db dyn Database) -> TerminalReturn<'db> {
-        TerminalReturn::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalReturn::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn expr_clause(&self, db: &'db dyn Database) -> OptionExprClause<'db> {
-        OptionExprClause::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionExprClause::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -11205,16 +11205,16 @@ impl<'db> StatementBreak<'db> {
 }
 impl<'db> StatementBreak<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn break_kw(&self, db: &'db dyn Database) -> TerminalBreak<'db> {
-        TerminalBreak::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalBreak::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn expr_clause(&self, db: &'db dyn Database) -> OptionExprClause<'db> {
-        OptionExprClause::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionExprClause::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -11304,7 +11304,7 @@ impl<'db> StatementItem<'db> {
 }
 impl<'db> StatementItem<'db> {
     pub fn item(&self, db: &'db dyn Database) -> ModuleItem<'db> {
-        ModuleItem::from_syntax_node(db, self.node.get_children(db)[0])
+        ModuleItem::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -11395,13 +11395,13 @@ impl<'db> Param<'db> {
 }
 impl<'db> Param<'db> {
     pub fn modifiers(&self, db: &'db dyn Database) -> ModifierList<'db> {
-        ModifierList::from_syntax_node(db, self.node.get_children(db)[0])
+        ModifierList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn type_clause(&self, db: &'db dyn Database) -> OptionTypeClause<'db> {
-        OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionTypeClause::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -11758,16 +11758,16 @@ impl<'db> ImplicitsClause<'db> {
 }
 impl<'db> ImplicitsClause<'db> {
     pub fn implicits_kw(&self, db: &'db dyn Database) -> TerminalImplicits<'db> {
-        TerminalImplicits::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalImplicits::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn implicits(&self, db: &'db dyn Database) -> ImplicitsList<'db> {
-        ImplicitsList::from_syntax_node(db, self.node.get_children(db)[2])
+        ImplicitsList::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -12487,22 +12487,22 @@ impl<'db> FunctionSignature<'db> {
 }
 impl<'db> FunctionSignature<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn parameters(&self, db: &'db dyn Database) -> ParamList<'db> {
-        ParamList::from_syntax_node(db, self.node.get_children(db)[1])
+        ParamList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn ret_ty(&self, db: &'db dyn Database) -> OptionReturnTypeClause<'db> {
-        OptionReturnTypeClause::from_syntax_node(db, self.node.get_children(db)[3])
+        OptionReturnTypeClause::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn implicits_clause(&self, db: &'db dyn Database) -> OptionImplicitsClause<'db> {
-        OptionImplicitsClause::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionImplicitsClause::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn optional_no_panic(&self, db: &'db dyn Database) -> OptionTerminalNoPanic<'db> {
-        OptionTerminalNoPanic::from_syntax_node(db, self.node.get_children(db)[5])
+        OptionTerminalNoPanic::from_syntax_node(db, self.node.get_child(db, 5))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -12603,16 +12603,16 @@ impl<'db> Member<'db> {
 }
 impl<'db> Member<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn type_clause(&self, db: &'db dyn Database) -> TypeClause<'db> {
-        TypeClause::from_syntax_node(db, self.node.get_children(db)[3])
+        TypeClause::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -12809,13 +12809,13 @@ impl<'db> Variant<'db> {
 }
 impl<'db> Variant<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn type_clause(&self, db: &'db dyn Database) -> OptionTypeClause<'db> {
-        OptionTypeClause::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionTypeClause::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -13511,19 +13511,19 @@ impl<'db> Attribute<'db> {
 }
 impl<'db> Attribute<'db> {
     pub fn hash(&self, db: &'db dyn Database) -> TerminalHash<'db> {
-        TerminalHash::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalHash::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn attr(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[2])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> OptionArgListParenthesized<'db> {
-        OptionArgListParenthesized::from_syntax_node(db, self.node.get_children(db)[3])
+        OptionArgListParenthesized::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -13773,13 +13773,13 @@ impl<'db> VisibilityPubArgumentClause<'db> {
 }
 impl<'db> VisibilityPubArgumentClause<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn argument(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -14064,10 +14064,10 @@ impl<'db> VisibilityPub<'db> {
 }
 impl<'db> VisibilityPub<'db> {
     pub fn pub_kw(&self, db: &'db dyn Database) -> TerminalPub<'db> {
-        TerminalPub::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalPub::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn argument_clause(&self, db: &'db dyn Database) -> OptionVisibilityPubArgumentClause<'db> {
-        OptionVisibilityPubArgumentClause::from_syntax_node(db, self.node.get_children(db)[1])
+        OptionVisibilityPubArgumentClause::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -14254,19 +14254,19 @@ impl<'db> ItemModule<'db> {
 }
 impl<'db> ItemModule<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn module_kw(&self, db: &'db dyn Database) -> TerminalModule<'db> {
-        TerminalModule::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalModule::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn body(&self, db: &'db dyn Database) -> MaybeModuleBody<'db> {
-        MaybeModuleBody::from_syntax_node(db, self.node.get_children(db)[4])
+        MaybeModuleBody::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -14454,13 +14454,13 @@ impl<'db> ModuleBody<'db> {
 }
 impl<'db> ModuleBody<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn items(&self, db: &'db dyn Database) -> ModuleItemList<'db> {
-        ModuleItemList::from_syntax_node(db, self.node.get_children(db)[1])
+        ModuleItemList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -14556,19 +14556,19 @@ impl<'db> FunctionDeclaration<'db> {
 }
 impl<'db> FunctionDeclaration<'db> {
     pub fn optional_const(&self, db: &'db dyn Database) -> OptionTerminalConst<'db> {
-        OptionTerminalConst::from_syntax_node(db, self.node.get_children(db)[0])
+        OptionTerminalConst::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn function_kw(&self, db: &'db dyn Database) -> TerminalFunction<'db> {
-        TerminalFunction::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalFunction::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[3])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn signature(&self, db: &'db dyn Database) -> FunctionSignature<'db> {
-        FunctionSignature::from_syntax_node(db, self.node.get_children(db)[4])
+        FunctionSignature::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -14689,28 +14689,28 @@ impl<'db> ItemConstant<'db> {
 }
 impl<'db> ItemConstant<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn const_kw(&self, db: &'db dyn Database) -> TerminalConst<'db> {
-        TerminalConst::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalConst::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn type_clause(&self, db: &'db dyn Database) -> TypeClause<'db> {
-        TypeClause::from_syntax_node(db, self.node.get_children(db)[4])
+        TypeClause::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn eq(&self, db: &'db dyn Database) -> TerminalEq<'db> {
-        TerminalEq::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalEq::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn value(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[6])
+        Expr::from_syntax_node(db, self.node.get_child(db, 6))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 7))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -14813,16 +14813,16 @@ impl<'db> FunctionWithBody<'db> {
 }
 impl<'db> FunctionWithBody<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn declaration(&self, db: &'db dyn Database) -> FunctionDeclaration<'db> {
-        FunctionDeclaration::from_syntax_node(db, self.node.get_children(db)[2])
+        FunctionDeclaration::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn body(&self, db: &'db dyn Database) -> ExprBlock<'db> {
-        ExprBlock::from_syntax_node(db, self.node.get_children(db)[3])
+        ExprBlock::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -14927,19 +14927,19 @@ impl<'db> ItemExternFunction<'db> {
 }
 impl<'db> ItemExternFunction<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn extern_kw(&self, db: &'db dyn Database) -> TerminalExtern<'db> {
-        TerminalExtern::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalExtern::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn declaration(&self, db: &'db dyn Database) -> FunctionDeclaration<'db> {
-        FunctionDeclaration::from_syntax_node(db, self.node.get_children(db)[3])
+        FunctionDeclaration::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -15057,25 +15057,25 @@ impl<'db> ItemExternType<'db> {
 }
 impl<'db> ItemExternType<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn extern_kw(&self, db: &'db dyn Database) -> TerminalExtern<'db> {
-        TerminalExtern::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalExtern::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn type_kw(&self, db: &'db dyn Database) -> TerminalType<'db> {
-        TerminalType::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalType::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[5])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[6])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 6))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -15185,22 +15185,22 @@ impl<'db> ItemTrait<'db> {
 }
 impl<'db> ItemTrait<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trait_kw(&self, db: &'db dyn Database) -> TerminalTrait<'db> {
-        TerminalTrait::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalTrait::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn body(&self, db: &'db dyn Database) -> MaybeTraitBody<'db> {
-        MaybeTraitBody::from_syntax_node(db, self.node.get_children(db)[5])
+        MaybeTraitBody::from_syntax_node(db, self.node.get_child(db, 5))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -15389,13 +15389,13 @@ impl<'db> TraitBody<'db> {
 }
 impl<'db> TraitBody<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn items(&self, db: &'db dyn Database) -> TraitItemList<'db> {
-        TraitItemList::from_syntax_node(db, self.node.get_children(db)[1])
+        TraitItemList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -15790,13 +15790,13 @@ impl<'db> TraitItemFunction<'db> {
 }
 impl<'db> TraitItemFunction<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn declaration(&self, db: &'db dyn Database) -> FunctionDeclaration<'db> {
-        FunctionDeclaration::from_syntax_node(db, self.node.get_children(db)[1])
+        FunctionDeclaration::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn body(&self, db: &'db dyn Database) -> MaybeTraitFunctionBody<'db> {
-        MaybeTraitFunctionBody::from_syntax_node(db, self.node.get_children(db)[2])
+        MaybeTraitFunctionBody::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -15900,19 +15900,19 @@ impl<'db> TraitItemType<'db> {
 }
 impl<'db> TraitItemType<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn type_kw(&self, db: &'db dyn Database) -> TerminalType<'db> {
-        TerminalType::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalType::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[3])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -16018,19 +16018,19 @@ impl<'db> TraitItemConstant<'db> {
 }
 impl<'db> TraitItemConstant<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn const_kw(&self, db: &'db dyn Database) -> TerminalConst<'db> {
-        TerminalConst::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalConst::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn type_clause(&self, db: &'db dyn Database) -> TypeClause<'db> {
-        TypeClause::from_syntax_node(db, self.node.get_children(db)[3])
+        TypeClause::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -16138,22 +16138,22 @@ impl<'db> TraitItemImpl<'db> {
 }
 impl<'db> TraitItemImpl<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn impl_kw(&self, db: &'db dyn Database) -> TerminalImpl<'db> {
-        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalImpl::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn trait_path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[4])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 5))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -16368,28 +16368,28 @@ impl<'db> ItemImpl<'db> {
 }
 impl<'db> ItemImpl<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn impl_kw(&self, db: &'db dyn Database) -> TerminalImpl<'db> {
-        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalImpl::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn of_kw(&self, db: &'db dyn Database) -> TerminalOf<'db> {
-        TerminalOf::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalOf::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn trait_path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[6])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 6))
     }
     pub fn body(&self, db: &'db dyn Database) -> MaybeImplBody<'db> {
-        MaybeImplBody::from_syntax_node(db, self.node.get_children(db)[7])
+        MaybeImplBody::from_syntax_node(db, self.node.get_child(db, 7))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -16486,7 +16486,7 @@ impl<'db> ItemHeaderDoc<'db> {
 }
 impl<'db> ItemHeaderDoc<'db> {
     pub fn empty(&self, db: &'db dyn Database) -> TerminalEmpty<'db> {
-        TerminalEmpty::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalEmpty::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -16663,13 +16663,13 @@ impl<'db> ImplBody<'db> {
 }
 impl<'db> ImplBody<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn items(&self, db: &'db dyn Database) -> ImplItemList<'db> {
-        ImplItemList::from_syntax_node(db, self.node.get_children(db)[1])
+        ImplItemList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -17200,28 +17200,28 @@ impl<'db> ItemImplAlias<'db> {
 }
 impl<'db> ItemImplAlias<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn impl_kw(&self, db: &'db dyn Database) -> TerminalImpl<'db> {
-        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalImpl::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn eq(&self, db: &'db dyn Database) -> TerminalEq<'db> {
-        TerminalEq::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalEq::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn impl_path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[6])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 6))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 7))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -17345,28 +17345,28 @@ impl<'db> ItemStruct<'db> {
 }
 impl<'db> ItemStruct<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn struct_kw(&self, db: &'db dyn Database) -> TerminalStruct<'db> {
-        TerminalStruct::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalStruct::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn members(&self, db: &'db dyn Database) -> MemberList<'db> {
-        MemberList::from_syntax_node(db, self.node.get_children(db)[6])
+        MemberList::from_syntax_node(db, self.node.get_child(db, 6))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[7])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 7))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -17486,28 +17486,28 @@ impl<'db> ItemEnum<'db> {
 }
 impl<'db> ItemEnum<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn enum_kw(&self, db: &'db dyn Database) -> TerminalEnum<'db> {
-        TerminalEnum::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalEnum::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn variants(&self, db: &'db dyn Database) -> VariantList<'db> {
-        VariantList::from_syntax_node(db, self.node.get_children(db)[6])
+        VariantList::from_syntax_node(db, self.node.get_child(db, 6))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[7])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 7))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -17627,28 +17627,28 @@ impl<'db> ItemTypeAlias<'db> {
 }
 impl<'db> ItemTypeAlias<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn type_kw(&self, db: &'db dyn Database) -> TerminalType<'db> {
-        TerminalType::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalType::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
-        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn eq(&self, db: &'db dyn Database) -> TerminalEq<'db> {
-        TerminalEq::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalEq::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn ty(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[6])
+        Expr::from_syntax_node(db, self.node.get_child(db, 6))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[7])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 7))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -17759,22 +17759,22 @@ impl<'db> ItemUse<'db> {
 }
 impl<'db> ItemUse<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn use_kw(&self, db: &'db dyn Database) -> TerminalUse<'db> {
-        TerminalUse::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalUse::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn dollar(&self, db: &'db dyn Database) -> OptionTerminalDollar<'db> {
-        OptionTerminalDollar::from_syntax_node(db, self.node.get_children(db)[3])
+        OptionTerminalDollar::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn use_path(&self, db: &'db dyn Database) -> UsePath<'db> {
-        UsePath::from_syntax_node(db, self.node.get_children(db)[4])
+        UsePath::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[5])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 5))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -17991,10 +17991,10 @@ impl<'db> UsePathLeaf<'db> {
 }
 impl<'db> UsePathLeaf<'db> {
     pub fn ident(&self, db: &'db dyn Database) -> PathSegment<'db> {
-        PathSegment::from_syntax_node(db, self.node.get_children(db)[0])
+        PathSegment::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn alias_clause(&self, db: &'db dyn Database) -> OptionAliasClause<'db> {
-        OptionAliasClause::from_syntax_node(db, self.node.get_children(db)[1])
+        OptionAliasClause::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -18088,13 +18088,13 @@ impl<'db> UsePathSingle<'db> {
 }
 impl<'db> UsePathSingle<'db> {
     pub fn ident(&self, db: &'db dyn Database) -> PathSegment<'db> {
-        PathSegment::from_syntax_node(db, self.node.get_children(db)[0])
+        PathSegment::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn colon_colon(&self, db: &'db dyn Database) -> TerminalColonColon<'db> {
-        TerminalColonColon::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalColonColon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn use_path(&self, db: &'db dyn Database) -> UsePath<'db> {
-        UsePath::from_syntax_node(db, self.node.get_children(db)[2])
+        UsePath::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -18190,13 +18190,13 @@ impl<'db> UsePathMulti<'db> {
 }
 impl<'db> UsePathMulti<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn use_paths(&self, db: &'db dyn Database) -> UsePathList<'db> {
-        UsePathList::from_syntax_node(db, self.node.get_children(db)[1])
+        UsePathList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -18281,7 +18281,7 @@ impl<'db> UsePathStar<'db> {
 }
 impl<'db> UsePathStar<'db> {
     pub fn star(&self, db: &'db dyn Database) -> TerminalMul<'db> {
-        TerminalMul::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalMul::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -18466,10 +18466,10 @@ impl<'db> AliasClause<'db> {
 }
 impl<'db> AliasClause<'db> {
     pub fn as_kw(&self, db: &'db dyn Database) -> TerminalAs<'db> {
-        TerminalAs::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalAs::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn alias(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -18822,13 +18822,13 @@ impl<'db> GenericArgNamed<'db> {
 }
 impl<'db> GenericArgNamed<'db> {
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn value(&self, db: &'db dyn Database) -> GenericArgValue<'db> {
-        GenericArgValue::from_syntax_node(db, self.node.get_children(db)[2])
+        GenericArgValue::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -18920,7 +18920,7 @@ impl<'db> GenericArgUnnamed<'db> {
 }
 impl<'db> GenericArgUnnamed<'db> {
     pub fn value(&self, db: &'db dyn Database) -> GenericArgValue<'db> {
-        GenericArgValue::from_syntax_node(db, self.node.get_children(db)[0])
+        GenericArgValue::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -19096,7 +19096,7 @@ impl<'db> GenericArgValueExpr<'db> {
 }
 impl<'db> GenericArgValueExpr<'db> {
     pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
+        Expr::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -19187,13 +19187,13 @@ impl<'db> GenericArgs<'db> {
 }
 impl<'db> GenericArgs<'db> {
     pub fn langle(&self, db: &'db dyn Database) -> TerminalLT<'db> {
-        TerminalLT::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLT::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn generic_args(&self, db: &'db dyn Database) -> GenericArgList<'db> {
-        GenericArgList::from_syntax_node(db, self.node.get_children(db)[1])
+        GenericArgList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rangle(&self, db: &'db dyn Database) -> TerminalGT<'db> {
-        TerminalGT::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalGT::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -19385,13 +19385,13 @@ impl<'db> AssociatedItemConstraint<'db> {
 }
 impl<'db> AssociatedItemConstraint<'db> {
     pub fn item(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn value(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[2])
+        Expr::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -19487,16 +19487,16 @@ impl<'db> AssociatedItemConstraints<'db> {
 }
 impl<'db> AssociatedItemConstraints<'db> {
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn associated_item_constraints(
         &self,
         db: &'db dyn Database,
     ) -> AssociatedItemConstraintList<'db> {
-        AssociatedItemConstraintList::from_syntax_node(db, self.node.get_children(db)[1])
+        AssociatedItemConstraintList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -20070,13 +20070,13 @@ impl<'db> WrappedGenericParamList<'db> {
 }
 impl<'db> WrappedGenericParamList<'db> {
     pub fn langle(&self, db: &'db dyn Database) -> TerminalLT<'db> {
-        TerminalLT::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLT::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn generic_params(&self, db: &'db dyn Database) -> GenericParamList<'db> {
-        GenericParamList::from_syntax_node(db, self.node.get_children(db)[1])
+        GenericParamList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rangle(&self, db: &'db dyn Database) -> TerminalGT<'db> {
-        TerminalGT::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalGT::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -20419,7 +20419,7 @@ impl<'db> GenericParamType<'db> {
 }
 impl<'db> GenericParamType<'db> {
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -20516,16 +20516,16 @@ impl<'db> GenericParamConst<'db> {
 }
 impl<'db> GenericParamConst<'db> {
     pub fn const_kw(&self, db: &'db dyn Database) -> TerminalConst<'db> {
-        TerminalConst::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalConst::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn ty(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[3])
+        Expr::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -20630,19 +20630,19 @@ impl<'db> GenericParamImplNamed<'db> {
 }
 impl<'db> GenericParamImplNamed<'db> {
     pub fn impl_kw(&self, db: &'db dyn Database) -> TerminalImpl<'db> {
-        TerminalImpl::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalImpl::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn trait_path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[3])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn type_constrains(&self, db: &'db dyn Database) -> OptionAssociatedItemConstraints<'db> {
-        OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -20744,13 +20744,13 @@ impl<'db> GenericParamImplAnonymous<'db> {
 }
 impl<'db> GenericParamImplAnonymous<'db> {
     pub fn plus(&self, db: &'db dyn Database) -> TerminalPlus<'db> {
-        TerminalPlus::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalPlus::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn trait_path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn type_constrains(&self, db: &'db dyn Database) -> OptionAssociatedItemConstraints<'db> {
-        OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionAssociatedItemConstraints::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -20844,10 +20844,10 @@ impl<'db> GenericParamNegativeImpl<'db> {
 }
 impl<'db> GenericParamNegativeImpl<'db> {
     pub fn minus(&self, db: &'db dyn Database) -> TerminalMinus<'db> {
-        TerminalMinus::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalMinus::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn trait_path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -21008,7 +21008,7 @@ impl<'db> TokenTreeLeaf<'db> {
 }
 impl<'db> TokenTreeLeaf<'db> {
     pub fn leaf(&self, db: &'db dyn Database) -> TokenNode<'db> {
-        TokenNode::from_syntax_node(db, self.node.get_children(db)[0])
+        TokenNode::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -21095,7 +21095,7 @@ impl<'db> TokenTreeNode<'db> {
 }
 impl<'db> TokenTreeNode<'db> {
     pub fn subtree(&self, db: &'db dyn Database) -> WrappedTokenTree<'db> {
-        WrappedTokenTree::from_syntax_node(db, self.node.get_children(db)[0])
+        WrappedTokenTree::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -21192,22 +21192,22 @@ impl<'db> TokenTreeRepetition<'db> {
 }
 impl<'db> TokenTreeRepetition<'db> {
     pub fn dollar(&self, db: &'db dyn Database) -> TerminalDollar<'db> {
-        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn elements(&self, db: &'db dyn Database) -> TokenList<'db> {
-        TokenList::from_syntax_node(db, self.node.get_children(db)[2])
+        TokenList::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn separator(&self, db: &'db dyn Database) -> OptionTerminalComma<'db> {
-        OptionTerminalComma::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionTerminalComma::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn operator(&self, db: &'db dyn Database) -> MacroRepetitionOperator<'db> {
-        MacroRepetitionOperator::from_syntax_node(db, self.node.get_children(db)[5])
+        MacroRepetitionOperator::from_syntax_node(db, self.node.get_child(db, 5))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -21304,10 +21304,10 @@ impl<'db> TokenTreeParam<'db> {
 }
 impl<'db> TokenTreeParam<'db> {
     pub fn dollar(&self, db: &'db dyn Database) -> TerminalDollar<'db> {
-        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -21843,13 +21843,13 @@ impl<'db> ParenthesizedTokenTree<'db> {
 }
 impl<'db> ParenthesizedTokenTree<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn tokens(&self, db: &'db dyn Database) -> TokenList<'db> {
-        TokenList::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -21945,13 +21945,13 @@ impl<'db> BracedTokenTree<'db> {
 }
 impl<'db> BracedTokenTree<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn tokens(&self, db: &'db dyn Database) -> TokenList<'db> {
-        TokenList::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -22047,13 +22047,13 @@ impl<'db> BracketedTokenTree<'db> {
 }
 impl<'db> BracketedTokenTree<'db> {
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn tokens(&self, db: &'db dyn Database) -> TokenList<'db> {
-        TokenList::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenList::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -22149,13 +22149,13 @@ impl<'db> ExprInlineMacro<'db> {
 }
 impl<'db> ExprInlineMacro<'db> {
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn bang(&self, db: &'db dyn Database) -> TerminalNot<'db> {
-        TerminalNot::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalNot::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> TokenTreeNode<'db> {
-        TokenTreeNode::from_syntax_node(db, self.node.get_children(db)[2])
+        TokenTreeNode::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -22255,19 +22255,19 @@ impl<'db> ItemInlineMacro<'db> {
 }
 impl<'db> ItemInlineMacro<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn bang(&self, db: &'db dyn Database) -> TerminalNot<'db> {
-        TerminalNot::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalNot::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> TokenTreeNode<'db> {
-        TokenTreeNode::from_syntax_node(db, self.node.get_children(db)[3])
+        TokenTreeNode::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -22374,25 +22374,25 @@ impl<'db> ItemMacroDeclaration<'db> {
 }
 impl<'db> ItemMacroDeclaration<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
-        Visibility::from_syntax_node(db, self.node.get_children(db)[1])
+        Visibility::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn macro_kw(&self, db: &'db dyn Database) -> TerminalMacro<'db> {
-        TerminalMacro::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalMacro::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn rules(&self, db: &'db dyn Database) -> MacroRulesList<'db> {
-        MacroRulesList::from_syntax_node(db, self.node.get_children(db)[5])
+        MacroRulesList::from_syntax_node(db, self.node.get_child(db, 5))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[6])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 6))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -22575,16 +22575,16 @@ impl<'db> MacroRule<'db> {
 }
 impl<'db> MacroRule<'db> {
     pub fn lhs(&self, db: &'db dyn Database) -> WrappedMacro<'db> {
-        WrappedMacro::from_syntax_node(db, self.node.get_children(db)[0])
+        WrappedMacro::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn fat_arrow(&self, db: &'db dyn Database) -> TerminalMatchArrow<'db> {
-        TerminalMatchArrow::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalMatchArrow::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rhs(&self, db: &'db dyn Database) -> BracedMacro<'db> {
-        BracedMacro::from_syntax_node(db, self.node.get_children(db)[2])
+        BracedMacro::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 3))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -22675,10 +22675,10 @@ impl<'db> ParamKind<'db> {
 }
 impl<'db> ParamKind<'db> {
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
-        TerminalColon::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalColon::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn kind(&self, db: &'db dyn Database) -> MacroParamKind<'db> {
-        MacroParamKind::from_syntax_node(db, self.node.get_children(db)[1])
+        MacroParamKind::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -22936,13 +22936,13 @@ impl<'db> MacroParam<'db> {
 }
 impl<'db> MacroParam<'db> {
     pub fn dollar(&self, db: &'db dyn Database) -> TerminalDollar<'db> {
-        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn name(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn kind(&self, db: &'db dyn Database) -> OptionParamKind<'db> {
-        OptionParamKind::from_syntax_node(db, self.node.get_children(db)[2])
+        OptionParamKind::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -23040,22 +23040,22 @@ impl<'db> MacroRepetition<'db> {
 }
 impl<'db> MacroRepetition<'db> {
     pub fn dollar(&self, db: &'db dyn Database) -> TerminalDollar<'db> {
-        TerminalDollar::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalDollar::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn elements(&self, db: &'db dyn Database) -> MacroElements<'db> {
-        MacroElements::from_syntax_node(db, self.node.get_children(db)[2])
+        MacroElements::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[3])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn separator(&self, db: &'db dyn Database) -> OptionTerminalComma<'db> {
-        OptionTerminalComma::from_syntax_node(db, self.node.get_children(db)[4])
+        OptionTerminalComma::from_syntax_node(db, self.node.get_child(db, 4))
     }
     pub fn operator(&self, db: &'db dyn Database) -> MacroRepetitionOperator<'db> {
-        MacroRepetitionOperator::from_syntax_node(db, self.node.get_children(db)[5])
+        MacroRepetitionOperator::from_syntax_node(db, self.node.get_child(db, 5))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -23536,7 +23536,7 @@ impl<'db> ParamIdent<'db> {
 }
 impl<'db> ParamIdent<'db> {
     pub fn ident(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -23619,7 +23619,7 @@ impl<'db> ParamExpr<'db> {
 }
 impl<'db> ParamExpr<'db> {
     pub fn expr(&self, db: &'db dyn Database) -> TerminalIdentifier<'db> {
-        TerminalIdentifier::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalIdentifier::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -24099,7 +24099,7 @@ impl<'db> MacroWrapper<'db> {
 }
 impl<'db> MacroWrapper<'db> {
     pub fn subtree(&self, db: &'db dyn Database) -> WrappedMacro<'db> {
-        WrappedMacro::from_syntax_node(db, self.node.get_children(db)[0])
+        WrappedMacro::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -24297,13 +24297,13 @@ impl<'db> ParenthesizedMacro<'db> {
 }
 impl<'db> ParenthesizedMacro<'db> {
     pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
-        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLParen::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn elements(&self, db: &'db dyn Database) -> MacroElements<'db> {
-        MacroElements::from_syntax_node(db, self.node.get_children(db)[1])
+        MacroElements::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
-        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRParen::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -24399,13 +24399,13 @@ impl<'db> BracedMacro<'db> {
 }
 impl<'db> BracedMacro<'db> {
     pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrace::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn elements(&self, db: &'db dyn Database) -> MacroElements<'db> {
-        MacroElements::from_syntax_node(db, self.node.get_children(db)[1])
+        MacroElements::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrace::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -24497,13 +24497,13 @@ impl<'db> BracketedMacro<'db> {
 }
 impl<'db> BracketedMacro<'db> {
     pub fn lbrack(&self, db: &'db dyn Database) -> TerminalLBrack<'db> {
-        TerminalLBrack::from_syntax_node(db, self.node.get_children(db)[0])
+        TerminalLBrack::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn elements(&self, db: &'db dyn Database) -> MacroElements<'db> {
-        MacroElements::from_syntax_node(db, self.node.get_children(db)[1])
+        MacroElements::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn rbrack(&self, db: &'db dyn Database) -> TerminalRBrack<'db> {
-        TerminalRBrack::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalRBrack::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -24599,13 +24599,13 @@ impl<'db> LegacyExprInlineMacro<'db> {
 }
 impl<'db> LegacyExprInlineMacro<'db> {
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[0])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn bang(&self, db: &'db dyn Database) -> TerminalNot<'db> {
-        TerminalNot::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalNot::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> WrappedArgList<'db> {
-        WrappedArgList::from_syntax_node(db, self.node.get_children(db)[2])
+        WrappedArgList::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -24705,19 +24705,19 @@ impl<'db> LegacyItemInlineMacro<'db> {
 }
 impl<'db> LegacyItemInlineMacro<'db> {
     pub fn attributes(&self, db: &'db dyn Database) -> AttributeList<'db> {
-        AttributeList::from_syntax_node(db, self.node.get_children(db)[0])
+        AttributeList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn path(&self, db: &'db dyn Database) -> ExprPath<'db> {
-        ExprPath::from_syntax_node(db, self.node.get_children(db)[1])
+        ExprPath::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn bang(&self, db: &'db dyn Database) -> TerminalNot<'db> {
-        TerminalNot::from_syntax_node(db, self.node.get_children(db)[2])
+        TerminalNot::from_syntax_node(db, self.node.get_child(db, 2))
     }
     pub fn arguments(&self, db: &'db dyn Database) -> WrappedArgList<'db> {
-        WrappedArgList::from_syntax_node(db, self.node.get_children(db)[3])
+        WrappedArgList::from_syntax_node(db, self.node.get_child(db, 3))
     }
     pub fn semicolon(&self, db: &'db dyn Database) -> TerminalSemicolon<'db> {
-        TerminalSemicolon::from_syntax_node(db, self.node.get_children(db)[4])
+        TerminalSemicolon::from_syntax_node(db, self.node.get_child(db, 4))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -24811,7 +24811,7 @@ impl<'db> TriviumSkippedNode<'db> {
 }
 impl<'db> TriviumSkippedNode<'db> {
     pub fn node(&self, db: &'db dyn Database) -> SkippedNode<'db> {
-        SkippedNode::from_syntax_node(db, self.node.get_children(db)[0])
+        SkippedNode::from_syntax_node(db, self.node.get_child(db, 0))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25085,13 +25085,13 @@ impl<'db> Terminal<'db> for TerminalIdentifier<'db> {
 }
 impl<'db> TerminalIdentifier<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenIdentifier<'db> {
-        TokenIdentifier::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenIdentifier::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25268,13 +25268,13 @@ impl<'db> Terminal<'db> for TerminalLiteralNumber<'db> {
 }
 impl<'db> TerminalLiteralNumber<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLiteralNumber<'db> {
-        TokenLiteralNumber::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLiteralNumber::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25450,13 +25450,13 @@ impl<'db> Terminal<'db> for TerminalShortString<'db> {
 }
 impl<'db> TerminalShortString<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenShortString<'db> {
-        TokenShortString::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenShortString::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25629,13 +25629,13 @@ impl<'db> Terminal<'db> for TerminalString<'db> {
 }
 impl<'db> TerminalString<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenString<'db> {
-        TokenString::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenString::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25808,13 +25808,13 @@ impl<'db> Terminal<'db> for TerminalAs<'db> {
 }
 impl<'db> TerminalAs<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenAs<'db> {
-        TokenAs::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenAs::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -25983,13 +25983,13 @@ impl<'db> Terminal<'db> for TerminalConst<'db> {
 }
 impl<'db> TerminalConst<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenConst<'db> {
-        TokenConst::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenConst::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26162,13 +26162,13 @@ impl<'db> Terminal<'db> for TerminalElse<'db> {
 }
 impl<'db> TerminalElse<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenElse<'db> {
-        TokenElse::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenElse::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26337,13 +26337,13 @@ impl<'db> Terminal<'db> for TerminalEnum<'db> {
 }
 impl<'db> TerminalEnum<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenEnum<'db> {
-        TokenEnum::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenEnum::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26512,13 +26512,13 @@ impl<'db> Terminal<'db> for TerminalExtern<'db> {
 }
 impl<'db> TerminalExtern<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenExtern<'db> {
-        TokenExtern::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenExtern::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26691,13 +26691,13 @@ impl<'db> Terminal<'db> for TerminalFalse<'db> {
 }
 impl<'db> TerminalFalse<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenFalse<'db> {
-        TokenFalse::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenFalse::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -26870,13 +26870,13 @@ impl<'db> Terminal<'db> for TerminalFunction<'db> {
 }
 impl<'db> TerminalFunction<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenFunction<'db> {
-        TokenFunction::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenFunction::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27049,13 +27049,13 @@ impl<'db> Terminal<'db> for TerminalIf<'db> {
 }
 impl<'db> TerminalIf<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenIf<'db> {
-        TokenIf::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenIf::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27224,13 +27224,13 @@ impl<'db> Terminal<'db> for TerminalWhile<'db> {
 }
 impl<'db> TerminalWhile<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenWhile<'db> {
-        TokenWhile::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenWhile::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27403,13 +27403,13 @@ impl<'db> Terminal<'db> for TerminalFor<'db> {
 }
 impl<'db> TerminalFor<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenFor<'db> {
-        TokenFor::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenFor::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27578,13 +27578,13 @@ impl<'db> Terminal<'db> for TerminalLoop<'db> {
 }
 impl<'db> TerminalLoop<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLoop<'db> {
-        TokenLoop::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLoop::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27753,13 +27753,13 @@ impl<'db> Terminal<'db> for TerminalImpl<'db> {
 }
 impl<'db> TerminalImpl<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenImpl<'db> {
-        TokenImpl::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenImpl::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -27928,13 +27928,13 @@ impl<'db> Terminal<'db> for TerminalImplicits<'db> {
 }
 impl<'db> TerminalImplicits<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenImplicits<'db> {
-        TokenImplicits::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenImplicits::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28107,13 +28107,13 @@ impl<'db> Terminal<'db> for TerminalLet<'db> {
 }
 impl<'db> TerminalLet<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLet<'db> {
-        TokenLet::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLet::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28282,13 +28282,13 @@ impl<'db> Terminal<'db> for TerminalMacro<'db> {
 }
 impl<'db> TerminalMacro<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMacro<'db> {
-        TokenMacro::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMacro::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28461,13 +28461,13 @@ impl<'db> Terminal<'db> for TerminalMatch<'db> {
 }
 impl<'db> TerminalMatch<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMatch<'db> {
-        TokenMatch::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMatch::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28640,13 +28640,13 @@ impl<'db> Terminal<'db> for TerminalModule<'db> {
 }
 impl<'db> TerminalModule<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenModule<'db> {
-        TokenModule::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenModule::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28819,13 +28819,13 @@ impl<'db> Terminal<'db> for TerminalMut<'db> {
 }
 impl<'db> TerminalMut<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMut<'db> {
-        TokenMut::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMut::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -28994,13 +28994,13 @@ impl<'db> Terminal<'db> for TerminalNoPanic<'db> {
 }
 impl<'db> TerminalNoPanic<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenNoPanic<'db> {
-        TokenNoPanic::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenNoPanic::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29173,13 +29173,13 @@ impl<'db> Terminal<'db> for TerminalOf<'db> {
 }
 impl<'db> TerminalOf<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenOf<'db> {
-        TokenOf::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenOf::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29348,13 +29348,13 @@ impl<'db> Terminal<'db> for TerminalRef<'db> {
 }
 impl<'db> TerminalRef<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenRef<'db> {
-        TokenRef::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenRef::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29523,13 +29523,13 @@ impl<'db> Terminal<'db> for TerminalContinue<'db> {
 }
 impl<'db> TerminalContinue<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenContinue<'db> {
-        TokenContinue::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenContinue::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29702,13 +29702,13 @@ impl<'db> Terminal<'db> for TerminalReturn<'db> {
 }
 impl<'db> TerminalReturn<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenReturn<'db> {
-        TokenReturn::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenReturn::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -29881,13 +29881,13 @@ impl<'db> Terminal<'db> for TerminalBreak<'db> {
 }
 impl<'db> TerminalBreak<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenBreak<'db> {
-        TokenBreak::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenBreak::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30060,13 +30060,13 @@ impl<'db> Terminal<'db> for TerminalStruct<'db> {
 }
 impl<'db> TerminalStruct<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenStruct<'db> {
-        TokenStruct::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenStruct::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30239,13 +30239,13 @@ impl<'db> Terminal<'db> for TerminalTrait<'db> {
 }
 impl<'db> TerminalTrait<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenTrait<'db> {
-        TokenTrait::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenTrait::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30418,13 +30418,13 @@ impl<'db> Terminal<'db> for TerminalTrue<'db> {
 }
 impl<'db> TerminalTrue<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenTrue<'db> {
-        TokenTrue::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenTrue::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30593,13 +30593,13 @@ impl<'db> Terminal<'db> for TerminalType<'db> {
 }
 impl<'db> TerminalType<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenType<'db> {
-        TokenType::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenType::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30768,13 +30768,13 @@ impl<'db> Terminal<'db> for TerminalUse<'db> {
 }
 impl<'db> TerminalUse<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenUse<'db> {
-        TokenUse::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenUse::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -30943,13 +30943,13 @@ impl<'db> Terminal<'db> for TerminalPub<'db> {
 }
 impl<'db> TerminalPub<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenPub<'db> {
-        TokenPub::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenPub::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31118,13 +31118,13 @@ impl<'db> Terminal<'db> for TerminalAnd<'db> {
 }
 impl<'db> TerminalAnd<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenAnd<'db> {
-        TokenAnd::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenAnd::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31293,13 +31293,13 @@ impl<'db> Terminal<'db> for TerminalAndAnd<'db> {
 }
 impl<'db> TerminalAndAnd<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenAndAnd<'db> {
-        TokenAndAnd::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenAndAnd::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31472,13 +31472,13 @@ impl<'db> Terminal<'db> for TerminalArrow<'db> {
 }
 impl<'db> TerminalArrow<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenArrow<'db> {
-        TokenArrow::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenArrow::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31651,13 +31651,13 @@ impl<'db> Terminal<'db> for TerminalAt<'db> {
 }
 impl<'db> TerminalAt<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenAt<'db> {
-        TokenAt::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenAt::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -31830,13 +31830,13 @@ impl<'db> Terminal<'db> for TerminalBadCharacters<'db> {
 }
 impl<'db> TerminalBadCharacters<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenBadCharacters<'db> {
-        TokenBadCharacters::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenBadCharacters::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32009,13 +32009,13 @@ impl<'db> Terminal<'db> for TerminalColon<'db> {
 }
 impl<'db> TerminalColon<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenColon<'db> {
-        TokenColon::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenColon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32188,13 +32188,13 @@ impl<'db> Terminal<'db> for TerminalColonColon<'db> {
 }
 impl<'db> TerminalColonColon<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenColonColon<'db> {
-        TokenColonColon::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenColonColon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32367,13 +32367,13 @@ impl<'db> Terminal<'db> for TerminalComma<'db> {
 }
 impl<'db> TerminalComma<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenComma<'db> {
-        TokenComma::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenComma::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32546,13 +32546,13 @@ impl<'db> Terminal<'db> for TerminalDiv<'db> {
 }
 impl<'db> TerminalDiv<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenDiv<'db> {
-        TokenDiv::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenDiv::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32721,13 +32721,13 @@ impl<'db> Terminal<'db> for TerminalDivEq<'db> {
 }
 impl<'db> TerminalDivEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenDivEq<'db> {
-        TokenDivEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenDivEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -32900,13 +32900,13 @@ impl<'db> Terminal<'db> for TerminalDollar<'db> {
 }
 impl<'db> TerminalDollar<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenDollar<'db> {
-        TokenDollar::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenDollar::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33079,13 +33079,13 @@ impl<'db> Terminal<'db> for TerminalDot<'db> {
 }
 impl<'db> TerminalDot<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenDot<'db> {
-        TokenDot::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenDot::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33254,13 +33254,13 @@ impl<'db> Terminal<'db> for TerminalDotDot<'db> {
 }
 impl<'db> TerminalDotDot<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenDotDot<'db> {
-        TokenDotDot::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenDotDot::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33433,13 +33433,13 @@ impl<'db> Terminal<'db> for TerminalDotDotEq<'db> {
 }
 impl<'db> TerminalDotDotEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenDotDotEq<'db> {
-        TokenDotDotEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenDotDotEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33612,13 +33612,13 @@ impl<'db> Terminal<'db> for TerminalEndOfFile<'db> {
 }
 impl<'db> TerminalEndOfFile<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenEndOfFile<'db> {
-        TokenEndOfFile::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenEndOfFile::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33791,13 +33791,13 @@ impl<'db> Terminal<'db> for TerminalEq<'db> {
 }
 impl<'db> TerminalEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenEq<'db> {
-        TokenEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -33966,13 +33966,13 @@ impl<'db> Terminal<'db> for TerminalEqEq<'db> {
 }
 impl<'db> TerminalEqEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenEqEq<'db> {
-        TokenEqEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenEqEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34141,13 +34141,13 @@ impl<'db> Terminal<'db> for TerminalGE<'db> {
 }
 impl<'db> TerminalGE<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenGE<'db> {
-        TokenGE::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenGE::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34316,13 +34316,13 @@ impl<'db> Terminal<'db> for TerminalGT<'db> {
 }
 impl<'db> TerminalGT<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenGT<'db> {
-        TokenGT::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenGT::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34491,13 +34491,13 @@ impl<'db> Terminal<'db> for TerminalHash<'db> {
 }
 impl<'db> TerminalHash<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenHash<'db> {
-        TokenHash::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenHash::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34666,13 +34666,13 @@ impl<'db> Terminal<'db> for TerminalLBrace<'db> {
 }
 impl<'db> TerminalLBrace<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLBrace<'db> {
-        TokenLBrace::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLBrace::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -34845,13 +34845,13 @@ impl<'db> Terminal<'db> for TerminalLBrack<'db> {
 }
 impl<'db> TerminalLBrack<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLBrack<'db> {
-        TokenLBrack::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLBrack::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35024,13 +35024,13 @@ impl<'db> Terminal<'db> for TerminalLE<'db> {
 }
 impl<'db> TerminalLE<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLE<'db> {
-        TokenLE::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLE::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35199,13 +35199,13 @@ impl<'db> Terminal<'db> for TerminalLParen<'db> {
 }
 impl<'db> TerminalLParen<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLParen<'db> {
-        TokenLParen::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLParen::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35378,13 +35378,13 @@ impl<'db> Terminal<'db> for TerminalLT<'db> {
 }
 impl<'db> TerminalLT<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenLT<'db> {
-        TokenLT::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenLT::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35553,13 +35553,13 @@ impl<'db> Terminal<'db> for TerminalMatchArrow<'db> {
 }
 impl<'db> TerminalMatchArrow<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMatchArrow<'db> {
-        TokenMatchArrow::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMatchArrow::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35732,13 +35732,13 @@ impl<'db> Terminal<'db> for TerminalMinus<'db> {
 }
 impl<'db> TerminalMinus<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMinus<'db> {
-        TokenMinus::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMinus::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -35911,13 +35911,13 @@ impl<'db> Terminal<'db> for TerminalMinusEq<'db> {
 }
 impl<'db> TerminalMinusEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMinusEq<'db> {
-        TokenMinusEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMinusEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36090,13 +36090,13 @@ impl<'db> Terminal<'db> for TerminalMod<'db> {
 }
 impl<'db> TerminalMod<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMod<'db> {
-        TokenMod::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMod::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36265,13 +36265,13 @@ impl<'db> Terminal<'db> for TerminalModEq<'db> {
 }
 impl<'db> TerminalModEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenModEq<'db> {
-        TokenModEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenModEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36444,13 +36444,13 @@ impl<'db> Terminal<'db> for TerminalMul<'db> {
 }
 impl<'db> TerminalMul<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMul<'db> {
-        TokenMul::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMul::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36619,13 +36619,13 @@ impl<'db> Terminal<'db> for TerminalMulEq<'db> {
 }
 impl<'db> TerminalMulEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenMulEq<'db> {
-        TokenMulEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenMulEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36798,13 +36798,13 @@ impl<'db> Terminal<'db> for TerminalNeq<'db> {
 }
 impl<'db> TerminalNeq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenNeq<'db> {
-        TokenNeq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenNeq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -36973,13 +36973,13 @@ impl<'db> Terminal<'db> for TerminalNot<'db> {
 }
 impl<'db> TerminalNot<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenNot<'db> {
-        TokenNot::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenNot::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37148,13 +37148,13 @@ impl<'db> Terminal<'db> for TerminalBitNot<'db> {
 }
 impl<'db> TerminalBitNot<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenBitNot<'db> {
-        TokenBitNot::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenBitNot::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37327,13 +37327,13 @@ impl<'db> Terminal<'db> for TerminalOr<'db> {
 }
 impl<'db> TerminalOr<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenOr<'db> {
-        TokenOr::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenOr::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37502,13 +37502,13 @@ impl<'db> Terminal<'db> for TerminalOrOr<'db> {
 }
 impl<'db> TerminalOrOr<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenOrOr<'db> {
-        TokenOrOr::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenOrOr::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37677,13 +37677,13 @@ impl<'db> Terminal<'db> for TerminalPlus<'db> {
 }
 impl<'db> TerminalPlus<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenPlus<'db> {
-        TokenPlus::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenPlus::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -37852,13 +37852,13 @@ impl<'db> Terminal<'db> for TerminalPlusEq<'db> {
 }
 impl<'db> TerminalPlusEq<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenPlusEq<'db> {
-        TokenPlusEq::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenPlusEq::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38034,13 +38034,13 @@ impl<'db> Terminal<'db> for TerminalQuestionMark<'db> {
 }
 impl<'db> TerminalQuestionMark<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenQuestionMark<'db> {
-        TokenQuestionMark::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenQuestionMark::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38213,13 +38213,13 @@ impl<'db> Terminal<'db> for TerminalRBrace<'db> {
 }
 impl<'db> TerminalRBrace<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenRBrace<'db> {
-        TokenRBrace::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenRBrace::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38392,13 +38392,13 @@ impl<'db> Terminal<'db> for TerminalRBrack<'db> {
 }
 impl<'db> TerminalRBrack<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenRBrack<'db> {
-        TokenRBrack::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenRBrack::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38571,13 +38571,13 @@ impl<'db> Terminal<'db> for TerminalRParen<'db> {
 }
 impl<'db> TerminalRParen<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenRParen<'db> {
-        TokenRParen::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenRParen::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38750,13 +38750,13 @@ impl<'db> Terminal<'db> for TerminalSemicolon<'db> {
 }
 impl<'db> TerminalSemicolon<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenSemicolon<'db> {
-        TokenSemicolon::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenSemicolon::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -38929,13 +38929,13 @@ impl<'db> Terminal<'db> for TerminalUnderscore<'db> {
 }
 impl<'db> TerminalUnderscore<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenUnderscore<'db> {
-        TokenUnderscore::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenUnderscore::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39108,13 +39108,13 @@ impl<'db> Terminal<'db> for TerminalXor<'db> {
 }
 impl<'db> TerminalXor<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenXor<'db> {
-        TokenXor::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenXor::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39204,10 +39204,10 @@ impl<'db> SyntaxFile<'db> {
 }
 impl<'db> SyntaxFile<'db> {
     pub fn items(&self, db: &'db dyn Database) -> ModuleItemList<'db> {
-        ModuleItemList::from_syntax_node(db, self.node.get_children(db)[0])
+        ModuleItemList::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn eof(&self, db: &'db dyn Database) -> TerminalEndOfFile<'db> {
-        TerminalEndOfFile::from_syntax_node(db, self.node.get_children(db)[1])
+        TerminalEndOfFile::from_syntax_node(db, self.node.get_child(db, 1))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
@@ -39372,13 +39372,13 @@ impl<'db> Terminal<'db> for TerminalEmpty<'db> {
 }
 impl<'db> TerminalEmpty<'db> {
     pub fn leading_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[0])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 0))
     }
     pub fn token(&self, db: &'db dyn Database) -> TokenEmpty<'db> {
-        TokenEmpty::from_syntax_node(db, self.node.get_children(db)[1])
+        TokenEmpty::from_syntax_node(db, self.node.get_child(db, 1))
     }
     pub fn trailing_trivia(&self, db: &'db dyn Database) -> Trivia<'db> {
-        Trivia::from_syntax_node(db, self.node.get_children(db)[2])
+        Trivia::from_syntax_node(db, self.node.get_child(db, 2))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]

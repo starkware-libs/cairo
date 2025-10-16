@@ -1,6 +1,6 @@
 use salsa::Database;
 
-use crate::node::SyntaxNode;
+use crate::node::{ChildrenIter, SyntaxNode};
 
 /// `WalkEvent` describes tree walking process.
 #[derive(Debug, Copy, Clone)]
@@ -32,7 +32,7 @@ pub struct Preorder<'a> {
 
 struct PreorderLayer<'a> {
     start: SyntaxNode<'a>,
-    children: Option<(&'a [SyntaxNode<'a>], usize)>,
+    children: Option<ChildrenIter<'a>>,
 }
 
 impl<'a> Preorder<'a> {
@@ -63,12 +63,12 @@ impl<'a> Iterator for Preorder<'a> {
                 // #1: If children iterator is not initialized, this means entire iteration just
                 // started, and the enter event for start node has to be emitted.
                 let event = WalkEvent::Enter(layer.start);
-                layer.children = Some((layer.start.get_children(self.db), 0));
+                layer.children = Some(layer.start.get_children(self.db));
                 self.layers.push(layer);
                 Some(event)
             }
-            Some((nodes, index)) => {
-                match nodes.get(index) {
+            Some(mut children_iter) => {
+                match children_iter.next() {
                     None => {
                         // #2: If children iterator is exhausted, this means iteration of start node
                         // just finished, and the layer needs to be popped (i.e. not pushed back)
@@ -81,12 +81,10 @@ impl<'a> Iterator for Preorder<'a> {
                         // push a new layer to iterate it. To avoid
                         // recursion, step #1 is duplicated and
                         // inlined here.
-                        let event = WalkEvent::Enter(*start);
-                        let new_layer = PreorderLayer {
-                            children: Some((start.get_children(self.db), 0)),
-                            start: *start,
-                        };
-                        layer.children = Some((nodes, index + 1));
+                        let event = WalkEvent::Enter(start);
+                        let new_layer =
+                            PreorderLayer { children: Some(start.get_children(self.db)), start };
+                        layer.children = Some(children_iter);
                         self.layers.extend([layer, new_layer]);
                         Some(event)
                     }

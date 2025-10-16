@@ -792,9 +792,9 @@ fn try_extract_named_macro_argument<'db>(
                         return Some(path);
                     }
                     let segments = path.segments(db);
-                    let mut elements = segments.elements(db);
+                    let elements = segments.elements(db);
                     if elements.len() != 1
-                        || !matches!(elements.next_back().unwrap(), ast::PathSegment::Simple(_))
+                        || !matches!(elements.last().unwrap(), ast::PathSegment::Simple(_))
                     {
                         diagnostics.push(PluginDiagnostic::error_with_inner_span(
                             db,

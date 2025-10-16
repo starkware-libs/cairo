@@ -184,8 +184,8 @@ fn generate_trait_for_impl<'db>(
                         builder.add_node(decl.name(db).as_syntax_node());
                         builder.add_node(decl.generic_params(db).as_syntax_node());
                         builder.add_node(signature.lparen(db).as_syntax_node());
-                        for node in signature.parameters(db).node.get_children(db).iter() {
-                            if let Some(param) = ast::Param::cast(db, *node) {
+                        for node in signature.parameters(db).node.get_children(db) {
+                            if let Some(param) = ast::Param::cast(db, node) {
                                 for modifier in param.modifiers(db).elements(db) {
                                     // `mut` modifiers are only relevant for impls, not traits.
                                     if !matches!(modifier, ast::Modifier::Mut(_)) {
@@ -195,7 +195,7 @@ fn generate_trait_for_impl<'db>(
                                 builder.add_node(param.name(db).as_syntax_node());
                                 builder.add_node(param.type_clause(db).as_syntax_node());
                             } else {
-                                builder.add_node(*node);
+                                builder.add_node(node);
                             }
                         }
                         let rparen = signature.rparen(db);
