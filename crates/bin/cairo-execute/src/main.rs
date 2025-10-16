@@ -27,8 +27,12 @@ use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use clap::Parser;
+use mimalloc::MiMalloc;
 use num_bigint::BigInt;
 use salsa::Database;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Compiles a Cairo project and runs a function marked `#[executable]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.

@@ -9,6 +9,7 @@ description = "Compiler executable for the Sierra intermediate representation wi
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+mimalloc.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 

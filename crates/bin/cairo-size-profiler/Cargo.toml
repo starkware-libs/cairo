@@ -9,6 +9,7 @@ description = "Runner executable for the Cairo programming language"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+mimalloc.workspace = true
 
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.3" }
 cairo-lang-defs = { path = "../../cairo-lang-defs", version = "~2.12.3" }

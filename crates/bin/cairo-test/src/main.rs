@@ -6,6 +6,10 @@ use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_test_runner::{TestRunConfig, TestRunner};
 use clap::Parser;
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Compiles a Cairo project and runs all the functions marked as `#[test]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.

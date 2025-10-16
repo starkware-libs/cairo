@@ -123,6 +123,7 @@ itertools = { version = "0.14.0", default-features = false }
 keccak = "0.1.5"
 lalrpop-util = { version = "0.22.2", features = ["lexer"] }
 log = "0.4.27"
+mimalloc = { version = "0.1.48" }
 num-bigint = { version = "0.4.6", default-features = false }
 num-integer = "0.1.46"
 num-traits = { version = "0.2.19", default-features = false }
