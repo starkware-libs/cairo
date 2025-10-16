@@ -6,7 +6,11 @@ use cairo_lang_starknet_classes::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPoints};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
+use mimalloc::MiMalloc;
 use serde::Deserialize;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Compiles a Sierra contract class into CASM contract class.
 /// Exits with 0/1 if the compilation succeeds/fails.
