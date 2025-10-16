@@ -73,3 +73,8 @@ pub use range::{
 // `RangeOp` and `RangeInclusiveOp` are used internally by the compiler.
 #[allow(unused_imports)]
 use range::{RangeInclusiveOp, RangeOp};
+
+#[unstable(feature: "slice-index")]
+pub mod slice_index;
+#[feature("slice-index")]
+pub use slice_index::SliceIndex;
