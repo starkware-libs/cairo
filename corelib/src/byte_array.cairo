@@ -42,12 +42,11 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
-use crate::array::{ArrayTrait, Span, SpanTrait};
-use crate::bytes_31::split_bytes31;
+use crate::array::{ArrayTrait, Span, SpanIter, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
-    one_shift_left_bytes_u128, split_u128, u8_at_u256,
+    one_shift_left_bytes_u128, split_bytes31, split_u128, u8_at_u256,
 };
 use crate::clone::Clone;
 use crate::cmp::min;
@@ -707,7 +706,7 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
     }
 }
 
-// TODO: Implement a more efficient version of this iterator.
+// TODO(giladchase): Delegate to byte span iterator instead of current at-based implementation.
 /// An iterator struct over a ByteArray.
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
@@ -717,6 +716,7 @@ pub struct ByteArrayIter {
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
     type Item = u8;
+
     fn next(ref self: ByteArrayIter) -> Option<u8> {
         self.ba.at(self.current_index.next()?)
     }
@@ -954,6 +954,114 @@ impl ByteSpanToByteSpan of ToByteSpanTrait<ByteSpan> {
         *self
     }
 }
+
+/// An iterator struct over a ByteSpan.
+#[derive(Drop, Clone)]
+pub struct ByteSpanIter {
+    data_iter: SpanIter<bytes31>,
+    current_word: felt252,
+    current_word_exhausted: bool,
+    // LSB index of next byte to read (decrements on each read, ignored when exhausted).
+    byte_in_word_lsb_index: usize,
+    remainder_word: felt252,
+    remainder_len: Bytes31Index,
+}
+
+#[generate_trait]
+impl ByteSpanIterImpl of ByteSpanIterTrait {
+    /// Loads a new word as the the current word and returns its first byte if it's not empty,
+    /// otherwise returns None.
+    fn load_word_next(ref self: ByteSpanIter, word: felt252, len: usize) -> Option<u8> {
+        let first_byte_index = len.checked_sub(1)?;
+        self.current_word = word;
+        let byte = u8_at_u256(self.current_word.into(), first_byte_index);
+
+        if let Some(next_index) = first_byte_index.checked_sub(1) {
+            self.byte_in_word_lsb_index = next_index;
+            self.current_word_exhausted = false;
+        } // else: current_word_exhausted is already set to true if this function is called.
+
+        Some(byte)
+    }
+}
+
+impl ByteSpanIterator of crate::iter::Iterator<ByteSpanIter> {
+    type Item = u8;
+
+    fn next(ref self: ByteSpanIter) -> Option<u8> {
+        // Return the next byte from the current word if it has bytes left.
+        if !self.current_word_exhausted {
+            let byte = u8_at_u256(self.current_word.into(), self.byte_in_word_lsb_index);
+            // Check if we have more bytes after this one
+            match self.byte_in_word_lsb_index.checked_sub(1) {
+                Some(next_index) => self.byte_in_word_lsb_index = next_index,
+                None => self.current_word_exhausted = true,
+            }
+            return Some(byte);
+        }
+
+        // Current word exhausted, try advancing to the next word from the data iterator.
+        let Some(word) = self.data_iter.next() else {
+            // No more data words, advance into the remainder word if it exists.
+            let len = upcast(self.remainder_len);
+            self.remainder_len = 0; // Mark remainder as consumed.
+            return self.load_word_next(self.remainder_word, len);
+        };
+        self.load_word_next((*word).into(), BYTES_IN_BYTES31)
+    }
+}
+
+impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
+    type IntoIter = ByteSpanIter;
+
+    /// Creates an iterator over the bytes in the `ByteSpan`.
+    fn into_iter(self: ByteSpan) -> Self::IntoIter {
+        let mut data_iter = self.data.into_iter();
+
+        // Get first word in data array if exists, otherwise iterate on the remainder word.
+        let Some(first_word) = data_iter.next() else {
+            if self.remainder_len == 0 {
+                return ByteSpanIter {
+                    data_iter,
+                    current_word: self.remainder_word,
+                    byte_in_word_lsb_index: 0,
+                    current_word_exhausted: true,
+                    remainder_word: 0,
+                    remainder_len: 0,
+                };
+            }
+
+            // If remainder length is nonzero then it's strictly larger than the start offset.
+            let byte_in_word_lsb_index = upcast(self.remainder_len)
+                - upcast(
+                    helpers::byte31_index_inc(self.first_char_start_offset)
+                        .expect('offset is < 30 in remainder'),
+                );
+
+            return ByteSpanIter {
+                data_iter,
+                current_word: self.remainder_word,
+                byte_in_word_lsb_index,
+                current_word_exhausted: false,
+                remainder_word: 0, // Mark remainder as consumed.
+                remainder_len: 0,
+            };
+        };
+
+        let byte_in_word_lsb_index = helpers::byte31_index_inc(self.first_char_start_offset)
+            .map(|offset_inc| BYTES_IN_BYTES31 - upcast(offset_inc))
+            .unwrap_or_default();
+        ByteSpanIter {
+            data_iter,
+            current_word: (*first_word).into(),
+            byte_in_word_lsb_index,
+            current_word_exhausted: false,
+            remainder_word: self.remainder_word,
+            remainder_len: self.remainder_len,
+        }
+    }
+}
+
 
 /// Shifts a word right by `n_bytes`.
 /// The input `bytes31` and the output `bytes31`s are represented using `felt252`s to improve
