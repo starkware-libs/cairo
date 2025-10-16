@@ -437,6 +437,7 @@ dependencies = [
  "cairo-lang-utils",
  "clap",
  "log",
+ "mimalloc",
  "tracing",
 ]
 
@@ -456,6 +457,7 @@ dependencies = [
  "cairo-lang-sierra-generator",
  "cairo-vm",
  "clap",
+ "mimalloc",
  "num-bigint",
  "salsa",
  "serde_json",
@@ -471,6 +473,7 @@ dependencies = [
  "colored",
  "ignore",
  "log",
+ "mimalloc",
  "tracing",
 ]
 
@@ -1191,6 +1194,7 @@ dependencies = [
  "cairo-lang-sierra-generator",
  "cairo-lang-starknet",
  "clap",
+ "mimalloc",
 ]
 
 [[package]]
@@ -1214,6 +1218,7 @@ dependencies = [
  "cairo-lang-utils",
  "clap",
  "itertools 0.14.0",
+ "mimalloc",
  "salsa",
 ]
 
@@ -1226,6 +1231,7 @@ dependencies = [
  "cairo-lang-runner",
  "cairo-lang-test-runner",
  "clap",
+ "mimalloc",
 ]
 
 [[package]]
@@ -1867,6 +1873,7 @@ dependencies = [
  "clap",
  "convert_case",
  "itertools 0.14.0",
+ "mimalloc",
  "salsa",
 ]
 
@@ -2477,6 +2484,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58f929b4d672ea937a23a1ab494143d968337a5f47e56d0815df1e0890ddf174"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "667f4fec20f29dfc6bc7357c582d91796c169ad7e2fce709468aefeb2c099870"
+dependencies = [
+ "cc",
+ "libc",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2555,6 +2572,15 @@ checksum = "51d1790c73b93164ff65868f63164497cb32339458a9297e17e212d91df62258"
 dependencies = [
  "log",
  "sprs",
+]
+
+[[package]]
+name = "mimalloc"
+version = "0.1.48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1ee66a4b64c74f4ef288bcbb9192ad9c3feaad75193129ac8509af543894fd8"
+dependencies = [
+ "libmimalloc-sys",
 ]
 
 [[package]]
@@ -3604,6 +3630,7 @@ dependencies = [
  "clap",
  "indoc",
  "log",
+ "mimalloc",
  "tracing",
 ]
 
@@ -3687,6 +3714,7 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-starknet-classes",
  "clap",
+ "mimalloc",
 ]
 
 [[package]]
@@ -3726,6 +3754,7 @@ dependencies = [
  "cairo-lang-starknet-classes",
  "cairo-lang-utils",
  "clap",
+ "mimalloc",
  "serde",
  "serde_json",
 ]
@@ -3737,6 +3766,7 @@ dependencies = [
  "anyhow",
  "cairo-lang-starknet-classes",
  "clap",
+ "mimalloc",
  "serde_json",
 ]
 

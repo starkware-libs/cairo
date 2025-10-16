@@ -37,7 +37,13 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use clap::Parser;
 use convert_case::Casing;
 use itertools::Itertools;
+#[cfg(feature = "mimalloc")]
+use mimalloc::MiMalloc;
 use salsa::Database;
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Tests that `PhasesFormatter` is consistent with the lowering phases.
 #[test]

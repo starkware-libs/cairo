@@ -8,6 +8,12 @@ use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_starknet::compile::starknet_compile;
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use clap::Parser;
+#[cfg(feature = "mimalloc")]
+use mimalloc::MiMalloc;
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Compiles the specified contract from a Cairo project, into a contract class file.
 /// Exits with 0/1 if the compilation succeeds/fails.

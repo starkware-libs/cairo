@@ -19,6 +19,11 @@ cairo-lang-runner = { path = "../../cairo-lang-runner", version = "~2.12.3" }
 cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "~2.12.3" }
 cairo-vm = { workspace = true, features = ["clap"] }
 clap.workspace = true
+mimalloc = { workspace = true, features = ["secure"], optional = true }
 num-bigint.workspace = true
 salsa.workspace = true
 serde_json.workspace = true
+
+[features]
+
+mimalloc = ["dep:mimalloc"]

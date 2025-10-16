@@ -6,6 +6,12 @@ use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::{CompilerConfig, compile_cairo_project_at_path};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
+#[cfg(feature = "mimalloc")]
+use mimalloc::MiMalloc;
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Options for the `inlining-strategy` arguments.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
