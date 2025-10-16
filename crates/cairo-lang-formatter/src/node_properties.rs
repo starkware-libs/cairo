@@ -140,7 +140,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         .parent(db)
                         .unwrap()
                         .get_children(db)
-                        .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
+                        .any(|c| c.kind() == SyntaxKind::PatternEnumInnerPattern) =>
             {
                 true
             }
@@ -952,7 +952,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             )
         {
             let parent_node = self.parent(db).unwrap();
-            let children = parent_node.get_children(db);
+            let mut children = parent_node.get_children(db);
             // Check if it's an ExprList or PatternList with len > 2, or any other list type.
             let is_expr_or_pattern_list = matches!(
                 self.parent_kind(db),
@@ -960,7 +960,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             );
             if (!is_expr_or_pattern_list || children.len() > 2)
             // Ensure that this node is the last element in the list.
-            && children.last() == Some(*self)
+            && children.next_back().map(|c| c.build(db)) == Some(*self)
             {
                 return true;
             }
@@ -975,8 +975,9 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             let statements_node = statement_node.parent(db).unwrap();
             // Checking if not the last statement, as `;` may be there to prevent the block from
             // returning the value of the current block.
-            let statements_children = statements_node.get_children(db);
-            let not_last = statements_children.last() != Some(statement_node);
+            let mut statements_children = statements_node.get_children(db);
+            let not_last =
+                statements_children.next_back().map(|c| c.build(db)) != Some(statement_node);
             if not_last
                 && matches!(
                     statement_node.get_child(db, 1).kind(db),
@@ -996,7 +997,9 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
         {
             let path_segment_node = self.parent(db).unwrap();
             let path_node = path_segment_node.parent(db).unwrap();
-            if path_node.get_children(db).last() != Some(path_segment_node) {
+            if path_node.get_children(db).next_back().map(|c| c.build(db))
+                != Some(path_segment_node)
+            {
                 false
             } else {
                 matches!(

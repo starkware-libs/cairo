@@ -92,7 +92,7 @@ fn test_generic_item_id(
             }
             _ => {}
         }
-        for child in node.get_children(db) {
+        for child in node.get_children(db).nodes(db) {
             find_generics(db, module_id, &child, output);
         }
     }

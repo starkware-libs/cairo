@@ -76,7 +76,8 @@ impl<'a> Iterator for Preorder<'a> {
                         // emitted.
                         Some(WalkEvent::Leave(layer.start))
                     }
-                    Some(start) => {
+                    Some(start_builder) => {
+                        let start = start_builder.build(self.db);
                         // #3: Otherwise the iterator is just in the middle of visiting a child, so
                         // push a new layer to iterate it. To avoid
                         // recursion, step #1 is duplicated and

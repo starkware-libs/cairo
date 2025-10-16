@@ -29,6 +29,7 @@ impl ColoredPrinter<'_> {
                     self.result.push_str(format!("{}", "<e>".red()).as_str());
                 } else {
                     for child in syntax_node.get_children(self.db) {
+                        let child = child.build(self.db);
                         self.print(&child);
                     }
                 }
