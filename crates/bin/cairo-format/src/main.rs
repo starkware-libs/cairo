@@ -10,6 +10,10 @@ use colored::Colorize;
 use ignore::WalkState::Continue;
 use ignore::{DirEntry, Error, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 use log::warn;
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Outputs a string to stderr if the verbose flag is true.
 fn eprintln_if_verbose(s: &str, verbose: bool) {
