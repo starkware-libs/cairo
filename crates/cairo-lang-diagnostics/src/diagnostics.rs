@@ -106,7 +106,7 @@ impl<'a> DiagnosticLocation<'a> {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
             None => "?".into(),
         };
-        write!(f, "{file_path}:{start}: {end}")
+        write!(f, "{file_path}:{start}:{end}")
     }
 }
 
