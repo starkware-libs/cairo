@@ -55,7 +55,7 @@ struct FormatterArgs {
     /// Enable merging of `use` items.
     #[arg(long)]
     merge_use_items: Option<bool>,
-    ///  Enable duplicates in `use` items.
+    /// Enable duplicates in `use` items.
     #[arg(long)]
     allow_duplicates: Option<bool>,
     /// A list of files and directories to format. Use "-" for stdin.

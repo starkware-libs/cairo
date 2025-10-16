@@ -791,7 +791,7 @@ impl CrateCached {
                     name: SmolStrId::from(ctx.db, name),
                     file_id: file_id.embed(ctx),
                     settings,
-                    cache_file: None, // todo  if two virtual crates are supported
+                    cache_file: None, // todo: if two virtual crates are supported
                 }
             }
         }
