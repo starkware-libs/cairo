@@ -11,7 +11,11 @@ clap.workspace = true
 colored.workspace = true
 ignore.workspace = true
 log.workspace = true
+mimalloc = { workspace = true, optional = true }
 tracing.workspace = true
 
 cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.13.0" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.0", features = ["tracing"] }
+
+[features]
+mimalloc = ["dep:mimalloc"]

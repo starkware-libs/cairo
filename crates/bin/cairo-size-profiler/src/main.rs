@@ -38,6 +38,10 @@ use clap::Parser;
 use itertools::{Itertools, chain};
 use salsa::Database;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Compiles a Cairo project and analyzes the size-related costs of its components.
 /// Exits with a status code of 1 if compilation or analysis fails, and 0 otherwise.
 #[derive(Parser, Debug)]

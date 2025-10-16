@@ -4,6 +4,10 @@ use anyhow::Context;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use clap::Parser;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Extracts Sierra code from a contract class file.
 /// Exits with 0/1 if the extraction succeeds/fails.
 #[derive(Parser, Debug)]

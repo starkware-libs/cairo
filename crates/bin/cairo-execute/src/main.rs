@@ -30,6 +30,10 @@ use clap::Parser;
 use num_bigint::BigInt;
 use salsa::Database;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Compiles a Cairo project and runs a function marked `#[executable]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]

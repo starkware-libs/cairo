@@ -7,6 +7,10 @@ use cairo_lang_runner::clap::RunProfilerConfigArg;
 use cairo_lang_test_runner::{TestRunConfig, TestRunner};
 use clap::Parser;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Compiles a Cairo project and runs all the functions marked as `#[test]`.
 /// Exits with 1 if the compilation or run fails, otherwise 0.
 #[derive(Parser, Debug)]
