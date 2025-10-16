@@ -47,7 +47,7 @@ use crate::bytes_31::split_bytes31;
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
-    one_shift_left_bytes_felt252, one_shift_left_bytes_u128, split_u128, u8_at_u256,
+    one_shift_left_bytes_u128, split_u128, u8_at_u256,
 };
 use crate::clone::Clone;
 use crate::cmp::min;
@@ -75,7 +75,7 @@ const BYTES_IN_BYTES31_NONZERO: NonZero<usize> = BYTES_IN_BYTES31.try_into().unw
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 /// Byte array type.
-#[derive(Drop, Clone, PartialEq, Serde)]
+#[derive(Drop, Clone, PartialEq)]
 pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
     /// The first byte of each word in the byte array is the most significant byte in the word.
@@ -91,6 +91,23 @@ pub struct ByteArray {
 impl ByteArrayDefault of Default<ByteArray> {
     fn default() -> ByteArray {
         ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+    }
+}
+impl ByteArraySerde of Serde<ByteArray> {
+    fn serialize(self: @ByteArray, ref output: Array<felt252>) {
+        Serde::serialize(self.data, ref output);
+        Serde::serialize(self.pending_word, ref output);
+        Serde::serialize(self.pending_word_len, ref output);
+    }
+
+    fn deserialize(ref serialized: Span<felt252>) -> Option<ByteArray> {
+        let data = Serde::deserialize(ref serialized)?;
+        let pending_word = Serde::deserialize(ref serialized)?;
+        let pending_word_len = Serde::deserialize(ref serialized)?;
+        if !is_valid_pending_word(pending_word, pending_word_len) {
+            return None;
+        }
+        Some(ByteArray { data, pending_word, pending_word_len })
     }
 }
 
@@ -302,8 +319,7 @@ impl InternalImpl of InternalTrait {
         // modified ByteArray).
         let split_index = match helpers::append_word_info(self.pending_word_len, len) {
             helpers::AppendWordInfo::InPending(pending_word_len) => {
-                self.pending_word = word
-                    + self.pending_word * one_shift_left_bytes_felt252(upcast(len));
+                self.pending_word = word + self.pending_word * pow256_felt252(len);
                 self.pending_word_len = pending_word_len;
                 return;
             },
@@ -377,7 +393,7 @@ impl InternalImpl of InternalTrait {
             2 => 0x10000000000000000000000000000000000000000000000000000000000,
             1 => 0x1000000000000000000000000000000000000000000000000000000000000,
             0 => 0x100000000000000000000000000000000000000000000000000000000000000,
-            _ => crate::panic_with_felt252('unreachable'),
+            _ => crate::panic_with_felt252('unreachable - no code generated'),
         }
     }
 
@@ -567,6 +583,85 @@ fn split_info(split_index: Bytes31Index) -> SplitInfo {
         30 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000000000000000 }),
         0 | _ => SplitInfo::BadUserData,
     }
+}
+
+/// Returns `2^n` as `felt252`.
+fn pow256_felt252(n: BoundedInt<1, 31>) -> felt252 {
+    // Matching on `n - 1` so we'd get a continuous match starting from 0, which is more efficient.
+    match helpers::length_minus_one(n) {
+        0 => 0x100,
+        1 => 0x10000,
+        2 => 0x1000000,
+        3 => 0x100000000,
+        4 => 0x10000000000,
+        5 => 0x1000000000000,
+        6 => 0x100000000000000,
+        7 => 0x10000000000000000,
+        8 => 0x1000000000000000000,
+        9 => 0x100000000000000000000,
+        10 => 0x10000000000000000000000,
+        11 => 0x1000000000000000000000000,
+        12 => 0x100000000000000000000000000,
+        13 => 0x10000000000000000000000000000,
+        14 => 0x1000000000000000000000000000000,
+        15 => 0x100000000000000000000000000000000,
+        16 => 0x10000000000000000000000000000000000,
+        17 => 0x1000000000000000000000000000000000000,
+        18 => 0x100000000000000000000000000000000000000,
+        19 => 0x10000000000000000000000000000000000000000,
+        20 => 0x1000000000000000000000000000000000000000000,
+        21 => 0x100000000000000000000000000000000000000000000,
+        22 => 0x10000000000000000000000000000000000000000000000,
+        23 => 0x1000000000000000000000000000000000000000000000000,
+        24 => 0x100000000000000000000000000000000000000000000000000,
+        25 => 0x10000000000000000000000000000000000000000000000000000,
+        26 => 0x1000000000000000000000000000000000000000000000000000000,
+        27 => 0x100000000000000000000000000000000000000000000000000000000,
+        28 => 0x10000000000000000000000000000000000000000000000000000000000,
+        29 => 0x1000000000000000000000000000000000000000000000000000000000000,
+        30 => 0x100000000000000000000000000000000000000000000000000000000000000,
+        _ => crate::panic_with_felt252('unreachable - no code generated'),
+    }
+}
+
+/// Validates that the data in a word is at most the given length.
+pub(crate) fn is_valid_pending_word(word: felt252, len: Bytes31Index) -> bool {
+    let data: u256 = word.into();
+    let bound: u256 = match len {
+        0 => 0x1,
+        1 => 0x100,
+        2 => 0x10000,
+        3 => 0x1000000,
+        4 => 0x100000000,
+        5 => 0x10000000000,
+        6 => 0x1000000000000,
+        7 => 0x100000000000000,
+        8 => 0x10000000000000000,
+        9 => 0x1000000000000000000,
+        10 => 0x100000000000000000000,
+        11 => 0x10000000000000000000000,
+        12 => 0x1000000000000000000000000,
+        13 => 0x100000000000000000000000000,
+        14 => 0x10000000000000000000000000000,
+        15 => 0x1000000000000000000000000000000,
+        16 => 0x100000000000000000000000000000000,
+        17 => 0x10000000000000000000000000000000000,
+        18 => 0x1000000000000000000000000000000000000,
+        19 => 0x100000000000000000000000000000000000000,
+        20 => 0x10000000000000000000000000000000000000000,
+        21 => 0x1000000000000000000000000000000000000000000,
+        22 => 0x100000000000000000000000000000000000000000000,
+        23 => 0x10000000000000000000000000000000000000000000000,
+        24 => 0x1000000000000000000000000000000000000000000000000,
+        25 => 0x100000000000000000000000000000000000000000000000000,
+        26 => 0x10000000000000000000000000000000000000000000000000000,
+        27 => 0x1000000000000000000000000000000000000000000000000000000,
+        28 => 0x100000000000000000000000000000000000000000000000000000000,
+        29 => 0x10000000000000000000000000000000000000000000000000000000000,
+        30 => 0x1000000000000000000000000000000000000000000000000000000000000,
+        _ => crate::panic_with_felt252('unreachable - no code generated'),
+    };
+    data < bound
 }
 
 impl ByteArrayAdd of Add<ByteArray> {
@@ -889,6 +984,15 @@ mod helpers {
     /// Impl for trimming the minimum value of a `Bytes31Index`.
     pub impl TrimMinBytes31Index of bounded_int::TrimMinHelper<Bytes31Index> {
         type Target = BoundedInt<1, 30>;
+    }
+
+    impl LengthToBytes31Index of SubHelper<BoundedInt<1, 31>, UnitInt<1>> {
+        type Result = Bytes31Index;
+    }
+
+    /// Takes the length of an input word and returns the length minus one.
+    pub fn length_minus_one(len: BoundedInt<1, 31>) -> Bytes31Index {
+        bounded_int::sub(len, 1)
     }
 }
 pub(crate) use helpers::len_parts;

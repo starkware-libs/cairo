@@ -907,6 +907,9 @@ fn inner_read_byte_array(address_domain: u32, address: StorageAddress) -> Syscal
         let pending_word = starknet::syscalls::storage_read_syscall(
             address_domain, storage_address_from_base_and_offset(chunk_base, index_in_chunk),
         )?;
+        if !core::byte_array::is_valid_pending_word(pending_word, pending_word_len) {
+            return Err(array!['Invalid pending word']);
+        }
         result.pending_word = pending_word;
         result.pending_word_len = pending_word_len;
     }
