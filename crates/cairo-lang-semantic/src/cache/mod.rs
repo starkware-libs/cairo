@@ -5,7 +5,7 @@ use std::sync::Arc;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::cache::{
     DefCacheLoadingData, DefCacheSavingContext, GenericParamCached, GlobalUseIdCached,
-    ImplDefIdCached, LanguageElementCached, ModuleIdCached, ModuleItemIdCached,
+    ImplAliasIdCached, ImplDefIdCached, LanguageElementCached, ModuleIdCached, ModuleItemIdCached,
     SyntaxStablePtrIdCached,
 };
 use cairo_lang_defs::db::DefsGroup;
@@ -46,6 +46,7 @@ use crate::items::imp::{
     GeneratedImplId, GeneratedImplItems, GeneratedImplLongId, ImplId, ImplImplId, ImplLongId,
     NegativeImplId, NegativeImplLongId,
 };
+use crate::items::impl_alias::ImplAliasSemantic;
 use crate::items::module::{ModuleItemInfo, ModuleSemantic, ModuleSemanticData};
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::visibility::Visibility;
@@ -92,9 +93,9 @@ pub fn load_cached_crate_modules_semantic<'db>(
             });
 
     let mut ctx = SemanticCacheLoadingContext::new(db, semantic_lookups, def_loading_data);
-    Some((
-        module_data
-            .0
+    Some(ModuleSemanticDataCacheAndLoadingData {
+        modules_semantic_data: module_data
+            .modules
             .into_iter()
             .map(|(module_id, module_data)| {
                 let module_id = module_id.get_embedded(&ctx.defs_loading_data);
@@ -104,12 +105,27 @@ pub fn load_cached_crate_modules_semantic<'db>(
             })
             .collect::<OrderedHashMap<_, _>>()
             .into(),
-        ctx.data.into(),
-    ))
+        impl_aliases_resolved_impls: module_data
+            .impl_aliases
+            .into_iter()
+            .map(|(impl_alias_id, impl_id)| {
+                let impl_alias_id = impl_alias_id.get_embedded(&ctx.defs_loading_data);
+                let impl_id = impl_id.embed(&mut ctx);
+                (impl_alias_id, impl_id)
+            })
+            .collect::<OrderedHashMap<_, _>>()
+            .into(),
+        loading_data: ctx.data.into(),
+    })
 }
 
+
+/// Semantic items in the semantic cache.
 #[derive(Serialize, Deserialize)]
-pub struct CrateSemanticCache(Vec<(ModuleIdCached, ModuleSemanticDataCached)>);
+pub struct CrateSemanticCache {
+    modules: Vec<(ModuleIdCached, ModuleSemanticDataCached)>,
+    impl_aliases: Vec<(ImplAliasIdCached, ImplIdCached)>,
+}
 
 /// Generate semantic cache for a crate.
 pub fn generate_crate_semantic_cache<'db>(
@@ -118,8 +134,8 @@ pub fn generate_crate_semantic_cache<'db>(
 ) -> Maybe<CrateSemanticCache> {
     let modules = ctx.db.crate_modules(crate_id);
 
-    Ok(CrateSemanticCache(
-        modules
+    Ok(CrateSemanticCache {
+        modules: modules
             .iter()
             .map(|id| {
                 let module_data = ctx.db.priv_module_semantic_data(*id)?.clone();
@@ -129,7 +145,22 @@ pub fn generate_crate_semantic_cache<'db>(
                 ))
             })
             .collect::<Maybe<Vec<_>>>()?,
-    ))
+        impl_aliases: modules
+            .iter()
+            .flat_map(|id| match ctx.db.module_impl_aliases_ids(*id) {
+                Err(err) => vec![Err(err)],
+                Ok(impl_aliases) => impl_aliases
+                    .iter()
+                    .map(|id| {
+                        Ok((
+                            ImplAliasIdCached::new(*id, &mut ctx.defs_ctx),
+                            ImplIdCached::new(ctx.db.impl_alias_resolved_impl(*id)?, ctx),
+                        ))
+                    })
+                    .collect::<Vec<_>>(),
+            })
+            .collect::<Maybe<Vec<_>>>()?,
+    })
 }
 
 /// Context for loading cache into the database.
