@@ -3,8 +3,8 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    InlineMacroExprPluginId, InlineMacroExprPluginLongId, LanguageElementId, LookupItemId,
-    MacroPluginId, MacroPluginLongId, ModuleId, ModuleItemId, UseId,
+    ImplAliasId, InlineMacroExprPluginId, InlineMacroExprPluginLongId, LanguageElementId,
+    LookupItemId, MacroPluginId, MacroPluginLongId, ModuleId, ModuleItemId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -27,7 +27,7 @@ use crate::items::enm::EnumSemantic;
 use crate::items::extern_function::ExternFunctionSemantic;
 use crate::items::extern_type::ExternTypeSemantic;
 use crate::items::free_function::FreeFunctionSemantic;
-use crate::items::imp::ImplSemantic;
+use crate::items::imp::{ImplId, ImplSemantic};
 use crate::items::impl_alias::ImplAliasSemantic;
 use crate::items::macro_call::{MacroCallSemantic, module_macro_modules};
 use crate::items::macro_declaration::MacroDeclarationSemantic;
@@ -646,10 +646,12 @@ pub fn module_fully_accessible_modules<'db>(
     result.into_iter().collect()
 }
 
-pub type ModuleSemanticDataCacheAndLoadingData<'db> = (
-    Arc<OrderedHashMap<ModuleId<'db>, ModuleSemanticData<'db>>>,
-    Arc<SemanticCacheLoadingData<'db>>,
-);
+#[derive(PartialEq, Eq, Clone, salsa::Update)]
+pub struct ModuleSemanticDataCacheAndLoadingData<'db> {
+    pub modules_semantic_data: Arc<OrderedHashMap<ModuleId<'db>, ModuleSemanticData<'db>>>,
+    pub impl_aliases_resolved_impls: Arc<OrderedHashMap<ImplAliasId<'db>, ImplId<'db>>>,
+    pub loading_data: Arc<SemanticCacheLoadingData<'db>>,
+}
 
 #[salsa::tracked]
 fn cached_crate_semantic_data<'db>(

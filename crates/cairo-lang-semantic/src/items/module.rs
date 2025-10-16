@@ -50,8 +50,8 @@ fn priv_module_semantic_data<'db>(
     _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<ModuleSemanticData<'db>> {
-    if let Some((map, _)) = db.cached_crate_semantic_data(module_id.owning_crate(db)) {
-        if let Some(module_data) = map.get(&module_id) {
+    if let Some(data) = db.cached_crate_semantic_data(module_id.owning_crate(db)) {
+        if let Some(module_data) = data.modules_semantic_data.get(&module_id) {
             return Ok(module_data.clone());
         } else {
             panic!("module not found in cached modules_data {:?}", module_id.name(db));
