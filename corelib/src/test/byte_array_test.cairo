@@ -843,10 +843,221 @@ fn test_span_at_overflows() {
     // Test overflow protection with large indices.
     let ba: ByteArray = "test";
     let span = ba.span();
-
     assert_eq!(span.get(Bounded::<usize>::MAX), None);
 
     let sliced = ba.span().get(1..3).unwrap();
     assert_eq!(sliced.get(Bounded::<usize>::MAX - 1), None);
     assert_eq!(sliced.get(Bounded::<usize>::MAX), None);
+}
+
+#[test]
+fn test_byte_span_simple() {
+    let empty: ByteArray = "";
+    let mut iter = empty.span().into_iter();
+    assert_eq!(iter.next(), None);
+
+    let ba: ByteArray = "A";
+    let mut iter = ba.span().into_iter();
+    assert_eq!(iter.next(), Some('A'));
+    assert_eq!(iter.next(), None);
+
+    let ba: ByteArray = "ABC";
+    let mut iter = ba.span().into_iter();
+    assert_eq!(iter.next(), Some('A'));
+    assert_eq!(iter.next(), Some('B'));
+    assert_eq!(iter.next(), Some('C'));
+    assert_eq!(iter.next(), None);
+    assert_eq!(iter.next(), None, "Idempotent empty");
+}
+
+#[test]
+fn test_byte_span_iterator_word_boundaries() {
+    // Test 30, 31, 32 bytes (1 word boundary).
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    let mut iter = ba_30.span().into_iter();
+    for _ in 0_usize..29 {
+        let _ = iter.next();
+    }
+    assert_eq!(iter.next(), Some('d'), "30 bytes - last byte");
+    assert_eq!(iter.next(), None);
+
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let mut iter = ba_31.span().into_iter();
+    assert_eq!(iter.next(), Some('A'));
+    for _ in 1_usize..30 {
+        let _ = iter.next();
+    }
+    assert_eq!(iter.next(), Some('e'), "31 bytes - last byte");
+    assert_eq!(iter.next(), None);
+
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    let mut iter = ba_32.span().into_iter();
+    for _ in 0_usize..30 {
+        let _ = iter.next();
+    }
+    assert_eq!(iter.next(), Some('e'), "32 bytes - byte 30");
+    assert_eq!(iter.next(), Some('f'), "32 bytes - byte 31");
+    assert_eq!(iter.next(), None);
+
+    // Test 62, 63, 64 bytes (2 word boundaries).
+    let ba_62: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let mut iter = ba_62.span().into_iter();
+    for _ in 0_usize..61 {
+        let _ = iter.next();
+    }
+    assert_eq!(iter.next(), Some('9'), "62 bytes - last byte");
+    assert_eq!(iter.next(), None);
+
+    let ba_63: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!";
+    let mut iter = ba_63.span().into_iter();
+    for _ in 0_usize..62 {
+        let _ = iter.next();
+    }
+    assert_eq!(iter.next(), Some('!'), "63 bytes - last byte");
+    assert_eq!(iter.next(), None);
+
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@";
+    let mut iter = ba_64.span().into_iter();
+    for _ in 0_usize..62 {
+        let _ = iter.next();
+    }
+    assert_eq!(iter.next(), Some('!'), "64 bytes - byte 62");
+    assert_eq!(iter.next(), Some('@'), "64 bytes - byte 63");
+    assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn test_byte_span_iterator_multiple_words() {
+    // Test with 3+ words to verify iteration works across multiple word boundaries.
+    // 92 bytes: 31 + 31 + 30.
+    let ba_92: ByteArray =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;':,.<>?/~`";
+    let span = ba_92.span();
+    let mut iter = span.into_iter();
+    // Verify we can iterate through all bytes.
+    let mut count = 0;
+    while let Some(_) = iter.next() {
+        count += 1;
+    }
+    assert_eq!(count, 92, "should iterate all 92 bytes");
+
+    // Verify correctness at specific positions.
+    let mut iter = span.into_iter();
+    assert_eq!(iter.next(), Some('A'));
+
+    // Skip to last byte.
+    for _ in 1_usize..91 {
+        let _ = iter.next();
+    }
+    assert_eq!(iter.next(), Some('`'));
+    assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn test_byte_span_iterator_for_loop_collect() {
+    let small_ba: ByteArray = "Hello";
+    let span = small_ba.span();
+
+    let mut collected = Default::default();
+    let mut count = 0;
+    for byte in span {
+        collected.append_byte(byte);
+        count += 1;
+    }
+    assert_eq!(collected, small_ba);
+    assert_eq!(count, 5);
+    assert_eq!(span.into_iter().collect(), small_ba);
+
+    // Test with 2 words.
+    let ba_40: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn";
+    collected = Default::default();
+    count = 0;
+    for byte in ba_40.span() {
+        collected.append_byte(byte);
+        count += 1;
+    }
+    assert_eq!(collected, ba_40);
+    assert_eq!(count, 40);
+    assert_eq!(ba_40.span().into_iter().collect(), ba_40);
+
+    // Test with 3 words.
+    let ba_70: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    collected = Default::default();
+    count = 0;
+    for byte in ba_70.span() {
+        collected.append_byte(byte);
+        count += 1;
+    }
+    assert_eq!(collected, ba_70);
+    assert_eq!(count, 70);
+    assert_eq!(ba_70.span().into_iter().collect(), ba_70);
+}
+
+#[test]
+fn test_byte_span_iterator_slices() {
+    // Slice within remainder word (< 31 bytes).
+    let ba_13: ByteArray = "Hello Shmello";
+    let span = ba_13.span().get(2..7).unwrap();
+
+    let mut iter = span.into_iter();
+    assert_eq!(iter.next(), Some('l'));
+    assert_eq!(iter.next(), Some('l'));
+    assert_eq!(iter.next(), Some('o'));
+    assert_eq!(iter.next(), Some(' '));
+    assert_eq!(iter.next(), Some('S'));
+    assert_eq!(iter.next(), None);
+
+    // Iterate slice across 2 words (1 data + remainder).
+    let ba_33: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    let span = ba_33.span().get(27..32).unwrap();
+
+    let mut iter = span.into_iter();
+    assert_eq!(iter.next(), Some('b'));
+    assert_eq!(iter.next(), Some('c'));
+    assert_eq!(iter.next(), Some('d'));
+    assert_eq!(iter.next(), Some('e'));
+    assert_eq!(iter.next(), Some('f'));
+    assert_eq!(iter.next(), None);
+
+    // Iterate slice across 3 words.
+    let ba_66: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$";
+    let span = ba_66.span().get(29..64).unwrap();
+
+    let mut iter = span.into_iter();
+    assert_eq!(iter.next(), Some('d'), "First word");
+    assert_eq!(iter.next(), Some('e'));
+    assert_eq!(iter.next(), Some('f'), "Second word");
+    assert_eq!(iter.next(), Some('g'));
+    assert_eq!(iter.next(), Some('h'));
+    assert_eq!(iter.next(), Some('i'));
+    assert_eq!(iter.next(), Some('j'));
+    assert_eq!(iter.next(), Some('k'));
+    assert_eq!(iter.next(), Some('l'));
+    assert_eq!(iter.next(), Some('m'));
+    assert_eq!(iter.next(), Some('n'));
+    assert_eq!(iter.next(), Some('o'));
+    assert_eq!(iter.next(), Some('p'));
+    assert_eq!(iter.next(), Some('q'));
+    assert_eq!(iter.next(), Some('r'));
+    assert_eq!(iter.next(), Some('s'));
+    assert_eq!(iter.next(), Some('t'));
+    assert_eq!(iter.next(), Some('u'));
+    assert_eq!(iter.next(), Some('v'));
+    assert_eq!(iter.next(), Some('w'));
+    assert_eq!(iter.next(), Some('x'));
+    assert_eq!(iter.next(), Some('y'));
+    assert_eq!(iter.next(), Some('z'));
+    assert_eq!(iter.next(), Some('0'));
+    assert_eq!(iter.next(), Some('1'));
+    assert_eq!(iter.next(), Some('2'));
+    assert_eq!(iter.next(), Some('3'));
+    assert_eq!(iter.next(), Some('4'));
+    assert_eq!(iter.next(), Some('5'));
+    assert_eq!(iter.next(), Some('6'));
+    assert_eq!(iter.next(), Some('7'));
+    assert_eq!(iter.next(), Some('8'));
+    assert_eq!(iter.next(), Some('9'));
+    assert_eq!(iter.next(), Some('!'), "Remainder word");
+    assert_eq!(iter.next(), Some('@'));
+    assert_eq!(iter.next(), None);
 }
