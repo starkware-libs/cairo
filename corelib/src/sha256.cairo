@@ -75,10 +75,10 @@ pub fn compute_sha256_u32_array(
 /// ```
 /// use core::sha256::compute_sha256_byte_array;
 ///
-//! let data = "Hello";
-//! let hash = compute_sha256_byte_array(@data);
-//! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
-//! 0x7d17648, 0x26381969]);
+/// let data = "Hello";
+/// let hash = compute_sha256_byte_array(@data);
+/// assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
+/// 0x7d17648, 0x26381969]);
 /// ```
 pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
     let mut word_arr = array![];
