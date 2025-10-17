@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
@@ -13,6 +14,7 @@ use salsa::Database;
 
 use super::generics::{GenericParamsData, semantic_generic_params};
 use super::imp::ImplId;
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::inference::InferenceId;
@@ -242,6 +244,17 @@ pub trait ImplAliasSemantic<'db>: Database {
     }
     /// Returns the resolved type of a type alias.
     fn impl_alias_resolved_impl(&'db self, id: ImplAliasId<'db>) -> Maybe<ImplId<'db>> {
+        let db = self.as_dyn_database();
+        if let Some(data) = db.cached_crate_semantic_data(id.module_id(db).owning_crate(db)) {
+            if let Some(resolved_impl) = data.impl_aliases_resolved_impls.get(&id) {
+                return Ok(*resolved_impl);
+            } else {
+                panic!(
+                    "impl alias not found in cached impl_aliases_resolved_impls {:?}",
+                    id.debug(db)
+                );
+            }
+        };
         impl_alias_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.resolved_impl
     }
     /// Returns the generic parameters of a type alias.

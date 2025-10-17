@@ -1286,7 +1286,7 @@ impl ImplAliasCached {
 pub struct ImplAliasIdCached(usize);
 
 impl ImplAliasIdCached {
-    fn new<'db>(id: ImplAliasId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+    pub fn new<'db>(id: ImplAliasId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         if let Some(cached_id) = ctx.impl_alias_ids.get(&id) {
             return *cached_id;
         }
