@@ -20,6 +20,7 @@ use crate::items::macro_declaration::{
     MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::module::ModuleSemantic;
+use crate::lsp_helpers::LspHelpers;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
 /// The data associated with a macro call in item context.
@@ -64,6 +65,7 @@ fn priv_macro_call_data<'db>(
             original_item_removed: false,
         })
         .intern(db);
+        db.accumulate_inline_macro_expansion(generated_file_id);
         let macro_call_module =
             ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: true };
         return Ok(MacroCallData {
@@ -151,6 +153,7 @@ fn priv_macro_call_data<'db>(
         original_item_removed: false,
     })
     .intern(db);
+    db.accumulate_inline_macro_expansion(generated_file_id);
     let macro_call_module =
         ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: false };
     Ok(MacroCallData {
