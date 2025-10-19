@@ -13,6 +13,8 @@
 //! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
 //! 0x7d17648, 0x26381969]);
 //! ```
+#[feature("byte-span")]
+use core::byte_array::ToByteSpanTrait;
 use starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
@@ -82,29 +84,28 @@ pub fn compute_sha256_u32_array(
 /// ```
 pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
     let mut word_arr = array![];
-    let len = arr.len();
-    let rem = len % 4;
-    let mut index = 0;
-    let rounded_len = len - rem;
-    while index != rounded_len {
-        let word = arr.at(index + 3).unwrap().into()
-            + arr.at(index + 2).unwrap().into() * 0x100
-            + arr.at(index + 1).unwrap().into() * 0x10000
-            + arr.at(index).unwrap().into() * 0x1000000;
-        word_arr.append(word);
-        index = index + 4;
-    }
+    let mut iter = arr.span().into_iter();
 
-    let last = match rem {
-        0 => 0,
-        1 => arr.at(len - 1).unwrap().into(),
-        2 => arr.at(len - 1).unwrap().into() + arr.at(len - 2).unwrap().into() * 0x100,
-        _ => arr.at(len - 1).unwrap().into()
-            + arr.at(len - 2).unwrap().into() * 0x100
-            + arr.at(len - 3).unwrap().into() * 0x10000,
+    // Process bytes from the iterator in chunks of 4.
+    let (last_word, last_word_len) = loop {
+        let Some(b0) = iter.next() else {
+            break (0, 0);
+        };
+        let Some(b1) = iter.next() else {
+            break (b0.into(), 1);
+        };
+        let Some(b2) = iter.next() else {
+            break (b1.into() + b0.into() * 0x100, 2);
+        };
+        let Some(b3) = iter.next() else {
+            break (b2.into() + b1.into() * 0x100 + b0.into() * 0x10000, 3);
+        };
+
+        let word = b3.into() + b2.into() * 0x100 + b1.into() * 0x10000 + b0.into() * 0x1000000;
+        word_arr.append(word);
     };
 
-    compute_sha256_u32_array(word_arr, last, rem.into())
+    compute_sha256_u32_array(word_arr, last_word, last_word_len)
 }
 
 /// Adds padding to the input array according to the SHA-256 specification.
