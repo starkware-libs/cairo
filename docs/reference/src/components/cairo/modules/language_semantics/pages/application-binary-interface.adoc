@@ -1,6 +1,172 @@
 = Application binary interface
 
-This section is a work in progress.
+The Application Binary Interface (ABI) is the machine-readable description of a Starknet
+contract’s public surface: callable entry points, their typed parameters and return values,
+events, and referenced user-defined types. The Cairo compiler generates the ABI from the
+contract source and validates basic invariants, so that tooling (SDKs, CLIs, indexers) can
+interact with contracts in a consistent way.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+This page explains what the ABI contains, its JSON representation, how it is generated and
+validated by the compiler, and how events are serialized. For how entry points are authored in
+contracts, see xref:language_constructs:contracts.adoc[Contracts].
+
+== What the ABI contains
+
+Each contract’s ABI includes a set of items:
+
+- Functions (external and view) — callable entry points.
+- Constructor — optional deployment-time initializer (at most one per contract).
+- L1 handlers — entry points invoked by L1→L2 messages.
+- Events — typed events emitted by the contract.
+- User-defined types — `struct` and `enum` definitions referenced by entry points and events.
+- Interfaces and impls — generated and/or embedded contract interfaces and their implementations.
+
+== JSON representation (shape)
+
+The ABI is a JSON array of items. Each item has a discriminator field `type` identifying the
+kind of item. Below are minimal shapes aligned with the compiler’s internal model.
+
+Function item:
+[source,json]
+----
+{
+  "type": "function",
+  "name": "transfer",
+  "inputs": [
+    { "name": "to", "type": "ContractAddress" },
+    { "name": "amount", "type": "u256" }
+  ],
+  "outputs": [],
+  "state_mutability": "external"  // or "view"
+}
+----
+
+Constructor item:
+[source,json]
+----
+{
+  "type": "constructor",
+  "name": "constructor",
+  "inputs": [
+    { "name": "initial_supply", "type": "u256" }
+  ]
+}
+----
+
+L1 handler item:
+[source,json]
+----
+{
+  "type": "l1_handler",
+  "name": "handle_deposit",
+  "inputs": [ { "name": "from_address", "type": "felt252" } ],
+  "outputs": [],
+  "state_mutability": "external"
+}
+----
+
+Event item (struct kind):
+[source,json]
+----
+{
+  "type": "event",
+  "name": "Transfer",
+  "kind": "struct",
+  "members": [
+    { "name": "from", "type": "ContractAddress", "kind": "key" },
+    { "name": "to",   "type": "ContractAddress", "kind": "key" },
+    { "name": "amount","type": "u256",            "kind": "data" }
+  ]
+}
+----
+
+Struct and enum items (referenced types):
+[source,json]
+----
+{ "type": "struct", "name": "Balance", "members": [
+  { "name": "amount", "type": "u256" }
+]}
+
+{ "type": "enum", "name": "Result", "variants": [
+  { "name": "Ok",  "type": "u256" },
+  { "name": "Err", "type": "felt252" }
+]}
+----
+
+Interface and impl items (contract interfaces and their implementations):
+[source,json]
+----
+{ "type": "interface", "name": "IERC20", "items": [
+  { "type": "function", "name": "balance_of", "inputs": [
+    { "name": "account", "type": "ContractAddress" }
+  ], "outputs": [ { "type": "u256" } ], "state_mutability": "view" }
+]}
+
+{ "type": "impl", "name": "Erc20Impl", "interface_name": "IERC20" }
+----
+
+Notes:
+
+- The exact set of user-defined types included depends on what entry point signatures and events
+  reference. Types follow Cairo’s Serde serialization rules when flattened to calldata/returndata.
+- State mutability is either `external` or `view`.
+
+== Generation and validation
+
+The compiler derives the ABI from the contract’s submodule and enforces invariants during
+generation. High‑level flow:
+
+1. Collect entry points (external/view, L1 handlers, constructor) from the contract module.
+2. Build the typed ABI, including referenced structs/enums, interfaces and impls.
+3. Validate invariants (see below) and emit diagnostics on violations.
+
+Key invariants and diagnostics include (non‑exhaustive):
+
+- Exactly one constructor at most; having more than one is rejected.
+- Contracts must define exactly one `Storage` struct.
+- Entry points must have a `self` first parameter with the correct mutability (`ref` for external,
+  `@` for view), see xref:language_constructs:contracts.adoc[Contracts].
+- Events must derive `starknet::Event`; flattened variants marked with `#[flat]` must be enums.
+- Duplicate entry point names/selectors and duplicate event selectors are rejected.
+- Interfaces embedded into a contract must be marked with the correct attributes, and interface
+  impls cannot be marked `#[abi(per_item)]`.
+
+These rules are implemented in the Starknet compiler pipeline and surfaced as diagnostics.
+
+== Events and serialization
+
+Event fields specify how data is placed into the event’s `keys` and `data` arrays:
+
+- `kind = "key"` — field is serialized into the `keys` array using Serde.
+- `kind = "data"` — field is serialized into the `data` array using Serde.
+- `kind = "nested"` — field is serialized as a nested event.
+
+Serialization of complex types follows Cairo’s Serde rules. Tooling should rely on the ABI shapes
+and Serde derivations for stable encoding.
+
+== Calling conventions and selectors
+
+Function and event selectors are computed by the compiler and made available to tooling via the
+generated contract class. Selectors are not redefined here; tooling should use the values emitted
+by the compiler for correctness.
+
+For account contracts, the standard calldata layout for invoke transactions is `Array<Call>`
+(SNIP‑6). While not enforced by the protocol, deviating may reduce compatibility with standard
+tooling.
+
+== Related documentation and sources
+
+- xref:language_constructs:contracts.adoc[Contracts]
+- ABI model and JSON serialization live in the codebase:
+  * `crates/cairo-lang-starknet-classes/src/abi.rs`
+  * `crates/cairo-lang-starknet/src/abi.rs`
+  * ABI building during compilation: `crates/cairo-lang-starknet/src/compile.rs`
+
+== Open points and versioning
+
+This document intentionally defers the precise selector hashing algorithm and the full, formal
+flattening of complex Cairo types to calldata/returndata, as those are governed by Cairo Serde and
+compiler internals. Future revisions may include a normative appendix once stabilized.
+
+Interface embedding attributes (e.g., `#[abi(embed_v0)]`) and per‑item embedding evolve with the
+language; refer to the source files above for the latest details.
