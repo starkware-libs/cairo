@@ -55,7 +55,7 @@ impl AuxCombine for PanicState {
     }
 }
 
-// Represents the item that caused the triggered the need for a drop.
+// Represents the item that caused the need for a drop.
 #[derive(Copy, Clone, Debug)]
 pub enum DropPosition<'db> {
     // The trigger is a call to a panicable function.
