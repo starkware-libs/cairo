@@ -170,6 +170,3 @@ compiler internals. Future revisions may include a normative appendix once stabi
 
 Interface embedding attributes (e.g., `#[abi(embed_v0)]`) and per‑item embedding evolve with the
 language; refer to the source files above for the latest details.
-
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
