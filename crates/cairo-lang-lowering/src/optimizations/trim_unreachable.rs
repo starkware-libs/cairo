@@ -20,7 +20,7 @@ pub fn trim_unreachable<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) 
     // Helper function to process a variable.
     // Checks if the variable is an enum with zero variants.
     // If it is, a fix is added to the list of fixes, and the function returns `true`,
-    // Otherwise, it returns `false.
+    // Otherwise, it returns `false`.
     let mut handle_var = |var_id: &VariableId, introduction_block| {
         let variable = &lowered.variables[*var_id];
         let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = variable.ty.long(db)
