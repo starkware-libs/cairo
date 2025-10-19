@@ -781,7 +781,7 @@ impl fmt::Display for CommentLine {
 }
 
 /// Formats a comment to fit in the line width. There are no merges of lines, as this is not clear
-/// when to merge two lines the user choose to write on separate lines, so all original line breaks
+/// when to merge two lines the user chooses to write on separate lines, so all original line breaks
 /// are preserved.
 fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usize) -> String {
     let mut formatted_comment = String::new();
