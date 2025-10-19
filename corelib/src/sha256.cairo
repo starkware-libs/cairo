@@ -13,6 +13,10 @@
 //! assert!(hash == [0x185f8db3, 0x2271fe25, 0xf561a6fc, 0x938b2e26, 0x4306ec30, 0x4eda5180,
 //! 0x7d17648, 0x26381969]);
 //! ```
+#[feature("byte-span")]
+use core::byte_array::ToByteSpanTrait;
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::upcast;
 use starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
@@ -81,30 +85,29 @@ pub fn compute_sha256_u32_array(
 /// 0x7d17648, 0x26381969]);
 /// ```
 pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
+    let mut iter = arr.span().into_iter();
     let mut word_arr = array![];
-    let len = arr.len();
-    let rem = len % 4;
-    let mut index = 0;
-    let rounded_len = len - rem;
-    while index != rounded_len {
-        let word = arr.at(index + 3).unwrap().into()
-            + arr.at(index + 2).unwrap().into() * 0x100
-            + arr.at(index + 1).unwrap().into() * 0x10000
-            + arr.at(index).unwrap().into() * 0x1000000;
-        word_arr.append(word);
-        index = index + 4;
-    }
 
-    let last = match rem {
-        0 => 0,
-        1 => arr.at(len - 1).unwrap().into(),
-        2 => arr.at(len - 1).unwrap().into() + arr.at(len - 2).unwrap().into() * 0x100,
-        _ => arr.at(len - 1).unwrap().into()
-            + arr.at(len - 2).unwrap().into() * 0x100
-            + arr.at(len - 3).unwrap().into() * 0x10000,
+    let (last_word, last_word_len) = loop {
+        let Some(b0) = iter.next() else {
+            break (0, 0);
+        };
+        let Some(b1) = iter.next() else {
+            break (upcast(b0), 1);
+        };
+        let b0_b1 = conversions::shift_append_byte(b0, b1);
+        let Some(b2) = iter.next() else {
+            break (upcast(b0_b1), 2);
+        };
+        let b0_b1_b2 = conversions::shift_append_byte(b0_b1, b2);
+        let Some(b3) = iter.next() else {
+            break (upcast(b0_b1_b2), 3);
+        };
+
+        word_arr.append(upcast(conversions::shift_append_byte(b0_b1_b2, b3)));
     };
 
-    compute_sha256_u32_array(word_arr, last, rem.into())
+    compute_sha256_u32_array(word_arr, last_word, last_word_len)
 }
 
 /// Adds padding to the input array according to the SHA-256 specification.
@@ -207,4 +210,42 @@ fn append_zeros(ref arr: Array<u32>, count: felt252) {
         return;
     }
     arr.append(0);
+}
+
+mod conversions {
+    #[feature("bounded-int-utils")]
+    use core::internal::bounded_int::{self, AddHelper, BoundedInt, MulHelper, UnitInt, upcast};
+
+    impl U8Shift of MulHelper<u8, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFF00>;
+    }
+    impl U8ShiftAddU8 of AddHelper<U8Shift::Result, u8> {
+        type Result = BoundedInt<0, 0xFFFF>;
+    }
+    impl U16Shift of MulHelper<U8ShiftAddU8::Result, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFFFF00>;
+    }
+    impl U16ShiftAddU8 of AddHelper<U16Shift::Result, u8> {
+        type Result = BoundedInt<0, 0xFFFFFF>;
+    }
+    impl U24Shift of MulHelper<U16ShiftAddU8::Result, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFFFFFF00>;
+    }
+    impl U24ShiftAddU8 of AddHelper<U24Shift::Result, u8> {
+        type Result = BoundedInt<0, 0xFFFFFFFF>;
+    }
+    trait ShiftAppendByte<T> {
+        impl Mul: MulHelper<T, UnitInt<0x100>>;
+        impl Add: AddHelper<Mul::Result, u8>;
+    }
+    impl ShiftAppendByteImpl<
+        T, impl MH: MulHelper<T, UnitInt<0x100>>, impl AH: AddHelper<MH::Result, u8>,
+    > of ShiftAppendByte<T> {}
+
+    /// Shifts a word left by one byte position and appends a new byte.
+    pub fn shift_append_byte<T, impl SAB: ShiftAppendByte<T>>(
+        word: T, byte: u8,
+    ) -> SAB::Add::Result {
+        bounded_int::add::<_, _, SAB::Add>(bounded_int::mul::<_, _, SAB::Mul>(word, 0x100), byte)
+    }
 }
