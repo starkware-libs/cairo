@@ -706,18 +706,17 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
     }
 }
 
-// TODO(giladchase): Delegate to byte span iterator instead of current at-based implementation.
 /// An iterator struct over a ByteArray.
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
-    ba: ByteArray,
-    current_index: IntoIterator::<crate::ops::Range<usize>>::IntoIter,
+    inner: ByteSpanIter,
 }
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
     type Item = u8;
+    #[inline]
     fn next(ref self: ByteArrayIter) -> Option<u8> {
-        self.ba.at(self.current_index.next()?)
+        self.inner.next()
     }
 }
 
@@ -725,7 +724,7 @@ impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
     type IntoIter = ByteArrayIter;
     #[inline]
     fn into_iter(self: ByteArray) -> Self::IntoIter {
-        ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
+        ByteArrayIter { inner: self.span().into_iter() }
     }
 }
 
