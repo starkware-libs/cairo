@@ -138,3 +138,5 @@ _For more information and to report security issues, please refer to our [securi
 This project is licensed under the **Apache 2.0**.
 
 See [LICENSE](LICENSE) for more information.
+<br>## Welcome to Cairo ZK<br>Cairo powers StarkNet ZK L2—new contributors, start with the Sierra compiler tutorial for MegaETH-compatible proofs. Tip: Use Starkli for CLI! <br>
+
