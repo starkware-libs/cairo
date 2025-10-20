@@ -1,34 +1,237 @@
-//! > Test simple specialization.
+//! > Test simple value.
 
 //! > test_runner_name
 test_specialized_function
 
 //! > function
-fn foo(ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>) {
-    arr.append(x + y)
+fn foo() {
+    bar(true, 1)
 }
 
 //! > function_name
 foo
 
 //! > module_code
+fn bar(keep: bool, x: felt252) {
+    if keep {
+        bar_ext(x);
+    }
+}
+
+extern fn bar_ext(x: felt252) nopanic;
+
+//! > caller_lowering
+Parameters:
+blk0 (root):
+Statements:
+  () <- test::bar{bool::True({}), 1, }()
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1
+  (v0: core::bool) <- bool::True({})
+  (v2: ()) <- test::bar(v0, v1)
+End:
+  Return(v2)
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > full_path
-test::foo{array![], { array![] }, None, 1, 0.into_box(), }
+//! > ==========================================================================
 
-//! > lowering
-Parameters: v2: core::felt252
+//! > Test boxed value.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo() {
+    bar(true, BoxTrait::new(2))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, x: Box<felt252>) {
+    if keep {
+        bar_ext(x);
+    }
+}
+
+extern fn bar_ext(x: Box<felt252>) nopanic;
+
+//! > caller_lowering
+Parameters:
 blk0 (root):
 Statements:
-  (v4: core::box::Box::<core::felt252>) <- 0.into_box()
-  (v3: core::felt252) <- 1
-  (v5: @core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v1: core::array::Span::<core::felt252>) <- struct_construct(v5)
+  (v0: core::box::Box::<core::felt252>) <- 2.into_box()
+  () <- test::bar{bool::True({}), None, }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v1: core::box::Box::<core::felt252>
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::True({})
+  (v2: ()) <- test::bar(v0, v1)
+End:
+  Return(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test empty array.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo() {
+    bar(true, array![])
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, x: Array<felt252>) {
+    if keep {
+        bar_ext(x);
+    }
+}
+
+extern fn bar_ext(x: Array<felt252>) nopanic;
+
+//! > caller_lowering
+Parameters:
+blk0 (root):
+Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v6: core::array::Array::<core::felt252>, v7: ()) <- test::foo(v0, v1, v2, v3, v4)
+  () <- test::bar{bool::True({}), None, }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::True({})
+  (v2: ()) <- test::bar(v0, v1)
+End:
+  Return(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test empty span.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo() {
+    bar(true, array![])
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, x: Array<felt252>) {
+    if keep {
+        bar_ext(x);
+    }
+}
+
+extern fn bar_ext(x: Array<felt252>) nopanic;
+
+//! > caller_lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  () <- test::bar{bool::True({}), None, }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::True({})
+  (v2: ()) <- test::bar(v0, v1)
+End:
+  Return(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test mixed case.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(x: felt252) {
+    let mut arr = array![];
+    bar(true, ref arr, array![].span(), x, 0, BoxTrait::new(1))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(
+    keep: bool, ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>,
+) {
+    if keep {
+        bar_ext(ref arr, d, x, y, z);
+    }
+}
+
+extern fn bar_ext(
+    ref arr: Array<felt252>, d: Span<felt252>, x: felt252, y: felt252, z: Box<felt252>,
+) nopanic;
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v5: core::box::Box::<core::felt252>) <- 1.into_box()
+  (v6: core::array::Span::<core::felt252>) <- struct_construct(v4)
+  (v7: core::array::Array::<core::felt252>) <- test::bar{bool::True({}), None, None, None, 0, None, }(v1, v6, v0, v5)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v1: core::array::Array::<core::felt252>, v2: core::array::Span::<core::felt252>, v3: core::felt252, v5: core::box::Box::<core::felt252>
+blk0 (root):
+Statements:
+  (v4: core::felt252) <- 0
+  (v0: core::bool) <- bool::True({})
+  (v6: core::array::Array::<core::felt252>, v7: ()) <- test::bar(v0, v1, v2, v3, v4, v5)
 End:
   Return(v6, v7)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
