@@ -1131,6 +1131,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             VarInfo::Const(value) => Some(SpecializationArg::Const { value, boxed: false }),
             VarInfo::Box(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)
                 .map(|value| SpecializationArg::Const { value: *value, boxed: true }),
+            VarInfo::Snapshot(info) => {
+                let desnap_ty = *extract_matches!(ty.long(self.db), TypeLongId::Snapshot);
+                Some(SpecializationArg::Snapshot(
+                    self.try_get_specialization_arg(info.as_ref().clone(), desnap_ty)?.into(),
+                ))
+            }
             VarInfo::Array(infos) if infos.is_empty() => {
                 let TypeLongId::Concrete(concrete_ty) = ty.long(self.db) else {
                     unreachable!("Expected a concrete type");

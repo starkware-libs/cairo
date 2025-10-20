@@ -7,6 +7,7 @@ use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
+use cairo_lang_utils::extract_matches;
 use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
 
@@ -16,13 +17,14 @@ use crate::ids::{self, LocationId, SemanticFunctionIdEx, SpecializedFunction};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     Block, BlockEnd, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
-    StatementConst, StatementStructConstruct, VarUsage, VariableId,
+    StatementConst, StatementSnapshot, StatementStructConstruct, VarUsage, VariableId,
 };
 
 // A const argument for a specialized function.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SpecializationArg<'db> {
     Const { value: ConstValueId<'db>, boxed: bool },
+    Snapshot(Box<SpecializationArg<'db>>),
     EmptyArray(TypeId<'db>),
     Struct(Vec<SpecializationArg<'db>>),
 }
@@ -38,6 +40,7 @@ impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
                 }
                 Ok(())
             }
+            SpecializationArg::Snapshot(inner) => write!(f, "@{:?}", inner.debug(db)),
             SpecializationArg::Struct(inner) => {
                 write!(f, "{{")?;
                 let mut inner = inner.iter().peekable();
@@ -62,6 +65,7 @@ impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
 /// currently only structs require an additional build step.
 enum SpecializationArgBuildingState<'db, 'a> {
     Initial(&'a SpecializationArg<'db>),
+    TakeSnapshot(VariableId),
     BuildStruct(Vec<VariableId>),
 }
 
@@ -105,6 +109,19 @@ pub fn specialized_function_lowered<'db>(
                 SpecializationArg::Const { value, boxed } => {
                     statements.push(Statement::Const(StatementConst::new(*value, var_id, *boxed)));
                 }
+                SpecializationArg::Snapshot(inner) => {
+                    let snap_ty = variables.variables[var_id].ty;
+                    let denapped_ty = *extract_matches!(snap_ty.long(db), TypeLongId::Snapshot);
+                    let desnapped_var = variables.new_var(VarRequest { ty: denapped_ty, location });
+                    stack.push((
+                        var_id,
+                        SpecializationArgBuildingState::TakeSnapshot(desnapped_var),
+                    ));
+                    stack.push((
+                        desnapped_var,
+                        SpecializationArgBuildingState::Initial(inner.as_ref()),
+                    ));
+                }
                 SpecializationArg::EmptyArray(ty) => {
                     statements.push(Statement::Call(StatementCall {
                         function: array_new_fn
@@ -142,6 +159,14 @@ pub fn specialized_function_lowered<'db>(
                     }
                 }
             },
+            SpecializationArgBuildingState::TakeSnapshot(desnapped_var) => {
+                let ignored = variables.variables.alloc(variables[desnapped_var].clone());
+                statements.push(Statement::Snapshot(StatementSnapshot::new(
+                    VarUsage { var_id: desnapped_var, location },
+                    ignored,
+                    var_id,
+                )));
+            }
             SpecializationArgBuildingState::BuildStruct(ids) => {
                 statements.push(Statement::StructConstruct(StatementStructConstruct {
                     inputs: ids
