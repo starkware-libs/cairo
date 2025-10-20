@@ -626,11 +626,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
-        if call_stmt
-            .inputs
-            .iter()
-            .all(|arg| !matches!(self.var_info.get(&arg.var_id), Some(VarInfo::Const(_))))
-        {
+        if call_stmt.inputs.iter().all(|arg| self.var_info.get(&arg.var_id).is_none()) {
             // No const inputs
             return None;
         }
