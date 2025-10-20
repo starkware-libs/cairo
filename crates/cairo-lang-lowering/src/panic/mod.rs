@@ -526,7 +526,7 @@ pub fn has_direct_panic<'db>(
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     let lowered_function = db.lowered_body(function_id, LoweringStage::Monomorphized)?;
-    Ok(itertools::any(&lowered_function.blocks, |(_, block)| {
+    Ok(itertools::any(lowered_function.blocks.iter(), |(_, block)| {
         matches!(&block.end, BlockEnd::Panic(..))
     }))
 }
