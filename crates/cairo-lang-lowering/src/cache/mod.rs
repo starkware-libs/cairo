@@ -428,7 +428,7 @@ impl LoweredCached {
                 .collect(),
             blocks: lowered
                 .blocks
-                .into_iter()
+                .iter()
                 .map(|block: (BlockId, &Block<'_>)| BlockCached::new(block.1.clone(), ctx))
                 .collect(),
             parameters: lowered.parameters.iter().map(|var| var.index()).collect(),

@@ -88,8 +88,10 @@ impl<'db> Blocks<'db> {
         self.0.is_empty()
     }
 
-    pub fn iter(&self) -> BlocksIter<'_, 'db> {
-        self.into_iter()
+    pub fn iter(
+        &self,
+    ) -> impl DoubleEndedIterator<Item = (BlockId, &Block<'db>)> + ExactSizeIterator {
+        self.0.iter().enumerate().map(|(i, b)| (BlockId(i), b))
     }
 
     // Note: It is safe to create DiagnosticAdded here, since BlocksBuilder::build() guarantees to
@@ -127,28 +129,5 @@ impl<'db> Index<BlockId> for Blocks<'db> {
 impl<'db> IndexMut<BlockId> for Blocks<'db> {
     fn index_mut(&mut self, index: BlockId) -> &mut Self::Output {
         &mut self.0[index.0]
-    }
-}
-impl<'a, 'db> IntoIterator for &'a Blocks<'db> {
-    type Item = (BlockId, &'a Block<'db>);
-    type IntoIter = BlocksIter<'a, 'db>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        BlocksIter { blocks: self, index: 0 }
-    }
-}
-pub struct BlocksIter<'a, 'db> {
-    pub blocks: &'a Blocks<'db>,
-    pub index: usize,
-}
-impl<'a, 'db> Iterator for BlocksIter<'a, 'db> {
-    type Item = (BlockId, &'a Block<'db>);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.blocks.0.get(self.index).map(|b| {
-            let res = (BlockId(self.index), b);
-            self.index += 1;
-            res
-        })
     }
 }
