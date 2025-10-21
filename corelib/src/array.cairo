@@ -323,7 +323,7 @@ impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
-    /// let arr:  Array<u8> = Serde::deserialize(ref span).unwrap();
+    /// let arr: Array<u8> = Serde::deserialize(ref span).unwrap();
     /// assert!(arr == array![0, 1]);
     /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
@@ -419,7 +419,7 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
     ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
-    /// let result:  Span<felt252> = Serde::deserialize(ref span).unwrap();
+    /// let result: Span<felt252> = Serde::deserialize(ref span).unwrap();
     /// assert!(result == array![0, 1]);
     /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<Span<felt252>> {
@@ -452,7 +452,7 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
     ///
     /// ```
     /// let mut span: Span<felt252> = array![2, 0, 1].span();
-    /// let result:  Span<u8> = Serde::deserialize(ref span).unwrap();
+    /// let result: Span<u8> = Serde::deserialize(ref span).unwrap();
     /// assert!(result == array![0, 1].span());
     /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<Span<T>> {
