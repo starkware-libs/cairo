@@ -55,7 +55,7 @@ use crate::cmp::min;
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[feature("bounded-int-utils")]
 use crate::internal::bounded_int::{self, BoundedInt, downcast, upcast};
-use crate::num::traits::CheckedSub;
+use crate::num::traits::{CheckedAdd, CheckedSub};
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -72,7 +72,6 @@ pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
-const BYTES_IN_BYTES31_NONZERO: NonZero<usize> = BYTES_IN_BYTES31.try_into().unwrap();
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 /// Byte array type.
@@ -867,33 +866,33 @@ impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
     /// If out of bounds: returns `None`.
     fn get(self: @ByteSpan, index: crate::ops::Range<usize>) -> Option<ByteSpan> {
         let range = index;
-        let len = (range.end).checked_sub(range.start)?;
-        if len == 0 {
+        if range.start == range.end {
             return Some(Default::default());
         }
-        if range.end > self.len() {
+        if range.start > range.end {
             return None;
         }
+        let base_start_offset: usize = upcast(*self.first_char_start_offset);
+        let (start_word, start_offset) = len_parts(range.start.checked_add(base_start_offset)?);
+        let (end_word, end_offset) = len_parts(range.end.checked_add(base_start_offset)?);
+        let data_slice_len = end_word.checked_sub(start_word)?;
 
-        let abs_start = range.start + upcast(*self.first_char_start_offset);
-        let (start_word, start_offset) = DivRem::div_rem(abs_start, BYTES_IN_BYTES31_NONZERO);
-        let (end_word, end_offset) = DivRem::div_rem(abs_start + len, BYTES_IN_BYTES31_NONZERO);
-        let data_len = self.data.len();
-
-        let remainder_with_end_offset_trimmed = if end_word < data_len {
-            let word = (*self.data[end_word]).into();
-            shift_right(word, BYTES_IN_BYTES31, BYTES_IN_BYTES31 - end_offset)
+        let remainder_with_end_offset_trimmed = if let Some(word) = self.data.get(end_word) {
+            shift_right((**word).into(), BYTES_IN_BYTES31, BYTES_IN_BYTES31 - upcast(end_offset))
+        } else if self.data.len() != end_word {
+            return None;
         } else {
-            let remainder_len = upcast(*self.remainder_len);
-            shift_right(*self.remainder_word, remainder_len, remainder_len - end_offset)
+            let remainder_len: usize = upcast(*self.remainder_len);
+            let offset = remainder_len.checked_sub(upcast(end_offset))?;
+            shift_right(*self.remainder_word, remainder_len, offset)
         };
 
         Some(
             ByteSpan {
-                data: self.data.slice(start_word, min(end_word, data_len) - start_word),
-                first_char_start_offset: downcast(start_offset).unwrap(),
+                data: self.data.slice(start_word, data_slice_len),
+                first_char_start_offset: start_offset,
                 remainder_word: remainder_with_end_offset_trimmed,
-                remainder_len: downcast(end_offset).unwrap(),
+                remainder_len: end_offset,
             },
         )
     }
