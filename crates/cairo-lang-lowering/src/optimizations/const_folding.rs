@@ -626,6 +626,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
+        // Avoid specializing with the same base as the current function as it may lead to infinite
+        // specialization.
+        if base == self.caller_base {
+            return None;
+        }
         if call_stmt.inputs.iter().all(|arg| self.var_info.get(&arg.var_id).is_none()) {
             // No const inputs
             return None;
@@ -663,12 +668,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     *arg = new_args_iter.next().unwrap_or_default();
                 }
             }
-        }
-
-        // Avoid specializing with the same base as the current function as it may lead to infinite
-        // specialization.
-        if base == self.caller_base {
-            return None;
         }
         let specialized = SpecializedFunction { base, args: const_args.into() };
         let specialized_func_id =
