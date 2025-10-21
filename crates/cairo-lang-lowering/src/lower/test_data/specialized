@@ -5,7 +5,7 @@ test_specialized_function
 
 //! > function
 fn foo() {
-    bar(true, 1)
+    bar(false, 1)
 }
 
 //! > function_name
@@ -24,7 +24,7 @@ extern fn bar_ext(x: felt252) nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  () <- test::bar{bool::True({}), 1, }()
+  () <- test::bar{bool::False({}), 1, }()
 End:
   Return()
 
@@ -33,7 +33,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 1
-  (v0: core::bool) <- bool::True({})
+  (v0: core::bool) <- bool::False({})
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -51,7 +51,7 @@ test_specialized_function
 
 //! > function
 fn foo() {
-    bar(true, BoxTrait::new(2))
+    bar(false, BoxTrait::new(2))
 }
 
 //! > function_name
@@ -70,7 +70,7 @@ extern fn bar_ext(x: Box<felt252>) nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  () <- test::bar{bool::True({}), 2.into_box(), }()
+  () <- test::bar{bool::False({}), 2.into_box(), }()
 End:
   Return()
 
@@ -79,7 +79,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v1: core::box::Box::<core::felt252>) <- 2.into_box()
-  (v0: core::bool) <- bool::True({})
+  (v0: core::bool) <- bool::False({})
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -97,7 +97,7 @@ test_specialized_function
 
 //! > function
 fn foo() {
-    bar(true, array![])
+    bar(false, array![])
 }
 
 //! > function_name
@@ -117,7 +117,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  () <- test::bar{bool::True({}), array![], }()
+  () <- test::bar{bool::False({}), array![], }()
 End:
   Return()
 
@@ -126,7 +126,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v0: core::bool) <- bool::True({})
+  (v0: core::bool) <- bool::False({})
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -144,7 +144,7 @@ test_specialized_function
 
 //! > function
 fn foo() {
-    bar(true, array![])
+    bar(false, array![])
 }
 
 //! > function_name
@@ -164,7 +164,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  () <- test::bar{bool::True({}), array![], }()
+  () <- test::bar{bool::False({}), array![], }()
 End:
   Return()
 
@@ -173,7 +173,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v0: core::bool) <- bool::True({})
+  (v0: core::bool) <- bool::False({})
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -192,7 +192,7 @@ test_specialized_function
 //! > function
 fn foo(x: felt252) {
     let mut arr = array![];
-    bar(true, ref arr, array![].span(), x, 0, BoxTrait::new(1))
+    bar(false, ref arr, array![].span(), x, 0, BoxTrait::new(1))
 }
 
 //! > function_name
@@ -217,7 +217,7 @@ blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v3: core::array::Array::<core::felt252>) <- test::bar{bool::True({}), array![], { @array![] }, None, 0, 1.into_box(), }(v0)
+  (v3: core::array::Array::<core::felt252>) <- test::bar{bool::False({}), array![], { @array![] }, None, 0, 1.into_box(), }(v0)
 End:
   Return()
 
@@ -231,7 +231,7 @@ Statements:
   (v8: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v7)
   (v2: core::array::Span::<core::felt252>) <- struct_construct(v6)
   (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v0: core::bool) <- bool::True({})
+  (v0: core::bool) <- bool::False({})
   (v9: core::array::Array::<core::felt252>, v10: ()) <- test::bar(v0, v1, v2, v3, v4, v5)
 End:
   Return(v9, v10)
