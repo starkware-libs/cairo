@@ -1136,7 +1136,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     self.try_get_specialization_arg(info.as_ref().clone(), desnap_ty)?.into(),
                 ))
             }
-            VarInfo::Array(infos) if infos.is_empty() => {
+            VarInfo::Array(infos) => {
                 let TypeLongId::Concrete(concrete_ty) = ty.long(self.db) else {
                     unreachable!("Expected a concrete type");
                 };
@@ -1144,7 +1144,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 else {
                     unreachable!("Expected a single type generic argument");
                 };
-                Some(SpecializationArg::EmptyArray(*inner_ty))
+                Some(SpecializationArg::Array(
+                    *inner_ty,
+                    infos
+                        .into_iter()
+                        .map(|info| self.try_get_specialization_arg(info?, *inner_ty))
+                        .collect::<Option<Vec<_>>>()?,
+                ))
             }
             VarInfo::Struct(infos) => {
                 let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =

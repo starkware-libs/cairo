@@ -137,6 +137,63 @@ End:
 
 //! > ==========================================================================
 
+//! > Test non-empty array.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo() {
+    bar(false, array![1, 2, 3])
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, x: Array<felt252>) {
+    if keep {
+        println!("Ensuring long code: {}{}{}", x[0], x[1], x[2]);
+    }
+}
+
+//! > caller_lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::felt252) <- 2
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v5: core::felt252) <- 3
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
+  (v7: core::panics::PanicResult::<((),)>) <- test::bar{bool::False({}), array![1, 2, 3], }()
+End:
+  Return(v7)
+
+//! > specialized_lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v7: core::felt252) <- 1
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
+  (v5: core::felt252) <- 2
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
+  (v3: core::felt252) <- 3
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v0: core::bool) <- bool::False({})
+  (v8: ()) <- test::bar(v0, v1)
+End:
+  Return(v8)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
 //! > Test empty span.
 
 //! > test_runner_name
