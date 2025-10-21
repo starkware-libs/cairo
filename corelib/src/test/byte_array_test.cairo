@@ -526,9 +526,9 @@ fn test_span_len() {
 
     // First word in the array, second in last word.
     let two_byte31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
-    let single_span = two_byte31.span().get(1..=32);
-    assert_eq!(single_span.map(|s| s.len()), Some(32), "len error with start offset");
-    assert_eq!(single_span.map(|s| s.is_empty()), Some(false));
+    let single_span = two_byte31.span()[1..=32];
+    assert_eq!(single_span.len(), 32, "len error with start offset");
+    assert!(!single_span.is_empty());
 
     // First word in the array, second in the array, third in remainder.
     let three_bytes31: ByteArray =
@@ -545,10 +545,10 @@ fn test_span_slice_is_empty() {
     let span = ba.span();
     let is_empty = |span: ByteSpan| span.is_empty();
 
-    let empty = span.get(2..2);
-    assert_eq!(empty.map(|s| s.len()), Some(0));
-    assert_eq!(empty.map(is_empty), Some(true));
-    assert_eq!(empty.map(|s| s.to_byte_array()), Some(""));
+    let empty = span[2..2];
+    assert_eq!(empty.len(), 0);
+    assert!(empty.is_empty());
+    assert_eq!(empty.to_byte_array(), "");
 
     let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
     assert_eq!(ba_31.span().get(30..30).map(is_empty), Some(true));
@@ -586,7 +586,7 @@ fn test_span_slice_empty() {
     let ba: ByteArray = "hello";
     let span = ba.span();
 
-    let empty = span.get(2..2).unwrap();
+    let empty = span[2..2];
     assert_eq!(empty.len(), 0);
     assert!(empty.is_empty());
     assert_eq!(empty.to_byte_array(), "");
@@ -633,22 +633,20 @@ fn test_span_slice_exactly_31_bytes() {
 
     assert_eq!(span.len(), 31);
     assert_eq!(span.get(0..31).unwrap().to_byte_array(), ba_31);
-    assert_eq!(span.get(10..=19).unwrap().to_byte_array(), "KLMNOPQRST");
+    assert_eq!(span[10..=19].to_byte_array(), "KLMNOPQRST");
 }
 
 #[test]
 fn test_span_slice_positions() {
     // Two full bytes31 + remainder with 2 bytes.
     let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$";
-    let span = ba_64.span();
-    let tba = |ba: ByteSpan| ba.to_byte_array();
 
-    assert_eq!(span.get(10..=39).map(tba), Some("KLMNOPQRSTUVWXYZabcdefghijklmn"));
+    assert_eq!(ba_64.span()[10..=39].to_byte_array(), "KLMNOPQRSTUVWXYZabcdefghijklmn");
     assert_eq!(
-        span.get(5..64).map(tba),
+        ba_64.span().get(5..64).map(|s| s.to_byte_array()),
         Some("FGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"),
     );
-    assert_eq!(span.get(29..49).map(tba), Some("defghijklmnopqrstuvw"));
+    assert_eq!(ba_64.span().get(29..=48).map(|s| s.to_byte_array()), Some("defghijklmnopqrstuvw"));
 }
 
 #[test]
@@ -675,8 +673,8 @@ fn test_span_multiple_start_offset_slicing() {
     let ba_6: ByteArray = "abcdef";
 
     let slice1_inc = ba_6.span().get(1..=5);
-    let slice2_inc = slice1_inc.map(|s| s.get(1..=4)).flatten();
-    let slice3_inc = slice2_inc.map(|s| s.get(1..=3)).flatten();
+    let slice2_inc = slice1_inc.map(|s| s[1..=4]);
+    let slice3_inc = slice2_inc.map(|s| s.get(1..4)).flatten();
 
     let tba = |ba: ByteSpan| ba.to_byte_array();
     assert_eq!(slice1_inc.map(tba), Some("bcdef"));
