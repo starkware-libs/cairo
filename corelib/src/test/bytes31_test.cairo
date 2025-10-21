@@ -1,4 +1,5 @@
-use crate::bytes_31::{bytes31_const, split_bytes31};
+use crate::byte_array::split_bytes31_for_testing as split_bytes31;
+use crate::bytes_31::bytes31_const;
 
 const POW_2_248: felt252 = 0x100000000000000000000000000000000000000000000000000000000000000;
 
@@ -137,32 +138,32 @@ fn test_u128_into_bytes31() {
 
 #[test]
 fn test_split_bytes31() {
-    let (left, right) = split_bytes31(0x1122, 2, 1);
+    let (left, right) = split_bytes31(0x1122, 1);
     assert(left == 0x22, 'bad split (2, 1) left');
     assert(right == 0x11, 'bad split (2, 1) right');
 
     let x = 0x112233445566778899aabbccddeeff00112233;
-    let (left, right) = split_bytes31(x, 19, 0);
+    let (left, right) = split_bytes31(x, 0);
     assert(left == 0, 'bad split (19, 0) left');
     assert(right == 0x112233445566778899aabbccddeeff00112233, 'bad split (19, 0) right');
 
-    let (left, right) = split_bytes31(x, 19, 1);
+    let (left, right) = split_bytes31(x, 1);
     assert(left == 0x33, 'bad split (19, 1) left');
     assert(right == 0x112233445566778899aabbccddeeff001122, 'bad split (19, 1) right');
 
-    let (left, right) = split_bytes31(x, 19, 15);
+    let (left, right) = split_bytes31(x, 15);
     assert(left == 0x5566778899aabbccddeeff00112233, 'bad split (19, 15) left');
     assert(right == 0x11223344, 'bad split (19, 15) right');
 
-    let (left, right) = split_bytes31(x, 19, 16);
+    let (left, right) = split_bytes31(x, 16);
     assert(left == 0x445566778899aabbccddeeff00112233, 'bad split (19, 16) left');
     assert(right == 0x112233, 'bad split (19, 16) right');
 
-    let (left, right) = split_bytes31(x, 19, 18);
+    let (left, right) = split_bytes31(x, 18);
     assert(left == 0x2233445566778899aabbccddeeff00112233, 'bad split (19, 18) left');
     assert(right == 0x11, 'bad split (19, 18) right');
 
-    let (left, right) = split_bytes31(x, 19, 19);
+    let (left, right) = split_bytes31(x, 19);
     assert(left == 0x112233445566778899aabbccddeeff00112233, 'bad split (19, 19) left');
     assert(right == 0, 'bad split (19, 19) right');
 }
