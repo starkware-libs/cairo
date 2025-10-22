@@ -1542,3 +1542,88 @@ Consider adding or removing snapshots.
  --> lib.cairo:6:12
     S { a: @1 }
            ^^
+
+//! > ==========================================================================
+
+//! > `path` attribute diagnostics
+
+//! > test_runner_name
+test_expr_diagnostics(expect_diagnostics: true)
+
+//! > expr_code
+{}
+
+//! > module_code
+#[path("a.cairo")]
+fn f() {}
+
+#[path("a.cairo")]
+mod inline {}
+
+#[path]
+mod m1;
+
+#[path("a.cairo", "b.cairo")]
+mod m2;
+
+#[path(3)]
+mod m3;
+
+#[path("non_existent_path.cairo")]
+mod non_existing;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `#[path(..)]` is only allowed on module declarations.
+ --> lib.cairo:1:1
+#[path("a.cairo")]
+^^^^^^^^^^^^^^^^^^
+
+error: Plugin diagnostic: `#[path(..)]` requires a file-based module: use `mod name;` with a semicolon.
+ --> lib.cairo:4:1
+#[path("a.cairo")]
+^^^^^^^^^^^^^^^^^^
+
+error: Plugin diagnostic: `#[path(..)]` expects exactly one string literal argument.
+ --> lib.cairo:7:7
+#[path]
+      ^
+
+error: Plugin diagnostic: `#[path(..)]` expects exactly one string literal argument.
+ --> lib.cairo:10:7
+#[path("a.cairo", "b.cairo")]
+      ^^^^^^^^^^^^^^^^^^^^^^
+
+error: Plugin diagnostic: `#[path(..)]` expects exactly one string literal argument.
+ --> lib.cairo:13:7
+#[path(3)]
+      ^^^
+
+error[E0005]: Module file not found. Expected path: m1.cairo
+ --> lib.cairo:7:1-8:7
+  #[path]
+ _^
+| mod m1;
+|_______^
+
+error[E0005]: Module file not found. Expected path: m2.cairo
+ --> lib.cairo:10:1-11:7
+  #[path("a.cairo", "b.cairo")]
+ _^
+| mod m2;
+|_______^
+
+error[E0005]: Module file not found. Expected path: m3.cairo
+ --> lib.cairo:13:1-14:7
+  #[path(3)]
+ _^
+| mod m3;
+|_______^
+
+error[E0005]: Module file not found. Expected path: non_existent_path.cairo
+ --> lib.cairo:16:1-17:17
+  #[path("non_existent_path.cairo")]
+ _^
+| mod non_existing;
+|_________________^

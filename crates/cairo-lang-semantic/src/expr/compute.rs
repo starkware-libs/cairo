@@ -427,9 +427,9 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
 
     /// Validates the features of the given item, then pushes them into the context.
     /// IMPORTANT: Don't forget to restore through `restore_features`!
-    fn add_features_from_statement(
+    fn add_features_from_statement<Item: QueryAttrs<'ctx> + TypedSyntaxNode<'ctx>>(
         &mut self,
-        item: &impl QueryAttrs<'ctx>,
+        item: &Item,
     ) -> FeatureConfigRestore<'ctx> {
         validate_statement_attributes(self, item);
         let crate_id = self.resolver.owning_crate_id;
@@ -4597,9 +4597,9 @@ fn check_struct_member_is_visible<'db>(
 
 /// Verifies that the statement attributes are valid statements attributes, if not a diagnostic is
 /// reported.
-fn validate_statement_attributes<'db>(
+fn validate_statement_attributes<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db>>(
     ctx: &mut ComputationContext<'db, '_>,
-    item: &impl QueryAttrs<'db>,
+    item: &Item,
 ) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
     let mut diagnostics = vec![];
