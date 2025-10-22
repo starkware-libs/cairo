@@ -110,7 +110,7 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
 /// Adds padding to the input array according to the SHA-256 specification.
 ///
 /// The padding follows FIPS 180-4:
-/// 1. Append a single '1' bit to
+/// 1. Append a single '1' bit to the message
 /// 2. Append zeros until data length ≡ 448 (mod 512)
 /// 3. Append the original message length as a 64-bit big-endian integer
 ///
