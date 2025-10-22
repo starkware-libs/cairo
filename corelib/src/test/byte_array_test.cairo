@@ -1,7 +1,7 @@
 #[feature("byte-span")]
-use crate::byte_array::{ByteSpan, ByteSpanTrait, ToByteSpanTrait};
-use crate::num::traits::Bounded;
-use crate::test::test_utils::{assert_eq, assert_ne};
+use core::byte_array::{ByteSpan, ByteSpanTrait, ToByteSpanTrait};
+use core::num::traits::Bounded;
+use core::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_append_byte() {
@@ -680,4 +680,61 @@ fn test_span_multiple_start_offset_slicing() {
     assert_eq!(slice1_inc.map(tba), Some("bcdef"));
     assert_eq!(slice2_inc.map(tba), Some("cdef"));
     assert_eq!(slice3_inc.map(tba), Some("def"));
+}
+
+#[test]
+fn test_span_at_and_index() {
+    // Test simple access.
+    let ba: ByteArray = "AB";
+    let span = ba.span();
+    assert_eq!(span[0_usize], 'A');
+    assert_eq!(span.get(1_usize), Some('B'));
+    assert_eq!(span.get(2_usize), None);
+
+    // Test with offset and two words.
+    let ba_33: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    let mut span = ba_33.span();
+    span = span.get(1..33).unwrap();
+    assert_eq!(span.get(0_usize), Some('B'));
+    assert_eq!(span.get(30_usize), Some('f'));
+    assert_eq!(span[31_usize], 'g');
+    assert_eq!(span.get(32_usize), None);
+
+    // Test with offset and two words.
+    // 64 bytes: 31 + 31 + 2.
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$";
+    let mut span = ba_64.span();
+    span = span.get(1..64).unwrap();
+    assert_eq!(span.get(30_usize), Some('f'));
+    assert_eq!(span[31_usize], 'g');
+    assert_eq!(span.get(60_usize), Some('9'));
+    assert_eq!(span[61_usize], '#');
+    assert_eq!(span.get(62_usize), Some('$'));
+    assert_eq!(span.get(63_usize), None);
+
+    // Test empty span.
+    let empty: ByteArray = Default::default();
+    let empty_span = empty.span();
+    assert_eq!(empty_span.get(0_usize), None);
+}
+
+#[test]
+#[should_panic(expected: ('Index out of bounds',))]
+fn test_span_index_out_of_bounds() {
+    let ba: ByteArray = "AB";
+    let span = ba.span();
+    let _x = span[2_usize]; // Should panic
+}
+
+#[test]
+fn test_span_at_overflows() {
+    // Test overflow protection with large indices.
+    let ba: ByteArray = "test";
+    let span = ba.span();
+
+    assert_eq!(span.get(Bounded::<usize>::MAX), None);
+
+    let sliced = ba.span().get(1..3).unwrap();
+    assert_eq!(sliced.get(Bounded::<usize>::MAX - 1), None);
+    assert_eq!(sliced.get(Bounded::<usize>::MAX), None);
 }
