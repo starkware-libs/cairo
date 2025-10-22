@@ -344,7 +344,7 @@ fn solve_candidate<'db>(
     let (canonical_trait, canonical_embedding) = canonical_trait.embed(&mut inference);
 
     // If the closure params are not var free, we cannot infer the negative impl.
-    // We use the canonical trait concretize the closure params.
+    // We use the canonical trait to concretize the closure params.
     if let UninferredImpl::GeneratedImpl(imp) = candidate {
         inference.conform_traits(imp.long(db).concrete_trait, canonical_trait.id)?;
     }
@@ -432,7 +432,7 @@ impl<'db> LiteInference<'db> {
     }
 
     /// Tries to infer the generic arguments of the trait from the given params.
-    /// If the inference fails (i.e. requires full inferece), returns an error.
+    /// If the inference fails (i.e. requires full inference), returns an error.
     fn infer_generic_assignment(
         &mut self,
         params: &[GenericParam<'db>],
