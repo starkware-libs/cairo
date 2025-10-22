@@ -8,10 +8,10 @@ description = "Some utilities for the Cairo-Execute binary crate."
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.12.3" }
-cairo-lang-executable = { path = "../cairo-lang-executable", version = "~2.12.3" }
-cairo-lang-runner = { path = "../cairo-lang-runner", version = "~2.12.3" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.12.3" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.13.0" }
+cairo-lang-executable = { path = "../cairo-lang-executable", version = "~2.13.0" }
+cairo-lang-runner = { path = "../cairo-lang-runner", version = "~2.13.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.13.0" }
 cairo-vm.workspace = true
 num-bigint.workspace = true
 serde_json.workspace = true
