@@ -245,9 +245,8 @@ End:
 
 blk5:
 Statements:
-  (v27: core::felt252, v28: core::array::Array::<core::felt252>) <- struct_destructure(v11)
 End:
-  Return(v27)
+  Return(v0)
 
 //! > after
 Parameters: v0: core::felt252
@@ -298,9 +297,8 @@ End:
 
 blk5:
 Statements:
-  (v27: core::felt252, v28: core::array::Array::<core::felt252>) <- struct_destructure(v11)
 End:
-  Return(v27)
+  Return(v0)
 
 //! > ==========================================================================
 
