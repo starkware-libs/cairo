@@ -54,7 +54,7 @@ use crate::cmp::min;
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[feature("bounded-int-utils")]
 use crate::internal::bounded_int::{self, BoundedInt, downcast, upcast};
-use crate::num::traits::{CheckedAdd, CheckedSub};
+use crate::num::traits::CheckedSub;
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -868,9 +868,12 @@ impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
         if range.start > range.end {
             return None;
         }
-        let base_start_offset: usize = upcast(*self.first_char_start_offset);
-        let (start_word, start_offset) = len_parts(range.start.checked_add(base_start_offset)?);
-        let (end_word, end_offset) = len_parts(range.end.checked_add(base_start_offset)?);
+        let (start_word, start_offset) = helpers::index_parts_with_offset_b31(
+            range.start, *self.first_char_start_offset,
+        );
+        let (end_word, end_offset) = helpers::index_parts_with_offset_b31(
+            range.end, *self.first_char_start_offset,
+        );
         let data_slice_len = end_word.checked_sub(start_word)?;
 
         let remainder_with_end_offset_trimmed = if self.data.len() == end_word {
@@ -1198,6 +1201,17 @@ mod helpers {
         let (div, rem) = bounded_int::div_rem::<_, _, DivRemU32ByB31>(length, 31);
         (upcast(div), rem)
     }
+    /// Splits `index` (relative to `start_offset`) into a word index (divided by 31) and the byte
+    /// offset within that word.
+    pub fn index_parts_with_offset_b31(
+        index: usize, start_offset: Bytes31Index,
+    ) -> (usize, Bytes31Index) {
+        let absolute_index = bounded_int::add(index, start_offset);
+        let (word_idx_bounded, byte_offset) = bounded_int::div_rem(
+            absolute_index, NZ_BYTES_IN_BYTES31,
+        );
+        (upcast(word_idx_bounded), byte_offset)
+    }
 
     impl TrimMaxBytes31Index of bounded_int::TrimMaxHelper<Bytes31Index> {
         type Target = BoundedInt<0, 29>;
@@ -1290,15 +1304,14 @@ mod helpers {
     pub fn length_minus_one(len: BoundedInt<1, 31>) -> Bytes31Index {
         bounded_int::sub(len, 1)
     }
+
     /// Returns the byte at the given index in the ByteSpan.
     /// If out of bounds: returns `None`.
     pub fn byte_at(self: @ByteSpan, index: usize) -> Option<u8> {
-        let absolute_index = bounded_int::add(index, *self.first_char_start_offset);
-        let (word_index_bounded, msb_index) = bounded_int::div_rem(
-            absolute_index, NZ_BYTES_IN_BYTES31,
+        let (word_index, msb_index) = index_parts_with_offset_b31(
+            index, *self.first_char_start_offset,
         );
 
-        let word_index = upcast(word_index_bounded);
         match self.data.get(word_index) {
             Some(word) => {
                 // Convert from MSB to LSB indexing.
