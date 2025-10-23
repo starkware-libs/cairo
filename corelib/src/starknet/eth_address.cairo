@@ -6,7 +6,6 @@
 use core::debug::PrintTrait;
 #[allow(unused_imports)]
 use core::integer::{U128TryIntoNonZero, U256TryIntoFelt252, u128_safe_divmod};
-use core::option::{Option, OptionTrait};
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
 
@@ -68,7 +67,7 @@ pub(crate) impl EthAddressSerde of Serde<EthAddress> {
 
 impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     fn zero() -> EthAddress {
-        0.try_into().unwrap()
+        EthAddress { address: 0 }
     }
 
     #[inline]
