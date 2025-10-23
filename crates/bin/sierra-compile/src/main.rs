@@ -8,6 +8,12 @@ use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 use indoc::formatdoc;
+#[cfg(feature = "mimalloc")]
+use mimalloc::MiMalloc;
+
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Compiles a Sierra file to CASM.
 /// Exits with 0/1 if the compilation succeeds/fails.

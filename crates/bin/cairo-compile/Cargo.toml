@@ -10,8 +10,13 @@ description = "Cairo compiler executable for the Cairo programming language"
 anyhow.workspace = true
 clap.workspace = true
 log.workspace = true
+mimalloc = { workspace = true, optional = true }
 tracing.workspace = true
 
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.3" }
 cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.12.3" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.3", features = ["tracing"] }
+
+[features]
+
+mimalloc = ["dep:mimalloc"]

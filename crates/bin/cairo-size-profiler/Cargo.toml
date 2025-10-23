@@ -9,6 +9,7 @@ description = "Runner executable for the Cairo programming language"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+mimalloc = { workspace = true, optional = true }
 
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.12.3" }
 cairo-lang-defs = { path = "../../cairo-lang-defs", version = "~2.12.3" }
@@ -26,3 +27,7 @@ cairo-lang-syntax = { path = "../../cairo-lang-syntax", version = "~2.12.3" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.12.3" }
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
+
+[features]
+
+mimalloc = ["dep:mimalloc"]
