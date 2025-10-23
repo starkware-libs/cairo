@@ -14,6 +14,18 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 #[cfg(test)]
 mod test;
 
+/// Mathematical constants for Cairo range checking algorithm.
+/// These constants are derived from the Cairo PRIME (2^251 + 17*2^192 + 1).
+mod range_check_constants {
+    /// ceil((PRIME / 3) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
+    /// Used in AssertLeFindSmallArcs for range checking optimization.
+    pub const PRIME_OVER_3_HIGH: u128 = 3544607988759775765608368578435044694;
+
+    /// ceil((PRIME / 2) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
+    /// Used in AssertLeFindSmallArcs for range checking optimization.
+    pub const PRIME_OVER_2_HIGH: u128 = 5316911983139663648412552867652567041;
+}
+
 // Represents a cairo hint.
 // Note: Hint encoding should be backwards-compatible. This is an API guarantee.
 // For example, new variants should have new `index`.
@@ -710,6 +722,8 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(a),
                     ResOperandAsIntegerFormatter(b),
                 );
+                let prime_over_3_high = range_check_constants::PRIME_OVER_3_HIGH;
+                let prime_over_2_high = range_check_constants::PRIME_OVER_2_HIGH;
                 formatdoc! {"
 
                     import itertools
@@ -729,9 +743,9 @@ impl PythonicHint for CoreHint {
                     excluded = lengths_and_indices[2][1]
 
                     memory[{range_check_ptr} + 1], memory[{range_check_ptr} + 0] = (
-                        divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
+                        divmod(lengths_and_indices[0][0], {prime_over_3_high}))
                     memory[{range_check_ptr} + 3], memory[{range_check_ptr} + 2] = (
-                        divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
+                        divmod(lengths_and_indices[1][0], {prime_over_2_high}))
                 "}
             }
             CoreHint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
