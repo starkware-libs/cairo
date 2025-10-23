@@ -1,7 +1,7 @@
 #[feature("byte-span")]
-use crate::byte_array::{ByteSpan, ByteSpanTrait, ToByteSpanTrait};
-use crate::num::traits::Bounded;
-use crate::test::test_utils::{assert_eq, assert_ne};
+use core::byte_array::{ByteSpan, ByteSpanTrait, ToByteSpanTrait};
+use core::num::traits::Bounded;
+use core::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_append_byte() {
@@ -523,6 +523,7 @@ fn test_span_len() {
     let empty_ba: ByteArray = "";
     assert_eq!(empty_ba.span().len(), 0);
     assert!(empty_ba.span().is_empty());
+    assert_eq!(ba_31.span()[0..0], empty_ba.span());
 
     // First word in the array, second in last word.
     let two_byte31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
@@ -536,7 +537,6 @@ fn test_span_len() {
     let three_span = three_bytes31.span().get(1..64);
     assert_eq!(three_span.map(|s| s.len()), Some(63), "len error with size-3 bytearray");
     assert_eq!(three_span.map(|s| s.is_empty()), Some(false));
-    // TODO(giladchase): use `ByteSpan::PartialEq` to check that a consuming slice == Default.
 }
 
 #[test]
@@ -570,15 +570,16 @@ fn test_span_copy() {
     let other_span = span;
     assert_eq!(other_span.len(), 2);
     assert_eq!(ba, span.to_byte_array());
+    assert_eq!(span, other_span);
 
     let span_again = span.span();
     assert_eq!(ba, span_again.to_byte_array());
-    assert_eq!(ba, span.to_byte_array());
+    assert_eq!(span, span_again);
 
     let even_more_span_again = other_span.span();
     assert_eq!(ba, even_more_span_again.to_byte_array());
-    assert_eq!(ba, other_span.to_byte_array());
-    assert_eq!(ba, span.to_byte_array());
+    assert_eq!(other_span, even_more_span_again);
+    assert_eq!(span, other_span);
 }
 
 #[test]
@@ -592,26 +593,25 @@ fn test_span_slice_empty() {
     assert_eq!(empty.to_byte_array(), "");
 }
 
-// TODO(giladchase): replace assert+is_none with assert_eq when we have PartialEq.
 #[test]
 fn test_span_slice_out_of_bounds() {
     let ba: ByteArray = "hello";
     let span = ba.span();
 
-    assert!(span.get(3..=7).is_none(), "end out of bounds");
-    assert!(span.get(6..=6).is_none(), "start out of bounds (inclusive)");
+    assert_eq!(span.get(3..=7), None, "end out of bounds");
+    assert_eq!(span.get(6..=6), None, "start out of bounds (inclusive)");
 
     const MAX_INDEX: usize = Bounded::MAX;
-    assert!(
-        span.get(2..4).unwrap().get((MAX_INDEX - 1)..MAX_INDEX).is_none(), "start offset overflow",
+    assert_eq!(
+        span.get(2..4).unwrap().get((MAX_INDEX - 1)..MAX_INDEX), None, "start offset overflow",
     );
-    assert!(span.get(2..=3).unwrap().get((MAX_INDEX - 1)..MAX_INDEX).is_none());
-    assert!(span.get(2..4).unwrap().get((MAX_INDEX - 1)..=MAX_INDEX).is_none());
-    assert!(span.get(2..=3).unwrap().get((MAX_INDEX - 1)..=MAX_INDEX).is_none());
-    assert!(span.get(MAX_INDEX..0).is_none(), "backwards range");
+    assert_eq!(span.get(2..=3).unwrap().get((MAX_INDEX - 1)..MAX_INDEX), None);
+    assert_eq!(span.get(2..4).unwrap().get((MAX_INDEX - 1)..=MAX_INDEX), None);
+    assert_eq!(span.get(2..=3).unwrap().get((MAX_INDEX - 1)..=MAX_INDEX), None);
+    assert_eq!(span.get(MAX_INDEX..0), None, "backwards range");
 
     let empty_string: ByteArray = "";
-    assert!(empty_string.span().get(0..2).is_none(), "empty slice is sliceable");
+    assert_eq!(empty_string.span().get(0..2), None, "empty slice is sliceable");
 }
 
 #[test]
@@ -875,4 +875,39 @@ fn test_byte_span_iterator_slices() {
     let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
     let span = ba_32.span().get(31..32).unwrap();
     assert_eq!(span.into_iter().collect(), array!['f'], "1 byte in remainder after data exhausted");
+}
+
+#[test]
+fn test_span_equality() {
+    let empty: ByteArray = "";
+    let empty_copy: ByteArray = "";
+    let a: ByteArray = "A";
+    let a_copy: ByteArray = "A";
+    let b: ByteArray = "B";
+    let hello_world: ByteArray = "Hello World";
+    let hello_world_copy: ByteArray = "Hello World";
+    let hello_cairo: ByteArray = "Hello Cairo";
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let ba_31_copy: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@";
+    let ba_64_copy: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@";
+
+    assert_eq!(empty.span(), empty_copy.span());
+    assert_eq!(a.span(), a_copy.span());
+    assert_eq!(hello_world.span(), hello_world_copy.span());
+    assert_eq!(ba_31.span(), ba_31_copy.span());
+    assert_eq!(ba_64.span(), ba_64_copy.span());
+
+    assert_ne!(a.span(), b.span());
+    assert_ne!(hello_world.span(), hello_cairo.span());
+    assert_ne!(empty.span(), a.span());
+    assert_ne!(ba_31.span(), ba_64.span());
+
+    // Test slice equality.
+    let ba_37: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij";
+    let slice_5_15 = ba_37.span()[5..15];
+    let slice_5_15_copy = ba_37.span()[5..15];
+    let slice_10_20 = ba_37.span()[10..20];
+    assert_eq!(slice_5_15, slice_5_15_copy);
+    assert_ne!(slice_5_15, slice_10_20);
 }
