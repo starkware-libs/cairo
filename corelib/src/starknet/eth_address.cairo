@@ -68,7 +68,7 @@ pub(crate) impl EthAddressSerde of Serde<EthAddress> {
 
 impl EthAddressZero of core::num::traits::Zero<EthAddress> {
     fn zero() -> EthAddress {
-        0.try_into().unwrap()
+        EthAddress { address: 0 }
     }
 
     #[inline]
