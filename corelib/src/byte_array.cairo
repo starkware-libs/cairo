@@ -833,6 +833,24 @@ impl ByteSpanDefault of Default<ByteSpan> {
     }
 }
 
+impl ByteSpanPartialEq of PartialEq<ByteSpan> {
+    fn eq(lhs: @ByteSpan, rhs: @ByteSpan) -> bool {
+        if (*lhs).len() != (*rhs).len() {
+            return false;
+        }
+        let mut lhs_iter = (*lhs).into_iter();
+        let mut rhs_iter = (*rhs).into_iter();
+        loop {
+            match lhs_iter.next() {
+                Some(lhs_byte) => if Some(lhs_byte) != rhs_iter.next() {
+                    break false;
+                },
+                None => { break true; },
+            }
+        }
+    }
+}
+
 
 impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
     type Output = ByteSpan;

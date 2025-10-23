@@ -41,6 +41,13 @@ impl DisplayByteArray of Display<ByteArray> {
     }
 }
 
+#[feature("byte-span")]
+impl DisplayByteSpan of Display<crate::byte_array::ByteSpan> {
+    fn fmt(self: @crate::byte_array::ByteSpan, ref f: Formatter) -> Result<(), Error> {
+        DisplayByteArray::fmt(@crate::byte_array::ByteSpanTrait::to_byte_array(*self), ref f)
+    }
+}
+
 impl DisplayInteger<
     T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of Display<T> {
@@ -106,6 +113,16 @@ pub trait Debug<T> {
 
 impl DebugByteArray of Debug<ByteArray> {
     fn fmt(self: @ByteArray, ref f: Formatter) -> Result<(), Error> {
+        write!(f, "\"")?;
+        Display::fmt(self, ref f)?;
+        write!(f, "\"")
+    }
+}
+
+// TODO(giladchase): find a way to do this by applying `ByteArray::extend` on the bytespan.
+#[feature("byte-span")]
+impl DebugByteSpan of Debug<crate::byte_array::ByteSpan> {
+    fn fmt(self: @crate::byte_array::ByteSpan, ref f: Formatter) -> Result<(), Error> {
         write!(f, "\"")?;
         Display::fmt(self, ref f)?;
         write!(f, "\"")
