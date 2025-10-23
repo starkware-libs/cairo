@@ -58,3 +58,9 @@ pub const STARKNET_INTERFACE_ATTR: &str = "starknet::interface";
 /// An attribute to define a type as a phantom type, phantom types cannot be created at run time and
 /// are typically used for meta-programming.
 pub const PHANTOM_ATTR: &str = "phantom";
+
+/// An attribute to override a submodule's source file path.
+///
+/// Usage: #[path("relative/or/absolute/path.cairo")]
+/// Applies to: `mod` items with a semicolon body (file-based modules).
+pub const PATH_ATTR: &str = "path";

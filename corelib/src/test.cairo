@@ -46,6 +46,7 @@ mod language_features {
     mod macro_test;
     mod match_test;
     mod panics_test;
+    mod path_attr_test;
     mod trait_test;
     mod while_test;
 }
