@@ -111,7 +111,7 @@ extern fn secp256r1_get_xy_syscall(
 
 impl Secp256r1PointSerde of Serde<Secp256r1Point> {
     fn serialize(self: @Secp256r1Point, ref output: Array<felt252>) {
-        let point = (*self).get_coordinates().unwrap();
+        let point = (*self).get_coordinates().unwrap_syscall();
         point.serialize(ref output)
     }
 
