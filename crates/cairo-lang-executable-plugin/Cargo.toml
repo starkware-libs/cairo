@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 repository.workspace = true
 license-file.workspace = true
+description = "Cairo executable plugin."
 
 [dependencies]
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.13.0" }
