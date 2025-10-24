@@ -14,7 +14,6 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 #[cfg(test)]
 mod test;
 
-
 // Represents a cairo hint.
 // Note: Hint encoding should be backwards-compatible. This is an API guarantee.
 // For example, new variants should have new `index`.
