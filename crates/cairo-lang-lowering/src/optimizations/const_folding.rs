@@ -185,8 +185,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             Reachability::FromSingleGoto(from_block) => match &get_block(from_block).end {
                 BlockEnd::Goto(_, remapping) => {
                     for (dst, src) in remapping.iter() {
-                        if let Some(v) = self.as_const(src.var_id) {
-                            self.var_info.insert(*dst, VarInfo::Const(v));
+                        if let Some(v) = self.var_info.get(&src.var_id) {
+                            self.var_info.insert(*dst, v.clone());
                         }
                     }
                 }
@@ -626,11 +626,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
-        if call_stmt
-            .inputs
-            .iter()
-            .all(|arg| !matches!(self.var_info.get(&arg.var_id), Some(VarInfo::Const(_))))
-        {
+        // Avoid specializing with the same base as the current function as it may lead to infinite
+        // specialization.
+        if base == self.caller_base {
+            return None;
+        }
+        if call_stmt.inputs.iter().all(|arg| self.var_info.get(&arg.var_id).is_none()) {
             // No const inputs
             return None;
         }
@@ -667,12 +668,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     *arg = new_args_iter.next().unwrap_or_default();
                 }
             }
-        }
-
-        // Avoid specializing with the same base as the current function as it may lead to infinite
-        // specialization.
-        if base == self.caller_base {
-            return None;
         }
         let specialized = SpecializedFunction { base, args: const_args.into() };
         let specialized_func_id =
@@ -1135,7 +1130,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             VarInfo::Const(value) => Some(SpecializationArg::Const { value, boxed: false }),
             VarInfo::Box(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)
                 .map(|value| SpecializationArg::Const { value: *value, boxed: true }),
-            VarInfo::Array(infos) if infos.is_empty() => {
+            VarInfo::Snapshot(info) => {
+                let desnap_ty = *extract_matches!(ty.long(self.db), TypeLongId::Snapshot);
+                Some(SpecializationArg::Snapshot(
+                    self.try_get_specialization_arg(info.as_ref().clone(), desnap_ty)?.into(),
+                ))
+            }
+            VarInfo::Array(infos) => {
                 let TypeLongId::Concrete(concrete_ty) = ty.long(self.db) else {
                     unreachable!("Expected a concrete type");
                 };
@@ -1143,7 +1144,13 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 else {
                     unreachable!("Expected a single type generic argument");
                 };
-                Some(SpecializationArg::EmptyArray(*inner_ty))
+                Some(SpecializationArg::Array(
+                    *inner_ty,
+                    infos
+                        .into_iter()
+                        .map(|info| self.try_get_specialization_arg(info?, *inner_ty))
+                        .collect::<Option<Vec<_>>>()?,
+                ))
             }
             VarInfo::Struct(infos) => {
                 let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =

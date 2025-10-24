@@ -1,5 +1,6 @@
 #[feature("byte-span")]
-use crate::byte_array::{ByteSpanTrait, ToByteSpanTrait};
+use crate::byte_array::{ByteSpan, ByteSpanTrait, ToByteSpanTrait};
+use crate::num::traits::Bounded;
 use crate::test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -508,37 +509,56 @@ fn test_from_collect() {
     assert_eq!(ba, "hello");
 }
 
-// TODO(giladchase): add dedicated is_empty test once we have `slice`.
 #[test]
 fn test_span_len() {
-    // Test simple happy flow --- value is included in the last word.
     // TODO(giladchase): add short string test here once supported cast into span.
     let ba: ByteArray = "A";
-    let span = ba.span();
-    assert_eq!(span.len(), 1);
-    assert!(!span.is_empty());
+    assert_eq!(ba.span().len(), 1);
+    assert!(!ba.span().is_empty());
 
-    // Test empty.
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    assert_eq!(ba_31.span().len(), 31);
+    assert!(!ba_31.span().is_empty());
+
     let empty_ba: ByteArray = "";
-    let empty_span = empty_ba.span();
-    assert_eq!(empty_span.len(), 0);
-    assert!(empty_span.is_empty());
+    assert_eq!(empty_ba.span().len(), 0);
+    assert!(empty_ba.span().is_empty());
 
-    // TODO(giladchase): Add start-offset using slice once supported.
     // First word in the array, second in last word.
     let two_byte31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
-    let mut single_span = two_byte31.span();
-    assert_eq!(single_span.len(), 33, "len error with start offset");
+    let single_span = two_byte31.span()[1..=32];
+    assert_eq!(single_span.len(), 32, "len error with start offset");
     assert!(!single_span.is_empty());
 
-    // TODO(giladchase): Add start-offset using slice once supported.
-    // First word in the array, second in the array, third in last word.
+    // First word in the array, second in the array, third in remainder.
     let three_bytes31: ByteArray =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"; // 64 chars.
-    let mut three_span = three_bytes31.span();
-    assert_eq!(three_span.len(), 64, "len error with size-3 bytearray");
-    assert!(!three_span.is_empty());
+    let three_span = three_bytes31.span().get(1..64);
+    assert_eq!(three_span.map(|s| s.len()), Some(63), "len error with size-3 bytearray");
+    assert_eq!(three_span.map(|s| s.is_empty()), Some(false));
     // TODO(giladchase): use `ByteSpan::PartialEq` to check that a consuming slice == Default.
+}
+
+#[test]
+fn test_span_slice_is_empty() {
+    let ba: ByteArray = "hello";
+    let span = ba.span();
+    let is_empty = |span: ByteSpan| span.is_empty();
+
+    let empty = span[2..2];
+    assert_eq!(empty.len(), 0);
+    assert!(empty.is_empty());
+    assert_eq!(empty.to_byte_array(), "");
+
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    assert_eq!(ba_31.span().get(30..30).map(is_empty), Some(true));
+    assert_eq!(ba_31.span().get(31..31).map(is_empty), Some(true));
+    assert_eq!(ba_31.span().get(15..30).map(is_empty), Some(false));
+
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    assert_eq!(ba_30.span().get(29..29).map(is_empty), Some(true));
+    assert_eq!(ba_30.span().get(30..30).map(is_empty), Some(true));
+    assert_eq!(ba_30.span().get(15..29).map(is_empty), Some(false));
 }
 
 #[test]
@@ -562,6 +582,74 @@ fn test_span_copy() {
 }
 
 #[test]
+fn test_span_slice_empty() {
+    let ba: ByteArray = "hello";
+    let span = ba.span();
+
+    let empty = span[2..2];
+    assert_eq!(empty.len(), 0);
+    assert!(empty.is_empty());
+    assert_eq!(empty.to_byte_array(), "");
+}
+
+// TODO(giladchase): replace assert+is_none with assert_eq when we have PartialEq.
+#[test]
+fn test_span_slice_out_of_bounds() {
+    let ba: ByteArray = "hello";
+    let span = ba.span();
+
+    assert!(span.get(3..=7).is_none(), "end out of bounds");
+    assert!(span.get(6..=6).is_none(), "start out of bounds (inclusive)");
+
+    const MAX_INDEX: usize = Bounded::MAX;
+    assert!(
+        span.get(2..4).unwrap().get((MAX_INDEX - 1)..MAX_INDEX).is_none(), "start offset overflow",
+    );
+    assert!(span.get(2..=3).unwrap().get((MAX_INDEX - 1)..MAX_INDEX).is_none());
+    assert!(span.get(2..4).unwrap().get((MAX_INDEX - 1)..=MAX_INDEX).is_none());
+    assert!(span.get(2..=3).unwrap().get((MAX_INDEX - 1)..=MAX_INDEX).is_none());
+    assert!(span.get(MAX_INDEX..0).is_none(), "backwards range");
+
+    let empty_string: ByteArray = "";
+    assert!(empty_string.span().get(0..2).is_none(), "empty slice is sliceable");
+}
+
+#[test]
+fn test_span_slice_under_31_bytes() {
+    // Word entirely in remainder word.
+    let ba: ByteArray = "abcde";
+    let span = ba.span();
+    let tba = |ba: ByteSpan| ba.to_byte_array();
+
+    assert_eq!(span.get(0..=2).map(tba), Some("abc"));
+    assert_eq!(span.get(2..4).map(tba), Some("cd"));
+    assert_eq!(span.get(4..=4).map(tba), Some("e"));
+}
+#[test]
+fn test_span_slice_exactly_31_bytes() {
+    // 1 full data word, empty last_word.
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let span = ba_31.span();
+
+    assert_eq!(span.len(), 31);
+    assert_eq!(span.get(0..31).unwrap().to_byte_array(), ba_31);
+    assert_eq!(span[10..=19].to_byte_array(), "KLMNOPQRST");
+}
+
+#[test]
+fn test_span_slice_positions() {
+    // Two full bytes31 + remainder with 2 bytes.
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$";
+
+    assert_eq!(ba_64.span()[10..=39].to_byte_array(), "KLMNOPQRSTUVWXYZabcdefghijklmn");
+    assert_eq!(
+        ba_64.span().get(5..64).map(|s| s.to_byte_array()),
+        Some("FGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"),
+    );
+    assert_eq!(ba_64.span().get(29..=48).map(|s| s.to_byte_array()), Some("defghijklmnopqrstuvw"));
+}
+
+#[test]
 fn test_span_to_bytearray() {
     let empty_ba: ByteArray = "";
     assert_eq!(empty_ba.span().to_byte_array(), empty_ba);
@@ -578,5 +666,213 @@ fn test_span_to_bytearray() {
     let even_larger_ba: ByteArray =
         "abcdeFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$"; // 64 bytes
     assert_eq!(even_larger_ba.span().to_byte_array(), even_larger_ba);
-    // TODO(giladchase): test with slice.
+}
+
+#[test]
+fn test_span_multiple_start_offset_slicing() {
+    let ba_6: ByteArray = "abcdef";
+
+    let slice1_inc = ba_6.span().get(1..=5);
+    let slice2_inc = slice1_inc.map(|s| s[1..=4]);
+    let slice3_inc = slice2_inc.map(|s| s.get(1..4)).flatten();
+
+    let tba = |ba: ByteSpan| ba.to_byte_array();
+    assert_eq!(slice1_inc.map(tba), Some("bcdef"));
+    assert_eq!(slice2_inc.map(tba), Some("cdef"));
+    assert_eq!(slice3_inc.map(tba), Some("def"));
+}
+
+#[test]
+fn test_span_at_and_index() {
+    // Test simple access.
+    let ba: ByteArray = "AB";
+    let span = ba.span();
+    assert_eq!(span[0_usize], 'A');
+    assert_eq!(span.get(1_usize), Some('B'));
+    assert_eq!(span.get(2_usize), None);
+
+    // Test with offset and two words.
+    let ba_33: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    let mut span = ba_33.span();
+    span = span.get(1..33).unwrap();
+    assert_eq!(span.get(0_usize), Some('B'));
+    assert_eq!(span.get(30_usize), Some('f'));
+    assert_eq!(span[31_usize], 'g');
+    assert_eq!(span.get(32_usize), None);
+
+    // Test with offset and two words.
+    // 64 bytes: 31 + 31 + 2.
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#$";
+    let mut span = ba_64.span();
+    span = span.get(1..64).unwrap();
+    assert_eq!(span.get(30_usize), Some('f'));
+    assert_eq!(span[31_usize], 'g');
+    assert_eq!(span.get(60_usize), Some('9'));
+    assert_eq!(span[61_usize], '#');
+    assert_eq!(span.get(62_usize), Some('$'));
+    assert_eq!(span.get(63_usize), None);
+
+    // Test empty span.
+    let empty: ByteArray = Default::default();
+    let empty_span = empty.span();
+    assert_eq!(empty_span.get(0_usize), None);
+}
+
+#[test]
+#[should_panic(expected: ('Index out of bounds',))]
+fn test_span_index_out_of_bounds() {
+    let ba: ByteArray = "AB";
+    let span = ba.span();
+    let _x = span[2_usize]; // Should panic
+}
+
+#[test]
+fn test_span_at_overflows() {
+    // Test overflow protection with large indices.
+    let ba: ByteArray = "test";
+    let span = ba.span();
+    assert_eq!(span.get(Bounded::<usize>::MAX), None);
+
+    let sliced = ba.span().get(1..3).unwrap();
+    assert_eq!(sliced.get(Bounded::<usize>::MAX - 1), None);
+    assert_eq!(sliced.get(Bounded::<usize>::MAX), None);
+}
+
+#[test]
+fn test_byte_span_simple() {
+    let empty: ByteArray = "";
+    assert_eq!(empty.span().into_iter().collect(), array![]);
+
+    let ba: ByteArray = "A";
+    assert_eq!(ba.span().into_iter().collect(), array!['A']);
+
+    let ba: ByteArray = "AB";
+    assert_eq!(ba.span().into_iter().collect(), array!['A', 'B']);
+}
+
+#[test]
+fn test_byte_span_iterator_word_boundaries() {
+    // Test 30, 31, 32 bytes (1 word boundary).
+    let ba_30: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcd";
+    let mut iter = ba_30.span().into_iter();
+    iter.advance_by(29).unwrap();
+    assert_eq!(iter.collect(), array!['d'], "30 bytes - last byte");
+
+    let ba_31: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcde";
+    let mut iter = ba_31.span().into_iter();
+    assert_eq!(iter.next(), Some('A'));
+    iter.advance_by(29).unwrap();
+    assert_eq!(iter.collect(), array!['e'], "31 bytes - last byte");
+
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    let mut iter = ba_32.span().into_iter();
+    iter.advance_by(30).unwrap();
+    assert_eq!(iter.collect(), array!['e', 'f'], "32 bytes - last two bytes");
+
+    // Test 62, 63, 64 bytes (2 word boundaries).
+    let ba_62: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let mut iter = ba_62.span().into_iter();
+    iter.advance_by(61).unwrap();
+    assert_eq!(iter.collect(), array!['9'], "62 bytes - last byte");
+
+    let ba_63: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!";
+    let mut iter = ba_63.span().into_iter();
+    iter.advance_by(62).unwrap();
+    assert_eq!(iter.collect(), array!['!'], "63 bytes - last byte");
+
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@";
+    let mut iter = ba_64.span().into_iter();
+    iter.advance_by(62).unwrap();
+    assert_eq!(iter.collect(), array!['!', '@'], "64 bytes - last two bytes");
+}
+
+#[test]
+fn test_byte_span_iterator_multiple_words() {
+    // Test with 3+ words to verify iteration works across multiple word boundaries.
+    // 92 bytes: 31 + 31 + 30.
+    let ba_92: ByteArray =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;':,.<>?/~`";
+    let span = ba_92.span();
+    assert_eq!(span.into_iter().count(), 92, "should iterate all 92 bytes");
+
+    // Verify correctness at specific positions.
+    let mut iter = span.into_iter();
+    assert_eq!(iter.next(), Some('A'));
+
+    // Skip to last byte.
+    iter.advance_by(90).unwrap();
+    assert_eq!(iter.collect(), array!['`'], "90 bytes - last byte");
+}
+
+#[test]
+fn test_byte_span_iterator_for_loop_collect() {
+    let small_ba: ByteArray = "Hello";
+    let span = small_ba.span();
+
+    let mut collected = Default::default();
+    let mut count = 0;
+    for byte in span {
+        collected.append_byte(byte);
+        count += 1;
+    }
+    assert_eq!(collected, small_ba);
+    assert_eq!(count, 5);
+    assert_eq!(span.into_iter().collect(), small_ba);
+
+    // Test with 2 words.
+    let ba_40: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn";
+    collected = Default::default();
+    count = 0;
+    for byte in ba_40.span() {
+        collected.append_byte(byte);
+        count += 1;
+    }
+    assert_eq!(collected, ba_40);
+    assert_eq!(count, 40);
+    assert_eq!(ba_40.span().into_iter().collect(), ba_40);
+
+    // Test with 3 words.
+    let ba_70: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    collected = Default::default();
+    count = 0;
+    for byte in ba_70.span() {
+        collected.append_byte(byte);
+        count += 1;
+    }
+    assert_eq!(collected, ba_70);
+    assert_eq!(count, 70);
+    assert_eq!(ba_70.span().into_iter().collect(), ba_70);
+}
+
+#[test]
+fn test_byte_span_iterator_slices() {
+    // Slice within remainder word (< 31 bytes).
+    let ba_13: ByteArray = "Hello Shmello";
+    let span = ba_13.span().get(2..7).unwrap();
+    assert_eq!(
+        span.into_iter().collect(), array!['l', 'l', 'o', ' ', 'S'], "slice within remainder word",
+    );
+
+    // Iterate slice across 2 words (1 data + remainder).
+    let ba_33: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg";
+    let span = ba_33.span().get(27..32).unwrap();
+    assert_eq!(span.into_iter().collect(), array!['b', 'c', 'd', 'e', 'f'], "slice across 2 words");
+
+    // Iterate slice across 3 words.
+    let ba_66: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$";
+    let span = ba_66.span().get(29..64).unwrap();
+    assert_eq!(
+        span.into_iter().collect(),
+        array![
+            'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+            'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!',
+            '@',
+        ],
+        "slice across 3 words",
+    );
+
+    // Test case where data array is exhausted and remainder has exactly 1 byte.
+    let ba_32: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+    let span = ba_32.span().get(31..32).unwrap();
+    assert_eq!(span.into_iter().collect(), array!['f'], "1 byte in remainder after data exhausted");
 }

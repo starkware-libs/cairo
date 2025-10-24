@@ -11,7 +11,7 @@ use cairo_lang_filesystem::ids::{
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::consts::{
     ALLOW_ATTR, ALLOW_ATTR_ATTR, DEPRECATED_ATTR, FEATURE_ATTR, FMT_SKIP_ATTR,
-    IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, INTERNAL_ATTR, MUST_USE_ATTR, PHANTOM_ATTR,
+    IMPLICIT_PRECEDENCE_ATTR, INLINE_ATTR, INTERNAL_ATTR, MUST_USE_ATTR, PATH_ATTR, PHANTOM_ATTR,
     STARKNET_INTERFACE_ATTR, UNSTABLE_ATTR,
 };
 use cairo_lang_syntax::attribute::structured::AttributeStructurize;
@@ -464,6 +464,7 @@ fn allowed_attributes<'db>(
         PHANTOM_ATTR,
         IMPLICIT_PRECEDENCE_ATTR,
         FMT_SKIP_ATTR,
+        PATH_ATTR,
         // TODO(orizi): Remove this once `starknet` is removed from corelib.
         STARKNET_INTERFACE_ATTR,
     ];
@@ -533,9 +534,11 @@ fn module_main_file_helper<'db>(
                 // defined. It can be either the file of the parent module
                 // or a plugin-generated virtual file.
                 submodule_id.stable_ptr(db).untyped().file_id(db)
+            } else if let Some(path_override) = submodule_path_override(db, submodule_id) {
+                path_override
             } else {
-                let name = format!("{}.cairo", submodule_id.name(db).long(db));
-                db.module_dir(parent)?.file(db, &name)
+                db.module_dir(parent)?
+                    .file(db, &format!("{}.cairo", submodule_id.name(db).long(db)))
             }
         }
         // This is a macro-generated module, so the main file is the generated file.
@@ -571,6 +574,33 @@ fn module_dir_helper<'db>(
         // call, as it is considered the location of the macro itself.
         ModuleId::MacroCall { id, .. } => db.module_dir(id.parent_module(db)).cloned(),
     }
+}
+
+/// Extracts an override path from a `#[path("...")]` attribute on the submodule declaration, if
+/// any. The returned string can be a relative path (resolved against the parent module directory)
+/// or an absolute path.
+fn submodule_path_override<'db>(
+    db: &'db dyn Database,
+    submodule_id: SubmoduleId<'db>,
+) -> Option<FileId<'db>> {
+    // Get the parent module's AST for this submodule.
+    let parent = submodule_id.parent_module(db);
+    let parent_data = parent.module_data(db).ok()?;
+    let item_module_ast = parent_data.submodules(db).get(&submodule_id)?.clone();
+
+    let attr_ast = item_module_ast.find_attr(db, PATH_ATTR)?;
+    let terminal = extract_path_arg(db, &attr_ast.arguments(db))?;
+    let path = terminal.string_value(db)?;
+    /// Find the module where the parents of this module is defined.
+    fn find_base<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> ModuleId<'db> {
+        match module_id {
+            ModuleId::CrateRoot(crate_id) => ModuleId::CrateRoot(crate_id),
+            ModuleId::Submodule(submodule_id) => submodule_id.parent_module(db),
+            ModuleId::MacroCall { id, .. } => find_base(db, id.parent_module(db)),
+        }
+    }
+    let base = find_base(db, parent);
+    Some(db.module_dir(base).ok()?.file(db, &path))
 }
 
 fn module_dir<'db>(db: &'db dyn Database, module_id: ModuleId<'db>) -> Maybe<&'db Directory<'db>> {
@@ -1234,11 +1264,11 @@ fn collect_extra_allowed_attributes<'db>(
 }
 
 /// Validates that all attributes on the given item are in the allowed set or adds diagnostics.
-pub fn validate_attributes_flat<'db>(
+pub fn validate_attributes_flat<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db>>(
     db: &'db dyn Database,
     allowed_attributes: &OrderedHashSet<SmolStrId<'db>>,
     extra_allowed_attributes: &OrderedHashSet<SmolStrId<'db>>,
-    item: &impl QueryAttrs<'db>,
+    item: &Item,
     plugin_diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) {
     let local_extra_attributes = collect_extra_allowed_attributes(db, item, plugin_diagnostics);
@@ -1252,6 +1282,53 @@ pub fn validate_attributes_flat<'db>(
                 attr.stable_ptr(db),
                 "Unsupported attribute.".to_string(),
             ));
+        }
+    }
+
+    // Additional semantic validation for `#[path("...")]` attribute.
+    for attr in item.query_attr(db, PATH_ATTR) {
+        let node = item.as_syntax_node();
+        let Some(item_module) = ast::ItemModule::cast(db, node) else {
+            plugin_diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr(db),
+                "`#[path(..)]` is only allowed on module declarations.".to_string(),
+            ));
+            continue;
+        };
+        // Must be file-based (`mod name;`), not inline.
+        if matches!(item_module.body(db), MaybeModuleBody::Some(_)) {
+            plugin_diagnostics.push(PluginDiagnostic::error(
+                attr.stable_ptr(db),
+                "`#[path(..)]` requires a file-based module: use `mod name;` with a semicolon."
+                    .to_string(),
+            ));
+            continue;
+        }
+
+        let args = attr.arguments(db);
+        if extract_path_arg(db, &args).is_none() {
+            plugin_diagnostics.push(PluginDiagnostic::error(
+                args.stable_ptr(db),
+                "`#[path(..)]` expects exactly one string literal argument.".to_string(),
+            ));
+        }
+    }
+}
+
+/// Extracts the path argument from the given attribute arguments.
+fn extract_path_arg<'db>(
+    db: &'db dyn Database,
+    args: &ast::OptionArgListParenthesized<'db>,
+) -> Option<ast::TerminalString<'db>> {
+    match args {
+        ast::OptionArgListParenthesized::Empty(_) => None,
+        ast::OptionArgListParenthesized::ArgListParenthesized(args) => {
+            let [arg] = args.arguments(db).elements(db).collect_array()?;
+            if let ast::Expr::String(path) = try_extract_unnamed_arg(db, &arg)? {
+                Some(path)
+            } else {
+                None
+            }
         }
     }
 }

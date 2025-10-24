@@ -42,8 +42,7 @@
 //! assert!(first_byte == 0x41);
 //! ```
 
-use crate::array::{ArrayTrait, Span, SpanTrait};
-use crate::bytes_31::split_bytes31;
+use crate::array::{ArrayTrait, Span, SpanIter, SpanTrait};
 #[allow(unused_imports)]
 use crate::bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31,
@@ -55,6 +54,7 @@ use crate::cmp::min;
 use crate::integer::{U32TryIntoNonZero, u128_safe_divmod};
 #[feature("bounded-int-utils")]
 use crate::internal::bounded_int::{self, BoundedInt, downcast, upcast};
+use crate::num::traits::CheckedSub;
 #[allow(unused_imports)]
 use crate::serde::Serde;
 use crate::traits::{Into, TryInto};
@@ -71,7 +71,6 @@ pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
-const BYTES_IN_BYTES31_NONZERO: NonZero<usize> = BYTES_IN_BYTES31.try_into().unwrap();
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 /// Byte array type.
@@ -327,35 +326,23 @@ impl InternalImpl of InternalTrait {
         };
 
         let shift_value = self.shift_value();
-
-        if split_index == 0 {
-            self.append_shifted(SplitToAddResult { to_add: word, remainder: 0 }, shift_value);
-            self.pending_word_len = 0;
-            return;
-        }
-        let word_as_u256 = word.into();
-        let to_append = match split_info(split_index) {
-            SplitInfo::Eq16(v) => v.split_u256(word_as_u256),
-            SplitInfo::Lt16(v) => v.split_u256(word_as_u256),
-            SplitInfo::Gt16(v) => v.split_u256(word_as_u256),
-            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
-        };
+        let to_append = split_bytes31(word, split_index);
         self.append_shifted(to_append, shift_value);
         self.pending_word_len = split_index;
     }
 
     /// Appends a split word to the end of `self`.
     ///
-    /// `value` is the value to add to the byte array, including `to_add` and `remainder`.
-    /// `shift_value` is the shift for `self.pending word`, before it is joined by the `to_add` part
+    /// `value` is the value to add to the byte array, including `high` and `low`.
+    /// `shift_value` is the shift for `self.pending word`, before it is joined by the `high` part
     /// of `value`.
     ///
     /// Note: this function doesn't update the new pending length of `self`. It's the caller's
     /// responsibility.
     #[inline]
-    fn append_shifted(ref self: ByteArray, value: SplitToAddResult, shift_value: felt252) {
-        self.append_bytes31(value.to_add + self.pending_word * shift_value);
-        self.pending_word = value.remainder;
+    fn append_shifted(ref self: ByteArray, value: U256Split, shift_value: felt252) {
+        self.append_bytes31(value.high + self.pending_word * shift_value);
+        self.pending_word = value.low;
     }
 
     /// The value to shift the current pending word to add the remaining bytes to it.
@@ -413,17 +400,16 @@ impl InternalImpl of InternalTrait {
         pending_word: felt252,
         pending_word_len: Bytes31Index,
     ) {
-        if self.pending_word_len == 0 {
+        let Some(curr_pending_word_len) = helpers::index_is_zero(self.pending_word_len) else {
             self.data.append_span(data);
             self.pending_word = pending_word;
             self.pending_word_len = pending_word_len;
             return;
-        }
-
+        };
         let shift_value = self.shift_value();
         // self.pending_word_len is in [1, 30]. This is the split index for all the full words of
         // `other`, as for each word, this is the number of bytes left for the next word.
-        match split_info(self.pending_word_len) {
+        match split_info(curr_pending_word_len) {
             SplitInfo::Eq16(v) => {
                 while let Some(word) = data.pop_front() {
                     self.append_shifted(v.split_u256((*word).into()), shift_value);
@@ -439,22 +425,20 @@ impl InternalImpl of InternalTrait {
                     self.append_shifted(v.split_u256((*word).into()), shift_value);
                 }
             },
-            SplitInfo::BadUserData => crate::panic_with_felt252('bad append len'),
         }
         // Add the pending word of `other`.
-        if let crate::internal::OptionRev::Some(pending_word_len) =
-            bounded_int::trim_min::<_, helpers::TrimMinBytes31Index>(pending_word_len) {
+        if let Some(pending_word_len) = helpers::index_is_zero(pending_word_len) {
             self.append_word_ex(pending_word, upcast(pending_word_len));
         }
     }
 }
 
-/// The value for adding up to 31 bytes to the byte array.
-struct SplitToAddResult {
-    /// The value to complete the current word.
-    to_add: felt252,
-    /// The value to update the pending word to, as it does not fit in the current word.
-    remainder: felt252,
+/// The value of a `u256` split into two parts at an index.
+struct U256Split {
+    /// The higher part of the split.
+    high: felt252,
+    /// The lower part of the split.
+    low: felt252,
 }
 
 /// Information for splitting a felt252 into 2 parts at an index.
@@ -465,8 +449,6 @@ enum SplitInfo {
     Lt16: Lt16SplitInfo,
     /// The index is more than 16.
     Gt16: Gt16SplitInfo,
-    /// Should never happen.
-    BadUserData,
 }
 
 /// Helper struct for splitting a number at the 16 byte.
@@ -490,105 +472,101 @@ struct Gt16SplitInfo {
 }
 
 trait SplitValue<T> {
-    /// Splits a u256 into a `SplitToAddResult` according to the info on the split index.
-    fn split_u256(self: T, v: u256) -> SplitToAddResult;
+    /// Splits a u256 into a `U256Split` according to the info on the split index.
+    fn split_u256(self: T, v: u256) -> U256Split;
 }
 
 impl Lt16SplitInfoSplitValue of SplitValue<Lt16SplitInfo> {
-    fn split_u256(self: Lt16SplitInfo, v: u256) -> SplitToAddResult {
+    fn split_u256(self: Lt16SplitInfo, v: u256) -> U256Split {
         let (low_high, low_low) = DivRem::div_rem(v.low, self.low_div);
-        SplitToAddResult {
-            to_add: v.high.into() * self.high_shift + low_high.into(), remainder: low_low.into(),
-        }
+        U256Split { high: v.high.into() * self.high_shift + low_high.into(), low: low_low.into() }
     }
 }
 
 impl Eq16SplitInfoSplitValue of SplitValue<Eq16SplitInfo> {
-    fn split_u256(self: Eq16SplitInfo, v: u256) -> SplitToAddResult {
-        SplitToAddResult { to_add: v.high.into(), remainder: v.low.into() }
+    fn split_u256(self: Eq16SplitInfo, v: u256) -> U256Split {
+        U256Split { high: v.high.into(), low: v.low.into() }
     }
 }
 
 impl Gt16SplitInfoSplitValue of SplitValue<Gt16SplitInfo> {
-    fn split_u256(self: Gt16SplitInfo, v: u256) -> SplitToAddResult {
+    fn split_u256(self: Gt16SplitInfo, v: u256) -> U256Split {
         let (high_high, high_low) = DivRem::div_rem(v.high, self.high_div);
-        SplitToAddResult {
-            to_add: high_high.into(), remainder: high_low.into() * POW_2_128 + v.low.into(),
-        }
+        U256Split { high: high_high.into(), low: high_low.into() * POW_2_128 + v.low.into() }
     }
 }
 
 /// Extracts the split info from the given index.
-fn split_info(split_index: Bytes31Index) -> SplitInfo {
-    match split_index {
-        1 => SplitInfo::Lt16(
+fn split_info(split_index: BoundedInt<1, 30>) -> SplitInfo {
+    match helpers::nz_index_minus_one(split_index) {
+        0 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x100, high_shift: 0x1000000000000000000000000000000 },
         ),
-        2 => SplitInfo::Lt16(
+        1 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x10000, high_shift: 0x10000000000000000000000000000 },
         ),
-        3 => SplitInfo::Lt16(
+        2 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x1000000, high_shift: 0x100000000000000000000000000 },
         ),
-        4 => SplitInfo::Lt16(
+        3 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x100000000, high_shift: 0x1000000000000000000000000 },
         ),
-        5 => SplitInfo::Lt16(
+        4 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x10000000000, high_shift: 0x10000000000000000000000 },
         ),
-        6 => SplitInfo::Lt16(
+        5 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x1000000000000, high_shift: 0x100000000000000000000 },
         ),
-        7 => SplitInfo::Lt16(
+        6 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x100000000000000, high_shift: 0x1000000000000000000 },
         ),
-        8 => SplitInfo::Lt16(
+        7 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x10000000000000000, high_shift: 0x10000000000000000 },
         ),
-        9 => SplitInfo::Lt16(
+        8 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x1000000000000000000, high_shift: 0x100000000000000 },
         ),
-        10 => SplitInfo::Lt16(
+        9 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x100000000000000000000, high_shift: 0x1000000000000 },
         ),
-        11 => SplitInfo::Lt16(
+        10 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x10000000000000000000000, high_shift: 0x10000000000 },
         ),
-        12 => SplitInfo::Lt16(
+        11 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x1000000000000000000000000, high_shift: 0x100000000 },
         ),
-        13 => SplitInfo::Lt16(
+        12 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x100000000000000000000000000, high_shift: 0x1000000 },
         ),
-        14 => SplitInfo::Lt16(
+        13 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x10000000000000000000000000000, high_shift: 0x10000 },
         ),
-        15 => SplitInfo::Lt16(
+        14 => SplitInfo::Lt16(
             Lt16SplitInfo { low_div: 0x1000000000000000000000000000000, high_shift: 0x100 },
         ),
-        16 => SplitInfo::Eq16(Eq16SplitInfo {}),
-        17 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100 }),
-        18 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000 }),
-        19 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000 }),
-        20 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000 }),
-        21 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000 }),
-        22 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000 }),
-        23 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000 }),
-        24 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000 }),
-        25 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000000000 }),
-        26 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000000000 }),
-        27 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000000000 }),
-        28 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000000000000000 }),
-        29 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000000000000000 }),
-        30 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000000000000000 }),
-        0 | _ => SplitInfo::BadUserData,
+        15 => SplitInfo::Eq16(Eq16SplitInfo {}),
+        16 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100 }),
+        17 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000 }),
+        18 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000 }),
+        19 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000 }),
+        20 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000 }),
+        21 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000 }),
+        22 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000 }),
+        23 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000 }),
+        24 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000000000 }),
+        25 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000000000 }),
+        26 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000000000 }),
+        27 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x1000000000000000000000000 }),
+        28 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x100000000000000000000000000 }),
+        29 => SplitInfo::Gt16(Gt16SplitInfo { high_div: 0x10000000000000000000000000000 }),
+        _ => crate::panic_with_felt252('unreachable - no code generated'),
     }
 }
 
 /// Returns `2^n` as `felt252`.
 fn pow256_felt252(n: BoundedInt<1, 31>) -> felt252 {
     // Matching on `n - 1` so we'd get a continuous match starting from 0, which is more efficient.
-    match helpers::length_minus_one(n) {
+    match helpers::nz_length_minus_one(n) {
         0 => 0x100,
         1 => 0x10000,
         2 => 0x1000000,
@@ -706,26 +684,24 @@ pub(crate) impl ByteArrayIndexView of crate::traits::IndexView<ByteArray, usize,
     }
 }
 
-// TODO: Implement a more efficient version of this iterator.
 /// An iterator struct over a ByteArray.
 #[derive(Drop, Clone)]
 pub struct ByteArrayIter {
-    ba: ByteArray,
-    current_index: IntoIterator::<crate::ops::Range<usize>>::IntoIter,
+    inner: ByteSpanIter,
 }
 
 impl ByteArrayIterator of crate::iter::Iterator<ByteArrayIter> {
     type Item = u8;
+
     fn next(ref self: ByteArrayIter) -> Option<u8> {
-        self.ba.at(self.current_index.next()?)
+        self.inner.next()
     }
 }
 
 impl ByteArrayIntoIterator of crate::iter::IntoIterator<ByteArray> {
     type IntoIter = ByteArrayIter;
-    #[inline]
     fn into_iter(self: ByteArray) -> Self::IntoIter {
-        ByteArrayIter { current_index: (0..self.len()).into_iter(), ba: self }
+        ByteArrayIter { inner: self.span().into_iter() }
     }
 }
 
@@ -814,28 +790,38 @@ pub impl ByteSpanImpl of ByteSpanTrait {
     /// segment for the returned array, and *O*(*n*) operations to populate the array with the
     /// content of the span (see also `SpanIntoArray`).
     fn to_byte_array(mut self: ByteSpan) -> ByteArray {
-        let remainder_len = upcast(self.remainder_len);
         let Some(first_word) = self.data.pop_front() else {
             // Slice is included entirely in the remainder word.
-            let pending_word_len: usize = remainder_len - upcast(self.first_char_start_offset);
-            let (pending_word, _) = split_bytes31(
-                self.remainder_word, remainder_len, pending_word_len,
-            );
-            return ByteArray {
-                data: array![], pending_word, pending_word_len: downcast(pending_word_len).unwrap(),
+            let Some(pending_word_len) = helpers::index_checked_sub(
+                self.remainder_len, self.first_char_start_offset,
+            ) else {
+                return Default::default();
             };
+            let pending_word = split_bytes31(self.remainder_word, pending_word_len).low;
+            return ByteArray { data: array![], pending_word, pending_word_len };
         };
 
         let mut ba = Default::default();
-        let n_bytes_to_append = BYTES_IN_BYTES31 - upcast(self.first_char_start_offset);
-        let (first_word_no_offset, _) = split_bytes31(
-            (*first_word).into(), BYTES_IN_BYTES31, n_bytes_to_append,
-        );
-        ba.append_word(first_word_no_offset, n_bytes_to_append);
-
+        if let Some(nz_start_offset) = helpers::index_is_zero(self.first_char_start_offset) {
+            let n_bytes_to_append = helpers::complement_to_31(nz_start_offset);
+            let first_word_no_offset = split_bytes31_nz((*first_word).into(), n_bytes_to_append)
+                .low;
+            ba.append_word_ex(first_word_no_offset, upcast(n_bytes_to_append));
+        } else {
+            ba.data.append(*first_word);
+        }
         // Append the rest of the span parts, now that the first word was popped.
-        ba.append_from_parts(self.data, self.remainder_word, upcast(self.remainder_len));
+        ba.append_from_parts(self.data, self.remainder_word, self.remainder_len);
         ba
+    }
+
+    /// Gets the element(s) at the given index.
+    /// Accepts ranges (returns Option<ByteSpan>), and single indices (returns Option<u8>).
+    #[feature("corelib-get-trait")]
+    fn get<I, impl TGet: crate::ops::Get<ByteSpan, I>, +Drop<I>>(
+        self: @ByteSpan, index: I,
+    ) -> Option<TGet::Output> {
+        TGet::get(self, index)
     }
 }
 
@@ -844,6 +830,102 @@ impl ByteSpanDefault of Default<ByteSpan> {
         ByteSpan {
             data: [].span(), first_char_start_offset: 0, remainder_word: 0, remainder_len: 0,
         }
+    }
+}
+
+
+impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
+    type Output = ByteSpan;
+
+    /// Returns a slice for the given range `[start, end)`.
+    /// If span is consumed by the slice: returns the default object.
+    /// If out of bounds: returns `None`.
+    fn get(self: @ByteSpan, index: crate::ops::Range<usize>) -> Option<ByteSpan> {
+        let range = index;
+        if range.start == range.end {
+            return Some(Default::default());
+        }
+        if range.start > range.end {
+            return None;
+        }
+        let (start_word, start_offset) = helpers::index_parts_with_offset_b31(
+            range.start, *self.first_char_start_offset,
+        );
+        let (end_word, end_offset) = helpers::index_parts_with_offset_b31(
+            range.end, *self.first_char_start_offset,
+        );
+        let data_slice_len = end_word.checked_sub(start_word)?;
+
+        let remainder_with_end_offset_trimmed = if self.data.len() == end_word {
+            let offset = helpers::index_checked_sub(*self.remainder_len, end_offset)?;
+            split_bytes31(*self.remainder_word, offset).high
+        } else {
+            let word = self.data.get(end_word)?;
+            if let Some(end_offset) = helpers::index_is_zero(end_offset) {
+                split_bytes31_nz((**word).into(), helpers::complement_to_31(end_offset)).high
+            } else {
+                0
+            }
+        };
+
+        Some(
+            ByteSpan {
+                data: self.data.slice(start_word, data_slice_len),
+                first_char_start_offset: start_offset,
+                remainder_word: remainder_with_end_offset_trimmed,
+                remainder_len: end_offset,
+            },
+        )
+    }
+}
+
+impl ByteSpanGetRangeInclusive of crate::ops::Get<ByteSpan, crate::ops::RangeInclusive<usize>> {
+    type Output = ByteSpan;
+
+    /// Returns a slice for the given range `[start, end]`.
+    /// If span is consumed by the slice: returns the default object.
+    /// If out of bounds: returns `None`.
+    fn get(self: @ByteSpan, index: crate::ops::RangeInclusive<usize>) -> Option<ByteSpan> {
+        let end_exclusive = crate::num::traits::CheckedAdd::checked_add(index.end, 1)?;
+        ByteSpanTrait::get(self, index.start..end_exclusive)
+    }
+}
+
+impl ByteSpanGetUsize of crate::ops::Get<ByteSpan, usize> {
+    type Output = u8;
+
+    /// Returns the byte at the given index.
+    /// If out of bounds: returns `None`.
+    fn get(self: @ByteSpan, index: usize) -> Option<u8> {
+        helpers::byte_at(self, index)
+    }
+}
+
+#[feature("byte-span")]
+impl ByteSpanIndexViewRange of crate::ops::IndexView<ByteSpan, crate::ops::Range<usize>> {
+    type Target = ByteSpan;
+
+    fn index(self: @ByteSpan, index: crate::ops::Range<usize>) -> ByteSpan {
+        crate::ops::Get::get(self, index).expect('Index out of bounds')
+    }
+}
+
+#[feature("byte-span")]
+impl ByteSpanIndexViewRangeInclusive of crate::ops::IndexView<
+    ByteSpan, crate::ops::RangeInclusive<usize>,
+> {
+    type Target = ByteSpan;
+
+    fn index(self: @ByteSpan, index: crate::ops::RangeInclusive<usize>) -> ByteSpan {
+        crate::ops::Get::get(self, index).expect('Index out of bounds')
+    }
+}
+
+impl ByteSpanIndex of core::ops::index::IndexView<ByteSpan, usize> {
+    type Target = u8;
+
+    fn index(self: @ByteSpan, index: usize) -> u8 {
+        ByteSpanTrait::get(self, index).expect('Index out of bounds')
     }
 }
 
@@ -874,13 +956,147 @@ impl ByteSpanToByteSpan of ToByteSpanTrait<ByteSpan> {
     }
 }
 
+/// An iterator struct over a ByteSpan.
+#[derive(Drop, Clone)]
+pub struct ByteSpanIter {
+    /// Iterator over the full words.
+    data_iter: SpanIter<bytes31>,
+    /// The word currently being iterated over.
+    current_word: ShortString,
+    /// The last, partial word of the ByteSpan, iterated over after all full words are consumed.
+    remainder: ShortString,
+}
+
+impl ByteSpanIterator of crate::iter::Iterator<ByteSpanIter> {
+    type Item = u8;
+
+    fn next(ref self: ByteSpanIter) -> Option<u8> {
+        if let Some(byte) = self.current_word.pop_first() {
+            return Some(byte);
+        }
+
+        // Current word exhausted, try loading the next into current word from data or remainder.
+        match self.data_iter.next() {
+            Some(word) => { self.current_word = ShortString { data: (*word).into(), len: 31 }; },
+            // No more words in data, try loading the remainder.
+            None => {
+                self.current_word = self.remainder;
+                self.remainder.len = 0; // Mark remainder as consumed.
+            },
+        }
+
+        self.current_word.pop_first()
+    }
+}
+
+impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
+    type IntoIter = ByteSpanIter;
+
+    /// Creates an iterator over the bytes in the `ByteSpan`.
+    fn into_iter(self: ByteSpan) -> Self::IntoIter {
+        let mut data_iter = self.data.into_iter();
+
+        // Get first word in data array if exists, otherwise iterate on the remainder word.
+        let Some(first_word) = data_iter.next() else {
+            // On empty data span, remainder length is larger than or equals to the start offset.
+            let len =
+                match helpers::length_sub_offset(
+                    upcast(self.remainder_len), self.first_char_start_offset,
+                ) {
+                Some(len) => len,
+                // Can't actually happen, as start offset is at most the remainder length.
+                None => 0,
+            };
+
+            return ByteSpanIter {
+                data_iter,
+                current_word: ShortString { data: self.remainder_word, len },
+                remainder: Default::default(),
+            };
+        };
+
+        let len = upcast(helpers::complement_to_31(self.first_char_start_offset));
+
+        ByteSpanIter {
+            data_iter,
+            current_word: ShortString { data: (*first_word).into(), len },
+            remainder: ShortString { data: self.remainder_word, len: upcast(self.remainder_len) },
+        }
+    }
+}
+
+
+/// Shifts a word right by `n_bytes`.
+/// The input `bytes31` and the output `bytes31`s are represented using `felt252`s to improve
+/// performance.
+///
+/// Note: this function assumes that:
+/// 1. `word` is validly convertible to a `bytes31` which has no more than `len` bytes of data.
+/// 2. `index <= len`.
+/// If these assumptions are not met, it can corrupt the `bytes31`. Thus, this should be a
+/// private function. We could add masking/assertions but it would be more expensive.
+fn split_bytes31(value: felt252, split_index: Bytes31Index) -> U256Split {
+    let Some(split_index) = helpers::index_is_zero(split_index) else {
+        return U256Split { high: value, low: 0 };
+    };
+    split_bytes31_nz(value, split_index)
+}
+
+/// For testing purposes only, leftover from the old implementation.
+#[cfg(test)]
+pub(crate) fn split_bytes31_for_testing(
+    value: felt252, split_index: Bytes31Index,
+) -> (felt252, felt252) {
+    let word = split_bytes31(value, split_index);
+    (word.low.into(), word.high.into())
+}
+
+/// Same as `split_bytes31`, but `split_index` is bound to not be zero.
+fn split_bytes31_nz(value: felt252, split_index: BoundedInt<1, 30>) -> U256Split {
+    let as_u256: u256 = value.into();
+    match split_info(split_index) {
+        SplitInfo::Eq16(v) => v.split_u256(as_u256),
+        SplitInfo::Lt16(v) => v.split_u256(as_u256),
+        SplitInfo::Gt16(v) => v.split_u256(as_u256),
+    }
+}
+/// Representation of a `felt252` holding a string up to size 31, including length.
+#[derive(Drop, Copy)]
+struct ShortString {
+    /// The actual data.
+    data: felt252,
+    /// The actual length of the short string in bytes.
+    len: BoundedInt<0, 31>,
+}
+
+#[generate_trait]
+impl ShortStringImpl of ShortStringTrait {
+    /// Removes and returns the first byte from the string if it exists.
+    fn pop_first(ref self: ShortString) -> Option<u8> {
+        let len = helpers::length_is_zero(self.len)?;
+        let byte_position = helpers::nz_length_minus_one(len);
+
+        // Strings are indexed by lsb, so the first char is at position (byte_count - 1).
+        let byte = u8_at_u256(self.data.into(), upcast(byte_position));
+
+        self.len = upcast(byte_position);
+        Some(byte)
+    }
+}
+
+impl ShortStringDefault of Default<ShortString> {
+    fn default() -> ShortString {
+        ShortString { data: 0, len: 0 }
+    }
+}
+
 mod helpers {
     use core::num::traits::Bounded;
-    use crate::bytes_31::BYTES_IN_BYTES31;
+    use crate::bytes_31::{BYTES_IN_BYTES31, Bytes31Trait, u8_at_u256};
     #[feature("bounded-int-utils")]
     use crate::internal::bounded_int::{
-        self, AddHelper, BoundedInt, ConstrainHelper, MulHelper, SubHelper, UnitInt, downcast,
-        upcast,
+        self, AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper, UnitInt,
+        downcast, upcast,
     };
     use super::{BYTES_IN_BYTES31_MINUS_ONE, ByteSpan, Bytes31Index};
 
@@ -888,6 +1104,9 @@ mod helpers {
 
     const U32_MAX_TIMES_B31: felt252 = Bounded::<u32>::MAX.into() * BYTES_IN_BYTES31.into();
     const BYTES_IN_BYTES31_UNIT_INT: BytesInBytes31Typed = downcast(BYTES_IN_BYTES31).unwrap();
+    const NZ_BYTES_IN_BYTES31: NonZero<BytesInBytes31Typed> = 31;
+    const BYTES_IN_BYTES31_MINUS_ONE_TYPED: UnitInt<{ BYTES_IN_BYTES31_MINUS_ONE.into() }> = 30;
+    const ONE_TYPED: UnitInt<1> = 1;
 
     impl U32ByB31 of MulHelper<u32, BytesInBytes31Typed> {
         type Result = BoundedInt<0, U32_MAX_TIMES_B31>;
@@ -903,6 +1122,50 @@ mod helpers {
                 { -BYTES_IN_BYTES31_MINUS_ONE.into() },
                 { BYTES_IN_BYTES31_MINUS_ONE.into() + U32_MAX_TIMES_B31 },
             >;
+    }
+
+    // For byte_at: usize + BoundedInt<0,30>
+    impl UsizeAddBytes31Index of AddHelper<usize, Bytes31Index> {
+        type Result =
+            BoundedInt<0, { Bounded::<usize>::MAX.into() + BYTES_IN_BYTES31_MINUS_ONE.into() }>;
+    }
+
+    // For byte_at: div_rem of (usize + BoundedInt<0,30>) by 31
+    const USIZE_PLUS_30_DIV_31: felt252 = (Bounded::<usize>::MAX / 31 + 1).into();
+    impl UsizePlusBytes31IndexDivRemB31 of DivRemHelper<
+        UsizeAddBytes31Index::Result, BytesInBytes31Typed,
+    > {
+        type DivT = BoundedInt<0, USIZE_PLUS_30_DIV_31>;
+        type RemT = Bytes31Index;
+    }
+
+    // For byte_at: 30 - BoundedInt<0,30>
+    impl B30SubBytes31Index of SubHelper<
+        UnitInt<{ BYTES_IN_BYTES31_MINUS_ONE.into() }>, Bytes31Index,
+    > {
+        type Result = Bytes31Index;
+    }
+
+    // For byte_at: BoundedInt<0,30> - 1
+    impl Bytes31IndexSub1 of SubHelper<Bytes31Index, UnitInt<1>> {
+        type Result = BoundedInt<-1, { BYTES_IN_BYTES31_MINUS_ONE.into() - 1 }>;
+    }
+
+    // For byte_at: (BoundedInt<0,30> - 1) - BoundedInt<0,30>
+    impl Bytes31IndexMinus1SubBytes31Index of SubHelper<Bytes31IndexSub1::Result, Bytes31Index> {
+        type Result =
+            BoundedInt<
+                { -BYTES_IN_BYTES31_MINUS_ONE.into() - 1 },
+                { BYTES_IN_BYTES31_MINUS_ONE.into() - 1 },
+            >;
+    }
+
+    // For byte_at: split BoundedInt<-31, 29> at 0.
+    impl ConstrainRemainderIndexAt0 of bounded_int::ConstrainHelper<
+        Bytes31IndexMinus1SubBytes31Index::Result, 0,
+    > {
+        type LowT = BoundedInt<{ -BYTES_IN_BYTES31_MINUS_ONE.into() - 1 }, -1>;
+        type HighT = BoundedInt<0, { BYTES_IN_BYTES31_MINUS_ONE.into() - 1 }>;
     }
 
     /// Calculates the length of a `ByteSpan` in bytes.
@@ -932,6 +1195,17 @@ mod helpers {
         let (div, rem) = bounded_int::div_rem::<_, _, DivRemU32ByB31>(length, 31);
         (upcast(div), rem)
     }
+    /// Splits `index` (relative to `start_offset`) into a word index (divided by 31) and the byte
+    /// offset within that word.
+    pub fn index_parts_with_offset_b31(
+        index: usize, start_offset: Bytes31Index,
+    ) -> (usize, Bytes31Index) {
+        let absolute_index = bounded_int::add(index, start_offset);
+        let (word_idx_bounded, byte_offset) = bounded_int::div_rem(
+            absolute_index, NZ_BYTES_IN_BYTES31,
+        );
+        (upcast(word_idx_bounded), byte_offset)
+    }
 
     impl TrimMaxBytes31Index of bounded_int::TrimMaxHelper<Bytes31Index> {
         type Target = BoundedInt<0, 29>;
@@ -947,6 +1221,35 @@ mod helpers {
         } else {
             None
         }
+    }
+
+    impl TrimMinShortStringCount of bounded_int::TrimMinHelper<BoundedInt<0, 31>> {
+        type Target = BoundedInt<1, 31>;
+    }
+
+    /// Returns the length if it is not zero, or `None` if it is zero.
+    pub fn length_is_zero(length: BoundedInt<0, 31>) -> Option<BoundedInt<1, 31>> {
+        match bounded_int::trim_min(length) {
+            crate::internal::OptionRev::Some(trimmed) => Some(trimmed),
+            crate::internal::OptionRev::None => None,
+        }
+    }
+
+    impl B31SubOffset of SubHelper<BoundedInt<0, 31>, Bytes31Index> {
+        type Result = BoundedInt<-30, 31>;
+    }
+
+    impl ConstrainB31SubOffsetPos of ConstrainHelper<B31SubOffset::Result, 0> {
+        type LowT = BoundedInt<-30, -1>;
+        type HighT = BoundedInt<0, 31>;
+    }
+
+    /// Subtracts `offset` from `length`, assumes `offset < length`.
+    pub fn length_sub_offset(
+        length: BoundedInt<0, 31>, offset: Bytes31Index,
+    ) -> Option<BoundedInt<0, 31>> {
+        let diff = bounded_int::sub(length, offset);
+        bounded_int::constrain::<_, 0>(diff).err()
     }
 
     /// The information about the new pending word length and the split index.
@@ -982,17 +1285,107 @@ mod helpers {
     }
 
     /// Impl for trimming the minimum value of a `Bytes31Index`.
-    pub impl TrimMinBytes31Index of bounded_int::TrimMinHelper<Bytes31Index> {
+    impl TrimMinBytes31Index of bounded_int::TrimMinHelper<Bytes31Index> {
         type Target = BoundedInt<1, 30>;
     }
 
-    impl LengthToBytes31Index of SubHelper<BoundedInt<1, 31>, UnitInt<1>> {
+    /// Returns the index if it is zero, or `None` if it is not.
+    #[inline(always)]
+    pub fn index_is_zero(index: Bytes31Index) -> Option<BoundedInt<1, 30>> {
+        match bounded_int::trim_min::<_, TrimMinBytes31Index>(index) {
+            crate::internal::OptionRev::Some(index) => Some(index),
+            crate::internal::OptionRev::None => None,
+        }
+    }
+
+    impl MinusOneBounded1To31 of SubHelper<BoundedInt<1, 31>, UnitInt<1>> {
         type Result = Bytes31Index;
     }
 
-    /// Takes the length of an input word and returns the length minus one.
-    pub fn length_minus_one(len: BoundedInt<1, 31>) -> Bytes31Index {
+    /// Returns the length minus one.
+    pub fn nz_length_minus_one(len: BoundedInt<1, 31>) -> Bytes31Index {
         bounded_int::sub(len, 1)
+    }
+
+    /// Returns the byte at the given index in the ByteSpan.
+    /// If out of bounds: returns `None`.
+    pub fn byte_at(self: @ByteSpan, index: usize) -> Option<u8> {
+        let (word_index, msb_index) = index_parts_with_offset_b31(
+            index, *self.first_char_start_offset,
+        );
+
+        match self.data.get(word_index) {
+            Some(word) => {
+                // Convert from MSB to LSB indexing.
+                let lsb_index = bounded_int::sub(BYTES_IN_BYTES31_MINUS_ONE_TYPED, msb_index);
+                Some(word.at(upcast(lsb_index)))
+            },
+            None => {
+                // Word index must equal data.len() for remainder word.
+                if word_index != self.data.len() {
+                    return None;
+                }
+
+                // Compute LSB index: remainder_len - 1 - msb_index.
+                let lsb_index_bounded = bounded_int::sub(
+                    bounded_int::sub(*self.remainder_len, ONE_TYPED), msb_index,
+                );
+
+                // Check if in bounds and extract non-negative index.
+                let Err(lsb_index) = bounded_int::constrain::<_, 0>(lsb_index_bounded) else {
+                    return None; // Out of bounds: index >= remainder_len.
+                };
+                Some(u8_at_u256((*self.remainder_word).into(), upcast(lsb_index)))
+            },
+        }
+    }
+
+    impl MinusOneBounded1To30 of SubHelper<BoundedInt<1, 30>, UnitInt<1>> {
+        type Result = BoundedInt<0, 29>;
+    }
+
+    /// Returns the index minus one.
+    pub fn nz_index_minus_one(len: BoundedInt<1, 30>) -> BoundedInt<0, 29> {
+        bounded_int::sub(len, 1)
+    }
+
+
+    trait Complement31Helper<T> {
+        type Result;
+    }
+    impl ComplementSubHelper<T, impl H: Complement31Helper<T>> of SubHelper<UnitInt<31>, T> {
+        type Result = H::Result;
+    }
+    mod complement {
+        pub impl Impl<
+            const MIN0: felt252, const MAX0: felt252, const MIN1: felt252, const MAX1: felt252,
+        > of super::Complement31Helper<super::BoundedInt<MIN0, MAX0>> {
+            type Result = super::BoundedInt<MIN1, MAX1>;
+        }
+    }
+    impl ComplementNzLength = complement::Impl<1, 31, 0, 30>;
+    impl ComplementLength = complement::Impl<0, 31, 0, 31>;
+    impl ComplementNzIndex = complement::Impl<1, 30, 1, 30>;
+    impl ComplementIndex = complement::Impl<0, 30, 1, 31>;
+
+    /// Returns `31 - v`.
+    pub fn complement_to_31<T, impl H: Complement31Helper<T>>(v: T) -> H::Result {
+        bounded_int::sub(BYTES_IN_BYTES31_UNIT_INT, v)
+    }
+
+    impl Bytes31IndexSubHelper of SubHelper<Bytes31Index, Bytes31Index> {
+        type Result = BoundedInt<-30, 30>;
+    }
+
+    impl IndexConstrainHelper of ConstrainHelper<Bytes31IndexSubHelper::Result, 0> {
+        type LowT = BoundedInt<-30, -1>;
+        type HighT = BoundedInt<0, 30>;
+    }
+
+    /// Returns the result of subtracting the second index from the first, or `None` if the result
+    /// is negative.
+    pub fn index_checked_sub(lhs: Bytes31Index, rhs: Bytes31Index) -> Option<Bytes31Index> {
+        bounded_int::constrain::<_, 0>(bounded_int::sub(lhs, rhs)).err()
     }
 }
 pub(crate) use helpers::len_parts;

@@ -427,9 +427,9 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
 
     /// Validates the features of the given item, then pushes them into the context.
     /// IMPORTANT: Don't forget to restore through `restore_features`!
-    fn add_features_from_statement(
+    fn add_features_from_statement<Item: QueryAttrs<'ctx> + TypedSyntaxNode<'ctx>>(
         &mut self,
-        item: &impl QueryAttrs<'ctx>,
+        item: &Item,
     ) -> FeatureConfigRestore<'ctx> {
         validate_statement_attributes(self, item);
         let crate_id = self.resolver.owning_crate_id;
@@ -756,15 +756,16 @@ fn compute_expr_inline_macro_semantic<'db>(
 ) -> Maybe<Expr<'db>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
+    let new_file_long_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
         name: SmolStrId::from(ctx.db, name),
         content: SmolStrId::from(ctx.db, content),
         code_mappings: info.mappings.clone(),
         kind: FileKind::Expr,
         original_item_removed: true,
-    })
-    .intern(ctx.db);
+    });
+    ctx.db.accumulate_inline_macro_expansion(&new_file_long_id);
+    let new_file_id = new_file_long_id.intern(ctx.db);
     let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
@@ -826,15 +827,16 @@ fn expand_macro_for_statement<'db>(
 ) -> Maybe<Option<ExprAndId<'db>>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
+    let new_file_long_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
         name: SmolStrId::from(ctx.db, name),
         content: SmolStrId::from_arcstr(ctx.db, &content),
         code_mappings: info.mappings.clone(),
         kind: FileKind::StatementList,
         original_item_removed: true,
-    })
-    .intern(ctx.db);
+    });
+    ctx.db.accumulate_inline_macro_expansion(&new_file_long_id);
+    let new_file_id = new_file_long_id.intern(ctx.db);
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
         for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
@@ -4597,9 +4599,9 @@ fn check_struct_member_is_visible<'db>(
 
 /// Verifies that the statement attributes are valid statements attributes, if not a diagnostic is
 /// reported.
-fn validate_statement_attributes<'db>(
+fn validate_statement_attributes<'db, Item: QueryAttrs<'db> + TypedSyntaxNode<'db>>(
     ctx: &mut ComputationContext<'db, '_>,
-    item: &impl QueryAttrs<'db>,
+    item: &Item,
 ) {
     let allowed_attributes = ctx.db.allowed_statement_attributes();
     let mut diagnostics = vec![];

@@ -3,8 +3,8 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    InlineMacroExprPluginId, InlineMacroExprPluginLongId, LanguageElementId, LookupItemId,
-    MacroPluginId, MacroPluginLongId, ModuleId, ModuleItemId, UseId,
+    ImplAliasId, InlineMacroExprPluginId, InlineMacroExprPluginLongId, LanguageElementId,
+    LookupItemId, MacroPluginId, MacroPluginLongId, ModuleId, ModuleItemId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -27,7 +27,7 @@ use crate::items::enm::EnumSemantic;
 use crate::items::extern_function::ExternFunctionSemantic;
 use crate::items::extern_type::ExternTypeSemantic;
 use crate::items::free_function::FreeFunctionSemantic;
-use crate::items::imp::ImplSemantic;
+use crate::items::imp::{ImplId, ImplSemantic};
 use crate::items::impl_alias::ImplAliasSemantic;
 use crate::items::macro_call::{MacroCallSemantic, module_macro_modules};
 use crate::items::macro_declaration::MacroDeclarationSemantic;
@@ -37,6 +37,7 @@ use crate::items::structure::StructSemantic;
 use crate::items::trt::TraitSemantic;
 use crate::items::us::{SemanticUseEx, UseSemantic};
 use crate::items::visibility::Visibility;
+use crate::lsp_helpers::InlineMacroExpansionAccumulator;
 use crate::plugin::{AnalyzerPlugin, InternedPluginSuite, PluginSuite};
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 
@@ -194,6 +195,17 @@ fn module_semantic_diagnostics_tracked<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
     module_semantic_diagnostics(db, module_id)
+}
+
+pub fn module_inline_macro_expansions<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+) -> Vec<&'db InlineMacroExpansionAccumulator> {
+    module_semantic_diagnostics_tracked::accumulated::<InlineMacroExpansionAccumulator>(
+        db,
+        (),
+        module_id,
+    )
 }
 
 fn module_semantic_diagnostics<'db>(
@@ -646,10 +658,16 @@ pub fn module_fully_accessible_modules<'db>(
     result.into_iter().collect()
 }
 
-pub type ModuleSemanticDataCacheAndLoadingData<'db> = (
-    Arc<OrderedHashMap<ModuleId<'db>, ModuleSemanticData<'db>>>,
-    Arc<SemanticCacheLoadingData<'db>>,
-);
+/// Cache for the semantic data of a crate.
+#[derive(PartialEq, Eq, Clone, salsa::Update)]
+pub struct ModuleSemanticDataCacheAndLoadingData<'db> {
+    /// Semantic data of the modules in the crate.
+    pub modules_semantic_data: Arc<OrderedHashMap<ModuleId<'db>, ModuleSemanticData<'db>>>,
+    /// Resolved implementations of the impl aliases in the crate.
+    pub impl_aliases_resolved_impls: Arc<OrderedHashMap<ImplAliasId<'db>, ImplId<'db>>>,
+    /// Loading data of the semantic cache.
+    pub loading_data: Arc<SemanticCacheLoadingData<'db>>,
+}
 
 #[salsa::tracked]
 fn cached_crate_semantic_data<'db>(

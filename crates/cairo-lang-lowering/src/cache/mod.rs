@@ -68,7 +68,7 @@ pub fn load_cached_crate_functions<'db>(
         return Default::default();
     };
 
-    let semantic_loading_data = db.cached_crate_semantic_data(crate_id)?.1;
+    let semantic_loading_data = db.cached_crate_semantic_data(crate_id)?.loading_data;
 
     let def_size = usize::from_be_bytes(content[..8].try_into().unwrap()); // def_size is the first 8 bytes of the blob.
     let semantic_start = 8 + def_size;
@@ -428,7 +428,7 @@ impl LoweredCached {
                 .collect(),
             blocks: lowered
                 .blocks
-                .into_iter()
+                .iter()
                 .map(|block: (BlockId, &Block<'_>)| BlockCached::new(block.1.clone(), ctx))
                 .collect(),
             parameters: lowered.parameters.iter().map(|var| var.index()).collect(),
