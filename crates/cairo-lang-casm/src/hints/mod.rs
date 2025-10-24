@@ -14,17 +14,6 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 #[cfg(test)]
 mod test;
 
-/// Mathematical constants for Cairo range checking algorithm.
-/// These constants are derived from the Cairo PRIME (2^251 + 17*2^192 + 1).
-mod range_check_constants {
-    /// ceil((PRIME / 3) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
-    /// Used in AssertLeFindSmallArcs for range checking optimization.
-    pub const PRIME_OVER_3_HIGH: u128 = 3544607988759775765608368578435044694;
-
-    /// ceil((PRIME / 2) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
-    /// Used in AssertLeFindSmallArcs for range checking optimization.
-    pub const PRIME_OVER_2_HIGH: u128 = 5316911983139663648412552867652567041;
-}
 
 // Represents a cairo hint.
 // Note: Hint encoding should be backwards-compatible. This is an API guarantee.
@@ -722,8 +711,10 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(a),
                     ResOperandAsIntegerFormatter(b),
                 );
-                let prime_over_3_high = range_check_constants::PRIME_OVER_3_HIGH;
-                let prime_over_2_high = range_check_constants::PRIME_OVER_2_HIGH;
+                // ceil((PRIME / 3) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
+                let prime_over_3_high = 3544607988759775765608368578435044694_u128;
+                // ceil((PRIME / 2) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
+                let prime_over_2_high = 5316911983139663648412552867652567041_u128;
                 formatdoc! {"
 
                     import itertools
