@@ -112,6 +112,14 @@ impl DebugByteArray of Debug<ByteArray> {
     }
 }
 
+// TODO(giladchase): find a way to do this by applying `ByteArray::extend` on the bytespan.
+#[feature("byte-span")]
+impl DebugByteSpan of Debug<crate::byte_array::ByteSpan> {
+    fn fmt(self: @crate::byte_array::ByteSpan, ref f: Formatter) -> Result<(), Error> {
+        DebugByteArray::fmt(@crate::byte_array::ByteSpanTrait::to_byte_array(*self), ref f)
+    }
+}
+
 impl DebugInteger<
     T, +crate::to_byte_array::AppendFormattedToByteArray<T>, +Into<u8, T>, +TryInto<T, NonZero<T>>,
 > of Debug<T> {
