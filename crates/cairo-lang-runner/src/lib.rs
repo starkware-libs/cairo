@@ -102,7 +102,7 @@ pub enum RunResultValue {
     Panic(Vec<Felt252>),
 }
 
-// Approximated costs token types.
+// Returns the gas cost for each token type.
 pub fn token_gas_cost(token_type: CostTokenType) -> usize {
     match token_type {
         CostTokenType::Const => 1,
