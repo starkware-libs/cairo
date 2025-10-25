@@ -612,7 +612,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         var
     }
 
-    /// Sets the infrence's impl type bounds to the given map, and rewrittes the types so all the
+    /// Sets the inference's impl type bounds to the given map, and rewrittes the types so all the
     /// types are var free.
     pub fn set_impl_type_bounds(
         &mut self,

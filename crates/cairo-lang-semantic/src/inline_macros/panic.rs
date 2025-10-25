@@ -14,7 +14,7 @@ use cairo_lang_utils::{require, try_extract_matches};
 use indoc::{formatdoc, indoc};
 use salsa::Database;
 
-/// Try to generate a simple panic handlic code.
+/// Try to generate a simple panic handling code.
 /// Return `Some(())` if successful and updates the builder if successful.
 fn try_handle_simple_panic(
     db: &dyn Database,
