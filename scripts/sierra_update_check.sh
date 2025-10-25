@@ -29,7 +29,7 @@ if [ $? -eq 0 ]; then
     echo "We have a change in one of the Sierra crates - an explanation tag is required."
     echo "If there's no actual change:"
     echo " - Add 'SIERRA_UPDATE_NO_CHANGE_TAG=<reason>'."
-    echo "If there is a change - but it does not affect which code will be compiled:"
+    echo "If there is a change, but it does not affect which code will be compiled:"
     echo " - Add 'SIERRA_UPDATE_PATCH_CHANGE_TAG=<reason>'."
     echo "If there is a change, but previously compilable code is still compilable:"
     echo " - Add 'SIERRA_UPDATE_MINOR_CHANGE_TAG=<reason>'."
