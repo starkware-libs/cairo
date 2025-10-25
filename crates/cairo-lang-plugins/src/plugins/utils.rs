@@ -116,7 +116,7 @@ impl<'a> PluginTypeInfo<'a> {
     }
 
     /// Returns a full derived impl header - given `derived_trait` - and the `dependent_traits`
-    /// required for its all its members.
+    /// required for all its members.
     pub fn impl_header(&self, derived_trait: &str, dependent_traits: &[&str]) -> String {
         let derived_trait_name = derived_trait.split("::").last().unwrap_or(derived_trait);
         format!(
