@@ -1,15 +1,6 @@
-#[cfg(not(feature = "std"))]
-pub use alloc::borrow::ToOwned;
-#[cfg(not(feature = "std"))]
-use alloc::{string::String, vec, vec::Vec};
-#[cfg(feature = "std")]
-pub use std::borrow::ToOwned;
-
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use cairo_lang_utils::small_ordered_map::{Entry, SmallOrderedMap};
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
 
@@ -40,10 +31,10 @@ pub enum AssertEqKind {
 }
 
 /// The state of the variables at some line.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
 pub struct State {
     /// The value per variable.
-    vars: OrderedHashMap<Var, CellExpression>,
+    vars: SmallOrderedMap<Var, CellExpression>,
     /// The number of allocated variables from the beginning of the run.
     allocated: i16,
     /// The AP change since the beginning of the run.
@@ -108,10 +99,10 @@ enum Statement {
     /// A final instruction, no need for further editing.
     Final(Instruction),
     /// A jump or call command, requires fixing the actual target label.
-    Jump(String, Instruction),
+    Jump(&'static str, Instruction),
     /// A target label for jumps, additionally with an offset for defining the label in a position
     /// relative to the current statement.
-    Label(String, usize),
+    Label(&'static str, usize),
 }
 
 /// The builder result.
@@ -129,9 +120,7 @@ pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
 /// a post validation of parameters stage.
 pub struct CasmBuilder {
     /// The state at a point of jumping into a label, per label.
-    label_state: UnorderedHashMap<String, State>,
-    /// The set of labels that were already read, so cannot be updated.
-    read_labels: UnorderedHashSet<String>,
+    label_state: SmallOrderedMap<&'static str, (State, bool)>,
     /// The state at the last added statement.
     main_state: State,
     /// The added statements.
@@ -157,10 +146,10 @@ impl CasmBuilder {
         );
         let label_offsets = self.compute_label_offsets();
         if self.reachable {
-            self.label_state.insert("Fallthrough".to_owned(), self.main_state);
+            self.label_state.insert("Fallthrough", (self.main_state, false));
         }
         let mut instructions = vec![];
-        let mut branch_relocations = UnorderedHashMap::<String, Vec<usize>>::default();
+        let mut branch_relocations: [Vec<usize>; BRANCH_COUNT] = core::array::from_fn(|_| vec![]);
         let mut offset = 0;
         for statement in self.statements {
             match statement {
@@ -191,7 +180,8 @@ impl CasmBuilder {
                             _ => unreachable!("Only jump or call statements should be here."),
                         },
                         None => {
-                            branch_relocations.entry(label).or_default().push(instructions.len())
+                            let idx = branch_names.iter().position(|name| name == &label).unwrap();
+                            branch_relocations[idx].push(instructions.len())
                         }
                     }
                     offset += inst.body.op_size();
@@ -202,16 +192,16 @@ impl CasmBuilder {
                 }
             }
         }
-        let branches = branch_names.map(|label| {
+        let branches = core::array::from_fn(|i| {
+            let label = branch_names[i];
             let state = self
                 .label_state
-                .remove(label)
+                .remove(&label)
                 .unwrap_or_else(|| panic!("Requested a non existing final label: {label:?}."));
-            state.validate_finality();
-            (state, branch_relocations.remove(label).unwrap_or_default())
+            state.0.validate_finality();
+            (state.0, core::mem::take(&mut branch_relocations[i]))
         });
         assert!(self.label_state.is_empty(), "Did not use all branches.");
-        assert!(branch_relocations.is_empty(), "Did not use all branch relocations.");
         CasmBuildResult { instructions, branches }
     }
 
@@ -222,8 +212,8 @@ impl CasmBuilder {
     }
 
     /// Computes the code offsets of all the labels.
-    fn compute_label_offsets(&self) -> UnorderedHashMap<String, usize> {
-        let mut label_offsets = UnorderedHashMap::default();
+    fn compute_label_offsets(&self) -> SmallOrderedMap<&'static str, usize> {
+        let mut label_offsets = SmallOrderedMap::default();
         let mut offset = 0;
         for statement in &self.statements {
             match statement {
@@ -231,7 +221,7 @@ impl CasmBuilder {
                     offset += inst.body.op_size();
                 }
                 Statement::Label(name, extra_offset) => {
-                    label_offsets.insert(name.clone(), offset + extra_offset);
+                    label_offsets.insert(*name, offset + extra_offset);
                 }
             }
         }
@@ -459,20 +449,20 @@ impl CasmBuilder {
 
     /// Sets the label to have the set states, otherwise tests if the state matches the existing one
     /// by merging.
-    fn set_or_test_label_state(&mut self, label: String, state: State) {
+    fn set_or_test_label_state(&mut self, label: &'static str, state: State) {
         match self.label_state.entry(label) {
             Entry::Occupied(e) => {
-                let read_only = self.read_labels.contains(e.key());
-                e.into_mut().intersect(&state, read_only);
+                let m = e.into_mut();
+                m.0.intersect(&state, m.1);
             }
             Entry::Vacant(e) => {
-                e.insert(state);
+                e.insert((state, false));
             }
         }
     }
 
     /// Add a statement to jump to `label`.
-    pub fn jump(&mut self, label: String) {
+    pub fn jump(&mut self, label: &'static str) {
         let instruction = self.next_instruction(
             InstructionBody::Jump(JumpInstruction {
                 target: deref_or_immediate!(0),
@@ -480,7 +470,7 @@ impl CasmBuilder {
             }),
             true,
         );
-        self.statements.push(Statement::Jump(label.clone(), instruction));
+        self.statements.push(Statement::Jump(label, instruction));
         let mut state = State::default();
         core::mem::swap(&mut state, &mut self.main_state);
         self.set_or_test_label_state(label, state);
@@ -489,7 +479,7 @@ impl CasmBuilder {
 
     /// Add a statement to jump to `label` if `condition != 0`.
     /// `condition` must be a cell reference.
-    pub fn jump_nz(&mut self, condition: Var, label: String) {
+    pub fn jump_nz(&mut self, condition: Var, label: &'static str) {
         let cell = self.as_cell_ref(condition, true);
         let instruction = self.next_instruction(
             InstructionBody::Jnz(JnzInstruction {
@@ -498,7 +488,7 @@ impl CasmBuilder {
             }),
             true,
         );
-        self.statements.push(Statement::Jump(label.clone(), instruction));
+        self.statements.push(Statement::Jump(label, instruction));
         self.set_or_test_label_state(label, self.main_state.clone());
     }
 
@@ -529,23 +519,23 @@ impl CasmBuilder {
     }
 
     /// Adds a label here named `name`.
-    pub fn label(&mut self, name: String) {
+    pub fn label(&mut self, name: &'static str) {
         if self.reachable {
-            self.set_or_test_label_state(name.clone(), self.main_state.clone());
+            self.set_or_test_label_state(name, self.main_state.clone());
         }
-        self.read_labels.insert(name.clone());
-        self.main_state = self
+        let state = self
             .label_state
-            .get(&name)
-            .unwrap_or_else(|| panic!("No known value for state on reaching {name}."))
-            .clone();
+            .get_mut(&name)
+            .unwrap_or_else(|| panic!("No known value for state on reaching {name}."));
+        state.1 = true;
+        self.main_state = state.0.clone();
         self.statements.push(Statement::Label(name, 0));
         self.reachable = true;
     }
 
     /// Adds a label `name` in distance `offset` from the current point.
     /// Useful for calling code outside of the builder's context.
-    pub fn future_label(&mut self, name: String, offset: usize) {
+    pub fn future_label(&mut self, name: &'static str, offset: usize) {
         self.statements.push(Statement::Label(name, offset));
     }
 
@@ -563,12 +553,12 @@ impl CasmBuilder {
 
     /// Adds a call command to 'label'. All AP based variables are passed to the called function
     /// state and dropped from the calling function state.
-    pub fn call(&mut self, label: String) {
+    pub fn call(&mut self, label: &'static str) {
         self.main_state.validate_finality();
         // Vars to be passed to the called function state.
-        let mut function_vars = OrderedHashMap::<Var, CellExpression>::default();
+        let mut function_vars = SmallOrderedMap::<Var, CellExpression>::default();
         // FP based vars which will remain in the current state.
-        let mut main_vars = OrderedHashMap::<Var, CellExpression>::default();
+        let mut main_vars = SmallOrderedMap::<Var, CellExpression>::default();
         let ap_change = self.main_state.ap_change;
         let cell_to_var_flags = |cell: &CellRef| {
             if cell.register == Register::AP { (true, false) } else { (false, true) }
@@ -622,7 +612,7 @@ impl CasmBuilder {
             }),
             false,
         );
-        self.statements.push(Statement::Jump(label.clone(), instruction));
+        self.statements.push(Statement::Jump(label, instruction));
 
         self.main_state.vars = main_vars;
         self.main_state.allocated = 0;
@@ -735,8 +725,7 @@ impl CasmBuilder {
 impl Default for CasmBuilder {
     fn default() -> Self {
         Self {
-            label_state: Default::default(),
-            read_labels: Default::default(),
+            label_state: SmallOrderedMap::new(),
             main_state: Default::default(),
             statements: Default::default(),
             current_hints: Default::default(),
@@ -928,15 +917,15 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, jump $target:ident; $($tok:tt)*) => {
-        $builder.jump($crate::builder::ToOwned::to_owned(core::stringify!($target)));
+        $builder.jump(core::stringify!($target));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
-        $builder.jump_nz($condition, $crate::builder::ToOwned::to_owned(core::stringify!($target)));
+        $builder.jump_nz($condition, core::stringify!($target));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
-        $builder.call($crate::builder::ToOwned::to_owned(core::stringify!($target)));
+        $builder.call(core::stringify!($target));
 
         let __var_count = {0i16 $(+ (stringify!($var_name), 1i16).1)*};
         let mut __var_index = 0;
@@ -954,7 +943,7 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, $label:ident: $($tok:tt)*) => {
-        $builder.label($crate::builder::ToOwned::to_owned(core::stringify!($label)));
+        $builder.label(core::stringify!($label));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:expr, fail; $($tok:tt)*) => {
