@@ -132,7 +132,7 @@ fn build_u128_mul_guarantee_verify(
         tempvar a0;
         tempvar a1;
         const u64_limit = u64::MAX as u128 + 1;
-        // Break a into two 64bit halves s.t. a = a1 * 2**64 + a0.
+        // Break a into two 64-bit halves s.t. a = a1 * 2**64 + a0.
         hint DivMod { lhs: a, rhs: u64_limit } into { quotient: a1, remainder: a0 };
 
         // Verify that a0 < 2**64 by constraining a0 + (2**128-1) - (2**64-1) < 2**128.

@@ -23,20 +23,20 @@ struct Args {
     /// The filter for the tests, running only tests containing the filter string.
     #[arg(short, long, default_value_t = String::default())]
     filter: String,
-    /// Should we run ignored tests as well.
+    /// Whether to run ignored tests as well.
     #[arg(long, default_value_t = false)]
     include_ignored: bool,
-    /// Should we run only the ignored tests.
+    /// Whether to run only the ignored tests.
     #[arg(long, default_value_t = false)]
     ignored: bool,
-    /// Should we add the starknet plugin to run the tests.
+    /// Whether to add the Starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
     /// Whether to run the profiler, and what results to produce. See
     /// [cairo_lang_runner::profiling::ProfilerConfig]
     #[arg(short, long, default_value_t, value_enum)]
     run_profiler: RunProfilerConfigArg,
-    /// Should disable gas calculation.
+    /// Whether to disable gas calculation.
     #[arg(long)]
     gas_disabled: bool,
     /// Whether to print resource usage after each test.

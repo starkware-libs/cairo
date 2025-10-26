@@ -118,7 +118,7 @@ impl SimpleParserDatabase {
     }
 }
 
-/// Reads a cairo file to the db and return the syntax_root and diagnostic of its parsing.
+/// Reads a Cairo file to the DB and returns the `syntax_root` and diagnostics of its parsing.
 pub fn get_syntax_root_and_diagnostics_from_file(
     db: &SimpleParserDatabase,
     cairo_filepath: PathBuf,
@@ -127,7 +127,7 @@ pub fn get_syntax_root_and_diagnostics_from_file(
     get_syntax_root_and_diagnostics(db, file_id)
 }
 
-/// Returns the syntax_root and diagnostic of a file in the db.
+/// Returns the `syntax_root` and diagnostics of a file in the DB.
 pub fn get_syntax_root_and_diagnostics<'a>(
     db: &'a SimpleParserDatabase,
     file_id: FileId<'a>,
@@ -136,7 +136,7 @@ pub fn get_syntax_root_and_diagnostics<'a>(
     (syntax_file.as_syntax_node(), diagnostics)
 }
 
-/// Returns the syntax_file and diagnostic of a file in the db.
+/// Returns the `syntax_file` and diagnostics of a file in the DB.
 pub fn get_syntax_file_and_diagnostics<'a>(
     db: &'a SimpleParserDatabase,
     file_id: FileId<'a>,
@@ -147,8 +147,8 @@ pub fn get_syntax_file_and_diagnostics<'a>(
     (syntax_file, diagnostics.build())
 }
 
-/// Collect content string and start offset from a struct implementing `[ToPrimitiveTokenStream`]
-/// interface. This basically means concatenation of all tokens supplied.
+/// Collects the content string and start offset from a struct implementing
+/// `ToPrimitiveTokenStream`. This concatenates all supplied tokens.
 pub(crate) fn primitive_token_stream_content_and_offset(
     token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,
 ) -> (String, Option<TextOffset>) {

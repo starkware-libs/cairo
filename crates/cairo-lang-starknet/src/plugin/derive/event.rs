@@ -26,7 +26,7 @@ pub fn handle_event_derive<'db>(
 }
 
 // TODO(spapini): Avoid names collisions with `keys` and `data`.
-/// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
+/// Derives the `Event` trait for structs annotated with `derive(starknet::Event)`.
 fn handle_struct<'db>(
     db: &'db dyn Database,
     struct_ast: &ast::ItemStruct<'db>,
@@ -177,7 +177,7 @@ fn get_field_kind_for_variant<'db>(
     default
 }
 
-/// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
+/// Derives the `Event` trait for enums annotated with `derive(starknet::Event)`.
 fn handle_enum<'db>(
     db: &'db dyn Database,
     enum_ast: &ast::ItemEnum<'db>,

@@ -27,14 +27,14 @@ pub mod component;
 pub mod contract;
 pub mod generation_data;
 
-/// The kind of the starknet module (contract/component).
+/// The kind of the Starknet module (contract/component).
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum StarknetModuleKind {
     Contract,
     Component,
 }
 impl StarknetModuleKind {
-    /// Returns the starknet module kind according to the module's attributes, if any.
+    /// Returns the Starknet module kind according to the module's attributes, if any.
     fn from_module<'db>(
         db: &'db dyn Database,
         module_ast: &ast::ItemModule<'db>,
@@ -238,14 +238,14 @@ pub(super) fn handle_module_by_storage<'db>(
     })
 }
 
-/// If the grand grand parent of the given item is a starknet module, returns its kind
+/// If the great-grandparent of the given item is a Starknet module, returns its kind
 /// (contract/component) and its ast.
 fn grand_grand_parent_starknet_module<'db>(
     item_node: SyntaxNode<'db>,
     db: &'db dyn Database,
 ) -> Option<(ast::ItemModule<'db>, StarknetModuleKind, ast::Attribute<'db>)> {
-    // Get the containing module node. The parent is the item list, the grand parent is the module
-    // body, and the grand grand parent is the module.
+    // Get the containing module node. The parent is the item list, the grandparent is the module
+    // body, and the great-grandparent is the module.
     let module_node = item_node.parent(db)?.parent(db)?.parent(db)?;
     let module_ast = ast::ItemModule::cast(db, module_node)?;
     let (module_kind, attr) = StarknetModuleKind::from_module(db, &module_ast)?;

@@ -27,7 +27,7 @@ struct Args {
     contract_path: Option<String>,
     /// The output file name (default: stdout).
     output: Option<String>,
-    /// Replaces sierra ids with human-readable ones.
+    /// Replaces Sierra IDs with human-readable ones.
     #[arg(short, long, default_value_t = false)]
     replace_ids: bool,
     /// The allowed libfuncs list to use (default: most recent audited list).

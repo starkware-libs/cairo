@@ -74,7 +74,7 @@ pub struct RunResult {
 }
 
 /// The execution resources in a run.
-/// Extends [ExecutionResources] by including the used syscalls for starknet.
+/// Extends [ExecutionResources] by including the used syscalls for Starknet.
 #[derive(Debug, Eq, PartialEq, Clone, Default)]
 pub struct StarknetExecutionResources {
     /// The basic execution resources.
@@ -121,14 +121,14 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
     }
 }
 
-/// An argument to a sierra function run,
+/// An argument to a Sierra function run.
 #[derive(Debug, Clone)]
 pub enum Arg {
     Value(Felt252),
     Array(Vec<Arg>),
 }
 impl Arg {
-    /// Returns the size of the argument in the vm.
+    /// Returns the size of the argument in the VM.
     pub fn size(&self) -> usize {
         match self {
             Self::Value(_) => 1,
@@ -142,7 +142,7 @@ impl From<Felt252> for Arg {
     }
 }
 
-/// Builds hints_dict required in cairo_vm::types::program::Program from instructions.
+/// Builds `hints_dict` required in `cairo_vm::types::program::Program` from instructions.
 pub fn build_hints_dict(
     hints: &[(usize, Vec<Hint>)],
 ) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
@@ -173,7 +173,7 @@ pub struct PreparedStarknetContext {
     pub builtins: Vec<BuiltinName>,
 }
 
-/// Runner enabling running a Sierra program on the vm.
+/// Runner enabling running a Sierra program on the VM.
 pub struct SierraCasmRunner {
     /// Builder for runnable functions.
     builder: RunnableBuilder,
@@ -197,7 +197,7 @@ impl SierraCasmRunner {
         })
     }
 
-    /// Runs the vm starting from a function in the context of a given starknet state.
+    /// Runs the VM starting from a function in the context of a given Starknet state.
     pub fn run_function_with_starknet_context(
         &self,
         func: &Function,
@@ -210,7 +210,7 @@ impl SierraCasmRunner {
         self.run_function_with_prepared_starknet_context(func, &mut hint_processor, ctx)
     }
 
-    /// Runs the vm starting from a function in the context of a given starknet state and a
+    /// Runs the VM starting from a function in the context of a given Starknet state and a
     /// (possibly) amended hint processor.
     pub fn run_function_with_prepared_starknet_context(
         &self,
@@ -258,7 +258,7 @@ impl SierraCasmRunner {
         None
     }
 
-    /// Runs the vm starting from a function with custom hint processor. Function may have
+    /// Runs the VM starting from a function with a custom hint processor. The function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
     /// `available_gas` before the execution begins.
     pub fn run_function<'a, Bytecode>(
@@ -317,7 +317,7 @@ impl SierraCasmRunner {
         Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
     }
 
-    /// Prepare context for running a function in the context of a given starknet state.
+    /// Prepares context for running a function in the context of a given Starknet state.
     ///
     /// The returned hint processor instance is set up for interpreting and executing the hints
     /// provided during the Cairo program's execution. Can be customised by wrapping into a custom
@@ -559,8 +559,8 @@ impl Default for ProfilingInfoCollectionConfig {
     }
 }
 
-/// Initializes a vm by adding a new segment with builtins cost and a necessary pointer at the end
-/// of the program, as well as placing the arguments at the initial ap values.
+/// Initializes a VM by adding a new segment with builtins cost and a necessary pointer at the end
+/// of the program, as well as placing the arguments at the initial AP values.
 pub fn initialize_vm(vm: &mut VirtualMachine, data_len: usize) -> Result<(), Box<CairoRunError>> {
     // Create the builtin cost segment, with dummy values.
     let builtin_cost_segment = vm.add_memory_segment();

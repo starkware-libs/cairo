@@ -55,7 +55,7 @@ mod circuit;
 mod contract_address;
 mod dict_manager;
 
-/// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
+/// Converts a hint to the Cairo VM class `HintParams` by canonically serializing it to a string.
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
         code: hint.representing_string(),
@@ -94,7 +94,7 @@ pub struct CairoHintProcessor<'a> {
     pub user_args: Vec<Vec<Arg>>,
     /// A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
-    /// The starknet state.
+    /// The Starknet state.
     pub starknet_state: StarknetState,
     /// Maintains the resources of the run.
     pub run_resources: RunResources,
@@ -117,7 +117,7 @@ pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Reloc
     (base + (cell_ref.offset as i32)).unwrap()
 }
 
-/// Inserts a value into the vm memory cell represented by the cellref.
+/// Inserts a value into the VM memory cell represented by the cell reference.
 #[macro_export]
 macro_rules! insert_value_to_cellref {
     ($vm:ident, $cell_ref:ident, $value:expr) => {
@@ -131,8 +131,8 @@ type Log = (Vec<Felt252>, Vec<Felt252>);
 // L2 to L1 message type signature
 type L2ToL1Message = (Felt252, Vec<Felt252>);
 
-/// Execution scope for starknet related data.
-/// All values will be 0 and by default if not setup by the test.
+/// Execution scope for Starknet-related data.
+/// All values will be 0 by default if not set up by the test.
 #[derive(Clone, Default)]
 pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
@@ -178,7 +178,7 @@ struct ContractLogs {
     l2_to_l1_messages: VecDeque<L2ToL1Message>,
 }
 
-/// Copy of the cairo `ExecutionInfo` struct.
+/// Copy of the Cairo `ExecutionInfo` struct.
 #[derive(Clone, Default)]
 struct ExecutionInfo {
     block_info: BlockInfo,
@@ -188,7 +188,7 @@ struct ExecutionInfo {
     entry_point_selector: Felt252,
 }
 
-/// Copy of the cairo `BlockInfo` struct.
+/// Copy of the Cairo `BlockInfo` struct.
 #[derive(Clone, Default)]
 struct BlockInfo {
     block_number: Felt252,
@@ -196,7 +196,7 @@ struct BlockInfo {
     sequencer_address: Felt252,
 }
 
-/// Copy of the cairo `TxInfo` struct.
+/// Copy of the Cairo `TxInfo` struct.
 #[derive(Clone, Default)]
 struct TxInfo {
     version: Felt252,
@@ -214,7 +214,7 @@ struct TxInfo {
     account_deployment_data: Vec<Felt252>,
 }
 
-/// Copy of the cairo `ResourceBounds` struct.
+/// Copy of the Cairo `ResourceBounds` struct.
 #[derive(Clone, Default)]
 struct ResourceBounds {
     resource: Felt252,
@@ -228,12 +228,12 @@ struct MemoryExecScope {
     next_address: Relocatable,
 }
 
-/// Fetches the value of a cell from the vm.
+/// Fetches the value of a cell from the VM.
 fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt252, VirtualMachineError> {
     Ok(*vm.get_integer(cell_ref_to_relocatable(cell, vm))?)
 }
 
-/// Fetch the `MaybeRelocatable` value from an address.
+/// Fetches the `MaybeRelocatable` value from an address.
 fn get_maybe_from_addr(
     vm: &VirtualMachine,
     addr: Relocatable,
@@ -242,7 +242,7 @@ fn get_maybe_from_addr(
         .ok_or_else(|| VirtualMachineError::InvalidMemoryValueTemporaryAddress(Box::new(addr)))
 }
 
-/// Fetches the maybe relocatable value of a cell from the vm.
+/// Fetches the maybe-relocatable value of a cell from the VM.
 fn get_cell_maybe(
     vm: &VirtualMachine,
     cell: &CellRef,
@@ -250,7 +250,7 @@ fn get_cell_maybe(
     get_maybe_from_addr(vm, cell_ref_to_relocatable(cell, vm))
 }
 
-/// Fetches the value of a cell plus an offset from the vm, useful for pointers.
+/// Fetches the value of a cell plus an offset from the VM; useful for pointers.
 pub fn get_ptr(
     vm: &VirtualMachine,
     cell: &CellRef,
@@ -259,7 +259,7 @@ pub fn get_ptr(
     Ok((vm.get_relocatable(cell_ref_to_relocatable(cell, vm))? + offset)?)
 }
 
-/// Fetches the value of a pointer described by the value at `cell` plus an offset from the vm.
+/// Fetches the value of a pointer described by the value at `cell` plus an offset from the VM.
 fn get_double_deref_val(
     vm: &VirtualMachine,
     cell: &CellRef,
@@ -268,8 +268,8 @@ fn get_double_deref_val(
     Ok(*vm.get_integer(get_ptr(vm, cell, offset)?)?)
 }
 
-/// Fetches the maybe relocatable value of a pointer described by the value at `cell` plus an offset
-/// from the vm.
+/// Fetches the maybe-relocatable value of a pointer described by the value at `cell` plus an offset
+/// from the VM.
 fn get_double_deref_maybe(
     vm: &VirtualMachine,
     cell: &CellRef,
@@ -278,7 +278,7 @@ fn get_double_deref_maybe(
     get_maybe_from_addr(vm, get_ptr(vm, cell, offset)?)
 }
 
-/// Extracts a parameter assumed to be a buffer, and converts it into a relocatable.
+/// Extracts a parameter assumed to be a buffer and converts it into a relocatable.
 pub fn extract_relocatable(
     vm: &VirtualMachine,
     buffer: &ResOperand,
@@ -287,7 +287,7 @@ pub fn extract_relocatable(
     get_ptr(vm, base, &offset)
 }
 
-/// Fetches the value of `res_operand` from the vm.
+/// Fetches the value of `res_operand` from the VM.
 pub fn get_val(
     vm: &VirtualMachine,
     res_operand: &ResOperand,
@@ -334,7 +334,7 @@ macro_rules! fail_syscall {
     };
 }
 
-/// Gas Costs for syscalls.
+/// Gas costs for syscalls.
 /// Mostly duplication of:
 /// `https://github.com/starkware-libs/blockifier/blob/main/crates/blockifier/src/abi/constants.rs`.
 mod gas_costs {
@@ -375,7 +375,7 @@ mod gas_costs {
     pub const STORAGE_WRITE: usize = 50 * STEP;
 }
 
-/// Deducts gas from the given gas counter, or fails the syscall if there is not enough gas.
+/// Deducts gas from the given gas counter or fails the syscall if there is not enough gas.
 macro_rules! deduct_gas {
     ($gas:ident, $amount:ident) => {
         if *$gas < gas_costs::$amount {
@@ -385,7 +385,7 @@ macro_rules! deduct_gas {
     };
 }
 
-/// Fetches the maybe relocatable value of `res_operand` from the vm.
+/// Fetches the maybe-relocatable value of `res_operand` from the VM.
 fn get_maybe(
     vm: &VirtualMachine,
     res_operand: &ResOperand,
@@ -1008,7 +1008,7 @@ impl CairoHintProcessor<'_> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, DEPLOY);
 
-        // Assign the starknet address of the contract.
+        // Assign the Starknet address of the contract.
         let deployer_address = if deploy_from_zero {
             Felt252::zero()
         } else {
@@ -1150,7 +1150,7 @@ impl CairoHintProcessor<'_> {
         new_class: Felt252,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, REPLACE_CLASS);
-        // Validating the class hash was declared as one of the starknet contracts.
+        // Validating the class hash was declared as one of the Starknet contracts.
         if !self
             .runner
             .expect("Runner is needed for starknet.")
@@ -1784,8 +1784,8 @@ pub fn execute_deprecated_hint(
     Ok(())
 }
 
-/// Allocates a memory buffer of size `size` on a vm segment.
-/// Segment will be reused between calls.
+/// Allocates a memory buffer of size `size` on a VM segment.
+/// The segment will be reused between calls.
 fn alloc_memory(
     exec_scopes: &mut ExecutionScopes,
     vm: &mut VirtualMachine,

@@ -47,7 +47,7 @@ pub fn handle_store_derive<'db>(
     }
 }
 
-/// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
+/// Derives the `Store` trait for structs annotated with `derive(starknet::Store)`.
 fn handle_struct_store<'db>(info: &PluginTypeInfo<'db>) -> Option<RewriteNode<'db>> {
     let full_name = &info.full_typename();
     let name = &info.name;
@@ -209,7 +209,7 @@ fn handle_struct_store<'db>(info: &PluginTypeInfo<'db>) -> Option<RewriteNode<'d
     Some(RewriteNode::Text(store_impl))
 }
 
-/// Derive the `starknet::Store` trait for enums annotated with `derive(starknet::Store)`.
+/// Derives the `starknet::Store` trait for enums annotated with `derive(starknet::Store)`.
 fn handle_enum<'db>(
     db: &'db dyn Database,
     info: &PluginTypeInfo<'db>,

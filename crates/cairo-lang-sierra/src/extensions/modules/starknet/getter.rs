@@ -17,7 +17,7 @@ use crate::program::GenericArg;
 pub trait GetterTraits: Default {
     /// The generic libfunc id for the getter libfunc.
     const STR_ID: &'static str;
-    /// The simple sierra generic type returned by the getter.
+    /// The simple Sierra generic type returned by the getter.
     type InfoType: NoGenericArgsGenericType;
 }
 
@@ -25,7 +25,7 @@ pub trait GetterTraits: Default {
 pub trait GetterTraitsEx: Default {
     /// The generic libfunc id for the getter libfunc.
     const STR_ID: &'static str;
-    /// The simple sierra generic type returned by the getter.
+    /// The simple Sierra generic type returned by the getter.
     fn info_type_id(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<ConcreteTypeId, SpecializationError>;

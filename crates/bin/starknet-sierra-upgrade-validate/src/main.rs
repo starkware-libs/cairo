@@ -89,14 +89,14 @@ fn parse_version_id(major_minor_patch: &str) -> anyhow::Result<VersionId> {
     })
 }
 
-/// The contract class from db.
+/// The contract class from the DB.
 #[derive(Serialize, Deserialize)]
 pub struct ContractClassInfo {
     /// The previous compiled class hash.
     pub compiled_class_hash: BigUintAsHex,
     /// The class hash.
     pub class_hash: BigUintAsHex,
-    /// The sierra program.
+    /// The Sierra program.
     pub sierra_program: Vec<BigUintAsHex>,
     /// The entry points by type.
     pub entry_points_by_type: ContractEntryPoints,

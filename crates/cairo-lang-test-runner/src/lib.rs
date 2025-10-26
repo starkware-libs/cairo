@@ -54,7 +54,7 @@ impl<'db> TestRunner<'db> {
     /// * `filter` - Run only tests containing the filter string
     /// * `include_ignored` - Include ignored tests as well
     /// * `ignored` - Run ignored tests only
-    /// * `starknet` - Add the starknet plugin to run the tests
+    /// * `starknet` - Add the Starknet plugin to run the tests
     pub fn new(
         path: &Path,
         starknet: bool,
@@ -92,7 +92,7 @@ impl<'db> TestRunner<'db> {
         self
     }
 
-    /// Runs the tests and process the results for a summary.
+    /// Runs the tests and processes the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
         let runner = CompiledTestRunner {
             compiled: self.compiler.build()?,
@@ -214,7 +214,7 @@ impl<'db> TestCompiler<'db> {
     /// # Arguments
     ///
     /// * `path` - The path to compile and run its tests
-    /// * `starknet` - Add the starknet plugin to run the tests
+    /// * `starknet` - Add the Starknet plugin to run the tests
     pub fn try_new(
         path: &Path,
         allow_warnings: bool,

@@ -65,8 +65,8 @@ use crate::zeroable::NonZeroIntoImpl;
 type Bytes31Index = BoundedInt<0, { BYTES_IN_BYTES31_MINUS_ONE.into() }>;
 
 /// A magic constant for identifying serialization of `ByteArray` variables. An array of `felt252`
-/// with this magic value as one of the `felt252` indicates that you should expect right after it a
-/// serialized `ByteArray`. This is currently used mainly for prints and panics.
+/// with this magic value as one of the `felt252` values indicates that a serialized `ByteArray`
+/// should be expected immediately after it. This is currently used mainly for prints and panics.
 pub const BYTE_ARRAY_MAGIC: felt252 =
     0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 const BYTES_IN_U128: usize = 16;
@@ -79,8 +79,8 @@ pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
     /// The first byte of each word in the byte array is the most significant byte in the word.
     pub(crate) data: Array<bytes31>,
-    /// A `felt252` that actually represents a `bytes31`, with less than 31 bytes.
-    /// It is represented as a `felt252` to improve performance of building the byte array.
+    /// A `felt252` that actually represents a `bytes31`, with fewer than 31 bytes.
+    /// It is represented as a `felt252` to improve performance when building the byte array.
     /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     pub(crate) pending_word: felt252,
     /// The number of bytes in `pending_word`.
@@ -155,7 +155,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         self.append_from_parts(other.data.span(), *other.pending_word, *other.pending_word_len);
     }
 
-    /// Concatenates two `ByteArray` and returns the result.
+    /// Concatenates two `ByteArray`s and returns the result.
     ///
     /// The content of `left` is cloned in a new memory segment.
     /// # Examples
@@ -216,8 +216,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         helpers::calc_bytearray_len(self)
     }
 
-    /// Returns an option of the byte at the given index of `self`
-    /// or `None` if the index is out of bounds.
+    /// Returns the byte at the given index of `self`, or `None` if the index is out of bounds.
     ///
     /// # Examples
     ///
@@ -334,7 +333,7 @@ impl InternalImpl of InternalTrait {
     /// Appends a split word to the end of `self`.
     ///
     /// `value` is the value to add to the byte array, including `high` and `low`.
-    /// `shift_value` is the shift for `self.pending word`, before it is joined by the `high` part
+    /// `shift_value` is the shift for `self.pending_word`, before it is joined by the `high` part
     /// of `value`.
     ///
     /// Note: this function doesn't update the new pending length of `self`. It's the caller's
@@ -392,7 +391,7 @@ impl InternalImpl of InternalTrait {
         self.data.append(value.try_into().unwrap_or(ON_ERR));
     }
 
-    /// Append `data`` span and `pending_word` fields to the byte array.
+    /// Appends the `data` span and `pending_word` fields to the byte array.
     #[inline]
     fn append_from_parts(
         ref self: ByteArray,
@@ -451,11 +450,11 @@ enum SplitInfo {
     Gt16: Gt16SplitInfo,
 }
 
-/// Helper struct for splitting a number at the 16 byte.
+/// Helper struct for splitting a number at the 16th byte.
 #[derive(Copy, Drop)]
 struct Eq16SplitInfo {}
 
-/// Helper struct for splitting a number at an index lower than the 16 byte.
+/// Helper struct for splitting a number at an index lower than the 16th byte.
 #[derive(Copy, Drop)]
 struct Lt16SplitInfo {
     /// The division value to extract the low word parts.
@@ -464,7 +463,7 @@ struct Lt16SplitInfo {
     high_shift: felt252,
 }
 
-/// Helper struct for splitting a number at an index greater than the 16 byte.
+/// Helper struct for splitting a number at an index greater than the 16th byte.
 #[derive(Copy, Drop)]
 struct Gt16SplitInfo {
     /// The division value to extract the high word parts.
@@ -783,7 +782,7 @@ pub impl ByteSpanImpl of ByteSpanTrait {
     }
 
     /// Converts a `ByteSpan` into a `ByteArray`.
-    /// The cast includes trimming the start_offset of the first word of the span (which is created
+    /// The cast includes trimming the start offset of the first word of the span (which is created
     /// when slicing).
     ///
     /// Note: creating `ByteArray.data` from `Span` requires allocating a new memory
@@ -998,7 +997,8 @@ impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
 
         // Get first word in data array if exists, otherwise iterate on the remainder word.
         let Some(first_word) = data_iter.next() else {
-            // On empty data span, remainder length is larger than or equals to the start offset.
+            // On an empty data span, the remainder length is greater than or equal to the start
+            // offset.
             let len =
                 match helpers::length_sub_offset(
                     upcast(self.remainder_len), self.first_char_start_offset,
