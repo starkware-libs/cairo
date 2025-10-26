@@ -185,8 +185,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             Reachability::FromSingleGoto(from_block) => match &get_block(from_block).end {
                 BlockEnd::Goto(_, remapping) => {
                     for (dst, src) in remapping.iter() {
-                        if let Some(v) = self.var_info.get(&src.var_id) {
-                            self.var_info.insert(*dst, v.clone());
+                        if let Some(v) = self.as_const(src.var_id) {
+                            self.var_info.insert(*dst, VarInfo::Const(v));
                         }
                     }
                 }
