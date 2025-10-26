@@ -1456,10 +1456,9 @@ fn sha_256_process_block(
     vm: &mut dyn VMWrapper,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
-    let data_as_bytes = sha2::digest::generic_array::GenericArray::from_exact_iter(
+    let data_as_bytes = FromIterator::from_iter(
         data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
-    )
-    .unwrap();
+    );
     let mut state_as_words: [u32; 8] = prev_state
         .iter()
         .map(|felt| felt.to_bigint().to_u32().unwrap())
