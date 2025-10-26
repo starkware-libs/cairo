@@ -552,6 +552,7 @@ pub fn core_unary_operator<'db>(
         UnaryOperator::BitNot(_) => (info.bitnot_trt, info.bitnot_fn),
         UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
         UnaryOperator::Desnap(_) => unreachable!("* is not an unary operator."),
+        UnaryOperator::Reference(_) => todo!(),
     };
     Ok(Ok(get_core_trait_function_infer(db, inference, trait_id, trait_fn, stable_ptr)))
 }

@@ -978,7 +978,7 @@ test_partial_parser_tree_with_trivia(expect_diagnostics: true)
 //! > cairo_code
 fn foo() {
     #[aaa]
-    &
+    /
 }
 
 //! > top_level_kind
@@ -1002,7 +1002,7 @@ error: Missing tokens. Expected a statement after attributes.
 
 error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:3:5
-    &
+    /
     ^
 
 //! > expected_tree
@@ -1028,7 +1028,7 @@ error: Skipped tokens. Expected: statement.
         │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
         │   │           └── rbrack (kind: TerminalRBrack) <ignored>
         │   ├── child #1 (kind: TokenWhitespace).
-        │   ├── child #2 (kind: TokenSkipped): '&'
+        │   ├── child #2 (kind: TokenSkipped): '/'
         │   └── child #3 (kind: TokenNewline).
         ├── token (kind: TokenRBrace): '}'
         └── trailing_trivia (kind: Trivia) []
@@ -1042,7 +1042,7 @@ test_partial_parser_tree_with_trivia(expect_diagnostics: true)
 
 //! > cairo_code
 fn foo() {
-    &
+    /
     #[aaa]
 }
 
@@ -1061,7 +1061,7 @@ TerminalSemicolon
 //! > expected_diagnostics
 error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:5
-    &
+    /
     ^
 
 error: Missing tokens. Expected a statement after attributes.
@@ -1082,7 +1082,7 @@ error: Missing tokens. Expected a statement after attributes.
         │               ├── hash (kind: TerminalHash)
         │               │   ├── leading_trivia (kind: Trivia)
         │               │   │   ├── child #0 (kind: TokenWhitespace).
-        │               │   │   ├── child #1 (kind: TokenSkipped): '&'
+        │               │   │   ├── child #1 (kind: TokenSkipped): '/'
         │               │   │   ├── child #2 (kind: TokenNewline).
         │               │   │   └── child #3 (kind: TokenWhitespace).
         │               │   ├── token (kind: TokenHash): '#'
@@ -1111,7 +1111,7 @@ test_partial_parser_tree_with_trivia(expect_diagnostics: true)
 //! > cairo_code
 fn foo() {
     #[aaa]
-    &
+    /
     #[bbb]
 }
 
@@ -1135,7 +1135,7 @@ error: Missing tokens. Expected a statement after attributes.
 
 error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:3:5
-    &
+    /
     ^
 
 error: Missing tokens. Expected a statement after attributes.
@@ -1176,7 +1176,7 @@ error: Missing tokens. Expected a statement after attributes.
         │               │   │   │           ├── arguments (kind: OptionArgListParenthesizedEmpty) []
         │               │   │   │           └── rbrack (kind: TerminalRBrack) <ignored>
         │               │   │   ├── child #1 (kind: TokenWhitespace).
-        │               │   │   ├── child #2 (kind: TokenSkipped): '&'
+        │               │   │   ├── child #2 (kind: TokenSkipped): '/'
         │               │   │   ├── child #3 (kind: TokenNewline).
         │               │   │   └── child #4 (kind: TokenWhitespace).
         │               │   ├── token (kind: TokenHash): '#'

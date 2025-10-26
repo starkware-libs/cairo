@@ -2706,6 +2706,7 @@ pub enum UnaryOperator<'db> {
     Minus(TerminalMinus<'db>),
     At(TerminalAt<'db>),
     Desnap(TerminalMul<'db>),
+    Reference(TerminalAnd<'db>),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
 pub struct UnaryOperatorPtr<'db>(pub SyntaxStablePtrId<'db>);
@@ -2748,6 +2749,11 @@ impl<'db> From<TerminalMulPtr<'db>> for UnaryOperatorPtr<'db> {
         Self(value.0)
     }
 }
+impl<'db> From<TerminalAndPtr<'db>> for UnaryOperatorPtr<'db> {
+    fn from(value: TerminalAndPtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
 impl<'db> From<TerminalNotGreen<'db>> for UnaryOperatorGreen<'db> {
     fn from(value: TerminalNotGreen<'db>) -> Self {
         Self(value.0)
@@ -2770,6 +2776,11 @@ impl<'db> From<TerminalAtGreen<'db>> for UnaryOperatorGreen<'db> {
 }
 impl<'db> From<TerminalMulGreen<'db>> for UnaryOperatorGreen<'db> {
     fn from(value: TerminalMulGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<TerminalAndGreen<'db>> for UnaryOperatorGreen<'db> {
+    fn from(value: TerminalAndGreen<'db>) -> Self {
         Self(value.0)
     }
 }
@@ -2796,6 +2807,9 @@ impl<'db> TypedSyntaxNode<'db> for UnaryOperator<'db> {
             SyntaxKind::TerminalMul => {
                 UnaryOperator::Desnap(TerminalMul::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalAnd => {
+                UnaryOperator::Reference(TerminalAnd::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UnaryOperator"),
         }
     }
@@ -2817,6 +2831,9 @@ impl<'db> TypedSyntaxNode<'db> for UnaryOperator<'db> {
             SyntaxKind::TerminalMul => {
                 Some(UnaryOperator::Desnap(TerminalMul::from_syntax_node(db, node)))
             }
+            SyntaxKind::TerminalAnd => {
+                Some(UnaryOperator::Reference(TerminalAnd::from_syntax_node(db, node)))
+            }
             _ => None,
         }
     }
@@ -2827,6 +2844,7 @@ impl<'db> TypedSyntaxNode<'db> for UnaryOperator<'db> {
             UnaryOperator::Minus(x) => x.as_syntax_node(),
             UnaryOperator::At(x) => x.as_syntax_node(),
             UnaryOperator::Desnap(x) => x.as_syntax_node(),
+            UnaryOperator::Reference(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
@@ -2843,6 +2861,7 @@ impl<'db> UnaryOperator<'db> {
                 | SyntaxKind::TerminalMinus
                 | SyntaxKind::TerminalAt
                 | SyntaxKind::TerminalMul
+                | SyntaxKind::TerminalAnd
         )
     }
 }

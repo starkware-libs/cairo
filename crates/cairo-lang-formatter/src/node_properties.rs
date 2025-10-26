@@ -100,6 +100,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             | SyntaxKind::TokenNot
             | SyntaxKind::TokenBitNot
             | SyntaxKind::TokenAt
+            | SyntaxKind::TokenAnd
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack

@@ -1503,6 +1503,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     fn expect_unary_operator(&mut self) -> UnaryOperatorGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalAt => self.take::<TerminalAt<'_>>().into(),
+            SyntaxKind::TerminalAnd => self.take::<TerminalAnd<'_>>().into(),
             SyntaxKind::TerminalNot => self.take::<TerminalNot<'_>>().into(),
             SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot<'_>>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus<'_>>().into(),
@@ -1703,6 +1704,11 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         match self.peek().kind {
             SyntaxKind::TerminalAt => {
                 let op = self.take::<TerminalAt<'_>>().into();
+                let expr = self.parse_type_expr();
+                Ok(ExprUnary::new_green(self.db, op, expr).into())
+            }
+            SyntaxKind::TerminalAnd => {
+                let op = self.take::<TerminalAnd<'_>>().into();
                 let expr = self.parse_type_expr();
                 Ok(ExprUnary::new_green(self.db, op, expr).into())
             }
