@@ -150,7 +150,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             {
                 true
             }
-            SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
+            SyntaxKind::TokenMinus | SyntaxKind::TokenMul | SyntaxKind::TokenAnd => {
                 matches!(self.grandparent_kind(db), Some(SyntaxKind::ExprUnary))
             }
             SyntaxKind::TokenPlus

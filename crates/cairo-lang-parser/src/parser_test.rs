@@ -199,6 +199,7 @@ cairo_lang_test_utils::test_file_test!(
         while_: "while",
         for_: "for",
         range: "range",
+        reference: "reference",
         use_: "use",
         type_alias: "type_alias",
         macro_declaration: "macro_declaration",
