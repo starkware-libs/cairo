@@ -13,5 +13,5 @@ ignore.workspace = true
 log.workspace = true
 tracing.workspace = true
 
-cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.13.0" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.0", features = ["tracing"] }
+cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "~2.13.1" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.1", features = ["tracing"] }
