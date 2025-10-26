@@ -1,7 +1,13 @@
+#[feature("byte-span")]
+use crate::byte_array::ToByteSpanTrait;
+
 #[test]
 fn test_format() {
     let ba: ByteArray = "hello";
     assert(format!("{}", ba) == ba, 'byte array bad formatting');
+    let span = ba.span();
+    assert(format!("{span}") == ba, 'byte span bad formatting');
+    assert(format!("{}", span[1..4]) == "ell", 'byte span slice bad formatting');
     assert(format!("{}", 97_felt252) == "97", 'felt252 bad formatting');
     assert(format!("{}", 97_usize) == "97", 'usize bad formatting');
     assert(format!("{}", 34 - 5) == "29", 'expression bad formatting');
@@ -56,6 +62,18 @@ impl IntoFelt252BasedLowerHex = core::fmt::into_felt252_based::LowerHexImpl<Into
 fn test_format_debug() {
     let ba: ByteArray = "hello";
     assert(format!("{:?}", ba) == "\"hello\"", 'byte array bad formatting');
+    assert(format!("{:?}", ba.span()) == "\"hello\"", 'byte span bad formatting');
+    assert(format!("{:?}", ba.span()[1..4]) == "\"ell\"", 'byte span slice bad formatting');
+    let ba_64: ByteArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@";
+    let span_64 = ba_64.span();
+    assert(
+        format!(
+            "{span_64:?}",
+        ) == "\"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@\"",
+        'long byte span',
+    );
+    assert(format!("{:?}", span_64[20..30]) == "\"UVWXYZabcd\"", 'byte span 64 slice');
+
     assert(format!("{:?}", 97_felt252) == "97", 'felt252 bad formatting');
     assert(format!("{:?}", 97_usize) == "97", 'usize bad formatting');
     assert(format!("{:?}{:?}", 12_usize, 14_u32) == "1214", 'two args bad formatting');
