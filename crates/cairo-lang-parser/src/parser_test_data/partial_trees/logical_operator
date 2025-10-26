@@ -1,4 +1,4 @@
-//! > Test binary expression.
+//! > Test logical AND and OR
 
 //! > test_runner_name
 test_partial_parser_tree(expect_diagnostics: false)
@@ -42,3 +42,38 @@ ExprBinary
             └── segments (kind: ExprPathInner)
                 └── item #0 (kind: PathSegmentSimple)
                     └── ident (kind: TokenIdentifier): 'd'
+
+//! > ==========================================================================
+
+//! > Test reference type param with bitwise AND expression
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn foo(a: &u32, b: u32) {
+    a & &b
+}
+
+//! > top_level_kind
+ExprBinary
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprBinary
+    ├── lhs (kind: ExprPath)
+    │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   └── segments (kind: ExprPathInner)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'a'
+    ├── op (kind: TokenAnd): '&'
+    └── rhs (kind: ExprUnary)
+        ├── op (kind: TokenAnd): '&'
+        └── expr (kind: ExprPath)
+            ├── dollar (kind: OptionTerminalDollarEmpty) []
+            └── segments (kind: ExprPathInner)
+                └── item #0 (kind: PathSegmentSimple)
+                    └── ident (kind: TokenIdentifier): 'b'
