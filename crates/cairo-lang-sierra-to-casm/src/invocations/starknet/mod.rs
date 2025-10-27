@@ -20,7 +20,7 @@ mod testing;
 mod secp256;
 mod storage;
 
-/// Builds instructions for Sierra starknet operations.
+/// Builds instructions for Sierra Starknet operations.
 pub fn build(
     libfunc: &StarknetConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,

@@ -47,7 +47,7 @@ impl<'db> InlineWeight<'db> for SimpleInlineWeight {
     }
 }
 
-/// Try to approximate the weight of a lowered function by counting the number of casm statements it
+/// Try to approximate the weight of a lowered function by counting the number of CASM statements it
 /// will add to the code.
 pub struct ApproxCasmInlineWeight<'db> {
     db: &'db dyn Database,

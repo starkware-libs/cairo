@@ -483,7 +483,7 @@ fn build_multi_pop_back(
     ))
 }
 
-/// Extends the casm builder with the common part of the multi-pop front and multi-pop back.
+/// Extends the CASM builder with the common part of the multi-pop front and multi-pop back.
 fn extend_multi_pop_failure_checks(
     casm_builder: &mut CasmBuilder,
     range_check: Var,

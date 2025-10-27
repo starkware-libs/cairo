@@ -388,7 +388,7 @@ impl ConcreteType for ConcreteU96LimbsLessThanGuarantee {
 }
 
 /// A value that is guaranteed to fit in a u96.
-/// This value can only be dropped by being written to a 96bit range check.
+/// This value can only be dropped by being written to a 96-bit range check.
 #[derive(Default)]
 pub struct U96Guarantee {}
 impl NoGenericArgsGenericType for U96Guarantee {

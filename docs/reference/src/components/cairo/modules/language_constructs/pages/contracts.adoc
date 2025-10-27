@@ -24,7 +24,7 @@ mod my_contract {
 
 A contract is written as an inline module, with designated attributes.
 
-The main attribute is the `#[starknet::contract]` attribute that makes the starknet plugin treat the
+The main attribute is the `#[starknet::contract]` attribute that makes the Starknet plugin treat the
 module as a contract.
 
 == Storage

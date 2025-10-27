@@ -432,7 +432,7 @@ impl<'db> LiteInference<'db> {
     }
 
     /// Tries to infer the generic arguments of the trait from the given params.
-    /// If the inference fails (i.e. requires full inference), returns an error.
+    /// If the inference fails (i.e., requires full inference), returns an error.
     fn infer_generic_assignment(
         &mut self,
         params: &[GenericParam<'db>],

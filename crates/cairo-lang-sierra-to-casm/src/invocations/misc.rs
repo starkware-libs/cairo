@@ -53,7 +53,7 @@ pub fn build_single_cell_const(
 /// ```ignore
 /// felt252_is_zero(var=[ap-10]) { fallthrough() 1000(var) };
 /// ```
-/// translates to these casm instructions:
+/// translates to these CASM instructions:
 /// ```ignore
 /// jmp rel <jump_offset_1000> if [ap-10] != 0
 /// ```

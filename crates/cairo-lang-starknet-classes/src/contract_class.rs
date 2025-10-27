@@ -81,7 +81,7 @@ impl ContractClass {
     }
 
     /// Checks that all the used libfuncs in the contract class are allowed in the contract class
-    /// sierra version.
+    /// Sierra version.
     pub fn validate_version_compatible(
         self: &ContractClass,
         list_selector: ListSelector,
@@ -119,7 +119,7 @@ pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub selector: BigUint,
-    /// The idx of the user function declaration in the sierra program.
+    /// The index of the user function declaration in the Sierra program.
     pub function_idx: usize,
 }
 

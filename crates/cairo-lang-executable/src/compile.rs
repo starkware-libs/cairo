@@ -74,7 +74,7 @@ pub struct CompileExecutableResult<'db> {
     pub compiled_function: CompiledFunction,
     /// A runnable builder with the program corresponding to the compiled function.
     pub builder: RunnableBuilder,
-    /// The debug info for the sierra program in the builder.
+    /// The debug info for the Sierra program in the builder.
     pub debug_info: SierraProgramDebugInfo<'db>,
 }
 

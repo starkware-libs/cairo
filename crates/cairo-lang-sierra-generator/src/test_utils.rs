@@ -76,7 +76,7 @@ impl Default for SierraGenDatabaseForTesting {
     }
 }
 
-/// Compiles `content` to sierra and replaces the sierra ids to make it readable.
+/// Compiles `content` to Sierra and replaces the Sierra IDs to make it readable.
 pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::Program {
     let db = SierraGenDatabaseForTesting::default();
     let crate_id = setup_db_and_get_crate_id(&db, content);

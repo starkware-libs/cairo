@@ -45,18 +45,18 @@ use salsa::Database;
 struct Args {
     /// The Cairo project path to compile and run.
     path: PathBuf,
-    /// Whether path is a single file.
+    /// Whether the path is a single file.
     #[arg(short, long)]
     single_file: bool,
     /// Allows the compilation to succeed with warnings.
     #[arg(long)]
     allow_warnings: bool,
-    /// A path to a contract to analyze size for.
+    /// A path to a contract to analyze the size of.
     ///
-    /// Implies usage of the starknet plugin.
+    /// Implies usage of the Starknet plugin.
     #[arg(long, conflicts_with = "executable")]
     contract: Option<String>,
-    /// A path to a function to analyze size for.
+    /// A path to a function to analyze the size of.
     ///
     /// Implies executable plugin.
     #[arg(long, conflicts_with = "contract")]

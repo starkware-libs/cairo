@@ -26,7 +26,7 @@ use starknet_types_core::felt::Felt as Felt252;
 
 type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateInput>);
 
-/// Setups the cairo lowering to sierra db for the examples crate.
+/// Sets up the Cairo-lowering-to-Sierra DB for the examples crate.
 #[fixture]
 #[once]
 fn example_dir_data() -> ExampleDirData {
@@ -129,7 +129,7 @@ fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirDat
     );
 }
 
-/// Tests lowering from Cairo to casm.
+/// Tests lowering from Cairo to CASM.
 #[rstest]
 #[case::fib("fib", false)]
 #[case::fib_box("fib_box", false)]
@@ -174,7 +174,7 @@ fn cairo_to_casm(
     );
 }
 
-/// Tests lowering from Cairo to casm, with automatic addition of `withdraw_gas` calls.
+/// Tests lowering from Cairo to CASM, with automatic addition of `withdraw_gas` calls.
 #[rstest]
 #[case::fib("fib")]
 fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData) {

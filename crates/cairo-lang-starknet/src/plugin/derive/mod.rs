@@ -12,7 +12,7 @@ use super::utils::has_derive;
 mod event;
 mod store;
 
-/// Checks whether the given item has a starknet derive attribute.
+/// Checks whether the given item has a Starknet derive attribute.
 pub fn derive_needed<'db, T: QueryAttrs<'db>>(with_attrs: &T, db: &'db dyn Database) -> bool {
     has_derive(with_attrs, db, EVENT_TRAIT).is_some()
         || has_derive(with_attrs, db, STORE_TRAIT).is_some()

@@ -114,7 +114,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: scripts/rust_fmt.sh --check
 
-  # Checks all .cairo files in the repo are formatted correctly.
+  # Checks that all .cairo files in the repo are formatted correctly.
   cairofmt:
     runs-on: ubuntu-latest
     steps:
@@ -137,7 +137,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: |
           cargo run --profile=ci-dev --bin cairo-test -- ${{ matrix.cmd }}
-  # Checks all cairo code tests run correctly.
+  # Checks that all Cairo code tests run correctly.
   cairotest:
     if: ${{ always() }}
     needs: parallel-cairo-tests

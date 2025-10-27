@@ -27,7 +27,7 @@ use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Registe
 #[path = "builder_test.rs"]
 mod test;
 
-/// Variables for casm builder, representing a `CellExpression`.
+/// Variables for CASM builder, representing a `CellExpression`.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Var(usize);
 
@@ -48,7 +48,7 @@ pub struct State {
     allocated: i16,
     /// The AP change since the beginning of the run.
     pub ap_change: usize,
-    /// The number of casm steps since the beginning of the run.
+    /// The number of CASM steps since the beginning of the run.
     pub steps: usize,
 }
 impl State {
@@ -116,13 +116,13 @@ enum Statement {
 
 /// The builder result.
 pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
-    /// The actual casm code.
+    /// The actual CASM code.
     pub instructions: Vec<Instruction>,
     /// The state and relocations per branch.
     pub branches: [(State, Vec<usize>); BRANCH_COUNT],
 }
 
-/// Builder to more easily write casm code.
+/// Builder to more easily write CASM code.
 ///
 /// Allows CASM building without specifically thinking about ap changes and the sizes of opcodes.
 /// Wrong usages of it would panic instead of returning a result, as this builder assumes we are in

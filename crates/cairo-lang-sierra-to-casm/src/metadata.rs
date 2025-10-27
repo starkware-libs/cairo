@@ -15,7 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
 #[derive(Default)]
-/// Metadata provided with a Sierra program to simplify the compilation to casm.
+/// Metadata provided with a Sierra program to simplify the compilation to CASM.
 pub struct Metadata {
     /// AP changes information for Sierra user functions.
     pub ap_change_info: ApChangeInfo,
@@ -47,7 +47,7 @@ pub struct MetadataComputationConfig {
     /// solution. Used for testing only.
     pub skip_non_linear_solver_comparisons: bool,
     /// If true, compute the runtime cost token types (steps, holes and range-checks) in addition
-    /// to the usual gas costs (used in Sierra-to-casm compilation).
+    /// to the usual gas costs (used in Sierra-to-CASM compilation).
     pub compute_runtime_costs: bool,
 }
 

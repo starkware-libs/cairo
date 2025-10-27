@@ -9,7 +9,7 @@ use cairo_lang_sierra::program;
 use cairo_lang_utils::{define_short_id, write_comma_separated};
 use salsa::Database;
 
-/// Represents the long id of a pre-sierra label.
+/// Represents the long ID of a pre-Sierra label.
 /// The long id consists of the parent function and a unique identifier inside the function.
 // TODO(lior): Make sure this struct can only be constructed by expr_generator_context.
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -39,7 +39,7 @@ impl<'db> LabelId<'db> {
     }
 }
 
-/// Represents a compiled function before the label-resolution phase (pre-sierra).
+/// Represents a compiled function before the label-resolution phase (pre-Sierra).
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Function<'db> {
     /// The source function which was compiled.
@@ -63,7 +63,7 @@ unsafe impl<'db> salsa::Update for Function<'db> {
     }
 }
 
-/// Represents a pre-sierra statement - a statement before label-resolution.
+/// Represents a pre-Sierra statement - a statement before label-resolution.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Statement<'db> {
     /// A compiled Sierra statement (before label resolution).
@@ -86,7 +86,7 @@ impl<'db> Statement<'db> {
     }
 }
 
-/// Represents a pre-sierra statement, with its location in the source code.
+/// Represents a pre-Sierra statement, with its location in the source code.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementWithLocation<'db> {
     pub statement: Statement<'db>,
@@ -146,7 +146,7 @@ pub struct PushValue {
     pub dup: bool,
 }
 
-/// Represents a pre-sierra label.
+/// Represents a pre-Sierra label.
 #[derive(Clone, Debug, Eq, PartialEq, salsa::Update)]
 pub struct Label<'db> {
     pub id: LabelId<'db>,
