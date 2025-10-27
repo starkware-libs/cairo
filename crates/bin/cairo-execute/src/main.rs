@@ -37,7 +37,7 @@ use salsa::Database;
 struct Args {
     /// The basic input path for the run.
     /// If `--prebuilt` is provided, this is the path to the prebuilt executable.
-    /// Else, if `--single-file` is provided, this is the path to a single cairo file to compile
+    /// Else, if `--single-file` is provided, this is the path to a single Cairo file to compile
     /// for execution. Otherwise, this is the path of the Cairo project - the directory
     /// containing the `cairo_project.toml` file.
     input_path: PathBuf,
@@ -49,7 +49,7 @@ struct Args {
     /// The path to save the result of the run.
     ///
     /// In `--build-only` this would be the executable artifact.
-    /// In bootloader mode it will be the resulting cairo PIE file.
+    /// In bootloader mode it will be the resulting Cairo PIE file.
     /// In standalone mode this parameter is disallowed.
     #[arg(long, required_unless_present_any(["standalone", "run_profiler"]))]
     output_path: Option<PathBuf>,
@@ -77,7 +77,7 @@ struct Args {
 
 #[derive(Parser, Debug)]
 struct BuildArgs {
-    /// Whether path is a single file.
+    /// Whether the path is a single file.
     #[arg(long, conflicts_with = "prebuilt")]
     single_file: bool,
     /// Allows the compilation to succeed with warnings.
@@ -136,8 +136,8 @@ struct RunArgs {
     /// according to the layout.
     /// When the padding is disabled:
     /// - It doesn't modify/pad n_steps.
-    /// - It still pads each builtin segment to the next power of 2 (w.r.t the number of used
-    ///   instances of the builtin) compared to their sizes at the end of the execution.
+    /// - It still pads each builtin segment to the next power of 2 (with respect to the number of
+    ///   used instances of the builtin) compared to their sizes at the end of the execution.
     #[arg(long, conflicts_with = "build_only")]
     disable_trace_padding: Option<bool>,
     #[command(flatten)]

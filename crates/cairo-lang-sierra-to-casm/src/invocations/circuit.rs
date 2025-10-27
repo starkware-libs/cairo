@@ -306,7 +306,7 @@ fn build_circuit_eval(
     ))
 }
 
-/// Generates casm instructions for `try_into_circuit_modulus()`.
+/// Generates CASM instructions for `try_into_circuit_modulus()`.
 fn build_try_into_circuit_modulus(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

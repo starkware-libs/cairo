@@ -25,8 +25,8 @@ pub const EMPTY_EVENT_CODE: &str = formatcp! {"\
 pub enum {EVENT_TYPE_NAME} {{}}
 "};
 
-/// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
-/// its variants. Returns None if it's not a starknet event.
+/// Checks whether the given item is a Starknet event and, if so, ensures it's valid and returns
+/// its variants. Returns `None` if it's not a Starknet event.
 pub fn get_starknet_event_variants<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,

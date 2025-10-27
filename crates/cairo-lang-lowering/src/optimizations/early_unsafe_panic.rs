@@ -17,7 +17,7 @@ use crate::{
 };
 
 /// Adds an early unsafe_panic when we detect that `return` is unreachable from a certain point in
-/// the code. This step is needed to avoid issues with undroppable references in sierra to casm.
+/// the code. This step is needed to avoid issues with undroppable references in Sierra to CASM.
 ///
 /// This step might replace a match on an empty enum with a call to unsafe_panic and we rely on the
 /// 'trim_unreachable' optimization to clean that up.

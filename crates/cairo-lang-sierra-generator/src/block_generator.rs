@@ -96,7 +96,7 @@ fn add_drop_statements<'db>(
 enum BlockGenStackElement<'db> {
     /// Generated code for the given block.
     Block(BlockId),
-    /// Output the given sierra statement.
+    /// Output the given Sierra statement.
     Statement(pre_sierra::Statement<'db>),
     /// Configuration for the following blocks.
     Config { starting_cairo_location: Vec<StableLocation<'db>>, ap_tracking_state: bool },

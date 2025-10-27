@@ -11,7 +11,7 @@ const ADDR_BOUND: NonZeroFelt252 =
 const CONTRACT_ADDRESS_PREFIX: Felt252 =
     Felt252::from_hex_unchecked("0x535441524b4e45545f434f4e54524143545f41444452455353");
 
-/// Calculates the address of a starknet contract, as defined in
+/// Calculates the address of a Starknet contract, as defined in
 /// <https://docs.starknet.io/documentation/architecture_and_concepts/Smart_Contracts/contract-address/>.
 pub fn calculate_contract_address(
     salt: &Felt252,

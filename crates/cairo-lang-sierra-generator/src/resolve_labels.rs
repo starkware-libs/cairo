@@ -38,7 +38,7 @@ impl<'db> LabelReplacer<'db> {
         Self { next_statement_index_fetch: NextStatementIndexFetch::new(statements, false) }
     }
 
-    /// Replaces the pre-sierra labels in the given statement, and returns [program::Statement].
+    /// Replaces the pre-Sierra labels in the given statement and returns [program::Statement].
     fn handle_statement(
         &self,
         statement: program::GenStatement<pre_sierra::LabelId<'db>>,
@@ -51,7 +51,7 @@ impl<'db> LabelReplacer<'db> {
         }
     }
 
-    /// Replaces the pre-sierra labels in the given invocation, and returns [program::Invocation].
+    /// Replaces the pre-Sierra labels in the given invocation and returns [program::Invocation].
     fn handle_invocation(
         &self,
         invocation: program::GenInvocation<pre_sierra::LabelId<'db>>,
@@ -67,7 +67,7 @@ impl<'db> LabelReplacer<'db> {
         }
     }
 
-    /// Replaces the pre-sierra labels in the given branch info, and returns [program::BranchInfo].
+    /// Replaces the pre-Sierra labels in the given branch info and returns [program::BranchInfo].
     fn handle_branch_info(
         &self,
         branch_info: program::GenBranchInfo<pre_sierra::LabelId<'db>>,
@@ -78,7 +78,7 @@ impl<'db> LabelReplacer<'db> {
         }
     }
 
-    /// Replaces the pre-sierra labels in the given branch target, and returns
+    /// Replaces the pre-Sierra labels in the given branch target and returns
     /// [program::BranchTarget].
     fn handle_branch_target(
         &self,
@@ -92,7 +92,7 @@ impl<'db> LabelReplacer<'db> {
         }
     }
 
-    /// Resolves the given pre-sierra label, and returns [program::StatementIdx].
+    /// Resolves the given pre-Sierra label and returns [program::StatementIdx].
     pub fn handle_label_id(&self, label_id: pre_sierra::LabelId<'db>) -> program::StatementIdx {
         program::StatementIdx(self.next_statement_index_fetch.resolve_label(&label_id))
     }

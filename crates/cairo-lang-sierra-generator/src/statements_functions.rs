@@ -5,7 +5,7 @@ use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
 
-/// The mapping from sierra statement index to fully qualified Cairo path of the Cairo function
+/// The mapping from Sierra statement index to fully qualified Cairo path of the Cairo function
 /// (if obtainable) which caused the statement to be generated.
 ///
 /// Should be created using

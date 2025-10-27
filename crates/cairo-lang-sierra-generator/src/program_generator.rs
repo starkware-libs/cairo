@@ -403,7 +403,7 @@ pub fn find_all_free_function_ids<'db>(
 }
 
 /// Given `function_id` generates a dummy program with the body of the relevant function
-/// and dummy helper functions that allows the program to be compiled to casm.
+/// and dummy helper functions that allows the program to be compiled to CASM.
 /// The generated program is not valid, but it can be used to estimate the size of the
 /// relevant function.
 pub fn get_dummy_program_for_size_estimation(

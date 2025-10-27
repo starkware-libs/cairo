@@ -101,7 +101,7 @@ pub struct SierraToCasmConfig {
     pub max_bytecode_size: usize,
 }
 
-/// The casm program representation.
+/// The CASM program representation.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
@@ -192,14 +192,14 @@ impl CairoProgram {
     }
 }
 
-/// The debug information of a compilation from Sierra to casm.
+/// The debug information of a compilation from Sierra to CASM.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct SierraStatementDebugInfo {
-    /// The start offset of the sierra statement within the bytecode.
+    /// The start offset of the Sierra statement within the bytecode.
     pub start_offset: usize,
-    /// The end offset of the sierra statement within the bytecode.
+    /// The end offset of the Sierra statement within the bytecode.
     pub end_offset: usize,
-    /// The index of the sierra statement in the instructions vector.
+    /// The index of the Sierra statement in the instructions vector.
     pub instruction_idx: usize,
     /// Statement-kind-dependent information.
     pub additional_kind_info: StatementKindDebugInfo,
@@ -229,7 +229,7 @@ pub struct InvokeStatementDebugInfo {
     pub ref_values: Vec<ReferenceValue>,
 }
 
-/// The debug information of a compilation from Sierra to casm.
+/// The debug information of a compilation from Sierra to CASM.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.

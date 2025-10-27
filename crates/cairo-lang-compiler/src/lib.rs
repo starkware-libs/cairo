@@ -42,7 +42,7 @@ mod test;
 pub struct CompilerConfig<'a> {
     pub diagnostics_reporter: DiagnosticsReporter<'a>,
 
-    /// Replaces sierra ids with human-readable ones.
+    /// Replaces Sierra IDs with human-readable ones.
     pub replace_ids: bool,
 
     /// Disables inlining functions.
@@ -52,11 +52,11 @@ pub struct CompilerConfig<'a> {
     /// If None the default list of audited libfuncs will be used.
     pub allowed_libfuncs_list_name: Option<String>,
 
-    /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
+    /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
     pub add_statements_functions: bool,
 
-    /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
+    /// Adds a mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
     pub add_statements_code_locations: bool,
 }

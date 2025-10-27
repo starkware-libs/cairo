@@ -14,9 +14,9 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 #[cfg(test)]
 mod test;
 
-// Represents a cairo hint.
-// Note: Hint encoding should be backwards-compatible. This is an API guarantee.
-// For example, new variants should have new `index`.
+// Represents a Cairo hint.
+// Note: Hint encoding should be backward-compatible. This is an API guarantee.
+// For example, new variants should have a new `index`.
 #[derive(Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize), serde(untagged))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -56,7 +56,7 @@ impl From<ExternalHint> for Hint {
     }
 }
 
-/// A trait for displaying the pythonic version of a hint.
+/// A trait for displaying the Pythonic version of a hint.
 /// Should only be used from within the compiler.
 pub trait PythonicHint {
     fn get_pythonic_hint(&self) -> String;
@@ -94,7 +94,7 @@ pub enum StarknetHint {
     },
 }
 
-// Represents a cairo core hint.
+// Represents a Cairo core hint.
 #[derive(Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize), serde(untagged))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -146,9 +146,9 @@ pub enum CoreHint {
     /// Note: the hint may be used to write an already assigned memory cell.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 4))]
     DivMod { lhs: ResOperand, rhs: ResOperand, quotient: CellRef, remainder: CellRef },
-    /// Divides dividend (represented by 2 128bit limbs) by divisor (represented by 2 128bit
-    /// limbs). Returns the quotient (represented by 2 128bit limbs) and remainder (represented by
-    /// 2 128bit limbs). In all cases - `name`0 is the least significant limb.
+    /// Divides dividend (represented by 2 128-bit limbs) by divisor (represented by 2 128-bit
+    /// limbs). Returns the quotient (represented by 2 128-bit limbs) and remainder (represented by
+    /// 2 128-bit limbs). In all cases, `name`0 is the least significant limb.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 5))]
     Uint256DivMod {
         dividend0: ResOperand,
@@ -160,10 +160,10 @@ pub enum CoreHint {
         remainder0: CellRef,
         remainder1: CellRef,
     },
-    /// Divides dividend (represented by 4 128bit limbs) by divisor (represented by 2 128bit
-    /// limbs). Returns the quotient (represented by 4 128bit limbs) and remainder (represented
-    /// by 2 128bit limbs).
-    /// In all cases - `name`0 is the least significant limb.
+    /// Divides dividend (represented by 4 128-bit limbs) by divisor (represented by 2 128-bit
+    /// limbs). Returns the quotient (represented by 4 128-bit limbs) and remainder (represented
+    /// by 2 128-bit limbs).
+    /// In all cases, `name`0 is the least significant limb.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 6))]
     Uint512DivModByUint256 {
         dividend0: ResOperand,
@@ -181,10 +181,10 @@ pub enum CoreHint {
     },
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 7))]
     SquareRoot { value: ResOperand, dst: CellRef },
-    /// Computes the square root of value_low<<128+value_high, stores the 64bit limbs of the result
-    /// in sqrt0 and sqrt1 as well as the 128bit limbs of the remainder in remainder_low and
+    /// Computes the square root of value_low<<128+value_high, stores the 64-bit limbs of the result
+    /// in sqrt0 and sqrt1 as well as the 128-bit limbs of the remainder in remainder_low and
     /// remainder_high. The remainder is defined as `value - sqrt**2`.
-    /// Lastly it checks whether `2*sqrt - remainder >= 2**128`.
+    /// Lastly, it checks whether `2*sqrt - remainder >= 2**128`.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 8))]
     Uint256SquareRoot {
         value_low: ResOperand,
@@ -198,10 +198,10 @@ pub enum CoreHint {
     /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 9))]
     LinearSplit { value: ResOperand, scalar: ResOperand, max_x: ResOperand, x: CellRef, y: CellRef },
-    /// Allocates a new dict segment, and write its start address into the dict_infos segment.
+    /// Allocates a new dict segment and writes its start address into the dict_infos segment.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 10))]
     AllocFelt252Dict { segment_arena_ptr: ResOperand },
-    /// Fetch the previous value of a key in a dict, and write it in a new dict access.
+    /// Fetches the previous value of a key in a dict and writes it in a new dict access.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 11))]
     Felt252DictEntryInit { dict_ptr: ResOperand, key: ResOperand },
     /// Similar to Felt252DictWrite, but updates an existing entry and does not write the previous
@@ -211,7 +211,7 @@ pub enum CoreHint {
     /// Retrieves the index of the given dict in the dict_infos segment.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 13))]
     GetSegmentArenaIndex { dict_end_ptr: ResOperand, dict_index: CellRef },
-    /// Initialized the lists of accesses of each key of a dict as a preparation of squash_dict.
+    /// Initializes the lists of accesses for each key in a dict in preparation for squash_dict.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 14))]
     InitSquashData {
         dict_accesses: ResOperand,
@@ -223,26 +223,26 @@ pub enum CoreHint {
     /// Retrieves the current index of a dict access to process.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 15))]
     GetCurrentAccessIndex { range_check_ptr: ResOperand },
-    /// Writes if the squash_dict loop should be skipped.
+    /// Writes whether the squash_dict loop should be skipped.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 16))]
     ShouldSkipSquashLoop { should_skip_loop: CellRef },
     /// Writes the delta from the current access index to the next one.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 17))]
     GetCurrentAccessDelta { index_delta_minus1: CellRef },
-    /// Writes if the squash_dict loop should be continued.
+    /// Writes whether the squash_dict loop should continue.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 18))]
     ShouldContinueSquashLoop { should_continue: CellRef },
     /// Writes the next dict key to process.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 19))]
     GetNextDictKey { next_key: CellRef },
-    /// Finds the two small arcs from within [(0,a),(a,b),(b,PRIME)] and writes it to the
+    /// Finds the two small arcs from within [(0,a),(a,b),(b,PRIME)] and writes them to the
     /// range_check segment.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 20))]
     AssertLeFindSmallArcs { range_check_ptr: ResOperand, a: ResOperand, b: ResOperand },
-    /// Writes if the arc (0,a) was excluded.
+    /// Writes whether the arc (0,a) was excluded.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 21))]
     AssertLeIsFirstArcExcluded { skip_exclude_a_flag: CellRef },
-    /// Writes if the arc (a,b) was excluded.
+    /// Writes whether the arc (a,b) was excluded.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 22))]
     AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a: CellRef },
     /// Samples a random point on the EC.
@@ -280,7 +280,7 @@ pub enum CoreHint {
     /// In this case: Returns `g == 1`, `s == b` and `t == 1`.
     /// All no-inverse requirements are satisfied, except for `g > 1`.
     ///
-    /// In all cases - `name`0 is the least significant limb.
+    /// In all cases, `name`0 is the least significant limb.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 27))]
     U256InvModN {
         b0: ResOperand,
@@ -304,7 +304,7 @@ pub enum CoreHint {
     },
 }
 
-/// Represents a deprecated hint which is kept for backward compatibility of previously deployed
+/// Represents a deprecated hint that is kept for backward compatibility with previously deployed
 /// contracts.
 #[derive(Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -330,18 +330,18 @@ pub enum DeprecatedHint {
     /// Asserts that the input represents integers and that a<b.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 4))]
     AssertLtAssertValidInput { a: ResOperand, b: ResOperand },
-    /// Retrieves and writes the value corresponding to the given dict and key from the vm
+    /// Retrieves and writes the value corresponding to the given dict and key from the VM
     /// dict_manager.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 5))]
     Felt252DictRead { dict_ptr: ResOperand, key: ResOperand, value_dst: CellRef },
-    /// Sets the value corresponding to the key in the vm dict_manager.
+    /// Sets the value corresponding to the key in the VM dict_manager.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 6))]
     Felt252DictWrite { dict_ptr: ResOperand, key: ResOperand, value: ResOperand },
 }
 
 /// Represents an external hint.
 ///
-/// Hints used out of the Sierra environment, mostly for creating external wrapper for code.
+/// Hints used outside the Sierra environment, mostly for creating external wrappers for code.
 #[derive(Debug, Eq, PartialEq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(
@@ -352,7 +352,7 @@ pub enum ExternalHint {
     /// Relocates a segment from `src` to `dst`.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 0))]
     AddRelocationRule { src: ResOperand, dst: ResOperand },
-    /// Writes a run argument of number `index` to `dst` and on.
+    /// Writes a run argument numbered `index` to `dst` and onward.
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 1))]
     WriteRunParam { index: ResOperand, dst: CellRef },
     /// Stores an array marker in the HintProcessor. Useful for debugging.

@@ -8,7 +8,7 @@ use super::contract::ContractSpecificGenerationData;
 /// The data for generating the code of a contract.
 #[derive(Default)]
 pub struct ContractGenerationData<'db> {
-    /// Common data - relevant for all starknet modules (component/contract).
+    /// Common data relevant for all Starknet modules (component/contract).
     pub common: StarknetModuleCommonGenerationData<'db>,
     /// Specific data - relevant only for contracts.
     pub specific: ContractSpecificGenerationData<'db>,
@@ -33,7 +33,7 @@ impl<'db> ContractGenerationData<'db> {
 /// The data for generating the code of a component.
 #[derive(Default)]
 pub struct ComponentGenerationData<'db> {
-    /// Common data - relevant for all starknet modules (component/contract).
+    /// Common data relevant for all Starknet modules (component/contract).
     pub common: StarknetModuleCommonGenerationData<'db>,
     /// Specific data - relevant only for components.
     pub specific: ComponentSpecificGenerationData<'db>,

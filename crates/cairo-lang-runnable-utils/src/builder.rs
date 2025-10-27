@@ -630,7 +630,7 @@ pub fn create_code_footer() -> Vec<Instruction> {
     .instructions
 }
 
-/// Creates the metadata required for a Sierra program lowering to casm.
+/// Creates the metadata required for a Sierra program lowering to CASM.
 fn create_metadata(
     sierra_program: &SierraProgram,
     program_info: &ProgramRegistryInfo,
