@@ -7,6 +7,7 @@ extern crate alloc;
 
 pub mod ap_change;
 pub mod assembler;
+#[cfg(feature = "std")]
 pub mod builder;
 pub mod cell_expression;
 pub mod encoder;

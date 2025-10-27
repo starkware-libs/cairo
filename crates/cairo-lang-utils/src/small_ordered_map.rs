@@ -3,7 +3,7 @@
 /// Wrapping the `vector_map::VecMap` structure.
 #[derive(Clone, Debug)]
 pub struct SmallOrderedMap<Key, Value>(vector_map::VecMap<Key, Value>);
-impl<Key: Eq, Value: Eq> SmallOrderedMap<Key, Value> {
+impl<Key: Eq, Value> SmallOrderedMap<Key, Value> {
     /// Creates a new empty map.
     pub fn new() -> Self {
         Self(vector_map::VecMap::new())
@@ -12,6 +12,8 @@ impl<Key: Eq, Value: Eq> SmallOrderedMap<Key, Value> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self(vector_map::VecMap::with_capacity(capacity))
     }
+}
+impl<Key: Eq, Value: Eq> SmallOrderedMap<Key, Value> {
     /// Checks if the two maps have the same keys and values.
     pub fn eq_unordered(&self, other: &Self) -> bool {
         self.0 == other.0
@@ -23,7 +25,7 @@ impl<Key: Eq, Value: Eq> PartialEq for SmallOrderedMap<Key, Value> {
     }
 }
 impl<Key: Eq, Value: Eq> Eq for SmallOrderedMap<Key, Value> {}
-impl<Key: Eq, Value: Eq> Default for SmallOrderedMap<Key, Value> {
+impl<Key: Eq, Value> Default for SmallOrderedMap<Key, Value> {
     fn default() -> Self {
         Self::new()
     }
