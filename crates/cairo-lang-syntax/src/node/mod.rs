@@ -204,7 +204,6 @@ impl<'db> SyntaxNode<'db> {
 }
 
 /// Create a new syntax node.
-#[salsa::tracked]
 pub fn new_syntax_node<'db>(
     db: &'db dyn Database,
     green: GreenId<'db>,
@@ -220,12 +219,23 @@ pub fn new_syntax_node<'db>(
     SyntaxNode { data, parent, kind, parent_kind }
 }
 
+/// A tracked function to prevent root duplication.
+#[salsa::tracked]
+fn new_root_node<'db>(
+    db: &'db dyn Database,
+    file_id: FileId<'db>,
+    green: GreenId<'db>,
+    offset: TextOffset,
+) -> SyntaxNode<'db> {
+    let kind = green.long(db).kind;
+    new_syntax_node(db, green, offset, SyntaxNodeId::Root(file_id), kind)
+}
+
 // Construction methods
 impl<'a> SyntaxNode<'a> {
     /// Create a new root syntax node.
     pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
-        let kind = green.long(db).kind;
-        new_syntax_node(db, green, TextOffset::START, SyntaxNodeId::Root(file_id), kind)
+        new_root_node(db, file_id, green, TextOffset::START)
     }
 
     /// Create a new root syntax node with a custom initial offset.
@@ -235,14 +245,7 @@ impl<'a> SyntaxNode<'a> {
         green: GreenId<'a>,
         initial_offset: Option<TextOffset>,
     ) -> Self {
-        let kind = green.long(db).kind;
-        new_syntax_node(
-            db,
-            green,
-            initial_offset.unwrap_or_default(),
-            SyntaxNodeId::Root(file_id),
-            kind,
-        )
+        new_root_node(db, file_id, green, initial_offset.unwrap_or_default())
     }
 
     // Basic accessors

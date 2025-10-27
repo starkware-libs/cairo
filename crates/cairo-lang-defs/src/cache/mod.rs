@@ -9,7 +9,7 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
     CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
-use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
     FunctionWithBodyPtr, GenericParamPtr, ItemConstantPtr, ItemEnumPtr, ItemExternFunctionPtr,
     ItemExternTypePtr, ItemImplAliasPtr, ItemImplPtr, ItemInlineMacroPtr, ItemMacroDeclarationPtr,
@@ -18,7 +18,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::green::{GreenNode, GreenNodeDetails};
 use cairo_lang_syntax::node::ids::{GreenId, SyntaxStablePtrId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{SyntaxNode, SyntaxNodeId, TypedSyntaxNode, ast, new_syntax_node};
+use cairo_lang_syntax::node::{SyntaxNode, SyntaxNodeId, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
@@ -171,15 +171,21 @@ impl<'db> DefCacheLoadingContext<'db> {
     }
     fn embed_lookups(&mut self) {
         for id in 0..self.lookups.green_ids_lookup.len() {
-            GreenIdCached(id).embed(self);
+            let id = GreenIdCached(id);
+            let embed = id.embed(self);
+            self.reverse_green_ids.insert(embed, id);
         }
-
         for id in 0..self.lookups.crate_ids_lookup.len() {
             CrateIdCached::Other(id).embed(self);
         }
+        for id in 0..self.lookups.file_ids_lookup.len() {
+            FileIdCached(id).embed(self);
+        }
+
         for id in 0..self.lookups.syntax_node_lookup.len() {
             SyntaxNodeCached(id).embed(self);
         }
+
         for id in 0..self.lookups.submodule_ids_lookup.len() {
             SubmoduleIdCached(id).embed(self);
         }
@@ -219,9 +225,6 @@ impl<'db> DefCacheLoadingContext<'db> {
         for id in 0..self.lookups.global_use_ids_lookup.len() {
             GlobalUseIdCached(id).embed(self);
         }
-        for id in 0..self.lookups.file_ids_lookup.len() {
-            FileIdCached(id).embed(self);
-        }
     }
 }
 
@@ -242,7 +245,9 @@ impl DerefMut for DefCacheLoadingContext<'_> {
 #[derive(PartialEq, Eq, salsa::Update)]
 pub struct DefCacheLoadingData<'db> {
     green_ids: OrderedHashMap<GreenIdCached, GreenId<'db>>,
+    reverse_green_ids: OrderedHashMap<GreenId<'db>, GreenIdCached>,
     crate_ids: OrderedHashMap<CrateIdCached, CrateId<'db>>,
+    reverse_syntax_node_lookup: OrderedHashMap<SyntaxNodeIdCached, SyntaxNodeCached>,
     syntax_nodes: OrderedHashMap<SyntaxNodeCached, SyntaxNode<'db>>,
     submodule_ids: OrderedHashMap<SubmoduleIdCached, SubmoduleId<'db>>,
     constant_ids: OrderedHashMap<ConstantIdCached, ConstantId<'db>>,
@@ -269,6 +274,13 @@ impl<'db> DefCacheLoadingData<'db> {
     fn new(lookups: DefCacheLookups, self_crate_id: CrateId<'db>) -> Self {
         Self {
             green_ids: OrderedHashMap::default(),
+            reverse_green_ids: OrderedHashMap::default(),
+            reverse_syntax_node_lookup: lookups
+                .syntax_node_lookup
+                .iter()
+                .enumerate()
+                .map(|(index, syntax_node)| (syntax_node.clone(), SyntaxNodeCached(index)))
+                .collect(),
             syntax_nodes: OrderedHashMap::default(),
             crate_ids: OrderedHashMap::default(),
             submodule_ids: OrderedHashMap::default(),
@@ -669,7 +681,7 @@ pub struct DefCacheLookups {
     macro_declaration_ids_lookup: Vec<MacroDeclarationCached>,
     macro_call_ids_lookup: Vec<MacroCallCached>,
 
-    syntax_node_lookup: Vec<SyntaxNodeInnerCached>,
+    syntax_node_lookup: Vec<SyntaxNodeIdCached>,
     file_ids_lookup: Vec<FileCached>,
 }
 
@@ -1620,55 +1632,72 @@ impl GlobalUseIdCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, salsa::Update)]
+#[derive(Serialize, Deserialize, Clone, Copy, Hash, Eq, PartialEq, salsa::Update, Debug)]
 struct SyntaxNodeCached(usize);
 
-#[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq, Debug)]
 enum SyntaxNodeIdCached {
-    Root(FileIdCached),
-    Child { parent: SyntaxNodeCached, key_fields: Vec<GreenIdCached>, index: usize },
+    Root(FileIdCached, GreenIdCached),
+    Child {
+        parent: SyntaxNodeCached,
+        kind: SyntaxKind,
+        key_fields: Vec<GreenIdCached>,
+        index: usize,
+    },
 }
 
 impl SyntaxNodeIdCached {
-    fn new<'db>(ctx: &mut DefCacheSavingContext<'db>, id: &SyntaxNodeId<'db>) -> Self {
+    fn new<'db>(
+        ctx: &mut DefCacheSavingContext<'db>,
+        id: &SyntaxNodeId<'db>,
+        syntax_node: SyntaxNode<'db>,
+    ) -> Self {
         match id {
-            SyntaxNodeId::Root(file_id) => Self::Root(FileIdCached::new(*file_id, ctx)),
+            SyntaxNodeId::Root(file_id) => {
+                let green = syntax_node.green_node(ctx.db).clone().intern(ctx.db);
+                Self::Root(FileIdCached::new(*file_id, ctx), GreenIdCached::new(green, ctx))
+            }
             SyntaxNodeId::Child { parent, key_fields, index } => Self::Child {
                 parent: SyntaxNodeCached::new(*parent, ctx),
+                kind: syntax_node.kind(ctx.db),
                 key_fields: key_fields.into_iter().map(|id| GreenIdCached::new(*id, ctx)).collect(),
                 index: *index,
             },
         }
     }
 
-    fn embed<'db>(&self, ctx: &mut DefCacheLoadingContext<'db>) -> SyntaxNodeId<'db> {
-        match self {
-            SyntaxNodeIdCached::Root(file_id) => SyntaxNodeId::Root(file_id.embed(ctx)),
-            SyntaxNodeIdCached::Child { parent, key_fields, index } => SyntaxNodeId::Child {
-                parent: parent.embed(ctx),
-                key_fields: Box::from_iter(key_fields.iter().map(|id| id.embed(ctx))),
-                index: *index,
-            },
+    fn from_raw(
+        ctx: &mut DefCacheLoadingContext<'_>,
+        parent: SyntaxNodeCached,
+        kind: SyntaxKind,
+        index: usize,
+        key_fields: &[GreenId<'_>],
+    ) -> Option<Self> {
+        let mut cached_key_fields = Vec::with_capacity(key_fields.len());
+        for id in key_fields {
+            let Some(cached_id) = ctx.reverse_green_ids.get(id) else {
+                // Green ID not found in cache, this child can't be reconstructed
+                return None;
+            };
+            cached_key_fields.push(*cached_id);
         }
+        Some(Self::Child { parent, kind, key_fields: cached_key_fields, index })
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Hash, Eq, PartialEq)]
-struct SyntaxNodeInnerCached {
-    green: GreenIdCached,
-    offset: TextOffset,
-    id: SyntaxNodeIdCached,
 }
 
 impl SyntaxNodeCached {
     fn new<'db>(syntax_node: SyntaxNode<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
+        if let Some(res) = ctx.syntax_nodes.get(&syntax_node) {
+            return *res;
+        }
         let db = ctx.db;
-        let green = GreenIdCached::new(syntax_node.green_node(db).clone().intern(db), ctx);
-        let id = SyntaxNodeIdCached::new(ctx, syntax_node.raw_id(db));
-        let offset = syntax_node.offset(db);
-        let inner = SyntaxNodeInnerCached { green, offset, id };
+        // Cache the green node and all its children to ensure they're available during load
+        let green = syntax_node.green_node(db);
+        GreenIdCached::new(green.clone().intern(db), ctx);
+
+        let id = SyntaxNodeIdCached::new(ctx, syntax_node.raw_id(db), syntax_node);
         let cached_node = SyntaxNodeCached(ctx.syntax_node_lookup.len());
-        ctx.syntax_node_lookup.push(inner);
+        ctx.syntax_node_lookup.push(id);
         ctx.syntax_nodes.insert(syntax_node, cached_node);
         cached_node
     }
@@ -1676,14 +1705,39 @@ impl SyntaxNodeCached {
         if let Some(node) = ctx.syntax_nodes.get(self) {
             return *node;
         }
-        let inner = ctx.syntax_node_lookup[self.0].clone();
-        let green = inner.green.embed(ctx);
-        let id = inner.id.embed(ctx);
-        let offset = inner.offset;
-        let kind = green.long(ctx.db).kind;
-        let node = new_syntax_node(ctx.db, green, offset, id, kind);
-        ctx.syntax_nodes.insert(*self, node);
-        node
+        let id_cached = ctx.syntax_node_lookup[self.0].clone();
+        match &id_cached {
+            SyntaxNodeIdCached::Root(file_id, green_id) => {
+                let fid = file_id.embed(ctx);
+                let green = green_id.embed(ctx);
+                let syntax = cairo_lang_syntax::node::SyntaxNode::new_root(ctx.db, fid, green);
+                ctx.syntax_nodes.insert(*self, syntax);
+            }
+            SyntaxNodeIdCached::Child { parent, .. } => {
+                let parent_node = parent.embed(ctx);
+                let children = parent_node.get_children(ctx.db);
+                // For each child, create the cached syntax node ID and insert into syntax_nodes map
+                for child in children {
+                    let SyntaxNodeId::Child { index, key_fields, .. } = child.raw_id(ctx.db) else {
+                        panic!("Unexpected SyntaxNodeId type root when creating child");
+                    };
+                    let kind = child.kind(ctx.db);
+                    let Some(child_id) =
+                        SyntaxNodeIdCached::from_raw(ctx, *parent, kind, *index, key_fields)
+                    else {
+                        continue;
+                    };
+                    // Check if this child was cached during save
+                    let Some(&child_cached) = ctx.reverse_syntax_node_lookup.get(&child_id) else {
+                        continue;
+                    };
+                    ctx.syntax_nodes.insert(child_cached, *child);
+                }
+            }
+        };
+        *ctx.syntax_nodes
+            .get(self)
+            .unwrap_or_else(|| panic!("Failed to find syntax node {:?} after embedding", self.0))
     }
     fn get_embedded<'db>(&self, data: &Arc<DefCacheLoadingData<'db>>) -> SyntaxNode<'db> {
         data.syntax_nodes[self]
@@ -1777,7 +1831,7 @@ impl GreenNodeCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update, Debug)]
 struct GreenIdCached(usize);
 
 impl GreenIdCached {
@@ -1834,7 +1888,7 @@ impl FileCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, Hash, PartialEq, salsa::Update, Debug)]
 pub struct FileIdCached(usize);
 impl FileIdCached {
     fn new<'db>(id: FileId<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
