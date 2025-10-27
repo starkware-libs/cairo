@@ -33,7 +33,7 @@ pub fn maybe_containing_function_identifier(
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
     if relative_semantic_path.is_empty() {
         // In some cases the stable location maps to a code that is a statement like a function call
-        // directly in a file module, e.g. `Self::eq(lhs, rhs)` in `core::traits`. This brings no
+        // directly in a file module, e.g., `Self::eq(lhs, rhs)` in `core::traits`. This brings no
         // information about the function it was called from.
         None
     } else {
@@ -59,7 +59,7 @@ pub fn maybe_containing_function_identifier_for_tests(
     let relative_semantic_path = function_identifier_relative_to_file_module(db, location);
     if relative_semantic_path.is_empty() {
         // In some cases the stable location maps to a code that is a statement like a function call
-        // directly in a file module, e.g. `Self::eq(lhs, rhs)` in `core::traits`. This brings no
+        // directly in a file module, e.g., `Self::eq(lhs, rhs)` in `core::traits`. This brings no
         // information about the function it was called from. It is especially relevant for corelib
         // tests where the first stable location may map to this kind of code.
         None
@@ -160,8 +160,8 @@ pub fn file_module_absolute_identifier<'db>(
     mut file_id: FileId<'db>,
 ) -> Option<String> {
     // `VirtualFile` is a generated file (e.g., by macros like `#[starknet::contract]`)
-    // that won't have a matching file module in the db. Instead, we find its non generated parent
-    // which is in the same module and have a matching file module in the db.
+    // that will not have a matching file module in the DB. Instead, we find its non-generated
+    // parent which is in the same module and has a matching file module in the DB.
     while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) = file_id.long(db) {
         file_id = *parent;
     }
@@ -191,7 +191,7 @@ impl<'db> StatementsLocations<'db> {
     }
     /// Builds a map between each Sierra statement index and a string representation of the Cairo
     /// function that it was generated from. It is used for places
-    /// without db access such as the profiler.
+    /// without DB access such as the profiler.
     // TODO(Gil): Add a db access to the profiler and remove this function.
     pub fn get_statements_functions_map_for_tests(
         &self,
@@ -251,7 +251,7 @@ impl<'db> StatementsLocations<'db> {
         }
     }
 
-    /// Returns the diagnostic location matching the user code corresponding to the sierra statement
+    /// Returns the diagnostic location matching the user code corresponding to the Sierra statement
     /// index.
     pub fn statement_diagnostic_location(
         &self,

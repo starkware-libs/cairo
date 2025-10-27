@@ -350,7 +350,7 @@ fn analyze_contract<'db, T: SierraIdReplacer>(
 }
 
 /// Converts a function to a Sierra function.
-/// Returns the selector and the sierra function id.
+/// Returns the selector and the Sierra function ID.
 pub fn get_selector_and_sierra_function<'db, T: SierraIdReplacer>(
     db: &dyn Database,
     function_with_body: &Aliased<lowering::ids::ConcreteFunctionWithBodyId<'db>>,

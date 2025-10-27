@@ -8,7 +8,7 @@ use crate::casm;
 use crate::inline::CasmContext;
 use crate::operand::Register;
 
-/// Takes a casm instruction, which can be constructed using the macro casm!, and
+/// Takes a CASM instruction, which can be constructed using the macro casm!, and
 /// returns its assembled representation.
 fn assemble_instruction(mut casm: CasmContext) -> InstructionRepr {
     casm.instructions.remove(0).assemble()

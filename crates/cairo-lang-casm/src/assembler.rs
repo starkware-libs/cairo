@@ -65,7 +65,7 @@ pub enum OpcodeExtension {
     QM31,
 }
 
-/// The low level representation of a cairo instruction.
+/// The low-level representation of a Cairo instruction.
 #[derive(Debug, Eq, PartialEq)]
 pub struct InstructionRepr {
     pub off0: i16,
@@ -86,7 +86,7 @@ pub struct InstructionRepr {
 #[cfg(feature = "serde")]
 use cairo_lang_utils::bigint::{deserialize_big_ints, serialize_big_ints};
 
-/// An assembled representation of a cairo program.
+/// An assembled representation of a Cairo program.
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Debug, Clone)]
 pub struct AssembledCairoProgram {

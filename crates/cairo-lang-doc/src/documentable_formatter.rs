@@ -46,7 +46,7 @@ use crate::signature_data::{
 };
 use crate::signature_errors::SignatureError;
 
-/// Used for indenting children items of complex data type signature e.g. struct members.
+/// Used for indenting children items of complex data type signature, e.g., struct members.
 const INDENT: &str = "    ";
 /// Returned when item's signature could not be determined.
 const MISSING: &str = "<missing>";
@@ -100,7 +100,7 @@ pub trait HirDisplay<'db> {
     /// Formats signature.
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError>;
 
-    /// Gets the signature of an item (i.e., item without its body).
+    /// Gets the signature of an item (i.e., the item without its body).
     fn get_signature(&self, f: &mut HirFormatter<'db>) -> Option<String> {
         match self.hir_fmt(f) {
             Ok(_) => Some(f.buf.clone()),
@@ -207,7 +207,7 @@ impl<'db> HirFormatter<'db> {
     }
 
     /// Applies extra formatting to item signature.
-    /// Avoid using for types whose signatures are invalid cairo code
+    /// Avoid using for types whose signatures are invalid Cairo code
     /// (such as struct members or enum variants).
     fn format(&mut self) {
         let (formatted_signature, moved_location_links) = format_signature(
@@ -686,7 +686,7 @@ impl<'db> HirDisplay<'db> for MacroDeclarationId<'db> {
     }
 }
 
-/// Formats the text of the [`Visibility`] to a relevant string slice.
+/// Formats the text of [`Visibility`] to a relevant string slice.
 pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
     match semantic_visibility {
         Visibility::Public => "pub ",
@@ -695,7 +695,7 @@ pub fn get_syntactic_visibility(semantic_visibility: &Visibility) -> &str {
     }
 }
 
-/// Checks if given paths come from the same root.
+/// Checks if the given paths come from the same root.
 fn is_the_same_root(path1: &str, path2: &str) -> bool {
     fn extract_root(input: &str) -> &str {
         if let Some(index) = input.find("::") { &input[..index] } else { input }
@@ -703,8 +703,8 @@ fn is_the_same_root(path1: &str, path2: &str) -> bool {
     extract_root(path1) == extract_root(path2)
 }
 
-/// Formats complex types full paths. For example "Result<Error::NotFound, System::Error>" input
-/// results in "Result<NotFound, Error>" output.
+/// Formats the full paths of complex types. For example, input "Result<Error::NotFound,
+/// System::Error>" results in output "Result<NotFound, Error>".
 fn extract_and_format(input: &str) -> String {
     let delimiters = [',', '<', '>', '(', ')', '[', ']'];
     let mut output = String::new();
@@ -731,7 +731,7 @@ fn extract_and_format(input: &str) -> String {
     output
 }
 
-/// Formats single type path. For example "core::felt252" input results in "felt252" output.
+/// Formats a single type path. For example, input "core::felt252" results in output "felt252".
 fn format_final_part(slice: &str) -> String {
     let parts: Vec<&str> = slice.split("::").collect();
     let ensure_whitespace =
@@ -746,7 +746,7 @@ fn format_final_part(slice: &str) -> String {
     if ensure_whitespace && !result.starts_with(' ') { format!(" {result}") } else { result }
 }
 
-/// Takes a list of [`GenericParamId`]s and formats it into a String representation used for
+/// Takes a list of [`GenericParamId`]s and formats it into a string representation used for
 /// signature documentation.
 fn format_resolver_generic_params<'db>(
     db: &'db dyn Database,
@@ -799,7 +799,7 @@ fn format_resolver_generic_params<'db>(
     }
 }
 
-/// A utility function used for formatting documentable functions data. Use with
+/// A utility function for formatting documentable function data. Use with
 /// [`DocumentableItemSignatureData`] argument created for [`FreeFunctionId`], [`TraitFunctionId`],
 /// [`ImplFunctionId`] or [`ExternFunctionId`]. As those are the items for which a
 /// [`cairo_lang_semantic::items::functions::Signature`] can be retrieved.
@@ -863,7 +863,7 @@ fn write_function_signature<'db>(
     Ok(())
 }
 
-/// Retrieves [`SyntaxKind::TypeClause`] text from [`SyntaxNode`].
+/// Retrieves [`SyntaxKind::TypeClause`] text from a [`SyntaxNode`].
 fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn Database) -> Option<String> {
     for child in syntax_node.get_children(db).iter() {
         if child.kind(db) == SyntaxKind::TypeClause {
@@ -934,7 +934,7 @@ fn write_generic_params<'db>(
     }
 }
 
-/// Formats syntax of generic arguments and writes it into [`HirFormatter`].
+/// Formats the syntax of generic arguments and writes it into [`HirFormatter`].
 fn write_generic_args<'db>(
     generic_args: Vec<GenericArgumentId<'db>>,
     f: &mut HirFormatter<'db>,

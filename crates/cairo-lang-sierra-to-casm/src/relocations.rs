@@ -13,7 +13,7 @@ pub type CodeOffset = usize;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Relocation {
-    /// Adds program_offset(StatementIdx) and subtracts the program offset of the casm instruction
+    /// Adds program_offset(StatementIdx) and subtracts the program offset of the CASM instruction
     /// that is being relocated.
     RelativeStatementId(StatementIdx),
     /// Adds the offset of the constant segment with this id.
@@ -111,7 +111,7 @@ impl Relocation {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct RelocationEntry {
-    /// The index of the casm instruction that needs to be relocated.
+    /// The index of the CASM instruction that needs to be relocated.
     pub instruction_idx: CodeOffset,
     /// The relocation that needs to be applied.
     pub relocation: Relocation,

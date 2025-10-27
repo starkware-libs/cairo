@@ -54,7 +54,7 @@ impl<'a> SyntaxStablePtrId<'a> {
     /// Returns the stable pointer of the `n`th parent of this stable pointer.
     /// n = 0: returns itself.
     /// n = 1: return the parent.
-    /// n = 2: return the grand parent.
+    /// n = 2: return the grandparent.
     /// And so on...
     /// Assumes that the `n`th parent exists. Panics otherwise.
     pub fn nth_parent<'r: 'a>(&self, db: &'r dyn Database, n: usize) -> SyntaxStablePtrId<'a> {

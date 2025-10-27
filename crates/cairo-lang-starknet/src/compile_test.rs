@@ -4,8 +4,8 @@ use test_case::test_case;
 
 use crate::test_utils::{get_example_file_path, get_test_contract};
 
-/// Tests that the sierra compiled from a contract in the contracts crate is the same as in
-/// <test_case>.sierra, and that the resulted json is the same as in
+/// Tests that the Sierra compiled from a contract in the contracts crate is the same as in
+/// <test_case>.sierra, and that the resulting JSON is the same as in
 /// <test_case>.contract_class.json.
 #[test_case("account::account")]
 #[test_case("circuit_contract::circuit_contract")]

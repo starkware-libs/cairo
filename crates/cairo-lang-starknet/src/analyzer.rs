@@ -50,7 +50,7 @@ impl AnalyzerPlugin for ABIAnalyzer {
     }
 }
 
-/// Add diagnostics for embeddable impls that do not implement a starknet interface.
+/// Adds diagnostics for embeddable impls that do not implement a Starknet interface.
 fn add_non_starknet_interface_embeddable_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,

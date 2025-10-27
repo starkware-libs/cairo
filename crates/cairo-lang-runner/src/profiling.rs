@@ -26,33 +26,34 @@ pub enum ProfilerConfig {
     Cairo,
     /// Similar to Cairo, but stack frames are deduplicated, and the output format is more compact.
     Scoped,
-    /// Sierra level profiling, no cairo level debug information.
+    /// Sierra-level profiling, no Cairo-level debug information.
     Sierra,
 }
 
 impl ProfilerConfig {
-    /// Returns true if the profiling config requires cairo level debug information.
+    /// Returns true if the profiling config requires Cairo-level debug information.
     pub fn requires_cairo_debug_info(&self) -> bool {
         matches!(self, ProfilerConfig::Cairo | ProfilerConfig::Scoped)
     }
 }
 
-/// Profiling into of a single run. This is the raw info - went through minimum processing, as this
-/// is done during the run. To enrich it before viewing/printing, use the `ProfilingInfoProcessor`.
+/// Profiling info of a single run. This is the raw info — it went through minimal processing, as
+/// this is done during the run. To enrich it before viewing/printing, use the
+/// `ProfilingInfoProcessor`.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ProfilingInfo {
-    /// The number of steps in the trace that originated from each sierra statement.
+    /// The number of steps in the trace that originated from each Sierra statement.
     pub sierra_statement_weights: UnorderedHashMap<StatementIdx, usize>,
 
     /// A map of weights of each stack trace.
     /// The key is a function stack trace of an executed function. The stack trace is represented
     /// as a vector of indices of the functions in the stack (indices of the functions according to
-    /// the list in the sierra program).
+    /// the list in the Sierra program).
     /// The value is the weight of the stack trace.
     /// The stack trace entries are sorted in the order they occur.
     pub stack_trace_weights: OrderedHashMap<Vec<usize>, usize>,
 
-    /// The number of steps in the trace that originated from each sierra statement
+    /// The number of steps in the trace that originated from each Sierra statement
     /// combined with information about the user function call stack.
     /// The call stack items are deduplicated to flatten and aggregate recursive calls
     /// and loops (which are tail recursion).
@@ -105,7 +106,7 @@ impl ProfilingInfo {
 
             // Skip the footer.
             // Also if pc is greater or equal the bytecode length it means that it is the outside
-            // ret used for e.g. getting pointer to builtins costs table, const segments
+            // ret used for, e.g., getting pointer to builtins costs table, const segments
             // etc.
             if real_pc >= bytecode_len {
                 continue;
@@ -298,7 +299,7 @@ impl Display for StackTraceWeights {
 /// Full profiling info of a single run. This is the processed info which went through additional
 /// processing after collecting the raw data during the run itself.
 pub struct ProcessedProfilingInfo {
-    /// For each sierra statement: the number of steps in the trace that originated from it, and
+    /// For each Sierra statement: the number of steps in the trace that originated from it, and
     /// the relevant GenStatement.
     pub sierra_statement_weights:
         Option<OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>>,
@@ -430,7 +431,7 @@ impl ProfilingInfoProcessorParams {
 pub struct ProfilingInfoProcessor<'a> {
     db: Option<&'a dyn Database>,
     sierra_program: &'a Program,
-    /// A map between sierra statement index and the string representation of the Cairo function
+    /// A map between Sierra statement index and the string representation of the Cairo function
     /// that generated it. The function representation is composed of the function name and the
     /// path (modules and impls) to the function in the file.
     statements_functions: UnorderedHashMap<StatementIdx, String>,
@@ -655,7 +656,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
 
         let mut cairo_functions = UnorderedHashMap::<_, _>::default();
         for (statement_idx, weight) in sierra_statement_weights {
-            // TODO(Gil): Fill all the `Unknown functions` in the cairo functions profiling.
+            // TODO(Gil): Fill all the `Unknown functions` in the Cairo functions profiling.
             let function_identifier = self
                 .statements_functions
                 .get(statement_idx)
@@ -727,8 +728,8 @@ fn is_cairo_trace(db: &dyn Database, sierra_program: &Program, sierra_trace: &[u
     })
 }
 
-/// Converts a sierra statement index to the index of the function that contains it (the index in
-/// the list in the sierra program).
+/// Converts a Sierra statement index to the index of the function that contains it (the index in
+/// the list in the Sierra program).
 ///
 /// Assumes that the given `statement_idx` is valid (that is within range of the given
 /// `sierra_program`) and that the given `sierra_program` is valid, specifically that the first
@@ -743,10 +744,10 @@ pub fn user_function_idx_by_sierra_statement_idx(
     sierra_program.funcs.partition_point(|f| f.entry_point.0 <= statement_idx.0) - 1
 }
 
-/// Converts a stack trace represented as a vector of indices of functions in the sierra program to
+/// Converts a stack trace represented as a vector of indices of functions in the Sierra program to
 /// a stack trace represented as a vector of function names.
 /// Assumes that the given `idx_stack_trace` is valid with respect to the given `sierra_program`.
-/// That is, each index in the stack trace is within range of the sierra program.
+/// That is, each index in the stack trace is within range of the Sierra program.
 fn index_stack_trace_to_name_stack_trace(
     sierra_program: &Program,
     idx_stack_trace: &[usize],

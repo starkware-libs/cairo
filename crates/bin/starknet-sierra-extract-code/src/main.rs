@@ -4,7 +4,7 @@ use anyhow::Context;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use clap::Parser;
 
-/// Extracts sierra code from a contract class file.
+/// Extracts Sierra code from a contract class file.
 /// Exits with 0/1 if the extraction succeeds/fails.
 #[derive(Parser, Debug)]
 #[command(version, verbatim_doc_comment)]

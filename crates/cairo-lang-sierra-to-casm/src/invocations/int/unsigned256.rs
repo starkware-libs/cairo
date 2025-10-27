@@ -22,7 +22,7 @@ pub fn build(
     }
 }
 
-/// Generates casm instructions for `u256_is_zero()`.
+/// Generates CASM instructions for `u256_is_zero()`.
 fn build_u256_is_zero(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -43,7 +43,7 @@ fn build_u256_is_zero(
     ))
 }
 
-/// Generates casm instructions for `u256_safe_divmod()`.
+/// Generates CASM instructions for `u256_safe_divmod()`.
 fn build_u256_divmod(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -185,7 +185,7 @@ fn build_u256_divmod(
     ))
 }
 
-/// Generates casm instructions for `u256_sqrt`.
+/// Generates CASM instructions for `u256_sqrt`.
 fn build_u256_sqrt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -324,7 +324,7 @@ fn build_u256_sqrt(
     ))
 }
 
-/// Generates casm instructions for `u256_inv_mod_n`.
+/// Generates CASM instructions for `u256_inv_mod_n`.
 fn build_u256_inv_mod_n(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

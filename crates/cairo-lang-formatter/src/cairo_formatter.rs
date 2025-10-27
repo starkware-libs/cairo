@@ -135,7 +135,7 @@ impl Display for ParsingError {
 /// Implements the [`FormattableInput`] trait.
 pub struct StdinFmt;
 
-/// A trait for types that can be used as input for the cairo formatter.
+/// A trait for types that can be used as input for the Cairo formatter.
 pub trait FormattableInput {
     /// Converts the input to a [`FileId`] that can be used by the formatter.
     fn to_file_id<'a, 'db: 'a>(&self, db: &'db dyn Database) -> Result<FileId<'a>>;
@@ -216,7 +216,7 @@ fn format_input(
     }
 }
 
-/// A struct for formatting cairo files.
+/// A struct for formatting Cairo files.
 ///
 /// The formatter can operate on all types implementing the [`FormattableInput`] trait.
 /// Allows formatting in place, and for formatting to a string.

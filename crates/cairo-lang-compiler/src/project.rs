@@ -24,7 +24,7 @@ pub enum ProjectError {
     LoadProjectError(DeserializationError),
 }
 
-/// Set up the 'db' to compile the file at the given path.
+/// Sets up the DB to compile the file at the given path.
 /// Returns the id of the generated crate.
 pub fn setup_single_file_project(
     db: &mut dyn Database,
@@ -70,7 +70,7 @@ pub fn setup_single_file_project(
     }
 }
 
-/// Updates the crate roots from a ProjectConfig object.
+/// Updates the crate roots from a `ProjectConfig` object.
 pub fn update_crate_roots_from_project_config(db: &mut dyn Database, config: &ProjectConfig) {
     for (crate_identifier, directory_path) in config.content.crate_roots.iter() {
         let root = Directory::Real(config.absolute_crate_root(directory_path));
@@ -78,9 +78,9 @@ pub fn update_crate_roots_from_project_config(db: &mut dyn Database, config: &Pr
     }
 }
 
-/// Updates a single crate root from a ProjectConfig.
-/// If the crate defines settings in the config, it will be used.
-/// Crate is identified by name and the root directory.
+/// Updates a single crate root from a `ProjectConfig`.
+/// If the crate defines settings in the config, they will be used.
+/// The crate is identified by name and root directory.
 pub fn update_crate_root(
     db: &mut dyn Database,
     config: &ProjectConfig,
@@ -95,9 +95,9 @@ pub fn update_crate_root(
     );
 }
 
-/// Setup the 'db' to compile the project in the given path.
-/// The path can be either a directory with cairo project file or a .cairo file.
-/// Returns the ids of the project crates.
+/// Sets up the DB to compile the project at the given path.
+/// The path can be either a directory with a Cairo project file or a `.cairo` file.
+/// Returns the IDs of the project crates.
 pub fn setup_project(db: &mut dyn Database, path: &Path) -> Result<Vec<CrateInput>, ProjectError> {
     if path.is_dir() {
         let config = ProjectConfig::from_directory(path).map_err(ProjectError::LoadProjectError)?;
