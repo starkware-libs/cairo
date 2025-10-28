@@ -1,4 +1,4 @@
-use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::LocationId;
 use crate::{
@@ -95,7 +95,7 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
     /// Apply map_var_id to all the variables in the `remapping`.
     fn rebuild_remapping(&mut self, remapping: &VarRemapping<'db>) -> VarRemapping<'db> {
         let mut remapping = VarRemapping {
-            remapping: SmallOrderedMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {
+            remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {
                 (self.map_var_id(*dst), self.map_var_usage(*src_var_usage))
             })),
         };

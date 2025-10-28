@@ -35,7 +35,6 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::{ExprPtr, FunctionWithBodyPtr, TraitItemFunctionPtr};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use id_arena::Arena;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
@@ -692,7 +691,7 @@ impl VarRemappingCached {
         }
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> VarRemapping<'db> {
-        let mut remapping = SmallOrderedMap::default();
+        let mut remapping = OrderedHashMap::default();
         for (dst, src) in self.remapping {
             remapping.insert(ctx.lowered_variables_id[dst], src.embed(ctx));
         }

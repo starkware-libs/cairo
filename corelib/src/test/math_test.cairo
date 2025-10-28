@@ -46,8 +46,8 @@ fn test_inv_mod() {
     assert(math::inv_mod(1, 24) == Some(1_u16), 'inv_mod(1, 24) != 1');
     assert(math::inv_mod(1, 5) == Some(1_u32), 'inv_mod(1, 5) != 1');
     assert(math::inv_mod(8, 24) == Option::<usize>::None, 'inv_mod(8, 24) != None');
-    assert(math::inv_mod(1, 1) == Some(0_usize), 'inv_mod(1, 1) != 0');
-    assert(math::inv_mod(7, 1) == Some(0_usize), 'inv_mod(7, 1) != 0');
+    assert_eq!(math::inv_mod(1, 1), Option::<usize>::None);
+    assert_eq!(math::inv_mod(7, 1), Option::<usize>::None);
 }
 
 #[test]

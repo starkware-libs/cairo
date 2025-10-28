@@ -5,7 +5,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::write_comma_separated;
 use thiserror::Error;
 
@@ -23,7 +23,7 @@ pub enum ReferencesError {
     UnknownType(ConcreteTypeId),
 }
 
-pub type StatementRefs = SmallOrderedMap<VarId, ReferenceValue>;
+pub type StatementRefs = OrderedHashMap<VarId, ReferenceValue>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
