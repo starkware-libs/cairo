@@ -1376,8 +1376,6 @@ fn compute_expr_function_call_semantic<'db>(
                 ctx.diagnostics.report(syntax.stable_ptr(db), CannotCreateInstancesOfPhantomTypes);
             }
 
-            // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
-            // errors in argument semantics, in order to avoid unnecessary diagnostics.
             let named_args: Vec<_> = args_syntax
                 .elements(db)
                 .map(|arg_syntax| compute_named_argument_clause(ctx, arg_syntax, None))
@@ -1426,8 +1424,6 @@ fn compute_expr_function_call_semantic<'db>(
                     },
                 ));
             }
-            // TODO(Gil): Consider not invoking the TraitFunction inference below if there were
-            // errors in argument semantics, in order to avoid unnecessary diagnostics.
 
             // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
             let mut args_iter = args_syntax.elements(db);
