@@ -39,6 +39,10 @@ use convert_case::Casing;
 use itertools::Itertools;
 use salsa::Database;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Tests that `PhasesFormatter` is consistent with the lowering phases.
 #[test]
 fn test_lowering_consistency() {

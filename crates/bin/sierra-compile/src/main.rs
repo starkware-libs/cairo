@@ -9,6 +9,10 @@ use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 use indoc::formatdoc;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Compiles a Sierra file to CASM.
 /// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]

@@ -8,6 +8,10 @@ use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use serde::Deserialize;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Compiles a Sierra contract class into CASM contract class.
 /// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]

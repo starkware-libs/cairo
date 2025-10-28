@@ -11,6 +11,10 @@ use ignore::WalkState::Continue;
 use ignore::{DirEntry, Error, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 use log::warn;
 
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 /// Outputs a string to stderr if the verbose flag is true.
 fn eprintln_if_verbose(s: &str, verbose: bool) {
     if verbose {

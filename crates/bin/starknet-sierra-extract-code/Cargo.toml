@@ -11,4 +11,9 @@ publish = false
 anyhow.workspace = true
 cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.13.0" }
 clap.workspace = true
+mimalloc = { workspace = true, optional = true }
 serde_json.workspace = true
+
+[features]
+
+mimalloc = ["dep:mimalloc"]

@@ -22,4 +22,9 @@ cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.0" }
 clap.workspace = true
 convert_case.workspace = true
 itertools.workspace = true
+mimalloc = { workspace = true, optional = true }
 salsa.workspace = true
+
+[features]
+
+mimalloc = ["dep:mimalloc"]
