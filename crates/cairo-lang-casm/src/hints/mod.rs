@@ -710,9 +710,9 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(a),
                     ResOperandAsIntegerFormatter(b),
                 );
-                // ceil((PRIME / 3) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
+                // ceil((PRIME / 3) / 2^128)
                 let prime_over_3_high = 3544607988759775765608368578435044694_u128;
-                // ceil((PRIME / 2) / 2^128) where PRIME = 2^251 + 17*2^192 + 1
+                // ceil((PRIME / 2) / 2^128)
                 let prime_over_2_high = 5316911983139663648412552867652567041_u128;
                 formatdoc! {"
 
