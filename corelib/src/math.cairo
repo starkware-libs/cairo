@@ -89,7 +89,7 @@ pub fn inv_mod<
     a: NonZero<T>, n: NonZero<T>,
 ) -> Option<T> {
     if core::num::traits::One::<T>::is_one(@n.into()) {
-        return Some(core::num::traits::Zero::zero());
+        return None;
     }
     let (g, s, _, sub_direction) = egcd(a, n);
     if g.is_one() {
