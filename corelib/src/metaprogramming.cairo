@@ -11,7 +11,7 @@ pub trait TypeEqual<S, T> {}
 impl TypeEqualImpl<T> of TypeEqual<T, T>;
 
 /// Marker trait for types that are tuples.
-/// Currently supports tuples of size 0 to 10.
+/// Currently supports tuples of size 0 to 16.
 pub(crate) trait IsTuple<T>;
 
 
