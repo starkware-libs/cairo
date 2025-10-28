@@ -342,7 +342,7 @@ impl<'db> AbiBuilder<'db> {
         Ok(())
     }
 
-    /// Adds an impl of a starknet interface to the ABI.
+    /// Adds an impl of a Starknet interface to the ABI.
     /// `impl_alias_name` can override the given impl name and is used in the ABI if set.
     fn add_embedded_impl(
         &mut self,

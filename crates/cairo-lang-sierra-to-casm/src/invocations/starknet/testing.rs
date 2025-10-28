@@ -9,7 +9,7 @@ use crate::invocations::{
     add_input_variables,
 };
 
-/// Builds instructions for starknet test setup operations.
+/// Builds instructions for Starknet test setup operations.
 pub fn build(
     libfunc: &TestingConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,

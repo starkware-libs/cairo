@@ -326,7 +326,7 @@ pub fn create_entry_code_from_params(
     casm_build_extend! (helper.ctx, ret;);
     // Point `FUNCTION` to offset `code_offset` from this point which is the beginning of the Sierra
     // based code.
-    helper.ctx.future_label("FUNCTION".into(), code_offset);
+    helper.ctx.future_label("FUNCTION", code_offset);
     Ok((helper.ctx.build([]).instructions, helper.builtins))
 }
 
@@ -630,7 +630,7 @@ pub fn create_code_footer() -> Vec<Instruction> {
     .instructions
 }
 
-/// Creates the metadata required for a Sierra program lowering to casm.
+/// Creates the metadata required for a Sierra program lowering to CASM.
 fn create_metadata(
     sierra_program: &SierraProgram,
     program_info: &ProgramRegistryInfo,

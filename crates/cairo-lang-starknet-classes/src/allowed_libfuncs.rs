@@ -64,7 +64,7 @@ impl Display for ListSelector {
     }
 }
 
-/// Represents a list of allowed sierra libfuncs.
+/// Represents a list of allowed Sierra libfuncs.
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 pub struct AllowedLibfuncs {
     #[serde(deserialize_with = "deserialize_libfuncs_set::<_>")]
@@ -82,13 +82,13 @@ fn deserialize_libfuncs_set<'de, D: serde::Deserializer<'de>>(
 /// The allowed libfuncs list to use if no list is supplied to the compiler.
 /// Should only contain libfuncs that are audited and tested.
 pub const BUILTIN_AUDITED_LIBFUNCS_LIST: &str = "audited";
-/// The allowed libfuncs list to use allowed on testnet2 - should be all libfuncs currently
-/// supported by starknet.
+/// The allowed libfuncs list to use on testnet2 — should be all libfuncs currently
+/// supported by Starknet.
 pub const BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST: &str = "experimental";
 /// The experimental list contains all the libfuncs and is currently used for development.
 pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
 
-/// Returns the sierra version corresponding to the given version id.
+/// Returns the Sierra version corresponding to the given version id.
 pub fn lookup_allowed_libfuncs_list(
     list_selector: ListSelector,
 ) -> Result<AllowedLibfuncs, AllowedLibfuncsError> {

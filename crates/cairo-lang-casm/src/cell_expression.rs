@@ -24,7 +24,7 @@ impl core::fmt::Display for CellOperator {
     }
 }
 
-/// The expression representing a cell in the casm memory.
+/// The expression representing a cell in the CASM memory.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CellExpression {
     Deref(CellRef),

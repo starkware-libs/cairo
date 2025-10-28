@@ -309,7 +309,7 @@ pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), Invocati
     Ok(())
 }
 
-/// The cells per returned Sierra variables, in casm-builder vars.
+/// The cells per returned Sierra variables, in CASM-builder vars.
 type VarCells = [Var];
 /// The configuration for all Sierra variables returned from a libfunc.
 type AllVars<'a> = [&'a VarCells];
@@ -480,7 +480,7 @@ impl CompiledInvocationBuilder<'_> {
         }
     }
 
-    /// Builds a `CompiledInvocation` from a casm builder and branch extractions.
+    /// Builds a `CompiledInvocation` from a CASM builder and branch extractions.
     /// Per branch requires `(name, result_variables, target_statement_id)`.
     fn build_from_casm_builder<const BRANCH_COUNT: usize>(
         self,
@@ -496,7 +496,7 @@ impl CompiledInvocationBuilder<'_> {
         )
     }
 
-    /// Builds a `CompiledInvocation` from a casm builder and branch extractions.
+    /// Builds a `CompiledInvocation` from a CASM builder and branch extractions.
     /// Per branch requires `(name, result_variables, target_statement_id)`.
     ///
     /// `pre_instructions` - Instructions to execute before the ones created by the builder.
@@ -644,7 +644,7 @@ pub struct ProgramInfo<'a> {
     pub const_data_values: &'a dyn Fn(&ConcreteTypeId) -> Vec<BigInt>,
 }
 
-/// Given a Sierra invocation statement and concrete libfunc, creates a compiled casm representation
+/// Given a Sierra invocation statement and concrete libfunc, creates a compiled CASM representation
 /// of the Sierra statement.
 pub fn compile_invocation(
     program_info: ProgramInfo<'_>,

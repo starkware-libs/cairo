@@ -37,7 +37,7 @@ fn build_empty_file_green_tree<'a>(db: &'a dyn Database, file_id: FileId<'a>) ->
 fn test_parser() {
     let db = SimpleParserDatabase::default();
 
-    // Parse empty cairo file.
+    // Parse empty Cairo file.
     let file_id = create_virtual_file(&db, "file.cairo", "");
     let syntax_file = db.file_module_syntax(file_id).unwrap();
     let diagnostics = db.file_syntax_diagnostics(file_id);

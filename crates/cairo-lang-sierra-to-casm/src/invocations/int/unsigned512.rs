@@ -19,7 +19,7 @@ pub fn build(
     }
 }
 
-/// Generates casm instructions for `u512_safe_divmod_by_u256()`.
+/// Generates CASM instructions for `u512_safe_divmod_by_u256()`.
 fn build_u512_safe_divmod_by_u256(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

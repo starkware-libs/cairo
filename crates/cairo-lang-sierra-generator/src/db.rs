@@ -19,7 +19,7 @@ use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::types::cycle_breaker_info;
 use crate::{ap_change, function_generator, pre_sierra, replace_ids};
 
-/// Helper type for Sierra long ids, which can be either a type long id or a cycle breaker.
+/// Helper type for Sierra long IDs, which can be either a type long ID or a cycle breaker.
 /// This is required for cases where the type long id is self referential.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
 pub enum SierraGeneratorTypeLongId<'db> {
@@ -28,7 +28,7 @@ pub enum SierraGeneratorTypeLongId<'db> {
     /// The long id for cycle breakers, such as `Box` and `Nullable`.
     CycleBreaker(semantic::TypeId<'db>),
     /// This is a long id of a phantom type.
-    /// Phantom types have a one to one mapping from the semantic type to the sierra type.
+    /// Phantom types have a one to one mapping from the semantic type to the Sierra type.
     Phantom(semantic::TypeId<'db>),
 }
 
@@ -41,7 +41,7 @@ struct ConcreteLibfuncIdLongWrapper {
 /// Handle for the concrete libfunc long id, used to lookup the concrete libfunc long id.
 struct ConcreteLibfuncHandle(u64);
 
-/// Wrapper for sierra type long id, providing a unique id for each type.
+/// Wrapper for Sierra type long ID, providing a unique ID for each type.
 #[salsa::interned(revisions = usize::MAX)]
 struct SierraGeneratorTypeLongIdWrapper<'db> {
     id: SierraGeneratorTypeLongId<'db>,
@@ -51,7 +51,7 @@ struct SierraGeneratorTypeLongIdWrapper<'db> {
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct ConcreteTypeHandle(u64);
 
-/// Handle for the sierra function id, used to lookup the sierra function id.
+/// Handle for the Sierra function ID, used to lookup the Sierra function ID.
 struct FunctionHandle(u64);
 
 fn intern_concrete_lib_func(
@@ -142,7 +142,7 @@ pub trait SierraGenGroup: Database {
         lookup_sierra_function(FunctionHandle(id.id))
     }
 
-    /// Returns the matching sierra concrete type id for a given semantic type id.
+    /// Returns the matching Sierra concrete type ID for a given semantic type ID.
     fn get_concrete_type_id<'db>(
         &'db self,
         type_id: semantic::TypeId<'db>,
@@ -158,7 +158,7 @@ pub trait SierraGenGroup: Database {
         crate::types::get_index_enum_type_id(self.as_dyn_database(), (), index_count).maybe_as_ref()
     }
 
-    /// Returns the matching sierra concrete type long id for a given semantic type id.
+    /// Returns the matching Sierra concrete type long ID for a given semantic type ID.
     fn get_concrete_long_type_id<'db>(
         &'db self,
         type_id: semantic::TypeId<'db>,
@@ -171,7 +171,7 @@ pub trait SierraGenGroup: Database {
         crate::types::is_self_referential(self.as_dyn_database(), type_id)
     }
 
-    /// Returns the semantic type ids the type is directly dependent on.
+    /// Returns the semantic type IDs the type is directly dependent on.
     ///
     /// A type depends on another type if it contains or may contain it, as a field or by holding a
     /// reference to it.

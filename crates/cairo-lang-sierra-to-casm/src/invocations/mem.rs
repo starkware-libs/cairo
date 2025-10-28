@@ -34,7 +34,7 @@ pub fn build(
     }
 }
 
-/// Adds a single instruction to a casm context.
+/// Adds a single instruction to a CASM context.
 macro_rules! add_instruction {
     ($ctx:ident, $($tok:tt)*) => {{
         casm_extend! {$ctx, $($tok)* ;}

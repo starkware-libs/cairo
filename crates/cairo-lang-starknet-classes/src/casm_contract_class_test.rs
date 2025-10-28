@@ -30,7 +30,7 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
     );
 }
 
-/// Tests that the casm compiled from a contract in the contract_crate is the same as in
+/// Tests that the CASM compiled from a contract in the contract_crate is the same as in
 /// <test_case>.compiled_contract_class.json.
 #[test_case("account__account")]
 #[test_case("circuit_contract__circuit_contract")]

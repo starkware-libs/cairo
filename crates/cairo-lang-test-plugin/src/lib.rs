@@ -51,7 +51,7 @@ const STATIC_GAS_ARG: &str = "static";
 /// Configuration for test compilation.
 #[derive(Clone)]
 pub struct TestsCompilationConfig<'db> {
-    /// Adds the starknet contracts to the compiled tests.
+    /// Adds the Starknet contracts to the compiled tests.
     pub starknet: bool,
 
     /// Contracts to compile.
@@ -67,11 +67,11 @@ pub struct TestsCompilationConfig<'db> {
     /// If not defined, test crates will be searched.
     pub executable_crate_ids: Option<Vec<CrateId<'db>>>,
 
-    /// Adds mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
+    /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [Annotations] in [DebugInfo] in the compiled tests.
     pub add_statements_functions: bool,
 
-    /// Adds mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
+    /// Adds a mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
     /// [Annotations] in [DebugInfo] in the compiled tests.
     pub add_statements_code_locations: bool,
 }
@@ -213,7 +213,7 @@ pub fn compile_test_prepared_db<'db>(
 
 /// Encapsulation of all data required to execute tests.
 ///
-/// This includes the source code compiled to a Sierra program and all cairo-test specific
+/// This includes the source code compiled to a Sierra program and all cairo-test-specific
 /// data extracted from it.
 /// This can be stored on the filesystem and shared externally.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -225,7 +225,7 @@ pub struct TestCompilation<'db> {
 
 /// Encapsulation of all data required to execute tests, except for the Sierra program itself.
 ///
-/// This includes all cairo-test specific data extracted from the program.
+/// This includes all cairo-test-specific data extracted from the program.
 /// This can be stored on the filesystem and shared externally.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct TestCompilationMetadata<'db> {

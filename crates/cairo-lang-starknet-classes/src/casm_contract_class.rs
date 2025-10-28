@@ -117,7 +117,7 @@ pub struct CasmContractClass {
     pub bytecode_segment_lengths: Option<NestedIntList>,
     pub hints: Vec<(usize, Vec<Hint>)>,
 
-    // Optional pythonic hints in a format that can be executed by the python vm.
+    // Optional Pythonic hints in a format that can be executed by the Python VM.
     #[serde(skip_serializing_if = "skip_if_none")]
     pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_type: CasmContractEntryPoints,

@@ -340,7 +340,7 @@ pub(super) fn generate_contract_specific_code<'db, 'a>(
     generation_data.into_rewrite_node(db, diagnostics)
 }
 
-/// Generates contract class hash for deploying contracts using cairo-test
+/// Generates the contract class hash for deploying contracts using cairo-test.
 fn generate_test_class_hash<'db>(
     db: &'db dyn Database,
     module_ast: &ast::ItemModule<'db>,

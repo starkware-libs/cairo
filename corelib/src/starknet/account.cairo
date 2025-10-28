@@ -20,7 +20,7 @@ pub struct Call {
     pub to: ContractAddress,
     /// The entry point selector in the called contract.
     pub selector: felt252,
-    /// The calldata to pass to entry point.
+    /// The calldata to pass to the entry point.
     pub calldata: Span<felt252>,
 }
 
