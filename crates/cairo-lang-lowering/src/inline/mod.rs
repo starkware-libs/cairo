@@ -9,7 +9,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
@@ -193,7 +193,7 @@ impl<'db, 'mt> Rebuilder<'db> for Mapper<'db, 'mt, '_> {
         match end {
             BlockEnd::Return(returns, _location) => {
                 let remapping = VarRemapping {
-                    remapping: SmallOrderedMap::from_iter(zip_eq(
+                    remapping: OrderedHashMap::from_iter(zip_eq(
                         self.outputs.iter().cloned(),
                         returns.iter().cloned(),
                     )),

@@ -5,7 +5,6 @@ mod test;
 use cairo_lang_semantic::MatchArmSelector;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
 
@@ -280,11 +279,9 @@ fn try_get_fix_info<'db>(
         Some(remappings) => {
             // Filter the additional remappings to only include those that are used in relevant arm.
             VarRemapping {
-                remapping: SmallOrderedMap::from_iter(remappings.iter().filter_map(
-                    |(dst, src)| {
-                        if demand.vars.contains_key(dst) { Some((*dst, *src)) } else { None }
-                    },
-                )),
+                remapping: OrderedHashMap::from_iter(remappings.iter().filter_map(|(dst, src)| {
+                    if demand.vars.contains_key(dst) { Some((*dst, *src)) } else { None }
+                })),
             }
         }
         None => VarRemapping::default(),
