@@ -710,6 +710,10 @@ impl PythonicHint for CoreHint {
                     ResOperandAsIntegerFormatter(a),
                     ResOperandAsIntegerFormatter(b),
                 );
+                // ceil((PRIME / 3) / 2^128)
+                let prime_over_3_high = 3544607988759775765608368578435044694_u128;
+                // ceil((PRIME / 2) / 2^128)
+                let prime_over_2_high = 5316911983139663648412552867652567041_u128;
                 formatdoc! {"
 
                     import itertools
@@ -729,9 +733,9 @@ impl PythonicHint for CoreHint {
                     excluded = lengths_and_indices[2][1]
 
                     memory[{range_check_ptr} + 1], memory[{range_check_ptr} + 0] = (
-                        divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
+                        divmod(lengths_and_indices[0][0], {prime_over_3_high}))
                     memory[{range_check_ptr} + 3], memory[{range_check_ptr} + 2] = (
-                        divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
+                        divmod(lengths_and_indices[1][0], {prime_over_2_high}))
                 "}
             }
             CoreHint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
