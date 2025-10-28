@@ -4,11 +4,17 @@ use anyhow::Context;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use clap::Parser;
 
+<<<<<<< HEAD
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 /// Extracts Sierra code from a contract class file.
+||||||| 8bebf62e2
+/// Extracts sierra code from a contract class file.
+=======
+/// Extracts Sierra code from a contract class file.
+>>>>>>> origin/dev-v2.13.1
 /// Exits with 0/1 if the extraction succeeds/fails.
 #[derive(Parser, Debug)]
 #[command(version, verbatim_doc_comment)]
