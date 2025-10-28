@@ -13,19 +13,9 @@ log.workspace = true
 mimalloc = { workspace = true, optional = true }
 tracing.workspace = true
 
-<<<<<<< HEAD
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.13.0" }
-cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.13.0" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.0", features = ["tracing"] }
-
-[features]
-mimalloc = ["dep:mimalloc"]
-||||||| 8bebf62e2
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.13.0" }
-cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.13.0" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.0", features = ["tracing"] }
-=======
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "~2.13.1" }
 cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "~2.13.1" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.1", features = ["tracing"] }
->>>>>>> origin/dev-v2.13.1
+
+[features]
+mimalloc = ["dep:mimalloc"]
