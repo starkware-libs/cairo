@@ -298,7 +298,7 @@ fn get_function_signature(
     let mut all_params = implicits.clone();
     let mut extra_rets = vec![];
     for param in &signature.params {
-        let concrete_type_id = db.get_concrete_type_id(param.ty())?;
+        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
         all_params.push(concrete_type_id.clone());
     }
     for var in &signature.extra_rets {

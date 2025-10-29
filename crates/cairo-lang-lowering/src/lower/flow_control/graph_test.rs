@@ -139,7 +139,7 @@ fn lower_graph_as_function<'db>(
                 diagnostics: ctx.diagnostics.build(),
                 variables: ctx.variables.variables,
                 blocks: Blocks::new_errored(diag_added),
-                signature: ctx.signature.clone(),
+                signature: ctx.signature.into(),
                 parameters,
             };
         }
@@ -154,7 +154,7 @@ fn lower_graph_as_function<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
-        signature: ctx.signature.clone(),
+        signature: ctx.signature.into(),
         parameters,
     }
 }
