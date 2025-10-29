@@ -26,8 +26,8 @@ use crate::program::{ConcreteTypeLongId, GenericArg};
 /// Type representing a dictionary from a felt252 to types of size one.
 ///
 /// This is currently only bounded for all numeric types, Nullable, and Enum types with 2 or less
-/// variants, as this are the types that has proper default as 0, and therefore can be properly used
-/// as a value in the dictionary.
+/// variants, as these are the types that has proper default as 0, and therefore can be properly
+/// used as a value in the dictionary.
 #[derive(Default)]
 pub struct Felt252DictTypeWrapped {}
 impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
