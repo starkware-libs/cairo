@@ -998,6 +998,7 @@ pub struct CoreInfo<'db> {
     pub downcast_fn: GenericFunctionId<'db>,
     pub tuple_submodule: ModuleId<'db>,
     pub fixed_size_array_submodule: ModuleId<'db>,
+    pub keywords_submodule: Option<ModuleId<'db>>,
 }
 impl<'db> CoreInfo<'db> {
     fn new(db: &'db dyn Database) -> Self {
@@ -1138,6 +1139,7 @@ impl<'db> CoreInfo<'db> {
             downcast_fn: bounded_int.generic_function_id("downcast"),
             tuple_submodule,
             fixed_size_array_submodule,
+            keywords_submodule: get_submodule(db, core.id, SmolStrId::from(db, "keywords")),
         }
     }
 }
