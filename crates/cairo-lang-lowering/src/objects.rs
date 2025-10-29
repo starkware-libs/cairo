@@ -29,7 +29,7 @@ use semantic::MatchArmSelector;
 use self::blocks::Blocks;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::fmt::LoweredFormatter;
-use crate::ids::{FunctionId, LocationId, Signature};
+use crate::ids::{FunctionId, LocationId, LoweredSignature};
 
 /// The Location struct represents the source location of a lowered object. It is used to store the
 /// most relevant source location for a lowering object.
@@ -143,7 +143,7 @@ pub struct Lowered<'db> {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<'db, LoweringDiagnostic<'db>>,
     /// Function signature.
-    pub signature: Signature<'db>,
+    pub signature: LoweredSignature<'db>,
     /// Arena of allocated lowered variables.
     pub variables: VariableArena<'db>,
     /// Arena of allocated lowered blocks.
@@ -157,7 +157,7 @@ unsafe impl<'db> salsa::Update for Lowered<'db> {
         let old_value = unsafe { &mut *old_pointer };
         let res = unsafe {
             Diagnostics::maybe_update(&mut old_value.diagnostics, new_value.diagnostics)
-                | Signature::maybe_update(&mut old_value.signature, new_value.signature)
+                | LoweredSignature::maybe_update(&mut old_value.signature, new_value.signature)
         } | (old_value.blocks != new_value.blocks);
         if res {
             old_value.variables = new_value.variables;

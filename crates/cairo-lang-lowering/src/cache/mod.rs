@@ -43,7 +43,8 @@ use thiserror::Error;
 
 use crate::blocks::BlocksBuilder;
 use crate::ids::{
-    FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, Signature,
+    FunctionId, FunctionLongId, GeneratedFunction, GeneratedFunctionKey, LocationId, LoweredParam,
+    LoweredSignature,
 };
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::objects::{
@@ -409,7 +410,7 @@ impl MultiLoweringCached {
 #[derive(Serialize, Deserialize)]
 struct LoweredCached {
     /// Function signature.
-    signature: SignatureCached,
+    signature: LoweredSignatureCached,
     /// Arena of allocated lowered variables.
     variables: Vec<VariableCached>,
     /// Arena of allocated lowered blocks.
@@ -420,7 +421,7 @@ struct LoweredCached {
 impl LoweredCached {
     fn new<'db>(lowered: Lowered<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
         Self {
-            signature: SignatureCached::new(lowered.signature, ctx),
+            signature: LoweredSignatureCached::new(lowered.signature, ctx),
             variables: lowered
                 .variables
                 .into_iter()
@@ -461,9 +462,9 @@ impl LoweredCached {
 }
 
 #[derive(Serialize, Deserialize)]
-struct SignatureCached {
+struct LoweredSignatureCached {
     /// Function parameters.
-    params: Vec<ExprVarMemberPathCached>,
+    params: Vec<LoweredParamCached>,
     /// Extra return values.
     extra_rets: Vec<ExprVarMemberPathCached>,
     /// Return type.
@@ -474,13 +475,13 @@ struct SignatureCached {
     panicable: bool,
     location: LocationIdCached,
 }
-impl SignatureCached {
-    fn new<'db>(signature: Signature<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
+impl LoweredSignatureCached {
+    fn new<'db>(signature: LoweredSignature<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
         Self {
             params: signature
                 .params
-                .into_iter()
-                .map(|var| ExprVarMemberPathCached::new(var, &mut ctx.semantic_ctx))
+                .iter()
+                .map(|param| LoweredParamCached::new(param, ctx))
                 .collect(),
             extra_rets: signature
                 .extra_rets
@@ -498,13 +499,9 @@ impl SignatureCached {
             location: LocationIdCached::new(signature.location, ctx),
         }
     }
-    fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> Signature<'db> {
-        Signature {
-            params: self
-                .params
-                .into_iter()
-                .map(|var| var.get_embedded(&ctx.semantic_loading_data, ctx.db))
-                .collect(),
+    fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> LoweredSignature<'db> {
+        LoweredSignature {
+            params: self.params.into_iter().map(|var| var.embed(ctx)).collect(),
             extra_rets: self
                 .extra_rets
                 .into_iter()
@@ -522,6 +519,30 @@ impl SignatureCached {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+struct LoweredParamCached {
+    ty: TypeIdCached,
+    stable_ptr: SyntaxStablePtrIdCached,
+}
+impl LoweredParamCached {
+    fn new<'db>(param: &LoweredParam<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
+        Self {
+            ty: TypeIdCached::new(param.ty, &mut ctx.semantic_ctx),
+            stable_ptr: SyntaxStablePtrIdCached::new(
+                param.stable_ptr.untyped(),
+                &mut ctx.semantic_ctx.defs_ctx,
+            ),
+        }
+    }
+    fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> LoweredParam<'db> {
+        LoweredParam {
+            ty: self.ty.get_embedded(&ctx.semantic_loading_data),
+            stable_ptr: ExprPtr(
+                self.stable_ptr.get_embedded(&ctx.semantic_loading_data.defs_loading_data),
+            ),
+        }
+    }
+}
 #[derive(Serialize, Deserialize)]
 struct VariableCached {
     droppable: Option<ImplIdCached>,

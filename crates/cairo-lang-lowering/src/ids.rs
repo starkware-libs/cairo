@@ -65,7 +65,7 @@ impl<'db> FunctionWithBodyId<'db> {
     ) -> cairo_lang_defs::ids::FunctionWithBodyId<'db> {
         self.long(db).base_semantic_function(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    pub fn signature(&self, db: &'db dyn Database) -> Maybe<LoweredSignature<'db>> {
         Ok(db.function_with_body_lowering(*self)?.signature.clone())
     }
     pub fn to_concrete(&self, db: &'db dyn Database) -> Maybe<ConcreteFunctionWithBodyId<'db>> {
@@ -200,7 +200,7 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
     pub fn full_path(&self, db: &dyn Database) -> String {
         self.long(db).full_path(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    pub fn signature(&self, db: &'db dyn Database) -> Maybe<LoweredSignature<'db>> {
         match self.generic_or_specialized(db) {
             GenericOrSpecialized::Generic(id) => {
                 let generic_signature = id.signature(db)?;
@@ -295,10 +295,10 @@ impl<'db> FunctionLongId<'db> {
             }
         }))
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    pub fn signature(&self, db: &'db dyn Database) -> Maybe<LoweredSignature<'db>> {
         match self {
             FunctionLongId::Semantic(semantic) => {
-                Ok(Signature::from_semantic(db, db.concrete_function_signature(*semantic)?))
+                Ok(Signature::from_semantic(db, db.concrete_function_signature(*semantic)?).into())
             }
             FunctionLongId::Generated(generated) => generated.body(db).signature(db),
             FunctionLongId::Specialized(specialized) => specialized.signature(db),
@@ -322,7 +322,7 @@ impl<'db> FunctionId<'db> {
     pub fn body(&self, db: &'db dyn Database) -> Maybe<Option<ConcreteFunctionWithBodyId<'db>>> {
         self.long(db).body(db)
     }
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    pub fn signature(&self, db: &'db dyn Database) -> Maybe<LoweredSignature<'db>> {
         self.long(db).signature(db)
     }
     pub fn full_path(&self, db: &dyn Database) -> String {
@@ -457,7 +457,7 @@ impl<'db> SpecializedFunction<'db> {
         format!("{:?}", self.debug(db))
     }
 
-    pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
+    pub fn signature(&self, db: &'db dyn Database) -> Maybe<LoweredSignature<'db>> {
         let mut base_sign = self.base.signature(db)?;
 
         base_sign.params = zip_eq(base_sign.params, self.args.iter())
@@ -481,7 +481,7 @@ impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
     }
 }
 
-/// Lowered signature of a function.
+/// Signature for lowering a function.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
 #[debug_db(dyn Database)]
 pub struct Signature<'db> {
@@ -538,6 +538,55 @@ impl<'db> Signature<'db> {
     }
 }
 semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, Signature<'a>);
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
+#[debug_db(dyn Database)]
+/// Represents a parameter of a lowered function.
+pub struct LoweredParam<'db> {
+    pub ty: semantic::TypeId<'db>,
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr<'db>,
+}
+semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, LoweredParam<'a>);
+
+/// Lowered signature of a function.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, Hash, salsa::Update)]
+#[debug_db(dyn Database)]
+pub struct LoweredSignature<'db> {
+    /// Input params.
+    pub params: Vec<LoweredParam<'db>>, // Vec<semantic::ExprVarMemberPath<'db>>,
+    /// Extra returns - e.g. ref params
+    pub extra_rets: Vec<semantic::ExprVarMemberPath<'db>>,
+    /// Return type.
+    pub return_type: semantic::TypeId<'db>,
+    /// Explicit implicit requirements.
+    pub implicits: Vec<semantic::TypeId<'db>>,
+    /// Panicable.
+    #[dont_rewrite]
+    pub panicable: bool,
+    /// Location.
+    #[dont_rewrite]
+    #[hide_field_debug_with_db]
+    pub location: LocationId<'db>,
+}
+semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, LoweredSignature<'a>);
+
+impl<'db> From<Signature<'db>> for LoweredSignature<'db> {
+    fn from(signature: Signature<'db>) -> Self {
+        LoweredSignature {
+            params: signature
+                .params
+                .iter()
+                .map(|param| LoweredParam { ty: param.ty(), stable_ptr: param.stable_ptr() })
+                .collect(),
+            extra_rets: signature.extra_rets,
+            return_type: signature.return_type,
+            implicits: signature.implicits,
+            panicable: signature.panicable,
+            location: signature.location,
+        }
+    }
+}
 
 /// Converts a [semantic::Parameter] to a [semantic::ExprVarMemberPath].
 pub(crate) fn parameter_as_member_path<'db>(

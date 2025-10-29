@@ -179,7 +179,7 @@ pub fn lower_function<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
-        signature: ctx.signature.clone(),
+        signature: ctx.signature.into(),
         parameters,
     })
 }
@@ -474,7 +474,7 @@ pub fn lower_loop_function<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
-        signature: ctx.signature.clone(),
+        signature: ctx.signature.into(),
         parameters,
     })
 }
@@ -1929,7 +1929,7 @@ fn get_destruct_lowering<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks: ctx.blocks.build().unwrap(),
-        signature: ctx.signature,
+        signature: ctx.signature.into(),
         parameters,
     };
     Ok(lowered_impl)
@@ -2058,7 +2058,7 @@ fn add_closure_call_function<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
-        signature: ctx.signature.clone(),
+        signature: ctx.signature.into(),
         parameters,
     };
     encapsulated_ctx.lowerings.insert(

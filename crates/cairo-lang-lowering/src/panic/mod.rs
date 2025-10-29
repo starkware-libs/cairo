@@ -20,8 +20,8 @@ use semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 use crate::blocks::BlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId, SemanticFunctionIdEx,
-    Signature,
+    ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId, LoweredSignature,
+    SemanticFunctionIdEx,
 };
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
@@ -211,7 +211,7 @@ pub struct PanicSignatureInfo<'db> {
     pub always_panic: bool,
 }
 impl<'db> PanicSignatureInfo<'db> {
-    pub fn new(db: &'db dyn Database, signature: &Signature<'db>) -> Self {
+    pub fn new(db: &'db dyn Database, signature: &LoweredSignature<'db>) -> Self {
         let extra_rets = signature.extra_rets.iter().map(|param| param.ty());
         let original_return_ty = signature.return_type;
 
