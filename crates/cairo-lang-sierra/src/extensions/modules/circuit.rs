@@ -29,7 +29,7 @@ use crate::program::{ConcreteTypeLongId, GenericArg};
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 /// The set of types that are considered circuit components.
-/// A circuit it defined as Circuit<(Output0, Output1, ...)> where all the outputs are
+/// A circuit is defined as Circuit<(Output0, Output1, ...)> where all the outputs are
 /// circuit components (recursively).
 static CIRCUIT_COMPONENTS: LazyLock<UnorderedHashSet<GenericTypeId>> = LazyLock::new(|| {
     UnorderedHashSet::from_iter([

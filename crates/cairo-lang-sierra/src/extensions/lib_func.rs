@@ -373,7 +373,7 @@ pub enum OutputVarReferenceInfo {
     Deferred(DeferredOutputKind),
     /// All the output cells are of the form `[ap/fp + const]`. For example, `([ap + 1], [fp])`.
     SimpleDerefs,
-    /// The output is a of size 0.
+    /// The output is of size 0.
     ZeroSized,
 }
 
