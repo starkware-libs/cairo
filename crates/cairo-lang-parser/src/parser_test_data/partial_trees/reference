@@ -96,3 +96,55 @@ ExprUnary
         └── segments (kind: ExprPathInner)
             └── item #0 (kind: PathSegmentSimple)
                 └── ident (kind: TokenIdentifier): 'u64'
+
+//! > ==========================================================================
+
+//! > Test double reference &&x
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f(x: & &u32) {}
+
+//! > top_level_kind
+ExprUnary
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprUnary
+    ├── op (kind: TokenAnd): '&'
+    └── expr (kind: ExprUnary)
+        ├── op (kind: TokenAnd): '&'
+        └── expr (kind: ExprPath)
+            ├── dollar (kind: OptionTerminalDollarEmpty) []
+            └── segments (kind: ExprPathInner)
+                └── item #0 (kind: PathSegmentSimple)
+                    └── ident (kind: TokenIdentifier): 'u32'
+
+//! > ==========================================================================
+
+//! > Test double &T as expr
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: false)
+
+//! > cairo_code
+fn f() {
+    let x =  &1_u32;
+}
+
+//! > top_level_kind
+ExprUnary
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprUnary
+    ├── op (kind: TokenAnd): '&'
+    └── expr (kind: TokenLiteralNumber): '1_u32'
