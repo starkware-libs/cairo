@@ -166,3 +166,42 @@ Block(
 )
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test closure capture of referenced mutable variable
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+
+//! > function_body
+let mut value = 5_u32;
+let _r = &value;
+
+//! > expr_code
+|| value
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = false
+references = true
+
+//! > expected_semantics
+ExprClosure(
+    ExprClosure {
+        body: Var(
+            LocalVarId(test::value),
+        ),
+        params: [],
+        ty: {closure@lib.cairo:3:1: 3:3},
+    },
+)
+
+//! > expected_diagnostics

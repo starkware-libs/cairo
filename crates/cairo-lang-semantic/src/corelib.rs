@@ -960,6 +960,7 @@ pub struct CoreInfo<'db> {
     pub fn_once_trt: TraitId<'db>,
     pub type_eq_trt: TraitId<'db>,
     pub felt252_dict_value_trt: TraitId<'db>,
+    pub box_trt: TraitId<'db>,
     // Trait fns.
     pub deref_fn: TraitFunctionId<'db>,
     pub deref_mut_fn: TraitFunctionId<'db>,
@@ -994,6 +995,7 @@ pub struct CoreInfo<'db> {
     pub next_fn: TraitFunctionId<'db>,
     pub call_fn: TraitFunctionId<'db>,
     pub call_once_fn: TraitFunctionId<'db>,
+    pub box_new_fn: TraitFunctionId<'db>,
     pub upcast_fn: GenericFunctionId<'db>,
     pub downcast_fn: GenericFunctionId<'db>,
     pub tuple_submodule: ModuleId<'db>,
@@ -1040,6 +1042,8 @@ impl<'db> CoreInfo<'db> {
         let fn_module = ops.submodule("function");
         let fn_trt = fn_module.trait_id("Fn");
         let fn_once_trt = fn_module.trait_id("FnOnce");
+        let box_module = core.submodule("box");
+        let box_trt = box_module.trait_id("BoxTrait");
         let index_module = ops.submodule("index");
         let starknet = core.submodule("starknet");
         let bounded_int = core.submodule("internal").submodule("bounded_int");
@@ -1101,6 +1105,7 @@ impl<'db> CoreInfo<'db> {
             fn_once_trt,
             type_eq_trt: core.submodule("metaprogramming").trait_id("TypeEqual"),
             felt252_dict_value_trt: traits.trait_id("Felt252DictValue"),
+            box_trt,
             deref_fn: trait_fn(deref_trt, "deref"),
             deref_mut_fn: trait_fn(deref_mut_trt, "deref_mut"),
             destruct_fn: trait_fn(destruct_trt, "destruct"),
@@ -1134,6 +1139,7 @@ impl<'db> CoreInfo<'db> {
             next_fn: trait_fn(iterator_trt, "next"),
             call_fn: trait_fn(fn_trt, "call"),
             call_once_fn: trait_fn(fn_once_trt, "call"),
+            box_new_fn: trait_fn(box_trt, "new"),
             upcast_fn: bounded_int.generic_function_id("upcast"),
             downcast_fn: bounded_int.generic_function_id("downcast"),
             tuple_submodule,

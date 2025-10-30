@@ -16,7 +16,7 @@ use cairo_lang_defs::ids::{
     StatementUseLongId, TraitFunctionId, TraitId, VarId,
 };
 use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPluginMetadata};
-use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
+use cairo_lang_diagnostics::{DiagnosticNote, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{
@@ -461,6 +461,8 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
 pub struct VariableTracker<'ctx> {
     /// Definitions of semantic variables.
     semantic_defs: UnorderedHashMap<semantic::VarId<'ctx>, Binding<'ctx>>,
+    /// Mutable variables that have been referenced (lost mutability).
+    referenced_mut_vars: UnorderedHashMap<semantic::VarId<'ctx>, SyntaxStablePtrId<'ctx>>,
 }
 
 impl<'ctx> VariableTracker<'ctx> {
@@ -475,14 +477,58 @@ impl<'ctx> VariableTracker<'ctx> {
         self.semantic_defs.insert(var.id(), var)
     }
 
-    /// Checks if a variable is mutable.
+    /// Returns true if the variable is currently mutable.
+    /// A variable is mutable only if declared mutable AND not referenced.
     pub fn is_mut(&self, var_id: &semantic::VarId<'ctx>) -> bool {
-        self.semantic_defs.get(var_id).is_some_and(|def| def.is_mut())
+        self.semantic_defs
+            .get(var_id)
+            .is_some_and(|def| def.is_mut() && !self.referenced_mut_vars.contains_key(var_id))
     }
 
     /// Returns true if the expression is a variable or a member access of a mutable variable.
     pub fn is_mut_expr(&self, expr: &ExprAndId<'ctx>) -> bool {
         expr.as_member_path().is_some_and(|var| self.is_mut(&var.base_var()))
+    }
+
+    /// Reports a mutability error if the variable cannot be modified.
+    pub fn report_var_mutability_error(
+        &self,
+        db: &'ctx dyn Database,
+        diagnostics: &mut SemanticDiagnostics<'ctx>,
+        var_id: &semantic::VarId<'ctx>,
+        error_ptr: impl Into<SyntaxStablePtrId<'ctx>>,
+        immutable_diagnostic: SemanticDiagnosticKind<'ctx>,
+    ) {
+        let Some(def) = self.semantic_defs.get(var_id) else {
+            return;
+        };
+
+        if !def.is_mut() {
+            diagnostics.report(error_ptr, immutable_diagnostic);
+            return;
+        }
+
+        if let Some(&referenced_at) = self.referenced_mut_vars.get(var_id) {
+            let note = DiagnosticNote::with_location(
+                "variable was referenced here".into(),
+                StableLocation::new(referenced_at).diagnostic_location(db),
+            );
+            diagnostics.report(error_ptr, AssignmentToReferencedVariable(vec![note]));
+        }
+    }
+
+    /// Marks an expression as referenced if it refers to a mutable variable.
+    pub fn mark_referenced(
+        &mut self,
+        expr: &ExprAndId<'ctx>,
+        reference_location: SyntaxStablePtrId<'ctx>,
+    ) {
+        if let Some(base_var) = expr.as_member_path().map(|path| path.base_var())
+            && self.is_mut(&base_var)
+        {
+            // This insert happens only once, since `is_mut` returns false if already referenced.
+            let _ = self.referenced_mut_vars.insert(base_var, reference_location);
+        }
     }
 }
 
@@ -1012,6 +1058,69 @@ fn compute_expr_unary_semantic<'db>(
                 stable_ptr: syntax.stable_ptr(db).into(),
             }))
         }
+        (UnaryOperator::Reference(_), inner) => {
+            let stable_ptr = syntax.stable_ptr(db);
+            if !crate::types::are_references_enabled(ctx.db, ctx.resolver.module_id) {
+                return Err(ctx.diagnostics.report(stable_ptr, ReferencesDisabled));
+            }
+            let inner_expr = compute_expr_semantic(ctx, inner);
+
+            // Disable mutability from referenced variable.
+            ctx.variable_tracker.mark_referenced(&inner_expr, stable_ptr.untyped());
+
+            // Snapshot inner expression.
+            let inner_ty = inner_expr.ty();
+            let snapshot_ty = TypeLongId::Snapshot(inner_ty).intern(ctx.db);
+            let snapshot_expr = ExprSnapshot {
+                inner: inner_expr.id,
+                ty: snapshot_ty,
+                stable_ptr: stable_ptr.into(),
+            };
+            let snapshot_expr_id = ctx.arenas.exprs.alloc(Expr::Snapshot(snapshot_expr.clone()));
+
+            // Get BoxTrait::<@T>::new
+            let info = ctx.db.core_info();
+            let generic_args = vec![GenericArgumentId::Type(snapshot_ty)];
+            let concrete_trait_id =
+                crate::ConcreteTraitLongId { trait_id: info.box_trt, generic_args }.intern(ctx.db);
+            let concrete_trait_function =
+                crate::items::trt::ConcreteTraitGenericFunctionLongId::new(
+                    ctx.db,
+                    concrete_trait_id,
+                    info.box_new_fn,
+                )
+                .intern(ctx.db);
+
+            // Resolve which BoxTrait implementation applies to this type.
+            let impl_lookup_context = ctx.resolver.impl_lookup_context();
+            let mut inference = ctx.resolver.inference();
+            let function = inference
+                .infer_trait_function(
+                    concrete_trait_function,
+                    impl_lookup_context,
+                    Some(stable_ptr.untyped()),
+                )
+                .map_err(|err_set| {
+                    inference.report_on_pending_error(
+                        err_set,
+                        ctx.diagnostics,
+                        stable_ptr.untyped(),
+                    )
+                })?;
+
+            // Call BoxTrait::new(@x).
+            expr_function_call(
+                ctx,
+                function,
+                vec![NamedArg(
+                    ExprAndId { expr: Expr::Snapshot(snapshot_expr), id: snapshot_expr_id },
+                    None,
+                    Mutability::Immutable,
+                )],
+                stable_ptr,
+                stable_ptr.into(),
+            )
+        }
         (_, inner) => {
             let expr = compute_expr_semantic(ctx, inner);
 
@@ -1093,10 +1202,13 @@ fn compute_expr_binary_semantic<'db>(
                 || rhs_syntax.stable_ptr(db).untyped(),
                 |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
             )?;
-            // Verify the variable argument is mutable.
-            if !ctx.variable_tracker.is_mut(&member_path.base_var()) {
-                ctx.diagnostics.report(syntax.stable_ptr(db), AssignmentToImmutableVar);
-            }
+            ctx.variable_tracker.report_var_mutability_error(
+                db,
+                ctx.diagnostics,
+                &member_path.base_var(),
+                syntax.stable_ptr(db),
+                AssignmentToImmutableVar,
+            );
             Ok(Expr::Assignment(ExprAssignment {
                 ref_arg: member_path,
                 rhs: rexpr.id,
@@ -2309,8 +2421,8 @@ fn compute_expr_closure_semantic<'db>(
     for (captured_var, expr) in
         chain!(usage.usage.iter(), usage.snap_usage.iter(), usage.changes.iter())
     {
-        let base_var = &captured_var.base_var();
-        if ctx.variable_tracker.is_mut(base_var) && reported.insert(expr.stable_ptr()) {
+        let base_var = captured_var.base_var();
+        if ctx.variable_tracker.is_mut(&base_var) && reported.insert(expr.stable_ptr()) {
             ctx.diagnostics.report(expr.stable_ptr(), MutableCapturedVariable);
         }
     }
@@ -4080,10 +4192,14 @@ fn expr_function_call<'db>(
             let Some(ref_arg) = arg.as_member_path() else {
                 return Err(ctx.diagnostics.report(arg.deref(), RefArgNotAVariable));
             };
-            // Verify the variable argument is mutable.
-            if !ctx.variable_tracker.is_mut(&ref_arg.base_var()) {
-                ctx.diagnostics.report(arg.deref(), RefArgNotMutable);
-            }
+            // Verify the variable is mutable and hasn't been referenced.
+            ctx.variable_tracker.report_var_mutability_error(
+                ctx.db,
+                ctx.diagnostics,
+                &ref_arg.base_var(),
+                arg.deref(),
+                RefArgNotMutable,
+            );
             // Verify that it is passed explicitly as 'ref'.
             if mutability != Mutability::Reference {
                 ctx.diagnostics.report(arg.deref(), RefArgNotExplicit);
