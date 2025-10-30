@@ -838,84 +838,9 @@ foo
 label_test::foo::0:
 alloc_local<BoundedInt<0, 30>>() -> ([1])
 alloc_local<felt252>() -> ([3])
-alloc_local<BoundedInt<0, 30>>() -> ([5])
-alloc_local<felt252>() -> ([7])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
-const_as_immediate<Const<felt252, 10>>() -> ([8])
-const_as_immediate<Const<felt252, 20>>() -> ([9])
-store_temp<felt252>([8]) -> ([8])
-Originating location:
-        felt252_sub(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^^^
-In function: core::Felt252Sub::sub
-Inlined at:
-        match *lhs - *rhs {
-              ^^^^^^^^^^^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-felt252_sub([8], [9]) -> ([10])
-Originating location:
-        felt252_sub(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^^^
-In function: core::Felt252Sub::sub
-Inlined at:
-        match *lhs - *rhs {
-              ^^^^^^^^^^^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-store_temp<felt252>([10]) -> ([10])
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-felt252_is_zero([10]) { fallthrough() label_test::foo::1([11]) }
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-branch_align() -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-drop<Uninitialized<BoundedInt<0, 30>>>([1]) -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-drop<Uninitialized<felt252>>([3]) -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-array_new<bytes31>() -> ([12])
+array_new<bytes31>() -> ([4])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -936,7 +861,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<Array<bytes31>>([12]) -> ()
+drop<Array<bytes31>>([4]) -> ()
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -957,7 +882,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-function_call<user@core::byte_array::InternalImpl::append_word_ex{{ array![], 0, 0 }, 33812444595910922, 7, }>() -> ([13])
+function_call<user@core::byte_array::InternalImpl::append_word_ex{{ array![], 0, 0 }, 33812324336826634, 7, }>() -> ([5])
 Originating location:
             Some(len) => self.append_word_ex(word, len),
                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -970,20 +895,20 @@ Inlined at:
 |_____^
 In function: core::byte_array::ByteArrayImpl::append_word
 Inlined at:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-enum_match<core::panics::PanicResult::<(core::byte_array::ByteArray, ())>>([13]) { fallthrough([14]) label_test::foo::3([15]) }
+enum_match<core::panics::PanicResult::<(core::byte_array::ByteArray, ())>>([5]) { fallthrough([6]) label_test::foo::1([7]) }
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 branch_align() -> ()
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-array_new<felt252>() -> ([16])
+array_new<felt252>() -> ([8])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -996,7 +921,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([17])
+const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([9])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -1009,7 +934,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<felt252>([17]) -> ([17])
+store_temp<felt252>([9]) -> ([9])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1022,7 +947,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([16], [17]) -> ([18])
+array_append<felt252>([8], [9]) -> ([10])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1035,27 +960,27 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_deconstruct<Tuple<core::byte_array::ByteArray, Unit>>([14]) -> ([19], [20])
+struct_deconstruct<Tuple<core::byte_array::ByteArray, Unit>>([6]) -> ([11], [12])
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-drop<Unit>([20]) -> ()
+drop<Unit>([12]) -> ()
 Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-snapshot_take<core::byte_array::ByteArray>([19]) -> ([21], [22])
+snapshot_take<core::byte_array::ByteArray>([11]) -> ([13], [14])
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<core::byte_array::ByteArray>([21]) -> ()
+drop<core::byte_array::ByteArray>([13]) -> ()
 Originating location:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([22]) -> ([23], [6], [4])
+struct_snapshot_deconstruct<core::byte_array::ByteArray>([14]) -> ([15], [2], [0])
 Originating location:
         Serde::serialize(self.data, ref output);
                          ^^^^
@@ -1068,7 +993,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-dup<Snapshot<Array<bytes31>>>([23]) -> ([23], [24])
+dup<Snapshot<Array<bytes31>>>([15]) -> ([15], [16])
 Originating location:
         array_len(self)
         ^^^^^^^^^^^^^^^
@@ -1089,7 +1014,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_len<bytes31>([24]) -> ([25])
+array_len<bytes31>([16]) -> ([17])
 Originating location:
         array_len(self)
         ^^^^^^^^^^^^^^^
@@ -1110,7 +1035,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-u32_to_felt252([25]) -> ([26])
+u32_to_felt252([17]) -> ([18])
 Originating location:
         u32_to_felt252(self)
         ^^^^^^^^^^^^^^^^^^^^
@@ -1135,7 +1060,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<felt252>([26]) -> ([26])
+store_temp<felt252>([18]) -> ([18])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1160,7 +1085,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([18], [26]) -> ([27])
+array_append<felt252>([10], [18]) -> ([19])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1185,7 +1110,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_construct<core::array::Span::<core::bytes_31::bytes31>>([23]) -> ([28])
+struct_construct<core::array::Span::<core::bytes_31::bytes31>>([15]) -> ([20])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1210,7 +1135,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<core::array::Span::<core::bytes_31::bytes31>>([28]) -> ([28])
+store_temp<core::array::Span::<core::bytes_31::bytes31>>([20]) -> ([20])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1227,596 +1152,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<Array<felt252>>([27]) -> ([27])
-Originating location:
-        serialize_array_helper(self.span(), ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-store_local<felt252>([7], [6]) -> ([6])
-Originating location:
-        serialize_array_helper(self.span(), ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-store_local<BoundedInt<0, 30>>([5], [4]) -> ([4])
-Originating location:
-        serialize_array_helper(self.span(), ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>([28], [27]) -> ([29])
-Originating location:
-        serialize_array_helper(self.span(), ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-rename<felt252>([6]) -> ([30])
-Originating location:
-        output.append(*self);
-                       ^^^^
-In function: core::Felt252Serde::serialize
-Inlined at:
-        Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-array_append<felt252>([29], [30]) -> ([31])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-        output.append(*self);
-        ^^^^^^^^^^^^^^^^^^^^
-In function: core::Felt252Serde::serialize
-Inlined at:
-        Serde::serialize(self.pending_word, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-rename<BoundedInt<0, 30>>([4]) -> ([32])
-Originating location:
-            output.append((*self).into());
-                            ^^^^
-In function: core::serde::into_felt252_based::SerdeImpl::serialize
-Inlined at:
-        Serde::serialize(self.pending_word_len, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-upcast<BoundedInt<0, 30>, felt252>([32]) -> ([33])
-Originating location:
-        upcast(self)
-        ^^^^^^^^^^^^
-In function: core::internal::bounded_int::BoundedIntIntoFelt252::into
-Inlined at:
-            output.append((*self).into());
-                          ^^^^^^^^^^^^^^
-In function: core::serde::into_felt252_based::SerdeImpl::serialize
-Inlined at:
-        Serde::serialize(self.pending_word_len, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-array_append<felt252>([31], [33]) -> ([34])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            output.append((*self).into());
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::serde::into_felt252_based::SerdeImpl::serialize
-Inlined at:
-        Serde::serialize(self.pending_word_len, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-store_temp<Array<felt252>>([34]) -> ([34])
-Originating location:
-    print(serialized)
-    ^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-print([34]) -> ()
-Originating location:
-    print(serialized)
-    ^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-jump() { label_test::foo::5() }
-Originating location:
-    print(serialized)
-    ^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-label_test::foo::3:
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-branch_align() -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-drop<Uninitialized<BoundedInt<0, 30>>>([5]) -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-drop<Uninitialized<felt252>>([7]) -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([15]) -> ([35])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x78203d3d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-store_temp<core::panics::PanicResult::<((),)>>([35]) -> ([35])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-return([35])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-label_test::foo::4:
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-label_test::foo::1:
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-branch_align() -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-drop<NonZero<felt252>>([11]) -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-drop<Uninitialized<BoundedInt<0, 30>>>([5]) -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-drop<Uninitialized<felt252>>([7]) -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-array_new<bytes31>() -> ([36])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
-                          ^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-drop<Array<bytes31>>([36]) -> ()
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
-                          ^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-function_call<user@core::byte_array::InternalImpl::append_word_ex{{ array![], 0, 0 }, 33812324336826634, 7, }>() -> ([37])
-Originating location:
-            Some(len) => self.append_word_ex(word, len),
-                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayImpl::append_word
-Inlined at:
-      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
- _____^
-| ...
-|     }
-|_____^
-In function: core::byte_array::ByteArrayImpl::append_word
-Inlined at:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-enum_match<core::panics::PanicResult::<(core::byte_array::ByteArray, ())>>([37]) { fallthrough([38]) label_test::foo::6([39]) }
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-branch_align() -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-array_new<felt252>() -> ([40])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::array_inline_macro
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([41])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
-                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::array_inline_macro
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-store_temp<felt252>([41]) -> ([41])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::array_inline_macro
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-array_append<felt252>([40], [41]) -> ([42])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::array_inline_macro
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-struct_deconstruct<Tuple<core::byte_array::ByteArray, Unit>>([38]) -> ([43], [44])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-drop<Unit>([44]) -> ()
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-snapshot_take<core::byte_array::ByteArray>([43]) -> ([45], [46])
-Originating location:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-drop<core::byte_array::ByteArray>([45]) -> ()
-Originating location:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-struct_snapshot_deconstruct<core::byte_array::ByteArray>([46]) -> ([47], [2], [0])
-Originating location:
-        Serde::serialize(self.data, ref output);
-                         ^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-dup<Snapshot<Array<bytes31>>>([47]) -> ([47], [48])
-Originating location:
-        array_len(self)
-        ^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::len
-Inlined at:
-        self.len().serialize(ref output);
-        ^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-array_len<bytes31>([48]) -> ([49])
-Originating location:
-        array_len(self)
-        ^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::len
-Inlined at:
-        self.len().serialize(ref output);
-        ^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-u32_to_felt252([49]) -> ([50])
-Originating location:
-        u32_to_felt252(self)
-        ^^^^^^^^^^^^^^^^^^^^
-In function: core::integer::U32IntoFelt252::into
-Inlined at:
-            output.append((*self).into());
-                          ^^^^^^^^^^^^^^
-In function: core::serde::into_felt252_based::SerdeImpl::serialize
-Inlined at:
-        self.len().serialize(ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-store_temp<felt252>([50]) -> ([50])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            output.append((*self).into());
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::serde::into_felt252_based::SerdeImpl::serialize
-Inlined at:
-        self.len().serialize(ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-array_append<felt252>([42], [50]) -> ([51])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            output.append((*self).into());
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::serde::into_felt252_based::SerdeImpl::serialize
-Inlined at:
-        self.len().serialize(ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-struct_construct<core::array::Span::<core::bytes_31::bytes31>>([47]) -> ([52])
-Originating location:
-        array_append(ref self, value)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayImpl::append
-Inlined at:
-            output.append((*self).into());
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::serde::into_felt252_based::SerdeImpl::serialize
-Inlined at:
-        self.len().serialize(ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-store_temp<core::array::Span::<core::bytes_31::bytes31>>([52]) -> ([52])
-Originating location:
-        serialize_array_helper(self.span(), ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::array::ArraySerde::serialize
-Inlined at:
-        Serde::serialize(self.data, ref output);
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArraySerde::serialize
-Inlined at:
-    self.serialize(ref serialized);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-store_temp<Array<felt252>>([51]) -> ([51])
+store_temp<Array<felt252>>([19]) -> ([19])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1867,7 +1203,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>([52], [51]) -> ([53])
+function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>([20], [19]) -> ([21])
 Originating location:
         serialize_array_helper(self.span(), ref output);
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1884,7 +1220,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<felt252>([2]) -> ([54])
+rename<felt252>([2]) -> ([22])
 Originating location:
         output.append(*self);
                        ^^^^
@@ -1901,7 +1237,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([53], [54]) -> ([55])
+array_append<felt252>([21], [22]) -> ([23])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1922,7 +1258,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-rename<BoundedInt<0, 30>>([0]) -> ([56])
+rename<BoundedInt<0, 30>>([0]) -> ([24])
 Originating location:
             output.append((*self).into());
                             ^^^^
@@ -1939,7 +1275,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-upcast<BoundedInt<0, 30>, felt252>([56]) -> ([57])
+upcast<BoundedInt<0, 30>, felt252>([24]) -> ([25])
 Originating location:
         upcast(self)
         ^^^^^^^^^^^^
@@ -1960,7 +1296,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-array_append<felt252>([55], [57]) -> ([58])
+array_append<felt252>([23], [25]) -> ([26])
 Originating location:
         array_append(ref self, value)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1981,7 +1317,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-store_temp<Array<felt252>>([58]) -> ([58])
+store_temp<Array<felt252>>([26]) -> ([26])
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -1990,7 +1326,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-print([58]) -> ()
+print([26]) -> ()
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -1999,7 +1335,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-label_test::foo::5:
+struct_construct<Unit>() -> ([27])
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -2008,7 +1344,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_construct<Unit>() -> ([59])
+struct_construct<Tuple<Unit>>([27]) -> ([28])
 Originating location:
     print(serialized)
     ^^^^^^^^^^^^^^^^^
@@ -2017,16 +1353,7 @@ Inlined at:
     core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-struct_construct<Tuple<Unit>>([59]) -> ([60])
-Originating location:
-    print(serialized)
-    ^^^^^^^^^^^^^^^^^
-In function: core::debug::print_byte_array_as_string
-Inlined at:
-    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: println_macro::println_macro
-enum_init<core::panics::PanicResult::<((),)>, 0>([60]) -> ([61])
+enum_init<core::panics::PanicResult::<((),)>, 0>([28]) -> ([29])
 Originating location:
   fn foo() {
  __________^
@@ -2034,7 +1361,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::foo
-store_temp<core::panics::PanicResult::<((),)>>([61]) -> ([61])
+store_temp<core::panics::PanicResult::<((),)>>([29]) -> ([29])
 Originating location:
   fn foo() {
  __________^
@@ -2042,7 +1369,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::foo
-return([61])
+return([29])
 Originating location:
   fn foo() {
  __________^
@@ -2050,7 +1377,7 @@ Originating location:
 | }
 |_^
 In function: lib.cairo::foo
-label_test::foo::6:
+label_test::foo::1:
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2070,22 +1397,17 @@ Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-enum_init<core::panics::PanicResult::<((),)>, 1>([39]) -> ([62])
+enum_init<core::panics::PanicResult::<((),)>, 1>([7]) -> ([30])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-store_temp<core::panics::PanicResult::<((),)>>([62]) -> ([62])
+store_temp<core::panics::PanicResult::<((),)>>([30]) -> ([30])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
-return([62])
-Originating location:
-    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: writeln_macro::writeln_macro
-label_test::foo::7:
+return([30])
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

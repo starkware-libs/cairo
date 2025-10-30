@@ -698,6 +698,7 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "serde",
+ "starknet-types-core",
  "thiserror",
 ]
 

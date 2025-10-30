@@ -175,7 +175,7 @@ fn foo(a: felt252) -> felt252 {
     {
         x;
     }
-    let _y = if 1 == 1 {
+    let _y = if a == 1 {
         6
     } else {
         7
@@ -208,7 +208,7 @@ End:
 blk1:
 Statements:
   (v7: core::felt252) <- 1
-  (v8: core::felt252) <- core::felt252_sub(v7, v7)
+  (v8: core::felt252) <- core::felt252_sub(v2, v7)
 End:
   Match(match core::felt252_is_zero(v8) {
     IsZeroResult::Zero => blk2,
@@ -242,27 +242,25 @@ Statements:
   (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v15)
   (v20: core::felt252) <- struct_destructure(v17)
   (v21: core::felt252) <- 5
-  (v22: core::felt252) <- 0
-  (v23: core::felt252) <- core::felt252_add(v2, v22)
-  (v24: core::felt252) <- core::felt252_mul(v21, v23)
-  (v25: core::felt252) <- core::felt252_add(v20, v24)
-  (v26: (core::felt252,)) <- struct_construct(v25)
-  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v26)
+  (v22: core::felt252) <- core::felt252_mul(v21, v2)
+  (v23: core::felt252) <- core::felt252_add(v20, v22)
+  (v24: (core::felt252,)) <- struct_construct(v23)
+  (v25: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v24)
 End:
-  Return(v14, v19, v27)
+  Return(v14, v19, v25)
 
 blk6:
 Statements:
-  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v18)
+  (v26: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v18)
 End:
-  Return(v14, v15, v28)
+  Return(v14, v15, v26)
 
 blk7:
 Statements:
-  (v29: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v30: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v29)
+  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v27)
 End:
-  Return(v5, v6, v30)
+  Return(v5, v6, v28)
 
 //! > ==========================================================================
 
