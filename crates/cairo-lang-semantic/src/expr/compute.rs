@@ -1770,16 +1770,20 @@ fn compute_pattern_list_or_semantic<'db>(
     for (pattern_syntax, pattern) in patterns_syntax.elements(db).zip(patterns.iter()) {
         let variables = pattern.variables(&ctx.arenas.patterns);
 
-        if variables.len() != arm_patterns_variables.len() {
-            ctx.diagnostics.report(pattern_syntax.stable_ptr(db), MissingVariableInPattern);
-        }
-
+        let mut variable_names_in_pattern = UnorderedHashSet::<_>::default();
         for v in variables {
+            if !variable_names_in_pattern.insert(v.name) {
+                ctx.diagnostics.report(v.stable_ptr, VariableDefinedMultipleTimesInPattern(v.name));
+            }
             let var_def = Binding::LocalVar(v.var.clone());
             // TODO(spapini): Wrap this in a function to couple with semantic_defs
             // insertion.
             ctx.environment.variables.insert(v.name, var_def.clone());
             ctx.semantic_defs.insert(var_def.id(), var_def);
+        }
+
+        if variable_names_in_pattern.len() != arm_patterns_variables.len() {
+            ctx.diagnostics.report(pattern_syntax.stable_ptr(db), MissingVariableInPattern);
         }
     }
 
@@ -2112,7 +2116,13 @@ fn compute_expr_for_semantic<'db>(
             &UnorderedHashMap::default(),
         );
         let variables = inner_pattern.variables(&new_ctx.arenas.patterns);
+        let mut variable_names_in_pattern = UnorderedHashSet::<_>::default();
         for v in variables {
+            if !variable_names_in_pattern.insert(v.name) {
+                new_ctx
+                    .diagnostics
+                    .report(v.stable_ptr, VariableDefinedMultipleTimesInPattern(v.name));
+            }
             let var_def = Binding::LocalVar(v.var.clone());
             new_ctx.environment.variables.insert(v.name, var_def.clone());
             new_ctx.semantic_defs.insert(var_def.id(), var_def);
@@ -4227,7 +4237,12 @@ pub fn compute_and_append_statement_semantic<'db>(
                 &UnorderedHashMap::default(),
             );
             let variables = pattern.variables(&ctx.arenas.patterns);
+            let mut variable_names_in_pattern = UnorderedHashSet::<_>::default();
             for v in variables {
+                if !variable_names_in_pattern.insert(v.name) {
+                    ctx.diagnostics
+                        .report(v.stable_ptr, VariableDefinedMultipleTimesInPattern(v.name));
+                }
                 let var_def = Binding::LocalVar(v.var.clone());
                 if let Some(old_var) = ctx.environment.variables.insert(v.name, var_def.clone()) {
                     if matches!(old_var, Binding::LocalItem(_)) {

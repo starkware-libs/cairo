@@ -276,7 +276,7 @@ error: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
 //! > Test duplicate variables in tuple pattern let.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -289,6 +289,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Redefinition of variable name "_a" in pattern.
+ --> lib.cairo:2:14
+    let (_a, _a) = (1, 2);
+             ^^
 
 //! > ==========================================================================
 
@@ -314,12 +318,12 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Missing variable in pattern.
- --> lib.cairo:3:9
+error: Redefinition of variable name "a" in pattern.
+ --> lib.cairo:3:13
         (a, a) => a,
-        ^^^^^^
+            ^
 
-error: Missing variable in pattern.
- --> lib.cairo:7:9
+error: Redefinition of variable name "b" in pattern.
+ --> lib.cairo:7:19
         ((b, _c), b) => b,
-        ^^^^^^^^^^^^
+                  ^
