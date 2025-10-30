@@ -26,8 +26,8 @@ use super::generators;
 use crate::blocks::BlocksBuilder;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionWithBodyId, GeneratedFunctionKey, LocationId,
-    SemanticFunctionIdEx, Signature,
+    ConcreteFunctionWithBodyId, EnrichedSemanticSignature, FunctionWithBodyId,
+    GeneratedFunctionKey, LocationId, SemanticFunctionIdEx,
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
@@ -138,7 +138,7 @@ pub struct LoweringContext<'db, 'mt> {
     /// Variable allocator.
     pub variables: VariableAllocator<'db>,
     /// Current function signature.
-    pub signature: Signature<'db>,
+    pub signature: EnrichedSemanticSignature<'db>,
     /// Id for the current function being lowered.
     pub function_id: FunctionWithBodyId<'db>,
     /// Id for the current concrete function to be used when generating recursive calls.
@@ -162,7 +162,7 @@ impl<'db, 'mt> LoweringContext<'db, 'mt> {
     pub fn new(
         global_ctx: &'mt mut EncapsulatingLoweringContext<'db>,
         function_id: FunctionWithBodyId<'db>,
-        signature: Signature<'db>,
+        signature: EnrichedSemanticSignature<'db>,
         return_type: semantic::TypeId<'db>,
     ) -> Maybe<Self>
     where

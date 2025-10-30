@@ -57,8 +57,9 @@ use crate::blocks::Blocks;
 use crate::diagnostic::LoweringDiagnosticKind::{self, *};
 use crate::diagnostic::LoweringDiagnosticsBuilder;
 use crate::ids::{
-    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
-    GeneratedFunctionKey, LocationId, SemanticFunctionIdEx, Signature, parameter_as_member_path,
+    EnrichedSemanticSignature, FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId,
+    GeneratedFunction, GeneratedFunctionKey, LocationId, SemanticFunctionIdEx,
+    parameter_as_member_path,
 };
 use crate::lower::context::{LoopContext, LoopEarlyReturnInfo, LoweringResult, VarRequest};
 use crate::lower::generators::StructDestructure;
@@ -120,7 +121,7 @@ pub fn lower_semantic_function<'db>(
     let main_lowering = lower_function(
         &mut encapsulating_ctx,
         function_id,
-        Signature::from_semantic(db, signature),
+        EnrichedSemanticSignature::from_semantic(db, signature),
         block_expr_id,
     )?;
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
@@ -130,7 +131,7 @@ pub fn lower_semantic_function<'db>(
 pub fn lower_function<'db>(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'db>,
     function_id: FunctionWithBodyId<'db>,
-    signature: Signature<'db>,
+    signature: EnrichedSemanticSignature<'db>,
     block_expr_id: semantic::ExprId,
 ) -> Maybe<Lowered<'db>> {
     log::trace!("Lowering a free function.");
@@ -179,7 +180,7 @@ pub fn lower_function<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
-        signature: ctx.signature.clone(),
+        signature: ctx.signature.into(),
         parameters,
     })
 }
@@ -386,7 +387,7 @@ pub fn lower_expr_while_let<'db>(
 pub fn lower_loop_function<'db>(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'db>,
     function_id: FunctionWithBodyId<'db>,
-    loop_signature: Signature<'db>,
+    loop_signature: EnrichedSemanticSignature<'db>,
     loop_ctx: LoopContext<'db>,
     return_type: semantic::TypeId<'db>,
 ) -> Maybe<Lowered<'db>> {
@@ -474,7 +475,7 @@ pub fn lower_loop_function<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
-        signature: ctx.signature.clone(),
+        signature: ctx.signature.into(),
         parameters,
     })
 }
@@ -1490,7 +1491,7 @@ fn lower_expr_loop<'db>(
     let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
 
     let loop_location = ctx.get_location(stable_ptr.untyped());
-    let loop_signature = Signature {
+    let loop_signature = EnrichedSemanticSignature {
         params,
         extra_rets,
         return_type: loop_return_ty,
@@ -1627,7 +1628,7 @@ fn recursively_call_loop_func<'db>(
 /// Adds a call to an inner loop-generated function.
 fn call_loop_func_ex<'db>(
     ctx: &mut LoweringContext<'db, '_>,
-    loop_signature: Signature<'db>,
+    loop_signature: EnrichedSemanticSignature<'db>,
     builder: &mut BlockBuilder<'db>,
     loop_expr_id: ExprId,
     stable_ptr: SyntaxStablePtrId<'db>,
@@ -1877,7 +1878,8 @@ fn add_capture_destruct_impl<'db>(
     }
     .intern(db);
 
-    let signature = Signature::from_semantic(db, db.concrete_function_signature(function)?);
+    let signature =
+        EnrichedSemanticSignature::from_semantic(db, db.concrete_function_signature(function)?);
 
     let func_key = GeneratedFunctionKey::TraitFunc(trait_function, location);
     let function_id =
@@ -1929,7 +1931,7 @@ fn get_destruct_lowering<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks: ctx.blocks.build().unwrap(),
-        signature: ctx.signature,
+        signature: ctx.signature.into(),
         parameters,
     };
     Ok(lowered_impl)
@@ -1985,7 +1987,8 @@ fn add_closure_call_function<'db>(
         key: GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.wrapper_location),
     }
     .intern(db);
-    let signature = Signature::from_semantic(db, db.concrete_function_signature(function)?);
+    let signature =
+        EnrichedSemanticSignature::from_semantic(db, db.concrete_function_signature(function)?);
 
     let return_type = signature.return_type;
     let mut ctx =
@@ -2058,7 +2061,7 @@ fn add_closure_call_function<'db>(
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables.variables,
         blocks,
-        signature: ctx.signature.clone(),
+        signature: ctx.signature.into(),
         parameters,
     };
     encapsulated_ctx.lowerings.insert(
