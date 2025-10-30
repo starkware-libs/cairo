@@ -307,7 +307,7 @@ test_generated_function
 fn foo(a: u32) {
     let f = |a: felt252| {
         let mut b = @0;
-        if 1 == 2 {
+        if 1 == bar(2) {
             b = @a;
         } else {
             b = @a;
@@ -320,6 +320,10 @@ fn foo(a: u32) {
 foo
 
 //! > module_code
+#[inline(never)]
+fn bar(a: felt252) -> felt252 {
+    a + 1
+}
 
 //! > semantic_diagnostics
 
@@ -330,11 +334,11 @@ Main:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:13: 2:25}) <- struct_construct()
-  (v2: {closure@lib.cairo:2:13: 2:25}, v3: @{closure@lib.cairo:2:13: 2:25}) <- snapshot(v1)
+  (v1: {closure@lib.cairo:6:13: 6:25}) <- struct_construct()
+  (v2: {closure@lib.cairo:6:13: 6:25}, v3: @{closure@lib.cairo:6:13: 6:25}) <- snapshot(v1)
   (v4: core::felt252) <- 0
   (v5: (core::felt252,)) <- struct_construct(v4)
-  (v6: ()) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:2:13: 2:25}(v3, v5)
+  (v6: ()) <- Generated `core::ops::function::Fn::call` for {closure@lib.cairo:6:13: 6:25}(v3, v5)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
@@ -344,13 +348,14 @@ Final lowering:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1
-  (v2: core::felt252) <- 2
-  (v3: core::felt252) <- core::felt252_sub(v1, v2)
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- test::bar(v1)
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- core::felt252_sub(v3, v2)
 End:
-  Match(match core::felt252_is_zero(v3) {
+  Match(match core::felt252_is_zero(v4) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk2,
+    IsZeroResult::NonZero(v5) => blk2,
   })
 
 blk1:
@@ -368,7 +373,7 @@ Generated core::traits::Destruct::destruct lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: {closure@lib.cairo:2:13: 2:25}
+Parameters: v0: {closure@lib.cairo:6:13: 6:25}
 blk0 (root):
 Statements:
   () <- struct_destructure(v0)
@@ -378,7 +383,7 @@ End:
 
 
 Final lowering:
-Parameters: v0: {closure@lib.cairo:2:13: 2:25}
+Parameters: v0: {closure@lib.cairo:6:13: 6:25}
 blk0 (root):
 Statements:
 End:
@@ -389,10 +394,10 @@ Generated core::ops::function::Fn::call lowering for source location:
     let f = |a: felt252| {
             ^^^^^^^^^^^^
 
-Parameters: v0: @{closure@lib.cairo:2:13: 2:25}, v2: (core::felt252,)
+Parameters: v0: @{closure@lib.cairo:6:13: 6:25}, v2: (core::felt252,)
 blk0 (root):
 Statements:
-  (v1: {closure@lib.cairo:2:13: 2:25}) <- desnap(v0)
+  (v1: {closure@lib.cairo:6:13: 6:25}) <- desnap(v0)
   () <- struct_destructure(v1)
   (v3: core::felt252) <- struct_destructure(v2)
   (v4: core::felt252) <- 0
@@ -400,44 +405,46 @@ Statements:
   (v7: core::felt252) <- 1
   (v8: core::felt252, v9: @core::felt252) <- snapshot(v7)
   (v10: core::felt252) <- 2
-  (v11: core::felt252, v12: @core::felt252) <- snapshot(v10)
-  (v13: core::bool) <- core::Felt252PartialEq::eq(v9, v12)
+  (v11: core::felt252) <- test::bar(v10)
+  (v12: core::felt252, v13: @core::felt252) <- snapshot(v11)
+  (v14: core::bool) <- core::Felt252PartialEq::eq(v9, v13)
 End:
-  Match(match_enum(v13) {
-    bool::False(v15) => blk2,
-    bool::True(v14) => blk1,
+  Match(match_enum(v14) {
+    bool::False(v16) => blk2,
+    bool::True(v15) => blk1,
   })
 
 blk1:
 Statements:
-  (v18: core::felt252, v19: @core::felt252) <- snapshot(v3)
+  (v19: core::felt252, v20: @core::felt252) <- snapshot(v3)
 End:
-  Goto(blk3, {v18 -> v20, v19 -> v21})
+  Goto(blk3, {v19 -> v21, v20 -> v22})
 
 blk2:
 Statements:
-  (v16: core::felt252, v17: @core::felt252) <- snapshot(v3)
+  (v17: core::felt252, v18: @core::felt252) <- snapshot(v3)
 End:
-  Goto(blk3, {v16 -> v20, v17 -> v21})
+  Goto(blk3, {v17 -> v21, v18 -> v22})
 
 blk3:
 Statements:
-  (v22: ()) <- struct_construct()
+  (v23: ()) <- struct_construct()
 End:
-  Return(v22)
+  Return(v23)
 
 
 Final lowering:
-Parameters: v0: @{closure@lib.cairo:2:13: 2:25}, v1: (core::felt252,)
+Parameters: v0: @{closure@lib.cairo:6:13: 6:25}, v1: (core::felt252,)
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 1
-  (v3: core::felt252) <- 2
-  (v4: core::felt252) <- core::felt252_sub(v2, v3)
+  (v2: core::felt252) <- 2
+  (v3: core::felt252) <- test::bar(v2)
+  (v4: core::felt252) <- 1
+  (v5: core::felt252) <- core::felt252_sub(v4, v3)
 End:
-  Match(match core::felt252_is_zero(v4) {
+  Match(match core::felt252_is_zero(v5) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v5) => blk2,
+    IsZeroResult::NonZero(v6) => blk2,
   })
 
 blk1:

@@ -1152,6 +1152,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smol_str",
+ "starknet-types-core",
  "test-case",
  "tracing",
  "tracing-log",

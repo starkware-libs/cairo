@@ -4,7 +4,7 @@
 test_reorder_statements
 
 //! > function
-fn foo() -> felt252 {
+fn foo(x: felt252) -> felt252 {
     let opt = get_option();
 
     let _unused = 17;
@@ -12,14 +12,14 @@ fn foo() -> felt252 {
 
     let one = 1;
     let two = 2;
-    let three = 3;
+    let threex = 3 + x;
 
     match opt {
         Some(_) => one + two,
         None => {
             let four = 4;
             match opt {
-                Some(_) => three + four,
+                Some(_) => threex + four,
                 None => one,
             }
         },
@@ -37,146 +37,147 @@ extern fn get_option() -> Option<u16> nopanic;
 //! > lowering_diagnostics
 
 //! > before
-Parameters:
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some(v0) => blk1,
+    Option::Some(v1) => blk1,
     Option::None => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
+  (v2: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v1 -> v2})
+  Goto(blk3, {v2 -> v3})
 
 blk2:
 Statements:
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<core::integer::u16>) <- Option::None(v4)
 End:
-  Goto(blk3, {v4 -> v2})
+  Goto(blk3, {v5 -> v3})
 
 blk3:
 Statements:
-  (v5: core::felt252) <- 17
-  (v6: ()) <- struct_construct()
-  (v7: core::felt252) <- 1
-  (v8: core::felt252) <- 2
-  (v9: core::felt252) <- 3
+  (v6: core::felt252) <- 17
+  (v7: ()) <- struct_construct()
+  (v8: core::felt252) <- 1
+  (v9: core::felt252) <- 2
+  (v10: core::felt252) <- 3
+  (v11: core::felt252) <- core::felt252_add(v10, v0)
 End:
-  Match(match_enum(v2) {
-    Option::Some(v10) => blk4,
-    Option::None(v11) => blk5,
+  Match(match_enum(v3) {
+    Option::Some(v12) => blk4,
+    Option::None(v13) => blk5,
   })
 
 blk4:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v7, v8)
+  (v14: core::felt252) <- 3
 End:
-  Goto(blk9, {v12 -> v13})
+  Goto(blk9, {v14 -> v15})
 
 blk5:
 Statements:
-  (v14: core::felt252) <- 4
+  (v16: core::felt252) <- 4
 End:
-  Match(match_enum(v2) {
-    Option::Some(v15) => blk6,
-    Option::None(v16) => blk7,
+  Match(match_enum(v3) {
+    Option::Some(v17) => blk6,
+    Option::None(v18) => blk7,
   })
 
 blk6:
 Statements:
-  (v17: core::felt252) <- core::felt252_add(v9, v14)
+  (v19: core::felt252) <- core::felt252_add(v11, v16)
 End:
-  Goto(blk8, {v17 -> v18})
+  Goto(blk8, {v19 -> v20})
 
 blk7:
 Statements:
 End:
-  Goto(blk8, {v7 -> v18})
+  Goto(blk8, {v8 -> v20})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v18 -> v13})
+  Goto(blk9, {v20 -> v15})
 
 blk9:
 Statements:
 End:
-  Return(v13)
+  Return(v15)
 
 //! > after
-Parameters:
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some(v0) => blk1,
+    Option::Some(v1) => blk1,
     Option::None => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
+  (v2: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v1 -> v2})
+  Goto(blk3, {v2 -> v3})
 
 blk2:
 Statements:
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<core::integer::u16>) <- Option::None(v4)
 End:
-  Goto(blk3, {v4 -> v2})
+  Goto(blk3, {v5 -> v3})
 
 blk3:
 Statements:
-  (v7: core::felt252) <- 1
 End:
-  Match(match_enum(v2) {
-    Option::Some(v10) => blk4,
-    Option::None(v11) => blk5,
+  Match(match_enum(v3) {
+    Option::Some(v12) => blk4,
+    Option::None(v13) => blk5,
   })
 
 blk4:
 Statements:
-  (v8: core::felt252) <- 2
-  (v12: core::felt252) <- core::felt252_add(v7, v8)
+  (v14: core::felt252) <- 3
 End:
-  Goto(blk9, {v12 -> v13})
+  Goto(blk9, {v14 -> v15})
 
 blk5:
 Statements:
 End:
-  Match(match_enum(v2) {
-    Option::Some(v15) => blk6,
-    Option::None(v16) => blk7,
+  Match(match_enum(v3) {
+    Option::Some(v17) => blk6,
+    Option::None(v18) => blk7,
   })
 
 blk6:
 Statements:
-  (v9: core::felt252) <- 3
-  (v14: core::felt252) <- 4
-  (v17: core::felt252) <- core::felt252_add(v9, v14)
+  (v10: core::felt252) <- 3
+  (v11: core::felt252) <- core::felt252_add(v10, v0)
+  (v16: core::felt252) <- 4
+  (v19: core::felt252) <- core::felt252_add(v11, v16)
 End:
-  Goto(blk8, {v17 -> v18})
+  Goto(blk8, {v19 -> v20})
 
 blk7:
 Statements:
+  (v8: core::felt252) <- 1
 End:
-  Goto(blk8, {v7 -> v18})
+  Goto(blk8, {v8 -> v20})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v18 -> v13})
+  Goto(blk9, {v20 -> v15})
 
 blk9:
 Statements:
 End:
-  Return(v13)
+  Return(v15)
 
 //! > ==========================================================================
 
@@ -356,7 +357,7 @@ Statements:
   (v2: core::felt252) <- 5
   (v3: ()) <- struct_construct()
   (v4: core::felt252) <- 3
-  (v5: core::felt252) <- core::felt252_add(v2, v4)
+  (v5: core::felt252) <- 8
 End:
   Return(v5)
 
@@ -364,8 +365,6 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 5
-  (v4: core::felt252) <- 3
-  (v5: core::felt252) <- core::felt252_add(v2, v4)
+  (v5: core::felt252) <- 8
 End:
   Return(v5)

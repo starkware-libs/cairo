@@ -18,6 +18,7 @@ use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeId, TypeLongId, corelib,
 };
+use cairo_lang_utils::Felt252;
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -493,10 +494,76 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         }
         let (id, _generic_args) = stmt.function.get_extern(db)?;
         if id == self.felt_sub {
-            // (a - 0) can be replaced by a.
-            let val = self.as_int(stmt.inputs[1].var_id)?;
-            if val.is_zero() {
+            if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
+                && rhs.is_zero()
+            {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                return None;
+            }
+            if let (Some(lhs), Some(rhs)) =
+                (self.as_int(stmt.inputs[0].var_id), self.as_int(stmt.inputs[1].var_id))
+            {
+                let value = Felt252::from(lhs - rhs);
+                return Some(self.propagate_const_and_get_statement(
+                    value.to_bigint(),
+                    stmt.outputs[0],
+                    false,
+                ));
+            }
+            None
+        } else if id == self.felt_add {
+            if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
+                && lhs.is_zero()
+            {
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]));
+                return None;
+            }
+            if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
+                && rhs.is_zero()
+            {
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                return None;
+            }
+            if let (Some(lhs), Some(rhs)) =
+                (self.as_int(stmt.inputs[0].var_id), self.as_int(stmt.inputs[1].var_id))
+            {
+                let value = Felt252::from(lhs + rhs);
+                return Some(self.propagate_const_and_get_statement(
+                    value.to_bigint(),
+                    stmt.outputs[0],
+                    false,
+                ));
+            }
+            None
+        } else if id == self.felt_mul {
+            let lhs = self.as_int_ex(stmt.inputs[0].var_id);
+            let rhs = self.as_int_ex(stmt.inputs[1].var_id);
+            if lhs.map(|(v, _)| v.is_zero()).unwrap_or(false)
+                || rhs.map(|(v, _)| v.is_zero()).unwrap_or(false)
+            {
+                return Some(self.propagate_zero_and_get_statement(stmt.outputs[0]));
+            }
+            if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
+                && rhs.is_one()
+            {
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                return None;
+            }
+            if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
+                && lhs.is_one()
+            {
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]));
+                return None;
+            }
+
+            if let (Some((lhs_val, lhs_nz)), Some((rhs_val, rhs_nz))) = (lhs, rhs) {
+                let value = Felt252::from(lhs_val * rhs_val);
+                let nz_ty = lhs_nz && rhs_nz;
+                return Some(self.propagate_const_and_get_statement(
+                    value.to_bigint(),
+                    stmt.outputs[0],
+                    nz_ty,
+                ));
             }
             None
         } else if self.wide_mul_fns.contains(&id) {
@@ -1211,6 +1278,10 @@ fn priv_const_folding_info<'db>(
 pub struct ConstFoldingLibfuncInfo<'db> {
     /// The `felt252_sub` libfunc.
     felt_sub: ExternFunctionId<'db>,
+    /// The `felt252_add` libfunc.
+    felt_add: ExternFunctionId<'db>,
+    /// The `felt252_mul` libfunc.
+    felt_mul: ExternFunctionId<'db>,
     /// The `into_box` libfunc.
     into_box: ExternFunctionId<'db>,
     /// The `unbox` libfunc.
@@ -1380,6 +1451,8 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             );
         Self {
             felt_sub: core.extern_function_id("felt252_sub"),
+            felt_add: core.extern_function_id("felt252_add"),
+            felt_mul: core.extern_function_id("felt252_mul"),
             into_box: box_module.extern_function_id("into_box"),
             unbox: box_module.extern_function_id("unbox"),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),

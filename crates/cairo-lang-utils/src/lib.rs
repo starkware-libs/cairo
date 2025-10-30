@@ -31,6 +31,8 @@ pub mod small_ordered_map;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
 
+pub use starknet_types_core::felt::Felt as Felt252;
+
 /// Similar to From / TryFrom, but returns an option.
 pub trait OptionFrom<T>
 where
