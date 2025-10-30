@@ -41,8 +41,7 @@ fn example_dir_data() -> ExampleDirData {
 }
 
 #[rstest]
-#[expect(unused_variables)]
-fn lowering_test(example_dir_data: &ExampleDirData) {}
+fn lowering_test(_example_dir_data: &ExampleDirData) {}
 
 /// Returns the path of the relevant test file.
 fn get_test_data_path(name: &str, test_type: &str) -> PathBuf {
