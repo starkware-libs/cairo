@@ -24,11 +24,9 @@ foo
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 2
-  (v2: core::felt252) <- 3
-  (v3: core::felt252) <- core::felt252_add(v1, v2)
+  (v1: core::felt252) <- 5
 End:
-  Return(v3)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -60,11 +58,6 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt252) <- 8
-  (v1: core::felt252) <- 2
-  (v2: core::felt252) <- 3
-  (v3: core::felt252) <- core::felt252_add(v1, v2)
-  (v4: core::felt252) <- core::felt252_mul(v0, v3)
-  (v5: core::felt252) <- core::felt252_add(v4, v0)
+  (v0: core::felt252) <- 48
 End:
-  Return(v5)
+  Return(v0)

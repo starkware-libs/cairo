@@ -838,84 +838,9 @@ foo
 label_test::foo::0:
 alloc_local<BoundedInt<0, 30>>() -> ([1])
 alloc_local<felt252>() -> ([3])
-alloc_local<BoundedInt<0, 30>>() -> ([5])
-alloc_local<felt252>() -> ([7])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
-const_as_immediate<Const<felt252, 10>>() -> ([8])
-const_as_immediate<Const<felt252, 20>>() -> ([9])
-store_temp<felt252>([8]) -> ([8])
-Originating location:
-        felt252_sub(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^^^
-In function: core::Felt252Sub::sub
-Inlined at:
-        match *lhs - *rhs {
-              ^^^^^^^^^^^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-felt252_sub([8], [9]) -> ([10])
-Originating location:
-        felt252_sub(lhs, rhs)
-        ^^^^^^^^^^^^^^^^^^^^^
-In function: core::Felt252Sub::sub
-Inlined at:
-        match *lhs - *rhs {
-              ^^^^^^^^^^^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-store_temp<felt252>([10]) -> ([10])
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-felt252_is_zero([10]) { fallthrough() label_test::foo::1([11]) }
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-branch_align() -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-drop<Uninitialized<BoundedInt<0, 30>>>([1]) -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-drop<Uninitialized<felt252>>([3]) -> ()
-Originating location:
-            0 => true,
-            ^
-In function: core::Felt252PartialEq::eq
-Inlined at:
-    if x == y { // highlighted
-       ^^^^^^
-In function: lib.cairo::foo
-array_new<bytes31>() -> ([12])
+array_new<bytes31>() -> ([4])
 Originating location:
         array_new()
         ^^^^^^^^^^^
@@ -936,7 +861,7 @@ Inlined at:
     let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: println_macro::println_macro
-drop<Array<bytes31>>([12]) -> ()
+drop<Array<bytes31>>([4]) -> ()
 Originating location:
         array_new()
         ^^^^^^^^^^^

@@ -9,7 +9,8 @@ use alloc::{format, string::String, vec::Vec};
 use num_bigint::ToBigInt;
 use num_bigint::{BigInt, BigUint};
 #[cfg(feature = "serde")]
-use num_traits::{Num, Signed};
+use num_traits::Signed;
+use num_traits::{Num, Zero};
 
 /// A wrapper for BigUint that serializes as hex.
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
@@ -237,4 +238,24 @@ mod impl_parity_scale_codec {
             Ok(Self { value: BigInt::from_bytes_le(sign, buffer.as_slice()) })
         }
     }
+}
+
+#[cfg(feature = "std")]
+use std::sync::LazyLock;
+
+/// The Cairo prime as a BigInt.
+#[cfg(feature = "std")]
+pub static CAIRO_PRIME_BIGINT: LazyLock<BigInt> = LazyLock::new(|| {
+    BigInt::from_str_radix("800000000000011000000000000000000000000000000000000000000000001", 16)
+        .unwrap()
+});
+
+/// Computes a mod p, ensuring the result is in [0, p) even for negative a.
+#[cfg(feature = "std")]
+pub fn felt252_mod(a: &BigInt) -> BigInt {
+    let mut r = a % &*CAIRO_PRIME_BIGINT;
+    if r < BigInt::zero() {
+        r += &*CAIRO_PRIME_BIGINT;
+    }
+    r
 }
