@@ -404,6 +404,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::MissingVariableInPattern => {
                 "Missing variable in pattern.".into()
             }
+            SemanticDiagnosticKind::VariableDefinedMultipleTimesInPattern(name) => {
+                format!(r#"Redefinition of variable name "{}" in pattern."#, name.long(db))
+            }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
                     r#"Redefinition of member "{}" on struct "{}"."#,
@@ -1293,6 +1296,7 @@ pub enum SemanticDiagnosticKind<'db> {
     },
     VariableNotFound(SmolStrId<'db>),
     MissingVariableInPattern,
+    VariableDefinedMultipleTimesInPattern(SmolStrId<'db>),
     StructMemberRedefinition {
         struct_id: StructId<'db>,
         member_name: SmolStrId<'db>,
