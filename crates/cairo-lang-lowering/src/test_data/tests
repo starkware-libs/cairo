@@ -202,67 +202,45 @@ Statements:
 End:
   Match(match core::gas::withdraw_gas(v0, v1) {
     Option::Some(v3, v4) => blk1,
-    Option::None(v5, v6) => blk7,
+    Option::None(v5, v6) => blk4,
   })
 
 blk1:
 Statements:
-  (v7: core::felt252) <- 1
-  (v8: core::felt252) <- core::felt252_sub(v7, v7)
+  (v7: core::felt252) <- 3
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v3, v4, v7)
 End:
-  Match(match core::felt252_is_zero(v8) {
-    IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v9) => blk3,
+  Match(match_enum(v10) {
+    PanicResult::Ok(v11) => blk2,
+    PanicResult::Err(v12) => blk3,
   })
 
 blk2:
 Statements:
-  (v10: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
+  (v14: core::felt252) <- struct_destructure(v11)
+  (v15: core::felt252) <- 5
+  (v16: core::felt252) <- 0
+  (v17: core::felt252) <- core::felt252_add(v2, v16)
+  (v18: core::felt252) <- core::felt252_mul(v15, v17)
+  (v19: core::felt252) <- core::felt252_add(v14, v18)
+  (v20: (core::felt252,)) <- struct_construct(v19)
+  (v21: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v20)
 End:
-  Goto(blk4, {v10 -> v11})
+  Return(v8, v13, v21)
 
 blk3:
 Statements:
-  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v22: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v12)
 End:
-  Goto(blk4, {v12 -> v11})
+  Return(v8, v9, v22)
 
 blk4:
 Statements:
-  (v13: core::felt252) <- 3
-  (v14: core::RangeCheck, v15: core::gas::GasBuiltin, v16: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v3, v11, v13)
+  (v23: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v24: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v23)
 End:
-  Match(match_enum(v16) {
-    PanicResult::Ok(v17) => blk5,
-    PanicResult::Err(v18) => blk6,
-  })
-
-blk5:
-Statements:
-  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v15)
-  (v20: core::felt252) <- struct_destructure(v17)
-  (v21: core::felt252) <- 5
-  (v22: core::felt252) <- 0
-  (v23: core::felt252) <- core::felt252_add(v2, v22)
-  (v24: core::felt252) <- core::felt252_mul(v21, v23)
-  (v25: core::felt252) <- core::felt252_add(v20, v24)
-  (v26: (core::felt252,)) <- struct_construct(v25)
-  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v26)
-End:
-  Return(v14, v19, v27)
-
-blk6:
-Statements:
-  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v18)
-End:
-  Return(v14, v15, v28)
-
-blk7:
-Statements:
-  (v29: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v30: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v29)
-End:
-  Return(v5, v6, v30)
+  Return(v5, v6, v24)
 
 //! > ==========================================================================
 

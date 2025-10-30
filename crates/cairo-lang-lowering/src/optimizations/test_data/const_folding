@@ -6150,3 +6150,175 @@ End:
   Return(v7)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Felt252 add const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    1 + 2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- 3
+End:
+  Return(v2)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Felt252 sub const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    5 - 3
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+  (v1: core::felt252) <- 3
+  (v2: core::felt252) <- core::felt252_sub(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5
+  (v1: core::felt252) <- 3
+  (v2: core::felt252) <- 2
+End:
+  Return(v2)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Felt252 mul const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    2 * 3
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 2
+  (v1: core::felt252) <- 3
+  (v2: core::felt252) <- core::felt252_mul(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 2
+  (v1: core::felt252) <- 3
+  (v2: core::felt252) <- 6
+End:
+  Return(v2)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Felt252 combined operations const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    1 + 2 * 3 - 4
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- 3
+  (v3: core::felt252) <- core::felt252_mul(v1, v2)
+  (v4: core::felt252) <- core::felt252_add(v0, v3)
+  (v5: core::felt252) <- 4
+  (v6: core::felt252) <- core::felt252_sub(v4, v5)
+End:
+  Return(v6)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::felt252) <- 2
+  (v2: core::felt252) <- 3
+  (v3: core::felt252) <- 6
+  (v4: core::felt252) <- 7
+  (v5: core::felt252) <- 4
+  (v6: core::felt252) <- 3
+End:
+  Return(v6)
+
+//! > lowering_diagnostics

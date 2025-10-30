@@ -344,22 +344,6 @@ Final lowering:
 Parameters: v0: core::integer::u32
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1
-  (v2: core::felt252) <- 2
-  (v3: core::felt252) <- core::felt252_sub(v1, v2)
-End:
-  Match(match core::felt252_is_zero(v3) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v4) => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Return()
-
-blk2:
-Statements:
 End:
   Return()
 
@@ -430,22 +414,6 @@ End:
 Final lowering:
 Parameters: v0: @{closure@lib.cairo:2:13: 2:25}, v1: (core::felt252,)
 blk0 (root):
-Statements:
-  (v2: core::felt252) <- 1
-  (v3: core::felt252) <- 2
-  (v4: core::felt252) <- core::felt252_sub(v2, v3)
-End:
-  Match(match core::felt252_is_zero(v4) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v5) => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Return()
-
-blk2:
 Statements:
 End:
   Return()

@@ -74,7 +74,7 @@ End:
 
 blk4:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v7, v8)
+  (v12: core::felt252) <- 3
 End:
   Goto(blk9, {v12 -> v13})
 
@@ -89,7 +89,7 @@ End:
 
 blk6:
 Statements:
-  (v17: core::felt252) <- core::felt252_add(v9, v14)
+  (v17: core::felt252) <- 7
 End:
   Goto(blk8, {v17 -> v18})
 
@@ -133,7 +133,6 @@ End:
 
 blk3:
 Statements:
-  (v7: core::felt252) <- 1
 End:
   Match(match_enum(v2) {
     Option::Some(v10) => blk4,
@@ -142,8 +141,7 @@ End:
 
 blk4:
 Statements:
-  (v8: core::felt252) <- 2
-  (v12: core::felt252) <- core::felt252_add(v7, v8)
+  (v12: core::felt252) <- 3
 End:
   Goto(blk9, {v12 -> v13})
 
@@ -157,14 +155,13 @@ End:
 
 blk6:
 Statements:
-  (v9: core::felt252) <- 3
-  (v14: core::felt252) <- 4
-  (v17: core::felt252) <- core::felt252_add(v9, v14)
+  (v17: core::felt252) <- 7
 End:
   Goto(blk8, {v17 -> v18})
 
 blk7:
 Statements:
+  (v7: core::felt252) <- 1
 End:
   Goto(blk8, {v7 -> v18})
 
@@ -356,7 +353,7 @@ Statements:
   (v2: core::felt252) <- 5
   (v3: ()) <- struct_construct()
   (v4: core::felt252) <- 3
-  (v5: core::felt252) <- core::felt252_add(v2, v4)
+  (v5: core::felt252) <- 8
 End:
   Return(v5)
 
@@ -364,8 +361,6 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 5
-  (v4: core::felt252) <- 3
-  (v5: core::felt252) <- core::felt252_add(v2, v4)
+  (v5: core::felt252) <- 8
 End:
   Return(v5)
