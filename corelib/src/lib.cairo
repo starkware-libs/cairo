@@ -432,6 +432,8 @@ mod fixed_size_array;
 
 pub mod iter;
 
+mod keyword_docs;
+
 pub mod metaprogramming;
 
 #[allow(unused_imports)]
