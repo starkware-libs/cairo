@@ -217,13 +217,13 @@ pub struct ComputationContext<'ctx, 'mt> {
     pub db: &'ctx dyn Database,
     pub diagnostics: &'mt mut SemanticDiagnostics<'ctx>,
     pub resolver: &'mt mut Resolver<'ctx>,
+    /// Tracks variable definitions and their mutability state.
+    pub variable_tracker: VariableTracker<'ctx>,
     signature: Option<&'mt Signature<'ctx>>,
     environment: Box<Environment<'ctx>>,
     /// Arenas of semantic objects.
     pub arenas: Arenas<'ctx>,
     function_id: ContextFunction<'ctx>,
-    /// Definitions of semantic variables.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId<'ctx>, semantic::Binding<'ctx>>,
     inner_ctx: Option<InnerContext<'ctx>>,
     cfg_set: Arc<CfgSet>,
     /// Whether to look for closures when calling variables.
@@ -243,10 +243,10 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
         environment: Environment<'ctx>,
         function_id: ContextFunction<'ctx>,
     ) -> Self {
-        let semantic_defs =
-            environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
         let cfg_set =
             Arc::new(resolver.settings.cfg_set.as_ref().unwrap_or_else(|| db.cfg_set()).clone());
+        let mut variable_tracker = VariableTracker::default();
+        variable_tracker.extend_from_environment(&environment);
         Self {
             db,
             diagnostics,
@@ -255,7 +255,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             environment: Box::new(environment),
             arenas: Default::default(),
             function_id,
-            semantic_defs,
+            variable_tracker,
             inner_ctx: None,
             cfg_set,
             are_closures_in_context: false,
@@ -270,6 +270,19 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
         resolver: &'mt mut Resolver<'ctx>,
     ) -> Self {
         Self::new(db, diagnostics, resolver, None, Environment::empty(), ContextFunction::Global)
+    }
+
+    /// Inserts a variable into both environment and variable tracker.
+    /// Returns the old value if the variable was already defined.
+    pub fn insert_variable(
+        &mut self,
+        name: SmolStrId<'ctx>,
+        var_def: Binding<'ctx>,
+    ) -> Option<Binding<'ctx>> {
+        // Ignore re-definitions in the variable tracker, diagnostics will be issued by the caller
+        // using this method's return value.
+        let _ = self.variable_tracker.insert(var_def.clone());
+        self.environment.variables.insert(name, var_def)
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
@@ -440,6 +453,36 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     /// using the restoration state returned by that method.
     fn restore_features(&mut self, feature_restore: FeatureConfigRestore<'ctx>) {
         self.resolver.restore_feature_config(feature_restore);
+    }
+}
+
+/// Tracks variable definitions and their mutability state.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct VariableTracker<'ctx> {
+    /// Definitions of semantic variables.
+    semantic_defs: UnorderedHashMap<semantic::VarId<'ctx>, Binding<'ctx>>,
+}
+
+impl<'ctx> VariableTracker<'ctx> {
+    /// Extends the variable tracker from the variables present in the environment.
+    pub fn extend_from_environment(&mut self, environment: &Environment<'ctx>) {
+        self.semantic_defs
+            .extend(environment.variables.values().cloned().map(|var| (var.id(), var)));
+    }
+    /// Inserts a semantic definition for a variable.
+    /// Returns the old value if the variable was already defined.
+    pub fn insert(&mut self, var: Binding<'ctx>) -> Option<Binding<'ctx>> {
+        self.semantic_defs.insert(var.id(), var)
+    }
+
+    /// Checks if a variable is mutable.
+    pub fn is_mut(&self, var_id: &semantic::VarId<'ctx>) -> bool {
+        self.semantic_defs.get(var_id).is_some_and(|def| def.is_mut())
+    }
+
+    /// Returns true if the expression is a variable or a member access of a mutable variable.
+    pub fn is_mut_expr(&self, expr: &ExprAndId<'ctx>) -> bool {
+        expr.as_member_path().is_some_and(|var| self.is_mut(&var.base_var()))
     }
 }
 
@@ -941,7 +984,7 @@ fn compute_expr_unary_semantic<'db>(
                         let deref_chain = ctx.db.deref_chain(
                             desnapped_expr_type,
                             ctx.resolver.owning_crate_id,
-                            desnapped_expr.expr.is_mutable_var(&ctx.semantic_defs),
+                            ctx.variable_tracker.is_mut_expr(&desnapped_expr),
                         )?;
                         let Some(DerefInfo { function_id, self_mutability, target_ty: _ }) =
                             deref_chain.derefs.first()
@@ -1051,7 +1094,7 @@ fn compute_expr_binary_semantic<'db>(
                 |actual_ty, expected_ty| WrongArgumentType { expected_ty, actual_ty },
             )?;
             // Verify the variable argument is mutable.
-            if !ctx.semantic_defs[&member_path.base_var()].is_mut() {
+            if !ctx.variable_tracker.is_mut(&member_path.base_var()) {
                 ctx.diagnostics.report(syntax.stable_ptr(db), AssignmentToImmutableVar);
             }
             Ok(Expr::Assignment(ExprAssignment {
@@ -1776,10 +1819,7 @@ fn compute_pattern_list_or_semantic<'db>(
                 ctx.diagnostics.report(v.stable_ptr, VariableDefinedMultipleTimesInPattern(v.name));
             }
             let var_def = Binding::LocalVar(v.var.clone());
-            // TODO(spapini): Wrap this in a function to couple with semantic_defs
-            // insertion.
-            ctx.environment.variables.insert(v.name, var_def.clone());
-            ctx.semantic_defs.insert(var_def.id(), var_def);
+            let _ = ctx.insert_variable(v.name, var_def);
         }
 
         if variable_names_in_pattern.len() != arm_patterns_variables.len() {
@@ -2124,8 +2164,7 @@ fn compute_expr_for_semantic<'db>(
                     .report(v.stable_ptr, VariableDefinedMultipleTimesInPattern(v.name));
             }
             let var_def = Binding::LocalVar(v.var.clone());
-            new_ctx.environment.variables.insert(v.name, var_def.clone());
-            new_ctx.semantic_defs.insert(var_def.id(), var_def);
+            let _ = new_ctx.insert_variable(v.name, var_def);
         }
         let (body, _inner_ctx) =
             compute_loop_body_semantic(new_ctx, syntax.body(db), InnerContextKind::For);
@@ -2215,9 +2254,7 @@ fn compute_expr_closure_semantic<'db>(
             new_ctx.diagnostics.report(param.stable_ptr(ctx.db), RefClosureParam);
         });
 
-        new_ctx
-            .semantic_defs
-            .extend(new_ctx.environment.variables.iter().map(|(_, var)| (var.id(), var.clone())));
+        new_ctx.variable_tracker.extend_from_environment(&new_ctx.environment);
 
         let return_type = match syntax.ret_ty(db) {
             OptionReturnTypeClause::ReturnTypeClause(ty_syntax) => resolve_type_ex(
@@ -2272,12 +2309,8 @@ fn compute_expr_closure_semantic<'db>(
     for (captured_var, expr) in
         chain!(usage.usage.iter(), usage.snap_usage.iter(), usage.changes.iter())
     {
-        let Some(var) = ctx.semantic_defs.get(&captured_var.base_var()) else {
-            // if the variable is not found in the semantic defs, it is closure parameter.
-            continue;
-        };
-
-        if var.is_mut() && reported.insert(expr.stable_ptr()) {
+        let base_var = &captured_var.base_var();
+        if ctx.variable_tracker.is_mut(base_var) && reported.insert(expr.stable_ptr()) {
             ctx.diagnostics.report(expr.stable_ptr(), MutableCapturedVariable);
         }
     }
@@ -2555,7 +2588,7 @@ fn get_method_function_candidates<'db>(
     let deref_chain = ctx.db.deref_chain(
         self_ty,
         ctx.resolver.owning_crate_id,
-        self_expr.expr.is_mutable_var(&ctx.semantic_defs),
+        ctx.variable_tracker.is_mut_expr(&self_expr),
     )?;
 
     // Find the first deref that contains the method.
@@ -3744,7 +3777,7 @@ fn get_enriched_type_member_access<'db>(
         ty = ctx.reduce_ty(ty);
     }
 
-    let is_mut_var = expr.expr.is_mutable_var(&ctx.semantic_defs);
+    let is_mut_var = ctx.variable_tracker.is_mut_expr(&expr);
     let key = (ty, is_mut_var);
     let mut enriched_members = match ctx.resolver.type_enriched_members.entry(key) {
         Entry::Occupied(entry) => {
@@ -4048,7 +4081,7 @@ fn expr_function_call<'db>(
                 return Err(ctx.diagnostics.report(arg.deref(), RefArgNotAVariable));
             };
             // Verify the variable argument is mutable.
-            if !ctx.semantic_defs[&ref_arg.base_var()].is_mut() {
+            if !ctx.variable_tracker.is_mut(&ref_arg.base_var()) {
                 ctx.diagnostics.report(arg.deref(), RefArgNotMutable);
             }
             // Verify that it is passed explicitly as 'ref'.
@@ -4264,7 +4297,7 @@ pub fn compute_and_append_statement_semantic<'db>(
                 {
                     macro_info.vars_to_expose.push((v.name, var_def.clone()));
                 }
-                ctx.semantic_defs.insert(var_def.id(), var_def);
+                let _ = ctx.variable_tracker.insert(var_def);
             }
             statements.push(ctx.arenas.statements.alloc(semantic::Statement::Let(
                 semantic::StatementLet {
@@ -4539,7 +4572,7 @@ fn add_value_to_statement_environment<'db>(
     var_def: Binding<'db>,
     stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
 ) {
-    if let Some(old_var) = ctx.environment.variables.insert(name, var_def.clone()) {
+    if let Some(old_var) = ctx.insert_variable(name, var_def) {
         ctx.diagnostics.report(
             stable_ptr,
             match old_var {
@@ -4548,7 +4581,6 @@ fn add_value_to_statement_environment<'db>(
             },
         );
     }
-    ctx.semantic_defs.insert(var_def.id(), var_def);
 }
 
 /// Adds an item to the statement environment and reports a diagnostic if the type is already
