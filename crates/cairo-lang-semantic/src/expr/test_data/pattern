@@ -270,3 +270,56 @@ error: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
  --> lib.cairo:2:9
     let (unresolved,) = if true {} else {
         ^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test duplicate variables in tuple pattern let.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let (_a, _a) = (1, 2);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test duplicate variables in match patterns.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    match (1, 2) {
+        (_a, _a) => (),
+    }
+
+    match ((1, 2), 3) {
+        ((_b, _), _b) => (),
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Missing variable in pattern.
+ --> lib.cairo:3:9
+        (_a, _a) => (),
+        ^^^^^^^^
+
+error: Missing variable in pattern.
+ --> lib.cairo:7:9
+        ((_b, _), _b) => (),
+        ^^^^^^^^^^^^^
