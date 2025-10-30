@@ -53,7 +53,11 @@ extern fn unbox<T>(box: Box<T>) -> T nopanic;
 extern fn box_forward_snapshot<T>(value: @Box<T>) -> Box<@T> nopanic;
 
 /// Basic trait for the `Box` type.
-#[generate_trait]
+pub trait BoxTrait<T> {
+    fn new(value: T) -> Box<T> nopanic;
+    fn unbox(self: Box<T>) -> T nopanic;
+    fn as_snapshot(self: @Box<T>) -> Box<@T> nopanic;
+}
 pub impl BoxImpl<T> of BoxTrait<T> {
     /// Creates a new `Box` with the given value.
     ///

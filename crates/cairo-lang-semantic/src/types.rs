@@ -23,7 +23,7 @@ use sha3::{Digest, Keccak256};
 
 use crate::corelib::{
     CorelibSemantic, concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait,
-    concrete_panic_destruct_trait, get_usize_ty, unit_ty,
+    concrete_panic_destruct_trait, core_box_ty, get_usize_ty, unit_ty,
 };
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
@@ -557,6 +557,16 @@ fn maybe_resolve_type<'db>(
             } else {
                 return Err(diagnostics.report(ty_syntax.stable_ptr(db), DerefNonRef { ty }));
             }
+        }
+        ast::Expr::Unary(unary_syntax)
+            if matches!(unary_syntax.op(db), ast::UnaryOperator::Reference(_)) =>
+        {
+            if !are_references_enabled(db, resolver.module_id) {
+                return Err(diagnostics.report(ty_syntax.stable_ptr(db), ReferencesDisabled));
+            }
+            let inner_ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(db), ctx);
+            let snapshot_ty = TypeLongId::Snapshot(inner_ty).intern(db);
+            core_box_ty(db, snapshot_ty)
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
             let Some([ty]) = &array_syntax.exprs(db).elements(db).collect_array() else {
@@ -1158,6 +1168,13 @@ pub(crate) fn are_coupons_enabled(db: &dyn Database, module_id: ModuleId<'_>) ->
     let owning_crate = module_id.owning_crate(db);
     let Some(config) = db.crate_config(owning_crate) else { return false };
     config.settings.experimental_features.coupons
+}
+
+/// Returns `true` if reference types are enabled in the module.
+pub(crate) fn are_references_enabled(db: &dyn Database, module_id: ModuleId<'_>) -> bool {
+    let owning_crate = module_id.owning_crate(db);
+    db.crate_config(owning_crate)
+        .is_some_and(|config| config.settings.experimental_features.references)
 }
 
 /// Trait for types-related semantic queries.

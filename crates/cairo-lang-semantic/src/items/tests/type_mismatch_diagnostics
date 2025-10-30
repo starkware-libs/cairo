@@ -225,3 +225,74 @@ error: `test::ImplIssue::Index` type mismatch: `@core::felt252` and `core::felt2
  --> lib.cairo:13:15
     1_felt252.issue(@2_felt252);
               ^^^^^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics of reference expressions.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    let _: Box<u32> =  &3_u32;
+    let _: Box<@felt252> =  &3_u32;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::box::Box::<core::integer::u32>", found: "core::box::Box::<@core::integer::u32>".
+ --> lib.cairo:2:24
+    let _: Box<u32> =  &3_u32;
+                       ^^^^^^
+
+error: Unexpected argument type. Expected: "core::box::Box::<@core::felt252>", found: "core::box::Box::<@core::integer::u32>".
+ --> lib.cairo:3:29
+    let _: Box<@felt252> =  &3_u32;
+                            ^^^^^^
+
+//! > ==========================================================================
+
+//! > Cannot assign to mutable variable after referencing it.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(mut param: u32) {
+    let mut x = 3_u32;
+    let _r =  &x;
+    x = 5;
+
+    let mut y = 2_felt252;
+    let _s =  &y;
+    y = 10;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Cannot assign to a variable that has been referenced
+ --> lib.cairo:4:5
+    x = 5;
+    ^^^^^
+note: variable was referenced here:
+  --> lib.cairo:3:15
+    let _r =  &x;
+              ^^
+
+error: Cannot assign to a variable that has been referenced
+ --> lib.cairo:8:5
+    y = 10;
+    ^^^^^^
+note: variable was referenced here:
+  --> lib.cairo:7:15
+    let _s =  &y;
+              ^^

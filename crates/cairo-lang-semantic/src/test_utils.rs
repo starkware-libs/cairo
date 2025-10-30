@@ -119,6 +119,7 @@ pub fn setup_test_crate_ex<'a>(
                 associated_item_constraints: true,
                 coupons: true,
                 user_defined_inline_macros: true,
+                references: true,
             },
             cfg_set: Default::default(),
         }
