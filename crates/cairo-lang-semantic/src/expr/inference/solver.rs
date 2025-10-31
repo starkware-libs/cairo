@@ -419,7 +419,7 @@ impl CanConformResult {
         res // Return the final result
     }
 }
-/// An inference without 'vars' that can be used to solve canonical traits which do not contains
+/// An inference without 'vars' that can be used to solve canonical traits which do not contain
 /// 'vars' or associated items.
 struct LiteInference<'db> {
     db: &'db dyn Database,
