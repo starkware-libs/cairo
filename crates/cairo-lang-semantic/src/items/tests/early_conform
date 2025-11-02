@@ -126,7 +126,7 @@ fn main() {
 
 //! > ==========================================================================
 
-//! > Early conform of an unary non-type-changing operator.
+//! > Early conform of a unary non-type-changing operator.
 
 //! > TODO(yuval):
 In the future, unary operators may change the types like any other function. This would make this
