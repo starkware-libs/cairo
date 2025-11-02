@@ -142,7 +142,7 @@ fn get_macro_name(with_newline: bool) -> &'static str {
     if with_newline { WritelnMacro::NAME } else { WriteMacro::NAME }
 }
 
-/// Information about a formatting a string for the write macros.
+/// Information about formatting a string for the write macros.
 struct FormattingInfo<'db> {
     /// The syntax rewrite node for the formatter input for the macro.
     formatter_arg_node: RewriteNode<'db>,

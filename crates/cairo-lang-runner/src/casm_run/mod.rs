@@ -1601,7 +1601,7 @@ fn get_secp256k1_exec_scope(
 
 // --- secp256r1 ---
 
-/// Executes the `secp256k1_new_syscall` syscall.
+/// Executes the `secp256r1_new_syscall` syscall.
 fn secp256r1_new(
     gas_counter: &mut usize,
     x: BigUint,
