@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use std::path::Path;
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
