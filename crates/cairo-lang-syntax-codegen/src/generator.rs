@@ -49,7 +49,7 @@ pub fn reformat_rust_code(text: String) -> String {
 }
 pub fn reformat_rust_code_inner(text: String) -> String {
     let sh = Shell::new().unwrap();
-    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2025-09-28");
+    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2025-11-02");
     let cmd_with_args = cmd.arg("--config-path").arg(project_root().join("rustfmt.toml"));
     let mut stdout = cmd_with_args.stdin(text).read().unwrap();
     if !stdout.ends_with('\n') {
