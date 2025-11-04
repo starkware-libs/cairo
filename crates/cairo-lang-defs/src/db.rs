@@ -188,7 +188,7 @@ pub trait DefsGroup: Database {
     fn crate_modules<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [ModuleId<'db>] {
         crate_modules(self.as_dyn_database(), crate_id)
     }
-    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
+    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<Vec<ModuleId<'db>>> {
         file_modules(self.as_dyn_database(), file_id)
     }
 
@@ -654,8 +654,9 @@ fn file_to_module_mapping<'db>(
     mapping
 }
 
-fn file_modules<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
-    Ok(file_to_module_mapping(db).get(&file_id).to_maybe()?)
+#[salsa::tracked]
+fn file_modules<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<Vec<ModuleId<'db>>> {
+    file_to_module_mapping(db).get(&file_id).cloned().to_maybe()
 }
 
 #[salsa::tracked]
