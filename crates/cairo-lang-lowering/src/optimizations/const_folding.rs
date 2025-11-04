@@ -550,6 +550,37 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else {
                 None
             }
+        } else if id == self.felt_div {
+            // There is no need to check if divisor is 0 and throw error, because casting to NonZero
+            // will add a panic that will always be thrown. TODO(eytan-starkware): Make
+            // sure that NonZero on a const zero leads to a compile error.
+            if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
+                && rhs.is_one()
+            {
+                // Check if dividing by 1 (returns the original value)
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                None
+            } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
+                && lhs.is_zero()
+            {
+                // Check if 0 is being divided (returns 0)
+                Some(self.propagate_zero_and_get_statement(stmt.outputs[0]))
+            } else if let (Some(lhs), Some(rhs)) =
+                (self.as_int(stmt.inputs[0].var_id), self.as_int(stmt.inputs[1].var_id))
+                && !rhs.is_zero()
+            {
+                // Constant fold when both operands are constants
+
+                // Use field_div for Felt252 division (requires non-zero divisor)
+                let lhs_felt = Felt252::from(lhs);
+                let rhs_felt = Felt252::from(rhs);
+                // For non-zero divisor, use field_div; the libfunc should handle zero checks
+                let rhs_nonzero = rhs_felt.try_into().expect("Non-zero divisor");
+                let value = lhs_felt.field_div(&rhs_nonzero).to_bigint();
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+            } else {
+                None
+            }
         } else if self.wide_mul_fns.contains(&id) {
             let lhs = self.as_int_ex(stmt.inputs[0].var_id);
             let rhs = self.as_int(stmt.inputs[1].var_id);
@@ -1266,6 +1297,8 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     felt_add: ExternFunctionId<'db>,
     /// The `felt252_mul` libfunc.
     felt_mul: ExternFunctionId<'db>,
+    /// The `felt252_div` libfunc.
+    felt_div: ExternFunctionId<'db>,
     /// The `into_box` libfunc.
     into_box: ExternFunctionId<'db>,
     /// The `unbox` libfunc.
@@ -1437,6 +1470,7 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             felt_sub: core.extern_function_id("felt252_sub"),
             felt_add: core.extern_function_id("felt252_add"),
             felt_mul: core.extern_function_id("felt252_mul"),
+            felt_div: core.extern_function_id("felt252_div"),
             into_box: box_module.extern_function_id("into_box"),
             unbox: box_module.extern_function_id("unbox"),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),

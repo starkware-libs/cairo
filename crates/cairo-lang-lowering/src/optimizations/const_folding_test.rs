@@ -33,8 +33,16 @@ fn test_match_optimizer(
     .split();
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-
-    let mut before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
+    let mut before = db
+        .lowered_body(function_id, LoweringStage::PreOptimizations)
+        .unwrap_or_else(|_| {
+            panic!(
+                "Failed to get lowered body for function {:?}. Diagnostics: {:?}",
+                function_id,
+                db.module_lowering_diagnostics(test_function.module_id)
+            )
+        })
+        .clone();
     OptimizationPhase::ApplyInlining { enable_const_folding: false }
         .apply(db, function_id, &mut before)
         .unwrap();
