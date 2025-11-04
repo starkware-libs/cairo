@@ -6493,3 +6493,127 @@ End:
   Return(v6)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Felt252 div const fold.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    let x = core::felt252_div(6, 30);
+    x * 5
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 6
+  (v1: core::zeroable::NonZero::<core::felt252>) <- NonZero(30)
+  (v2: core::felt252) <- core::felt252_div(v0, v1)
+  (v3: core::felt252) <- 5
+  (v4: core::felt252) <- core::felt252_mul(v2, v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 6
+  (v1: core::zeroable::NonZero::<core::felt252>) <- NonZero(30)
+  (v2: core::felt252) <- 2894802230932904970957858226476056084498485772265277359978473644908697616385
+  (v3: core::felt252) <- 5
+  (v4: core::felt252) <- 1
+End:
+  Return(v4)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Felt252 div by one.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+    core::felt252_div(a, 1)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::zeroable::NonZero::<core::felt252>) <- NonZero(1)
+  (v2: core::felt252) <- core::felt252_div(v0, v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::zeroable::NonZero::<core::felt252>) <- NonZero(1)
+  (v2: core::felt252) <- core::felt252_div(v0, v1)
+End:
+  Return(v0)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Felt252 zero div.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: NonZero<felt252>) -> felt252 {
+    core::felt252_div(0, a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::zeroable::NonZero::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+  (v2: core::felt252) <- core::felt252_div(v1, v0)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::zeroable::NonZero::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 0
+  (v2: core::felt252) <- 0
+End:
+  Return(v2)
+
+//! > lowering_diagnostics

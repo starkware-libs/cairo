@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -33,8 +34,18 @@ fn test_match_optimizer(
     .split();
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-
-    let mut before = db.lowered_body(function_id, LoweringStage::PreOptimizations).unwrap().clone();
+    let mut before = db
+        .lowered_body(function_id, LoweringStage::PreOptimizations)
+        .unwrap_or_else(|_| {
+            let semantic_diagnostics = db.module_semantic_diagnostics(test_function.module_id).unwrap();
+            panic!(
+                "Failed to get lowered body for function {:?}. Diagnostics: {:?}\n Semantic diagnostics: {:?}",
+                function_id,
+                db.module_lowering_diagnostics(test_function.module_id),
+                semantic_diagnostics
+            )
+        })
+        .clone();
     OptimizationPhase::ApplyInlining { enable_const_folding: false }
         .apply(db, function_id, &mut before)
         .unwrap();

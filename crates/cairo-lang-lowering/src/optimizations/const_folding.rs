@@ -499,9 +499,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
                 None
-            } else if let (Some(lhs), Some(rhs)) =
-                (self.as_int(stmt.inputs[0].var_id), self.as_int(stmt.inputs[1].var_id))
-            {
+            } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id) && let Some(rhs) = self.as_int(stmt.inputs[1].var_id) {
                 let value = Felt252::from(lhs - rhs).to_bigint();
                 Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
             } else {
@@ -518,9 +516,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
                 None
-            } else if let (Some(lhs), Some(rhs)) =
-                (self.as_int(stmt.inputs[0].var_id), self.as_int(stmt.inputs[1].var_id))
-            {
+            } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id) && let Some(rhs) = self.as_int(stmt.inputs[1].var_id) {
                 let value = Felt252::from(lhs + rhs).to_bigint();
                 Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
             } else {
@@ -543,10 +539,36 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]));
                 None
-            } else if let (Some((lhs_val, lhs_nz)), Some((rhs_val, rhs_nz))) = (lhs, rhs) {
+            } else if let Some((lhs_val, lhs_nz)) = lhs && let Some((rhs_val, rhs_nz)) = rhs {
                 let value = Felt252::from(lhs_val * rhs_val).to_bigint();
                 let nz_ty = lhs_nz && rhs_nz;
                 Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], nz_ty))
+            } else {
+                None
+            }
+        } else if id == self.felt_div {
+            // Note that divisor is never 0, due to NonZero type always being the divisor.
+            if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
+                // Returns the original value when dividing by 1.
+                && rhs.is_one()
+            {
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                None
+            } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
+                // If the value is 0, result is 0 regardless of the divisor.
+                && lhs.is_zero()
+            {
+                Some(self.propagate_zero_and_get_statement(stmt.outputs[0]))
+            } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id) && let Some(rhs) = self.as_int(stmt.inputs[1].var_id) {
+                // Constant fold when both operands are constants
+
+                // Use field_div for Felt252 division (requires non-zero divisor)
+                let lhs_felt = Felt252::from(lhs);
+                let rhs_felt = Felt252::from(rhs);
+                // For non-zero divisor, use field_div; the libfunc should handle zero checks
+                let rhs_nonzero = rhs_felt.try_into().expect("Non-zero divisor");
+                let value = lhs_felt.field_div(&rhs_nonzero).to_bigint();
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
             } else {
                 None
             }
@@ -1266,6 +1288,8 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     felt_add: ExternFunctionId<'db>,
     /// The `felt252_mul` libfunc.
     felt_mul: ExternFunctionId<'db>,
+    /// The `felt252_div` libfunc.
+    felt_div: ExternFunctionId<'db>,
     /// The `into_box` libfunc.
     into_box: ExternFunctionId<'db>,
     /// The `unbox` libfunc.
@@ -1437,6 +1461,7 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             felt_sub: core.extern_function_id("felt252_sub"),
             felt_add: core.extern_function_id("felt252_add"),
             felt_mul: core.extern_function_id("felt252_mul"),
+            felt_div: core.extern_function_id("felt252_div"),
             into_box: box_module.extern_function_id("into_box"),
             unbox: box_module.extern_function_id("unbox"),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),
