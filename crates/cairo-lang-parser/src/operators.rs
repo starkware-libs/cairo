@@ -4,6 +4,7 @@ pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
     match kind {
         SyntaxKind::TerminalAt
         | SyntaxKind::TerminalAnd
+        | SyntaxKind::TerminalAndAnd
         | SyntaxKind::TerminalNot
         | SyntaxKind::TerminalBitNot
         | SyntaxKind::TerminalMul

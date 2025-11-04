@@ -4,7 +4,7 @@
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn f(x: &u32) {}
+fn f(x: &u32, y: &&u32, z: &&&u32) {}
 
 //! > top_level_kind
 ExprUnary
@@ -30,7 +30,7 @@ ExprUnary
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn f(x: &@u32, y: @ &u32) {}
+fn f(x: &@u32, y: @&u32) {}
 
 //! > top_level_kind
 ParamList
@@ -79,7 +79,7 @@ ParamList
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn f() -> Option< &u64> {}
+fn f() -> Option<&u64> {}
 
 //! > top_level_kind
 ExprUnary
@@ -99,13 +99,17 @@ ExprUnary
 
 //! > ==========================================================================
 
-//! > Test double reference &&x
+//! > Test double reference with literal &&5_u32
 
 //! > test_runner_name
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-fn f(x: & &u32) {}
+fn f() {
+    let x = &1_u32;
+    let y = &&2_u32;
+    let z = &&&3_u32;
+}
 
 //! > top_level_kind
 ExprUnary
@@ -119,8 +123,4 @@ ExprUnary
     ├── op (kind: TokenAnd): '&'
     └── expr (kind: ExprUnary)
         ├── op (kind: TokenAnd): '&'
-        └── expr (kind: ExprPath)
-            ├── dollar (kind: OptionTerminalDollarEmpty) []
-            └── segments (kind: ExprPathInner)
-                └── item #0 (kind: PathSegmentSimple)
-                    └── ident (kind: TokenIdentifier): 'u32'
+        └── expr (kind: TokenLiteralNumber): '5_u32'
