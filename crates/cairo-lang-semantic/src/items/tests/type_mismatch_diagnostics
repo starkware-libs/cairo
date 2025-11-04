@@ -235,8 +235,8 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
-    let _: Box<u32> =  &3_u32;
-    let _: Box<@felt252> =  &3_u32;
+    let _: Box<u32> = &3_u32;
+    let _: Box<@felt252> = &3_u32;
 }
 
 //! > function_name
@@ -246,14 +246,14 @@ foo
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::box::Box::<core::integer::u32>", found: "core::box::Box::<@core::integer::u32>".
- --> lib.cairo:2:24
-    let _: Box<u32> =  &3_u32;
-                       ^^^^^^
+ --> lib.cairo:2:23
+    let _: Box<u32> = &3_u32;
+                      ^^^^^^
 
 error: Unexpected argument type. Expected: "core::box::Box::<@core::felt252>", found: "core::box::Box::<@core::integer::u32>".
- --> lib.cairo:3:29
-    let _: Box<@felt252> =  &3_u32;
-                            ^^^^^^
+ --> lib.cairo:3:28
+    let _: Box<@felt252> = &3_u32;
+                           ^^^^^^
 
 //! > ==========================================================================
 
@@ -265,11 +265,11 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > function
 fn foo(mut param: u32) {
     let mut x = 3_u32;
-    let _r =  &x;
+    let _r = &x;
     x = 5;
 
     let mut y = 2_felt252;
-    let _s =  &y;
+    let _s = &y;
     y = 10;
 }
 
@@ -284,15 +284,15 @@ error: Cannot assign to a variable that has been referenced
     x = 5;
     ^^^^^
 note: variable was referenced here:
-  --> lib.cairo:3:15
-    let _r =  &x;
-              ^^
+  --> lib.cairo:3:14
+    let _r = &x;
+             ^^
 
 error: Cannot assign to a variable that has been referenced
  --> lib.cairo:8:5
     y = 10;
     ^^^^^^
 note: variable was referenced here:
-  --> lib.cairo:7:15
-    let _s =  &y;
-              ^^
+  --> lib.cairo:7:14
+    let _s = &y;
+             ^^

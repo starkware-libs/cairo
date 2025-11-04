@@ -758,7 +758,9 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalAnd => {
+                SyntaxKind::TerminalAnd
+                    if matches!(self.parent_kind(db), Some(SyntaxKind::ExprBinary)) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         13,
                         BreakLinePointIndentation::Indented,
