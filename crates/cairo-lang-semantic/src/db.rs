@@ -434,7 +434,7 @@ fn file_semantic_diagnostics<'db>(
     file_id: FileId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for module_id in db.file_modules(file_id)?.iter().copied() {
+    for module_id in db.file_modules(file_id).to_owned()?.iter().copied() {
         if let Ok(module_diagnostics) = db.module_semantic_diagnostics(module_id) {
             diagnostics.extend(module_diagnostics)
         }

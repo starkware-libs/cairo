@@ -2,7 +2,6 @@ use std::ops::Add;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{FileId, FileLongId, SpanInFile, VirtualFile};
 use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_sierra::program::StatementIdx;
@@ -167,7 +166,7 @@ pub fn file_module_absolute_identifier<'db>(
         file_id = parent.file_id;
     }
 
-    let file_modules = db.file_modules(file_id).to_option()?;
+    let file_modules = db.file_modules(file_id).as_ref().ok()?;
     let full_path = file_modules.first().unwrap().full_path(db);
 
     Some(full_path)

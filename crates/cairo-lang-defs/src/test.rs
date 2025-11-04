@@ -182,14 +182,17 @@ fn test_submodules() {
     );
 
     // Test file mappings.
-    assert_eq!(db.file_modules(db.module_main_file(module_id).unwrap()).unwrap(), vec![module_id]);
     assert_eq!(
-        db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap(),
-        vec![submodule_id]
+        db.file_modules(db.module_main_file(module_id).unwrap()).as_ref().unwrap(),
+        &vec![module_id]
     );
     assert_eq!(
-        db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap(),
-        vec![subsubmodule_id]
+        db.file_modules(db.module_main_file(submodule_id).unwrap()).as_ref().unwrap(),
+        &vec![submodule_id]
+    );
+    assert_eq!(
+        db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).as_ref().unwrap(),
+        &vec![subsubmodule_id]
     );
 }
 
