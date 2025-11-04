@@ -768,7 +768,7 @@ define_language_element_id_as_enum! {
     }
 }
 
-// TODO(spapini): Override full_path for to include parents, for better debug.
+// TODO(spapini): Override full_path to include parents, for better debug.
 define_top_level_language_element_id!(ParamId, ParamLongId, ast::Param<'db>);
 define_language_element_id_basic!(GenericParamId, GenericParamLongId, ast::GenericParam<'db>);
 impl<'db> GenericParamLongId<'db> {
