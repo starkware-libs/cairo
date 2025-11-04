@@ -4,39 +4,157 @@
 test_expr_semantics
 
 //! > expr_code
-&5_u32
-
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
+{
+    let _x= & 1_u32;
+    let _y= && 2_u32;
+    let _z= &&& 3_u32;
+}
 
 //! > expected_semantics
-FunctionCall(
-    ExprFunctionCall {
-        function: core::box::BoxImpl::<@core::integer::u32>::new,
-        args: [
-            Value(
-                Snapshot(
-                    ExprSnapshot {
-                        inner: Literal(
-                            ExprLiteral {
-                                value: 5,
-                                ty: core::integer::u32,
-                            },
-                        ),
-                        ty: @core::integer::u32,
-                    },
-                ),
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _x,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: core::box::BoxImpl::<@core::integer::u32>::new,
+                            args: [
+                                Value(
+                                    Snapshot(
+                                        ExprSnapshot {
+                                            inner: Literal(
+                                                ExprLiteral {
+                                                    value: 1,
+                                                    ty: core::integer::u32,
+                                                },
+                                            ),
+                                            ty: @core::integer::u32,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
+                            ty: core::box::Box::<@core::integer::u32>,
+                        },
+                    ),
+                    else_clause: None,
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _y,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                            args: [
+                                Value(
+                                    Snapshot(
+                                        ExprSnapshot {
+                                            inner: FunctionCall(
+                                                ExprFunctionCall {
+                                                    function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                    args: [
+                                                        Value(
+                                                            Snapshot(
+                                                                ExprSnapshot {
+                                                                    inner: Literal(
+                                                                        ExprLiteral {
+                                                                            value: 2,
+                                                                            ty: core::integer::u32,
+                                                                        },
+                                                                    ),
+                                                                    ty: @core::integer::u32,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    ],
+                                                    coupon_arg: None,
+                                                    ty: core::box::Box::<@core::integer::u32>,
+                                                },
+                                            ),
+                                            ty: @core::box::Box::<@core::integer::u32>,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
+                            ty: core::box::Box::<@core::box::Box::<@core::integer::u32>>,
+                        },
+                    ),
+                    else_clause: None,
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        _z,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: core::box::BoxImpl::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>::new,
+                            args: [
+                                Value(
+                                    Snapshot(
+                                        ExprSnapshot {
+                                            inner: FunctionCall(
+                                                ExprFunctionCall {
+                                                    function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                                                    args: [
+                                                        Value(
+                                                            Snapshot(
+                                                                ExprSnapshot {
+                                                                    inner: FunctionCall(
+                                                                        ExprFunctionCall {
+                                                                            function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                                            args: [
+                                                                                Value(
+                                                                                    Snapshot(
+                                                                                        ExprSnapshot {
+                                                                                            inner: Literal(
+                                                                                                ExprLiteral {
+                                                                                                    value: 3,
+                                                                                                    ty: core::integer::u32,
+                                                                                                },
+                                                                                            ),
+                                                                                            ty: @core::integer::u32,
+                                                                                        },
+                                                                                    ),
+                                                                                ),
+                                                                            ],
+                                                                            coupon_arg: None,
+                                                                            ty: core::box::Box::<@core::integer::u32>,
+                                                                        },
+                                                                    ),
+                                                                    ty: @core::box::Box::<@core::integer::u32>,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    ],
+                                                    coupon_arg: None,
+                                                    ty: core::box::Box::<@core::box::Box::<@core::integer::u32>>,
+                                                },
+                                            ),
+                                            ty: @core::box::Box::<@core::box::Box::<@core::integer::u32>>,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            coupon_arg: None,
+                            ty: core::box::Box::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>,
+                        },
+                    ),
+                    else_clause: None,
+                },
             ),
         ],
-        coupon_arg: None,
-        ty: core::box::Box::<@core::integer::u32>,
+        tail: None,
+        ty: (),
     },
 )
 
@@ -44,23 +162,13 @@ FunctionCall(
 
 //! > ==========================================================================
 
-//! > Test double reference & &x
+//! > Test double reference & &x with space
 
 //! > test_runner_name
 test_expr_semantics
 
 //! > expr_code
 & &5_u32
-
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
 
 //! > expected_semantics
 FunctionCall(
@@ -106,6 +214,155 @@ FunctionCall(
 
 //! > ==========================================================================
 
+//! > Test double and triple reference in function parameter types
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+fn f(x: &u32, y: &&u32, z: &&&u32) {}
+
+//! > function_body
+
+//! > expr_code
+f(&1,&&2, &&&3)
+
+
+//! > expected_semantics
+FunctionCall(
+    ExprFunctionCall {
+        function: test::f,
+        args: [
+            Value(
+                FunctionCall(
+                    ExprFunctionCall {
+                        function: core::box::BoxImpl::<@core::integer::u32>::new,
+                        args: [
+                            Value(
+                                Snapshot(
+                                    ExprSnapshot {
+                                        inner: Literal(
+                                            ExprLiteral {
+                                                value: 1,
+                                                ty: core::integer::u32,
+                                            },
+                                        ),
+                                        ty: @core::integer::u32,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::box::Box::<@core::integer::u32>,
+                    },
+                ),
+            ),
+            Value(
+                FunctionCall(
+                    ExprFunctionCall {
+                        function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                        args: [
+                            Value(
+                                Snapshot(
+                                    ExprSnapshot {
+                                        inner: FunctionCall(
+                                            ExprFunctionCall {
+                                                function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                args: [
+                                                    Value(
+                                                        Snapshot(
+                                                            ExprSnapshot {
+                                                                inner: Literal(
+                                                                    ExprLiteral {
+                                                                        value: 2,
+                                                                        ty: core::integer::u32,
+                                                                    },
+                                                                ),
+                                                                ty: @core::integer::u32,
+                                                            },
+                                                        ),
+                                                    ),
+                                                ],
+                                                coupon_arg: None,
+                                                ty: core::box::Box::<@core::integer::u32>,
+                                            },
+                                        ),
+                                        ty: @core::box::Box::<@core::integer::u32>,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::box::Box::<@core::box::Box::<@core::integer::u32>>,
+                    },
+                ),
+            ),
+            Value(
+                FunctionCall(
+                    ExprFunctionCall {
+                        function: core::box::BoxImpl::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>::new,
+                        args: [
+                            Value(
+                                Snapshot(
+                                    ExprSnapshot {
+                                        inner: FunctionCall(
+                                            ExprFunctionCall {
+                                                function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                                                args: [
+                                                    Value(
+                                                        Snapshot(
+                                                            ExprSnapshot {
+                                                                inner: FunctionCall(
+                                                                    ExprFunctionCall {
+                                                                        function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                                        args: [
+                                                                            Value(
+                                                                                Snapshot(
+                                                                                    ExprSnapshot {
+                                                                                        inner: Literal(
+                                                                                            ExprLiteral {
+                                                                                                value: 3,
+                                                                                                ty: core::integer::u32,
+                                                                                            },
+                                                                                        ),
+                                                                                        ty: @core::integer::u32,
+                                                                                    },
+                                                                                ),
+                                                                            ),
+                                                                        ],
+                                                                        coupon_arg: None,
+                                                                        ty: core::box::Box::<@core::integer::u32>,
+                                                                    },
+                                                                ),
+                                                                ty: @core::box::Box::<@core::integer::u32>,
+                                                            },
+                                                        ),
+                                                    ),
+                                                ],
+                                                coupon_arg: None,
+                                                ty: core::box::Box::<@core::box::Box::<@core::integer::u32>>,
+                                            },
+                                        ),
+                                        ty: @core::box::Box::<@core::box::Box::<@core::integer::u32>>,
+                                    },
+                                ),
+                            ),
+                        ],
+                        coupon_arg: None,
+                        ty: core::box::Box::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>,
+                    },
+                ),
+            ),
+        ],
+        coupon_arg: None,
+        ty: (),
+    },
+)
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test reference of snapshot &@x
 
 //! > test_runner_name
@@ -114,15 +371,6 @@ test_expr_semantics
 //! > expr_code
 &@5_u32
 
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
 
 //! > expected_semantics
 FunctionCall(
@@ -165,15 +413,6 @@ test_expr_semantics
 //! > expr_code
 @&5_u32
 
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
 
 //! > expected_semantics
 Snapshot(
@@ -220,15 +459,6 @@ let b = 5_u32;
 //! > expr_code
 a & &b
 
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
 
 //! > expected_semantics
 FunctionCall(
@@ -296,15 +526,6 @@ let p = PPoint { point: Point { x: 1, y: 2 } };
 //! > expr_code
 &p.point.x
 
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
 
 //! > expected_semantics
 FunctionCall(
@@ -356,16 +577,6 @@ let arr = array![1_u32, 2_u32, 3_u32];
 //! > expr_code
 &arr[1]
 
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
-
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
@@ -415,66 +626,6 @@ FunctionCall(
 
 //! > ==========================================================================
 
-//! > Test reference in function call
-
-//! > test_runner_name
-test_expr_semantics
-
-//! > module_code
-fn takes_box(b: Box<@u32>) {}
-
-//! > function_body
-let x = 42_u32;
-
-//! > expr_code
-takes_box(&x)
-
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
-
-//! > expected_semantics
-FunctionCall(
-    ExprFunctionCall {
-        function: test::takes_box,
-        args: [
-            Value(
-                FunctionCall(
-                    ExprFunctionCall {
-                        function: core::box::BoxImpl::<@core::integer::u32>::new,
-                        args: [
-                            Value(
-                                Snapshot(
-                                    ExprSnapshot {
-                                        inner: Var(
-                                            LocalVarId(test::x),
-                                        ),
-                                        ty: @core::integer::u32,
-                                    },
-                                ),
-                            ),
-                        ],
-                        coupon_arg: None,
-                        ty: core::box::Box::<@core::integer::u32>,
-                    },
-                ),
-            ),
-        ],
-        coupon_arg: None,
-        ty: (),
-    },
-)
-
-//! > expected_diagnostics
-
-//! > ==========================================================================
-
 //! > Test reference in assignment
 
 //! > test_runner_name
@@ -486,16 +637,6 @@ let y = &x;
 
 //! > expr_code
 y
-
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
 
 //! > expected_semantics
 Var(
@@ -524,15 +665,6 @@ let r = &value;
 //! > expr_code
 modify_value(ref value)
 
-//! > crate_settings
-edition = "2023_01"
-
-[experimental_features]
-negative_impls = false
-associated_item_constraints = false
-coupons = false
-user_defined_inline_macros = false
-references = true
 
 //! > expected_semantics
 FunctionCall(
