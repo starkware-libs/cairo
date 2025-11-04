@@ -144,7 +144,7 @@ pub fn compile_test_prepared_db<'db>(
     .collect();
 
     let SierraProgramWithDebug { program: mut sierra_program, debug_info } =
-        get_sierra_program_for_functions(db, func_ids)?;
+        get_sierra_program_for_functions(db, func_ids)?.clone();
 
     let function_set_costs: OrderedHashMap<FunctionId, CostTokenMap<i32>> = all_entry_points
         .iter()
@@ -162,7 +162,9 @@ pub fn compile_test_prepared_db<'db>(
     let mut annotations = Annotations::default();
     if tests_compilation_config.add_statements_functions {
         annotations.extend(Annotations::from(
-            debug_info.statements_locations.extract_statements_functions(db),
+            debug_info
+                .statements_locations
+                .extract_statements_source_code_locations(db),
         ))
     }
     if tests_compilation_config.add_statements_code_locations {
