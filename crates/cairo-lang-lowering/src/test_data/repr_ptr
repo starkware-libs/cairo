@@ -24,7 +24,7 @@ extern fn baz(y: &u32) nopanic;
 edition = "2024_07"
 
 [experimental_features]
-references = true
+repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -67,7 +67,7 @@ extern fn bar(x: &u32, y: &&u32, z: &&&u32) nopanic;
 edition = "2024_07"
 
 [experimental_features]
-references = true
+repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -111,7 +111,7 @@ extern fn bar(x: &u32) nopanic;
 edition = "2024_07"
 
 [experimental_features]
-references = true
+repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -149,7 +149,7 @@ extern fn bar(x: &@u32) nopanic;
 edition = "2024_07"
 
 [experimental_features]
-references = true
+repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -190,7 +190,7 @@ extern fn bar(x: &u32) nopanic;
 edition = "2024_07"
 
 [experimental_features]
-references = true
+repr_ptrs = true
 
 //! > semantic_diagnostics
 

@@ -18,7 +18,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 Block(
@@ -188,7 +188,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 FunctionCall(
@@ -255,7 +255,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 FunctionCall(
@@ -408,7 +408,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 FunctionCall(
@@ -459,7 +459,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 Snapshot(
@@ -514,7 +514,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 FunctionCall(
@@ -590,7 +590,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 FunctionCall(
@@ -650,7 +650,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 FunctionCall(
@@ -721,7 +721,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 Var(
@@ -758,7 +758,7 @@ negative_impls = false
 associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = false
-references = true
+repr_ptrs = true
 
 //! > expected_semantics
 FunctionCall(
@@ -775,11 +775,11 @@ FunctionCall(
 )
 
 //! > expected_diagnostics
-error: Cannot assign to a variable that has been referenced
+error: Cannot assign to a variable with a taken pointer
  --> lib.cairo:7:18
 modify_value(ref value)
                  ^^^^^
-note: variable was referenced here:
+note: variable pointer taken here:
   --> lib.cairo:6:9
 let r = &value; {
         ^^^^^^
