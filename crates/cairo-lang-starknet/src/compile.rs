@@ -8,6 +8,7 @@ use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -41,7 +42,9 @@ pub fn compile_path(
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
-        .with_inlining_strategy(compiler_config.inlining_strategy)
+        .with_optimizations(Optimizations::enabled_with_default_movable_functions(
+            compiler_config.inlining_strategy,
+        ))
         .detect_corelib()
         .with_default_plugin_suite(starknet_plugin_suite())
         .build()?;

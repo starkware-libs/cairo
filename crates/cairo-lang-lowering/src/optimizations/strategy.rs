@@ -9,11 +9,13 @@ use super::gas_redeposit::gas_redeposit;
 use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
 use crate::Lowered;
+use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::branch_inversion::branch_inversion;
 use crate::optimizations::cancel_ops::cancel_ops;
+use crate::optimizations::config::Optimizations;
 use crate::optimizations::const_folding::const_folding;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
@@ -135,48 +137,61 @@ impl<'db> OptimizationStrategyId<'db> {
 /// Query implementation of [crate::db::LoweringGroup::baseline_optimization_strategy].
 #[salsa::tracked]
 pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
-    OptimizationStrategy(vec![
-        // Must be right before inlining.
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ApplyInlining { enable_const_folding: true },
-        OptimizationPhase::ReturnOptimization,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::BranchInversion,
-        OptimizationPhase::CancelOps,
-        // Must be right before const folding.
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ConstFolding,
-        OptimizationPhase::OptimizeMatches,
-        OptimizationPhase::SplitStructs,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::OptimizeMatches,
-        OptimizationPhase::ReorganizeBlocks,
-        OptimizationPhase::CancelOps,
-        OptimizationPhase::ReorganizeBlocks,
-        // Performing CSE here after blocks are the most contiguous, to reach maximum effect.
-        OptimizationPhase::Cse,
-        OptimizationPhase::DedupBlocks,
-        // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
-        OptimizationPhase::ReturnOptimization,
-        OptimizationPhase::ReorderStatements,
-        OptimizationPhase::ReorganizeBlocks,
-    ])
+    match db.optimizations() {
+        Optimizations::Enabled(_) => {
+            OptimizationStrategy(vec![
+                // Must be right before inlining.
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ApplyInlining { enable_const_folding: true },
+                OptimizationPhase::ReturnOptimization,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::BranchInversion,
+                OptimizationPhase::CancelOps,
+                // Must be right before const folding.
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ConstFolding,
+                OptimizationPhase::OptimizeMatches,
+                OptimizationPhase::SplitStructs,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::OptimizeMatches,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::CancelOps,
+                OptimizationPhase::ReorganizeBlocks,
+                // Performing CSE here after blocks are the most contiguous, to reach maximum
+                // effect.
+                OptimizationPhase::Cse,
+                OptimizationPhase::DedupBlocks,
+                // Re-run ReturnOptimization to eliminate harmful merges introduced by DedupBlocks.
+                OptimizationPhase::ReturnOptimization,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::ReorganizeBlocks,
+            ])
+        }
+        Optimizations::Disabled => OptimizationStrategy(vec![OptimizationPhase::ApplyInlining {
+            enable_const_folding: false,
+        }]),
+    }
     .intern(db)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::final_optimization_strategy].
 #[salsa::tracked]
 pub fn final_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationStrategyId<'db> {
-    OptimizationStrategy(vec![
-        OptimizationPhase::GasRedeposit,
-        OptimizationPhase::EarlyUnsafePanic,
-        // Apply `TrimUnreachable` here to remove unreachable `redeposit_gas` and `unsafe_panic`
-        // calls.
-        OptimizationPhase::TrimUnreachable,
-        OptimizationPhase::LowerImplicits,
-        OptimizationPhase::ReorganizeBlocks,
-    ])
+    match db.optimizations() {
+        Optimizations::Enabled(_) => {
+            OptimizationStrategy(vec![
+                OptimizationPhase::GasRedeposit,
+                OptimizationPhase::EarlyUnsafePanic,
+                // Apply `TrimUnreachable` here to remove unreachable `redeposit_gas` and
+                // `unsafe_panic` calls.
+                OptimizationPhase::TrimUnreachable,
+                OptimizationPhase::LowerImplicits,
+                OptimizationPhase::ReorganizeBlocks,
+            ])
+        }
+        Optimizations::Disabled => OptimizationStrategy(vec![OptimizationPhase::LowerImplicits]),
+    }
     .intern(db)
 }

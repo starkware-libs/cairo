@@ -614,7 +614,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
         // No specialization when avoiding inlining.
-        if matches!(self.db.optimization_config().inlining_strategy, InliningStrategy::Avoid) {
+        if matches!(self.db.optimizations().inlining_strategy(), InliningStrategy::Avoid) {
             return None;
         }
 
@@ -1175,7 +1175,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
     /// Returns true if const-folding should be skipped for the current function.
     pub fn should_skip_const_folding(&self, db: &'db dyn Database) -> bool {
-        if db.optimization_config().skip_const_folding {
+        if db.optimizations().skip_const_folding() {
             return true;
         }
 

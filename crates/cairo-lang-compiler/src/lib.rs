@@ -11,6 +11,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -76,7 +77,9 @@ pub fn compile_cairo_project_at_path(
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
     let mut db = RootDatabase::builder()
-        .with_inlining_strategy(compiler_config.inlining_strategy)
+        .with_optimizations(Optimizations::enabled_with_default_movable_functions(
+            compiler_config.inlining_strategy,
+        ))
         .detect_corelib()
         .build()?;
     let main_crate_ids = setup_project(&mut db, path)?;
@@ -101,7 +104,9 @@ pub fn compile(
     compiler_config: CompilerConfig<'_>,
 ) -> Result<Program> {
     let db = RootDatabase::builder()
-        .with_inlining_strategy(compiler_config.inlining_strategy)
+        .with_optimizations(Optimizations::enabled_with_default_movable_functions(
+            compiler_config.inlining_strategy,
+        ))
         .with_project_config(project_config.clone())
         .build()?;
     let main_crate_ids = get_main_crate_ids_from_project(&db, &project_config);
