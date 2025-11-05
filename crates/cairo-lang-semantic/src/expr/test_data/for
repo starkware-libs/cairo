@@ -57,3 +57,26 @@ error[E0006]: Identifier not found.
  --> lib.cairo:7:9
         x;
         ^
+
+//! > ==========================================================================
+
+//! > Test for loop with duplicate variables in pattern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    for (_a, _a) in array![(1, 2)] {}
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Redefinition of variable name "_a" in pattern.
+ --> lib.cairo:2:14
+    for (_a, _a) in array![(1, 2)] {}
+             ^^
