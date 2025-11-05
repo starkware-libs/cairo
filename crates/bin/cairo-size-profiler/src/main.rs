@@ -16,7 +16,6 @@ use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
-use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_executable::compile::{find_executable_functions, originating_function_path};
 use cairo_lang_executable_plugin::executable_plugin_suite;
@@ -32,7 +31,7 @@ use cairo_lang_starknet::compile::{SemanticEntryPoints, extract_semantic_entrypo
 use cairo_lang_starknet::contract::find_contracts;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
+use cairo_lang_syntax::node::{Terminal, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use clap::Parser;
 use itertools::{Itertools, chain};
