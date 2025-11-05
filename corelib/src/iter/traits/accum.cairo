@@ -27,8 +27,7 @@ impl SumAddableTypesImpl<A, +Add<A>, impl ZeroA: core::num::traits::Zero<A>> of 
 /// [`product()`]: Iterator::product
 /// [`FromIterator`]: crate::iter::FromIterator
 pub trait Product<A> {
-    /// Takes an iterator and generates `Self` from the elements by "summing up"
-    /// the items.
+    /// Takes an iterator and generates `Self` from the elements by multiplying the items.
     fn product<I, +Iterator<I>[Item: A], +Destruct<I>, +Destruct<A>>(iter: I) -> A;
 }
 
