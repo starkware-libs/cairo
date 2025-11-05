@@ -33,12 +33,11 @@ use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, Generic
 use crate::inline::get_inline_diagnostics;
 use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::lower::{MultiLowering, lower_semantic_function};
-use crate::optimizations::config::OptimizationConfig;
+use crate::optimizations::config::{OptimizationConfig, Optimizations};
 use crate::optimizations::scrub_units::scrub_units;
 use crate::optimizations::strategy::OptimizationStrategyId;
 use crate::panic::lower_panics;
 use crate::specialization::specialized_function_lowered;
-use crate::utils::InliningStrategy;
 use crate::{
     BlockEnd, BlockId, DependencyType, Location, Lowered, LoweringStage, MatchInfo, Statement, ids,
 };
@@ -364,9 +363,9 @@ pub trait LoweringGroup: Database {
     }
 
     /// Returns the configuration struct that controls the behavior of the optimization passes.
-    fn optimization_config(&self) -> &OptimizationConfig {
+    fn optimization_config(&self) -> Option<&OptimizationConfig> {
         let db = self.as_dyn_database();
-        lowering_group_input(db).optimization_config(db).as_ref().unwrap()
+        lowering_group_input(db).optimization_config(db).as_ref()
     }
 
     /// Returns the final optimization strategy that is applied on top of
@@ -395,27 +394,33 @@ impl<T: Database + ?Sized> LoweringGroup for T {}
 
 pub fn init_lowering_group(
     db: &mut (dyn Database + 'static),
-    inlining_strategy: InliningStrategy,
+    optimizations: Optimizations,
     code_size_estimator: Option<CodeSizeEstimator>,
 ) {
-    let mut moveable_functions: Vec<String> = chain!(
-        ["bool_not_impl"],
-        ["felt252_add", "felt252_sub", "felt252_mul", "felt252_div"],
-        ["array::array_new", "array::array_append"],
-        ["box::unbox", "box::box_forward_snapshot", "box::into_box"],
-    )
-    .map(|s| s.to_string())
-    .collect();
+    match optimizations {
+        Optimizations::Disabled => {}
+        Optimizations::Enabled { inlining_strategy } => {
+            let mut moveable_functions: Vec<String> = chain!(
+                ["bool_not_impl"],
+                ["felt252_add", "felt252_sub", "felt252_mul", "felt252_div"],
+                ["array::array_new", "array::array_append"],
+                ["box::unbox", "box::box_forward_snapshot", "box::into_box"],
+            )
+            .map(|s| s.to_string())
+            .collect();
 
-    for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"] {
-        moveable_functions.push(format!("integer::{ty}_wide_mul"));
+            for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"] {
+                moveable_functions.push(format!("integer::{ty}_wide_mul"));
+            }
+
+            lowering_group_input(db).set_optimization_config(db).to(Some(
+                OptimizationConfig::default()
+                    .with_moveable_functions(moveable_functions)
+                    .with_inlining_strategy(inlining_strategy),
+            ));
+        }
     }
 
-    lowering_group_input(db).set_optimization_config(db).to(Some(
-        OptimizationConfig::default()
-            .with_moveable_functions(moveable_functions)
-            .with_inlining_strategy(inlining_strategy),
-    ));
     lowering_group_input(db).set_code_size_estimator(db).to(code_size_estimator);
 }
 

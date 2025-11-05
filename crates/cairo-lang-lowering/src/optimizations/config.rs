@@ -6,15 +6,25 @@ use salsa::Database;
 use crate::db::LoweringGroup;
 use crate::utils::InliningStrategy;
 
+/// An optimization config that allows controlling the value of the `optimization_config` field in
+/// [`crate::db::LoweringGroupInput`] via a call to [`crate::db::init_lowering_group`].
+#[derive(Clone, Debug)]
+pub enum Optimizations {
+    Disabled,
+    Enabled { inlining_strategy: InliningStrategy },
+}
+
 /// A configuration struct that controls the behavior of the optimization passes.
+/// Other crates should **not** create this struct directly, but instead use [`Optimizations`] and
+/// pass it to [`crate::db::init_lowering_group`].
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct OptimizationConfig {
     /// A list of functions that can be moved during the reorder_statements optimization.
-    pub moveable_functions: Vec<String>,
+    pub(crate) moveable_functions: Vec<String>,
     /// Determines whether inlining is disabled.
-    pub inlining_strategy: InliningStrategy,
+    pub(crate) inlining_strategy: InliningStrategy,
     /// Should const folding be skipped.
-    pub skip_const_folding: bool,
+    pub(crate) skip_const_folding: bool,
 }
 
 impl OptimizationConfig {
@@ -54,6 +64,7 @@ pub fn priv_movable_function_ids<'db>(
     db: &'db dyn Database,
 ) -> UnorderedHashSet<ExternFunctionId<'db>> {
     db.optimization_config()
+        .unwrap()
         .moveable_functions
         .iter()
         .map(|name: &String| {

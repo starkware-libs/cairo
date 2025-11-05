@@ -38,7 +38,12 @@ pub fn priv_function_with_body_sierra_data<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<SierraFunctionWithBodyData<'db>> {
-    let lowered_function = db.lowered_body(function_id, LoweringStage::Final)?;
+    let lowering_stage = if db.optimization_config().is_none() {
+        LoweringStage::PreOptimizations
+    } else {
+        LoweringStage::Final
+    };
+    let lowered_function = db.lowered_body(function_id, lowering_stage)?;
     lowered_function.blocks.has_root()?;
 
     // Find the local variables.

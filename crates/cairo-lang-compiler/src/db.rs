@@ -10,6 +10,7 @@ use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
 use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
@@ -74,11 +75,11 @@ pub struct RootDatabase {
 impl salsa::Database for RootDatabase {}
 
 impl RootDatabase {
-    fn new(default_plugin_suite: PluginSuite, inlining_strategy: InliningStrategy) -> Self {
+    fn new(default_plugin_suite: PluginSuite, optimizations: Optimizations) -> Self {
         let mut res = Self { storage: Default::default() };
         init_external_files(&mut res);
         init_files_group(&mut res);
-        init_lowering_group(&mut res, inlining_strategy, Some(estimate_code_size));
+        init_lowering_group(&mut res, optimizations, Some(estimate_code_size));
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
         init_sierra_gen_group(&mut res);
@@ -117,7 +118,7 @@ pub struct RootDatabaseBuilder {
     unsafe_panic: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
-    inlining_strategy: InliningStrategy,
+    optimizations: Optimizations,
 }
 
 impl RootDatabaseBuilder {
@@ -130,7 +131,7 @@ impl RootDatabaseBuilder {
             unsafe_panic: false,
             project_config: None,
             cfg_set: None,
-            inlining_strategy: InliningStrategy::Default,
+            optimizations: Optimizations::Enabled { inlining_strategy: InliningStrategy::Default },
         }
     }
 
@@ -144,8 +145,8 @@ impl RootDatabaseBuilder {
         self
     }
 
-    pub fn with_inlining_strategy(&mut self, inlining_strategy: InliningStrategy) -> &mut Self {
-        self.inlining_strategy = inlining_strategy;
+    pub fn with_optimizations(&mut self, optimizations: Optimizations) -> &mut Self {
+        self.optimizations = optimizations;
         self
     }
 
@@ -184,7 +185,8 @@ impl RootDatabaseBuilder {
         //   Errors if something is not OK are very subtle, mostly this results in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
-        let mut db = RootDatabase::new(self.default_plugin_suite.clone(), self.inlining_strategy);
+        let mut db =
+            RootDatabase::new(self.default_plugin_suite.clone(), self.optimizations.clone());
 
         if let Some(cfg_set) = &self.cfg_set {
             db.use_cfg(cfg_set);
