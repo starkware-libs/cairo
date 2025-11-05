@@ -2295,8 +2295,8 @@ fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Ve
     let [res_start, res_end] = value else {
         panic!("Unexpected return value from contract call");
     };
-    let res_start: usize = res_start.clone().to_bigint().try_into().unwrap();
-    let res_end: usize = res_end.clone().to_bigint().try_into().unwrap();
+    let res_start: usize = res_start.to_bigint().try_into().unwrap();
+    let res_end: usize = res_end.to_bigint().try_into().unwrap();
     (res_start..res_end).map(|i| memory[i].unwrap()).collect()
 }
 
