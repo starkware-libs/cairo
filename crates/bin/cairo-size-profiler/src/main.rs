@@ -22,6 +22,7 @@ use cairo_lang_executable::compile::{find_executable_functions, originating_func
 use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateInput;
+use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_runner::profiling::user_function_idx_by_sierra_statement_idx;
@@ -89,7 +90,9 @@ fn main() -> anyhow::Result<()> {
             .with_default_plugin_suite(executable_plugin_suite());
     }
     if let Some(inline_threshold) = args.inline_threshold {
-        db_builder.with_inlining_strategy(InliningStrategy::InlineSmallFunctions(inline_threshold));
+        db_builder.with_optimizations(Optimizations::enabled_with_default_movable_functions(
+            InliningStrategy::InlineSmallFunctions(inline_threshold),
+        ));
     }
     let db = &mut db_builder.build()?;
 

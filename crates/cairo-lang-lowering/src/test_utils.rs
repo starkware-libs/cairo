@@ -11,6 +11,7 @@ use salsa::Database;
 use crate::Lowered;
 use crate::db::init_lowering_group;
 use crate::fmt::LoweredFormatter;
+use crate::optimizations::config::Optimizations;
 use crate::utils::InliningStrategy;
 
 #[salsa::db]
@@ -33,7 +34,11 @@ impl LoweringDatabaseForTesting {
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
-        init_lowering_group(&mut res, InliningStrategy::Default, None);
+        init_lowering_group(
+            &mut res,
+            Optimizations::enabled_with_default_movable_functions(InliningStrategy::Default),
+            None,
+        );
         res
     }
 

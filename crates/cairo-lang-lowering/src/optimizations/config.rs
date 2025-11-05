@@ -1,51 +1,68 @@
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
+use itertools::chain;
 use salsa::Database;
 
 use crate::db::LoweringGroup;
 use crate::utils::InliningStrategy;
 
-/// A configuration struct that controls the behavior of the optimization passes.
+/// A configuration that controls occurrences of optimizations and their behavior.
 #[derive(Debug, Eq, PartialEq, Clone)]
+pub enum Optimizations {
+    Disabled,
+    Enabled(OptimizationConfig),
+}
+
+/// A configuration struct that controls the behavior of the optimization passes.
+#[derive(Default, Debug, Eq, PartialEq, Clone)]
 pub struct OptimizationConfig {
     /// A list of functions that can be moved during the reorder_statements optimization.
-    pub moveable_functions: Vec<String>,
+    pub(crate) moveable_functions: Vec<String>,
     /// Determines whether inlining is disabled.
-    pub inlining_strategy: InliningStrategy,
+    pub(crate) inlining_strategy: InliningStrategy,
     /// Should const folding be skipped.
-    pub skip_const_folding: bool,
+    pub(crate) skip_const_folding: bool,
 }
 
 impl OptimizationConfig {
-    /// Sets the list of moveable functions.
-    pub fn with_moveable_functions(mut self, moveable_functions: Vec<String>) -> Self {
-        self.moveable_functions = moveable_functions;
-        self
-    }
-    /// Sets the list of moveable functions to a minimal set, useful for testing.
-    pub fn with_minimal_movable_functions(self) -> Self {
-        self.with_moveable_functions(vec!["felt252_sub".into()])
-    }
-    /// Sets the `inlining_strategy` flag.
-    pub fn with_inlining_strategy(mut self, inlining_strategy: InliningStrategy) -> Self {
-        self.inlining_strategy = inlining_strategy;
-        self
-    }
-    /// Sets the `skip_const_folding` flag.
     pub fn with_skip_const_folding(mut self, skip_const_folding: bool) -> Self {
         self.skip_const_folding = skip_const_folding;
         self
     }
 }
 
-impl Default for OptimizationConfig {
-    fn default() -> Self {
-        Self {
-            moveable_functions: vec![],
-            inlining_strategy: InliningStrategy::Default,
+impl Optimizations {
+    /// Returns enabled optimization with the list of moveable functions set to a default set and
+    /// `inlining_strategy` set to the passed value.
+    pub fn enabled_with_default_movable_functions(inlining_strategy: InliningStrategy) -> Self {
+        Self::Enabled(OptimizationConfig {
+            moveable_functions: default_moveable_functions(),
+            inlining_strategy,
             skip_const_folding: false,
-        }
+        })
+    }
+
+    /// Returns enabled optimization with the list of moveable functions set to a minimal set.
+    /// Useful for testing.
+    pub fn enabled_with_minimal_movable_functions() -> Self {
+        Self::Enabled(OptimizationConfig {
+            moveable_functions: vec!["felt252_sub".to_string()],
+            inlining_strategy: Default::default(),
+            skip_const_folding: false,
+        })
+    }
+
+    pub fn moveable_functions(&self) -> Option<&[String]> {
+        if let Self::Enabled(config) = self { Some(&config.moveable_functions) } else { None }
+    }
+
+    pub fn inlining_strategy(&self) -> Option<InliningStrategy> {
+        if let Self::Enabled(config) = self { Some(config.inlining_strategy) } else { None }
+    }
+
+    pub fn skip_const_folding(&self) -> Option<bool> {
+        if let Self::Enabled(config) = self { Some(config.skip_const_folding) } else { None }
     }
 }
 
@@ -53,8 +70,9 @@ impl Default for OptimizationConfig {
 pub fn priv_movable_function_ids<'db>(
     db: &'db dyn Database,
 ) -> UnorderedHashSet<ExternFunctionId<'db>> {
-    db.optimization_config()
-        .moveable_functions
+    db.optimizations()
+        .moveable_functions()
+        .unwrap()
         .iter()
         .map(|name: &String| {
             let mut path_iter = name.split("::");
@@ -74,4 +92,20 @@ pub fn priv_movable_function_ids<'db>(
             panic!("Got empty string as movable_function");
         })
         .collect()
+}
+
+fn default_moveable_functions() -> Vec<String> {
+    let mut moveable_functions: Vec<String> = chain!(
+        ["bool_not_impl"],
+        ["felt252_add", "felt252_sub", "felt252_mul", "felt252_div"],
+        ["array::array_new", "array::array_append"],
+        ["box::unbox", "box::box_forward_snapshot", "box::into_box"],
+    )
+    .map(|s| s.to_string())
+    .collect();
+
+    for ty in ["i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"] {
+        moveable_functions.push(format!("integer::{ty}_wide_mul"));
+    }
+    moveable_functions
 }

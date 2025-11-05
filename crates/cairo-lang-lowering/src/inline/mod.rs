@@ -67,7 +67,10 @@ pub fn priv_should_inline<'db>(
         return Ok(false);
     }
 
-    match (db.optimization_config().inlining_strategy, function_inline_config(db, function_id)?) {
+    match (
+        db.optimizations().inlining_strategy().unwrap(),
+        function_inline_config(db, function_id)?,
+    ) {
         (_, InlineConfiguration::Always(_)) => Ok(true),
         (InliningStrategy::Avoid, _) | (_, InlineConfiguration::Never(_)) => Ok(false),
         (_, InlineConfiguration::Should(_)) => Ok(true),
