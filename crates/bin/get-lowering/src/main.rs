@@ -29,7 +29,6 @@ use cairo_lang_semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionWithBodyId, ImplFunctionBodyId,
     ImplGenericFunctionWithBodyId,
 };
-use cairo_lang_semantic::items::imp::ImplSemantic;
 use cairo_lang_starknet::starknet_plugin_suite;
 use cairo_lang_test_plugin::test_plugin_suite;
 use cairo_lang_utils::Intern;
