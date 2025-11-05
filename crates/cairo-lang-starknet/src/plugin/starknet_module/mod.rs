@@ -253,7 +253,7 @@ fn grand_grand_parent_starknet_module<'db>(
 }
 
 /// Whether the generated code should be backwards compatible with the old storage generated code.
-/// This mostly affect the visibility of the generated storage structs, as everything was public in
+/// This mostly affects the visibility of the generated storage structs, as everything was public in
 /// the old version regardless of the original visibility.
 pub fn backwards_compatible_storage(edition: Edition) -> bool {
     match edition {
