@@ -279,20 +279,20 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Cannot assign to a variable that has been referenced
+error: Cannot assign to a pointed-to variable
  --> lib.cairo:4:5
     x = 5;
     ^^^^^
-note: variable was referenced here:
+note: variable pointed to here:
   --> lib.cairo:3:14
     let _r = &x;
              ^^
 
-error: Cannot assign to a variable that has been referenced
+error: Cannot assign to a pointed-to variable
  --> lib.cairo:8:5
     y = 10;
     ^^^^^^
-note: variable was referenced here:
+note: variable pointed to here:
   --> lib.cairo:7:14
     let _s = &y;
              ^^

@@ -205,9 +205,9 @@ pub struct ExperimentalFeaturesConfig {
     /// Allows using user defined inline macros.
     #[serde(default)]
     pub user_defined_inline_macros: bool,
-    /// Allows using reference types (&T), which desugar to BoxTrait<@T>.
+    /// Allows using representation pointer types (&T), which desugar to BoxTrait<@T>.
     #[serde(default)]
-    pub references: bool,
+    pub repr_ptrs: bool,
 }
 
 /// Function to get a virtual file from an external id.
@@ -413,7 +413,7 @@ pub fn init_dev_corelib(db: &mut dyn salsa::Database, core_lib_dir: PathBuf) {
                 associated_item_constraints: true,
                 coupons: true,
                 user_defined_inline_macros: true,
-                references: true,
+                repr_ptrs: true,
             },
         },
         cache_file: None,

@@ -510,14 +510,14 @@ impl<'ctx> VariableTracker<'ctx> {
 
         if let Some(&referenced_at) = self.referenced_mut_vars.get(var_id) {
             let note = DiagnosticNote::with_location(
-                "variable was referenced here".into(),
+                "variable pointed to here".into(),
                 StableLocation::new(referenced_at).diagnostic_location(db),
             );
-            diagnostics.report(error_ptr, AssignmentToReferencedVariable(vec![note]));
+            diagnostics.report(error_ptr, AssignmentToReprPtrVariable(vec![note]));
         }
     }
 
-    /// Marks an expression as referenced if it refers to a mutable variable.
+    /// Marks an expression as pointed to if it refers to a mutable variable.
     pub fn mark_referenced(
         &mut self,
         expr: &ExprAndId<'ctx>,
@@ -1060,12 +1060,12 @@ fn compute_expr_unary_semantic<'db>(
         }
         (UnaryOperator::Reference(_), inner) => {
             let stable_ptr = syntax.stable_ptr(db);
-            if !crate::types::are_references_enabled(ctx.db, ctx.resolver.module_id) {
-                return Err(ctx.diagnostics.report(stable_ptr, ReferencesDisabled));
+            if !crate::types::are_repr_ptrs_enabled(ctx.db, ctx.resolver.module_id) {
+                return Err(ctx.diagnostics.report(stable_ptr, ReprPtrsDisabled));
             }
             let inner_expr = compute_expr_semantic(ctx, inner);
 
-            // Disable mutability from referenced variable.
+            // Disable mutability from repr ptr variable.
             ctx.variable_tracker.mark_referenced(&inner_expr, stable_ptr.untyped());
 
             // Snapshot inner expression.
