@@ -91,7 +91,7 @@ cairo_lang_test_utils::test_file_test!(
         range: "range",
         const_: "const",
         use_: "use",
-        reference: "reference",
+        repr_ptr: "repr_ptr",
     },
     test_expr_semantics
 );
