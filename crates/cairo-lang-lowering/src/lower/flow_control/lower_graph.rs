@@ -140,7 +140,7 @@ impl<'mt, 'db, 'a> LowerGraphContext<'db, 'mt, 'a> {
     }
 
     /// Passes the parent block builder to the child node.
-    /// This function is used by nodes that has a single child node.
+    /// This function is used by nodes that have a single child node.
     fn pass_builder_to_child(
         &mut self,
         parent_id: NodeId,
