@@ -138,7 +138,7 @@ pub struct CasmBuilder {
     /// The number of vars created. Used to not reuse var names.
     var_count: usize,
     /// Is the current state reachable.
-    /// Example for unreachable state is after a unconditional jump, before any label is stated.
+    /// Example for unreachable state is after an unconditional jump, before any label is stated.
     reachable: bool,
 }
 impl CasmBuilder {
