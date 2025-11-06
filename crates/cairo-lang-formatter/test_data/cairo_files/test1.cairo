@@ -31,6 +31,8 @@ let x:T=1;     let x:[u32;3]=[1,2, 3]; let[a,b,c]=x;
 let [
         a, b, c
     ] = f("very long string that should not cause a break in the fixed size array pattern");
+       // Long fixed-size array
+   let arr = [composition_log_size - LOG_COMPOSITION_SPLIT_FACTOR; COMPOSITION_SPLIT_FACTOR * QM31_EXTENSION_DEGREE];
 }
 
 
