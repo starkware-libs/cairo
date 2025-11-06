@@ -290,7 +290,7 @@ mod keyword_return {}
 /// fn first_gt(xs: Array<u32>, cmp: u32) -> Option<u32> {
 ///     let mut i = 0;
 ///     let v = loop {
-///         if i > xs.len() {
+///         if i >= xs.len() {
 ///             return None;
 ///         }
 ///
