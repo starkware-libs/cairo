@@ -48,10 +48,6 @@ pub struct CompilerConfig<'a> {
     /// Disables inlining functions.
     pub inlining_strategy: InliningStrategy,
 
-    /// The name of the allowed libfuncs list to use in compilation.
-    /// If None the default list of audited libfuncs will be used.
-    pub allowed_libfuncs_list_name: Option<String>,
-
     /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
     pub add_statements_functions: bool,
