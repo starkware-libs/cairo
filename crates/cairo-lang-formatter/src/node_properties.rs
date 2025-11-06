@@ -818,6 +818,21 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         true,
                     ))
                 }
+                SyntaxKind::TerminalSemicolon
+                    if matches!(
+                        self.parent_kind(db),
+                        Some(SyntaxKind::ExprFixedSizeArray | SyntaxKind::PatternFixedSizeArray)
+                    ) =>
+                {
+                    BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
+                        // The precedence should be less than the wrapping precedence of the
+                        // ExprList.
+                        1,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    ))
+                }
                 _ => BreakLinePointsPositions::None,
             },
         }
