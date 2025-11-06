@@ -184,7 +184,7 @@ pub trait Iterator<T> {
     /// assert_eq!(iter.nth(1), None);
     /// ```
     ///
-    /// Returning `None` if there are less than `n + 1` elements:
+    /// Returning `None` if there are fewer than `n + 1` elements:
     ///
     /// ```
     /// let mut iter = array![1, 2, 3].into_iter();
@@ -782,7 +782,7 @@ pub trait Iterator<T> {
 
     /// Takes two iterators and creates a new iterator over both in sequence.
     ///
-    /// `chain()` will return a new iterator which will first iterate over
+    /// `chain()` will return a new iterator that will first iterate over
     /// values from the first iterator and then over values from the second
     /// iterator.
     ///
