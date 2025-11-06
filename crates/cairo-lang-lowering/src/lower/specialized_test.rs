@@ -7,7 +7,7 @@ use salsa::Setter;
 use crate::db::{LoweringGroup, lowering_group_input};
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::optimizations::config::OptimizationConfig;
+use crate::optimizations::config::{OptimizationConfig, Optimizations};
 use crate::test_utils::LoweringDatabaseForTesting;
 use crate::utils::InliningStrategy;
 use crate::{LoweringStage, Statement};
@@ -28,10 +28,13 @@ fn test_specialized_function(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::new();
-    lowering_group_input(db).set_optimization_config(db).to(Some(
-        OptimizationConfig::default()
-            .with_inlining_strategy(InliningStrategy::InlineSmallFunctions(0)),
-    ));
+    lowering_group_input(db).set_optimizations(db).to(Some(Optimizations::Enabled(
+        OptimizationConfig {
+            moveable_functions: vec![],
+            inlining_strategy: InliningStrategy::InlineSmallFunctions(0),
+            skip_const_folding: false,
+        },
+    )));
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),
