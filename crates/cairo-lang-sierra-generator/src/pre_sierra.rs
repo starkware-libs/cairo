@@ -2,7 +2,7 @@ use std::hash::Hash;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
@@ -50,6 +50,7 @@ pub struct Function<'db> {
     pub entry_point: LabelId<'db>,
     /// The parameters for the function.
     pub parameters: Vec<program::Param>,
+    pub variable_locations: Vec<(sierra::ids::VarId, LocationId<'db>)>,
 }
 
 unsafe impl<'db> salsa::Update for Function<'db> {

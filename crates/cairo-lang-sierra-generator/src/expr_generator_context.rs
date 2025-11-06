@@ -1,12 +1,12 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
+use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, Lowered};
 use salsa::Database;
@@ -26,7 +26,7 @@ pub struct ExprGeneratorContext<'db, 'a> {
 
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
+    variables: OrderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId<'db>>,
 
     /// The current ap tracking status.
@@ -55,7 +55,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
             lifetime,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
-            variables: UnorderedHashMap::default(),
+            variables: OrderedHashMap::default(),
             block_labels: OrderedHashMap::default(),
             ap_tracking_enabled: true,
             ap_tracking_configuration,
@@ -199,6 +199,22 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     /// Returns the statements generated for the expression.
     pub fn statements(self) -> Vec<pre_sierra::StatementWithLocation<'db>> {
         self.statements
+    }
+
+    pub fn variable_locations(&self) -> Vec<(cairo_lang_sierra::ids::VarId, LocationId<'db>)> {
+        self.variables
+            .iter()
+            .map(|(definition, var)| {
+                (
+                    var.clone(),
+                    match definition {
+                        SierraGenVar::LoweringVar(id) | SierraGenVar::UninitializedLocal(id) => {
+                            self.lowered.variables[*id].location
+                        }
+                    },
+                )
+            })
+            .collect()
     }
 }
 
