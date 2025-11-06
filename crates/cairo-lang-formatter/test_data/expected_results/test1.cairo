@@ -36,6 +36,9 @@ fn bar<T>(x: T) -> T {
     let [a, b, c] = f(
         "very long string that should not cause a break in the fixed size array pattern",
     );
+    // Long fixed-size array
+    let arr = [composition_log_size - LOG_COMPOSITION_SPLIT_FACTOR;
+        COMPOSITION_SPLIT_FACTOR * QM31_EXTENSION_DEGREE];
 }
 
 
