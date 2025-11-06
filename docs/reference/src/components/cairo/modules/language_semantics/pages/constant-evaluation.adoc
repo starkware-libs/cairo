@@ -1,6 +1,105 @@
 = Constant evaluation
 
-This section is a work in progress.
+== Overview
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+Constant evaluation is the process of validating and computing expressions in const context during
+semantic analysis. The Cairo compiler resolves, type-checks and interprets eligible expressions to
+produce a `ConstValue` for items such as constant definitions and constant function bodies.
+
+Implementation reference:
+
+- `crates/cairo-lang-semantic/src/items/constant.rs`
+  * `resolve_const_expr_and_evaluate()` — resolve types, validate const context, evaluate value.
+  * `validate_const_expr()` and `ConstantEvaluateContext::validate()` — admissible constructs.
+  * `ConstantEvaluateContext::evaluate()` — interpreter for const expressions.
+  * `evaluate_function_call()` / `evaluate_const_function_call()` — const function calls.
+
+Note: IR-level constant folding is an optimization step and not part of language semantics:
+
+- `crates/cairo-lang-lowering/src/optimizations/const_folding.rs`.
+
+== Allowed constructs in const expressions
+
+As validated by `ConstantEvaluateContext::validate()` and evaluated by
+`ConstantEvaluateContext::evaluate()`:
+
+- Literals (with literal validation against the target type).
+- Tuples.
+- Struct construction without `base` (members evaluated in declared order).
+- Enum variant construction.
+- Member access on const structs.
+- Fixed-size arrays:
+  * Explicit item list.
+  * Value-and-size form (value duplicated `size` times, where `size` is const-int).
+- `snapshot` / `desnap` of const values.
+- Logical operators `&&` / `||` (short-circuiting on `bool`).
+- `match` on enum consts (including pattern destructuring).
+- `if` with boolean conditions and `let`-patterns in conditions.
+- Blocks with `let` and expression statements; variables may be bound from const values.
+
+Unsupported constructs in const context are diagnosed as `UnsupportedConstant`.
+
+== Function calls in const context
+
+Calls are permitted if one of the following holds (see `is_function_const` and
+`evaluate_const_function_call`):
+
+- The function is marked `is_const` in its signature and depth limits are respected.
+- The call resolves to a trait implementation in the core library for specific const-enabled
+  traits (see below).
+- Specific extern functions enumerated in `ConstCalcInfo` are allowed.
+
+Const-enabled traits (corelib):
+
+- Arithmetic and bitwise: `Neg`, `Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`, `BitAnd`, `BitOr`, `BitXor`.
+- Comparisons and logical: `PartialEq`, `PartialOrd`, `Not`.
+
+Allowed externs (from `ConstCalcInfo::new`):
+
+- Upcast:
+  * `core::internal::bounded_int::upcast`.
+  * `core::integer::{u8,u16,u32,u64,u128,i8,i16,i32,i64,i128}_to_felt252`.
+  * `core::starknet::class_hash::class_hash_to_felt252`.
+  * `core::starknet::contract_address::contract_address_to_felt252`.
+- Downcast / trimming (returning an `Option`-like enum; some are reversed per configuration):
+  * `core::internal::bounded_int::{downcast,bounded_int_trim_min,bounded_int_trim_max}`.
+  * `core::integer::{u8,u16,u32,u64,u128,i8,i16,i32,i64,i128}_try_from_felt252`.
+  * `core::starknet::class_hash::class_hash_try_from_felt252`.
+  * `core::starknet::contract_address::contract_address_try_from_felt252`.
+- Non-zero utilities:
+  * `core::zeroable::unwrap_non_zero`.
+  * `core::{felt252_is_zero}` and integer zero checks: `bounded_int_is_zero`, `u8_is_zero`,
+    `u16_is_zero`, `u32_is_zero`, `u64_is_zero`, `u128_is_zero`, `u256_is_zero`.
+
+== Numeric semantics in const evaluation
+
+- `felt252` results are reduced modulo the field prime during evaluation.
+- `u256` is represented as a struct of two `u128` values `(low, high)` in `ConstValue::Struct`.
+- `NonZero<T>` values are wrapped/unwrapped explicitly by the evaluator when applicable.
+- `DivRem` returns a struct with quotient and remainder, each validated against the operand type.
+
+== Type checking and inference
+
+Before evaluation, the expression’s type is conformed to the target type. Type inference must be
+solved or finalized for consts; unresolved or mismatched types result in diagnostics and a
+`ConstValue::Missing` placeholder.
+
+== Diagnostics and limits
+
+- `UnsupportedConstant` — construct not permitted in const context.
+- `DivisionByZero` — division or remainder by zero detected during evaluation.
+- `ConstantCalculationDepthExceeded` — recursion/expansion beyond the internal limit (100).
+- `InnerFailedConstantCalculation` — bubbled-up error from a called const function; includes a note
+  with the inner location.
+
+== Relation to optimization passes
+
+The semantic rules above define what is valid and how values are computed for consts. Separately,
+the lowering/IR optimizer performs constant folding and related simplifications on lowered code
+(`crates/cairo-lang-lowering/src/optimizations/const_folding.rs`). Those optimizations do not alter
+language semantics.
+
+== Related sources
+
+- `crates/cairo-lang-semantic/src/items/constant.rs`
+- `crates/cairo-lang-lowering/src/optimizations/const_folding.rs`
