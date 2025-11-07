@@ -39,7 +39,13 @@ pub fn test_sierra_locations(
         for stmt in &function.unwrap().body {
             sierra_code
                 .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
-            for (i, location) in stmt.location.iter().enumerate() {
+            for (i, location) in stmt
+                .location
+                .map(|l| l.all_locations(db))
+                .unwrap_or_default()
+                .into_iter()
+                .enumerate()
+            {
                 if i == 0 {
                     sierra_code.push_str("Originating location:\n");
                 } else {
@@ -51,8 +57,7 @@ pub fn test_sierra_locations(
                     true,
                 ));
                 sierra_code.push('\n');
-                if let Some(function) =
-                    maybe_containing_function_identifier_for_tests(db, *location)
+                if let Some(function) = maybe_containing_function_identifier_for_tests(db, location)
                 {
                     sierra_code.push_str(&format!("In function: {function}\n",));
                 }

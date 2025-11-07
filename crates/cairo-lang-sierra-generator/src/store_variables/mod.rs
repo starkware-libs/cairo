@@ -92,10 +92,10 @@ where
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements {
         let prev_len = handler.result.len();
-        let location = statement.location.clone();
+        let location = statement.location;
         state_opt = handler.handle_statement(state_opt, statement, get_libfunc_signature);
         for statement in &mut handler.result[prev_len..] {
-            statement.set_location(location.clone())
+            statement.set_location(location)
         }
     }
     handler.finalize(state_opt)
