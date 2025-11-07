@@ -338,7 +338,7 @@ struct LineBuilder {
     is_open: bool,
     /// Added break line points are temporarily collected into this vector. The vector is flushed
     /// into the children vector if any other LineComponent is pushed. This prevents break line
-    /// points being added to the end of a line.
+    /// points from being added to the end of a line.
     pending_break_line_points: Vec<LineComponent>,
 }
 impl fmt::Display for LineBuilder {
