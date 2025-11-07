@@ -47,9 +47,9 @@ struct FormatterArgs {
     /// same line (as space permits). Defaults to line-by-line.
     #[arg(long)]
     tuple_line_breaking: Option<bool>,
-    /// Controls fixed array breaking behavior. Set to 'single-break-point' (default) to format
-    /// each array item on a new line, or 'line-by-line' to keep as many items as possible on the
-    /// same line (as space permits). Defaults to single line.
+    /// Controls fixed array breaking behavior. Set to 'single-break-point' (default) to keep as
+    /// many items as possible on the same line, or 'line-by-line' to format each array item on a
+    /// new line (as space permits). Defaults to single line.
     #[arg(long)]
     fixed_array_line_breaking: Option<bool>,
     /// Controls macro call breaking behavior.
