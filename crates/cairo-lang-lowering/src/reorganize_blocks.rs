@@ -42,7 +42,7 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
 
     // Keep only blocks that can't be merged or have more than 1 incoming
     // goto.
-    // Note that unreachable block were not added to `ctx.old_block_rev_order` during
+    // Note that unreachable blocks were not added to `ctx.old_block_rev_order` during
     // the analysis above.
     let mut old_block_rev_order = ctx
         .old_block_rev_order
