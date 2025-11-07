@@ -375,7 +375,7 @@ impl<'a> DebugWithDb<'a> for FunctionLongId<'a> {
     }
 }
 
-/// A key for a generated functions.
+/// A key for generated functions.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum GeneratedFunctionKey<'db> {
     /// Generated loop functions are identified by the loop expr_id.
