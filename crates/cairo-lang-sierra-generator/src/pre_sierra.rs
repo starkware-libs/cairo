@@ -1,7 +1,6 @@
 use std::hash::Hash;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -80,7 +79,7 @@ pub enum Statement<'db> {
 }
 impl<'db> Statement<'db> {
     pub fn into_statement_without_location(self) -> StatementWithLocation<'db> {
-        StatementWithLocation { statement: self, location: vec![] }
+        StatementWithLocation { statement: self, location: None }
     }
     pub fn to_string(&self, db: &dyn Database) -> String {
         StatementWithDb { db, statement: self.clone() }.to_string()
@@ -91,11 +90,11 @@ impl<'db> Statement<'db> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementWithLocation<'db> {
     pub statement: Statement<'db>,
-    pub location: Vec<StableLocation<'db>>,
+    pub location: Option<LocationId<'db>>,
 }
 
 impl<'db> StatementWithLocation<'db> {
-    pub fn set_location(&mut self, location: Vec<StableLocation<'db>>) {
+    pub fn set_location(&mut self, location: Option<LocationId<'db>>) {
         self.location = location;
     }
 }
