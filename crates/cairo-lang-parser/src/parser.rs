@@ -1503,7 +1503,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     fn expect_unary_operator(&mut self) -> UnaryOperatorGreen<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalAt => self.take::<TerminalAt<'_>>().into(),
-            SyntaxKind::TerminalAnd => self.take::<TerminalAnd<'_>>().into(),
+            SyntaxKind::TerminalAnd | SyntaxKind::TerminalAndAnd => {
+                self.unglue_andand_for_unary();
+                self.take::<TerminalAnd<'_>>().into()
+            }
             SyntaxKind::TerminalNot => self.take::<TerminalNot<'_>>().into(),
             SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot<'_>>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus<'_>>().into(),
@@ -1707,7 +1710,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 let expr = self.parse_type_expr();
                 Ok(ExprUnary::new_green(self.db, op, expr).into())
             }
-            SyntaxKind::TerminalAnd => {
+            SyntaxKind::TerminalAnd | SyntaxKind::TerminalAndAnd => {
+                self.unglue_andand_for_unary();
                 let op = self.take::<TerminalAnd<'_>>().into();
                 let expr = self.parse_type_expr();
                 Ok(ExprUnary::new_green(self.db, op, expr).into())
@@ -3545,6 +3549,26 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Assumption: the next token is not EOF.
     pub fn peek_next_next_kind(&mut self) -> SyntaxKind {
         self.next_next_terminal().kind
+    }
+
+    /// Consumes a '&&' token and pushes two '&' tokens into the token stream.
+    /// If the current token is not '&&', does nothing.
+    fn unglue_andand_for_unary(&mut self) {
+        if self.peek().kind != SyntaxKind::TerminalAndAnd {
+            return;
+        }
+
+        // Consume the && token and create base '&' token from it.
+        let and_terminal = LexerTerminal {
+            text: SmolStrId::from(self.db, "&"),
+            kind: SyntaxKind::TerminalAnd,
+            ..self.advance() // Consume the && token and grab its trivia.
+        };
+
+        // The second '&' (hence pushing it first) was glued to the first, so no leading trivia.
+        self.terminals.push_front(LexerTerminal { leading_trivia: vec![], ..and_terminal });
+        // The first '&' was glued to the second, hence no trailing trivia.
+        self.terminals.push_front(LexerTerminal { trailing_trivia: vec![], ..and_terminal });
     }
 
     /// Move forward one terminal.
