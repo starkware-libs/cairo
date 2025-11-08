@@ -8,7 +8,6 @@ use clap::Parser;
 use colored::Colorize;
 use ignore::WalkState::Continue;
 use ignore::{DirEntry, Error, ParallelVisitor, ParallelVisitorBuilder, WalkState};
-use log::warn;
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
@@ -129,14 +128,14 @@ impl ParallelVisitor for PathFormatter<'_> {
         let dir_entry = if let Ok(dir_entry) = dir_entry_res {
             dir_entry
         } else {
-            warn!("Failed to read the file.");
+            log::warn!("Failed to read the file.");
             return Continue;
         };
 
         let file_type = if let Some(file_type) = dir_entry.file_type() {
             file_type
         } else {
-            warn!("Failed to read filetype.");
+            log::warn!("Failed to read filetype.");
             return Continue;
         };
 
