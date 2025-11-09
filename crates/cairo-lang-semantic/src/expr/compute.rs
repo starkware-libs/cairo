@@ -4675,7 +4675,8 @@ pub fn compute_and_append_statement_semantic<'db>(
             )));
             Ok(())
         }
-        ast::Statement::Missing(_) => todo!(),
+        // Dianogstics reported on syntax level already.
+        ast::Statement::Missing(_) => return Err(skip_diagnostic()),
     };
     ctx.restore_features(feature_restore);
     Ok(())
