@@ -109,7 +109,7 @@ pub fn inv_mod<
     }
 }
 
-/// Returns `1 / b (mod n)`, or `None` if `b` is not invertible modulo `n`.
+/// Returns `1 / b (mod n)`, or `Err` if `b` is not invertible modulo `n`.
 ///
 /// All `b`s will be considered not invertible for `n == 1`.
 /// Additionally returns several `U128MulGuarantee`s that are required for validating the
