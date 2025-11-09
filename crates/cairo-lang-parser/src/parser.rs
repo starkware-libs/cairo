@@ -1302,7 +1302,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Assumes the current token is Impl.
     /// Expects either an impl item (`impl <name> of <trait_path> {<impl_body>}`) or and impl alias
     /// `impl <name> = <path>;`.
-    /// If `only_allow_alias` is true, always returns a ImplItemOrAlias::Alias.
+    /// If `only_allow_alias` is true, always returns an ImplItemOrAlias::Alias.
     fn expect_item_impl_inner(
         &mut self,
         attributes: AttributeListGreen<'a>,

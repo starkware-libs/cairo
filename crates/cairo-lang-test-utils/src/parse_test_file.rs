@@ -184,7 +184,7 @@ pub trait TestFileRunner {
 /// Creates a test that reads test files for a given function.
 ///
 /// test_name - the name of the test.
-/// filenames - a vector of tests files the test applies to.
+/// filenames - a vector of test files the test applies to.
 /// runner - the struct implementing `TestFileRunner + Default`.
 ///
 /// The structure of the file must be of the following form:
