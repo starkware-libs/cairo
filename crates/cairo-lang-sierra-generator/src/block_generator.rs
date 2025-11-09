@@ -2,9 +2,9 @@
 #[path = "block_generator_test.rs"]
 mod test;
 
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering::BlockId;
+use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use lowering::borrow_check::analysis::StatementLocation;
@@ -51,10 +51,7 @@ pub fn generate_block_body_code<'db>(
     // Process the statements.
     for (i, statement) in block.statements.iter().enumerate() {
         let statement_lowering_location = (block_id, i);
-        let statement_cairo_location = statement
-            .location()
-            .map(|location_id| location_id.all_locations(context.get_db()))
-            .unwrap_or_default();
+        let statement_cairo_location = statement.location();
         context.maybe_set_cairo_location(statement_cairo_location);
         generate_statement_code(context, statement, &statement_lowering_location)?;
         let drop_location = &DropLocation::PostStatement(statement_lowering_location);
@@ -99,7 +96,7 @@ enum BlockGenStackElement<'db> {
     /// Output the given Sierra statement.
     Statement(pre_sierra::Statement<'db>),
     /// Configuration for the following blocks.
-    Config { starting_cairo_location: Vec<StableLocation<'db>>, ap_tracking_state: bool },
+    Config { starting_cairo_location: Option<LocationId<'db>>, ap_tracking_state: bool },
 }
 
 /// Generates Sierra statements for a function from the given [ExprGeneratorContext].
@@ -173,7 +170,7 @@ fn generate_block_code<'db>(
         // Process the block end if it's a match.
         lowering::BlockEnd::Match { info } => {
             let statement_location = (block_id, block.statements.len());
-            let statement_cairo_location = info.location().all_locations(context.get_db());
+            let statement_cairo_location = info.location();
             if context.should_enable_ap_tracking(&block_id) {
                 context.set_ap_tracking(true);
                 context.push_statement(simple_basic_statement(
@@ -183,7 +180,7 @@ fn generate_block_code<'db>(
                 ));
             }
 
-            context.maybe_set_cairo_location(statement_cairo_location);
+            context.maybe_set_cairo_location(Some(*statement_cairo_location));
 
             match info {
                 lowering::MatchInfo::Extern(s) => {
@@ -229,11 +226,7 @@ fn generate_push_values_statement_for_remapping<'db, 'mt>(
             dup,
         })
     }
-    let location = remapping
-        .iter()
-        .next_back()
-        .map(|(_, inner_output)| inner_output.location.all_locations(context.get_db()))
-        .unwrap_or_default();
+    let location = remapping.iter().next_back().map(|(_, inner_output)| inner_output.location);
     Ok(StatementWithLocation {
         statement: pre_sierra::Statement::PushValues(push_values),
         location,
@@ -267,10 +260,7 @@ pub fn generate_return_code<'db>(
             dup: should_dup,
         });
     }
-    let location = returned_variables
-        .last()
-        .map(|var| var.location.all_locations(context.get_db()))
-        .unwrap_or_default();
+    let location = returned_variables.last().map(|var| var.location);
     context.maybe_set_cairo_location(location);
     context.push_statement(pre_sierra::Statement::PushValues(push_values));
     context.push_statement(return_statement(return_variables_on_stack));
@@ -494,7 +484,7 @@ fn generate_match_code<'db>(
 
     let ap_tracking_enabled = context.get_ap_tracking();
 
-    let match_block_location = std::mem::take(&mut context.curr_cairo_location);
+    let match_block_location = context.curr_cairo_location.take();
     block_gen_stack.push(BlockGenStackElement::Statement(end_label));
     // Generate the blocks.
     for (i, MatchArm { arm_selector: _, block_id, var_ids: _ }) in enumerate(arms).rev() {
@@ -508,7 +498,7 @@ fn generate_match_code<'db>(
             block_gen_stack.push(BlockGenStackElement::Statement(arm_labels[i - 1].0.clone()));
         }
         block_gen_stack.push(BlockGenStackElement::Config {
-            starting_cairo_location: match_block_location.clone(),
+            starting_cairo_location: match_block_location,
             ap_tracking_state: ap_tracking_enabled,
         });
     }

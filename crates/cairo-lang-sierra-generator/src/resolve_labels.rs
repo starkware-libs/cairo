@@ -2,7 +2,7 @@
 #[path = "resolve_labels_test.rs"]
 mod test;
 
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_sierra::program;
 
 use crate::next_statement_index_fetch::NextStatementIndexFetch;
@@ -12,7 +12,7 @@ use crate::pre_sierra;
 pub fn resolve_labels_and_extract_locations<'db>(
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
     label_replacer: &LabelReplacer<'_>,
-) -> (Vec<program::Statement>, Vec<Vec<StableLocation<'db>>>) {
+) -> (Vec<program::Statement>, Vec<Option<LocationId<'db>>>) {
     statements
         .into_iter()
         .filter_map(|statement| match statement.statement {

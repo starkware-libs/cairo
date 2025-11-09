@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Maybe, get_location_marks};
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
@@ -295,7 +294,7 @@ pub fn get_sierra_program_for_functions<'db>(
     Ok(SierraProgramWithDebug {
         program,
         debug_info: SierraProgramDebugInfo {
-            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
+            statements_locations: StatementsLocations::from_locations_vec(db, statements_locations),
             variable_location,
         },
     })
@@ -306,7 +305,7 @@ struct AssembledProgram<'db> {
     /// The actual program.
     program: program::Program,
     /// The locations per statement.
-    statements_locations: Vec<Vec<StableLocation<'db>>>,
+    statements_locations: Vec<Option<LocationId<'db>>>,
     /// The locations of variables per function.
     variable_location: OrderedHashMap<FunctionId, OrderedHashMap<VarId, LocationId<'db>>>,
 }
