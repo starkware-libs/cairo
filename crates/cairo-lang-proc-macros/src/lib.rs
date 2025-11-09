@@ -45,7 +45,7 @@ pub fn test(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[::core::prelude::v1::test]
         #(#fn_attrs)*
         #fn_vis #fn_sig {
-            // Initialize logging with TRACE level for tests
+            // Initialize logging with ERROR level for tests
             cairo_lang_test_utils::logging::init_logging(cairo_lang_test_utils::logging::level::ERROR);
 
             // Run the original test body
