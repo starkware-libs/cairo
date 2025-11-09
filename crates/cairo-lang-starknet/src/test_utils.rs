@@ -7,7 +7,6 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Directory;
-use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_starknet_classes::contract_class::ContractClass;
 use cairo_lang_test_utils::test_lock;
 use itertools::Itertools;
@@ -85,7 +84,6 @@ pub fn get_test_contract(example_file_name: &str) -> ContractClass {
             diagnostics_reporter,
             add_statements_functions: false,
             add_statements_code_locations: false,
-            inlining_strategy: InliningStrategy::Default,
         },
     )
     .expect("compile_path failed")
