@@ -15,7 +15,7 @@ use cairo_lang_sierra::program;
 use cairo_lang_utils::Intern;
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
-use lowering::optimizations::config::OptimizationConfig;
+use lowering::optimizations::config::Optimizations;
 use salsa::{Database, Setter};
 use semantic::inline_macros::get_default_plugin_suite;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -55,8 +55,8 @@ impl SierraGenDatabaseForTesting {
         res.set_default_plugins_from_suite(plugin_suite);
 
         lowering_group_input(&res)
-            .set_optimization_config(&mut res)
-            .to(Some(OptimizationConfig::default().with_minimal_movable_functions()));
+            .set_optimizations(&mut res)
+            .to(Some(Optimizations::enabled_with_minimal_movable_functions()));
 
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);

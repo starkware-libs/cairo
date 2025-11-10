@@ -53,8 +53,8 @@ use crate::casm_run::circuit::invert_or_nullify;
     "invert_or_nullify(7, 8)"
 )]
 
-fn test_invert_or_nullify(input: u32, modules: u32, output: u32) {
-    let (success, nullifier) = invert_or_nullify(BigUint::from(input), &BigUint::from(modules));
-    assert_eq!(success, (input * output).mod_floor(&modules) == 1_u32);
+fn test_invert_or_nullify(input: u32, modulus: u32, output: u32) {
+    let (success, nullifier) = invert_or_nullify(BigUint::from(input), &BigUint::from(modulus));
+    assert_eq!(success, (input * output).mod_floor(&modulus) == 1_u32);
     assert_eq!(nullifier, BigUint::from(output));
 }

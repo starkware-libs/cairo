@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::cache::{
-    DefCacheLoadingData, DefCacheSavingContext, GenericParamCached, GlobalUseIdCached,
-    ImplAliasIdCached, ImplDefIdCached, LanguageElementCached, ModuleIdCached, ModuleItemIdCached,
-    SyntaxStablePtrIdCached,
+    CrateDefCache, DefCacheLoadingData, DefCacheSavingContext, GenericParamCached,
+    GlobalUseIdCached, ImplAliasIdCached, ImplDefIdCached, LanguageElementCached, ModuleDataCached,
+    ModuleIdCached, ModuleItemIdCached, SyntaxStablePtrIdCached,
 };
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -30,6 +30,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::smol_str::SmolStr;
+use itertools::chain;
 use num_bigint::BigInt;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
@@ -47,6 +48,7 @@ use crate::items::imp::{
     NegativeImplId, NegativeImplLongId,
 };
 use crate::items::impl_alias::ImplAliasSemantic;
+use crate::items::macro_call::module_macro_modules;
 use crate::items::module::{ModuleItemInfo, ModuleSemantic, ModuleSemanticData};
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::visibility::Visibility;
@@ -119,6 +121,27 @@ pub fn load_cached_crate_modules_semantic<'db>(
     })
 }
 
+/// Cache the module_data of each module in the crate and returns the cache and the context.
+pub fn generate_crate_def_cache<'db>(
+    db: &'db dyn Database,
+    crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
+    ctx: &mut DefCacheSavingContext<'db>,
+) -> Maybe<CrateDefCache<'db>> {
+    let modules = db.crate_modules(crate_id);
+
+    let mut modules_data = Vec::new();
+    for module_id in modules.iter() {
+        for module_id in chain!([module_id], module_macro_modules(db, true, *module_id)) {
+            let module_data = module_id.module_data(db)?;
+            modules_data.push((
+                ModuleIdCached::new(*module_id, ctx),
+                ModuleDataCached::new(db, module_data, ctx),
+            ));
+        }
+    }
+    Ok(CrateDefCache::new(modules_data))
+}
+
 /// Semantic items in the semantic cache.
 #[derive(Serialize, Deserialize)]
 pub struct CrateSemanticCache {
@@ -135,17 +158,19 @@ pub fn generate_crate_semantic_cache<'db>(
 ) -> Maybe<CrateSemanticCache> {
     let modules = ctx.db.crate_modules(crate_id);
 
+    let mut modules_data = Vec::new();
+    for module_id in modules.iter() {
+        for module_id in chain!([module_id], module_macro_modules(ctx.db, true, *module_id)) {
+            let module_data = ctx.db.priv_module_semantic_data(*module_id)?.clone();
+            modules_data.push((
+                ModuleIdCached::new(*module_id, &mut ctx.defs_ctx),
+                ModuleSemanticDataCached::new(module_data, ctx),
+            ));
+        }
+    }
+
     Ok(CrateSemanticCache {
-        modules: modules
-            .iter()
-            .map(|id| {
-                let module_data = ctx.db.priv_module_semantic_data(*id)?.clone();
-                Ok((
-                    ModuleIdCached::new(*id, &mut ctx.defs_ctx),
-                    ModuleSemanticDataCached::new(module_data, ctx),
-                ))
-            })
-            .collect::<Maybe<Vec<_>>>()?,
+        modules: modules_data,
         impl_aliases: modules
             .iter()
             .flat_map(|id| match ctx.db.module_impl_aliases_ids(*id) {

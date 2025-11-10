@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Maybe, Severity};
+use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
@@ -25,7 +25,7 @@ use salsa::Database;
 use serde::{Deserialize, Serialize};
 
 use crate::db::{
-    DefsGroup, ModuleData, ModuleDataCacheAndLoadingData, ModuleFilesData, ModuleNamedItemsData,
+    ModuleData, ModuleDataCacheAndLoadingData, ModuleFilesData, ModuleNamedItemsData,
     ModuleTypesData, ModuleUnnamedItemsData,
 };
 use crate::ids::{
@@ -131,23 +131,10 @@ pub fn load_cached_crate_modules<'db>(
 #[derive(Serialize, Deserialize)]
 pub struct CrateDefCache<'db>(Vec<(ModuleIdCached, ModuleDataCached<'db>)>);
 
-/// Cache the module_data of each module in the crate and returns the cache and the context.
-pub fn generate_crate_def_cache<'db>(
-    db: &'db dyn Database,
-    crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
-    ctx: &mut DefCacheSavingContext<'db>,
-) -> Maybe<CrateDefCache<'db>> {
-    let modules = db.crate_modules(crate_id);
-
-    Ok(CrateDefCache(
-        modules
-            .iter()
-            .map(|id| {
-                let module_data = id.module_data(db)?;
-                Ok((ModuleIdCached::new(*id, ctx), ModuleDataCached::new(db, module_data, ctx)))
-            })
-            .collect::<Maybe<Vec<_>>>()?,
-    ))
+impl<'db> CrateDefCache<'db> {
+    pub fn new(modules: Vec<(ModuleIdCached, ModuleDataCached<'db>)>) -> Self {
+        Self(modules)
+    }
 }
 
 /// Context for loading cache into the database.
@@ -428,7 +415,7 @@ pub struct ModuleDataCached<'db> {
     diagnostics_notes: PluginFileDiagnosticNotesCached,
 }
 impl<'db> ModuleDataCached<'db> {
-    fn new(
+    pub fn new(
         db: &'db dyn Database,
         module_data: ModuleData<'db>,
         ctx: &mut DefCacheSavingContext<'db>,

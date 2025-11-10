@@ -4,6 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticLocation, ToOption};
 use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -179,15 +180,25 @@ pub struct StatementsLocations<'db> {
 }
 
 impl<'db> StatementsLocations<'db> {
-    /// Creates a new [StatementsLocations] object from a list of [`Option<StableLocation>`].
-    pub fn from_locations_vec(locations_vec: &[Vec<StableLocation<'db>>]) -> Self {
-        let mut locations = UnorderedHashMap::default();
-        for (idx, stmt_locations) in locations_vec.iter().enumerate() {
-            if !stmt_locations.is_empty() {
-                locations.insert(StatementIdx(idx), stmt_locations.clone());
-            }
+    /// Creates a new [StatementsLocations] object from a list of [`Option<LocationId<'db>>`].
+    pub fn from_locations_vec(
+        db: &'db dyn Database,
+        locations: Vec<Option<LocationId<'db>>>,
+    ) -> Self {
+        let mut cache = UnorderedHashMap::<LocationId<'db>, Vec<StableLocation<'db>>>::default();
+        Self {
+            locations: locations
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, loc)| {
+                    let loc = loc?;
+                    Some((
+                        StatementIdx(i),
+                        cache.entry(loc).or_insert_with(|| loc.all_locations(db)).clone(),
+                    ))
+                })
+                .collect(),
         }
-        Self { locations }
     }
     /// Builds a map between each Sierra statement index and a string representation of the Cairo
     /// function that it was generated from. It is used for places

@@ -119,6 +119,7 @@ fn get_function_ap_change_and_code<'db>(
         context.set_ap_tracking(false);
     }
 
+    let variable_locations = context.variable_locations();
     // Generate the function's code.
     let statements = generate_function_statements(context)?;
 
@@ -137,6 +138,7 @@ fn get_function_ap_change_and_code<'db>(
         body: statements,
         entry_point: label_id,
         parameters,
+        variable_locations,
     })
 }
 
@@ -192,6 +194,7 @@ pub fn priv_get_dummy_function<'db>(
         body: context.statements(),
         entry_point: label_id,
         parameters,
+        variable_locations: vec![],
     })
 }
 

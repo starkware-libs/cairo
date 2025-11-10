@@ -2,14 +2,14 @@ use std::collections::VecDeque;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Maybe, get_location_marks};
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
-use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
-use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId, VarId};
 use cairo_lang_sierra::program::{self, DeclaredTypeInfo, Program, StatementIdx};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -260,6 +260,7 @@ impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SierraProgramDebugInfo<'db> {
     pub statements_locations: StatementsLocations<'db>,
+    pub variable_location: OrderedHashMap<FunctionId, OrderedHashMap<VarId, LocationId<'db>>>,
 }
 
 #[salsa::tracked(returns(ref))]
@@ -288,23 +289,39 @@ pub fn get_sierra_program_for_functions<'db>(
         }
     }
 
-    let (program, statements_locations) = assemble_program(db, functions, statements);
+    let AssembledProgram { program, statements_locations, variable_location } =
+        assemble_program(db, functions, statements);
     Ok(SierraProgramWithDebug {
         program,
         debug_info: SierraProgramDebugInfo {
-            statements_locations: StatementsLocations::from_locations_vec(&statements_locations),
+            statements_locations: StatementsLocations::from_locations_vec(db, statements_locations),
+            variable_location,
         },
     })
 }
 
+/// Return value of `assemble_program`.
+struct AssembledProgram<'db> {
+    /// The actual program.
+    program: program::Program,
+    /// The locations per statement.
+    statements_locations: Vec<Option<LocationId<'db>>>,
+    /// The locations of variables per function.
+    variable_location: OrderedHashMap<FunctionId, OrderedHashMap<VarId, LocationId<'db>>>,
+}
+
 /// Given a list of functions and statements, generates a Sierra program.
 /// Returns the program and the locations of the statements in the program.
-pub fn assemble_program<'db>(
+fn assemble_program<'db>(
     db: &dyn Database,
     functions: Vec<&'db pre_sierra::Function<'db>>,
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
-) -> (program::Program, Vec<Vec<StableLocation<'db>>>) {
+) -> AssembledProgram<'db> {
     let label_replacer = LabelReplacer::from_statements(&statements);
+    let variable_location = functions
+        .iter()
+        .map(|f| (f.id.clone(), f.variable_locations.iter().cloned().collect()))
+        .collect();
     let funcs = functions
         .into_iter()
         .map(|function| {
@@ -329,7 +346,7 @@ pub fn assemble_program<'db>(
         statements: resolved_statements,
         funcs,
     };
-    (program, statements_locations)
+    AssembledProgram { program, statements_locations, variable_location }
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
@@ -431,7 +448,5 @@ pub fn get_dummy_program_for_size_estimation(
         .map(|s| s.statement.clone().into_statement_without_location())
         .collect();
 
-    let (program, _statements_locations) = assemble_program(db, functions, statements);
-
-    Ok(program)
+    Ok(assemble_program(db, functions, statements).program)
 }

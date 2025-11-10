@@ -588,7 +588,7 @@ impl<'a> QueryAttrs<'a> for Statement<'a> {
     }
 }
 pub trait WrappedArgListHelper<'a> {
-    /// Pills the wrapping brackets to get the argument list. Returns None if `self` is `Missing`.
+    /// Pulls the wrapping brackets to get the argument list. Returns None if `self` is `Missing`.
     fn arg_list(&self, db: &'a dyn Database) -> Option<ast::ArgList<'a>>;
     /// Gets the syntax node of the right wrapping bracket.
     fn right_bracket_syntax_node(&self, db: &'a dyn Database) -> SyntaxNode<'a>;

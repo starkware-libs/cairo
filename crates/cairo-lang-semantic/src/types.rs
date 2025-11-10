@@ -561,8 +561,8 @@ fn maybe_resolve_type<'db>(
         ast::Expr::Unary(unary_syntax)
             if matches!(unary_syntax.op(db), ast::UnaryOperator::Reference(_)) =>
         {
-            if !are_references_enabled(db, resolver.module_id) {
-                return Err(diagnostics.report(ty_syntax.stable_ptr(db), ReferencesDisabled));
+            if !are_repr_ptrs_enabled(db, resolver.module_id) {
+                return Err(diagnostics.report(ty_syntax.stable_ptr(db), ReprPtrsDisabled));
             }
             let inner_ty = resolve_type_ex(db, diagnostics, resolver, &unary_syntax.expr(db), ctx);
             let snapshot_ty = TypeLongId::Snapshot(inner_ty).intern(db);
@@ -1170,11 +1170,11 @@ pub(crate) fn are_coupons_enabled(db: &dyn Database, module_id: ModuleId<'_>) ->
     config.settings.experimental_features.coupons
 }
 
-/// Returns `true` if reference types are enabled in the module.
-pub(crate) fn are_references_enabled(db: &dyn Database, module_id: ModuleId<'_>) -> bool {
+/// Returns `true` if representation pointers are enabled in the module.
+pub(crate) fn are_repr_ptrs_enabled(db: &dyn Database, module_id: ModuleId<'_>) -> bool {
     let owning_crate = module_id.owning_crate(db);
     db.crate_config(owning_crate)
-        .is_some_and(|config| config.settings.experimental_features.references)
+        .is_some_and(|config| config.settings.experimental_features.repr_ptrs)
 }
 
 /// Trait for types-related semantic queries.

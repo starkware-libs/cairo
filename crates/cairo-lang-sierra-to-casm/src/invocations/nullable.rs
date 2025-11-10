@@ -37,7 +37,7 @@ fn build_nullable_null(
     ))
 }
 
-/// Builds Casm instructions for the `null()` libfunc.
+/// Builds Casm instructions for the `match_nullable()` libfunc.
 fn build_nullable_match_nullable(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

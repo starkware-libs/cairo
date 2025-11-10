@@ -1,0 +1,220 @@
+//! > Test reference to struct member.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(s: Point) {
+    bar(&s.x);
+    baz(&s.y);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Point {
+    x: u32,
+    y: u32,
+}
+extern fn bar(x: &u32) nopanic;
+extern fn baz(y: &u32) nopanic;
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+repr_ptrs = true
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::Point
+blk0 (root):
+Statements:
+  (v1: core::integer::u32, v2: core::integer::u32) <- struct_destructure(v0)
+  (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
+  (v5: core::box::Box::<@core::integer::u32>) <- core::box::into_box::<@core::integer::u32>(v4)
+  () <- test::bar(v5)
+  (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v2)
+  (v8: core::box::Box::<@core::integer::u32>) <- core::box::into_box::<@core::integer::u32>(v7)
+  () <- test::baz(v8)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test single, double and triple reference
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let x = 3;
+    bar(&x, &&x, &&&x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar(x: &u32, y: &&u32, z: &&&u32) nopanic;
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+repr_ptrs = true
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::box::Box::<@core::integer::u32>) <- 3.into_box()
+  (v1: core::box::Box::<@core::integer::u32>, v2: @core::box::Box::<@core::integer::u32>) <- snapshot(v0)
+  (v3: core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- core::box::into_box::<@core::box::Box::<@core::integer::u32>>(v2)
+  (v4: core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- core::box::into_box::<@core::box::Box::<@core::integer::u32>>(v2)
+  (v5: core::box::Box::<@core::box::Box::<@core::integer::u32>>, v6: @core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- snapshot(v4)
+  (v7: core::box::Box::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>) <- core::box::into_box::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>(v6)
+  () <- test::bar(v0, v3, v7)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test multiple references to same variable.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    let mut x = 1;
+    bar(&x);
+    bar(&x);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar(x: &u32) nopanic;
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+repr_ptrs = true
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::box::Box::<@core::integer::u32>) <- 1.into_box()
+  () <- test::bar(v0)
+  () <- test::bar(v0)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test reference snapshot is double snapshot.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(x: @u32) {
+    bar(&x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar(x: &@u32) nopanic;
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+repr_ptrs = true
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: @core::integer::u32
+blk0 (root):
+Statements:
+  (v1: @core::integer::u32, v2: @@core::integer::u32) <- snapshot(v0)
+  (v3: core::box::Box::<@@core::integer::u32>) <- core::box::into_box::<@@core::integer::u32>(v2)
+  () <- test::bar(v3)
+End:
+  Return()
+
+//! > ==========================================================================
+
+//! > Test reference in match expression.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function
+fn foo(opt: Option<u32>) {
+    match opt {
+        Option::Some(x) => bar(&x),
+        Option::None => (),
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn bar(x: &u32) nopanic;
+
+//! > crate_settings
+edition = "2024_07"
+
+[experimental_features]
+repr_ptrs = true
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::integer::u32>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
+  (v5: core::box::Box::<@core::integer::u32>) <- core::box::into_box::<@core::integer::u32>(v4)
+  () <- test::bar(v5)
+End:
+  Return()
+
+blk2:
+Statements:
+End:
+  Return()

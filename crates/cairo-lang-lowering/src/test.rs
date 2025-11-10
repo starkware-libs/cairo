@@ -50,6 +50,7 @@ cairo_lang_test_utils::test_file_test!(
         members: "members",
         panic: "panic",
         rebindings: "rebindings",
+        repr_ptr: "repr_ptr",
         snapshot: "snapshot",
         struct_: "struct",
         tests: "tests",

@@ -953,13 +953,13 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                  coupons experimental feature in the crate config."
                     .into()
             }
-            SemanticDiagnosticKind::ReferencesDisabled => {
-                "Reference types are disabled in the current crate.\nYou can enable them by \
-                 enabling the `references` experimental feature in the crate config."
+            SemanticDiagnosticKind::ReprPtrsDisabled => {
+                "Representation pointers are disabled in the current crate.\nYou can enable them \
+                 by enabling the `repr_ptrs` experimental feature in the crate config."
                     .into()
             }
-            SemanticDiagnosticKind::AssignmentToReferencedVariable { .. } => {
-                "Cannot assign to a variable that has been referenced".into()
+            SemanticDiagnosticKind::AssignmentToReprPtrVariable { .. } => {
+                "Cannot assign to a variable with a taken pointer".into()
             }
             SemanticDiagnosticKind::StructBaseStructExpressionNotLast => {
                 "The base struct must always be the last argument.".into()
@@ -1156,7 +1156,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
     fn notes(&self, _db: &dyn Database) -> &[DiagnosticNote<'_>] {
         match &self.kind {
             SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) => notes,
-            SemanticDiagnosticKind::AssignmentToReferencedVariable(notes) => notes,
+            SemanticDiagnosticKind::AssignmentToReprPtrVariable(notes) => notes,
             _ => &[],
         }
     }
@@ -1512,10 +1512,10 @@ pub enum SemanticDiagnosticKind<'db> {
     CouponArgumentNoModifiers,
     /// Coupons are disabled in the current crate.
     CouponsDisabled,
-    /// Reference types are disabled in the current crate.
-    ReferencesDisabled,
-    /// Cannot assign to a variable that has been referenced.
-    AssignmentToReferencedVariable(Vec<DiagnosticNote<'db>>),
+    /// Representation pointers are disabled in the current crate.
+    ReprPtrsDisabled,
+    /// Cannot assign to a variable with a taken pointer.
+    AssignmentToReprPtrVariable(Vec<DiagnosticNote<'db>>),
     FixedSizeArrayTypeNonSingleType,
     FixedSizeArrayTypeEmptySize,
     FixedSizeArrayNonNumericSize,

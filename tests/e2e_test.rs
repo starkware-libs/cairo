@@ -4,7 +4,7 @@ use std::sync::{LazyLock, Mutex};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_lowering::db::lowering_group_input;
-use cairo_lang_lowering::optimizations::config::OptimizationConfig;
+use cairo_lang_lowering::optimizations::config::{OptimizationConfig, Optimizations};
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
@@ -27,23 +27,23 @@ use salsa::Setter;
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 static SHARED_DB_WITH_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    lowering_group_input(&db)
-        .set_optimization_config(&mut db)
-        .to(Some(OptimizationConfig::default().with_skip_const_folding(true)));
+    lowering_group_input(&db).set_optimizations(&mut db).to(Some(Optimizations::Enabled(
+        OptimizationConfig::default().with_skip_const_folding(true),
+    )));
     Mutex::new(db)
 });
 static SHARED_DB_NO_GAS_NO_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
-    lowering_group_input(&db)
-        .set_optimization_config(&mut db)
-        .to(Some(OptimizationConfig::default().with_skip_const_folding(true)));
+    lowering_group_input(&db).set_optimizations(&mut db).to(Some(Optimizations::Enabled(
+        OptimizationConfig::default().with_skip_const_folding(true),
+    )));
     Mutex::new(db)
 });
 static SHARED_DB_WITH_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     let mut db = RootDatabase::builder().detect_corelib().skip_auto_withdraw_gas().build().unwrap();
     lowering_group_input(&db)
-        .set_optimization_config(&mut db)
-        .to(Some(OptimizationConfig::default()));
+        .set_optimizations(&mut db)
+        .to(Some(Optimizations::Enabled(Default::default())));
     Mutex::new(db)
 });
 

@@ -140,7 +140,7 @@ fn emit_enum_semantic_object(
 
 /// Helper function for emit_struct_semantic_object and emit_enum_semantic_object. Both struct, and
 /// a variant use a type called [syn::Fields].
-/// This function builds and returns an unpacking pattern and code for `fmt()` on these fields.
+/// This function builds and returns an unpacking pattern and code for `rewrite()` on these fields.
 fn emit_fields_semantic_object(
     fields: &syn::Fields,
 ) -> (Vec<TokenStream2>, TokenStream2, TokenStream2) {

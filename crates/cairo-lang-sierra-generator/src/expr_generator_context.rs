@@ -1,12 +1,11 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
+use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, Lowered};
 use salsa::Database;
@@ -26,7 +25,7 @@ pub struct ExprGeneratorContext<'db, 'a> {
 
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
+    variables: OrderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId<'db>>,
 
     /// The current ap tracking status.
@@ -35,7 +34,7 @@ pub struct ExprGeneratorContext<'db, 'a> {
     ap_tracking_configuration: ApTrackingConfiguration,
 
     /// The current location for adding statements.
-    pub curr_cairo_location: Vec<StableLocation<'db>>,
+    pub curr_cairo_location: Option<LocationId<'db>>,
     /// The accumulated statements for the expression.
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
 }
@@ -55,12 +54,12 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
             lifetime,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
-            variables: UnorderedHashMap::default(),
+            variables: OrderedHashMap::default(),
             block_labels: OrderedHashMap::default(),
             ap_tracking_enabled: true,
             ap_tracking_configuration,
             statements: vec![],
-            curr_cairo_location: vec![],
+            curr_cairo_location: None,
         }
     }
 
@@ -185,20 +184,37 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     pub fn push_statement(&mut self, statement: pre_sierra::Statement<'db>) {
         self.statements.push(pre_sierra::StatementWithLocation {
             statement,
-            location: self.curr_cairo_location.clone(),
+            location: self.curr_cairo_location,
         });
     }
 
     /// Sets up a location for the next pushed statements.
-    pub fn maybe_set_cairo_location(&mut self, location: Vec<StableLocation<'db>>) {
-        if !location.is_empty() {
-            self.curr_cairo_location = location;
+    pub fn maybe_set_cairo_location(&mut self, location: Option<LocationId<'db>>) {
+        if let Some(location) = location {
+            self.curr_cairo_location = Some(location);
         }
     }
 
     /// Returns the statements generated for the expression.
     pub fn statements(self) -> Vec<pre_sierra::StatementWithLocation<'db>> {
         self.statements
+    }
+
+    /// Returns the locations per variable of the variables in context.
+    pub fn variable_locations(&self) -> Vec<(cairo_lang_sierra::ids::VarId, LocationId<'db>)> {
+        self.variables
+            .iter()
+            .map(|(definition, var)| {
+                (
+                    var.clone(),
+                    match definition {
+                        SierraGenVar::LoweringVar(id) | SierraGenVar::UninitializedLocal(id) => {
+                            self.lowered.variables[*id].location
+                        }
+                    },
+                )
+            })
+            .collect()
     }
 }
 

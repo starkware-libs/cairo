@@ -4,7 +4,7 @@ use crate::lower::flow_control::graph::{
     BindVar, FlowControlGraphBuilder, FlowControlNode, FlowControlVar, NodeId, PatternVarId,
 };
 
-/// The pattern-matching function below take a list of patterns, and depending on the item at
+/// The pattern-matching function below takes a list of patterns, and depending on the item at
 /// question, construct a filtered list of patterns that are relevant to the item.
 /// This struct represents the indices of those filtered patterns.
 ///

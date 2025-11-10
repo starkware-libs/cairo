@@ -44,7 +44,7 @@ macro_rules! try_extract_matches {
 /// let Point { x, y: _ } = extract_matches!(p, MyEnum::Point);
 /// assert_eq!(x, 3);
 ///
-/// // Would panic with 'assertion failed: `Point(Point { x: 3, y: 5 })` does not match `MyEnum::Value`:
+/// // Would panic with 'Variant extract failed: `Point(Point { x: 3, y: 5 })` is not of variant `MyEnum::Value`:
 /// // Expected a point!'
 /// // let _value = extract_matches!(p, MyEnum::Value, "Expected a point!");
 /// ```
