@@ -737,7 +737,7 @@ pub struct ByteSpan {
     first_char_start_offset: Bytes31Index,
     /// Contains the final bytes of the span when the end is either not in memory or isn't aligned
     /// to a word boundary.
-    /// It is represented as a `felt252` to improve performance of building the byte array, but
+    /// It is represented as a `felt252` to improve the performance of building the byte array, but
     /// represents a `bytes31`.
     /// The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     remainder_word: felt252,
@@ -785,7 +785,7 @@ pub impl ByteSpanImpl of ByteSpanTrait {
     /// The cast includes trimming the start offset of the first word of the span (which is created
     /// when slicing).
     ///
-    /// Note: creating `ByteArray.data` from `Span` requires allocating a new memory
+    /// Note: creating `ByteArray.data` from `Span` requires allocating new memory
     /// segment for the returned array, and *O*(*n*) operations to populate the array with the
     /// content of the span (see also `SpanIntoArray`).
     fn to_byte_array(mut self: ByteSpan) -> ByteArray {
