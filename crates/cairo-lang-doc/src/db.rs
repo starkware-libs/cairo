@@ -211,7 +211,7 @@ fn extract_item_module_level_documentation_from_file<'db>(
     )
 }
 
-/// This function does 2 things to the line of comment:
+/// This function does 3 things to the line of comment:
 /// 1. Removes indentation
 /// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space
 ///    after the prefix).
