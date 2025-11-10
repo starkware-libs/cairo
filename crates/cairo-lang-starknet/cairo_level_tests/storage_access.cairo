@@ -145,15 +145,15 @@ fn write_read_struct() {
 fn write_read_byte_arrays() {
     let mut multi_chunk: ByteArray =
         "0123456789abcdef0123456789abcdef"; // 32 bytes, 2 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 64 bytes, 3 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 128 bytes, 5 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 256 bytes, 9 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 512 bytes, 17 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 1024 bytes, 34 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 2048 bytes, 67 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 4096 bytes, 133 felt252s, 1 chunk.
-    multi_chunk.append(@multi_chunk); // 8192 bytes, 265 felt252s, 2 chunks.
-    multi_chunk.append(@multi_chunk); // 16384 bytes, 529 felt252s, 3 chunks.
+    multi_chunk.append(@multi_chunk); // 64 bytes, 3 felt252s, 2 chunks.
+    multi_chunk.append(@multi_chunk); // 128 bytes, 5 felt252s, 4 chunks.
+    multi_chunk.append(@multi_chunk); // 256 bytes, 9 felt252s, 8 chunks.
+    multi_chunk.append(@multi_chunk); // 512 bytes, 17 felt252s, 16 chunks.
+    multi_chunk.append(@multi_chunk); // 1024 bytes, 34 felt252s, 33 chunks.
+    multi_chunk.append(@multi_chunk); // 2048 bytes, 67 felt252s, 66 chunks.
+    multi_chunk.append(@multi_chunk); // 4096 bytes, 133 felt252s, 132 chunks.
+    multi_chunk.append(@multi_chunk); // 8192 bytes, 265 felt252s, 264 chunks.
+    multi_chunk.append(@multi_chunk); // 16384 bytes, 529 felt252s, 528 chunks.
     let value = ByteArrays {
         empty: "",
         single_word: "shorter than 31",
