@@ -785,7 +785,7 @@ pub impl ByteSpanImpl of ByteSpanTrait {
     /// The cast includes trimming the start offset of the first word of the span (which is created
     /// when slicing).
     ///
-    /// Note: creating `ByteArray.data` from `Span` requires allocating new memory
+    /// Note: creating `ByteArray.data` from `Span` requires allocating a new memory
     /// segment for the returned array, and *O*(*n*) operations to populate the array with the
     /// content of the span (see also `SpanIntoArray`).
     fn to_byte_array(mut self: ByteSpan) -> ByteArray {
