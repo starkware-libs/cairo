@@ -8,7 +8,8 @@ memory. It is based on existing source code and documentation in this repository
 - Values are immutable; assignments rebind variables rather than mutate memory.
 - Updates to struct members are modeled as constructing new values; the compiler may optimize.
 - Certain types are linear (non-`Copy`, possibly non-`Drop`) due to the immutable model.
-- Snapshots (`@T`) and desnap (`*`) model borrowing and access to underlying values.
+- Snapshots (`@T`) represent values taken at a snapshot; `*` (desnap) accesses the underlying
+  value type. For `Copy` types, desnap of the value is allowed.
 - Execution uses relocatable memory with segments, `AP` (allocation pointer) and `FP`
   (frame pointer).
 
@@ -39,20 +40,20 @@ Relevant traits are defined in `corelib`:
 - `Copy` — value duplication
 - `Drop`, `Destruct`, `PanicDestruct` — destruction pathways
 
-== Snapshots, desnap, and borrows
+== Snapshots and desnap
 
-Borrowing is represented semantically using snapshot types:
+Snapshots represent taking a value at a snapshot:
 
-- `@T` denotes a snapshot type created by taking a reference (unary `&` at the syntax level where
-  enabled, represented as Reference in semantics).
-- `*snapshot` (desnap) retrieves the underlying value's type, with semantics governed by
-  snapshot/desnap rules.
+- `@T` denotes the snapshot type produced when a value is taken at a snapshot.
+- `*x` (desnap) yields the underlying type `T` from a `@T` value. For `Copy` types, desnap of the
+  value is permitted; otherwise desnap requires a `Snapshot(T)` or proceeds via deref-like logic
+  when available.
 
 In the semantic analysis:
 
-- Creating a reference snapshots the inner expression, producing `Snapshot(T)` as the type.
-- Desnapping requires either operating on a `Snapshot(T)` to obtain `T`, or routing through
-  deref-like logic where applicable.
+- Creating a snapshot produces `Snapshot(T)` as the type of the expression.
+- Desnapping operates on `Snapshot(T)` to obtain `T`, or routes through deref-chain logic where
+  applicable.
 
 == Lowering representation (high level)
 
