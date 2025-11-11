@@ -81,7 +81,7 @@ pub struct AbiBuilder<'db> {
     /// The constructed ABI.
     abi_items: OrderedHashSet<Item>,
 
-    /// List of type that were included abi.
+    /// List of types that were included in the abi.
     /// Used to avoid redundancy.
     types: HashSet<TypeId<'db>>,
 
