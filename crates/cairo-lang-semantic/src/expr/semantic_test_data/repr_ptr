@@ -227,7 +227,6 @@ fn f(x: &u32, y: &&u32, z: &&&u32) {}
 //! > expr_code
 f(&1,&&2, &&&3)
 
-
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
@@ -371,7 +370,6 @@ test_expr_semantics
 //! > expr_code
 &@5_u32
 
-
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
@@ -412,7 +410,6 @@ test_expr_semantics
 
 //! > expr_code
 @&5_u32
-
 
 //! > expected_semantics
 Snapshot(
@@ -458,7 +455,6 @@ let b = 5_u32;
 
 //! > expr_code
 a & &b
-
 
 //! > expected_semantics
 FunctionCall(
@@ -525,7 +521,6 @@ let p = PPoint { point: Point { x: 1, y: 2 } };
 
 //! > expr_code
 &p.point.x
-
 
 //! > expected_semantics
 FunctionCall(
@@ -664,7 +659,6 @@ let r = &value;
 
 //! > expr_code
 modify_value(ref value)
-
 
 //! > expected_semantics
 FunctionCall(
