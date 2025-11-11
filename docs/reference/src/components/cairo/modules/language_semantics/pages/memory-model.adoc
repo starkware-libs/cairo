@@ -1,6 +1,121 @@
 = Memory model
 
-This section is a work in progress.
+== Overview
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+This page describes Cairo's semantic memory model and its interaction with execution-time
+memory. It is based on existing source code and documentation in this repository.
+
+- Values are immutable; assignments rebind variables rather than mutate memory.
+- Updates to struct members are modeled as constructing new values; the compiler may optimize.
+- Certain types are linear (non-`Copy`, possibly non-`Drop`) due to the immutable model.
+- Snapshots (`@T`) represent values taken at a snapshot; `*` (desnap) accesses the underlying
+  value type. For `Copy` types, desnap of the value is allowed.
+- Execution uses relocatable memory with segments, `AP` (allocation pointer) and `FP`
+  (frame pointer).
+
+== Immutability and assignment
+
+At the language semantics level, memory is immutable. Assigning to an lvalue does not mutate
+existing memory; instead, a variable is a logical placeholder that can point to a different value
+after assignment. See the language constructs reference for the canonical wording.
+
+xref:language_constructs:lvalue.adoc#_mutability_in_an_immutable_world[Mutability in an immutable world]
+
+== Struct member updates and copying
+
+Assigning to a member (e.g. `s.x = ...`) is defined as producing a new struct value. For large
+structs, this may copy the entire struct logically; compilers may optimize to reduce copies when
+possible. The language constructs docs explain this performance aspect.
+
+xref:language_constructs:structs.adoc[Structs] (copy behavior notes)
+
+== Linear types, Copy and Drop
+
+Due to immutability, some types are linear and cannot be freely copied or dropped (e.g. `Array`,
+`Dict`). Copying requires implementing `Copy`; destruction requires `Drop` or `Destruct`
+mechanisms defined in core traits.
+
+Relevant traits are defined in `corelib`:
+
+- `Copy` — value duplication
+- `Drop`, `Destruct`, `PanicDestruct` — destruction pathways
+
+== Snapshots and desnap
+
+Snapshots represent taking a value at a snapshot:
+
+- `@T` denotes the snapshot type produced when a value is taken at a snapshot.
+- `*x` (desnap) yields the underlying type `T` from a `@T` value. For `Copy` types, desnap of the
+  value is permitted; otherwise desnap requires a `Snapshot(T)` or proceeds via deref-like logic
+  when available.
+
+In the semantic analysis:
+
+- Creating a snapshot produces `Snapshot(T)` as the type of the expression.
+- Desnapping operates on `Snapshot(T)` to obtain `T`, or routes through deref-chain logic where
+  applicable.
+
+== Lowering representation (high level)
+
+During lowering (to the internal IR), values may be represented as:
+
+- Variables in a variable arena,
+- Tuples and fixed-size arrays as structured aggregates,
+- Member-path based expressions,
+- Snapshot-wrapped expressions.
+
+This reflects the immutable model and enables later code generation and optimization while keeping
+the semantics of snapshots and member updates explicit.
+
+== Execution-time memory model (VM basics)
+
+Cairo programs execute on a VM with relocatable memory:
+
+- Memory is divided into segments; pointers are relocatable (segment, offset).
+- `AP` (allocation pointer) advances through memory for data placement.
+- `FP` (frame pointer) anchors call frames; call/return update `FP`/`AP` according to
+  instruction semantics.
+- The runner creates and manages memory segments (e.g., for program data, builtins, buffers).
+
+The assembler and runner code define instruction flags and memory helpers that drive these
+semantics at execution time (e.g., `ApUpdate`, `FpUpdate`, creating new segments, reading/writing
+buffers).
+
+== Out of scope / WIP
+
+This page intentionally does not fix the exact Application Binary Interface (ABI) layout or a
+formal, stable layout for all composite types in VM memory. Those details are covered by the ABI
+specification and may evolve. Refer to the ABI page when stabilized.
+
+See also:
+
+- xref:application-binary-interface.adoc[Application binary interface] (WIP)
+
+== Implementation reference
+
+Language semantics and constructs:
+
+- `docs/reference/src/components/cairo/modules/language_constructs/pages/lvalue.adoc`
+- `docs/reference/src/components/cairo/modules/language_constructs/pages/structs.adoc`
+- `docs/reference/src/components/cairo/modules/language_constructs/pages/linear-types.adoc`
+
+Snapshots, desnap, and types:
+
+- `crates/cairo-lang-semantic/src/expr/compute.rs` (unary Reference/Desnap handling)
+- `crates/cairo-lang-semantic/src/types.rs` (type resolution for `Snapshot(T)` and `*`)
+
+Lowering representation:
+
+- `crates/cairo-lang-lowering/src/lower/context.rs` (`LoweredExpr`, snapshots, variable arena)
+- `crates/cairo-lang-lowering/src/objects.rs` (lowered structures, blocks, variables)
+
+Execution-time memory model:
+
+- `crates/cairo-lang-casm/src/assembler.rs` (instruction reps, `ApUpdate`, `FpUpdate`)
+- `crates/cairo-lang-runner/src/casm_run/mod.rs` (segments, memory buffers, VM helpers)
+- `crates/cairo-lang-runner/src/lib.rs` (VM initialization, builtin cost segment)
+
+== Related reading
+
+- xref:constant-evaluation.adoc[Constant evaluation]
+
