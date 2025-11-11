@@ -7,10 +7,11 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
 use cairo_lang_filesystem::ids::SmolStrId;
-use cairo_lang_semantic::corelib::{CorelibSemantic, try_extract_nz_wrapped_type};
+use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{
-    ConstCalcInfo, ConstValue, ConstValueId, ConstantSemantic,
+    ConstCalcInfo, ConstValue, ConstValueId, ConstantSemantic, TypeRange, canonical_felt252,
+    felt252_for_downcast,
 };
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -502,8 +503,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
             {
-                let value = Felt252::from(lhs - rhs).to_bigint();
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+                let value = canonical_felt252(&(lhs - rhs));
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
@@ -521,16 +522,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
             {
-                let value = Felt252::from(lhs + rhs).to_bigint();
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+                let value = canonical_felt252(&(lhs + rhs));
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
         } else if id == self.felt_mul {
-            let lhs = self.as_int_ex(stmt.inputs[0].var_id);
-            let rhs = self.as_int_ex(stmt.inputs[1].var_id);
-            if lhs.map(|(v, _)| v.is_zero()).unwrap_or(false)
-                || rhs.map(|(v, _)| v.is_zero()).unwrap_or(false)
+            let lhs = self.as_int(stmt.inputs[0].var_id);
+            let rhs = self.as_int(stmt.inputs[1].var_id);
+            if lhs.map(Zero::is_zero).unwrap_or_default()
+                || rhs.map(Zero::is_zero).unwrap_or_default()
             {
                 Some(self.propagate_zero_and_get_statement(stmt.outputs[0]))
             } else if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
@@ -543,12 +544,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]));
                 None
-            } else if let Some((lhs_val, lhs_nz)) = lhs
-                && let Some((rhs_val, rhs_nz)) = rhs
+            } else if let Some(lhs) = lhs
+                && let Some(rhs) = rhs
             {
-                let value = Felt252::from(lhs_val * rhs_val).to_bigint();
-                let nz_ty = lhs_nz && rhs_nz;
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], nz_ty))
+                let value = canonical_felt252(&(lhs * rhs));
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
@@ -574,26 +574,26 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 // Use field_div for Felt252 division
                 let lhs_felt = Felt252::from(lhs);
                 let value = lhs_felt.field_div(&rhs_nonzero).to_bigint();
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
         } else if self.wide_mul_fns.contains(&id) {
-            let lhs = self.as_int_ex(stmt.inputs[0].var_id);
+            let lhs = self.as_int(stmt.inputs[0].var_id);
             let rhs = self.as_int(stmt.inputs[1].var_id);
             let output = stmt.outputs[0];
-            if lhs.map(|(v, _)| v.is_zero()).unwrap_or_default()
+            if lhs.map(Zero::is_zero).unwrap_or_default()
                 || rhs.map(Zero::is_zero).unwrap_or_default()
             {
                 return Some(self.propagate_zero_and_get_statement(output));
             }
-            let (lhs, nz_ty) = lhs?;
-            Some(self.propagate_const_and_get_statement(lhs * rhs?, stmt.outputs[0], nz_ty))
+            let lhs = lhs?;
+            Some(self.propagate_const_and_get_statement(lhs * rhs?, stmt.outputs[0]))
         } else if id == self.bounded_int_add || id == self.bounded_int_sub {
             let lhs = self.as_int(stmt.inputs[0].var_id)?;
             let rhs = self.as_int(stmt.inputs[1].var_id)?;
             let value = if id == self.bounded_int_add { lhs + rhs } else { lhs - rhs };
-            Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+            Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
         } else if self.div_rem_fns.contains(&id) {
             let lhs = self.as_int(stmt.inputs[0].var_id);
             if lhs.map(Zero::is_zero).unwrap_or_default() {
@@ -676,7 +676,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let info = self.var_info.get(&stmt.inputs[0].var_id)?;
             let desnapped = try_extract_matches!(info, VarInfo::Snapshot)?;
             let length = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?.len();
-            Some(self.propagate_const_and_get_statement(length.into(), stmt.outputs[0], false))
+            Some(self.propagate_const_and_get_statement(length.into(), stmt.outputs[0]))
         } else {
             None
         }
@@ -770,23 +770,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         &mut self,
         value: BigInt,
         output: VariableId,
-        nz_ty: bool,
     ) -> Statement<'db> {
         let ty = self.variables[output].ty;
-        let value = if nz_ty {
-            let inner_ty =
-                try_extract_nz_wrapped_type(self.db, ty).expect("Expected a non-zero type");
-            ConstValue::NonZero(ConstValue::Int(value, inner_ty).intern(self.db)).intern(self.db)
-        } else {
-            ConstValue::Int(value, ty).intern(self.db)
-        };
+        let value = ConstValueId::from_int(self.db, ty, &value);
         self.var_info.insert(output, VarInfo::Const(value));
         Statement::Const(StatementConst::new_flat(value, output))
     }
 
     /// Adds 0 const to `var_info` and return a const statement for it.
     fn propagate_zero_and_get_statement(&mut self, output: VariableId) -> Statement<'db> {
-        self.propagate_const_and_get_statement(BigInt::zero(), output, false)
+        self.propagate_const_and_get_statement(BigInt::zero(), output)
     }
 
     /// Returns a statement that introduces the requested value into `output`, or None if fails.
@@ -845,7 +838,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             {
                 let nz_input = info.inputs[if lhs.is_some() { 1 } else { 0 }];
                 let var = &self.variables[nz_input.var_id].clone();
-                let function = self.type_value_ranges.get(&var.ty)?.is_zero;
+                let function = self.type_info.get(&var.ty)?.is_zero;
                 let unused_nz_var = Variable::with_default_context(
                     db,
                     corelib::core_nonzero_ty(db, var.ty),
@@ -896,7 +889,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let lhs = self.as_int(info.inputs[0].var_id);
             if let (Some(lhs), Some(rhs)) = (lhs, rhs) {
                 let ty = self.variables[info.arms[0].var_ids[0]].ty;
-                let range = &self.type_value_ranges.get(&ty)?.range;
+                let range = self.type_value_ranges.get(&ty)?;
                 let value = if self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id) {
                     lhs + rhs
                 } else {
@@ -931,7 +924,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 }
                 if rhs.is_one() && !self.diff_fns.contains(&id) {
                     let ty = self.variables[info.arms[0].var_ids[0]].ty;
-                    let ty_info = self.type_value_ranges.get(&ty)?;
+                    let ty_info = self.type_info.get(&ty)?;
                     let function = if self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id) {
                         ty_info.inc?
                     } else {
@@ -978,8 +971,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             None
         } else if let Some(reversed) = self.downcast_fns.get(&id) {
             let range = |ty: TypeId<'_>| {
-                Some(if let Some(ti) = self.type_value_ranges.get(&ty) {
-                    ti.range.clone()
+                Some(if let Some(range) = self.type_value_ranges.get(&ty) {
+                    range.clone()
                 } else {
                     let (min, max) = corelib::try_extract_bounded_int_type_ranges(db, ty)?;
                     TypeRange { min, max }
@@ -987,11 +980,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             };
             let (success_arm, failure_arm) = if *reversed { (1, 0) } else { (0, 1) };
             let input_var = info.inputs[0].var_id;
+            let in_ty = self.variables[input_var].ty;
             let success_output = info.arms[success_arm].var_ids[0];
             let out_ty = self.variables[success_output].ty;
             let out_range = range(out_ty)?;
             let Some(value) = self.as_int(input_var) else {
-                let in_ty = self.variables[input_var].ty;
                 let in_range = range(in_ty)?;
                 return if in_range.min < out_range.min || in_range.max > out_range.max {
                     None
@@ -1010,7 +1003,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     ));
                 };
             };
-            Some(if let NormalizedResult::InRange(value) = out_range.normalized(value.clone()) {
+            let value = if in_ty == self.felt252 {
+                felt252_for_downcast(value, &out_range.min)
+            } else {
+                value.clone()
+            };
+            Some(if let NormalizedResult::InRange(value) = out_range.normalized(value) {
                 let value = ConstValue::Int(value, out_ty).intern(db);
                 self.var_info.insert(success_output, VarInfo::Const(value));
                 (
@@ -1022,7 +1020,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             })
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
-            let (value, nz_ty) = self.as_int_ex(input_var)?;
+            let value = self.as_int(input_var)?;
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
                 .long(db)
@@ -1031,7 +1029,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let arm_idx = if value < constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
             Some((
-                vec![self.propagate_const_and_get_statement(value.clone(), output, nz_ty)],
+                vec![self.propagate_const_and_get_statement(value.clone(), output)],
                 BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
         } else if id == self.array_get {
@@ -1158,25 +1156,19 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const).copied()
     }
 
-    /// Return the const value as an int if it exists and is an integer, additionally, if it is of a
-    /// non-zero type.
-    fn as_int_ex(&self, var_id: VariableId) -> Option<(&BigInt, bool)> {
+    /// Return the const value as a int if it exists and is an integer.
+    fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
         match self.as_const(var_id)?.long(self.db) {
-            ConstValue::Int(value, _) => Some((value, false)),
+            ConstValue::Int(value, _) => Some(value),
             ConstValue::NonZero(const_value) => {
                 if let ConstValue::Int(value, _) = const_value.long(self.db) {
-                    Some((value, true))
+                    Some(value)
                 } else {
                     None
                 }
             }
             _ => None,
         }
-    }
-
-    /// Return the const value as a int if it exists and is an integer.
-    fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
-        Some(self.as_int_ex(var_id)?.0)
     }
 
     /// Replaces the inputs in place if they are in the var_info map.
@@ -1348,8 +1340,8 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     pub panic_with_const_felt252: FreeFunctionId<'db>,
     /// The `core::panics::panic_with_byte_array` function.
     panic_with_byte_array: FunctionId<'db>,
-    /// Type ranges.
-    type_value_ranges: OrderedHashMap<TypeId<'db>, TypeInfo<'db>>,
+    /// Information per type.
+    type_info: OrderedHashMap<TypeId<'db>, TypeInfo<'db>>,
     /// The info used for semantic const calculation.
     const_calculation_info: Arc<ConstCalcInfo<'db>>,
 }
@@ -1395,74 +1387,58 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             [bounded_int_module.extern_function_id("bounded_int_div_rem")],
             utypes.map(|ty| integer_module.extern_function_id(&format!("{ty}_safe_divmod"))),
         ));
-        let type_value_ranges: OrderedHashMap<TypeId<'db>, TypeInfo<'db>> =
-            OrderedHashMap::from_iter(
-                [
-                    ("u8", BigInt::ZERO, u8::MAX.into(), false, true),
-                    ("u16", BigInt::ZERO, u16::MAX.into(), false, true),
-                    ("u32", BigInt::ZERO, u32::MAX.into(), false, true),
-                    ("u64", BigInt::ZERO, u64::MAX.into(), false, true),
-                    ("u128", BigInt::ZERO, u128::MAX.into(), false, true),
-                    ("u256", BigInt::ZERO, BigInt::from(1) << 256, false, false),
-                    ("i8", i8::MIN.into(), i8::MAX.into(), true, true),
-                    ("i16", i16::MIN.into(), i16::MAX.into(), true, true),
-                    ("i32", i32::MIN.into(), i32::MAX.into(), true, true),
-                    ("i64", i64::MIN.into(), i64::MAX.into(), true, true),
-                    ("i128", i128::MIN.into(), i128::MAX.into(), true, true),
-                ]
-                .map(
-                    |(ty_name, min, max, as_bounded_int, inc_dec): (
-                        &'static str,
-                        BigInt,
-                        BigInt,
-                        bool,
-                        bool,
-                    )| {
-                        let ty =
-                            corelib::get_core_ty_by_name(db, SmolStrId::from(db, ty_name), vec![]);
-                        let is_zero = if as_bounded_int {
-                            bounded_int_module.function_id(
-                                "bounded_int_is_zero",
-                                vec![GenericArgumentId::Type(ty)],
-                            )
-                        } else {
-                            integer_module.function_id(
-                                SmolStrId::from(db, format!("{ty_name}_is_zero")).long(db).as_str(),
-                                vec![],
-                            )
-                        }
-                        .lowered(db);
-                        let (inc, dec) = if inc_dec {
-                            (
-                                Some(
-                                    num_module
-                                        .function_id(
-                                            SmolStrId::from(db, format!("{ty_name}_inc"))
-                                                .long(db)
-                                                .as_str(),
-                                            vec![],
-                                        )
-                                        .lowered(db),
-                                ),
-                                Some(
-                                    num_module
-                                        .function_id(
-                                            SmolStrId::from(db, format!("{ty_name}_dec"))
-                                                .long(db)
-                                                .as_str(),
-                                            vec![],
-                                        )
-                                        .lowered(db),
-                                ),
-                            )
-                        } else {
-                            (None, None)
-                        };
-                        let info = TypeInfo { range: TypeRange { min, max }, is_zero, inc, dec };
-                        (ty, info)
-                    },
-                ),
-            );
+        let type_info: OrderedHashMap<TypeId<'db>, TypeInfo<'db>> = OrderedHashMap::from_iter(
+            [
+                ("u8", false, true),
+                ("u16", false, true),
+                ("u32", false, true),
+                ("u64", false, true),
+                ("u128", false, true),
+                ("u256", false, false),
+                ("i8", true, true),
+                ("i16", true, true),
+                ("i32", true, true),
+                ("i64", true, true),
+                ("i128", true, true),
+            ]
+            .map(|(ty_name, as_bounded_int, inc_dec): (&'static str, bool, bool)| {
+                let ty = corelib::get_core_ty_by_name(db, SmolStrId::from(db, ty_name), vec![]);
+                let is_zero = if as_bounded_int {
+                    bounded_int_module
+                        .function_id("bounded_int_is_zero", vec![GenericArgumentId::Type(ty)])
+                } else {
+                    integer_module.function_id(
+                        SmolStrId::from(db, format!("{ty_name}_is_zero")).long(db).as_str(),
+                        vec![],
+                    )
+                }
+                .lowered(db);
+                let (inc, dec) = if inc_dec {
+                    (
+                        Some(
+                            num_module
+                                .function_id(
+                                    SmolStrId::from(db, format!("{ty_name}_inc")).long(db).as_str(),
+                                    vec![],
+                                )
+                                .lowered(db),
+                        ),
+                        Some(
+                            num_module
+                                .function_id(
+                                    SmolStrId::from(db, format!("{ty_name}_dec")).long(db).as_str(),
+                                    vec![],
+                                )
+                                .lowered(db),
+                        ),
+                    )
+                } else {
+                    (None, None)
+                };
+                let info = TypeInfo { is_zero, inc, dec };
+                (ty, info)
+            }),
+        );
         Self {
             felt_sub: core.extern_function_id("felt252_sub"),
             felt_add: core.extern_function_id("felt252_add"),
@@ -1499,7 +1475,7 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
                 .submodule("panics")
                 .function_id("panic_with_byte_array", vec![])
                 .lowered(db),
-            type_value_ranges,
+            type_info,
             const_calculation_info: db.const_calc_info(),
         }
     }
@@ -1522,8 +1498,6 @@ impl<'a> std::ops::Deref for ConstFoldingLibfuncInfo<'a> {
 /// The information of a type required for const foldings.
 #[derive(Debug, PartialEq, Eq, salsa::Update)]
 struct TypeInfo<'db> {
-    /// The value range of the type.
-    range: TypeRange,
     /// The function to check if the value is zero for the type.
     is_zero: FunctionId<'db>,
     /// Inc function to increase the value by one.
@@ -1532,17 +1506,12 @@ struct TypeInfo<'db> {
     dec: Option<FunctionId<'db>>,
 }
 
-/// The range of values of a numeric type.
-#[derive(Debug, PartialEq, Eq, Clone)]
-struct TypeRange {
-    /// The minimum value of the type.
-    min: BigInt,
-    /// The maximum value of the type.
-    max: BigInt,
-}
-impl TypeRange {
+trait TypeRangeNormalizer {
     /// Normalizes the value to the range.
     /// Assumes the value is within size of range of the range.
+    fn normalized(&self, value: BigInt) -> NormalizedResult;
+}
+impl TypeRangeNormalizer for TypeRange {
     fn normalized(&self, value: BigInt) -> NormalizedResult {
         if value < self.min {
             NormalizedResult::Under(value - &self.min + &self.max + 1)

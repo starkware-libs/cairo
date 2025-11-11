@@ -31,6 +31,7 @@ num-traits = { workspace = true, default-features = true }
 salsa.workspace = true
 serde.workspace = true
 sha3.workspace = true
+starknet-types-core.workspace = true
 toml = { workspace = true, optional = true }
 
 [dev-dependencies]
