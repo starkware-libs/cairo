@@ -548,8 +548,7 @@ impl Default for ProfilingInfoCollectionConfig {
                 if max.is_empty() {
                     MAX_STACK_TRACE_DEPTH_DEFAULT
                 } else {
-                    max.parse::<usize>()
-                        .expect("MAX_STACK_TRACE_DEPTH_DEFAULT env var is not numeric")
+                    max.parse::<usize>().expect("MAX_STACK_TRACE_DEPTH env var is not numeric")
                 }
             } else {
                 MAX_STACK_TRACE_DEPTH_DEFAULT
