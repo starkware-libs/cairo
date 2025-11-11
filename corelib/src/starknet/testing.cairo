@@ -155,7 +155,7 @@ pub fn set_chain_id(chain_id: felt252) {
 ///
 /// # Arguments
 ///
-/// `non` - The nonce to set.
+/// `nonce` - The nonce to set.
 ///
 /// After a call to `set_nonce`, `starknet::get_execution_info().tx_info.nonce` will return the set
 /// value.
