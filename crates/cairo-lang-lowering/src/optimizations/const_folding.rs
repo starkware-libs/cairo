@@ -7,10 +7,10 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
 use cairo_lang_filesystem::flag::flag_unsafe_panic;
 use cairo_lang_filesystem::ids::SmolStrId;
-use cairo_lang_semantic::corelib::{CorelibSemantic, try_extract_nz_wrapped_type};
+use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::{
-    ConstCalcInfo, ConstValue, ConstValueId, ConstantSemantic,
+    ConstCalcInfo, ConstValue, ConstValueId, ConstantSemantic, canonical_felt252,
 };
 use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -502,8 +502,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
             {
-                let value = Felt252::from(lhs - rhs).to_bigint();
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+                let value = canonical_felt252(&(lhs - rhs));
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
@@ -521,16 +521,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
             {
-                let value = Felt252::from(lhs + rhs).to_bigint();
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+                let value = canonical_felt252(&(lhs + rhs));
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
         } else if id == self.felt_mul {
-            let lhs = self.as_int_ex(stmt.inputs[0].var_id);
-            let rhs = self.as_int_ex(stmt.inputs[1].var_id);
-            if lhs.map(|(v, _)| v.is_zero()).unwrap_or(false)
-                || rhs.map(|(v, _)| v.is_zero()).unwrap_or(false)
+            let lhs = self.as_int(stmt.inputs[0].var_id);
+            let rhs = self.as_int(stmt.inputs[1].var_id);
+            if lhs.map(Zero::is_zero).unwrap_or_default()
+                || rhs.map(Zero::is_zero).unwrap_or_default()
             {
                 Some(self.propagate_zero_and_get_statement(stmt.outputs[0]))
             } else if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
@@ -543,12 +543,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             {
                 self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]));
                 None
-            } else if let Some((lhs_val, lhs_nz)) = lhs
-                && let Some((rhs_val, rhs_nz)) = rhs
+            } else if let Some(lhs) = lhs
+                && let Some(rhs) = rhs
             {
-                let value = Felt252::from(lhs_val * rhs_val).to_bigint();
-                let nz_ty = lhs_nz && rhs_nz;
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], nz_ty))
+                let value = canonical_felt252(&(lhs * rhs));
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
@@ -574,26 +573,26 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 // Use field_div for Felt252 division
                 let lhs_felt = Felt252::from(lhs);
                 let value = lhs_felt.field_div(&rhs_nonzero).to_bigint();
-                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+                Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
             } else {
                 None
             }
         } else if self.wide_mul_fns.contains(&id) {
-            let lhs = self.as_int_ex(stmt.inputs[0].var_id);
+            let lhs = self.as_int(stmt.inputs[0].var_id);
             let rhs = self.as_int(stmt.inputs[1].var_id);
             let output = stmt.outputs[0];
-            if lhs.map(|(v, _)| v.is_zero()).unwrap_or_default()
+            if lhs.map(Zero::is_zero).unwrap_or_default()
                 || rhs.map(Zero::is_zero).unwrap_or_default()
             {
                 return Some(self.propagate_zero_and_get_statement(output));
             }
-            let (lhs, nz_ty) = lhs?;
-            Some(self.propagate_const_and_get_statement(lhs * rhs?, stmt.outputs[0], nz_ty))
+            let lhs = lhs?;
+            Some(self.propagate_const_and_get_statement(lhs * rhs?, stmt.outputs[0]))
         } else if id == self.bounded_int_add || id == self.bounded_int_sub {
             let lhs = self.as_int(stmt.inputs[0].var_id)?;
             let rhs = self.as_int(stmt.inputs[1].var_id)?;
             let value = if id == self.bounded_int_add { lhs + rhs } else { lhs - rhs };
-            Some(self.propagate_const_and_get_statement(value, stmt.outputs[0], false))
+            Some(self.propagate_const_and_get_statement(value, stmt.outputs[0]))
         } else if self.div_rem_fns.contains(&id) {
             let lhs = self.as_int(stmt.inputs[0].var_id);
             if lhs.map(Zero::is_zero).unwrap_or_default() {
@@ -676,7 +675,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let info = self.var_info.get(&stmt.inputs[0].var_id)?;
             let desnapped = try_extract_matches!(info, VarInfo::Snapshot)?;
             let length = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?.len();
-            Some(self.propagate_const_and_get_statement(length.into(), stmt.outputs[0], false))
+            Some(self.propagate_const_and_get_statement(length.into(), stmt.outputs[0]))
         } else {
             None
         }
@@ -770,23 +769,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         &mut self,
         value: BigInt,
         output: VariableId,
-        nz_ty: bool,
     ) -> Statement<'db> {
         let ty = self.variables[output].ty;
-        let value = if nz_ty {
-            let inner_ty =
-                try_extract_nz_wrapped_type(self.db, ty).expect("Expected a non-zero type");
-            ConstValue::NonZero(ConstValue::Int(value, inner_ty).intern(self.db)).intern(self.db)
-        } else {
-            ConstValue::Int(value, ty).intern(self.db)
-        };
+        let value = ConstValueId::from_int(self.db, ty, &value);
         self.var_info.insert(output, VarInfo::Const(value));
         Statement::Const(StatementConst::new_flat(value, output))
     }
 
     /// Adds 0 const to `var_info` and return a const statement for it.
     fn propagate_zero_and_get_statement(&mut self, output: VariableId) -> Statement<'db> {
-        self.propagate_const_and_get_statement(BigInt::zero(), output, false)
+        self.propagate_const_and_get_statement(BigInt::zero(), output)
     }
 
     /// Returns a statement that introduces the requested value into `output`, or None if fails.
@@ -987,11 +979,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             };
             let (success_arm, failure_arm) = if *reversed { (1, 0) } else { (0, 1) };
             let input_var = info.inputs[0].var_id;
+            let in_ty = self.variables[input_var].ty;
             let success_output = info.arms[success_arm].var_ids[0];
             let out_ty = self.variables[success_output].ty;
             let out_range = range(out_ty)?;
             let Some(value) = self.as_int(input_var) else {
-                let in_ty = self.variables[input_var].ty;
                 let in_range = range(in_ty)?;
                 return if in_range.min < out_range.min || in_range.max > out_range.max {
                     None
@@ -1010,7 +1002,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     ));
                 };
             };
-            Some(if let NormalizedResult::InRange(value) = out_range.normalized(value.clone()) {
+            let value =
+                if in_ty == self.felt252 { canonical_felt252(value) } else { value.clone() };
+            Some(if let NormalizedResult::InRange(value) = out_range.normalized(value) {
                 let value = ConstValue::Int(value, out_ty).intern(db);
                 self.var_info.insert(success_output, VarInfo::Const(value));
                 (
@@ -1022,7 +1016,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             })
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
-            let (value, nz_ty) = self.as_int_ex(input_var)?;
+            let value = self.as_int(input_var)?;
             let generic_arg = generic_args[1];
             let constrain_value = extract_matches!(generic_arg, GenericArgumentId::Constant)
                 .long(db)
@@ -1031,7 +1025,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let arm_idx = if value < constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
             Some((
-                vec![self.propagate_const_and_get_statement(value.clone(), output, nz_ty)],
+                vec![self.propagate_const_and_get_statement(value.clone(), output)],
                 BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
             ))
         } else if id == self.array_get {
@@ -1158,25 +1152,19 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const).copied()
     }
 
-    /// Return the const value as an int if it exists and is an integer, additionally, if it is of a
-    /// non-zero type.
-    fn as_int_ex(&self, var_id: VariableId) -> Option<(&BigInt, bool)> {
+    /// Return the const value as a int if it exists and is an integer.
+    fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
         match self.as_const(var_id)?.long(self.db) {
-            ConstValue::Int(value, _) => Some((value, false)),
+            ConstValue::Int(value, _) => Some(value),
             ConstValue::NonZero(const_value) => {
                 if let ConstValue::Int(value, _) = const_value.long(self.db) {
-                    Some((value, true))
+                    Some(value)
                 } else {
                     None
                 }
             }
             _ => None,
         }
-    }
-
-    /// Return the const value as a int if it exists and is an integer.
-    fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
-        Some(self.as_int_ex(var_id)?.0)
     }
 
     /// Replaces the inputs in place if they are in the var_info map.

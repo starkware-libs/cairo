@@ -853,6 +853,7 @@ dependencies = [
  "salsa",
  "serde",
  "sha3",
+ "starknet-types-core",
  "toml",
  "tracing",
 ]
