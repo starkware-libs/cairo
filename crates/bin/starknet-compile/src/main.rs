@@ -64,6 +64,7 @@ fn main() -> anyhow::Result<()> {
             diagnostics_reporter,
             ..CompilerConfig::default()
         }),
+        Default::default(),
         Some(list_selector),
     )?;
     match args.output {

@@ -9,7 +9,7 @@ use bincode::error::EncodeError;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::cache::{
     CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, LanguageElementCached,
-    SyntaxStablePtrIdCached, generate_crate_def_cache,
+    SyntaxStablePtrIdCached,
 };
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -23,12 +23,13 @@ use cairo_lang_semantic::cache::{
     ConcreteEnumCached, ConcreteVariantCached, ConstValueIdCached, ExprVarMemberPathCached,
     ImplIdCached, MatchArmSelectorCached, SemanticCacheLoadingData, SemanticCacheSavingContext,
     SemanticCacheSavingData, SemanticConcreteFunctionWithBodyCached, SemanticFunctionIdCached,
-    TypeIdCached, generate_crate_semantic_cache,
+    TypeIdCached, generate_crate_def_cache, generate_crate_semantic_cache,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::macro_call::module_macro_modules;
 use cairo_lang_semantic::items::trt::TraitSemantic;
 use cairo_lang_semantic::types::TypeInfo;
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -36,6 +37,7 @@ use cairo_lang_syntax::node::ast::{ExprPtr, FunctionWithBodyPtr, TraitItemFuncti
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::Arena;
+use itertools::chain;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -131,22 +133,24 @@ pub fn generate_crate_cache<'db>(
     let modules = db.crate_modules(crate_id);
     let mut function_ids = Vec::new();
     for module_id in modules.iter() {
-        for free_func in db.module_free_functions_ids(*module_id)?.iter() {
-            function_ids.push(FunctionWithBodyId::Free(*free_func));
-        }
-        for impl_id in db.module_impls_ids(*module_id)?.iter() {
-            for impl_func in db.impl_functions(*impl_id)?.values() {
-                function_ids.push(FunctionWithBodyId::Impl(*impl_func));
+        for module_id in chain!([module_id], module_macro_modules(db, true, *module_id)) {
+            for free_func in db.module_free_functions_ids(*module_id)?.iter() {
+                function_ids.push(FunctionWithBodyId::Free(*free_func));
             }
-        }
-        for trait_id in db.module_traits_ids(*module_id)?.iter() {
-            for trait_func in db.trait_functions(*trait_id)?.values() {
-                function_ids.push(FunctionWithBodyId::Trait(*trait_func));
+            for impl_id in db.module_impls_ids(*module_id)?.iter() {
+                for impl_func in db.impl_functions(*impl_id)?.values() {
+                    function_ids.push(FunctionWithBodyId::Impl(*impl_func));
+                }
             }
-        }
-        for trait_id in db.module_traits_ids(*module_id)?.iter() {
-            for trait_func in db.trait_functions(*trait_id)?.values() {
-                function_ids.push(FunctionWithBodyId::Trait(*trait_func));
+            for trait_id in db.module_traits_ids(*module_id)?.iter() {
+                for trait_func in db.trait_functions(*trait_id)?.values() {
+                    function_ids.push(FunctionWithBodyId::Trait(*trait_func));
+                }
+            }
+            for trait_id in db.module_traits_ids(*module_id)?.iter() {
+                for trait_func in db.trait_functions(*trait_id)?.values() {
+                    function_ids.push(FunctionWithBodyId::Trait(*trait_func));
+                }
             }
         }
     }

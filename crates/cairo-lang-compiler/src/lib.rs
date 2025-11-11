@@ -46,9 +46,6 @@ pub struct CompilerConfig<'a> {
     /// Replaces Sierra IDs with human-readable ones.
     pub replace_ids: bool,
 
-    /// Disables inlining functions.
-    pub inlining_strategy: InliningStrategy,
-
     /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
     /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
     pub add_statements_functions: bool,
@@ -71,10 +68,11 @@ pub struct CompilerConfig<'a> {
 pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig<'_>,
+    inlining_strategy: InliningStrategy,
 ) -> Result<Program> {
     let mut db = RootDatabase::builder()
         .with_optimizations(Optimizations::enabled_with_default_movable_functions(
-            compiler_config.inlining_strategy,
+            inlining_strategy,
         ))
         .detect_corelib()
         .build()?;
@@ -101,7 +99,7 @@ pub fn compile(
 ) -> Result<Program> {
     let db = RootDatabase::builder()
         .with_optimizations(Optimizations::enabled_with_default_movable_functions(
-            compiler_config.inlining_strategy,
+            InliningStrategy::Default,
         ))
         .with_project_config(project_config.clone())
         .build()?;

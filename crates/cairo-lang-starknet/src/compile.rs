@@ -9,6 +9,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, CrateInput};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::optimizations::config::Optimizations;
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -40,10 +41,11 @@ pub fn compile_path(
     path: &Path,
     contract_path: Option<&str>,
     mut compiler_config: CompilerConfig<'_>,
+    inlining_strategy: InliningStrategy,
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
         .with_optimizations(Optimizations::enabled_with_default_movable_functions(
-            compiler_config.inlining_strategy,
+            inlining_strategy,
         ))
         .detect_corelib()
         .with_default_plugin_suite(starknet_plugin_suite())
@@ -231,9 +233,11 @@ pub fn starknet_compile(
     crate_path: PathBuf,
     contract_path: Option<String>,
     config: Option<CompilerConfig<'_>>,
+    inlining_strategy: InliningStrategy,
     allowed_libfuncs_list: Option<ListSelector>,
-) -> anyhow::Result<String> {
-    let contract = compile_path(&crate_path, contract_path.as_deref(), config.unwrap_or_default())?;
+) -> Result<String> {
+    let config = config.unwrap_or_default();
+    let contract = compile_path(&crate_path, contract_path.as_deref(), config, inlining_strategy)?;
     contract.validate_version_compatible(allowed_libfuncs_list.unwrap_or_default())?;
     serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")
 }
