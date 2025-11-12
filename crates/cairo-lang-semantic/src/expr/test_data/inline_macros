@@ -1059,9 +1059,9 @@ macro a_macro {
 
 //! > expected_diagnostics
 error: Expected path after modifier.
- --> lib.cairo[a_macro]:1:17
-        $defsite
-                ^
+ --> lib.cairo:7:5
+    a_macro!(x);
+    ^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1147,9 +1147,9 @@ fn consume_z(_z: felt252) {}
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
- --> lib.cairo[bas_use_z_from_callsite]:1:9
-        z
-        ^
+ --> lib.cairo:10:5
+    bas_use_z_from_callsite!();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1186,9 +1186,9 @@ macro wrap_bas_use_z_from_callsite {
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
- --> lib.cairo[wrap_bas_use_z_from_callsite][bas_use_z_from_callsite]:1:20
-        $callsite::z
-                   ^
+ --> lib.cairo:17:5
+    wrap_bas_use_z_from_callsite!();
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1216,9 +1216,9 @@ fn bar() {}
 
 //! > expected_diagnostics
 error[E0006]: Function not found.
- --> lib.cairo[call_bar]:1:9
-        bar()
-        ^^^
+ --> lib.cairo:9:5
+    call_bar!();
+    ^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1352,9 +1352,9 @@ macro test_macro {
 
 //! > expected_diagnostics
 error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
- --> lib.cairo[test_macro]:1:12
-        1 +
-           ^
+ --> lib.cairo:7:5
+    test_macro!();
+    ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1494,16 +1494,14 @@ macro statement_list_returning_macro {
 
 //! > expected_diagnostics
 error: Parser error in macro-expanded code: Missing tokens. Expected an expression.
- --> lib.cairo[statement_list_returning_macro]:1:1
-        let a = 1;
-^
+ --> lib.cairo:8:14
+    let _x = statement_list_returning_macro!();
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: Parser error in macro-expanded code: Skipped tokens. Expected: end of expr.
- --> lib.cairo[statement_list_returning_macro]:1:1-2:18
-          let a = 1;
- _^
-|         let b = 2;
-|__________________^
+ --> lib.cairo:8:14
+    let _x = statement_list_returning_macro!();
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1582,14 +1580,9 @@ macro empty_path {
 
 //! > expected_diagnostics
 error: Expected path after modifier.
- --> lib.cairo[empty_path]:1:17
-        $defsite;
-                ^
-
-error: Expected path after modifier.
- --> lib.cairo[empty_path]:2:18
-        $callsite;
-                 ^
+ --> lib.cairo:8:5
+    empty_path!();
+    ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1650,9 +1643,9 @@ macro super_path {
 
 //! > expected_diagnostics
 error: `super` used in macro call top level.
- --> lib.cairo[super_path]:1:9
-        super::some::path();
-        ^^^^^
+ --> lib.cairo:7:5
+    super_path!();
+    ^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1820,9 +1813,9 @@ macro_item_level!();
 
 //! > expected_diagnostics
 error: Mismatched types. The type `core::felt252` cannot be created from a string literal.
- --> lib.cairo[macro_item_level]:2:42
-            fn item_level() -> felt252 { "100" }
-                                         ^^^^^
+ --> lib.cairo:8:1
+macro_item_level!();
+^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1899,14 +1892,14 @@ define_foo_caller!();
 
 //! > expected_diagnostics
 error[E0006]: Function not found.
- --> lib.cairo[define_foo_caller]:3:13
-            foo();
-            ^^^
+ --> lib.cairo:10:1
+define_foo_caller!();
+^^^^^^^^^^^^^^^^^^^^^
 
 error: Expected path after modifier.
- --> lib.cairo[define_foo_caller]:1:22
-        use $callsite::*;
-                     ^
+ --> lib.cairo:10:1
+define_foo_caller!();
+^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2178,9 +2171,9 @@ define_bar!();
 
 //! > expected_diagnostics
 error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar]:1:20
-        expose!(fn bar() {});
-                   ^^^
+ --> lib.cairo:7:1
+define_bar!();
+^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2212,14 +2205,9 @@ fn bar() {}
 
 //! > expected_diagnostics
 error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar_twice][$defsite::define_bar]:1:20
-        expose!(fn bar() {});
-                   ^^^
-
-error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar_twice]:2:20
-        expose!(fn bar() {});
-                   ^^^
+ --> lib.cairo:12:1
+define_bar_twice!();
+^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2276,9 +2264,9 @@ define_bar!();
 
 //! > expected_diagnostics
 error: The name `bar` is defined multiple times.
- --> lib.cairo[define_bar]:1:20
-        expose!(fn bar() {});
-                   ^^^
+ --> lib.cairo:8:1
+define_bar!();
+^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -2312,9 +2300,9 @@ outer_macro!();
 
 //! > expected_diagnostics
 error: The name `bar` is defined multiple times.
- --> lib.cairo[outer_macro][$defsite::inner_macro]:1:20
-        expose!(fn bar() {});
-                   ^^^
+ --> lib.cairo:15:1
+outer_macro!();
+^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
