@@ -223,7 +223,7 @@ impl CodeOrigin {
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFileInput {
-    pub parent: Option<Arc<FileInput>>,
+    pub parent: Option<(Arc<FileInput>, TextSpan)>,
     pub name: String,
     pub content: Arc<str>,
     pub code_mappings: Arc<[CodeMapping]>,
@@ -234,7 +234,10 @@ pub struct VirtualFileInput {
 impl VirtualFileInput {
     fn into_virtual_file(self, db: &dyn Database) -> VirtualFile<'_> {
         VirtualFile {
-            parent: self.parent.map(|id| id.as_ref().clone().into_file_long_id(db).intern(db)),
+            parent: self.parent.map(|(id, span)| SpanInFile {
+                file_id: id.as_ref().clone().into_file_long_id(db).intern(db),
+                span,
+            }),
             name: SmolStrId::from(db, self.name),
             content: SmolStrId::from(db, self.content),
             code_mappings: self.code_mappings,
@@ -246,7 +249,7 @@ impl VirtualFileInput {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub struct VirtualFile<'db> {
-    pub parent: Option<FileId<'db>>,
+    pub parent: Option<SpanInFile<'db>>,
     pub name: SmolStrId<'db>,
     pub content: SmolStrId<'db>,
     pub code_mappings: Arc<[CodeMapping]>,
@@ -259,8 +262,11 @@ pub struct VirtualFile<'db> {
 impl<'db> VirtualFile<'db> {
     fn full_path(&self, db: &'db dyn Database) -> String {
         if let Some(parent) = self.parent {
-            // TODO(yuval): consider a different path format for virtual files.
-            format!("{}[{}]", parent.full_path(db), self.name.long(db))
+            use std::fmt::Write;
+            let mut f = String::new();
+            parent.fmt_location(&mut f, db).unwrap();
+            write!(&mut f, "[{}]", self.name.long(db)).unwrap();
+            f
         } else {
             self.name.to_string(db)
         }
@@ -268,7 +274,9 @@ impl<'db> VirtualFile<'db> {
 
     fn into_virtual_file_input(self, db: &dyn Database) -> VirtualFileInput {
         VirtualFileInput {
-            parent: self.parent.map(|id| Arc::new(id.long(db).clone().into_file_input(db))),
+            parent: self
+                .parent
+                .map(|loc| (Arc::new(loc.file_id.long(db).clone().into_file_input(db)), loc.span)),
             name: self.name.to_string(db),
             content: Arc::from(self.content.long(db).as_str()),
             code_mappings: self.code_mappings,

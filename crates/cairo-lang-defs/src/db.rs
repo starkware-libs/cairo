@@ -1189,10 +1189,11 @@ fn module_sub_files<'db>(
             }
 
             if let Some(generated) = result.code {
+                let stable_ptr = item_ast.stable_ptr(db).untyped();
                 let generated_file_id = FileLongId::External(
                     PluginGeneratedFileLongId {
                         module_id,
-                        stable_ptr: item_ast.stable_ptr(db).untyped(),
+                        stable_ptr,
                         name: generated.name.clone(),
                     }
                     .intern(db)
@@ -1206,7 +1207,7 @@ fn module_sub_files<'db>(
                 files.insert(
                     generated_file_id,
                     VirtualFile {
-                        parent: Some(file_id),
+                        parent: Some(stable_ptr.span_in_file(db)),
                         name: SmolStrId::from(db, generated.name),
                         content: SmolStrId::from(db, generated.content),
                         code_mappings: generated.code_mappings.into(),

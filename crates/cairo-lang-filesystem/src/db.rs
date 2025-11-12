@@ -600,15 +600,11 @@ pub fn get_originating_location<'db>(
         parent_files.push(location.file_id);
     }
     while let Some((parent, code_mappings)) = get_parent_and_mapping(db, location.file_id) {
-        if let Some(origin) = translate_location(code_mappings, location.span) {
-            location.span = origin;
-            location.file_id = parent;
-            if let Some(ref mut parent_files) = parent_files {
-                parent_files.push(location.file_id);
-            }
-        } else {
-            break;
+        location.file_id = parent.file_id;
+        if let Some(ref mut parent_files) = parent_files {
+            parent_files.push(location.file_id);
         }
+        location.span = translate_location(code_mappings, location.span).unwrap_or(parent.span);
     }
     location
 }
@@ -706,7 +702,7 @@ pub fn translate_location(code_mapping: &[CodeMapping], span: TextSpan) -> Optio
 pub fn get_parent_and_mapping<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
-) -> Option<(FileId<'db>, &'db [CodeMapping])> {
+) -> Option<(SpanInFile<'db>, &'db [CodeMapping])> {
     let vf = match file_id.long(db) {
         FileLongId::OnDisk(_) => return None,
         FileLongId::Virtual(vf) => vf,

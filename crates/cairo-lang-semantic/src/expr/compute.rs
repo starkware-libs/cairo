@@ -846,7 +846,7 @@ fn compute_expr_inline_macro_semantic<'db>(
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_long_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
         name: SmolStrId::from(ctx.db, name),
         content: SmolStrId::from(ctx.db, content),
         code_mappings: info.mappings.clone(),
@@ -917,7 +917,7 @@ fn expand_macro_for_statement<'db>(
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
     let new_file_long_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().file_id(ctx.db)),
+        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
         name: SmolStrId::from(ctx.db, name),
         content: SmolStrId::from_arcstr(ctx.db, &content),
         code_mappings: info.mappings.clone(),
