@@ -11,7 +11,6 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
     skip_diagnostic,
 };
-use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -22,14 +21,15 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, require, try_extract_matches};
 use itertools::Itertools;
 use num_bigint::BigInt;
-use num_traits::{Num, ToPrimitive, Zero};
+use num_traits::{ToPrimitive, Zero};
 use salsa::Database;
+use starknet_types_core::felt::{CAIRO_PRIME_BIGINT, Felt as Felt252};
 
 use super::functions::{GenericFunctionId, GenericFunctionWithBodyId};
 use super::imp::{ImplId, ImplLongId};
 use crate::corelib::{
-    CoreInfo, CorelibSemantic, LiteralError, core_nonzero_ty, false_variant, get_core_ty_by_name,
-    true_variant, try_extract_nz_wrapped_type, unit_ty, validate_literal,
+    CoreInfo, CorelibSemantic, core_nonzero_ty, false_variant, true_variant,
+    try_extract_bounded_int_type_ranges, try_extract_nz_wrapped_type, unit_ty, validate_literal,
 };
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ExprAndId, compute_expr_semantic};
@@ -98,6 +98,33 @@ pub struct ConstantData<'db> {
 define_short_id!(ConstValueId, ConstValue<'db>);
 semantic_object_for_id!(ConstValueId, ConstValue<'a>);
 impl<'db> ConstValueId<'db> {
+    /// Creates a new const value from a BigInt.
+    pub fn from_int(db: &'db dyn Database, ty: TypeId<'db>, value: &BigInt) -> Self {
+        let get_basic_const_value = |ty| {
+            let info = db.const_calc_info();
+            if ty != info.u256 {
+                ConstValue::Int(value.clone(), ty).intern(db)
+            } else {
+                let mask128 = BigInt::from(u128::MAX);
+                let low = value & mask128;
+                let high = value >> 128;
+                ConstValue::Struct(
+                    vec![
+                        (ConstValue::Int(low, info.u128).intern(db)),
+                        (ConstValue::Int(high, info.u128).intern(db)),
+                    ],
+                    ty,
+                )
+                .intern(db)
+            }
+        };
+        if let Some(inner) = try_extract_nz_wrapped_type(db, ty) {
+            ConstValue::NonZero(get_basic_const_value(inner)).intern(db)
+        } else {
+            get_basic_const_value(ty)
+        }
+    }
+    /// Returns a formatted string of the const value.
     pub fn format(&self, db: &dyn Database) -> String {
         format!("{:?}", self.long(db).debug(db))
     }
@@ -116,6 +143,16 @@ impl<'db> ConstValueId<'db> {
     pub fn ty(&self, db: &'db dyn Database) -> Maybe<TypeId<'db>> {
         self.long(db).ty(db)
     }
+}
+
+/// Moves the value of a felt252, to the range of `[range_min, range_min + PRIME)`.
+pub fn felt252_for_downcast(value: &BigInt, range_min: &BigInt) -> BigInt {
+    Felt252::from(value - range_min).to_bigint() + range_min
+}
+
+/// Canonicalize the value of a felt252, to the range of `(-PRIME, PRIME)`.
+pub fn canonical_felt252(value: &BigInt) -> BigInt {
+    value % &*CAIRO_PRIME_BIGINT
 }
 
 /// A constant value.
@@ -423,41 +460,6 @@ pub fn resolve_const_expr_and_evaluate<'db, 'mt>(
     }
 }
 
-/// creates a [ConstValue] from a [BigInt] value.
-pub fn value_as_const_value<'db>(
-    db: &'db dyn Database,
-    ty: TypeId<'db>,
-    value: &BigInt,
-) -> Result<ConstValueId<'db>, LiteralError<'db>> {
-    validate_literal(db, ty, value)?;
-    let get_basic_const_value = |ty| {
-        let u256_ty = get_core_ty_by_name(db, SmolStrId::from(db, "u256"), vec![]);
-
-        if ty != u256_ty {
-            ConstValue::Int(value.clone(), ty).intern(db)
-        } else {
-            let u128_ty = get_core_ty_by_name(db, SmolStrId::from(db, "u128"), vec![]);
-            let mask128 = BigInt::from(u128::MAX);
-            let low = value & mask128;
-            let high = value >> 128;
-            ConstValue::Struct(
-                vec![
-                    (ConstValue::Int(low, u128_ty).intern(db)),
-                    (ConstValue::Int(high, u128_ty).intern(db)),
-                ],
-                ty,
-            )
-            .intern(db)
-        }
-    };
-
-    if let Some(inner) = try_extract_nz_wrapped_type(db, ty) {
-        Ok(ConstValue::NonZero(get_basic_const_value(inner)).intern(db))
-    } else {
-        Ok(get_basic_const_value(ty))
-    }
-}
-
 /// A context for evaluating constant expressions.
 struct ConstantEvaluateContext<'a, 'r, 'mt> {
     db: &'a dyn Database,
@@ -649,8 +651,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 self.evaluate(*inner)
             }
             Expr::FunctionCall(expr) => self.evaluate_function_call(expr),
-            Expr::Literal(expr) => value_as_const_value(db, expr.ty, &expr.value)
-                .expect("LiteralError should have been caught on `validate`"),
+            Expr::Literal(expr) => ConstValueId::from_int(db, expr.ty, &expr.value),
             Expr::Tuple(expr) => ConstValue::Struct(
                 expr.items.iter().map(|expr_id| self.evaluate(*expr_id)).collect(),
                 expr.ty,
@@ -859,7 +860,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             // the function, or the arg itself couldn't have been calculated.
             None => return to_missing(skip_diagnostic()),
         };
-        let mut value = match imp.function {
+        let value = match imp.function {
             id if id == self.neg_fn => -&args[0].v,
             id if id == self.add_fn => &args[0].v + &args[1].v,
             id if id == self.sub_fn => &args[0].v - &args[1].v,
@@ -884,8 +885,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 // Also results are always in the range of the input type, so `unwrap`s are ok.
                 return ConstValue::Struct(
                     vec![
-                        value_as_const_value(db, args[0].ty, &(&args[0].v / &args[1].v)).unwrap(),
-                        value_as_const_value(db, args[0].ty, &(&args[0].v % &args[1].v)).unwrap(),
+                        ConstValueId::from_int(db, args[0].ty, &(&args[0].v / &args[1].v)),
+                        ConstValueId::from_int(db, args[0].ty, &(&args[0].v % &args[1].v)),
                     ],
                     expr.ty,
                 )
@@ -895,20 +896,16 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 unreachable!("Unexpected function call in constant lowering: {:?}", expr)
             }
         };
-        if expr.ty == db.core_info().felt252 {
-            // Specifically handling felt252s since their evaluation is more complex.
-            value %= BigInt::from_str_radix(
-                "800000000000011000000000000000000000000000000000000000000000001",
-                16,
-            )
-            .unwrap();
-        }
-        value_as_const_value(db, expr.ty, &value)
-            .map_err(|err| {
+        if expr.ty == self.felt252 {
+            ConstValue::Int(canonical_felt252(&value), expr.ty).intern(db)
+        } else if let Err(err) = validate_literal(db, expr.ty, &value) {
+            to_missing(
                 self.diagnostics
-                    .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::LiteralError(err))
-            })
-            .unwrap_or_else(to_missing)
+                    .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::LiteralError(err)),
+            )
+        } else {
+            ConstValueId::from_int(db, expr.ty, &value)
+        }
     }
 
     /// Attempts to evaluate a constant function call.
@@ -923,13 +920,13 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             let expr_ty = self.generic_substitution.substitute(db, expr.ty).ok()?;
             if self.upcast_fns.contains(&extern_fn) {
                 let [arg] = args else { return None };
-                return Some(ConstValue::Int(arg.long(db).to_int()?.clone(), expr_ty).intern(db));
+                return Some(ConstValueId::from_int(db, expr_ty, arg.long(db).to_int()?));
             } else if self.unwrap_non_zero == extern_fn {
                 let [arg] = args else { return None };
                 return try_extract_matches!(arg.long(db), ConstValue::NonZero).copied();
             } else if let Some(reversed) = self.downcast_fns.get(&extern_fn) {
                 let [arg] = args else { return None };
-                let value = arg.long(db).to_int()?;
+                let ConstValue::Int(value, input_ty) = arg.long(db) else { return None };
                 let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.long(db) else {
                     return None;
                 };
@@ -938,19 +935,29 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 let (some, none) =
                     if *reversed { (variant1, variant0) } else { (variant0, variant1) };
                 let success_ty = some.ty;
-                return Some(match validate_literal(db, success_ty, value) {
-                    Ok(()) => ConstValue::Enum(
-                        some,
-                        ConstValue::Int(value.clone(), success_ty).intern(db),
-                    )
-                    .intern(db),
-                    Err(LiteralError::OutOfRange(_)) => {
-                        ConstValue::Enum(none, self.unit_const).intern(db)
-                    }
-                    Err(LiteralError::InvalidTypeForLiteral(_)) => unreachable!(
-                        "`downcast` is only allowed into types that can be literals. Got `{}`.",
-                        success_ty.format(db)
-                    ),
+                let out_range = self
+                    .type_value_ranges
+                    .get(&success_ty)
+                    .cloned()
+                    .or_else(|| {
+                        let (min, max) = try_extract_bounded_int_type_ranges(db, success_ty)?;
+                        Some(TypeRange::new(min, max))
+                    })
+                    .unwrap_or_else(|| {
+                        unreachable!(
+                            "`downcast` is only allowed into types that can be literals. Got `{}`.",
+                            success_ty.format(db)
+                        )
+                    });
+                let value = if *input_ty == self.felt252 {
+                    felt252_for_downcast(value, &out_range.min)
+                } else {
+                    value.clone()
+                };
+                return Some(if value >= out_range.min && value <= out_range.max {
+                    ConstValue::Enum(some, ConstValue::Int(value, success_ty).intern(db)).intern(db)
+                } else {
+                    ConstValue::Enum(none, self.unit_const).intern(db)
                 });
             } else if self.nz_fns.contains(&extern_fn) {
                 let [arg] = args else { return None };
@@ -1192,6 +1199,8 @@ pub struct ConstCalcInfo<'db> {
     unwrap_non_zero: ExternFunctionId<'db>,
     /// The `is_zero` style functions.
     pub nz_fns: UnorderedHashSet<ExternFunctionId<'db>>,
+    /// The range of values of a numeric type.
+    pub type_value_ranges: UnorderedHashMap<TypeId<'db>, TypeRange>,
 
     core_info: Arc<CoreInfo<'db>>,
 }
@@ -1214,7 +1223,9 @@ impl<'db> ConstCalcInfo<'db> {
         let zeroable = core.submodule("zeroable");
         let starknet = core.submodule("starknet");
         let class_hash_module = starknet.submodule("class_hash");
+        let class_hash_ty = class_hash_module.ty("ClassHash", vec![]);
         let contract_address_module = starknet.submodule("contract_address");
+        let contract_address_ty = contract_address_module.ty("ContractAddress", vec![]);
         Self {
             const_traits: FromIterator::from_iter([
                 core_info.neg_trt,
@@ -1280,6 +1291,21 @@ impl<'db> ConstCalcInfo<'db> {
                 integer.extern_function_id("u128_is_zero"),
                 integer.extern_function_id("u256_is_zero"),
             ]),
+            type_value_ranges: FromIterator::from_iter([
+                (core_info.u8, TypeRange::new(u8::MIN, u8::MAX)),
+                (core_info.u16, TypeRange::new(u16::MIN, u16::MAX)),
+                (core_info.u32, TypeRange::new(u32::MIN, u32::MAX)),
+                (core_info.u64, TypeRange::new(u64::MIN, u64::MAX)),
+                (core_info.u128, TypeRange::new(u128::MIN, u128::MAX)),
+                (core_info.u256, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 256)),
+                (core_info.i8, TypeRange::new(i8::MIN, i8::MAX)),
+                (core_info.i16, TypeRange::new(i16::MIN, i16::MAX)),
+                (core_info.i32, TypeRange::new(i32::MIN, i32::MAX)),
+                (core_info.i64, TypeRange::new(i64::MIN, i64::MAX)),
+                (core_info.i128, TypeRange::new(i128::MIN, i128::MAX)),
+                (class_hash_ty, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 251)),
+                (contract_address_ty, TypeRange::new(BigInt::ZERO, BigInt::from(1) << 251)),
+            ]),
             core_info,
         }
     }
@@ -1319,3 +1345,17 @@ pub trait ConstantSemantic<'db>: Database {
     }
 }
 impl<'db, T: Database + ?Sized> ConstantSemantic<'db> for T {}
+
+/// A range of values of a numeric type.
+#[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
+pub struct TypeRange {
+    /// The minimum value of the range.
+    pub min: BigInt,
+    /// The maximum value of the range.
+    pub max: BigInt,
+}
+impl TypeRange {
+    pub fn new(min: impl Into<BigInt>, max: impl Into<BigInt>) -> Self {
+        Self { min: min.into(), max: max.into() }
+    }
+}

@@ -6,8 +6,9 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
-    try_get_ty_by_name, unwrap_error_propagation_type,
+    try_get_ty_by_name, unwrap_error_propagation_type, validate_literal,
 };
+use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::functions::{
     FunctionsSemantic, GenericFunctionId, ImplGenericFunctionId,
@@ -38,7 +39,7 @@ use salsa::Database;
 use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
 };
-use semantic::items::constant::{ConstValue, value_as_const_value};
+use semantic::items::constant::ConstValue;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
@@ -946,11 +947,14 @@ fn lower_expr_literal_to_var_usage<'db>(
     value: &BigInt,
     builder: &mut BlockBuilder<'db>,
 ) -> VarUsage<'db> {
-    let value = value_as_const_value(ctx.db, ty, value)
-        .map_err(|err| {
-            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err))
-        })
-        .unwrap_or_else(|diag_added| ConstValue::Missing(diag_added).intern(ctx.db));
+    let value = if let Err(err) = validate_literal(ctx.db, ty, value) {
+        ConstValue::Missing(
+            ctx.diagnostics.report(stable_ptr, LoweringDiagnosticKind::LiteralError(err)),
+        )
+        .intern(ctx.db)
+    } else {
+        ConstValueId::from_int(ctx.db, ty, value)
+    };
     let location = ctx.get_location(stable_ptr);
     generators::Const { value, ty, location }.add(ctx, &mut builder.statements)
 }
