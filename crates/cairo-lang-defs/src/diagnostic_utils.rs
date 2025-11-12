@@ -1,8 +1,7 @@
 use std::fmt;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::DiagnosticLocation;
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -48,35 +47,33 @@ impl<'db> StableLocation<'db> {
         self.stable_ptr
     }
 
-    /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
-    pub fn diagnostic_location(&self, db: &'db dyn Database) -> DiagnosticLocation<'db> {
+    /// Returns the [SpanInFile] that corresponds to the [StableLocation].
+    pub fn span_in_file(&self, db: &'db dyn Database) -> SpanInFile<'db> {
         match self.inner_span {
             Some((start, width)) => {
                 let start = self.syntax_node(db).offset(db).add_width(start);
-                DiagnosticLocation {
+                SpanInFile {
                     file_id: self.file_id(db),
                     span: TextSpan::new_with_width(start, width),
                 }
             }
             None => {
                 let syntax_node = self.syntax_node(db);
-                DiagnosticLocation {
-                    file_id: self.file_id(db),
-                    span: syntax_node.span_without_trivia(db),
-                }
+                SpanInFile { file_id: self.file_id(db), span: syntax_node.span_without_trivia(db) }
             }
         }
     }
 
-    /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
-    pub fn diagnostic_location_until(
+    /// Returns the [SpanInFile] that starts at the [StableLocation], and ends at the given
+    /// [SyntaxStablePtrId].
+    pub fn span_in_file_until(
         &self,
         db: &'db dyn Database,
         until_stable_ptr: SyntaxStablePtrId<'db>,
-    ) -> DiagnosticLocation<'db> {
+    ) -> SpanInFile<'db> {
         let start = self.stable_ptr.lookup(db).span_start_without_trivia(db);
         let end = until_stable_ptr.lookup(db).span_end_without_trivia(db);
-        DiagnosticLocation { file_id: self.stable_ptr.file_id(db), span: TextSpan::new(start, end) }
+        SpanInFile { file_id: self.stable_ptr.file_id(db), span: TextSpan::new(start, end) }
     }
 }
 
@@ -84,7 +81,7 @@ impl<'db> DebugWithDb<'db> for StableLocation<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>, db: &'db dyn Database) -> fmt::Result {
-        let diag_location = self.diagnostic_location(db);
+        let diag_location = self.span_in_file(db);
         diag_location.fmt_location(f, db)
     }
 }

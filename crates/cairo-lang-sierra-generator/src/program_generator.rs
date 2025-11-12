@@ -2,8 +2,9 @@ use std::collections::VecDeque;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_diagnostics::{Maybe, get_location_marks};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
+use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
@@ -243,8 +244,7 @@ impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
                 if let Some(loc) =
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
-                    let loc =
-                        get_location_marks(db, &loc.first().unwrap().diagnostic_location(db), true);
+                    let loc = get_location_marks(db, &loc.first().unwrap().span_in_file(db), true);
                     println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
                 }
             }

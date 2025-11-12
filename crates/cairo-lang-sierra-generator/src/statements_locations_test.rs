@@ -1,4 +1,4 @@
-use cairo_lang_diagnostics::get_location_marks;
+use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -51,11 +51,7 @@ pub fn test_sierra_locations(
                 } else {
                     sierra_code.push_str("Inlined at:\n");
                 }
-                sierra_code.push_str(&get_location_marks(
-                    db,
-                    &location.diagnostic_location(db),
-                    true,
-                ));
+                sierra_code.push_str(&get_location_marks(db, &location.span_in_file(db), true));
                 sierra_code.push('\n');
                 if let Some(function) = maybe_containing_function_identifier_for_tests(db, location)
                 {

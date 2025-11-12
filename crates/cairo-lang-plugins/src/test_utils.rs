@@ -1,9 +1,8 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_diagnostics::{
-    DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder, ErrorCode, Severity,
-};
+use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticsBuilder, ErrorCode, Severity};
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -76,11 +75,12 @@ impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
     fn format(&self, _db: &dyn Database) -> String {
         self.0.message.to_string()
     }
-    fn location(&self, db: &'a dyn Database) -> DiagnosticLocation<'a> {
+    fn location(&self, db: &'a dyn Database) -> SpanInFile<'a> {
         match self.0.inner_span {
-            Some(inner_span) => StableLocation::with_inner_span(self.0.stable_ptr, inner_span)
-                .diagnostic_location(db),
-            None => StableLocation::new(self.0.stable_ptr).diagnostic_location(db),
+            Some(inner_span) => {
+                StableLocation::with_inner_span(self.0.stable_ptr, inner_span).span_in_file(db)
+            }
+            None => StableLocation::new(self.0.stable_ptr).span_in_file(db),
         }
     }
     fn severity(&self) -> Severity {

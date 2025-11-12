@@ -73,7 +73,7 @@ impl<'db> Location<'db> {
     ) -> Self {
         self.with_note(DiagnosticNote::with_location(
             text.into(),
-            location.long(db).stable_location.diagnostic_location(db),
+            location.long(db).stable_location.span_in_file(db),
         ))
     }
 }
@@ -81,7 +81,7 @@ impl<'db> Location<'db> {
 impl<'db> DebugWithDb<'db> for Location<'db> {
     type Db = dyn Database;
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        self.stable_location.diagnostic_location(db).fmt(f, db)?;
+        self.stable_location.span_in_file(db).fmt(f, db)?;
 
         for note in &self.notes {
             f.write_str("\nnote: ")?;

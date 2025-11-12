@@ -1,14 +1,13 @@
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
-use cairo_lang_filesystem::span::{TextSpan, TextWidth};
-use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
-use super::get_location_marks;
-use crate::DiagnosticLocation;
+use crate::db::FilesGroup;
+use crate::ids::{FileKind, FileLongId, SmolStrId, SpanInFile, VirtualFile};
+use crate::location_marks::get_location_marks;
+use crate::span::{TextSpan, TextWidth};
+use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_location_marks() {
@@ -33,7 +32,7 @@ fn test_location_marks() {
     let third_line = summary.line_offsets[2];
 
     // Empty span.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan::cursor(second_line.add_width(TextWidth::new_for_testing(13))),
     };
@@ -47,7 +46,7 @@ fn test_location_marks() {
     );
 
     // Span of length 1.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan::new(
             third_line.add_width(TextWidth::new_for_testing(3)),
@@ -64,7 +63,7 @@ fn test_location_marks() {
     );
 
     // Span of length 2.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan::new(
             third_line.add_width(TextWidth::new_for_testing(3)),
@@ -81,7 +80,7 @@ fn test_location_marks() {
     );
 
     // Span of length > 1.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan::new(
             second_line.add_width(TextWidth::new_for_testing(7)),
@@ -98,7 +97,7 @@ fn test_location_marks() {
     );
 
     // Multiline span.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan::new(
             second_line.add_width(TextWidth::new_for_testing(7)),
@@ -117,7 +116,7 @@ fn test_location_marks() {
     );
 
     // Span that ends past the end of the file.
-    let location = DiagnosticLocation {
+    let location = SpanInFile {
         file_id: file,
         span: TextSpan::new(
             third_line.add_width(TextWidth::new_for_testing(7)),
@@ -134,8 +133,7 @@ fn test_location_marks() {
     );
 
     // Empty span past the end of the file.
-    let location =
-        DiagnosticLocation { file_id: file, span: TextSpan::cursor(summary.last_offset) };
+    let location = SpanInFile { file_id: file, span: TextSpan::cursor(summary.last_offset) };
 
     assert_eq!(
         get_location_marks(&db, &location, true) + "\n",

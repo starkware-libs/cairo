@@ -76,7 +76,7 @@ impl<'db> DropPosition<'db> {
         let location = location.long(db);
         notes.push(DiagnosticNote::with_location(
             text.into(),
-            location.stable_location.diagnostic_location(db),
+            location.stable_location.span_in_file(db),
         ));
         notes.extend(location.notes.clone());
     }
