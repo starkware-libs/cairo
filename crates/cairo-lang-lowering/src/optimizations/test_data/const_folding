@@ -6298,8 +6298,8 @@ Statements:
   (v0: core::felt252) <- 1
   (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
   (v2: core::option::Option::<core::felt252>, v3: @core::option::Option::<core::felt252>) <- snapshot(v1)
-  (v10: core::felt252) <- 1
-  (v9: core::felt252, v4: @core::felt252) <- snapshot(v10)
+  (v9: core::felt252) <- 1
+  (v10: core::felt252, v4: @core::felt252) <- snapshot(v9)
 End:
   Goto(blk1, {})
 
@@ -6308,6 +6308,251 @@ Statements:
   (v6: core::felt252) <- desnap(v4)
 End:
   Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::felt252) <- 0
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Match enum with known variant on snapshot of value.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > Comments
+TODO(orizi): Enable const-folding of known enum variants not of direct variables or consts.
+
+//! > function
+fn foo() -> felt252 {
+    let v = Some(@1);
+    match v {
+        Some(v) => *v,
+        None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::option::Option::<@core::felt252>) <- Option::Some(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252) <- desnap(v4)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::felt252) <- 0
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 1
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::option::Option::<@core::felt252>) <- Option::Some(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252) <- desnap(v4)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::felt252) <- 0
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Match enum on known variant enum.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+    let v = Some(a);
+    match v {
+        Some(v) => v,
+        None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v2 -> v4})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 0
+End:
+  Goto(blk3, {v5 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v0 -> v4})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 0
+End:
+  Goto(blk3, {v5 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Match enum on snapshot of known variant enum.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: felt252) -> felt252 {
+    let v = @Some(a);
+    match v {
+        Some(v) => *v,
+        None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+  (v2: core::option::Option::<core::felt252>, v3: @core::option::Option::<core::felt252>) <- snapshot(v1)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252) <- desnap(v4)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::felt252) <- 0
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
+  (v2: core::option::Option::<core::felt252>, v3: @core::option::Option::<core::felt252>) <- snapshot(v1)
+  (v9: core::felt252, v4: @core::felt252) <- snapshot(v0)
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v6: core::felt252) <- desnap(v4)
+End:
+  Goto(blk3, {v0 -> v7})
 
 blk2:
 Statements:
