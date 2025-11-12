@@ -191,7 +191,10 @@ pub fn final_optimization_strategy<'db>(db: &'db dyn Database) -> OptimizationSt
                 OptimizationPhase::ReorganizeBlocks,
             ])
         }
-        Optimizations::Disabled => OptimizationStrategy(vec![OptimizationPhase::LowerImplicits]),
+        Optimizations::Disabled => OptimizationStrategy(vec![
+            OptimizationPhase::LowerImplicits,
+            OptimizationPhase::ReorganizeBlocks,
+        ]),
     }
     .intern(db)
 }
