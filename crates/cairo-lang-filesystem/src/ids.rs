@@ -1,7 +1,9 @@
+use core::fmt;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_utils::{Intern, define_short_id};
 use itertools::Itertools;
 use path_clean::PathClean;
@@ -9,7 +11,8 @@ use salsa::Database;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::db::{CORELIB_CRATE_NAME, ext_as_virtual};
+use crate::db::{CORELIB_CRATE_NAME, ext_as_virtual, get_originating_location};
+use crate::location_marks::get_location_marks;
 use crate::span::{TextOffset, TextSpan};
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
@@ -504,6 +507,59 @@ define_short_id!(BlobId, BlobLongId);
 impl<'db> BlobId<'db> {
     pub fn new_on_disk(db: &'db (dyn salsa::Database + 'db), path: PathBuf) -> Self {
         BlobId::new(db, BlobLongId::OnDisk(path.clean()))
+    }
+}
+
+/// A location within a file.
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct SpanInFile<'db> {
+    pub file_id: FileId<'db>,
+    pub span: TextSpan,
+}
+impl<'db> SpanInFile<'db> {
+    /// Get the location of right after this diagnostic's location (with width 0).
+    pub fn after(&self) -> Self {
+        Self { file_id: self.file_id, span: self.span.after() }
+    }
+    /// Get the location of the originating user code.
+    pub fn user_location(&self, db: &'db dyn Database) -> Self {
+        get_originating_location(db, *self, None)
+    }
+    /// Helper function to format the location of a diagnostic.
+    pub fn fmt_location(&self, f: &mut impl fmt::Write, db: &'db dyn Database) -> fmt::Result {
+        let file_path = self.file_id.long(db).full_path(db);
+        let start = match self.span.start.position_in_file(db, self.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+
+        let end = match self.span.end.position_in_file(db, self.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+        write!(f, "{file_path}:{start}: {end}")
+    }
+}
+impl<'db> DebugWithDb<'db> for SpanInFile<'db> {
+    type Db = dyn Database;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
+        let file_path = self.file_id.long(db).full_path(db);
+        let mut marks = String::new();
+        let mut ending_pos = String::new();
+        let starting_pos = match self.span.start.position_in_file(db, self.file_id) {
+            Some(starting_text_pos) => {
+                if let Some(ending_text_pos) = self.span.end.position_in_file(db, self.file_id)
+                    && starting_text_pos.line != ending_text_pos.line
+                {
+                    ending_pos = format!("-{}:{}", ending_text_pos.line + 1, ending_text_pos.col);
+                }
+                marks = get_location_marks(db, self, true);
+                format!("{}:{}", starting_text_pos.line + 1, starting_text_pos.col + 1)
+            }
+            None => "?".into(),
+        };
+        write!(f, "{file_path}:{starting_pos}{ending_pos}\n{marks}")
     }
 }
 

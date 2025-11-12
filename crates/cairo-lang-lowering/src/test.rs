@@ -114,7 +114,7 @@ fn test_location_and_diagnostics() {
         .stable_ptr
         .untyped(),
     )
-    .diagnostic_location(db);
+    .span_in_file(db);
 
     let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
         .with_auto_generation_note(db, "withdraw_gas")

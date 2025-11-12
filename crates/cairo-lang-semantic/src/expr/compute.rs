@@ -511,7 +511,7 @@ impl<'ctx> VariableTracker<'ctx> {
         if let Some(&referenced_at) = self.referenced_mut_vars.get(var_id) {
             let note = DiagnosticNote::with_location(
                 "variable pointer taken here".into(),
-                StableLocation::new(referenced_at).diagnostic_location(db),
+                StableLocation::new(referenced_at).span_in_file(db),
             );
             diagnostics.report(error_ptr, AssignmentToReprPtrVariable(vec![note]));
         }

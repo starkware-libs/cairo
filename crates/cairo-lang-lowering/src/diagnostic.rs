@@ -1,8 +1,8 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, DiagnosticsBuilder,
-    Severity,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, DiagnosticsBuilder, Severity,
 };
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::LiteralError;
 use cairo_lang_semantic::expr::inference::InferenceError;
@@ -98,11 +98,11 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
         &self.location.notes
     }
 
-    fn location(&self, db: &'db dyn Database) -> DiagnosticLocation<'db> {
+    fn location(&self, db: &'db dyn Database) -> SpanInFile<'db> {
         if let LoweringDiagnosticKind::Unreachable { block_end_ptr } = &self.kind {
-            return self.location.stable_location.diagnostic_location_until(db, *block_end_ptr);
+            return self.location.stable_location.span_in_file_until(db, *block_end_ptr);
         }
-        self.location.stable_location.diagnostic_location(db)
+        self.location.stable_location.span_in_file(db)
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {

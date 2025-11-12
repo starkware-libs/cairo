@@ -15,7 +15,7 @@ use crate::flag::Flag;
 use crate::ids::{
     ArcStr, BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId,
     Directory, DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, SmolStrId,
-    Tracked, VirtualFile,
+    SpanInFile, Tracked, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -593,25 +593,24 @@ fn blob_content<'db>(db: &'db dyn Database, blob: BlobId<'db>) -> Option<&'db [u
 /// Returns the location of the originating user code.
 pub fn get_originating_location<'db>(
     db: &'db dyn Database,
-    mut file_id: FileId<'db>,
-    mut span: TextSpan,
+    mut location: SpanInFile<'db>,
     mut parent_files: Option<&mut Vec<FileId<'db>>>,
-) -> (FileId<'db>, TextSpan) {
+) -> SpanInFile<'db> {
     if let Some(ref mut parent_files) = parent_files {
-        parent_files.push(file_id);
+        parent_files.push(location.file_id);
     }
-    while let Some((parent, code_mappings)) = get_parent_and_mapping(db, file_id) {
-        if let Some(origin) = translate_location(code_mappings, span) {
-            span = origin;
-            file_id = parent;
+    while let Some((parent, code_mappings)) = get_parent_and_mapping(db, location.file_id) {
+        if let Some(origin) = translate_location(code_mappings, location.span) {
+            location.span = origin;
+            location.file_id = parent;
             if let Some(ref mut parent_files) = parent_files {
-                parent_files.push(file_id);
+                parent_files.push(location.file_id);
             }
         } else {
             break;
         }
     }
-    (file_id, span)
+    location
 }
 
 /// This function finds a span in original code that corresponds to the provided span in the

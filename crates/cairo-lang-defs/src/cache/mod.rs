@@ -3,11 +3,12 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{DiagnosticLocation, DiagnosticNote, Severity};
+use cairo_lang_diagnostics::{DiagnosticNote, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, SmolStrId, VirtualFile,
+    CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, SmolStrId, SpanInFile,
+    VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_syntax::node::ast::{
@@ -2032,7 +2033,7 @@ type PluginFileDiagnosticNotesCached = OrderedHashMap<FileIdCached, DiagnosticNo
 #[derive(Serialize, Deserialize, Clone)]
 struct DiagnosticNoteCached {
     text: String,
-    location: Option<DiagnosticLocationCached>,
+    location: Option<SpanInFileCached>,
 }
 
 impl DiagnosticNoteCached {
@@ -2042,7 +2043,7 @@ impl DiagnosticNoteCached {
     ) -> DiagnosticNoteCached {
         DiagnosticNoteCached {
             text: note.text.clone(),
-            location: note.location.map(|location| DiagnosticLocationCached::new(&location, ctx)),
+            location: note.location.map(|location| SpanInFileCached::new(&location, ctx)),
         }
     }
     fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> DiagnosticNote<'db> {
@@ -2054,22 +2055,19 @@ impl DiagnosticNoteCached {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-struct DiagnosticLocationCached {
+struct SpanInFileCached {
     file_id: FileIdCached,
     span: TextSpan,
 }
 
-impl DiagnosticLocationCached {
+impl SpanInFileCached {
     fn new<'db>(
-        location: &DiagnosticLocation<'db>,
+        location: &SpanInFile<'db>,
         ctx: &mut DefCacheSavingContext<'db>,
-    ) -> DiagnosticLocationCached {
-        DiagnosticLocationCached {
-            file_id: FileIdCached::new(location.file_id, ctx),
-            span: location.span,
-        }
+    ) -> SpanInFileCached {
+        SpanInFileCached { file_id: FileIdCached::new(location.file_id, ctx), span: location.span }
     }
-    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> DiagnosticLocation<'db> {
-        DiagnosticLocation { file_id: self.file_id.embed(ctx), span: self.span }
+    fn embed<'db>(self, ctx: &mut DefCacheLoadingContext<'db>) -> SpanInFile<'db> {
+        SpanInFile { file_id: self.file_id.embed(ctx), span: self.span }
     }
 }

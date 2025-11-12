@@ -2,8 +2,8 @@ use std::ops::Add;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::{DiagnosticLocation, ToOption};
-use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::ids::{FileId, FileLongId, SpanInFile, VirtualFile};
 use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -142,7 +142,7 @@ pub fn maybe_code_location<'db>(
 ) -> Option<(SourceFileFullPath, SourceCodeSpan, bool)> {
     let is_macro =
         matches!(location.file_id(db).long(db), FileLongId::Virtual(_) | FileLongId::External(_));
-    let location = location.diagnostic_location(db).user_location(db);
+    let location = location.span_in_file(db).user_location(db);
     let file_full_path = location.file_id.full_path(db);
     let position = location.span.position_in_file(db, location.file_id)?;
     let source_location = SourceCodeSpan {
@@ -268,11 +268,11 @@ impl<'db> StatementsLocations<'db> {
         &self,
         db: &'db dyn Database,
         stmt_idx: StatementIdx,
-    ) -> Option<DiagnosticLocation<'db>> {
+    ) -> Option<SpanInFile<'db>> {
         // Note that the `last` is used here as the call site is the most relevant location.
         self.locations
             .get(&stmt_idx)
             .and_then(|stmt_locs| stmt_locs.last())
-            .map(|loc| loc.diagnostic_location(db).user_location(db))
+            .map(|loc| loc.span_in_file(db).user_location(db))
     }
 }
