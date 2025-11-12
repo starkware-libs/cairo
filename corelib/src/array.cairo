@@ -67,6 +67,7 @@ use crate::box::BoxTrait;
 use crate::gas::withdraw_gas;
 use crate::iter::Iterator;
 use crate::metaprogramming::TypeEqual;
+use crate::num::traits::CheckedSub;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
 use crate::serde::Serde;
@@ -424,9 +425,10 @@ impl SpanFelt252Serde of Serde<Span<felt252>> {
     /// ```
     fn deserialize(ref serialized: Span<felt252>) -> Option<Span<felt252>> {
         let length: u32 = (*serialized.pop_front()?).try_into()?;
-        let res = serialized.slice(0, length);
-        serialized = serialized.slice(length, serialized.len() - length);
-        Some(res)
+        let res = array_slice(serialized.snapshot, 0, length)?;
+        let remaining = serialized.len().checked_sub(length)?;
+        serialized.snapshot = array_slice(serialized.snapshot, length, remaining)?;
+        Some(Span { snapshot: res })
     }
 }
 
