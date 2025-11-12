@@ -17,7 +17,8 @@ use cairo_lang_semantic::items::functions::{GenericFunctionId, GenericFunctionWi
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{
-    ConcreteTypeId, GenericArgumentId, MatchArmSelector, TypeId, TypeLongId, corelib,
+    ConcreteTypeId, ConcreteVariant, GenericArgumentId, MatchArmSelector, TypeId, TypeLongId,
+    corelib,
 };
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -59,6 +60,8 @@ enum VarInfo<'db> {
     /// The variable is a struct of other variables.
     /// `None` values represent variables that are not tracked.
     Struct(Vec<Option<VarInfo<'db>>>),
+    /// The variable is an enum of a known variant of other variables.
+    Enum { variant: ConcreteVariant<'db>, payload: Box<VarInfo<'db>> },
     /// The variable is a box of another variable.
     Box(Box<VarInfo<'db>>),
     /// The variable is an array of known size of other variables.
@@ -294,10 +297,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 }
             }
             Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
-                if let Some(VarInfo::Const(val)) = self.var_info.get(&input.var_id) {
-                    let value = ConstValue::Enum(*variant, *val).intern(self.db);
-                    self.var_info.insert(*output, VarInfo::Const(value));
-                }
+                let value = if let Some(info) = self.var_info.get(&input.var_id) {
+                    if let VarInfo::Const(val) = info {
+                        VarInfo::Const(ConstValue::Enum(*variant, *val).intern(self.db))
+                    } else {
+                        VarInfo::Enum { variant: *variant, payload: info.clone().into() }
+                    }
+                } else {
+                    VarInfo::Enum { variant: *variant, payload: VarInfo::Var(*input).into() }
+                };
+                self.var_info.insert(*output, value);
             }
         }
     }
@@ -773,9 +782,15 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         let input = info.input.var_id;
         let (n_snapshots, var_info) = self.var_info.get(&input)?.peel_snapshots();
         let location = info.location;
+        let as_usage = |var_id| VarUsage { var_id, location };
+        let db = self.db;
+        let snapshot_stmt = |vars: &mut VariableArena<'_>, pre_snap, post_snap| {
+            let ignored = vars.alloc(vars[pre_snap].clone());
+            Statement::Snapshot(StatementSnapshot::new(as_usage(pre_snap), ignored, post_snap))
+        };
         // Checking whether we have actual const info on the enum.
         if let VarInfo::Const(const_value) = var_info
-            && let ConstValue::Enum(variant, value) = const_value.long(self.db)
+            && let ConstValue::Enum(variant, value) = const_value.long(db)
         {
             let arm = &info.arms[variant.idx];
             let output = arm.var_ids[0];
@@ -783,26 +798,45 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             self.var_info.insert(output, VarInfo::Const(*value).wrap_with_snapshots(n_snapshots));
             if self.variables[input].info.droppable.is_ok()
                 && self.variables[output].info.copyable.is_ok()
-                && let Ok(mut ty) = value.ty(self.db)
+                && let Ok(mut ty) = value.ty(db)
                 && let Some(mut stmt) = self.try_generate_const_statement(*value, output)
             {
                 // Adding snapshot taking statements for snapshots.
                 for _ in 0..n_snapshots {
-                    let non_snap_var = Variable::with_default_context(self.db, ty, location);
-                    ty = TypeLongId::Snapshot(ty).intern(self.db);
-                    let ignored = self.variables.alloc(non_snap_var.clone());
+                    let non_snap_var = Variable::with_default_context(db, ty, location);
+                    ty = TypeLongId::Snapshot(ty).intern(db);
                     let pre_snap = self.variables.alloc(non_snap_var);
                     stmt.outputs_mut()[0] = pre_snap;
-                    statements.push(core::mem::replace(
-                        &mut stmt,
-                        Statement::Snapshot(StatementSnapshot::new(
-                            VarUsage { var_id: pre_snap, location },
-                            ignored,
-                            output,
-                        )),
-                    ));
+                    let take_snap = snapshot_stmt(self.variables, pre_snap, output);
+                    statements.push(core::mem::replace(&mut stmt, take_snap));
                 }
                 statements.push(stmt);
+                return Some(BlockEnd::Goto(arm.block_id, Default::default()));
+            }
+        } else if let VarInfo::Enum { variant, payload } = var_info {
+            let arm = &info.arms[variant.idx];
+            let variant_ty = variant.ty;
+            let output = arm.var_ids[0];
+            let payload = payload.as_ref().clone();
+            let unwrapped = try_extract_matches!(payload, VarInfo::Var).map(|v| v.var_id);
+            // Propagating the const value information.
+            self.var_info.insert(output, payload.wrap_with_snapshots(n_snapshots));
+            if let Some(mut unwrapped) = unwrapped
+                && self.variables[input].info.droppable.is_ok()
+                && self.variables[unwrapped].info.copyable.is_ok()
+            {
+                if n_snapshots != 0 {
+                    // Adding snapshot taking statements for snapshots.
+                    let mut ty = variant_ty;
+                    for _ in 1..n_snapshots {
+                        ty = TypeLongId::Snapshot(ty).intern(db);
+                        let non_snap_var = Variable::with_default_context(self.db, ty, location);
+                        let snapped = self.variables.alloc(non_snap_var);
+                        statements.push(snapshot_stmt(self.variables, unwrapped, snapped));
+                        unwrapped = snapped;
+                    }
+                    statements.push(snapshot_stmt(self.variables, unwrapped, output));
+                };
                 return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
         }

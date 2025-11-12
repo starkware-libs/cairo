@@ -3330,54 +3330,46 @@ End:
 
 blk1:
 Statements:
-  (v1: test::A) <- A::One(v0)
-  (v2: test::A, v3: @test::A) <- snapshot(v1)
+  (v1: @core::option::Option::<@@core::option::Option::<@core::felt252>>, v2: @@core::option::Option::<@@core::option::Option::<@core::felt252>>) <- snapshot(v0)
 End:
-  Match(match_enum(v3) {
-    A::One(v4) => blk2,
+  Match(match_enum(v2) {
+    Option::Some(v3) => blk2,
+    Option::None(v4) => blk5,
   })
 
 blk2:
 Statements:
 End:
-  Match(match_enum(v4) {
+  Match(match_enum(v3) {
     Option::Some(v5) => blk3,
-    Option::None(v6) => blk6,
+    Option::None(v6) => blk4,
   })
 
 blk3:
 Statements:
+  (v7: @@@@core::felt252) <- desnap(v5)
+  (v8: @@@core::felt252) <- desnap(v7)
+  (v9: @@core::felt252) <- desnap(v8)
+  (v10: @core::felt252) <- desnap(v9)
+  (v11: core::felt252) <- desnap(v10)
 End:
-  Match(match_enum(v5) {
-    Option::Some(v7) => blk4,
-    Option::None(v8) => blk5,
-  })
+  Return(v11)
 
 blk4:
 Statements:
-  (v9: @@@@core::felt252) <- desnap(v7)
-  (v10: @@@core::felt252) <- desnap(v9)
-  (v11: @@core::felt252) <- desnap(v10)
-  (v12: @core::felt252) <- desnap(v11)
-  (v13: core::felt252) <- desnap(v12)
 End:
-  Return(v13)
+  Goto(blk6, {})
 
 blk5:
 Statements:
 End:
-  Goto(blk7, {})
+  Goto(blk6, {})
 
 blk6:
 Statements:
+  (v12: core::felt252) <- 3
 End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
-  (v14: core::felt252) <- 3
-End:
-  Return(v14)
+  Return(v12)
 
 //! > ==========================================================================
 
