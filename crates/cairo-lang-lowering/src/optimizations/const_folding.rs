@@ -308,8 +308,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// - Inserts the accumulated additional statements into the block.
     /// - Converts match endings to goto when applicable.
     /// - Updates self.reachability based on the block's ending.
-    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut crate::Block<'db>) {
-        block.statements.splice(0..0, self.additional_stmts.drain(..));
+    pub fn visit_block_end(&mut self, block_id: BlockId, block: &mut Block<'db>) {
+        let statements = &mut block.statements;
+        statements.splice(0..0, self.additional_stmts.drain(..));
 
         match &mut block.end {
             BlockEnd::Goto(_, remappings) => {
@@ -320,47 +321,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             BlockEnd::Match { info } => {
                 self.maybe_replace_inputs(info.inputs_mut());
                 match info {
-                    MatchInfo::Enum(MatchEnumInfo { input, arms, location, .. }) => {
-                        if let Some(var_info) = self.var_info.get(&input.var_id) {
-                            let (n_snapshots, var_info) = var_info.peel_snapshots();
-                            // Checking whether we have actual const info on the enum.
-                            if let VarInfo::Const(const_value) = var_info
-                                && let ConstValue::Enum(variant, value) = const_value.long(self.db)
-                            {
-                                let arm = &arms[variant.idx];
-                                let output = arm.var_ids[0];
-                                if self.variables[input.var_id].info.droppable.is_ok()
-                                    && self.variables[output].info.copyable.is_ok()
-                                    && let Ok(mut ty) = value.ty(self.db)
-                                    && let Some(mut stmt) =
-                                        self.try_generate_const_statement(*value, output)
-                                {
-                                    // Adding snapshot taking statements for snapshots.
-                                    for _ in 0..n_snapshots {
-                                        let non_snap_var =
-                                            Variable::with_default_context(self.db, ty, *location);
-                                        ty = TypeLongId::Snapshot(ty).intern(self.db);
-                                        let ignored = self.variables.alloc(non_snap_var.clone());
-                                        let pre_snap = self.variables.alloc(non_snap_var);
-                                        stmt.outputs_mut()[0] = pre_snap;
-                                        block.statements.push(core::mem::replace(
-                                            &mut stmt,
-                                            Statement::Snapshot(StatementSnapshot::new(
-                                                VarUsage { var_id: pre_snap, location: *location },
-                                                ignored,
-                                                output,
-                                            )),
-                                        ));
-                                    }
-                                    block.statements.push(stmt);
-                                    block.end = BlockEnd::Goto(arm.block_id, Default::default());
-                                }
-                                // Propagating the const value information.
-                                self.var_info.insert(
-                                    output,
-                                    VarInfo::Const(*value).wrap_with_snapshots(n_snapshots),
-                                );
-                            }
+                    MatchInfo::Enum(info) => {
+                        if let Some(updated_end) = self.handle_enum_block_end(info, statements) {
+                            block.end = updated_end;
+                        }
+                    }
+                    MatchInfo::Extern(info) => {
+                        if let Some(updated_end) = self.handle_extern_block_end(info, statements) {
+                            block.end = updated_end;
                         }
                     }
                     MatchInfo::Value(info) => {
@@ -374,17 +342,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                             })
                         {
                             // Create the variable that was previously introduced in match arm.
-                            block.statements.push(Statement::StructConstruct(
-                                StatementStructConstruct { inputs: vec![], output: arm.var_ids[0] },
-                            ));
+                            statements.push(Statement::StructConstruct(StatementStructConstruct {
+                                inputs: vec![],
+                                output: arm.var_ids[0],
+                            }));
                             block.end = BlockEnd::Goto(arm.block_id, Default::default());
-                        }
-                    }
-                    MatchInfo::Extern(info) => {
-                        if let Some((extra_stmts, updated_end)) = self.handle_extern_block_end(info)
-                        {
-                            block.statements.extend(extra_stmts);
-                            block.end = updated_end;
                         }
                     }
                 }
@@ -799,14 +761,63 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         }
     }
 
-    /// Handles the end of an extern block.
+    /// Handles the end of block matching on an enum.
+    /// Possibly extends the blocks statements as well.
     /// Returns None if no additional changes are required.
-    /// If changes are required, returns a possible additional const-statement to the block, as well
-    /// as an updated block end.
+    /// If changes are required, returns the updated block end.
+    fn handle_enum_block_end(
+        &mut self,
+        info: &mut MatchEnumInfo<'db>,
+        statements: &mut Vec<Statement<'db>>,
+    ) -> Option<BlockEnd<'db>> {
+        let input = info.input.var_id;
+        let (n_snapshots, var_info) = self.var_info.get(&input)?.peel_snapshots();
+        let location = info.location;
+        // Checking whether we have actual const info on the enum.
+        if let VarInfo::Const(const_value) = var_info
+            && let ConstValue::Enum(variant, value) = const_value.long(self.db)
+        {
+            let arm = &info.arms[variant.idx];
+            let output = arm.var_ids[0];
+            // Propagating the const value information.
+            self.var_info.insert(output, VarInfo::Const(*value).wrap_with_snapshots(n_snapshots));
+            if self.variables[input].info.droppable.is_ok()
+                && self.variables[output].info.copyable.is_ok()
+                && let Ok(mut ty) = value.ty(self.db)
+                && let Some(mut stmt) = self.try_generate_const_statement(*value, output)
+            {
+                // Adding snapshot taking statements for snapshots.
+                for _ in 0..n_snapshots {
+                    let non_snap_var = Variable::with_default_context(self.db, ty, location);
+                    ty = TypeLongId::Snapshot(ty).intern(self.db);
+                    let ignored = self.variables.alloc(non_snap_var.clone());
+                    let pre_snap = self.variables.alloc(non_snap_var);
+                    stmt.outputs_mut()[0] = pre_snap;
+                    statements.push(core::mem::replace(
+                        &mut stmt,
+                        Statement::Snapshot(StatementSnapshot::new(
+                            VarUsage { var_id: pre_snap, location },
+                            ignored,
+                            output,
+                        )),
+                    ));
+                }
+                statements.push(stmt);
+                return Some(BlockEnd::Goto(arm.block_id, Default::default()));
+            }
+        }
+        None
+    }
+
+    /// Handles the end of a block based on an extern function call.
+    /// Possibly extends the blocks statements as well.
+    /// Returns None if no additional changes are required.
+    /// If changes are required, returns the updated block end.
     fn handle_extern_block_end(
         &mut self,
         info: &mut MatchExternInfo<'db>,
-    ) -> Option<(Vec<Statement<'db>>, BlockEnd<'db>)> {
+        statements: &mut Vec<Statement<'db>>,
+    ) -> Option<BlockEnd<'db>> {
         let db = self.db;
         let (id, generic_args) = info.function.get_extern(db)?;
         if self.nz_fns.contains(&id) {
@@ -819,16 +830,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 _ => unreachable!(),
             };
             Some(if is_zero {
-                (vec![], BlockEnd::Goto(info.arms[0].block_id, Default::default()))
+                BlockEnd::Goto(info.arms[0].block_id, Default::default())
             } else {
                 let arm = &info.arms[1];
                 let nz_var = arm.var_ids[0];
                 let nz_val = ConstValue::NonZero(val).intern(db);
                 self.var_info.insert(nz_var, VarInfo::Const(nz_val));
-                (
-                    vec![Statement::Const(StatementConst::new_flat(nz_val, nz_var))],
-                    BlockEnd::Goto(arm.block_id, Default::default()),
-                )
+                statements.push(Statement::Const(StatementConst::new_flat(nz_val, nz_var)));
+                BlockEnd::Goto(arm.block_id, Default::default())
             })
         } else if self.eq_fns.contains(&id) {
             let lhs = self.as_int(info.inputs[0].var_id);
@@ -845,39 +854,33 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     var.location,
                 );
                 let unused_nz_var = self.variables.alloc(unused_nz_var);
-                return Some((
-                    vec![],
-                    BlockEnd::Match {
-                        info: MatchInfo::Extern(MatchExternInfo {
-                            function,
-                            inputs: vec![nz_input],
-                            arms: vec![
-                                MatchArm {
-                                    arm_selector: MatchArmSelector::VariantId(
-                                        corelib::jump_nz_zero_variant(db, var.ty),
-                                    ),
-                                    block_id: info.arms[1].block_id,
-                                    var_ids: vec![],
-                                },
-                                MatchArm {
-                                    arm_selector: MatchArmSelector::VariantId(
-                                        corelib::jump_nz_nonzero_variant(db, var.ty),
-                                    ),
-                                    block_id: info.arms[0].block_id,
-                                    var_ids: vec![unused_nz_var],
-                                },
-                            ],
-                            location: info.location,
-                        }),
-                    },
-                ));
+                return Some(BlockEnd::Match {
+                    info: MatchInfo::Extern(MatchExternInfo {
+                        function,
+                        inputs: vec![nz_input],
+                        arms: vec![
+                            MatchArm {
+                                arm_selector: MatchArmSelector::VariantId(
+                                    corelib::jump_nz_zero_variant(db, var.ty),
+                                ),
+                                block_id: info.arms[1].block_id,
+                                var_ids: vec![],
+                            },
+                            MatchArm {
+                                arm_selector: MatchArmSelector::VariantId(
+                                    corelib::jump_nz_nonzero_variant(db, var.ty),
+                                ),
+                                block_id: info.arms[0].block_id,
+                                var_ids: vec![unused_nz_var],
+                            },
+                        ],
+                        location: info.location,
+                    }),
+                });
             }
-            Some((
-                vec![],
-                BlockEnd::Goto(
-                    info.arms[if lhs? == rhs? { 1 } else { 0 }].block_id,
-                    Default::default(),
-                ),
+            Some(BlockEnd::Goto(
+                info.arms[if lhs? == rhs? { 1 } else { 0 }].block_id,
+                Default::default(),
             ))
         } else if self.uadd_fns.contains(&id)
             || self.usub_fns.contains(&id)
@@ -911,16 +914,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let actual_output = arm.var_ids[0];
                 let value = ConstValue::Int(value, ty).intern(db);
                 self.var_info.insert(actual_output, VarInfo::Const(value));
-                return Some((
-                    vec![Statement::Const(StatementConst::new_flat(value, actual_output))],
-                    BlockEnd::Goto(arm.block_id, Default::default()),
-                ));
+                statements.push(Statement::Const(StatementConst::new_flat(value, actual_output)));
+                return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
             if let Some(rhs) = rhs {
                 if rhs.is_zero() && !self.diff_fns.contains(&id) {
                     let arm = &info.arms[0];
                     self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]));
-                    return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
+                    return Some(BlockEnd::Goto(arm.block_id, Default::default()));
                 }
                 if rhs.is_one() && !self.diff_fns.contains(&id) {
                     let ty = self.variables[info.arms[0].var_ids[0]].ty;
@@ -941,23 +942,21 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         function.signature(db).unwrap().return_type,
                         info.location,
                     ));
-                    return Some((
-                        vec![Statement::Call(StatementCall {
-                            function,
-                            inputs: vec![info.inputs[0]],
-                            with_coupon: false,
-                            outputs: vec![result],
+                    statements.push(Statement::Call(StatementCall {
+                        function,
+                        inputs: vec![info.inputs[0]],
+                        with_coupon: false,
+                        outputs: vec![result],
+                        location: info.location,
+                    }));
+                    return Some(BlockEnd::Match {
+                        info: MatchInfo::Enum(MatchEnumInfo {
+                            concrete_enum_id: *concrete_enum_id,
+                            input: VarUsage { var_id: result, location: info.location },
+                            arms: core::mem::take(&mut info.arms),
                             location: info.location,
-                        })],
-                        BlockEnd::Match {
-                            info: MatchInfo::Enum(MatchEnumInfo {
-                                concrete_enum_id: *concrete_enum_id,
-                                input: VarUsage { var_id: result, location: info.location },
-                                arms: core::mem::take(&mut info.arms),
-                                location: info.location,
-                            }),
-                        },
-                    ));
+                        }),
+                    });
                 }
             }
             if let Some(lhs) = lhs
@@ -966,7 +965,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             {
                 let arm = &info.arms[0];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
-                return Some((vec![], BlockEnd::Goto(arm.block_id, Default::default())));
+                return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
             None
         } else if let Some(reversed) = self.downcast_fns.get(&id) {
@@ -991,15 +990,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 } else {
                     let generic_args = [in_ty, out_ty].map(GenericArgumentId::Type).to_vec();
                     let function = db.core_info().upcast_fn.concretize(db, generic_args);
-                    return Some((
-                        vec![Statement::Call(StatementCall {
-                            function: function.lowered(db),
-                            inputs: vec![info.inputs[0]],
-                            with_coupon: false,
-                            outputs: vec![success_output],
-                            location: info.location,
-                        })],
-                        BlockEnd::Goto(info.arms[success_arm].block_id, Default::default()),
+                    statements.push(Statement::Call(StatementCall {
+                        function: function.lowered(db),
+                        inputs: vec![info.inputs[0]],
+                        with_coupon: false,
+                        outputs: vec![success_output],
+                        location: info.location,
+                    }));
+                    return Some(BlockEnd::Goto(
+                        info.arms[success_arm].block_id,
+                        Default::default(),
                     ));
                 };
             };
@@ -1011,12 +1011,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             Some(if let NormalizedResult::InRange(value) = out_range.normalized(value) {
                 let value = ConstValue::Int(value, out_ty).intern(db);
                 self.var_info.insert(success_output, VarInfo::Const(value));
-                (
-                    vec![Statement::Const(StatementConst::new_flat(value, success_output))],
-                    BlockEnd::Goto(info.arms[success_arm].block_id, Default::default()),
-                )
+                statements.push(Statement::Const(StatementConst::new_flat(value, success_output)));
+                BlockEnd::Goto(info.arms[success_arm].block_id, Default::default())
             } else {
-                (vec![], BlockEnd::Goto(info.arms[failure_arm].block_id, Default::default()))
+                BlockEnd::Goto(info.arms[failure_arm].block_id, Default::default())
             })
         } else if id == self.bounded_int_constrain {
             let input_var = info.inputs[0].var_id;
@@ -1028,10 +1026,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 .expect("Expected ConstValue::Int for size");
             let arm_idx = if value < constrain_value { 0 } else { 1 };
             let output = info.arms[arm_idx].var_ids[0];
-            Some((
-                vec![self.propagate_const_and_get_statement(value.clone(), output)],
-                BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()),
-            ))
+            statements.push(self.propagate_const_and_get_statement(value.clone(), output));
+            Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
         } else if id == self.array_get {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
             if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id)
@@ -1057,33 +1053,28 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                                 TypeLongId::Snapshot(value_box_ty).intern(db),
                                 location,
                             ));
-                            return Some((
-                                vec![
-                                    Statement::Const(StatementConst::new_boxed(value, boxed)),
-                                    Statement::Snapshot(StatementSnapshot {
-                                        input: VarUsage { var_id: boxed, location },
-                                        outputs: [unused_boxed, snapped],
-                                    }),
-                                    Statement::Call(StatementCall {
-                                        function: self
-                                            .box_forward_snapshot
-                                            .concretize(db, vec![GenericArgumentId::Type(value_ty)])
-                                            .lowered(db),
-                                        inputs: vec![VarUsage { var_id: snapped, location }],
-                                        with_coupon: false,
-                                        outputs: vec![arm.var_ids[0]],
-                                        location: info.location,
-                                    }),
-                                ],
-                                BlockEnd::Goto(arm.block_id, Default::default()),
-                            ));
+                            statements.extend([
+                                Statement::Const(StatementConst::new_boxed(value, boxed)),
+                                Statement::Snapshot(StatementSnapshot {
+                                    input: VarUsage { var_id: boxed, location },
+                                    outputs: [unused_boxed, snapped],
+                                }),
+                                Statement::Call(StatementCall {
+                                    function: self
+                                        .box_forward_snapshot
+                                        .concretize(db, vec![GenericArgumentId::Type(value_ty)])
+                                        .lowered(db),
+                                    inputs: vec![VarUsage { var_id: snapped, location }],
+                                    with_coupon: false,
+                                    outputs: vec![arm.var_ids[0]],
+                                    location: info.location,
+                                }),
+                            ]);
+                            return Some(BlockEnd::Goto(arm.block_id, Default::default()));
                         }
                     }
                     None => {
-                        return Some((
-                            vec![],
-                            BlockEnd::Goto(info.arms[1].block_id, Default::default()),
-                        ));
+                        return Some(BlockEnd::Goto(info.arms[1].block_id, Default::default()));
                     }
                     Some(None) => {}
                 }
@@ -1116,14 +1107,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else {
                 let arm = &info.arms[1];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
-                Some((
-                    vec![],
-                    BlockEnd::Goto(
-                        arm.block_id,
-                        VarRemapping {
-                            remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
-                        },
-                    ),
+                Some(BlockEnd::Goto(
+                    arm.block_id,
+                    VarRemapping {
+                        remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
+                    },
                 ))
             }
         } else if id == self.array_snapshot_pop_back || id == self.array_snapshot_pop_front {
@@ -1134,14 +1122,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             if element_var_infos.is_empty() {
                 let arm = &info.arms[1];
                 self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
-                Some((
-                    vec![],
-                    BlockEnd::Goto(
-                        arm.block_id,
-                        VarRemapping {
-                            remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
-                        },
-                    ),
+                Some(BlockEnd::Goto(
+                    arm.block_id,
+                    VarRemapping {
+                        remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
+                    },
                 ))
             } else {
                 None
