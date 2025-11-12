@@ -1,4 +1,4 @@
-//! Compiles and runs a Cairo program.
+//! Compiles and runs Cairo tests.
 
 use std::path::PathBuf;
 
