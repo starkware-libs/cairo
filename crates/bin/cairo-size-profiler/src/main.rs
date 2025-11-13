@@ -16,7 +16,6 @@ use anyhow::Context;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
-use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_executable::compile::{find_executable_functions, originating_function_path};
 use cairo_lang_executable_plugin::executable_plugin_suite;
