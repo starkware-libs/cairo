@@ -22,7 +22,6 @@ use std::vec;
 use hashbrown::HashMap;
 #[cfg(not(feature = "std"))]
 pub use hashbrown::hash_map::Entry;
-use itertools::Itertools;
 
 #[cfg(feature = "std")]
 type BHImpl = RandomState;
