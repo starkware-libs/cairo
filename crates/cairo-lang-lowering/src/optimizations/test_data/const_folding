@@ -6329,9 +6329,6 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > Comments
-TODO(orizi): Enable const-folding of known enum variants not of direct variables or consts.
-
 //! > function
 fn foo() -> felt252 {
     let v = Some(@1);
@@ -6385,11 +6382,10 @@ Statements:
   (v0: core::felt252) <- 1
   (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   (v3: core::option::Option::<@core::felt252>) <- Option::Some(v2)
+  (v9: @core::felt252) <- 1
+  (v10: @core::felt252, v4: @core::felt252) <- snapshot(v9)
 End:
-  Match(match_enum(v3) {
-    Option::Some(v4) => blk1,
-    Option::None(v5) => blk2,
-  })
+  Goto(blk1, {})
 
 blk1:
 Statements:

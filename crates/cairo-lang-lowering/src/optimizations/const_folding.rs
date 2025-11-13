@@ -818,18 +818,31 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let variant_ty = variant.ty;
             let output = arm.var_ids[0];
             let payload = payload.as_ref().clone();
-            let unwrapped = try_extract_matches!(payload, VarInfo::Var).map(|v| v.var_id);
+            let unwrapped =
+                self.variables[input].info.droppable.is_ok().then_some(()).and_then(|_| {
+                    let (extra_snapshots, inner) = payload.peel_snapshots();
+                    match inner {
+                        VarInfo::Var(var) if self.variables[var.var_id].info.copyable.is_ok() => {
+                            Some((var.var_id, extra_snapshots))
+                        }
+                        VarInfo::Const(value) => {
+                            let const_var = self
+                                .variables
+                                .alloc(Variable::with_default_context(db, variant_ty, location));
+                            statements.push(self.try_generate_const_statement(*value, const_var)?);
+                            Some((const_var, extra_snapshots))
+                        }
+                        _ => None,
+                    }
+                });
             // Propagating the const value information.
             self.var_info.insert(output, payload.wrap_with_snapshots(n_snapshots));
-            if let Some(mut unwrapped) = unwrapped
-                && self.variables[input].info.droppable.is_ok()
-                && self.variables[unwrapped].info.copyable.is_ok()
-            {
-                if n_snapshots != 0 {
+            if let Some((mut unwrapped, extra_snapshots)) = unwrapped {
+                let total_snapshots = n_snapshots + extra_snapshots;
+                if total_snapshots != 0 {
                     // Adding snapshot taking statements for snapshots.
-                    let mut ty = variant_ty;
-                    for _ in 1..n_snapshots {
-                        ty = TypeLongId::Snapshot(ty).intern(db);
+                    for _ in 1..total_snapshots {
+                        let ty = TypeLongId::Snapshot(self.variables[unwrapped].ty).intern(db);
                         let non_snap_var = Variable::with_default_context(self.db, ty, location);
                         let snapped = self.variables.alloc(non_snap_var);
                         statements.push(snapshot_stmt(self.variables, unwrapped, snapped));
