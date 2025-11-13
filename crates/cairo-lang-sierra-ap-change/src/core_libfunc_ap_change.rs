@@ -113,6 +113,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoxConcreteLibfunc::Into(_) => vec![ApChange::Known(1)],
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
             BoxConcreteLibfunc::ForwardSnapshot(_) => vec![ApChange::Known(0)],
+            BoxConcreteLibfunc::FromTempStore(_) => {
+                // Total: 2 calls * 2
+                vec![ApChange::Known(4)]
+            }
         },
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(libfunc) => {

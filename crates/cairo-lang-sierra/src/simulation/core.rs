@@ -10,6 +10,7 @@ use super::LibfuncSimulationError;
 use super::value::CoreValue;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
+use crate::extensions::boxing::BoxConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -201,6 +202,9 @@ pub fn simulate<
         CoreConcreteLibfunc::Bool(libfunc) => simulate_bool_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::Felt252(libfunc) => simulate_felt252_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::UnwrapNonZero(_) => (inputs, 0),
+        CoreConcreteLibfunc::Box(BoxConcreteLibfunc::FromTempStore(_)) => {
+            unimplemented!("Simulation of Box::from_temp_store is not implemented yet.");
+        }
         CoreConcreteLibfunc::Mem(
             MemConcreteLibfunc::Rename(_) | MemConcreteLibfunc::StoreTemp(_),
         )

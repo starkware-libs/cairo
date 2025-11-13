@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
 use cairo_lang_casm::assembler::AssembledCairoProgram;
+use cairo_lang_casm::casm;
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
+use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::circuit::{CircuitConcreteLibfunc, CircuitInfo, VALUE_SIZE};
 use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::{
@@ -106,7 +108,7 @@ pub struct SierraToCasmConfig {
 pub struct CairoProgram {
     pub instructions: Vec<Instruction>,
     pub debug_info: CairoProgramDebugInfo,
-    pub consts_info: ConstsInfo,
+    pub segments_info: SegmentsInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -116,7 +118,7 @@ impl Display for CairoProgram {
                 writeln!(f, "{instruction}; // {bytecode_offset}")?;
                 bytecode_offset += instruction.body.op_size();
             }
-            for segment in self.consts_info.segments.values() {
+            for segment in self.segments_info.const_segments.values() {
                 writeln!(f, "ret; // {bytecode_offset}")?;
                 bytecode_offset += 1;
                 for value in &segment.values {
@@ -124,14 +126,25 @@ impl Display for CairoProgram {
                     bytecode_offset += 1;
                 }
             }
+            for segment in self.segments_info.utility_segments.values() {
+                for instruction in &segment.instructions {
+                    writeln!(f, "{instruction}; // {bytecode_offset}")?;
+                    bytecode_offset += instruction.body.op_size();
+                }
+            }
         } else {
             for instruction in &self.instructions {
                 writeln!(f, "{instruction};")?;
             }
-            for segment in self.consts_info.segments.values() {
+            for segment in self.segments_info.const_segments.values() {
                 writeln!(f, "ret;")?;
                 for value in &segment.values {
                     writeln!(f, "dw {value};")?;
+                }
+            }
+            for segment in self.segments_info.utility_segments.values() {
+                for instruction in &segment.instructions {
+                    writeln!(f, "{instruction};")?;
                 }
             }
         }
@@ -166,9 +179,12 @@ impl CairoProgram {
         else {
             panic!("`ret` instruction should be a single word.")
         };
-        for segment in self.consts_info.segments.values() {
+        for segment in self.segments_info.const_segments.values() {
             bytecode.push(ret_bytecode.clone());
             bytecode.extend(segment.values.clone());
+        }
+        for segment in self.segments_info.utility_segments.values() {
+            bytecode.extend(segment.instructions.iter().flat_map(|inst| inst.assemble().encode()));
         }
         for instruction in footer {
             assert!(
@@ -238,14 +254,18 @@ pub struct CairoProgramDebugInfo {
 
 /// The information about the constants used in the program.
 #[derive(Debug, Eq, PartialEq, Default, Clone)]
-pub struct ConstsInfo {
-    pub segments: OrderedHashMap<u32, ConstSegment>,
+pub struct SegmentsInfo {
+    pub const_segments: OrderedHashMap<u32, ConstSegment>,
     pub total_segments_size: usize,
 
     /// Maps a circuit to its segment id.
     pub circuit_segments: OrderedHashMap<ConcreteTypeId, u32>,
+
+    /// Utility segments for code reuse.
+    pub utility_segments: OrderedHashMap<UtilityId, UtilitySegment>,
 }
-impl ConstsInfo {
+
+impl SegmentsInfo {
     /// Creates a new `ConstSegmentsInfo` from the given libfuncs.
     pub fn new<'a>(
         program_info: &ProgramRegistryInfo,
@@ -272,14 +292,14 @@ impl ConstsInfo {
             Ok(())
         };
 
-        let mut segments = OrderedHashMap::default();
+        let mut const_segments = OrderedHashMap::default();
 
         for id in libfunc_ids.clone() {
             if let CoreConcreteLibfunc::Const(ConstConcreteLibfunc::AsBox(as_box)) =
                 program_info.registry.get_libfunc(id).unwrap()
             {
                 add_const(
-                    &mut segments,
+                    &mut const_segments,
                     as_box.segment_id,
                     as_box.const_type.clone(),
                     extract_const_value(program_info, &as_box.const_type).unwrap(),
@@ -288,7 +308,7 @@ impl ConstsInfo {
         }
 
         // Check that the segments were declared in order and without holes.
-        if segments
+        if const_segments
             .keys()
             .enumerate()
             .any(|(i, segment_id)| i != segment_id.into_or_panic::<usize>())
@@ -296,10 +316,10 @@ impl ConstsInfo {
             return Err(CompilationError::ConstSegmentsOutOfOrder);
         }
 
-        let mut next_segment = segments.len() as u32;
+        let mut next_segment = const_segments.len() as u32;
         let mut circuit_segments = OrderedHashMap::default();
 
-        for id in libfunc_ids {
+        for id in libfunc_ids.clone() {
             if let CoreConcreteLibfunc::Circuit(CircuitConcreteLibfunc::GetDescriptor(libfunc)) =
                 program_info.registry.get_libfunc(id).unwrap()
             {
@@ -314,19 +334,50 @@ impl ConstsInfo {
                     push_offset(gate_offsets.output);
                 }
 
-                add_const(&mut segments, next_segment, circ_ty.clone(), const_value)?;
+                add_const(&mut const_segments, next_segment, circ_ty.clone(), const_value)?;
                 circuit_segments.insert(circ_ty.clone(), next_segment);
                 next_segment += 1;
             }
         }
 
+        let mut utility_instructions = Vec::default();
+
+        // Check for BoxFromTempStore usage
+        let has_box_from_temp_store = libfunc_ids.into_iter().any(|id| {
+            matches!(
+                program_info.registry.get_libfunc(id),
+                Ok(CoreConcreteLibfunc::Box(BoxConcreteLibfunc::FromTempStore(_)))
+            )
+        });
+
+        if has_box_from_temp_store {
+            utility_instructions.push((
+                UtilityId::BoxFromTempStore,
+                casm! {
+                    call rel 2;
+                    ret;
+                }
+                .instructions,
+            ));
+        }
+
         let mut total_segments_size = 0;
-        for (_, segment) in segments.iter_mut() {
+        for (_, segment) in const_segments.iter_mut() {
             segment.segment_offset = total_segments_size;
             // Add 1 for the `ret` instruction.
             total_segments_size += 1 + segment.values.len();
         }
-        Ok(Self { segments, total_segments_size, circuit_segments })
+
+        let utility_segments = utility_instructions
+            .into_iter()
+            .map(|(id, instructions)| {
+                let segment = UtilitySegment { instructions, offset: total_segments_size };
+                total_segments_size +=
+                    segment.instructions.iter().map(|i| i.body.op_size()).sum::<usize>();
+                (id, segment)
+            })
+            .collect();
+        Ok(Self { const_segments, total_segments_size, circuit_segments, utility_segments })
     }
 }
 
@@ -339,6 +390,20 @@ pub struct ConstSegment {
     pub const_offset: UnorderedHashMap<ConcreteTypeId, usize>,
     /// The offset of the segment relative to the end of the code segment.
     pub segment_offset: usize,
+}
+
+/// The data for a single utility segment (code).
+#[derive(Debug, Eq, PartialEq, Default, Clone)]
+pub struct UtilitySegment {
+    /// The instructions in the segment.
+    pub instructions: Vec<Instruction>,
+    /// Offset from start of segments
+    pub offset: usize,
+}
+
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
+pub enum UtilityId {
+    BoxFromTempStore,
 }
 
 /// Gets a concrete type, if it is a const type returns a vector of the values to be stored in the
@@ -639,17 +704,17 @@ pub fn compile(
         .max_bytecode_size
         .checked_sub(program_offset)
         .ok_or_else(|| Box::new(CompilationError::CodeSizeLimitExceeded))?;
-    let consts_info = ConstsInfo::new(
+    let segments_info = SegmentsInfo::new(
         program_info,
         program.libfunc_declarations.iter().map(|ld| &ld.id),
         &circuits_info.circuits,
         const_segments_max_size,
     )?;
-    relocate_instructions(&relocations, &statement_offsets, &consts_info, &mut instructions);
+    relocate_instructions(&relocations, &statement_offsets, &segments_info, &mut instructions);
 
     Ok(CairoProgram {
         instructions,
-        consts_info,
+        segments_info,
         debug_info: CairoProgramDebugInfo { sierra_statement_info },
     })
 }
