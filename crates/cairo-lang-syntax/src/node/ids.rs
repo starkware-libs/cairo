@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_utils::define_short_id;
 use salsa::Database;
@@ -48,5 +48,9 @@ impl<'a> SyntaxStablePtrId<'a> {
     /// Assumes that `self` is not the root. Panics otherwise.
     pub fn kind(&self, db: &'a dyn Database) -> SyntaxKind {
         self.0.kind(db)
+    }
+    /// Returns the span in file of this stable pointer without trivia.
+    pub fn span_in_file(&self, db: &'a dyn Database) -> SpanInFile<'a> {
+        SpanInFile { file_id: self.file_id(db), span: self.lookup(db).span_without_trivia(db) }
     }
 }

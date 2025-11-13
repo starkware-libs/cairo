@@ -1905,7 +1905,7 @@ impl FileIdCached {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct VirtualFileCached {
-    parent: Option<FileIdCached>,
+    parent: Option<SpanInFileCached>,
     name: String,
     content: String,
     code_mappings: Vec<CodeMapping>,
@@ -1916,7 +1916,7 @@ struct VirtualFileCached {
 impl VirtualFileCached {
     fn new<'db>(virtual_file: &VirtualFile<'db>, ctx: &mut DefCacheSavingContext<'db>) -> Self {
         Self {
-            parent: virtual_file.parent.map(|parent| FileIdCached::new(parent, ctx)),
+            parent: virtual_file.parent.map(|parent| SpanInFileCached::new(&parent, ctx)),
             name: virtual_file.name.to_string(ctx.db),
             content: virtual_file.content.to_string(ctx.db),
             code_mappings: virtual_file.code_mappings.to_vec(),
@@ -2054,7 +2054,7 @@ impl DiagnosticNoteCached {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 struct SpanInFileCached {
     file_id: FileIdCached,
     span: TextSpan,

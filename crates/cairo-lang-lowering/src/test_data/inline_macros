@@ -24,9 +24,9 @@ generate_unreachable!();
 
 //! > lowering_diagnostics
 warning: Unreachable code
- --> lib.cairo[generate_unreachable]:3:13
-            let _x = 5; 
-            ^^^^^^^^^^^
+ --> lib.cairo:9:1
+generate_unreachable!();
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_flat
 Parameters:

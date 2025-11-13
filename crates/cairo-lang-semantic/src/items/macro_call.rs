@@ -57,7 +57,7 @@ fn priv_macro_call_data<'db>(
         let code_mappings: Arc<[CodeMapping]> = [mapping].into();
         let parent_macro_call_data = resolver.macro_call_data;
         let generated_file_long_id = FileLongId::Virtual(VirtualFile {
-            parent: Some(macro_call_syntax.stable_ptr(db).untyped().file_id(db)),
+            parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
             name: macro_name,
             content: SmolStrId::from(db, content),
             code_mappings: code_mappings.clone(),
@@ -145,7 +145,7 @@ fn priv_macro_call_data<'db>(
     let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
     let parent_macro_call_data = resolver.macro_call_data;
     let generated_file_long_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(macro_call_syntax.stable_ptr(db).untyped().file_id(db)),
+        parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
         name: macro_name,
         content: SmolStrId::from_arcstr(db, &expanded_code.text),
         code_mappings: expanded_code.code_mappings.clone(),

@@ -164,7 +164,7 @@ pub fn file_module_absolute_identifier<'db>(
     // that will not have a matching file module in the DB. Instead, we find its non-generated
     // parent which is in the same module and has a matching file module in the DB.
     while let FileLongId::Virtual(VirtualFile { parent: Some(parent), .. }) = file_id.long(db) {
-        file_id = *parent;
+        file_id = parent.file_id;
     }
 
     let file_modules = db.file_modules(file_id).to_option()?;
