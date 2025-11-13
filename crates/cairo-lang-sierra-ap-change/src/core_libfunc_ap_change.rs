@@ -224,6 +224,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             GasReserveConcreteLibfunc::Utilize(_) => vec![ApChange::Known(0)],
         },
+        GetTempPtr(_) => {
+            // Total: 2 calls * 2
+            vec![ApChange::Known(4)]
+        }
         Uint8(libfunc) => uint_ap_change(libfunc),
         Uint16(libfunc) => uint_ap_change(libfunc),
         Uint32(libfunc) => uint_ap_change(libfunc),
