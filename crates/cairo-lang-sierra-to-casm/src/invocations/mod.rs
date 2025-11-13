@@ -50,6 +50,7 @@ mod felt252_dict;
 mod function_call;
 mod gas;
 mod gas_reserve;
+mod get_temp_ptr;
 mod int;
 mod mem;
 mod misc;
@@ -690,6 +691,7 @@ pub fn compile_invocation(
         Sint128(libfunc) => int::signed128::build(libfunc, builder),
         Gas(libfunc) => gas::build(libfunc, builder),
         GasReserve(libfunc) => gas_reserve::build(libfunc, builder),
+        GetTempPtr(libfunc) => get_temp_ptr::build(libfunc, builder),
         BranchAlign(_) => misc::build_branch_align(builder),
         Array(libfunc) => array::build(libfunc, builder),
         Drop(_) => misc::build_drop(builder),

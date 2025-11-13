@@ -304,6 +304,7 @@ pub fn simulate<
         CoreConcreteLibfunc::UnsafePanic(_) => unimplemented!(),
         CoreConcreteLibfunc::DummyFunctionCall(_) => unimplemented!(),
         CoreConcreteLibfunc::GasReserve(_) => unimplemented!(),
+        CoreConcreteLibfunc::GetTempPtr(_) => unimplemented!(),
     })
 }
 

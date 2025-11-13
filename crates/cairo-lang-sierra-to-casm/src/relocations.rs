@@ -7,7 +7,7 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_gas::objects::ConstCost;
 
-use crate::compiler::ConstsInfo;
+use crate::compiler::{SegmentsInfo, UtilityId};
 
 pub type CodeOffset = usize;
 
@@ -22,6 +22,8 @@ pub enum Relocation {
     ConstStart(u32, ConcreteTypeId),
     /// Adds the offset of the circuit with the given type.
     CircuitStart(ConcreteTypeId),
+    /// Adds the offset of the GetTempPtr utility segment.
+    UtilitySegment(UtilityId),
     /// Adds the offset between the current statement index and the end of the program code
     /// segment (which includes the const segment at its end).
     EndOfProgram,
@@ -32,29 +34,32 @@ impl Relocation {
         &self,
         instruction_offset: CodeOffset,
         statement_offsets: &[CodeOffset],
-        consts_info: &ConstsInfo,
+        segments_info: &SegmentsInfo,
         instruction: &mut Instruction,
     ) {
         let target_pc = match self {
             Relocation::RelativeStatementId(statement_idx) => statement_offsets[statement_idx.0],
             Relocation::SegmentStart(segment_index) => {
-                let segment = consts_info.segments.get(segment_index).expect("Segment not found.");
+                let segment =
+                    segments_info.const_segments.get(segment_index).expect("Segment not found.");
                 *statement_offsets.last().unwrap() + segment.segment_offset
             }
             Relocation::ConstStart(segment_index, ty) => {
-                let segment = consts_info.segments.get(segment_index).expect("Segment not found.");
+                let segment =
+                    segments_info.const_segments.get(segment_index).expect("Segment not found.");
                 *statement_offsets.last().unwrap()
                     + segment.segment_offset
                     + segment.const_offset.get(ty).expect("Const type not found in const segments.")
             }
             Relocation::EndOfProgram => {
-                *statement_offsets.last().unwrap() + consts_info.total_segments_size
+                *statement_offsets.last().unwrap() + segments_info.total_segments_size
             }
             Relocation::CircuitStart(circ_ty) => {
                 let segment_index =
-                    consts_info.circuit_segments.get(circ_ty).expect("Circuit not found");
+                    segments_info.circuit_segments.get(circ_ty).expect("Circuit not found");
 
-                let segment = consts_info.segments.get(segment_index).expect("Segment not found.");
+                let segment =
+                    segments_info.const_segments.get(segment_index).expect("Segment not found.");
 
                 *statement_offsets.last().unwrap()
                     + segment.segment_offset
@@ -62,6 +67,11 @@ impl Relocation {
                         .const_offset
                         .get(circ_ty)
                         .expect("Const type not found in const segments.")
+            }
+            Relocation::UtilitySegment(id) => {
+                let segment =
+                    segments_info.utility_segments.get(id).expect("Utility segment not found");
+                *statement_offsets.last().unwrap() + segment.offset
             }
         };
         match instruction {
@@ -125,7 +135,7 @@ pub struct RelocationEntry {
 pub fn relocate_instructions(
     relocations: &[RelocationEntry],
     statement_offsets: &[usize],
-    consts_info: &ConstsInfo,
+    segment_info: &SegmentsInfo,
     instructions: &mut [Instruction],
 ) {
     let mut program_offset = 0;
@@ -136,7 +146,7 @@ pub fn relocate_instructions(
             relocation_entry
         {
             if *relocation_idx == instruction_idx {
-                relocation.apply(program_offset, statement_offsets, consts_info, instruction);
+                relocation.apply(program_offset, statement_offsets, segment_info, instruction);
                 relocation_entry = relocations_iter.next();
             } else {
                 assert!(

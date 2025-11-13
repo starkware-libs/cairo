@@ -37,6 +37,7 @@ use super::modules::felt252::{Felt252Libfunc, Felt252Type};
 use super::modules::function_call::FunctionCallLibfunc;
 use super::modules::gas::{GasBuiltinType, GasLibfunc};
 use super::modules::gas_reserve::{GasReserveLibfunc, GasReserveType};
+use super::modules::get_temp_ptr::GetTempPtrLibfunc;
 use super::modules::mem::MemLibfunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibfunc};
 use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
@@ -128,6 +129,7 @@ define_libfunc_hierarchy! {
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
         GasReserve(GasReserveLibfunc),
+        GetTempPtr(GetTempPtrLibfunc),
         IntRange(IntRangeLibfunc),
         Uint8(Uint8Libfunc),
         Uint16(Uint16Libfunc),

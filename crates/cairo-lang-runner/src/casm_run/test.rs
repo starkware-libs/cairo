@@ -20,7 +20,7 @@ use crate::{CairoHintProcessor, StarknetState, build_hints_dict};
 fn assembled(casm: CasmContext) -> AssembledCairoProgram {
     CairoProgram {
         instructions: casm.instructions,
-        consts_info: Default::default(),
+        segments_info: Default::default(),
         debug_info: CairoProgramDebugInfo { sierra_statement_info: vec![] },
     }
     .assemble()

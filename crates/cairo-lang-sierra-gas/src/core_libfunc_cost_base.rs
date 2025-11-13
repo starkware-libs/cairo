@@ -648,6 +648,8 @@ pub fn core_libfunc_cost(
         },
         UnsafePanic(_) => vec![],
         DummyFunctionCall(_) => vec![ConstCost::steps(2).into()],
+        // Total: 2 calls * 2
+        GetTempPtr(_) => vec![ConstCost::steps(4).into()],
     }
 }
 
