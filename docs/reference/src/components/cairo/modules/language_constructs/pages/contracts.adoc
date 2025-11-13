@@ -75,7 +75,7 @@ Another possibility is to get a read-only reference to the storage:
 ----
     #[external(v0)]
     fn view_example(self: @ContractState) -> felt252 {
-        x::read(value)
+        x::read()
     }
 ----
 This is a view function - it can only read from the storage.
