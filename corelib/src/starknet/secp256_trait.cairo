@@ -44,7 +44,6 @@ use core::array::ArrayTrait;
 #[allow(unused_imports)]
 use core::integer::U256TryIntoNonZero;
 use core::math::{u256_inv_mod, u256_mul_mod_n};
-use core::option::OptionTrait;
 use core::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use starknet::eth_address::U256IntoEthAddress;
@@ -322,8 +321,8 @@ pub fn recover_public_key<
     //   -(msg_hash / r) * gen + (s / r) * r_point
     // where the divisions by `r` are modulo `N` (the size of the curve).
 
-    let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
-    let r_inv = u256_inv_mod(r.try_into().unwrap(), n_nz).unwrap().into();
+    let n_nz = Secp256Impl::get_curve_size().try_into()?;
+    let r_inv = u256_inv_mod(r.try_into()?, n_nz)?.into();
 
     let u1 = u256_mul_mod_n(msg_hash, r_inv, n_nz);
     let minus_u1 = secp256_ec_negate_scalar::<Secp256Point>(u1);
