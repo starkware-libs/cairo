@@ -46,9 +46,16 @@ fn test_specialized_function(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let lowered_caller = db.lowered_body(function_id, LoweringStage::Final).unwrap_or_else(|_| {
-        panic!("Got diagnostics for the caller {semantic_diagnostics}.");
-    });
+    let lowered_caller: &crate::Lowered<'_> =
+        db.lowered_body(function_id, LoweringStage::Final).unwrap_or_else(|_| {
+            let lowering_diagnostics = db
+                .module_lowering_diagnostics(test_function.module_id)
+                .unwrap_or_default()
+                .format(db);
+            panic!(
+                "Got diagnostics for the caller {semantic_diagnostics}\n{lowering_diagnostics}."
+            );
+        });
     let Some(Statement::Call(call)) = lowered_caller
         .blocks
         .iter()
