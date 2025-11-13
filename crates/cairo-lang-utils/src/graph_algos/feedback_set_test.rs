@@ -61,8 +61,8 @@ fn test_root_points_to_cycle() {
     // And 10 (the root) has and edge to 0.
     graph.push(/* 10: */ vec![0]);
 
-    // Note 10 is used as a root (which is part of the cycle).
-    let fset = HashSet::<usize>::from_iter(calc_feedback_set(IntegerNode { id: 10, graph }.into()));
+    // Note 0 is used as a root (which is part of the cycle).
+    let fset = HashSet::<usize>::from_iter(calc_feedback_set(IntegerNode { id: 0, graph }.into()));
     assert_eq!(fset, HashSet::from([0]));
 }
 
