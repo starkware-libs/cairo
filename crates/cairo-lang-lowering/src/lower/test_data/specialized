@@ -32,8 +32,8 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 1
   (v0: core::bool) <- bool::False({})
+  (v1: core::felt252) <- 1
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -78,8 +78,8 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v1: core::box::Box::<core::felt252>) <- 2.into_box()
   (v0: core::bool) <- bool::False({})
+  (v1: core::box::Box::<core::felt252>) <- 2.into_box()
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -125,8 +125,8 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v0: core::bool) <- bool::False({})
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -176,6 +176,7 @@ End:
 Parameters:
 blk0 (root):
 Statements:
+  (v0: core::bool) <- bool::False({})
   (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v7: core::felt252) <- 1
   (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
@@ -183,7 +184,6 @@ Statements:
   (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
   (v3: core::felt252) <- 3
   (v1: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
-  (v0: core::bool) <- bool::False({})
   (v8: ()) <- test::bar(v0, v1)
 End:
   Return(v8)
@@ -229,8 +229,8 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v0: core::bool) <- bool::False({})
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v2: ()) <- test::bar(v0, v1)
 End:
   Return(v2)
@@ -249,7 +249,7 @@ test_specialized_function
 //! > function
 fn foo(x: felt252) {
     let mut arr = array![];
-    bar(false, ref arr, array![].span(), x, 0, BoxTrait::new(1))
+    bar(false, ref arr, arr.span(), x, 0, BoxTrait::new(1))
 }
 
 //! > function_name
@@ -273,25 +273,410 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v3: core::array::Array::<core::felt252>) <- test::bar{bool::False({}), array![], { @array![] }, None, 0, 1.into_box(), }(v0)
+  (v2: core::array::Array::<core::felt252>) <- test::bar{bool::False({}), array![], { @array![] }, NotSpecialized, 0, 1.into_box(), }(v0)
 End:
   Return()
 
 //! > specialized_lowering
-Parameters: v3: core::felt252
+Parameters: v6: core::felt252
 blk0 (root):
 Statements:
-  (v5: core::box::Box::<core::felt252>) <- 1.into_box()
-  (v4: core::felt252) <- 0
-  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v8: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v7)
-  (v2: core::array::Span::<core::felt252>) <- struct_construct(v6)
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v0: core::bool) <- bool::False({})
-  (v9: core::array::Array::<core::felt252>, v10: ()) <- test::bar(v0, v1, v2, v3, v4, v5)
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: core::array::Array::<core::felt252>, v3: @core::array::Array::<core::felt252>) <- snapshot(v4)
+  (v2: core::array::Span::<core::felt252>) <- struct_construct(v3)
+  (v7: core::felt252) <- 0
+  (v8: core::box::Box::<core::felt252>) <- 1.into_box()
+  (v9: core::array::Array::<core::felt252>, v10: ()) <- test::bar(v0, v1, v2, v6, v7, v8)
 End:
   Return(v9, v10)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test partial struct ordering with many fields.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(b: felt252, e: felt252, d: felt252) {
+    bar(false, S6 { a: 1, b, c: 3, d, e, f: 6 })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct S6 {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+    d: felt252,
+    e: felt252,
+    f: felt252,
+}
+
+fn bar(keep: bool, s: S6) {
+    if keep {
+        bar_ext(s);
+    }
+}
+
+extern fn bar_ext(s: S6) nopanic;
+
+//! > caller_lowering
+Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False({}), { 1, NotSpecialized, 3, NotSpecialized, NotSpecialized, 6 }, }(v0, v2, v1)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v3: core::felt252, v5: core::felt252, v6: core::felt252
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v2: core::felt252) <- 1
+  (v4: core::felt252) <- 3
+  (v7: core::felt252) <- 6
+  (v1: test::S6) <- struct_construct(v2, v3, v4, v5, v6, v7)
+  (v8: ()) <- test::bar(v0, v1)
+End:
+  Return(v8)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test partial struct with arrays (known arrays and unknown scalar).
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(b: felt252) {
+    // TODO(TomerStarkware): propagate array info in case of specialized function call.
+    bar(false, SA1 { a: array![1, 2, 3], b, c: array![] })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct SA1 {
+    a: Array<felt252>,
+    b: felt252,
+    c: Array<felt252>,
+}
+
+fn bar(keep: bool, s: SA1) {
+    if keep {
+        bar_ext(s);
+    }
+}
+
+extern fn bar_ext(s: SA1) nopanic;
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 1
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v1, v2)
+  (v4: core::felt252) <- 2
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::felt252) <- 3
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v5, v6)
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: test::SA1) <- struct_construct(v7, v0, v8)
+  () <- test::bar{bool::False({}), NotSpecialized, }(v9)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v1: test::SA1
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v2: ()) <- test::bar(v0, v1)
+End:
+  Return(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test partial struct with arrays (unknown array and known scalar/array).
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(a: Array<felt252>) {
+    // TODO(TomerStarkware): propagate array info in case of specialized function call.
+    bar(false, SA1 { a, b: 7, c: array![5, 6] })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct SA1 {
+    a: Array<felt252>,
+    b: felt252,
+    c: Array<felt252>,
+}
+
+fn bar(keep: bool, s: SA1) {
+    if keep {
+        bar_ext(s);
+    }
+}
+
+extern fn bar_ext(s: SA1) nopanic;
+
+//! > caller_lowering
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::felt252) <- 5
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v1, v2)
+  (v4: core::felt252) <- 6
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v6: core::felt252) <- 7
+  (v7: test::SA1) <- struct_construct(v0, v6, v5)
+  () <- test::bar{bool::False({}), NotSpecialized, }(v7)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v1: test::SA1
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v2: ()) <- test::bar(v0, v1)
+End:
+  Return(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test partial struct with non-droppable fields.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(a: NoDrop) {
+    // TODO(TomerStarkware): Allow for specialzing with non-droppable fields.
+    let c = NoDrop { a: 7 };
+    not_consume(c);
+    bar(false, SB { a, b: 5, c })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy)]
+struct SB {
+    a: NoDrop,
+    b: felt252,
+    c: NoDrop,
+}
+#[derive(Copy)]
+struct NoDrop {
+    a: felt252,
+}
+
+fn not_consume(c: NoDrop) nopanic {
+    let NoDrop { .. } = c;
+}
+
+
+fn bar(keep: bool, s: SB) {
+    if keep {
+        bar_ext(s);
+    } else {
+        let SB { a, b: _b, c } = s;
+        let NoDrop { .. } = a;
+        let NoDrop { .. } = c;
+    }
+}
+
+extern fn bar_ext(s: SB) nopanic;
+
+//! > caller_lowering
+Parameters: v0: test::NoDrop
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 7
+  (v2: test::NoDrop) <- struct_construct(v1)
+  () <- test::not_consume(v2)
+  (v3: core::felt252) <- 5
+  (v4: test::SB) <- struct_construct(v0, v3, v2)
+  () <- test::bar{bool::False({}), NotSpecialized, }(v4)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v1: test::SB
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v2: ()) <- test::bar(v0, v1)
+End:
+  Return(v2)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test partial struct with unknown field.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(a: felt252) {
+    bar(false, S { a, b: 5 })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct S {
+    a: felt252,
+    b: felt252,
+}
+
+fn bar(keep: bool, s: S) {
+    if keep {
+        bar_ext(s);
+    }
+}
+
+extern fn bar_ext(s: S) nopanic;
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False({}), { NotSpecialized, 5 }, }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v2: core::felt252
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v3: core::felt252) <- 5
+  (v1: test::S) <- struct_construct(v2, v3)
+  (v4: ()) <- test::bar(v0, v1)
+End:
+  Return(v4)
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test array of nested structs with partial specialization.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(x: felt252, y: felt252) {
+    let mut arr = array![];
+    arr.append(Outer { inner: Inner { a: 1, b: x }, c: 3 });
+    arr.append(Outer { inner: Inner { a: y, b: 5 }, c: y });
+    bar(false, arr);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy, Debug)]
+struct Inner {
+    a: felt252,
+    b: felt252,
+}
+#[derive(Drop, Copy, Debug)]
+struct Outer {
+    inner: Inner,
+    c: felt252,
+}
+
+fn bar(keep: bool, x: Array<Outer>) {
+    if keep {
+        println!("Ensuring long code: {:?}{:?}{:?}", x[0], x[1], x[2]);
+    }
+}
+
+extern fn bar_ext(arr: Array<Outer>) nopanic;
+
+//! > caller_lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<test::Outer>) <- core::array::array_new::<test::Outer>()
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- 3
+  (v5: test::Inner) <- struct_construct(v3, v0)
+  (v6: test::Outer) <- struct_construct(v5, v4)
+  (v7: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v2, v6)
+  (v8: core::felt252) <- 5
+  (v9: test::Inner) <- struct_construct(v1, v8)
+  (v10: test::Outer) <- struct_construct(v9, v1)
+  (v11: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v7, v10)
+  (v12: core::panics::PanicResult::<((),)>) <- test::bar{bool::False({}), array![{ { 1, NotSpecialized }, 3 }, { { NotSpecialized, 5 }, NotSpecialized }], }(v0, v1, v1)
+End:
+  Return(v12)
+
+//! > specialized_lowering
+Parameters: v9: core::felt252, v12: core::felt252, v11: core::felt252
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v4: core::array::Array::<test::Outer>) <- core::array::array_new::<test::Outer>()
+  (v8: core::felt252) <- 1
+  (v6: test::Inner) <- struct_construct(v8, v9)
+  (v7: core::felt252) <- 3
+  (v5: test::Outer) <- struct_construct(v6, v7)
+  (v2: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v4, v5)
+  (v13: core::felt252) <- 5
+  (v10: test::Inner) <- struct_construct(v12, v13)
+  (v3: test::Outer) <- struct_construct(v10, v11)
+  (v1: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v2, v3)
+  (v14: ()) <- test::bar(v0, v1)
+End:
+  Return(v14)
 
 //! > semantic_diagnostics
 
