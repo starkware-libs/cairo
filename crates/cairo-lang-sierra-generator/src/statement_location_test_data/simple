@@ -69,6 +69,43 @@ Originating location:
     ^^^^^^^^^^^^
 In function: lib.cairo::foo
 
+//! > var_locations
+[0]:
+Originating location:
+fn foo(a: felt252, b: felt252) -> felt252 {
+       ^
+In function: lib.cairo::foo
+[1]:
+Originating location:
+fn foo(a: felt252, b: felt252) -> felt252 {
+                   ^
+In function: lib.cairo::foo
+[2]:
+Originating location:
+    let b = felt252_add(a, 5);
+                           ^
+In function: lib.cairo::foo
+[3]:
+Originating location:
+    let b = felt252_add(a, 5);
+        ^
+In function: lib.cairo::foo
+[4]:
+Originating location:
+    let b = felt252_add(a, 5);
+        ^
+In function: lib.cairo::foo
+[5]:
+Originating location:
+    let b = felt252_add(a, 5);
+        ^
+In function: lib.cairo::foo
+[6]:
+Originating location:
+    bar(b, b, b)
+    ^^^^^^^^^^^^
+In function: lib.cairo::foo
+
 //! > ==========================================================================
 
 //! > match statement
@@ -623,6 +660,291 @@ Originating location:
             ^^^^^^^
 In function: lib.cairo::foo
 
+//! > var_locations
+[0]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[1]:
+Originating location:
+fn foo(my_enum: MyEnum) -> u8 {
+       ^^^^^^^
+In function: lib.cairo::foo
+[2]:
+Originating location:
+        MyEnum::A(a) => a,
+                  ^
+In function: lib.cairo::foo
+[3]:
+Originating location:
+        MyEnum::B(b) => b,
+                  ^
+In function: lib.cairo::foo
+[4]:
+Originating location:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                  ^^^^^^^^
+In function: lib.cairo::foo
+[5]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[6]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[7]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[8]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[9]:
+Originating location:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                   ^^
+In function: lib.cairo::foo
+[10]:
+Originating location:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                       ^^
+In function: lib.cairo::foo
+[11]:
+Originating location:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                       ^^
+In function: lib.cairo::foo
+[12]:
+Originating location:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                   ^^
+In function: lib.cairo::foo
+[13]:
+Originating location:
+        u8_overflowing_sub(lhs, rhs).into_is_err()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^^^^^^^
+In function: lib.cairo::foo
+[14]:
+Originating location:
+        u8_overflowing_sub(lhs, rhs).into_is_err()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^^^^^^^
+In function: lib.cairo::foo
+[15]:
+Originating location:
+        u8_overflowing_sub(lhs, rhs).into_is_err()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^^^^^^^
+In function: lib.cairo::foo
+[16]:
+Originating location:
+        u8_overflowing_sub(lhs, rhs).into_is_err()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8PartialOrd::lt
+Inlined at:
+        Self::lt(rhs, lhs)
+        ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        MyEnum::C((c1, c2)) => { if c1 > c2 {
+                                    ^^^^^^^
+In function: lib.cairo::foo
+[17]:
+Originating location:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[18]:
+Originating location:
+        downcast(self)
+        ^^^^^^^^^^^^^^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[19]:
+Originating location:
+        downcast(self)
+        ^^^^^^^^^^^^^^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[20]:
+Originating location:
+        downcast(self)
+        ^^^^^^^^^^^^^^
+In function: core::integer::DowncastableIntTryInto::try_into
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[21]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[22]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[23]:
+Originating location:
+            None => crate::panic_with_felt252(err),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::option::OptionTraitImpl::expect
+Inlined at:
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Mul::mul
+Inlined at:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[24]:
+Originating location:
+            c1 * c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[25]:
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[26]:
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[27]:
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[28]:
+Originating location:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[29]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[30]:
+Originating location:
+  fn foo(my_enum: MyEnum) -> u8 {
+ _______________________________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[31]:
+Originating location:
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        u8_overflowing_add(lhs, rhs).expect('u8_add Overflow')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U8Add::add
+Inlined at:
+            c1 + c2
+            ^^^^^^^
+In function: lib.cairo::foo
+[32]:
+Originating location:
+            c1 + c2
+            ^^^^^^^
+In function: lib.cairo::foo
+
 //! > ==========================================================================
 
 //! > enum flow
@@ -653,6 +975,13 @@ Originating location:
     ^^^
 In function: lib.cairo::main
 return([0])
+Originating location:
+    300
+    ^^^
+In function: lib.cairo::main
+
+//! > var_locations
+[0]:
 Originating location:
     300
     ^^^
@@ -700,6 +1029,32 @@ Originating location:
 |_^
 In function: lib.cairo::main
 return([2])
+Originating location:
+  fn main() {
+ ___________^
+| ...
+| }
+|_^
+In function: lib.cairo::main
+
+//! > var_locations
+[0]:
+Originating location:
+  fn main() {
+ ___________^
+| ...
+| }
+|_^
+In function: lib.cairo::main
+[1]:
+Originating location:
+  fn main() {
+ ___________^
+| ...
+| }
+|_^
+In function: lib.cairo::main
+[2]:
 Originating location:
   fn main() {
  ___________^
@@ -799,6 +1154,66 @@ Originating location:
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: lib.cairo::test_pedersen
 return([9], [10])
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: lib.cairo::test_pedersen
+
+//! > var_locations
+[0]:
+Originating location:
+  fn test_pedersen() -> felt252 {
+ _^
+|     pedersen(pedersen(pedersen(1, 2), 3), 4)
+| }
+|_^
+In function: lib.cairo::test_pedersen
+[1]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                               ^
+In function: lib.cairo::test_pedersen
+[2]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                                  ^
+In function: lib.cairo::test_pedersen
+[3]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                      ^^^^^^^^^^^^^^
+In function: lib.cairo::test_pedersen
+[4]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                      ^^^^^^^^^^^^^^
+In function: lib.cairo::test_pedersen
+[5]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                                      ^
+In function: lib.cairo::test_pedersen
+[6]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: lib.cairo::test_pedersen
+[7]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: lib.cairo::test_pedersen
+[8]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+                                          ^
+In function: lib.cairo::test_pedersen
+[9]:
+Originating location:
+    pedersen(pedersen(pedersen(1, 2), 3), 4)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: lib.cairo::test_pedersen
+[10]:
 Originating location:
     pedersen(pedersen(pedersen(1, 2), 3), 4)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1413,6 +1828,426 @@ Originating location:
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: writeln_macro::writeln_macro
 label_test::foo::2:
+Originating location:
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: writeln_macro::writeln_macro
+
+//! > var_locations
+[0]:
+Originating location:
+        Serde::serialize(self.data, ref output);
+                         ^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[1]:
+Originating location:
+        Serde::serialize(self.data, ref output);
+                         ^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[2]:
+Originating location:
+        Serde::serialize(self.data, ref output);
+                         ^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[3]:
+Originating location:
+        Serde::serialize(self.data, ref output);
+                         ^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[4]:
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_print_macros__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[5]:
+Originating location:
+            Some(len) => self.append_word_ex(word, len),
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+      fn append_word(ref self: ByteArray, word: felt252, len: usize) {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::byte_array::ByteArrayImpl::append_word
+Inlined at:
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: writeln_macro::writeln_macro
+[6]:
+Originating location:
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: writeln_macro::writeln_macro
+[7]:
+Originating location:
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: writeln_macro::writeln_macro
+[8]:
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::array_inline_macro
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[9]:
+Originating location:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::array_inline_macro
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[10]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,crate::byte_array::BYTE_ARRAY_MAGIC);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::array_inline_macro
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[11]:
+Originating location:
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: writeln_macro::writeln_macro
+[12]:
+Originating location:
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: writeln_macro::writeln_macro
+[13]:
+Originating location:
+    core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: writeln_macro::writeln_macro
+[14]:
+Originating location:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[15]:
+Originating location:
+        Serde::serialize(self.data, ref output);
+                         ^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[16]:
+Originating location:
+        Serde::serialize(self.data, ref output);
+                         ^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[17]:
+Originating location:
+        array_len(self)
+        ^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::len
+Inlined at:
+        self.len().serialize(ref output);
+        ^^^^^^^^^^
+In function: core::array::ArraySerde::serialize
+Inlined at:
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[18]:
+Originating location:
+        u32_to_felt252(self)
+        ^^^^^^^^^^^^^^^^^^^^
+In function: core::integer::U32IntoFelt252::into
+Inlined at:
+            output.append((*self).into());
+                          ^^^^^^^^^^^^^^
+In function: core::serde::into_felt252_based::SerdeImpl::serialize
+Inlined at:
+        self.len().serialize(ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArraySerde::serialize
+Inlined at:
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[19]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            output.append((*self).into());
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::serde::into_felt252_based::SerdeImpl::serialize
+Inlined at:
+        self.len().serialize(ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArraySerde::serialize
+Inlined at:
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[20]:
+Originating location:
+      fn span(self: @Array<T>) -> Span<T> {
+ _________________________________________^
+|         ArrayTrait::span(self)
+|     }
+|_____^
+In function: core::array::ArrayToSpan::span
+Inlined at:
+        serialize_array_helper(self.span(), ref output);
+                               ^^^^^^^^^^^
+In function: core::array::ArraySerde::serialize
+Inlined at:
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[21]:
+Originating location:
+        serialize_array_helper(self.span(), ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArraySerde::serialize
+Inlined at:
+        Serde::serialize(self.data, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[22]:
+Originating location:
+        output.append(*self);
+                      ^^^^^
+In function: core::Felt252Serde::serialize
+Inlined at:
+        Serde::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[23]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+        output.append(*self);
+        ^^^^^^^^^^^^^^^^^^^^
+In function: core::Felt252Serde::serialize
+Inlined at:
+        Serde::serialize(self.pending_word, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[24]:
+Originating location:
+            output.append((*self).into());
+                           ^^^^^
+In function: core::serde::into_felt252_based::SerdeImpl::serialize
+Inlined at:
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[25]:
+Originating location:
+        upcast(self)
+        ^^^^^^^^^^^^
+In function: core::internal::bounded_int::BoundedIntIntoFelt252::into
+Inlined at:
+            output.append((*self).into());
+                          ^^^^^^^^^^^^^^
+In function: core::serde::into_felt252_based::SerdeImpl::serialize
+Inlined at:
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[26]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            output.append((*self).into());
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::serde::into_felt252_based::SerdeImpl::serialize
+Inlined at:
+        Serde::serialize(self.pending_word_len, ref output);
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArraySerde::serialize
+Inlined at:
+    self.serialize(ref serialized);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::debug::print_byte_array_as_string
+Inlined at:
+    core::debug::print_byte_array_as_string(@__formatter_for_print_macros__.buffer);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: println_macro::println_macro
+[27]:
+Originating location:
+  fn foo() {
+ __________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[28]:
+Originating location:
+  fn foo() {
+ __________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[29]:
+Originating location:
+  fn foo() {
+ __________^
+| ...
+| }
+|_^
+In function: lib.cairo::foo
+[30]:
 Originating location:
     core::byte_array::ByteArrayTrait::append_word(ref __formatter_for_print_macros__.buffer, 0x7820213d20790a, 7);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2225,6 +3060,503 @@ if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 label_test::some_array_checks::2:
+Originating location:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+
+//! > var_locations
+[0]:
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[1]:
+Originating location:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+                                                                               ^
+In function: array_inline_macro::array_inline_macro
+[2]:
+Originating location:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+                                                                               ^
+In function: array_inline_macro::array_inline_macro
+[3]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[4]:
+Originating location:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+                                                                               ^
+In function: array_inline_macro::array_inline_macro
+[5]:
+Originating location:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+                                                                               ^
+In function: array_inline_macro::array_inline_macro
+[6]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[7]:
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+            let mut __array_builder_macro_result__ = core::array::ArrayTrait::new();
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[8]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[9]:
+Originating location:
+        array_append(ref self, value)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayImpl::append
+Inlined at:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[10]:
+Originating location:
+        u32_eq(*lhs, *rhs)
+        ^^^^^^^^^^^^^^^^^^
+In function: core::integer::U32PartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[11]:
+Originating location:
+        u32_eq(*lhs, *rhs)
+        ^^^^^^^^^^^^^^^^^^
+In function: core::integer::U32PartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[12]:
+Originating location:
+        u32_eq(*lhs, *rhs)
+        ^^^^^^^^^^^^^^^^^^
+In function: core::integer::U32PartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[13]:
+Originating location:
+        let (r,) = bool_not_impl(a);
+             ^
+In function: core::BoolNot::not
+Inlined at:
+        !Self::eq(lhs, rhs)
+        ^^^^^^^^^^^^^^^^^^^
+Inlined at:
+        if (*lhs).len() != (*rhs).len() {
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[14]:
+Originating location:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,2);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[15]:
+Originating location:
+  {
+ _^
+| ...
+|         }
+|_________^
+In function: array_inline_macro::array_inline_macro
+[16]:
+Originating location:
+            core::array::ArrayTrait::append(ref __array_builder_macro_result__,1);
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: array_inline_macro::array_inline_macro
+[17]:
+Originating location:
+  {
+ _^
+| ...
+|         }
+|_________^
+In function: array_inline_macro::array_inline_macro
+[18]:
+Originating location:
+      fn span(self: @Array<T>) -> Span<T> {
+ _________________________________________^
+|         ArrayTrait::span(self)
+|     }
+|_____^
+In function: core::array::ArrayToSpan::span
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[19]:
+Originating location:
+      fn span(self: @Array<T>) -> Span<T> {
+ _________________________________________^
+|         ArrayTrait::span(self)
+|     }
+|_____^
+In function: core::array::ArrayToSpan::span
+Inlined at:
+        lhs.span() == rhs.span()
+                      ^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[20]:
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[21]:
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[22]:
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[23]:
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[24]:
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[25]:
+Originating location:
+          loop {
+ _________^
+| ...
+|         }
+|_________^
+In function: core::array::SpanPartialEq::eq
+Inlined at:
+        lhs.span() == rhs.span()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayPartialEq::eq
+Inlined at:
+        !Self::eq(lhs, rhs)
+         ^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[26]:
+Originating location:
+        let (r,) = bool_not_impl(a);
+             ^
+In function: core::BoolNot::not
+Inlined at:
+        !Self::eq(lhs, rhs)
+        ^^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[27]:
+Originating location:
+        let (r,) = bool_not_impl(a);
+             ^
+In function: core::BoolNot::not
+Inlined at:
+        !Self::eq(lhs, rhs)
+        ^^^^^^^^^^^^^^^^^^^
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[28]:
+Originating location:
+        let (r,) = bool_not_impl(a);
+             ^
+In function: core::BoolNot::not
+Inlined at:
+if !(array![1, 2] != array![2, 1]) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[29]:
+Originating location:
+  if !(array![1, 2] != array![2, 1]) {
+ _^
+| ...
+| }
+|_^
+In function: assert_macro::assert_macro
+[30]:
+Originating location:
+  if !(array![1, 2] != array![2, 1]) {
+ _^
+| ...
+| }
+|_^
+In function: assert_macro::assert_macro
+[31]:
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[32]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[33]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[34]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[35]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[36]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[37]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[38]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[39]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[40]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[41]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[42]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[43]:
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+[44]:
+Originating location:
+  fn some_array_checks() {
+ ________________________^
+|     assert!(array![1, 2] != array![2, 1], "");
+| }
+|_^
+In function: lib.cairo::some_array_checks
+[45]:
+Originating location:
+  fn some_array_checks() {
+ ________________________^
+|     assert!(array![1, 2] != array![2, 1], "");
+| }
+|_^
+In function: lib.cairo::some_array_checks
+[46]:
 Originating location:
 if !(array![1, 2] != array![2, 1]) {
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

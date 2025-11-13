@@ -1,6 +1,7 @@
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::get_direct_or_file_content;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -34,30 +35,36 @@ pub fn test_sierra_locations(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
     let function = db.function_with_body_sierra(function_id);
+    let append_stable_loc_str = |buf: &mut String, loc: StableLocation<'_>| {
+        buf.push_str(&get_location_marks(db, &loc.span_in_file(db), true));
+        buf.push('\n');
+        if let Some(function) = maybe_containing_function_identifier_for_tests(db, loc) {
+            buf.push_str(&format!("In function: {function}\n",));
+        }
+    };
+    let append_loc_str = |buf: &mut String, loc: LocationId<'_>| {
+        let loc = loc.long(db);
+        buf.push_str("Originating location:\n");
+        append_stable_loc_str(buf, loc.stable_location);
+        for loc in &loc.inline_locations {
+            buf.push_str("Inlined at:\n");
+            append_stable_loc_str(buf, *loc);
+        }
+    };
     let mut sierra_code: String = "".into();
+    let mut var_locations: String = "".into();
     if semantic_diagnostics.is_empty() && lowering_diagnostics.is_ok() {
-        for stmt in &function.unwrap().body {
+        let func = function.unwrap();
+        for stmt in &func.body {
             sierra_code
                 .push_str(&format!("{}\n", replace_sierra_ids(db, stmt).statement.to_string(db),));
-            for (i, location) in stmt
-                .location
-                .map(|l| l.all_locations(db))
-                .unwrap_or_default()
-                .into_iter()
-                .enumerate()
-            {
-                if i == 0 {
-                    sierra_code.push_str("Originating location:\n");
-                } else {
-                    sierra_code.push_str("Inlined at:\n");
-                }
-                sierra_code.push_str(&get_location_marks(db, &location.span_in_file(db), true));
-                sierra_code.push('\n');
-                if let Some(function) = maybe_containing_function_identifier_for_tests(db, location)
-                {
-                    sierra_code.push_str(&format!("In function: {function}\n",));
-                }
+            if let Some(loc) = stmt.location {
+                append_loc_str(&mut sierra_code, loc);
             }
+        }
+        for (var, loc) in &func.variable_locations {
+            var_locations.push_str(&format!("{var}:\n"));
+            append_loc_str(&mut var_locations, *loc);
         }
     }
 
@@ -68,6 +75,7 @@ pub fn test_sierra_locations(
             lowering_diagnostics.map_or("".into(), |diagnostics| diagnostics.format(db)),
         ),
         ("sierra_code".into(), sierra_code),
+        ("var_locations".into(), var_locations),
     ]))
 }
 

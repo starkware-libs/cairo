@@ -1,6 +1,6 @@
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::ids::LocationId;
+use cairo_lang_lowering::{self as lowering, VariableId};
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
@@ -26,6 +26,8 @@ pub struct ExprGeneratorContext<'db, 'a> {
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
     variables: OrderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
+    /// Allocated Sierra variables and their locations.
+    variable_locations: Vec<(cairo_lang_sierra::ids::VarId, LocationId<'db>)>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId<'db>>,
 
     /// The current ap tracking status.
@@ -55,6 +57,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
             variables: OrderedHashMap::default(),
+            variable_locations: vec![],
             block_labels: OrderedHashMap::default(),
             ap_tracking_enabled: true,
             ap_tracking_configuration,
@@ -64,8 +67,13 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     }
 
     /// Allocates a new Sierra variable.
-    pub fn allocate_sierra_variable(&mut self) -> cairo_lang_sierra::ids::VarId {
-        cairo_lang_sierra::ids::VarId::new(self.var_id_allocator.allocate() as u64)
+    pub fn allocate_sierra_variable(
+        &mut self,
+        lowering_var: VariableId,
+    ) -> cairo_lang_sierra::ids::VarId {
+        let var = cairo_lang_sierra::ids::VarId::new(self.var_id_allocator.allocate() as u64);
+        self.variable_locations.push((var.clone(), self.lowered.variables[lowering_var].location));
+        var
     }
 
     /// Returns the SierraGenGroup salsa database.
@@ -83,8 +91,9 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
         if let Some(sierra_var) = self.variables.get(&var) {
             return sierra_var.clone();
         }
-
-        let sierra_var = self.allocate_sierra_variable();
+        let (SierraGenVar::LoweringVar(lowering_var)
+        | SierraGenVar::UninitializedLocal(lowering_var)) = var;
+        let sierra_var = self.allocate_sierra_variable(lowering_var);
         self.variables.insert(var, sierra_var.clone());
         sierra_var
     }
@@ -195,27 +204,21 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
         }
     }
 
-    /// Returns the statements generated for the expression.
-    pub fn statements(self) -> Vec<pre_sierra::StatementWithLocation<'db>> {
-        self.statements
+    /// Returns the final information generated from the context.
+    pub fn result(self) -> ExprGenerationResult<'db> {
+        ExprGenerationResult {
+            statements: self.statements,
+            variable_locations: self.variable_locations,
+        }
     }
+}
 
-    /// Returns the locations per variable of the variables in context.
-    pub fn variable_locations(&self) -> Vec<(cairo_lang_sierra::ids::VarId, LocationId<'db>)> {
-        self.variables
-            .iter()
-            .map(|(definition, var)| {
-                (
-                    var.clone(),
-                    match definition {
-                        SierraGenVar::LoweringVar(id) | SierraGenVar::UninitializedLocal(id) => {
-                            self.lowered.variables[*id].location
-                        }
-                    },
-                )
-            })
-            .collect()
-    }
+/// The final generated information from an expr.
+pub struct ExprGenerationResult<'db> {
+    /// The statements generated for the expression.
+    pub statements: Vec<pre_sierra::StatementWithLocation<'db>>,
+    /// The locations per sierra variable.
+    pub variable_locations: Vec<(cairo_lang_sierra::ids::VarId, LocationId<'db>)>,
 }
 
 /// A variant of ExprGeneratorContext::alloc_label_id that allows the caller to avoid
