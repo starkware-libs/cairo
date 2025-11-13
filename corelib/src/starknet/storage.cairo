@@ -71,7 +71,7 @@
 //!     let user = self.users.entry(address).read();
 //!     // Accessing nested `Map`s requires chaining `entry` calls:
 //!     let nested = self.nested_data.entry(address).entry(address).read();
-//!     // Accessing a specific index in a `Vec` requires using the `index` method:
+//!     // Accessing a specific index in a `Vec` uses the indexing operator:
 //!     let element = self.collection[index];
 //!
 //!     // Writing values
