@@ -9,11 +9,12 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{FunctionsSemantic, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
-use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
+use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
-use cairo_lang_utils::{Intern, define_short_id, try_extract_matches};
+use cairo_lang_utils::{Intern, define_short_id, extract_matches, try_extract_matches};
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{ExternFunctionId, FreeFunctionId};
 use itertools::zip_eq;
@@ -447,7 +448,7 @@ pub struct SpecializedFunction<'db> {
     /// The base function.
     pub base: crate::ids::ConcreteFunctionWithBodyId<'db>,
     /// Optional const assignments for the arguments.
-    pub args: Arc<[Option<SpecializationArg<'db>>]>,
+    pub args: Arc<[SpecializationArg<'db>]>,
 }
 
 impl<'db> SpecializedFunction<'db> {
@@ -462,9 +463,52 @@ impl<'db> SpecializedFunction<'db> {
     pub fn signature(&self, db: &'db dyn Database) -> Maybe<Signature<'db>> {
         let mut base_sign = self.base.signature(db)?;
 
-        base_sign.params = zip_eq(base_sign.params, self.args.iter())
-            .filter_map(|(param, arg)| arg.is_none().then_some(param))
-            .collect::<Vec<_>>();
+        let mut params = vec![];
+        let mut stack = vec![];
+        for (param, arg) in zip_eq(base_sign.params.iter().rev(), self.args.iter().rev()) {
+            stack.push((param.clone(), arg));
+        }
+
+        while let Some((param, arg)) = stack.pop() {
+            match arg {
+                SpecializationArg::Const { .. } => {}
+                SpecializationArg::Snapshot(inner) => {
+                    let desnap_ty = *extract_matches!(param.ty.long(db), TypeLongId::Snapshot);
+                    stack.push((
+                        LoweredParam { ty: desnap_ty, stable_ptr: param.stable_ptr },
+                        inner.as_ref(),
+                    ));
+                }
+                SpecializationArg::Array(ty, values) => {
+                    for arg in values.iter().rev() {
+                        let lowered_param = LoweredParam { ty: *ty, stable_ptr: param.stable_ptr };
+                        stack.push((lowered_param, arg));
+                    }
+                }
+                SpecializationArg::Struct(specialization_args) => {
+                    let ty = param.ty;
+                    let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) = ty.long(db)
+                    else {
+                        unreachable!("Expected a concrete struct type");
+                    };
+                    let Ok(inner_param) = db.concrete_struct_members(*concrete_struct) else {
+                        continue;
+                    };
+                    for ((_, inner_param), arg) in
+                        zip_eq(inner_param.iter().rev(), specialization_args.iter().rev())
+                    {
+                        let lowered_param =
+                            LoweredParam { ty: inner_param.ty, stable_ptr: param.stable_ptr };
+                        stack.push((lowered_param, arg));
+                    }
+                }
+                SpecializationArg::NotSpecialized => {
+                    params.push(param.clone());
+                }
+            }
+        }
+
+        base_sign.params = params;
 
         Ok(base_sign)
     }
@@ -474,10 +518,7 @@ impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'a dyn Database) -> std::fmt::Result {
         write!(f, "{}{{", self.base.full_path(db))?;
         for arg in self.args.iter() {
-            match arg {
-                Some(value) => write!(f, "{:?}, ", value.debug(db))?,
-                None => write!(f, "None, ")?,
-            }
+            write!(f, "{:?}, ", arg.debug(db))?;
         }
         write!(f, "}}")
     }

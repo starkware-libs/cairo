@@ -685,41 +685,63 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             // No const inputs
             return None;
         }
-
-        let mut const_args = vec![];
+        let mut specialization_args = vec![];
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
             if let Some(var_info) = self.var_info.get(&arg.var_id)
-                && let Some(c) =
+                && self.variables[arg.var_id].info.droppable.is_ok()
+                && let Some((specialization_arg, unknown_vars)) =
                     self.try_get_specialization_arg(var_info.clone(), self.variables[arg.var_id].ty)
             {
-                const_args.push(Some(c.clone()));
+                specialization_args.push(specialization_arg);
+                new_args.extend(unknown_vars.into_iter());
+            } else {
+                specialization_args.push(SpecializationArg::NotSpecialized);
+                new_args.push(*arg);
                 continue;
-            }
-            const_args.push(None);
-            new_args.push(*arg);
+            };
         }
 
-        if new_args.len() == call_stmt.inputs.len() {
+        if specialization_args.iter().all(|arg| matches!(arg, SpecializationArg::NotSpecialized)) {
             // No argument was assigned -> no specialization.
             return None;
         }
-
         if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
             base.long(self.db)
         {
             // Canonicalize the specialization rather than adding a specialization of a specialized
             // function.
             base = specialized_function.base;
-            let mut new_args_iter = const_args.into_iter();
-            const_args = specialized_function.args.to_vec();
-            for arg in &mut const_args {
-                if arg.is_none() {
-                    *arg = new_args_iter.next().unwrap_or_default();
+            let mut new_args_iter = specialization_args.into_iter();
+            let mut old_args = specialized_function.args.to_vec();
+            let mut stack = vec![];
+            for arg in old_args.iter_mut().rev() {
+                stack.push(arg);
+            }
+            while let Some(arg) = stack.pop() {
+                match arg {
+                    SpecializationArg::Const { .. } => {}
+                    SpecializationArg::Snapshot(inner) => {
+                        stack.push(inner.as_mut());
+                    }
+                    SpecializationArg::Array(_, values) => {
+                        for value in values.iter_mut().rev() {
+                            stack.push(value);
+                        }
+                    }
+                    SpecializationArg::Struct(specialization_args) => {
+                        for arg in specialization_args.iter_mut().rev() {
+                            stack.push(arg);
+                        }
+                    }
+                    SpecializationArg::NotSpecialized => {
+                        *arg = new_args_iter.next().unwrap_or(SpecializationArg::NotSpecialized);
+                    }
                 }
             }
+            specialization_args = old_args;
         }
-        let specialized = SpecializedFunction { base, args: const_args.into() };
+        let specialized = SpecializedFunction { base, args: specialization_args.into() };
         let specialized_func_id =
             ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 
@@ -1210,21 +1232,24 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         &self,
         var_info: VarInfo<'db>,
         ty: TypeId<'db>,
-    ) -> Option<SpecializationArg<'db>> {
+    ) -> Option<(SpecializationArg<'db>, Vec<VarUsage<'db>>)> {
         if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
             // Skip zero-sized constants as they are not supported in sierra-gen.
             return None;
         }
 
         match var_info {
-            VarInfo::Const(value) => Some(SpecializationArg::Const { value, boxed: false }),
+            VarInfo::Const(value) => {
+                Some((SpecializationArg::Const { value, boxed: false }, vec![]))
+            }
             VarInfo::Box(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)
-                .map(|value| SpecializationArg::Const { value: *value, boxed: true }),
+                .map(|value| (SpecializationArg::Const { value: *value, boxed: true }, vec![])),
             VarInfo::Snapshot(info) => {
                 let desnap_ty = *extract_matches!(ty.long(self.db), TypeLongId::Snapshot);
-                Some(SpecializationArg::Snapshot(
-                    self.try_get_specialization_arg(info.as_ref().clone(), desnap_ty)?.into(),
-                ))
+                let (inner, vars) =
+                    self.try_get_specialization_arg(info.as_ref().clone(), desnap_ty)?;
+
+                Some((SpecializationArg::Snapshot(Box::new(inner)), vars))
             }
             VarInfo::Array(infos) => {
                 let TypeLongId::Concrete(concrete_ty) = ty.long(self.db) else {
@@ -1234,13 +1259,20 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 else {
                     unreachable!("Expected a single type generic argument");
                 };
-                Some(SpecializationArg::Array(
-                    *inner_ty,
-                    infos
-                        .into_iter()
-                        .map(|info| self.try_get_specialization_arg(info?, *inner_ty))
-                        .collect::<Option<Vec<_>>>()?,
-                ))
+                let mut vars = vec![];
+                let mut args = vec![];
+                for info in infos {
+                    let info = info?;
+                    let (arg, v) = self.try_get_specialization_arg(info, *inner_ty)?;
+                    args.push(arg);
+                    vars.extend(v);
+                }
+                if !args.is_empty()
+                    && args.iter().all(|arg| matches!(arg, SpecializationArg::NotSpecialized))
+                {
+                    return None;
+                }
+                Some((SpecializationArg::Array(*inner_ty, args), vars))
             }
             VarInfo::Struct(infos) => {
                 let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
@@ -1251,15 +1283,28 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 };
 
                 let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
-                let struct_args = zip_eq(members.values(), infos)
-                    .map(|(member, opt_var_info)| {
-                        self.try_get_specialization_arg(opt_var_info?.clone(), member.ty)
-                    })
-                    .collect::<Option<Vec<_>>>()?;
-
-                Some(SpecializationArg::Struct(struct_args))
+                let mut struct_args = Vec::new();
+                let mut vars = vec![];
+                for (member, opt_var_info) in zip_eq(members.values(), infos) {
+                    let var_info = opt_var_info?;
+                    let (arg, v) = self.try_get_specialization_arg(var_info, member.ty)?;
+                    struct_args.push(arg);
+                    vars.extend(v);
+                }
+                if !struct_args.is_empty()
+                    && struct_args
+                        .iter()
+                        .all(|arg| matches!(arg, SpecializationArg::NotSpecialized))
+                {
+                    return None;
+                }
+                Some((SpecializationArg::Struct(struct_args), vars))
             }
-            _ => None,
+            VarInfo::Enum { .. } => {
+                // TODO(TomerStarkware): Support enums as specialization arguments.
+                None
+            }
+            VarInfo::Var(var_usage) => Some((SpecializationArg::NotSpecialized, vec![var_usage])),
         }
     }
 
