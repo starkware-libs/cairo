@@ -15,7 +15,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
 use crate::block_generator::sierra::ids::ConcreteLibfuncId;
 use crate::db::SierraGenGroup;
-use crate::expr_generator_context::ExprGeneratorContext;
+use crate::expr_generator_context::{ExprGenerationResult, ExprGeneratorContext};
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::pre_sierra::{self, StatementWithLocation};
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -102,9 +102,9 @@ enum BlockGenStackElement<'db> {
 /// Generates Sierra statements for a function from the given [ExprGeneratorContext].
 ///
 /// Returns a vector of Sierra statements.
-pub fn generate_function_statements<'db>(
+pub fn generate_function_result<'db>(
     mut context: ExprGeneratorContext<'db, '_>,
-) -> Maybe<Vec<StatementWithLocation<'db>>> {
+) -> Maybe<ExprGenerationResult<'db>> {
     let mut block_gen_stack = vec![BlockGenStackElement::Block(BlockId::root())];
     while let Some(element) = block_gen_stack.pop() {
         match element {
@@ -118,7 +118,7 @@ pub fn generate_function_statements<'db>(
             }
         }
     }
-    Ok(context.statements())
+    Ok(context.result())
 }
 
 /// Generates Sierra for a given [lowering::Block].
@@ -250,8 +250,11 @@ pub fn generate_return_code<'db>(
         let use_location = UseLocation { statement_location: *statement_location, idx };
         let should_dup = should_dup(context, &use_location);
         let var = context.get_sierra_variable(*returned_variable);
-        let return_variable_on_stack =
-            if should_dup { context.allocate_sierra_variable() } else { var.clone() };
+        let return_variable_on_stack = if should_dup {
+            context.allocate_sierra_variable(returned_variable.var_id)
+        } else {
+            var.clone()
+        };
         return_variables_on_stack.push(return_variable_on_stack.clone());
         push_values.push(pre_sierra::PushValue {
             var,
@@ -342,8 +345,11 @@ fn generate_statement_call_code<'db>(
             let use_location = UseLocation { statement_location: *statement_location, idx };
             let should_dup = should_dup(context, &use_location);
             let var = context.get_sierra_variable(var_usage.var_id);
-            let arg_on_stack =
-                if should_dup { context.allocate_sierra_variable() } else { var.clone() };
+            let arg_on_stack = if should_dup {
+                context.allocate_sierra_variable(var_usage.var_id)
+            } else {
+                var.clone()
+            };
             push_values_vec.push(pre_sierra::PushValue {
                 var,
                 var_on_stack: arg_on_stack.clone(),
@@ -417,7 +423,7 @@ fn maybe_add_dup_statement<'db>(
         Ok(sierra_var)
     } else {
         let ty = context.get_variable_sierra_type(*lowering_var)?;
-        let dup_var = context.allocate_sierra_variable();
+        let dup_var = context.allocate_sierra_variable(lowering_var.var_id);
         context.push_statement(simple_basic_statement(
             dup_libfunc_id(context.get_db(), ty),
             std::slice::from_ref(&sierra_var),
@@ -577,7 +583,7 @@ fn generate_match_value_code<'db>(
 
     // Get the [ConcreteLibfuncId].
     let concrete_enum_type = context.get_db().get_index_enum_type_id(match_info.num_of_arms)?;
-    let enum_var = context.allocate_sierra_variable();
+    let enum_var = context.allocate_sierra_variable(match_info.input.var_id);
     context.push_statement(simple_basic_statement(
         enum_from_bounded_int_libfunc_id(context.get_db(), concrete_enum_type.clone()),
         &[bounded_int],

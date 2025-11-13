@@ -14,7 +14,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lowering::fmt::LoweredFormatter;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
-use super::generate_function_statements;
+use super::generate_function_result;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
@@ -89,7 +89,7 @@ fn block_generator_test(
 
     let mut expected_sierra_code = String::default();
 
-    for statement in generate_function_statements(expr_generator_context).unwrap() {
+    for statement in generate_function_result(expr_generator_context).unwrap().statements {
         expected_sierra_code.push_str(&replace_sierra_ids(db, &statement).statement.to_string(db));
         expected_sierra_code.push('\n');
     }

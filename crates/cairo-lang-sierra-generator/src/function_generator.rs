@@ -13,7 +13,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
-use crate::block_generator::generate_function_statements;
+use crate::block_generator::generate_function_result;
 use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{SierraGenVar, find_variable_lifetime};
@@ -119,13 +119,12 @@ fn get_function_ap_change_and_code<'db>(
         context.set_ap_tracking(false);
     }
 
-    let variable_locations = context.variable_locations();
     // Generate the function's code.
-    let statements = generate_function_statements(context)?;
+    let result = generate_function_result(context)?;
 
     let statements = add_store_statements(
         db,
-        statements,
+        result.statements,
         &|id: ConcreteLibfuncId| get_libfunc_signature(db, &id),
         sierra_local_variables,
         &parameters,
@@ -138,7 +137,7 @@ fn get_function_ap_change_and_code<'db>(
         body: statements,
         entry_point: label_id,
         parameters,
-        variable_locations,
+        variable_locations: result.variable_locations,
     })
 }
 
@@ -191,7 +190,7 @@ pub fn priv_get_dummy_function<'db>(
 
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(function_id.function_id(db)?),
-        body: context.statements(),
+        body: context.result().statements,
         entry_point: label_id,
         parameters,
         variable_locations: vec![],
