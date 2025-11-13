@@ -4,7 +4,7 @@
 pub use diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, DiagnosticsBuilder,
     FormattedDiagnosticEntry, Maybe, MaybeAsRef, PluginFileDiagnosticNotes, Severity, ToMaybe,
-    ToOption, format_diagnostics, skip_diagnostic,
+    ToOption, UserLocationWithPluginNotes, format_diagnostics, skip_diagnostic,
 };
 pub use error_code::{ErrorCode, OptionErrorCodeExt};
 
