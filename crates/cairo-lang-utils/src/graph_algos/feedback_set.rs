@@ -20,6 +20,22 @@ use crate::unordered_hash_set::UnorderedHashSet;
 #[path = "feedback_set_test.rs"]
 mod feedback_set_test;
 
+/// Calculates the feedback set of an SCC.
+pub fn calc_feedback_set<Node: ComputeScc>(
+    node: SccGraphNode<Node>,
+) -> OrderedHashSet<Node::NodeId> {
+    let mut ctx = FeedbackSetAlgoContext {
+        feedback_set: OrderedHashSet::default(),
+        in_flight: UnorderedHashSet::default(),
+        pending: VecDeque::new(),
+        visited: UnorderedHashSet::default(),
+    };
+    ctx.pending.push_back(node);
+    while let Some(node) = ctx.pending.pop_front() {
+        ctx.calc_feedback_set_recursive(node);
+    }
+    ctx.feedback_set
+}
 /// Context for the feedback-set algorithm.
 struct FeedbackSetAlgoContext<Node: ComputeScc> {
     /// Nodes that were discovered as reachable from the current run, but possibly were not yet
@@ -37,58 +53,41 @@ struct FeedbackSetAlgoContext<Node: ComputeScc> {
     /// Already visited nodes in the current run.
     visited: UnorderedHashSet<Node::NodeId>,
 }
+impl<Node: ComputeScc> FeedbackSetAlgoContext<Node> {
+    fn calc_feedback_set_recursive(&mut self, node: SccGraphNode<Node>) {
+        let cur_node_id = node.get_id();
+        if !self.visited.insert(cur_node_id.clone()) {
+            return;
+        };
+        let neighbors = node.get_neighbors();
+        let has_self_loop = neighbors.iter().any(|neighbor| neighbor.get_id() == cur_node_id);
+        let mut remaining_neighbors = neighbors.into_iter();
+        if has_self_loop {
+            // If there is a self-loop, we prefer to add the current node to the feedback set as it
+            // must be there eventually. This may result in smaller feedback sets in
+            // many cases.
+            self.feedback_set.insert(cur_node_id.clone());
+        } else {
+            self.in_flight.insert(cur_node_id.clone());
+            for neighbor in remaining_neighbors.by_ref() {
+                let neighbor_id = neighbor.get_id();
+                if self.feedback_set.contains(&neighbor_id) {
+                    continue;
+                } else if self.in_flight.contains(&neighbor_id) {
+                    self.feedback_set.insert(neighbor_id);
+                } else {
+                    self.calc_feedback_set_recursive(neighbor);
+                }
 
-/// Calculates the feedback set of an SCC.
-pub fn calc_feedback_set<Node: ComputeScc>(
-    node: SccGraphNode<Node>,
-) -> OrderedHashSet<Node::NodeId> {
-    let mut ctx = FeedbackSetAlgoContext {
-        feedback_set: OrderedHashSet::default(),
-        in_flight: UnorderedHashSet::default(),
-        pending: VecDeque::new(),
-        visited: UnorderedHashSet::default(),
-    };
-    ctx.pending.push_back(node);
-    while let Some(node) = ctx.pending.pop_front() {
-        calc_feedback_set_recursive(node, &mut ctx);
+                // `node` might have been added to the fset during this iteration of the loop. If
+                // so, no need to continue this loop.
+                if self.feedback_set.contains(&cur_node_id) {
+                    break;
+                }
+            }
+            self.in_flight.remove(&cur_node_id);
+        };
+        self.pending
+            .extend(remaining_neighbors.filter(|node| !self.visited.contains(&node.get_id())));
     }
-    ctx.feedback_set
-}
-
-fn calc_feedback_set_recursive<Node: ComputeScc>(
-    node: SccGraphNode<Node>,
-    ctx: &mut FeedbackSetAlgoContext<Node>,
-) {
-    let cur_node_id = node.get_id();
-    if !ctx.visited.insert(cur_node_id.clone()) {
-        return;
-    };
-    let neighbors = node.get_neighbors();
-    let has_self_loop = neighbors.iter().any(|neighbor| neighbor.get_id() == cur_node_id);
-    let mut remaining_neighbors = neighbors.into_iter();
-    if has_self_loop {
-        // If there is a self-loop, we prefer to add the current node to the feedback set as it must
-        // be there eventually. This may result in smaller feedback sets in many cases.
-        ctx.feedback_set.insert(cur_node_id.clone());
-    } else {
-        ctx.in_flight.insert(cur_node_id.clone());
-        for neighbor in remaining_neighbors.by_ref() {
-            let neighbor_id = neighbor.get_id();
-            if ctx.feedback_set.contains(&neighbor_id) {
-                continue;
-            } else if ctx.in_flight.contains(&neighbor_id) {
-                ctx.feedback_set.insert(neighbor_id);
-            } else {
-                calc_feedback_set_recursive(neighbor, ctx);
-            }
-
-            // `node` might have been added to the fset during this iteration of the loop. If so, no
-            // need to continue this loop.
-            if ctx.feedback_set.contains(&cur_node_id) {
-                break;
-            }
-        }
-        ctx.in_flight.remove(&cur_node_id);
-    };
-    ctx.pending.extend(remaining_neighbors.filter(|node| !ctx.visited.contains(&node.get_id())));
 }
