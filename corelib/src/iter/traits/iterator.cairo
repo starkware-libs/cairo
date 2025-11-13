@@ -271,7 +271,7 @@ pub trait Iterator<T> {
     ///
     /// # Panics
     ///
-    /// Will panic if the to-be-returned index overflows a `usize`.
+    /// The returned iterator will panic if the to-be-returned index overflows a `usize`.
     ///
     /// # Examples
     ///
