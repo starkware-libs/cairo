@@ -275,7 +275,7 @@ impl<StatementId> GenStatement<StatementId> {
                     })
                     .collect(),
             }),
-            GenStatement::Return(results) => GenStatement::Return(results.clone()),
+            GenStatement::Return(results) => GenStatement::Return(results),
         }
     }
 }
