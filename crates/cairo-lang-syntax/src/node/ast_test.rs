@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use cairo_lang_filesystem::ids::{FileLongId, SmolStrId};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
-use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
 use pretty_assertions::assert_eq;
 
