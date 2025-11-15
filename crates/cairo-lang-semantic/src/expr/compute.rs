@@ -2909,7 +2909,7 @@ fn maybe_compute_pattern_semantic<'db>(
             // Peel all snapshot wrappers.
             let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
 
-            // Check that type is an struct, and get the concrete struct from it.
+            // Check that type is a struct, and get the concrete struct from it.
             let concrete_struct_id = try_extract_matches!(long_ty, TypeLongId::Concrete)
                 .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
                 .ok_or(())
