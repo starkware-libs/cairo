@@ -457,7 +457,7 @@ pub fn never_ty<'db>(db: &'db dyn Database) -> TypeId<'db> {
         .module_item_by_name(core_module, SmolStrId::from(db, "never"))
         .expect("Failed to load core lib.")
         .and_then(GenericTypeId::option_from)
-        .expect("Type bool was not found in core lib.");
+        .expect("Type never was not found in core lib.");
     semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(db, generic_type, vec![]))
         .intern(db)
 }
