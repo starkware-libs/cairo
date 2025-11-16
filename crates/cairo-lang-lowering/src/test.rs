@@ -41,7 +41,7 @@ cairo_lang_test_utils::test_file_test!(
         fixed_size_array: "fixed_size_array",
         arm_pattern_destructure: "arm_pattern_destructure",
         if_: "if",
-        inline_macros:"inline_macros",
+        inline_macros: "inline_macros",
         implicits: "implicits",
         let_else: "let_else",
         logical_operator: "logical_operator",

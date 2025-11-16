@@ -47,7 +47,7 @@ use crate::{
     VarUsage, Variable, VariableArena, VariableId,
 };
 
-/// Keeps track of equivalent values that a variables might be replaced with.
+/// Keeps track of equivalent values that variables might be replaced with.
 /// Note: We don't keep track of types as we assume the usage is always correct.
 #[derive(Debug, Clone)]
 enum VarInfo<'db> {
