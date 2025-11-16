@@ -91,7 +91,7 @@ impl<'db> InlineWeight<'db> for ApproxCasmInlineWeight<'db> {
 
     fn block_end_weight(&self, block_end: &BlockEnd<'db>) -> isize {
         match block_end {
-            // Return are removed when the function is inlined.
+            // Returns are removed when the function is inlined.
             BlockEnd::Return(..) => 0,
             // Goto requires the size of the variables in the mappings, as these are likely to be
             // stored for merge.
