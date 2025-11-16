@@ -681,3 +681,115 @@ End:
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test enum with unknown payload.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(x: felt252) {
+    bar(false, E::A(x))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum E {
+    A: felt252,
+    B: felt252,
+}
+
+fn bar(keep: bool, e: E) {
+    if keep {
+        bar_ext(e);
+    }
+}
+
+extern fn bar_ext(e: E) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False({}), E::A(NotSpecialized), }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v2: core::felt252
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v1: test::E) <- E::A(v2)
+  (v3: ()) <- test::bar(v0, v1)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test enum with struct payload partially specialized.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(b: felt252) {
+    let s = S { a: 1, b };
+    bar(false, E::A(s))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct S {
+    a: felt252,
+    b: felt252,
+}
+#[derive(Drop)]
+enum E {
+    A: S,
+    B: felt252,
+}
+
+fn bar(keep: bool, e: E) {
+    if keep {
+        bar_ext(e);
+    }
+}
+
+extern fn bar_ext(e: E) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False({}), E::A({ 1, NotSpecialized }), }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v4: core::felt252
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v3: core::felt252) <- 1
+  (v2: test::S) <- struct_construct(v3, v4)
+  (v1: test::E) <- E::A(v2)
+  (v5: ()) <- test::bar(v0, v1)
+End:
+  Return(v5)

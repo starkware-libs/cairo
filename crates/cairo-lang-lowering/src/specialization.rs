@@ -6,7 +6,7 @@ use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
+use cairo_lang_semantic::{ConcreteTypeId, ConcreteVariant, GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_utils::extract_matches;
 use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
@@ -15,6 +15,7 @@ use crate::blocks::BlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::ids::{self, LocationId, SemanticFunctionIdEx, SpecializedFunction};
 use crate::lower::context::{VarRequest, VariableAllocator};
+use crate::objects::StatementEnumConstruct as StatementEnumConstructObj;
 use crate::{
     Block, BlockEnd, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
     StatementConst, StatementSnapshot, StatementStructConstruct, VarUsage, VariableId,
@@ -27,6 +28,7 @@ pub enum SpecializationArg<'db> {
     Snapshot(Box<SpecializationArg<'db>>),
     Array(TypeId<'db>, Vec<SpecializationArg<'db>>),
     Struct(Vec<SpecializationArg<'db>>),
+    Enum { variant: ConcreteVariant<'db>, payload: Box<SpecializationArg<'db>> },
     NotSpecialized,
 }
 
@@ -70,6 +72,11 @@ impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
                 }
                 write!(f, "]")
             }
+            SpecializationArg::Enum { variant, payload } => {
+                write!(f, "{:?}(", variant.debug(db))?;
+                payload.fmt(f, db)?;
+                write!(f, ")")
+            }
             SpecializationArg::NotSpecialized => write!(f, "NotSpecialized"),
         }
     }
@@ -82,6 +89,7 @@ enum SpecializationArgBuildingState<'db, 'a> {
     TakeSnapshot(VariableId),
     BuildStruct(Vec<VariableId>),
     PushBackArray { in_array: VariableId, value: VariableId },
+    BuildEnum { variant: ConcreteVariant<'db>, payload: VariableId },
 }
 
 /// Returns the lowering of a specialized function.
@@ -188,6 +196,22 @@ pub fn specialized_function_lowered<'db>(
                             stack.push((*var_id, SpecializationArgBuildingState::Initial(arg)));
                         }
                     }
+                    SpecializationArg::Enum { variant, payload } => {
+                        let location = variables[var_id].location;
+                        let payload_var =
+                            variables.new_var(VarRequest { ty: variant.ty, location });
+                        stack.push((
+                            var_id,
+                            SpecializationArgBuildingState::BuildEnum {
+                                variant: *variant,
+                                payload: payload_var,
+                            },
+                        ));
+                        stack.push((
+                            payload_var,
+                            SpecializationArgBuildingState::Initial(payload.as_ref()),
+                        ));
+                    }
                     SpecializationArg::NotSpecialized => {
                         parameters.push(var_id);
                     }
@@ -223,6 +247,13 @@ pub fn specialized_function_lowered<'db>(
                             .iter()
                             .map(|id| VarUsage { var_id: *id, location: variables[*id].location })
                             .collect(),
+                        output: var_id,
+                    }));
+                }
+                SpecializationArgBuildingState::BuildEnum { variant, payload } => {
+                    statements.push(Statement::EnumConstruct(StatementEnumConstructObj {
+                        variant,
+                        input: VarUsage { var_id: payload, location: variables[payload].location },
                         output: var_id,
                     }));
                 }
