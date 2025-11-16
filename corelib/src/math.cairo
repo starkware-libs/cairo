@@ -11,9 +11,6 @@ use crate::traits::{Into, TryInto};
 #[allow(unused_imports)]
 use crate::zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
-// TODO(yuval): use signed integers once supported.
-// TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
-// supported.
 /// Computes the extended GCD and Bezout coefficients for two numbers.
 ///
 /// Uses the Extended Euclidean algorithm to find (g, s, t, sub_direction) where `g = gcd(a, b)`.
@@ -42,28 +39,36 @@ pub fn egcd<
     +core::num::traits::Zero<T>,
     +core::num::traits::One<T>,
     +TryInto<T, NonZero<T>>,
+    +Sub<T>,
+    +PartialOrd<T>,
 >(
     a: NonZero<T>, b: NonZero<T>,
 ) -> (T, T, T, bool) {
     let (q, r) = DivRem::<T>::div_rem(a.into(), b);
-
     let Some(r) = r.try_into() else {
-        return (b.into(), core::num::traits::Zero::zero(), core::num::traits::One::one(), false);
+        let (abs_b, sign) = abs_and_sign(b.into());
+        return (abs_b, core::num::traits::Zero::zero(), core::num::traits::One::one(), sign);
     };
 
     // `sign` (1 for true, -1 for false) is the sign of `g` in the current iteration.
     // 0 is considered negative for this purpose.
     let (g, s, t, sign) = egcd(b, r);
-    // We know that `a = q*b + r` and that `s*b - t*r = sign*g`.
-    // So `t*a - (s + q*t)*b = t*r - s*b = sign*g`.
+    // From the recursive call, we know that `s*b - t*r = sign*g`.
+    // From the division above, we have `a = q*b + r`, which gives us `r = a - q*b`.
+    // Substituting `r` into the equation:
+    //   `s*b - t*r = sign*g`
+    //   `s*b - t*(a - q*b) = sign*g`
+    //   `s*b - t*a + t*q*b = sign*g`
+    //   `(s + q*t)*b - t*a = sign*g`
+    // Rearranging:
+    //   `t*a - (s + q*t)*b = (-sign)*g`
     // Thus we pick `new_s = t`, `new_t = s + q*t`, `new_sign = !sign`.
     (g, t, s + q * t, !sign)
 }
 
-// TODO(yuval): use signed integers once supported.
 /// Computes the modular multiplicative inverse of `a` modulo `n`.
 ///
-/// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `n-1` inclusive, or
+/// Returns `s` such that `a*s ≡ 1 (mod n)` where `s` is between `1` and `|n|-1` inclusive, or
 /// `None` if `gcd(a,n) > 1` (inverse doesn't exist).
 ///
 /// # Examples
@@ -85,27 +90,48 @@ pub fn inv_mod<
     +core::num::traits::Zero<T>,
     +core::num::traits::One<T>,
     +TryInto<T, NonZero<T>>,
+    +PartialOrd<T>,
 >(
     a: NonZero<T>, n: NonZero<T>,
 ) -> Option<T> {
-    if core::num::traits::One::<T>::is_one(@n.into()) {
+    // In any case, normalizing `n` to be positive.
+    let (n_abs, _) = abs_and_sign(n.into());
+    if core::num::traits::One::<T>::is_one(@n_abs) {
         return None;
     }
     let (g, s, _, sub_direction) = egcd(a, n);
     if g.is_one() {
+        let (s_abs, s_sign) = abs_and_sign(s);
         // `1 = g = gcd(a, n) = +-(s*a - t*n) => s*a = +-1 (mod n)`.
         // The absolute values of Bezout coefficients are guaranteed to be `< n`.
         // With n > 1 and gcd = 1, `s` can't be 0.
-        if sub_direction {
-            // `s` is the Bezout coefficient, `0 < s < n`.
-            Some(s)
+        if sub_direction ^ s_sign {
+            // Both cases are valid:
+            // 1. `s` is the Bezout coefficient and `s > 0` so `0 < s < n`.
+            // 2. `-s` is the Bezout coefficient and `s < 0` so `0 < -s < n`.
+            Some(s_abs)
         } else {
-            // `-s` is the Bezout coefficient.
+            // Both cases are valid:
+            // 1. `-s` is the Bezout coefficient and `s > 0` so
             // `-n < -s < 0 => 0 < n - s < n`, and `n - s = -s (mod n)`.
-            Some(n.into() - s)
+            // 2. `s` is the Bezout coefficient and `s < 0` so
+            // `-n < s < 0 => 0 < n - (-s) < n`, and `n - (-s) = s (mod n)`.
+            Some(n_abs - s_abs)
         }
     } else {
         None
+    }
+}
+
+/// Returns `(|value|, value < 0)`.
+fn abs_and_sign<T, +Copy<T>, +Drop<T>, +PartialOrd<T>, +Sub<T>, +core::num::traits::Zero<T>>(
+    value: T,
+) -> (T, bool) {
+    let zero = core::num::traits::Zero::<T>::zero();
+    if value < zero {
+        (zero - value, true)
+    } else {
+        (value, false)
     }
 }
 
