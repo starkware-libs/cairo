@@ -479,6 +479,11 @@ impl<'db> SpecializedFunction<'db> {
                         inner.as_ref(),
                     ));
                 }
+                SpecializationArg::Enum { variant, payload } => {
+                    let lowered_param =
+                        LoweredParam { ty: variant.ty, stable_ptr: param.stable_ptr };
+                    stack.push((lowered_param, payload.as_ref()));
+                }
                 SpecializationArg::Array(ty, values) => {
                     for arg in values.iter().rev() {
                         let lowered_param = LoweredParam { ty: *ty, stable_ptr: param.stable_ptr };
