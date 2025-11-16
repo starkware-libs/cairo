@@ -121,3 +121,37 @@ fn test_u256_inv_mod() {
         0x74c5ef92be07ee4ad43ae8ca337390e4a5dfdbf4f1a5f09cdf412ab7ce343503;
     assert(math::u256_inv_mod(very_large_gcd.into(), very_large_gcd).is_none(), 'gcd ~ 2**256');
 }
+
+#[test]
+fn test_inv_mod_negatives() {
+    assert_eq!(math::inv_mod::<i32>(-3, 7), Some(2));
+    assert_eq!(math::inv_mod::<i32>(4, 7), Some(2));
+    assert_eq!(math::inv_mod::<i32>(-5, -11), Some(2));
+    assert_eq!(math::inv_mod::<i32>(6, 11), Some(2));
+    assert_eq!(math::inv_mod::<i32>(3, -7), Some(5));
+    assert_eq!(math::inv_mod::<i32>(-4, 8), None);
+    assert_eq!(math::inv_mod::<i32>(6, -9), None);
+    assert_eq!(math::inv_mod::<i32>(-6, -9), None);
+    assert_eq!(math::inv_mod::<i32>(10, -15), None);
+    assert_eq!(math::inv_mod::<i32>(-1, 1), None);
+    assert_eq!(math::inv_mod::<i32>(-7, -1), None);
+}
+
+#[test]
+fn test_egcd_neg() {
+    assert_eq!(math::egcd::<i8>(14, -2), (2, 0, 1, true));
+    assert_eq!(math::egcd::<i8>(14, -6), (2, 1, -2, true));
+    assert_eq!(math::egcd::<i8>(-3, 7), (1, -2, 1, false));
+    assert_eq!(math::egcd::<i8>(-5, -11), (1, 2, 1, true));
+    assert_eq!(math::egcd::<i8>(3, -7), (1, -2, 1, true));
+    // Test cases with 1 as argument
+    assert_eq!(math::egcd::<i8>(1, -5), (1, 1, 0, true));
+    assert_eq!(math::egcd::<i8>(-1, 5), (1, 1, 0, false));
+    assert_eq!(math::egcd::<i8>(-1, -5), (1, 1, 0, false));
+    assert_eq!(math::egcd::<i8>(7, -1), (1, 0, 1, true));
+    assert_eq!(math::egcd::<i8>(-7, 1), (1, 0, 1, false));
+    assert_eq!(math::egcd::<i8>(-7, -1), (1, 0, 1, true));
+    assert_eq!(math::egcd::<i8>(-1, -1), (1, 0, 1, true));
+    assert_eq!(math::egcd::<i8>(-1, 1), (1, 0, 1, false));
+    assert_eq!(math::egcd::<i8>(1, -1), (1, 0, 1, true));
+}
