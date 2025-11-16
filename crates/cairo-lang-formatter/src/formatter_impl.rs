@@ -182,7 +182,7 @@ pub enum BreakLinePointIndentation {
 pub struct BreakLinePointProperties {
     /// Indicates that the break line point was added instead of an empty line in the code, which
     /// means it must be preserved in the output. Notice that the number of consecutive empty line
-    /// break points is limited and not all empty lines in the code creates an empty line break
+    /// break points is limited and not all empty lines in the code create an empty line break
     /// points.
     pub is_empty_line_breakpoint: bool,
     /// Breaking precedence, lower values will break first.
