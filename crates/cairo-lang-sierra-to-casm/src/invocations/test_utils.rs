@@ -105,7 +105,7 @@ struct MockSpecializationContext {}
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         let long_id = cairo_lang_sierra::ConcreteTypeLongIdParser::new()
-            .parse(id.to_string().as_str())
+            .parse(&id.to_string())
             .unwrap();
         Some(
             CoreType::specialize_by_id(self, &long_id.generic_id, &long_id.generic_args)
