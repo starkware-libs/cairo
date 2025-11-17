@@ -265,17 +265,17 @@ impl<StatementId> GenStatement<StatementId> {
         match self {
             GenStatement::Invocation(invocation) => GenStatement::Invocation(GenInvocation {
                 libfunc_id: invocation.libfunc_id,
-                args: invocation.args.clone(),
+                args: invocation.args,
                 branches: invocation
                     .branches
                     .into_iter()
                     .map(|branch| GenBranchInfo {
                         target: branch.target.map(&f),
-                        results: branch.results.clone(),
+                        results: branch.results,
                     })
                     .collect(),
             }),
-            GenStatement::Return(results) => GenStatement::Return(results.clone()),
+            GenStatement::Return(results) => GenStatement::Return(results),
         }
     }
 }
