@@ -67,6 +67,7 @@ use crate::diagnostic::{
 };
 use crate::expr::inference::solver::SolutionSet;
 use crate::expr::inference::{ImplVarTraitItemMappings, InferenceId};
+use crate::helper::ModuleHelper;
 use crate::items::constant::{
     ConstValue, ConstantSemantic, resolve_const_expr_and_evaluate, validate_const_expr,
 };
@@ -1078,40 +1079,13 @@ fn compute_expr_unary_semantic<'db>(
             };
             let snapshot_expr_id = ctx.arenas.exprs.alloc(Expr::Snapshot(snapshot_expr.clone()));
 
-            // Get BoxTrait::<@T>::new
-            let info = ctx.db.core_info();
-            let generic_args = vec![GenericArgumentId::Type(snapshot_ty)];
-            let concrete_trait_id =
-                crate::ConcreteTraitLongId { trait_id: info.box_trt, generic_args }.intern(ctx.db);
-            let concrete_trait_function =
-                crate::items::trt::ConcreteTraitGenericFunctionLongId::new(
-                    ctx.db,
-                    concrete_trait_id,
-                    info.box_new_fn,
-                )
-                .intern(ctx.db);
-
-            // Resolve which BoxTrait implementation applies to this type.
-            let impl_lookup_context = ctx.resolver.impl_lookup_context();
-            let mut inference = ctx.resolver.inference();
-            let function = inference
-                .infer_trait_function(
-                    concrete_trait_function,
-                    impl_lookup_context,
-                    Some(stable_ptr.untyped()),
-                )
-                .map_err(|err_set| {
-                    inference.report_on_pending_error(
-                        err_set,
-                        ctx.diagnostics,
-                        stable_ptr.untyped(),
-                    )
-                })?;
-
-            // Call BoxTrait::new(@x).
+            // Call core::box::into_repr_ptr_wrapper(@x).
+            let into_repr_ptr = ModuleHelper::core(ctx.db)
+                .submodule("box")
+                .function_id("into_repr_ptr_wrapper", vec![GenericArgumentId::Type(inner_ty)]);
             expr_function_call(
                 ctx,
-                function,
+                into_repr_ptr,
                 vec![NamedArg(
                     ExprAndId { expr: Expr::Snapshot(snapshot_expr), id: snapshot_expr_id },
                     None,

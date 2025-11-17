@@ -51,6 +51,15 @@ impl BoxDrop<T, +Drop<T>> of Drop<Box<T>>;
 extern fn into_box<T>(value: T) -> Box<T> nopanic;
 extern fn unbox<T>(box: Box<T>) -> T nopanic;
 extern fn box_forward_snapshot<T>(value: @Box<T>) -> Box<@T> nopanic;
+extern fn into_repr_ptr<T>(value: @T) -> Box<@T> nopanic;
+
+/// Wrapper function for into_repr_ptr to ensure value is local.
+// TODO(giladchase): remove the wrapper, add better mechanism for detecting ap/fp-based variables
+// instead.
+#[inline(never)]
+pub fn into_repr_ptr_wrapper<T>(value: @T) -> Box<@T> {
+    into_repr_ptr(value)
+}
 
 /// Basic trait for the `Box` type.
 pub trait BoxTrait<T> {

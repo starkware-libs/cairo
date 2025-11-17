@@ -37,6 +37,7 @@ pub type BoxType = GenericTypeArgGenericTypeWrapper<BoxTypeWrapped>;
 define_libfunc_hierarchy! {
     pub enum BoxLibfunc {
         Into(IntoBoxLibfunc),
+        IntoReprPtr(IntoReprPtrLibfunc),
         Unbox(UnboxLibfunc),
         ForwardSnapshot(BoxForwardSnapshotLibfunc),
     }, BoxConcreteLibfunc
@@ -72,6 +73,30 @@ impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
     }
 }
 pub type IntoBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoBoxLibfuncWrapped>;
+
+/// Libfunc for wrapping a snapshot object of type T into a repr-ptr box.
+#[derive(Default)]
+pub struct IntoReprPtrLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for IntoReprPtrLibfuncWrapped {
+    const STR_ID: &'static str = "into_repr_ptr";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let snapshot_ty = snapshot_ty(context, ty.clone())?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![snapshot_ty.clone()],
+            vec![OutputVarInfo {
+                ty: box_ty(context, snapshot_ty)?,
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+pub type IntoReprPtrLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoReprPtrLibfuncWrapped>;
 
 /// Libfunc for unboxing a `Box<T>` back into a T.
 #[derive(Default)]

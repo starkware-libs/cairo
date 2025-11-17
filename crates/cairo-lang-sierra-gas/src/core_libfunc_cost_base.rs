@@ -368,6 +368,10 @@ pub fn core_libfunc_cost(
                     std::cmp::max(1, info_provider.type_size(&libfunc.ty).try_into().unwrap());
                 vec![ConstCost::steps(n_steps).into()]
             }
+            BoxConcreteLibfunc::IntoReprPtr(libfunc) => {
+                let size = if info_provider.type_size(&libfunc.ty) == 0 { 1 } else { 4 };
+                vec![ConstCost::steps(size).into()]
+            }
             BoxConcreteLibfunc::Unbox(_) | BoxConcreteLibfunc::ForwardSnapshot(_) => {
                 vec![ConstCost::default().into()]
             }

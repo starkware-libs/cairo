@@ -139,6 +139,7 @@
         "int_range_pop_front",
         "int_range_try_new",
         "into_box",
+        "into_repr_ptr",
         "into_u96_guarantee",
         "jump",
         "keccak_syscall",

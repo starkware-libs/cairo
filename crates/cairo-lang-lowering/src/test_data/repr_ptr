@@ -36,10 +36,10 @@ blk0 (root):
 Statements:
   (v1: core::integer::u32, v2: core::integer::u32) <- struct_destructure(v0)
   (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
-  (v5: core::box::Box::<@core::integer::u32>) <- core::box::into_box::<@core::integer::u32>(v4)
+  (v5: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v4)
   () <- test::bar(v5)
   (v6: core::integer::u32, v7: @core::integer::u32) <- snapshot(v2)
-  (v8: core::box::Box::<@core::integer::u32>) <- core::box::into_box::<@core::integer::u32>(v7)
+  (v8: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v7)
   () <- test::baz(v8)
 End:
   Return()
@@ -77,13 +77,18 @@ repr_ptrs = true
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::box::Box::<@core::integer::u32>) <- 3.into_box()
-  (v1: core::box::Box::<@core::integer::u32>, v2: @core::box::Box::<@core::integer::u32>) <- snapshot(v0)
-  (v3: core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- core::box::into_box::<@core::box::Box::<@core::integer::u32>>(v2)
-  (v4: core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- core::box::into_box::<@core::box::Box::<@core::integer::u32>>(v2)
-  (v5: core::box::Box::<@core::box::Box::<@core::integer::u32>>, v6: @core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- snapshot(v4)
-  (v7: core::box::Box::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>) <- core::box::into_box::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>(v6)
-  () <- test::bar(v0, v3, v7)
+  (v0: core::integer::u32) <- 3
+  (v1: core::integer::u32, v2: @core::integer::u32) <- snapshot(v0)
+  (v3: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v2)
+  (v4: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v2)
+  (v5: core::box::Box::<@core::integer::u32>, v6: @core::box::Box::<@core::integer::u32>) <- snapshot(v4)
+  (v7: core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::integer::u32>>(v6)
+  (v8: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v2)
+  (v9: core::box::Box::<@core::integer::u32>, v10: @core::box::Box::<@core::integer::u32>) <- snapshot(v8)
+  (v11: core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::integer::u32>>(v10)
+  (v12: core::box::Box::<@core::box::Box::<@core::integer::u32>>, v13: @core::box::Box::<@core::box::Box::<@core::integer::u32>>) <- snapshot(v11)
+  (v14: core::box::Box::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>) <- core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::box::Box::<@core::integer::u32>>>(v13)
+  () <- test::bar(v3, v7, v14)
 End:
   Return()
 
@@ -121,9 +126,12 @@ repr_ptrs = true
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::box::Box::<@core::integer::u32>) <- 1.into_box()
-  () <- test::bar(v0)
-  () <- test::bar(v0)
+  (v0: core::integer::u32) <- 1
+  (v1: core::integer::u32, v2: @core::integer::u32) <- snapshot(v0)
+  (v3: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v2)
+  () <- test::bar(v3)
+  (v4: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v2)
+  () <- test::bar(v4)
 End:
   Return()
 
@@ -160,7 +168,7 @@ Parameters: v0: @core::integer::u32
 blk0 (root):
 Statements:
   (v1: @core::integer::u32, v2: @@core::integer::u32) <- snapshot(v0)
-  (v3: core::box::Box::<@@core::integer::u32>) <- core::box::into_box::<@@core::integer::u32>(v2)
+  (v3: core::box::Box::<@@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<@core::integer::u32>(v2)
   () <- test::bar(v3)
 End:
   Return()
@@ -209,7 +217,7 @@ End:
 blk1:
 Statements:
   (v3: core::integer::u32, v4: @core::integer::u32) <- snapshot(v1)
-  (v5: core::box::Box::<@core::integer::u32>) <- core::box::into_box::<@core::integer::u32>(v4)
+  (v5: core::box::Box::<@core::integer::u32>) <- core::box::into_repr_ptr_wrapper::<core::integer::u32>(v4)
   () <- test::bar(v5)
 End:
   Return()

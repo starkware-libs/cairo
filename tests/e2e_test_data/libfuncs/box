@@ -302,3 +302,283 @@ store_temp<Box<Snapshot<Array<felt252>>>>([1]) -> ([1]);
 return([1]);
 
 test::foo@F0([0]: Snapshot<Box<Array<felt252>>>) -> (Box<Snapshot<Array<felt252>>>);
+
+//! > ==========================================================================
+
+//! > into_repr_ptr with fp-based variable
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn foo(x: felt252) -> Box<@felt252> {
+    let y = x;
+    core::box::into_repr_ptr_wrapper(@y)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+call rel 3;
+ret;
+call rel 2;
+jmp rel 2;
+ret;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 700})
+core::box::into_repr_ptr_wrapper::<core::felt252>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc snapshot_take<felt252> = snapshot_take<felt252>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>> = function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>;
+libfunc into_repr_ptr<felt252> = into_repr_ptr<felt252>;
+
+F0:
+snapshot_take<felt252>([0]) -> ([1], [2]);
+drop<felt252>([1]) -> ();
+store_temp<felt252>([2]) -> ([2]);
+function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>([2]) -> ([3]);
+return([3]);
+F1:
+into_repr_ptr<felt252>([0]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: felt252) -> (Box<felt252>);
+core::box::into_repr_ptr_wrapper::<core::felt252>@F1([0]: felt252) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > into_repr_ptr with ap-based variable
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn bar() -> felt252 {
+    42
+}
+
+fn foo() -> Box<@felt252> {
+    let x = bar(); // x is ap-based after function call
+    core::box::into_repr_ptr_wrapper(@x)
+}
+
+//! > casm
+[ap + 0] = 42, ap++;
+ret;
+[ap + 0] = 42, ap++;
+call rel 3;
+ret;
+call rel 2;
+jmp rel 2;
+ret;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 700})
+core::box::into_repr_ptr_wrapper::<core::felt252>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 42> = Const<felt252, 42> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 42>> = const_as_immediate<Const<felt252, 42>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc snapshot_take<felt252> = snapshot_take<felt252>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>> = function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>;
+libfunc into_repr_ptr<felt252> = into_repr_ptr<felt252>;
+
+F0:
+const_as_immediate<Const<felt252, 42>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_immediate<Const<felt252, 42>>() -> ([0]);
+snapshot_take<felt252>([0]) -> ([1], [2]);
+drop<felt252>([1]) -> ();
+store_temp<felt252>([2]) -> ([2]);
+function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>([2]) -> ([3]);
+return([3]);
+F2:
+into_repr_ptr<felt252>([0]) -> ([1]);
+return([1]);
+
+test::bar@F0() -> (felt252);
+test::foo@F1() -> (Box<felt252>);
+core::box::into_repr_ptr_wrapper::<core::felt252>@F2([0]: felt252) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > reference operator &x with FP-based variable
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+#[feature("repr_ptrs")]
+fn foo(x: felt252, y: felt252) -> Box<@felt252> {
+    let z = x + y;
+    &z
+}
+
+//! > casm
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+call rel 3;
+ret;
+call rel 2;
+jmp rel 2;
+ret;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 700})
+core::box::into_repr_ptr_wrapper::<core::felt252>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc felt252_add = felt252_add;
+libfunc snapshot_take<felt252> = snapshot_take<felt252>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>> = function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>;
+libfunc into_repr_ptr<felt252> = into_repr_ptr<felt252>;
+
+F0:
+felt252_add([0], [1]) -> ([2]);
+snapshot_take<felt252>([2]) -> ([3], [4]);
+drop<felt252>([3]) -> ();
+store_temp<felt252>([4]) -> ([4]);
+function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>([4]) -> ([5]);
+return([5]);
+F1:
+into_repr_ptr<felt252>([0]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: felt252, [1]: felt252) -> (Box<felt252>);
+core::box::into_repr_ptr_wrapper::<core::felt252>@F1([0]: felt252) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > reference operator &x with AP-based variable after function call
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+#[feature("repr_ptrs")]
+fn helper(x: felt252, y: felt252) -> felt252 {
+    x * y
+}
+
+fn foo(x: felt252, y: felt252) -> Box<@felt252> {
+    let z = helper(x, y); // z is ap-based after function call.
+    &z
+}
+
+//! > casm
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+ret;
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+call rel 3;
+ret;
+call rel 2;
+jmp rel 2;
+ret;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::helper: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 700})
+core::box::into_repr_ptr_wrapper::<core::felt252>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc felt252_mul = felt252_mul;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc snapshot_take<felt252> = snapshot_take<felt252>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>> = function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>;
+libfunc into_repr_ptr<felt252> = into_repr_ptr<felt252>;
+
+F0:
+felt252_mul([0], [1]) -> ([2]);
+store_temp<felt252>([2]) -> ([2]);
+return([2]);
+F1:
+felt252_mul([0], [1]) -> ([2]);
+snapshot_take<felt252>([2]) -> ([3], [4]);
+drop<felt252>([3]) -> ();
+store_temp<felt252>([4]) -> ([4]);
+function_call<user@core::box::into_repr_ptr_wrapper::<core::felt252>>([4]) -> ([5]);
+return([5]);
+F2:
+into_repr_ptr<felt252>([0]) -> ([1]);
+return([1]);
+
+test::helper@F0([0]: felt252, [1]: felt252) -> (felt252);
+test::foo@F1([0]: felt252, [1]: felt252) -> (Box<felt252>);
+core::box::into_repr_ptr_wrapper::<core::felt252>@F2([0]: felt252) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > reference operator &x with zero-sized type
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+#[feature("repr_ptrs")]
+fn foo() -> Box<@()> {
+    let x = ();
+    &x
+}
+
+//! > casm
+call rel 3;
+ret;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 300})
+core::box::into_repr_ptr_wrapper::<()>: SmallOrderedMap({Const: 100})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc snapshot_take<Unit> = snapshot_take<Unit>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc function_call<user@core::box::into_repr_ptr_wrapper::<()>> = function_call<user@core::box::into_repr_ptr_wrapper::<()>>;
+libfunc into_repr_ptr<Unit> = into_repr_ptr<Unit>;
+
+F0:
+struct_construct<Unit>() -> ([0]);
+snapshot_take<Unit>([0]) -> ([1], [2]);
+drop<Unit>([1]) -> ();
+function_call<user@core::box::into_repr_ptr_wrapper::<()>>([2]) -> ([3]);
+return([3]);
+F1:
+into_repr_ptr<Unit>([0]) -> ([1]);
+return([1]);
+
+test::foo@F0() -> (Box<Unit>);
+core::box::into_repr_ptr_wrapper::<()>@F1([0]: Unit) -> (Box<Unit>);

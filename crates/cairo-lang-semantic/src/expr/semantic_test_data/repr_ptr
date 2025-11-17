@@ -21,7 +21,7 @@ Block(
                     ),
                     expr: FunctionCall(
                         ExprFunctionCall {
-                            function: core::box::BoxImpl::<@core::integer::u32>::new,
+                            function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                             args: [
                                 Value(
                                     Snapshot(
@@ -51,14 +51,14 @@ Block(
                     ),
                     expr: FunctionCall(
                         ExprFunctionCall {
-                            function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                            function: core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::integer::u32>>,
                             args: [
                                 Value(
                                     Snapshot(
                                         ExprSnapshot {
                                             inner: FunctionCall(
                                                 ExprFunctionCall {
-                                                    function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                    function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                                                     args: [
                                                         Value(
                                                             Snapshot(
@@ -97,21 +97,21 @@ Block(
                     ),
                     expr: FunctionCall(
                         ExprFunctionCall {
-                            function: core::box::BoxImpl::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>::new,
+                            function: core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::box::Box::<@core::integer::u32>>>,
                             args: [
                                 Value(
                                     Snapshot(
                                         ExprSnapshot {
                                             inner: FunctionCall(
                                                 ExprFunctionCall {
-                                                    function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                                                    function: core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::integer::u32>>,
                                                     args: [
                                                         Value(
                                                             Snapshot(
                                                                 ExprSnapshot {
                                                                     inner: FunctionCall(
                                                                         ExprFunctionCall {
-                                                                            function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                                            function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                                                                             args: [
                                                                                 Value(
                                                                                     Snapshot(
@@ -173,14 +173,14 @@ test_expr_semantics
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
-        function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+        function: core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::integer::u32>>,
         args: [
             Value(
                 Snapshot(
                     ExprSnapshot {
                         inner: FunctionCall(
                             ExprFunctionCall {
-                                function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                                 args: [
                                     Value(
                                         Snapshot(
@@ -235,7 +235,7 @@ FunctionCall(
             Value(
                 FunctionCall(
                     ExprFunctionCall {
-                        function: core::box::BoxImpl::<@core::integer::u32>::new,
+                        function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                         args: [
                             Value(
                                 Snapshot(
@@ -259,14 +259,14 @@ FunctionCall(
             Value(
                 FunctionCall(
                     ExprFunctionCall {
-                        function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                        function: core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::integer::u32>>,
                         args: [
                             Value(
                                 Snapshot(
                                     ExprSnapshot {
                                         inner: FunctionCall(
                                             ExprFunctionCall {
-                                                function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                                                 args: [
                                                     Value(
                                                         Snapshot(
@@ -299,21 +299,21 @@ FunctionCall(
             Value(
                 FunctionCall(
                     ExprFunctionCall {
-                        function: core::box::BoxImpl::<@core::box::Box::<@core::box::Box::<@core::integer::u32>>>::new,
+                        function: core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::box::Box::<@core::integer::u32>>>,
                         args: [
                             Value(
                                 Snapshot(
                                     ExprSnapshot {
                                         inner: FunctionCall(
                                             ExprFunctionCall {
-                                                function: core::box::BoxImpl::<@core::box::Box::<@core::integer::u32>>::new,
+                                                function: core::box::into_repr_ptr_wrapper::<core::box::Box::<@core::integer::u32>>,
                                                 args: [
                                                     Value(
                                                         Snapshot(
                                                             ExprSnapshot {
                                                                 inner: FunctionCall(
                                                                     ExprFunctionCall {
-                                                                        function: core::box::BoxImpl::<@core::integer::u32>::new,
+                                                                        function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                                                                         args: [
                                                                             Value(
                                                                                 Snapshot(
@@ -373,7 +373,7 @@ test_expr_semantics
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
-        function: core::box::BoxImpl::<@@core::integer::u32>::new,
+        function: core::box::into_repr_ptr_wrapper::<@core::integer::u32>,
         args: [
             Value(
                 Snapshot(
@@ -416,7 +416,7 @@ Snapshot(
     ExprSnapshot {
         inner: FunctionCall(
             ExprFunctionCall {
-                function: core::box::BoxImpl::<@core::integer::u32>::new,
+                function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                 args: [
                     Value(
                         Snapshot(
@@ -459,7 +459,7 @@ a & &b
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
-        function: ?1::bitand,
+        function: ?0::bitand,
         args: [
             Value(
                 Var(
@@ -469,7 +469,7 @@ FunctionCall(
             Value(
                 FunctionCall(
                     ExprFunctionCall {
-                        function: core::box::BoxImpl::<@core::integer::u32>::new,
+                        function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
                         args: [
                             Value(
                                 Snapshot(
@@ -525,7 +525,7 @@ let p = PPoint { point: Point { x: 1, y: 2 } };
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
-        function: core::box::BoxImpl::<@core::integer::u32>::new,
+        function: core::box::into_repr_ptr_wrapper::<core::integer::u32>,
         args: [
             Value(
                 Snapshot(
@@ -575,7 +575,7 @@ let arr = array![1_u32, 2_u32, 3_u32];
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {
-        function: core::box::BoxImpl::<@@core::integer::u32>::new,
+        function: core::box::into_repr_ptr_wrapper::<@core::integer::u32>,
         args: [
             Value(
                 Snapshot(
