@@ -26,7 +26,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         EcConcreteLibfunc::IsZero(_) => build_ec_point_is_zero(builder),
-        EcConcreteLibfunc::Neg(_) => build_ec_neg(builder),
+        EcConcreteLibfunc::Neg(_) | EcConcreteLibfunc::NegNz(_) => build_ec_neg(builder),
         EcConcreteLibfunc::StateAdd(_) => build_ec_state_add(builder),
         EcConcreteLibfunc::TryNew(_) => build_ec_point_try_new_nz(builder),
         EcConcreteLibfunc::StateFinalize(_) => build_ec_state_finalize(builder),

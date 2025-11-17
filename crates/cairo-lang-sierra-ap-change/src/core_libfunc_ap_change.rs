@@ -150,7 +150,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-            EcConcreteLibfunc::Neg(_) => vec![ApChange::Known(0)],
+            EcConcreteLibfunc::Neg(_) | EcConcreteLibfunc::NegNz(_) => vec![ApChange::Known(0)],
             EcConcreteLibfunc::StateAdd(_) => vec![ApChange::Known(9)],
             EcConcreteLibfunc::TryNew(_) => vec![ApChange::Known(6), ApChange::Known(6)],
             EcConcreteLibfunc::StateFinalize(_) => vec![ApChange::Known(11), ApChange::Known(3)],
