@@ -184,11 +184,11 @@ pub fn recover_public_key(
     //   Q.x = ((s/r)R - (z/r)G).x.
     let r_nz: u256 = signature_r.into();
     let r_nz = r_nz.try_into()?;
-    let ord_nz: u256 = ec::stark_curve::ORDER.into();
-    let ord_nz = ord_nz.try_into()?;
-    let r_inv = math::u256_inv_mod(r_nz, ord_nz)?.into();
-    let s_div_r: felt252 = math::u256_mul_mod_n(signature_s.into(), r_inv, ord_nz).try_into()?;
-    let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ord_nz).try_into()?;
+    const ORD_U256: u256 = ec::stark_curve::ORDER.into();
+    const ORD_NZ: NonZero<u256> = ORD_U256.try_into().unwrap();
+    let r_inv = math::u256_inv_mod(r_nz, ORD_NZ)?.into();
+    let s_div_r: felt252 = math::u256_mul_mod_n(signature_s.into(), r_inv, ORD_NZ).try_into()?;
+    let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ORD_NZ).try_into()?;
     let s_div_rR: EcPoint = signature_r_point.mul(s_div_r);
     let z_div_rG: EcPoint = gen_point.mul(z_div_r);
 
