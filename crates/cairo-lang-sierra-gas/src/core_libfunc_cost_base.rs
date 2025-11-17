@@ -68,7 +68,7 @@ pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
     ConstCost { steps: 9, holes: 0, range_checks: 1, range_checks96: 0 };
-/// The cost not dependent on the number of keys and access.
+/// The cost not dependent on the number of keys and accesses.
 pub const DICT_SQUASH_FIXED_COST: ConstCost =
     ConstCost { steps: 57, holes: 0, range_checks: 3, range_checks96: 0 };
 

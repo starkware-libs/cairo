@@ -22,7 +22,7 @@ type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
 pub trait CostTypeTrait:
     std::fmt::Debug + Default + Clone + Eq + Add<Output = Self> + Sub<Output = Self>
 {
-    /// Computes the minimum of the given two value (for each token type).
+    /// Computes the minimum of the given two values (for each token type).
     ///
     /// Assumes that the arguments are non-negative.
     fn min2(value1: &Self, value2: &Self) -> Self;
