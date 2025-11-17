@@ -924,6 +924,33 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             } else if self.unwrap_non_zero == extern_fn {
                 let [arg] = args else { return None };
                 return try_extract_matches!(arg.long(db), ConstValue::NonZero).copied();
+            } else if self.u128s_from_felt252 == extern_fn {
+                let [arg] = args else { return None };
+                let TypeLongId::Concrete(ConcreteTypeId::Enum(enm)) = expr_ty.long(db) else {
+                    return None;
+                };
+                let (narrow, wide) =
+                    db.concrete_enum_variants(*enm).ok()?.into_iter().collect_tuple()?;
+                let value = felt252_for_downcast(arg.long(db).to_int()?, &BigInt::ZERO);
+                let mask128 = BigInt::from(u128::MAX);
+                let low = (&value) & mask128;
+                let high: BigInt = (&value) >> 128;
+                return Some(if high.is_zero() {
+                    ConstValue::Enum(narrow, ConstValue::Int(low, narrow.ty).intern(db)).intern(db)
+                } else {
+                    ConstValue::Enum(
+                        wide,
+                        ConstValue::Struct(
+                            vec![
+                                (ConstValue::Int(high, self.u128).intern(db)),
+                                (ConstValue::Int(low, self.u128).intern(db)),
+                            ],
+                            wide.ty,
+                        )
+                        .intern(db),
+                    )
+                    .intern(db)
+                });
             } else if let Some(reversed) = self.downcast_fns.get(&extern_fn) {
                 let [arg] = args else { return None };
                 let ConstValue::Int(value, input_ty) = arg.long(db) else { return None };
@@ -1195,6 +1222,8 @@ pub struct ConstCalcInfo<'db> {
     /// The integer `downcast` style functions, mapping to whether it returns a reversed Option
     /// enum.
     pub downcast_fns: UnorderedHashMap<ExternFunctionId<'db>, bool>,
+    /// The `felt252` into `u128` words libfunc.
+    pub u128s_from_felt252: ExternFunctionId<'db>,
     /// The `unwrap_non_zero` function.
     unwrap_non_zero: ExternFunctionId<'db>,
     /// The `is_zero` style functions.
@@ -1280,6 +1309,7 @@ impl<'db> ConstCalcInfo<'db> {
                     false,
                 ),
             ]),
+            u128s_from_felt252: integer.extern_function_id("u128s_from_felt252"),
             unwrap_non_zero: zeroable.extern_function_id("unwrap_non_zero"),
             nz_fns: FromIterator::from_iter([
                 core.extern_function_id("felt252_is_zero"),
