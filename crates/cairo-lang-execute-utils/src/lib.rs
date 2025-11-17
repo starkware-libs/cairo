@@ -3,7 +3,9 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_executable::executable::{EntryPointKind, Executable, ExecutableEntryPoint};
+use cairo_lang_executable::executable::{
+    EntryPointKind, Executable, ExecutableEntryPoint, NOT_RETURNING_HEADER_SIZE,
+};
 use cairo_lang_runner::{Arg, build_hints_dict};
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_vm::Felt252;
@@ -28,7 +30,7 @@ pub fn program_and_hints_from_executable(
             entrypoint.builtins.clone(),
             data,
             entrypoint.offset,
-            entrypoint.offset + 4,
+            entrypoint.offset + NOT_RETURNING_HEADER_SIZE,
             hints,
             Default::default(),
             Default::default(),
