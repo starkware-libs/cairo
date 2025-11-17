@@ -159,6 +159,98 @@ fn test_complex_consts() {
     assert_eq!(IF_CONST_FALSE, 7);
 }
 
+#[test]
+fn test_const_casts_from_felt252() {
+    const _U8_UNDER_RANGE: () = assert((-1_felt252).try_into() == None::<u8>, 'U8 under range');
+    const _U8_MIN_IN_RANGE: () = assert(0_felt252.try_into() == Some(0_u8), 'U8 min in range');
+    const _U8_MAX_IN_RANGE: () = assert(
+        0xff_felt252.try_into() == Some(0xff_u8), 'U8 max in range',
+    );
+    const _U8_OVER_RANGE: () = assert(0x100_felt252.try_into() == None::<u8>, 'U8 over range');
+    const _U16_UNDER_RANGE: () = assert((-1_felt252).try_into() == None::<u16>, 'U16 under range');
+    const _U16_MIN_IN_RANGE: () = assert(0_felt252.try_into() == Some(0_u16), 'U16 min in range');
+    const _U16_MAX_IN_RANGE: () = assert(
+        0xffff_felt252.try_into() == Some(0xffff_u16), 'U16 max in range',
+    );
+    const _U16_OVER_RANGE: () = assert(0x10000_felt252.try_into() == None::<u16>, 'U16 over range');
+    const _U32_UNDER_RANGE: () = assert((-1_felt252).try_into() == None::<u32>, 'U32 under range');
+    const _U32_MIN_IN_RANGE: () = assert(0_felt252.try_into() == Some(0_u32), 'U32 min in range');
+    const _U32_MAX_IN_RANGE: () = assert(
+        0xffffffff_felt252.try_into() == Some(0xffffffff_u32), 'U32 max in range',
+    );
+    const _U32_OVER_RANGE: () = assert(
+        0x100000000_felt252.try_into() == None::<u32>, 'U32 over range',
+    );
+    const _U64_UNDER_RANGE: () = assert((-1_felt252).try_into() == None::<u64>, 'U64 under range');
+    const _U64_MIN_IN_RANGE: () = assert(0_felt252.try_into() == Some(0_u64), 'U64 min in range');
+    const _U64_MAX_IN_RANGE: () = assert(
+        0xffffffffffffffff_felt252.try_into() == Some(0xffffffffffffffff_u64), 'U64 max in range',
+    );
+    const _U64_OVER_RANGE: () = assert(
+        0x10000000000000000_felt252.try_into() == None::<u64>, 'U64 over range',
+    );
+    const _I8_UNDER_RANGE: () = assert((-0x81_felt252).try_into() == None::<i8>, 'I8 under range');
+    const _I8_MIN_IN_RANGE: () = assert(
+        (-0x80_felt252).try_into() == Some(-0x80_i8), 'I8 min in range',
+    );
+    const _I8_MAX_IN_RANGE: () = assert(
+        0x7f_felt252.try_into() == Some(0x7f_i8), 'I8 max in range',
+    );
+    const _I8_OVER_RANGE: () = assert(0x80_felt252.try_into() == None::<i8>, 'I8 over range');
+    const _I16_UNDER_RANGE: () = assert(
+        (-0x8001_felt252).try_into() == None::<i16>, 'I16 under range',
+    );
+    const _I16_MIN_IN_RANGE: () = assert(
+        (-0x8000_felt252).try_into() == Some(-0x8000_i16), 'I16 min in range',
+    );
+    const _I16_MAX_IN_RANGE: () = assert(
+        0x7fff_felt252.try_into() == Some(0x7fff_i16), 'I16 max in range',
+    );
+    const _I16_OVER_RANGE: () = assert(0x8000_felt252.try_into() == None::<i16>, 'I16 over range');
+    const _I32_UNDER_RANGE: () = assert(
+        (-0x80000001_felt252).try_into() == None::<i32>, 'I32 under range',
+    );
+    const _I32_MIN_IN_RANGE: () = assert(
+        (-0x80000000_felt252).try_into() == Some(-0x80000000_i32), 'I32 min in range',
+    );
+    const _I32_MAX_IN_RANGE: () = assert(
+        0x7fffffff_felt252.try_into() == Some(0x7fffffff_i32), 'I32 max in range',
+    );
+    const _I32_OVER_RANGE: () = assert(
+        0x80000000_felt252.try_into() == None::<i32>, 'I32 over range',
+    );
+    const _I64_UNDER_RANGE: () = assert(
+        (-0x8000000000000001_felt252).try_into() == None::<i64>, 'I64 under range',
+    );
+    const _I64_MIN_IN_RANGE: () = assert(
+        (-0x8000000000000000_felt252).try_into() == Some(-0x8000000000000000_i64),
+        'I64 min in range',
+    );
+    const _I64_MAX_IN_RANGE: () = assert(
+        0x7fffffffffffffff_felt252.try_into() == Some(0x7fffffffffffffff_i64), 'I64 max in range',
+    );
+    const _I64_OVER_RANGE: () = assert(
+        0x8000000000000000_felt252.try_into() == None::<i64>, 'I64 over range',
+    );
+    const _I128_UNDER_RANGE: () = assert(
+        (-0x80000000000000000000000000000001_felt252).try_into() == None::<i128>,
+        'I128 under range',
+    );
+    const _I128_MIN_IN_RANGE: () = assert(
+        (-0x80000000000000000000000000000000_felt252)
+            .try_into() == Some(-0x80000000000000000000000000000000_i128),
+        'I128 min in range',
+    );
+    const _I128_MAX_IN_RANGE: () = assert(
+        0x7fffffffffffffffffffffffffffffff_felt252
+            .try_into() == Some(0x7fffffffffffffffffffffffffffffff_i128),
+        'I128 max in range',
+    );
+    const _I128_OVER_RANGE: () = assert(
+        0x80000000000000000000000000000000_felt252.try_into() == None::<i128>, 'I128 over range',
+    );
+}
+
 mod const_starknet_consts {
     pub extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<
         (starknet::ContractAddress, starknet::ClassHash),
