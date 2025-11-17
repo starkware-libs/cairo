@@ -412,7 +412,8 @@ pub fn core_libfunc_cost(
         Struct(
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)
-            | StructConcreteLibfunc::SnapshotDeconstruct(_),
+            | StructConcreteLibfunc::SnapshotDeconstruct(_)
+            | StructConcreteLibfunc::BoxedDeconstruct(_),
         ) => {
             vec![ConstCost::default().into()]
         }
