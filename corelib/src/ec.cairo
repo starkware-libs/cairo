@@ -184,10 +184,7 @@ pub impl EcStateImpl of EcStateTrait {
     #[inline]
     fn sub(ref self: EcState, p: NonZeroEcPoint) {
         // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well, or a `ec_state_sub`.
-        let p: EcPoint = p.into();
-        let p_neg = ec_neg(p);
-        let p_neg_nz = p_neg.try_into().unwrap();
-        ec_state_add(ref self, p_neg_nz);
+        ec_state_add(ref self, -p);
     }
 
     /// Adds the product `p * scalar` to the state.

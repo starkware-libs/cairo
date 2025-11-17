@@ -13,7 +13,7 @@
 //! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
-use crate::ec::{self, EcPoint, EcPointTrait, EcStateTrait};
+use crate::ec::{self, EcPointTrait, EcStateTrait};
 use crate::math;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
@@ -160,15 +160,8 @@ pub fn check_ecdsa_signature(
 pub fn recover_public_key(
     message_hash: felt252, signature_r: felt252, signature_s: felt252, y_parity: bool,
 ) -> Option<felt252> {
-    let mut signature_r_point = EcPointTrait::new_from_x(signature_r)?;
-    let y: u256 = signature_r_point.try_into()?.y().into();
-    // If the actual parity of the actual y is different than requested, flip the parity.
-    if (y.low & 1 == 1) != y_parity {
-        signature_r_point = -signature_r_point;
-    }
-
-    // Retrieve the generator point.
-    let gen_point = EcPointTrait::new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)?;
+    let r_point = EcPointTrait::new_nz_from_x(signature_r)?;
+    let gen_point = EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)?;
 
     // a Valid signature should satisfy:
     // zG + rQ = sR.
@@ -184,13 +177,23 @@ pub fn recover_public_key(
     //   Q.x = ((s/r)R - (z/r)G).x.
     let r_nz: u256 = signature_r.into();
     let r_nz = r_nz.try_into()?;
-    const ORD_U256: u256 = ec::stark_curve::ORDER.into();
+    use ec::stark_curve::ORDER as ORD;
+    const ORD_U256: u256 = ORD.into();
     const ORD_NZ: NonZero<u256> = ORD_U256.try_into().unwrap();
     let r_inv = math::u256_inv_mod(r_nz, ORD_NZ)?.into();
     let s_div_r: felt252 = math::u256_mul_mod_n(signature_s.into(), r_inv, ORD_NZ).try_into()?;
     let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ORD_NZ).try_into()?;
-    let s_div_rR: EcPoint = signature_r_point.mul(s_div_r);
-    let z_div_rG: EcPoint = gen_point.mul(z_div_r);
-
-    Some((s_div_rR - z_div_rG).try_into()?.x())
+    let mut state = EcStateTrait::init();
+    let ord = ORD;
+    state.add_mul(ord - z_div_r, gen_point);
+    // Checking if the actual parity of the point's y is different than requested, and if so,
+    // flipping the multiplier to match the requested parity.
+    let y: u256 = r_point.y().into();
+    let r_multiplier = if (y.low & 1 != 0) ^ y_parity {
+        ord - s_div_r
+    } else {
+        s_div_r
+    };
+    state.add_mul(r_multiplier, r_point);
+    Some(state.finalize_nz()?.x())
 }
