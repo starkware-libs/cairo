@@ -726,6 +726,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     SpecializationArg::Snapshot(inner) => {
                         stack.push(inner.as_mut());
                     }
+                    SpecializationArg::Enum { payload, .. } => {
+                        stack.push(payload.as_mut());
+                    }
                     SpecializationArg::Array(_, values) => {
                         for value in values.iter_mut().rev() {
                             stack.push(value);
@@ -1321,9 +1324,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 unknown_vars.extend(vars);
                 Some(SpecializationArg::Struct(struct_args))
             }
-            VarInfo::Enum { .. } => {
-                // TODO(TomerStarkware): Support enums as specialization arguments.
-                None
+            VarInfo::Enum { variant, payload } => {
+                let mut local_unknown_vars = vec![];
+                let payload_arg = self.try_get_specialization_arg(
+                    payload.as_ref().clone(),
+                    variant.ty,
+                    &mut local_unknown_vars,
+                )?;
+
+                unknown_vars.extend(local_unknown_vars);
+                Some(SpecializationArg::Enum { variant, payload: Box::new(payload_arg) })
             }
             VarInfo::Var(var_usage) => {
                 unknown_vars.push(var_usage);
