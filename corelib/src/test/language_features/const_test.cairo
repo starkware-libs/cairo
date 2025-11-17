@@ -189,6 +189,20 @@ fn test_const_casts_from_felt252() {
     const _U64_OVER_RANGE: () = assert(
         0x10000000000000000_felt252.try_into() == None::<u64>, 'U64 over range',
     );
+    const _U128_UNDER_RANGE: () = assert(
+        (-1_felt252).try_into() == None::<u128>, 'U128 under range',
+    );
+    const _U128_MIN_IN_RANGE: () = assert(
+        0_felt252.try_into() == Some(0_u128), 'U128 min in range',
+    );
+    const _U128_MAX_IN_RANGE: () = assert(
+        0xffffffffffffffffffffffffffffffff_felt252
+            .try_into() == Some(0xffffffffffffffffffffffffffffffff_u128),
+        'U128 max in range',
+    );
+    const _U128_OVER_RANGE: () = assert(
+        0x100000000000000000000000000000000_felt252.try_into() == None::<u128>, 'U128 over range',
+    );
     const _I8_UNDER_RANGE: () = assert((-0x81_felt252).try_into() == None::<i8>, 'I8 under range');
     const _I8_MIN_IN_RANGE: () = assert(
         (-0x80_felt252).try_into() == Some(-0x80_i8), 'I8 min in range',
@@ -248,6 +262,13 @@ fn test_const_casts_from_felt252() {
     );
     const _I128_OVER_RANGE: () = assert(
         0x80000000000000000000000000000000_felt252.try_into() == None::<i128>, 'I128 over range',
+    );
+    const _U256_FROM_ZERO: () = assert(0_felt252.into() == 0_u256, 'U256 from zero');
+    const _U256_FROM_ONE: () = assert(1_felt252.into() == 1_u256, 'U256 from one');
+    const _U256_FROM_MINUS_ONE: () = assert(
+        (-1_felt252)
+            .into() == 0x800000000000011000000000000000000000000000000000000000000000000_u256,
+        'U256 under range',
     );
 }
 
