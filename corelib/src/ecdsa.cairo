@@ -55,35 +55,29 @@ use crate::zeroable::IsZeroResult;
 pub fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252,
 ) -> bool {
-    // TODO(orizi): Change to || once it does not prevent `a == 0` comparison optimization.
     // Check that s != 0 (mod stark_curve::ORDER).
-    if signature_s == 0 {
-        return false;
-    }
-    if signature_s == ec::stark_curve::ORDER {
-        return false;
-    }
-    if signature_r == ec::stark_curve::ORDER {
+    if signature_s == 0
+        || signature_s == ec::stark_curve::ORDER
+        || signature_r == ec::stark_curve::ORDER {
         return false;
     }
 
     // Check that the public key is the x coordinate of a point on the curve and get such a point.
-    let public_key_point = match EcPointTrait::new_nz_from_x(public_key) {
-        Some(point) => point,
-        None => { return false; },
+    let Some(public_key_point) = EcPointTrait::new_nz_from_x(public_key) else {
+        return false;
     };
 
     // Check that `r` is the x coordinate of a point on the curve and get such a point.
     // Note that this ensures that `r != 0`.
-    let signature_r_point = match EcPointTrait::new_nz_from_x(signature_r) {
-        Some(point) => point,
-        None => { return false; },
+    let Some(signature_r_point) = EcPointTrait::new_nz_from_x(signature_r) else {
+        return false;
     };
 
     // Retrieve the generator point.
-    let gen_point = match EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
-        Some(point) => point,
-        None => { return false; },
+    let Some(gen_point) = EcPointTrait::new_nz(
+        ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y,
+    ) else {
+        return false;
     };
 
     // Initialize an EC state.
@@ -100,10 +94,10 @@ pub fn check_ecdsa_signature(
     // Calculate `sR.x`.
     let mut sR_state = init_ec.clone();
     sR_state.add_mul(signature_s, signature_r_point);
-    let sR_x = match sR_state.finalize_nz() {
-        Some(pt) => pt.x(),
-        None => { return false; },
+    let Some(sR_nz) = sR_state.finalize_nz() else {
+        return false;
     };
+    let sR_x = sR_nz.x();
 
     // Calculate a state with `z * G`.
     let mut zG_state = init_ec.clone();
@@ -120,19 +114,15 @@ pub fn check_ecdsa_signature(
     // Check the `(zG + rQ).x = sR.x` case.
     let mut zG_plus_eQ_state = zG_state.clone();
     zG_plus_eQ_state.add(rQ);
-    if let Some(pt) = zG_plus_eQ_state.finalize_nz() {
-        if pt.x() == sR_x {
-            return true;
-        }
+    if let Some(pt) = zG_plus_eQ_state.finalize_nz() && pt.x() == sR_x {
+        return true;
     }
 
     // Check the `(zG - rQ).x = sR.x` case.
     let mut zG_minus_eQ_state = zG_state;
     zG_minus_eQ_state.sub(rQ);
-    if let Some(pt) = zG_minus_eQ_state.finalize_nz() {
-        if pt.x() == sR_x {
-            return true;
-        }
+    if let Some(pt) = zG_minus_eQ_state.finalize_nz() && pt.x() == sR_x {
+        return true;
     }
 
     false

@@ -1402,62 +1402,61 @@ drop<felt252>([5]) -> ();
 drop<felt252>([2]) -> ();
 drop<felt252>([4]) -> ();
 drop<felt252>([3]) -> ();
-store_temp<RangeCheck>([0]) -> ([8]);
-store_temp<EcOp>([1]) -> ([9]);
-jump() { F18_B15() };
+jump() { F18_B1() };
 F18_B0:
 branch_align() -> ();
 drop<NonZero<felt252>>([7]) -> ();
-const_as_immediate<Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583>>() -> ([10]);
-dup<felt252>([5]) -> ([5], [11]);
-dup<felt252>([10]) -> ([10], [12]);
-felt252_sub([11], [12]) -> ([13]);
-store_temp<felt252>([13]) -> ([13]);
-felt252_is_zero([13]) { fallthrough() F18_B1([14]) };
+const_as_immediate<Const<felt252, 3618502788666131213697322783095070105526743751716087489154079457884512865583>>() -> ([8]);
+dup<felt252>([5]) -> ([5], [9]);
+dup<felt252>([8]) -> ([8], [10]);
+felt252_sub([9], [10]) -> ([11]);
+store_temp<felt252>([11]) -> ([11]);
+felt252_is_zero([11]) { fallthrough() F18_B2([12]) };
 branch_align() -> ();
 drop<felt252>([5]) -> ();
 drop<felt252>([2]) -> ();
 drop<felt252>([4]) -> ();
 drop<felt252>([3]) -> ();
-drop<felt252>([10]) -> ();
-store_temp<RangeCheck>([0]) -> ([8]);
-store_temp<EcOp>([1]) -> ([9]);
-jump() { F18_B15() };
+drop<felt252>([8]) -> ();
 F18_B1:
-branch_align() -> ();
-drop<NonZero<felt252>>([14]) -> ();
-dup<felt252>([4]) -> ([4], [15]);
-felt252_sub([15], [10]) -> ([16]);
-store_temp<felt252>([16]) -> ([16]);
-felt252_is_zero([16]) { fallthrough() F18_B2([17]) };
-branch_align() -> ();
-drop<felt252>([5]) -> ();
-drop<felt252>([2]) -> ();
-drop<felt252>([4]) -> ();
-drop<felt252>([3]) -> ();
-store_temp<RangeCheck>([0]) -> ([8]);
-store_temp<EcOp>([1]) -> ([9]);
-jump() { F18_B15() };
+store_temp<RangeCheck>([0]) -> ([13]);
+store_temp<EcOp>([1]) -> ([14]);
+jump() { F18_B16() };
 F18_B2:
 branch_align() -> ();
+drop<NonZero<felt252>>([12]) -> ();
+dup<felt252>([4]) -> ([4], [15]);
+felt252_sub([15], [8]) -> ([16]);
+store_temp<felt252>([16]) -> ([16]);
+felt252_is_zero([16]) { fallthrough() F18_B3([17]) };
+branch_align() -> ();
+drop<felt252>([5]) -> ();
+drop<felt252>([2]) -> ();
+drop<felt252>([4]) -> ();
+drop<felt252>([3]) -> ();
+store_temp<RangeCheck>([0]) -> ([13]);
+store_temp<EcOp>([1]) -> ([14]);
+jump() { F18_B16() };
+F18_B3:
+branch_align() -> ();
 drop<NonZero<felt252>>([17]) -> ();
-ec_point_from_x_nz([0], [3]) { fallthrough([18], [19]) F18_B14([20]) };
+ec_point_from_x_nz([0], [3]) { fallthrough([18], [19]) F18_B15([20]) };
 branch_align() -> ();
 dup<felt252>([4]) -> ([4], [21]);
-ec_point_from_x_nz([18], [21]) { fallthrough([22], [23]) F18_B13([24]) };
+ec_point_from_x_nz([18], [21]) { fallthrough([22], [23]) F18_B14([24]) };
 branch_align() -> ();
 const_as_immediate<Const<felt252, 874739451078007766457464989774322083649278607533249481151382481072868806602>>() -> ([25]);
 const_as_immediate<Const<felt252, 152666792071518830868575557812948353041420400780739481342941381225525861407>>() -> ([26]);
 store_temp<felt252>([25]) -> ([25]);
 store_temp<felt252>([26]) -> ([26]);
-ec_point_try_new_nz([25], [26]) { fallthrough([27]) F18_B12() };
+ec_point_try_new_nz([25], [26]) { fallthrough([27]) F18_B13() };
 branch_align() -> ();
 ec_state_init() -> ([28]);
 dup<EcState>([28]) -> ([28], [29]);
 store_temp<NonZero<EcPoint>>([23]) -> ([23]);
 ec_state_add_mul([1], [29], [5], [23]) -> ([30], [31]);
 store_temp<EcState>([31]) -> ([31]);
-ec_state_try_finalize_nz([31]) { fallthrough([32]) F18_B11() };
+ec_state_try_finalize_nz([31]) { fallthrough([32]) F18_B12() };
 branch_align() -> ();
 ec_point_unwrap([32]) -> ([33], [34]);
 drop<felt252>([34]) -> ();
@@ -1468,36 +1467,36 @@ store_temp<NonZero<EcPoint>>([19]) -> ([19]);
 ec_state_add_mul([36], [28], [4], [19]) -> ([38], [39]);
 store_temp<EcState>([39]) -> ([39]);
 store_temp<EcState>([37]) -> ([37]);
-ec_state_try_finalize_nz([39]) { fallthrough([40]) F18_B10() };
+ec_state_try_finalize_nz([39]) { fallthrough([40]) F18_B11() };
 branch_align() -> ();
 dup<EcState>([37]) -> ([37], [41]);
 dup<NonZero<EcPoint>>([40]) -> ([40], [42]);
 ec_state_add([41], [42]) -> ([43]);
 store_temp<EcState>([43]) -> ([43]);
-ec_state_try_finalize_nz([43]) { fallthrough([44]) F18_B4() };
+ec_state_try_finalize_nz([43]) { fallthrough([44]) F18_B5() };
 branch_align() -> ();
 ec_point_unwrap([44]) -> ([45], [46]);
 drop<felt252>([46]) -> ();
 dup<felt252>([33]) -> ([33], [47]);
 felt252_sub([45], [47]) -> ([48]);
 store_temp<felt252>([48]) -> ([48]);
-felt252_is_zero([48]) { fallthrough() F18_B3([49]) };
+felt252_is_zero([48]) { fallthrough() F18_B4([49]) };
 branch_align() -> ();
 drop<felt252>([33]) -> ();
 drop<EcState>([37]) -> ();
 drop<NonZero<EcPoint>>([40]) -> ();
-jump() { F18_B7() };
-F18_B3:
-branch_align() -> ();
-drop<NonZero<felt252>>([49]) -> ();
-jump() { F18_B5() };
+jump() { F18_B8() };
 F18_B4:
 branch_align() -> ();
+drop<NonZero<felt252>>([49]) -> ();
+jump() { F18_B6() };
 F18_B5:
+branch_align() -> ();
+F18_B6:
 unwrap_non_zero<EcPoint>([40]) -> ([50]);
 ec_neg([50]) -> ([51]);
 store_temp<EcPoint>([51]) -> ([51]);
-ec_point_is_zero([51]) { fallthrough() F18_B6([52]) };
+ec_point_is_zero([51]) { fallthrough() F18_B7([52]) };
 branch_align() -> ();
 drop<felt252>([33]) -> ();
 drop<EcState>([37]) -> ();
@@ -1507,19 +1506,19 @@ store_temp<RangeCheck>([22]) -> ([22]);
 store_temp<EcOp>([38]) -> ([38]);
 store_temp<core::panics::PanicResult::<(core::bool,)>>([54]) -> ([54]);
 return([22], [38], [54]);
-F18_B6:
+F18_B7:
 branch_align() -> ();
 ec_state_add([37], [52]) -> ([55]);
 store_temp<EcState>([55]) -> ([55]);
-ec_state_try_finalize_nz([55]) { fallthrough([56]) F18_B9() };
+ec_state_try_finalize_nz([55]) { fallthrough([56]) F18_B10() };
 branch_align() -> ();
 ec_point_unwrap([56]) -> ([57], [58]);
 drop<felt252>([58]) -> ();
 felt252_sub([57], [33]) -> ([59]);
 store_temp<felt252>([59]) -> ([59]);
-felt252_is_zero([59]) { fallthrough() F18_B8([60]) };
+felt252_is_zero([59]) { fallthrough() F18_B9([60]) };
 branch_align() -> ();
-F18_B7:
+F18_B8:
 struct_construct<Unit>() -> ([61]);
 enum_init<core::bool, 1>([61]) -> ([62]);
 struct_construct<Tuple<core::bool>>([62]) -> ([63]);
@@ -1528,68 +1527,68 @@ store_temp<RangeCheck>([22]) -> ([22]);
 store_temp<EcOp>([38]) -> ([38]);
 store_temp<core::panics::PanicResult::<(core::bool,)>>([64]) -> ([64]);
 return([22], [38], [64]);
-F18_B8:
-branch_align() -> ();
-drop<NonZero<felt252>>([60]) -> ();
-store_temp<RangeCheck>([22]) -> ([8]);
-store_temp<EcOp>([38]) -> ([9]);
-jump() { F18_B15() };
 F18_B9:
 branch_align() -> ();
-drop<felt252>([33]) -> ();
-store_temp<RangeCheck>([22]) -> ([8]);
-store_temp<EcOp>([38]) -> ([9]);
-jump() { F18_B15() };
+drop<NonZero<felt252>>([60]) -> ();
+store_temp<RangeCheck>([22]) -> ([13]);
+store_temp<EcOp>([38]) -> ([14]);
+jump() { F18_B16() };
 F18_B10:
 branch_align() -> ();
 drop<felt252>([33]) -> ();
-drop<EcState>([37]) -> ();
-store_temp<RangeCheck>([22]) -> ([8]);
-store_temp<EcOp>([38]) -> ([9]);
-jump() { F18_B15() };
+store_temp<RangeCheck>([22]) -> ([13]);
+store_temp<EcOp>([38]) -> ([14]);
+jump() { F18_B16() };
 F18_B11:
+branch_align() -> ();
+drop<felt252>([33]) -> ();
+drop<EcState>([37]) -> ();
+store_temp<RangeCheck>([22]) -> ([13]);
+store_temp<EcOp>([38]) -> ([14]);
+jump() { F18_B16() };
+F18_B12:
 branch_align() -> ();
 drop<EcState>([28]) -> ();
 drop<NonZero<EcPoint>>([19]) -> ();
 drop<felt252>([4]) -> ();
 drop<NonZero<EcPoint>>([27]) -> ();
 drop<felt252>([2]) -> ();
-store_temp<RangeCheck>([22]) -> ([8]);
-store_temp<EcOp>([30]) -> ([9]);
-jump() { F18_B15() };
-F18_B12:
+store_temp<RangeCheck>([22]) -> ([13]);
+store_temp<EcOp>([30]) -> ([14]);
+jump() { F18_B16() };
+F18_B13:
 branch_align() -> ();
 drop<felt252>([2]) -> ();
 drop<NonZero<EcPoint>>([19]) -> ();
 drop<felt252>([4]) -> ();
 drop<felt252>([5]) -> ();
 drop<NonZero<EcPoint>>([23]) -> ();
-store_temp<RangeCheck>([22]) -> ([8]);
-store_temp<EcOp>([1]) -> ([9]);
-jump() { F18_B15() };
-F18_B13:
+store_temp<RangeCheck>([22]) -> ([13]);
+store_temp<EcOp>([1]) -> ([14]);
+jump() { F18_B16() };
+F18_B14:
 branch_align() -> ();
 drop<felt252>([5]) -> ();
 drop<felt252>([2]) -> ();
 drop<NonZero<EcPoint>>([19]) -> ();
 drop<felt252>([4]) -> ();
-store_temp<RangeCheck>([24]) -> ([8]);
-store_temp<EcOp>([1]) -> ([9]);
-jump() { F18_B15() };
-F18_B14:
+store_temp<RangeCheck>([24]) -> ([13]);
+store_temp<EcOp>([1]) -> ([14]);
+jump() { F18_B16() };
+F18_B15:
 branch_align() -> ();
 drop<felt252>([5]) -> ();
 drop<felt252>([2]) -> ();
 drop<felt252>([4]) -> ();
-store_temp<RangeCheck>([20]) -> ([8]);
-store_temp<EcOp>([1]) -> ([9]);
-F18_B15:
+store_temp<RangeCheck>([20]) -> ([13]);
+store_temp<EcOp>([1]) -> ([14]);
+F18_B16:
 struct_construct<Unit>() -> ([65]);
 enum_init<core::bool, 0>([65]) -> ([66]);
 struct_construct<Tuple<core::bool>>([66]) -> ([67]);
 enum_init<core::panics::PanicResult::<(core::bool,)>, 0>([67]) -> ([68]);
 store_temp<core::panics::PanicResult::<(core::bool,)>>([68]) -> ([68]);
-return([8], [9], [68]);
+return([13], [14], [68]);
 F19:
 const_as_immediate<Const<felt252, 24944740430830204917365432020251520094789>>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
