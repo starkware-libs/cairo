@@ -129,15 +129,14 @@ impl<'db> DocumentationCommentParser<'db> {
         let mut table_alignment: Vec<Alignment> = Vec::new();
 
         for event in parser {
-            let current_event = event.clone();
-            match current_event {
+            match &event {
                 Event::Text(text) => {
                     if prefix_list_item {
                         write_list_item_prefix(&mut list_nesting, &mut tokens);
                         prefix_list_item = false;
                     }
                     if let Some(link) = current_link.as_mut() {
-                        link.label.push_str(&text);
+                        link.label.push_str(text.as_ref());
                     } else {
                         let text = {
                             if is_indented_code_block {
@@ -171,7 +170,7 @@ impl<'db> DocumentationCommentParser<'db> {
                             }
                             tokens.push(DocumentationCommentToken::Content(format!(
                                 "{} ",
-                                heading_level_to_markdown(level)
+                                heading_level_to_markdown(*level)
                             )));
                         }
                         Tag::List(list_type) => {
@@ -179,7 +178,7 @@ impl<'db> DocumentationCommentParser<'db> {
                                 tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                             }
                             list_nesting.push(DocCommentListItem {
-                                delimiter: list_type,
+                                delimiter: *list_type,
                                 is_ordered_list: list_type.is_some(),
                             });
                         }
@@ -201,7 +200,7 @@ impl<'db> DocumentationCommentParser<'db> {
                             }
                         },
                         Tag::Link { link_type, dest_url, .. } => {
-                            match link_type {
+                            match *link_type {
                                 LinkType::ShortcutUnknown | LinkType::Shortcut => {
                                     let path =
                                         if dest_url.starts_with("`") && dest_url.ends_with("`") {
@@ -237,7 +236,7 @@ impl<'db> DocumentationCommentParser<'db> {
                             prefix_list_item = true;
                         }
                         Tag::Table(alignment) => {
-                            table_alignment = alignment;
+                            table_alignment = alignment.clone();
                             tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                         }
                         Tag::TableCell => {
