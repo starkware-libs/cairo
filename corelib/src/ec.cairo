@@ -102,6 +102,9 @@ pub extern fn ec_point_unwrap(p: NonZeroEcPoint) -> (felt252, felt252) nopanic;
 /// Computes the negation of an elliptic curve point (-p).
 extern fn ec_neg(p: EcPoint) -> EcPoint nopanic;
 
+/// Computes the negation of a non-zero elliptic curve point (-p).
+extern fn ec_neg_nz(p: NonZeroEcPoint) -> NonZeroEcPoint nopanic;
+
 /// Checks whether the given `EcPoint` is the zero point.
 extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 
@@ -181,9 +184,21 @@ pub impl EcStateImpl of EcStateTrait {
     /// # Arguments
     ///
     /// * `p` - The non-zero point to subtract
+    #[cfg(sierra: "future")]
+    #[inline]
+    fn sub(ref self: EcState, p: NonZeroEcPoint) nopanic {
+        ec_state_add(ref self, ec_neg_nz(p));
+    }
+
+    // TODO(orizi): Remove function on next Sierra release.
+    /// Subtracts a point to the computation.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - The non-zero point to subtract
+    #[cfg(not(sierra: "future"))]
     #[inline]
     fn sub(ref self: EcState, p: NonZeroEcPoint) {
-        // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well, or a `ec_state_sub`.
         ec_state_add(ref self, -p);
     }
 
