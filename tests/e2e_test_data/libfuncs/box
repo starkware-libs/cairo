@@ -302,3 +302,348 @@ store_temp<Box<Snapshot<Array<felt252>>>>([1]) -> ([1]);
 return([1]);
 
 test::foo@F0([0]: Snapshot<Box<Array<felt252>>>) -> (Box<Snapshot<Array<felt252>>>);
+
+//! > ==========================================================================
+
+//! > local_into_box with fp-based variable
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+#[inline(never)]
+pub fn local_into_box_wrapper<T>(value: T) -> Box<T> {
+    local_into_box(value)
+}
+
+fn foo(x: felt252) -> Box<felt252> {
+    let y = x;
+    local_into_box_wrapper(y)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+call rel 3;
+ret;
+call rel 5;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 700})
+test::local_into_box_wrapper::<core::felt252>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@test::local_into_box_wrapper::<core::felt252>> = function_call<user@test::local_into_box_wrapper::<core::felt252>>;
+libfunc local_into_box<felt252> = local_into_box<felt252>;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@test::local_into_box_wrapper::<core::felt252>>([0]) -> ([1]);
+return([1]);
+F1:
+local_into_box<felt252>([0]) -> ([1]);
+store_temp<Box<felt252>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: felt252) -> (Box<felt252>);
+test::local_into_box_wrapper::<core::felt252>@F1([0]: felt252) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > local_into_box with ap-based variable
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+#[inline(never)]
+pub fn local_into_box_wrapper<T>(value: T) -> Box<T> {
+    local_into_box(value)
+}
+
+fn bar() -> felt252 {
+    42
+}
+
+fn foo() -> Box<felt252> {
+    let x = bar(); // x is ap-based after function call
+    local_into_box_wrapper(x)
+}
+
+//! > casm
+[ap + 0] = 42, ap++;
+ret;
+[ap + 0] = 42, ap++;
+call rel 3;
+ret;
+call rel 5;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 700})
+test::local_into_box_wrapper::<core::felt252>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 42> = Const<felt252, 42> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 42>> = const_as_immediate<Const<felt252, 42>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@test::local_into_box_wrapper::<core::felt252>> = function_call<user@test::local_into_box_wrapper::<core::felt252>>;
+libfunc local_into_box<felt252> = local_into_box<felt252>;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+const_as_immediate<Const<felt252, 42>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_immediate<Const<felt252, 42>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@test::local_into_box_wrapper::<core::felt252>>([0]) -> ([1]);
+return([1]);
+F2:
+local_into_box<felt252>([0]) -> ([1]);
+store_temp<Box<felt252>>([1]) -> ([1]);
+return([1]);
+
+test::bar@F0() -> (felt252);
+test::foo@F1() -> (Box<felt252>);
+test::local_into_box_wrapper::<core::felt252>@F2([0]: felt252) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > reference operator &x with zero-sized type
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+#[inline(never)]
+pub fn local_into_box_wrapper<T>(value: T) -> Box<T> {
+    local_into_box(value)
+}
+
+fn foo() -> Box<()> {
+    let x = ();
+    local_into_box_wrapper(x)
+}
+
+//! > casm
+call rel 3;
+ret;
+call rel 5;
+[ap + 0] = [ap + -2] + 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 600})
+test::local_into_box_wrapper::<()>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc function_call<user@test::local_into_box_wrapper::<()>> = function_call<user@test::local_into_box_wrapper::<()>>;
+libfunc local_into_box<Unit> = local_into_box<Unit>;
+libfunc store_temp<Box<Unit>> = store_temp<Box<Unit>>;
+
+F0:
+struct_construct<Unit>() -> ([0]);
+function_call<user@test::local_into_box_wrapper::<()>>([0]) -> ([1]);
+return([1]);
+F1:
+local_into_box<Unit>([0]) -> ([1]);
+store_temp<Box<Unit>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0() -> (Box<Unit>);
+test::local_into_box_wrapper::<()>@F1([0]: Unit) -> (Box<Unit>);
+
+//! > ==========================================================================
+
+//! > local_into_box with size 3 tuple
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+#[inline(never)]
+pub fn local_into_box_wrapper<T>(value: T) -> Box<T> {
+    local_into_box(value)
+}
+
+fn foo(x: felt252, y: felt252, z: felt252) -> Box<@(felt252, felt252, felt252)> {
+    let tuple = (x, y, z);
+    local_into_box_wrapper(@tuple)
+}
+
+//! > casm
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel 3;
+ret;
+call rel 5;
+[ap + 0] = [ap + -2] + -5, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 900})
+test::local_into_box_wrapper::<@(core::felt252, core::felt252, core::felt252)>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Tuple<felt252, felt252, felt252>> = Box<Tuple<felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc struct_construct<Tuple<felt252, felt252, felt252>> = struct_construct<Tuple<felt252, felt252, felt252>>;
+libfunc snapshot_take<Tuple<felt252, felt252, felt252>> = snapshot_take<Tuple<felt252, felt252, felt252>>;
+libfunc drop<Tuple<felt252, felt252, felt252>> = drop<Tuple<felt252, felt252, felt252>>;
+libfunc store_temp<Tuple<felt252, felt252, felt252>> = store_temp<Tuple<felt252, felt252, felt252>>;
+libfunc function_call<user@test::local_into_box_wrapper::<@(core::felt252, core::felt252, core::felt252)>> = function_call<user@test::local_into_box_wrapper::<@(core::felt252, core::felt252, core::felt252)>>;
+libfunc local_into_box<Tuple<felt252, felt252, felt252>> = local_into_box<Tuple<felt252, felt252, felt252>>;
+libfunc store_temp<Box<Tuple<felt252, felt252, felt252>>> = store_temp<Box<Tuple<felt252, felt252, felt252>>>;
+
+F0:
+struct_construct<Tuple<felt252, felt252, felt252>>([0], [1], [2]) -> ([3]);
+snapshot_take<Tuple<felt252, felt252, felt252>>([3]) -> ([4], [5]);
+drop<Tuple<felt252, felt252, felt252>>([4]) -> ();
+store_temp<Tuple<felt252, felt252, felt252>>([5]) -> ([5]);
+function_call<user@test::local_into_box_wrapper::<@(core::felt252, core::felt252, core::felt252)>>([5]) -> ([6]);
+return([6]);
+F1:
+local_into_box<Tuple<felt252, felt252, felt252>>([0]) -> ([1]);
+store_temp<Box<Tuple<felt252, felt252, felt252>>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: felt252, [1]: felt252, [2]: felt252) -> (Box<Tuple<felt252, felt252, felt252>>);
+test::local_into_box_wrapper::<@(core::felt252, core::felt252, core::felt252)>@F1([0]: Tuple<felt252, felt252, felt252>) -> (Box<Tuple<felt252, felt252, felt252>>);
+
+//! > ==========================================================================
+
+//! > local_into_box with mixed fp and ap variables
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+#[inline(never)]
+pub fn local_into_box_wrapper<T>(value: T) -> Box<T> {
+    local_into_box(value)
+}
+
+fn bar() -> felt252 {
+    42
+}
+
+fn foo() -> (Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>) {
+    // First two are FP-based
+    let a = 10;
+    let b = 20;
+    let box_a = local_into_box_wrapper(a);
+    let box_b = local_into_box_wrapper(b);
+
+    // Next two are AP-based after function calls
+    let c = bar();
+    let d = bar() + 1;
+    let box_c = local_into_box_wrapper(c);
+    let box_d = local_into_box_wrapper(d);
+
+    (box_a, box_b, box_c, box_d)
+}
+
+//! > casm
+[ap + 0] = 42, ap++;
+ret;
+[ap + 0] = 10, ap++;
+call rel 21;
+[ap + 0] = 20, ap++;
+call rel 17;
+[ap + 0] = 42, ap++;
+[ap + 0] = 42, ap++;
+call rel 11;
+[ap + 0] = [ap + -5] + 1, ap++;
+call rel 7;
+[ap + 0] = [ap + -14], ap++;
+[ap + 0] = [ap + -11], ap++;
+[ap + 0] = [ap + -7], ap++;
+[ap + 0] = [ap + -4], ap++;
+ret;
+call rel 5;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 3300})
+test::local_into_box_wrapper::<core::felt252>: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>> = Struct<ut@Tuple, Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 20> = Const<felt252, 20> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 42> = Const<felt252, 42> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 42>> = const_as_immediate<Const<felt252, 42>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
+libfunc function_call<user@test::local_into_box_wrapper::<core::felt252>> = function_call<user@test::local_into_box_wrapper::<core::felt252>>;
+libfunc const_as_immediate<Const<felt252, 20>> = const_as_immediate<Const<felt252, 20>>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
+libfunc dup<felt252> = dup<felt252>;
+libfunc felt252_add = felt252_add;
+libfunc struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
+libfunc store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>> = store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>;
+libfunc local_into_box<felt252> = local_into_box<felt252>;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+const_as_immediate<Const<felt252, 42>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+return([0]);
+F1:
+const_as_immediate<Const<felt252, 10>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@test::local_into_box_wrapper::<core::felt252>>([0]) -> ([1]);
+const_as_immediate<Const<felt252, 20>>() -> ([2]);
+store_temp<felt252>([2]) -> ([2]);
+function_call<user@test::local_into_box_wrapper::<core::felt252>>([2]) -> ([3]);
+const_as_immediate<Const<felt252, 42>>() -> ([4]);
+const_as_immediate<Const<felt252, 1>>() -> ([5]);
+dup<felt252>([4]) -> ([4], [6]);
+store_temp<felt252>([6]) -> ([6]);
+felt252_add([6], [5]) -> ([7]);
+store_temp<felt252>([4]) -> ([4]);
+function_call<user@test::local_into_box_wrapper::<core::felt252>>([4]) -> ([8]);
+store_temp<felt252>([7]) -> ([7]);
+function_call<user@test::local_into_box_wrapper::<core::felt252>>([7]) -> ([9]);
+struct_construct<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([1], [3], [8], [9]) -> ([10]);
+store_temp<Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>>([10]) -> ([10]);
+return([10]);
+F2:
+local_into_box<felt252>([0]) -> ([1]);
+store_temp<Box<felt252>>([1]) -> ([1]);
+return([1]);
+
+test::bar@F0() -> (felt252);
+test::foo@F1() -> (Tuple<Box<felt252>, Box<felt252>, Box<felt252>, Box<felt252>>);
+test::local_into_box_wrapper::<core::felt252>@F2([0]: felt252) -> (Box<felt252>);
