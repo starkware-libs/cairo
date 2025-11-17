@@ -328,6 +328,42 @@ test::foo@F0([0]: EcPoint) -> (EcPoint);
 
 //! > ==========================================================================
 
+//! > ec_neg_nz libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+fn foo(a: ec::NonZeroEcPoint) -> ec::NonZeroEcPoint {
+    ec::ec_neg_nz(a)
+}
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3] * -1, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 200})
+
+//! > sierra_code
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc ec_neg_nz = ec_neg_nz;
+libfunc store_temp<NonZero<EcPoint>> = store_temp<NonZero<EcPoint>>;
+
+F0:
+ec_neg_nz([0]) -> ([1]);
+store_temp<NonZero<EcPoint>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: NonZero<EcPoint>) -> (NonZero<EcPoint>);
+
+//! > ==========================================================================
+
 //! > ec_state_init libfunc
 
 //! > test_comments

@@ -55,6 +55,7 @@
         "drop",
         "dup",
         "ec_neg",
+        "ec_neg_nz",
         "ec_point_from_x_nz",
         "ec_point_is_zero",
         "ec_point_try_new_nz",
