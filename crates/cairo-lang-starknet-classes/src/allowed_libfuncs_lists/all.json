@@ -143,6 +143,7 @@
         "jump",
         "keccak_syscall",
         "library_call_syscall",
+        "local_into_box",
         "m31_add",
         "m31_div",
         "m31_mul",
