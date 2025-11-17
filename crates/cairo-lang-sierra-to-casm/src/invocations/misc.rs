@@ -260,6 +260,26 @@ pub fn get_pointer_after_program_code(offset: i32) -> (InstructionsWithRelocatio
     )
 }
 
+/// Helper function to generate code that computes a pointer to a local based on its offset from fp.
+pub fn get_fp_based_pointer(offset: i32) -> InstructionsWithRelocations {
+    let ctx = casm! {
+        // The relocation table will point the `call` to the end of the program, where there's a
+        // `ret` instruction.
+        call rel 0;
+        // After calling the above empty function, `[ap - 2]` contains the callsite's `fp`.
+        // Compute fp + offset (the address of the local) and push onto stack.
+        [ap+0] = [ap + -2] + (offset), ap++;
+    };
+    let relocations =
+        vec![RelocationEntry { instruction_idx: 0, relocation: Relocation::EndOfProgram }];
+
+    InstructionsWithRelocations {
+        instructions: ctx.instructions,
+        relocations,
+        cost: ConstCost { steps: 3, ..Default::default() },
+    }
+}
+
 /// Builds a libfunc that tries to convert a felt252 to type with values in the range
 /// `[0, 2**num_bits)`.
 /// Assumption: num_bits > 128.

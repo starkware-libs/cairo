@@ -1,6 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use num_bigint::ToBigInt;
@@ -8,6 +9,7 @@ use num_bigint::ToBigInt;
 use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
+use crate::invocations::misc::get_fp_based_pointer;
 use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra box operations.
@@ -17,6 +19,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         BoxConcreteLibfunc::Into(_) => build_into_box(builder),
+        BoxConcreteLibfunc::LocalInto(_) => build_local_into_box(builder),
         BoxConcreteLibfunc::Unbox(libfunc) => build_unbox(&libfunc.ty, builder),
         BoxConcreteLibfunc::ForwardSnapshot(_) => build_identity(builder),
     }
@@ -51,6 +54,32 @@ fn build_into_box(
         casm_builder,
         [("Fallthrough", &[&[addr]], None)],
         Default::default(),
+    ))
+}
+
+/// Handles instruction for wrapping a local object of type T into a box.
+fn build_local_into_box(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [operand] = builder.try_get_refs()?;
+
+    let base_offset = match &operand.cells[..] {
+        [] => 0,
+        [CellExpression::Deref(cell), ..] if cell.register == Register::FP => cell.offset.into(),
+        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+    };
+    let pre_instructions = get_fp_based_pointer(base_offset);
+
+    let mut casm_builder = CasmBuilder::default();
+    casm_builder.increase_ap_change(1);
+    let addr =
+        casm_builder.add_var(CellExpression::Deref(CellRef { register: Register::AP, offset: 0 }));
+
+    Ok(builder.build_from_casm_builder_ex(
+        casm_builder,
+        [("Fallthrough", &[&[addr]], None)],
+        Default::default(),
+        pre_instructions,
     ))
 }
 
