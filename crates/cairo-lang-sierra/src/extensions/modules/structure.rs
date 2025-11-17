@@ -13,7 +13,8 @@
 
 use cairo_lang_utils::try_extract_matches;
 
-use super::snapshot::snapshot_ty;
+use super::boxing::box_ty;
+use super::snapshot::{SnapshotType, snapshot_ty};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -22,7 +23,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
+    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
+    SpecializationError, args_as_single_type,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
@@ -126,6 +128,7 @@ define_libfunc_hierarchy! {
         Construct(StructConstructLibfunc),
         Deconstruct(StructDeconstructLibfunc),
         SnapshotDeconstruct(StructSnapshotDeconstructLibfunc),
+        BoxedStructDeconstruct(BoxedStructDeconstructLibfunc),
     }, StructConcreteLibfunc
 }
 
@@ -256,5 +259,120 @@ impl SignatureOnlyGenericLibfunc for StructSnapshotDeconstructLibfunc {
                 .collect::<Result<Vec<_>, _>>()?,
             SierraApChange::Known { new_vars_only: true },
         ))
+    }
+}
+
+/// Concrete implementation of the boxed struct deconstruct libfunc.
+pub struct ConcreteBoxedStructDeconstructLibfunc {
+    /// The concrete types of the struct members (no additional snapshots and boxing) that will be
+    /// extracted as boxed values.
+    pub members: Vec<ConcreteTypeId>,
+    signature: LibfuncSignature,
+}
+
+impl SignatureBasedConcreteLibfunc for ConcreteBoxedStructDeconstructLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
+/// Libfunc for deconstructing a boxed struct into boxes of its members.
+#[derive(Default)]
+pub struct BoxedStructDeconstructLibfunc {}
+
+impl BoxedStructDeconstructLibfunc {
+    /// Analyzes a struct type to extract member types and snapshot information.
+    ///
+    /// This method handles both regular structs and snapshot-wrapped structs. For snapshot-wrapped
+    /// structs (e.g., `@StructType`), it unwraps the snapshot to get the underlying struct type,
+    /// then extracts the member types and indicates the snapshot status.
+    ///
+    /// # Returns
+    /// - `Vec<ConcreteTypeId>`: The concrete types of each struct member
+    /// - `bool`: Whether the input struct was wrapped in a snapshot
+    fn analyze_struct_type(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        mut ty: ConcreteTypeId,
+    ) -> Result<(Vec<ConcreteTypeId>, bool), SpecializationError> {
+        let arg_type_info = context.get_type_info(ty.clone())?;
+        let is_snapshot = arg_type_info.long_id.generic_id == SnapshotType::id();
+        if is_snapshot {
+            ty = match &arg_type_info.long_id.generic_args[0] {
+                GenericArg::Type(ty) => ty.clone(),
+                _ => return Err(SpecializationError::UnsupportedGenericArg),
+            }
+        }
+        let struct_type = StructConcreteType::try_from_concrete_type(context, &ty)?;
+        Ok((struct_type.members, is_snapshot))
+    }
+
+    /// Creates the libfunc signature for boxed struct deconstruction.
+    ///
+    /// # Parameters
+    /// - `ty`: The concrete type ID of the struct being deconstructed
+    /// - `member_types`: The concrete types of each struct member
+    /// - `is_snapshot`: Whether the struct was originally wrapped in a snapshot
+    ///
+    /// # Returns
+    /// A libfunc signature that takes a boxed struct as input and returns boxed versions
+    /// of each member. If `is_snapshot` is true, the members are also wrapped in snapshots.
+    fn inner_specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+        member_types: Vec<ConcreteTypeId>,
+        is_snapshot: bool,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: box_ty(context, ty)?,
+                allow_deferred: false,
+                allow_add_const: true,
+                allow_const: false,
+            }],
+            member_types
+                .into_iter()
+                .map(|member_ty| {
+                    let inner_type =
+                        if is_snapshot { snapshot_ty(context, member_ty)? } else { member_ty };
+                    Ok(OutputVarInfo {
+                        ty: box_ty(context, inner_type)?,
+                        ref_info: OutputVarReferenceInfo::Deferred(
+                            crate::extensions::lib_func::DeferredOutputKind::Generic,
+                        ),
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?,
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+impl NamedLibfunc for BoxedStructDeconstructLibfunc {
+    type Concrete = ConcreteBoxedStructDeconstructLibfunc;
+
+    const STR_ID: &'static str = "boxed_struct_deconstruct";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let (member_types, is_snapshot) = self.analyze_struct_type(context, ty.clone())?;
+        self.inner_specialize_signature(context, ty, member_types, is_snapshot)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn crate::extensions::lib_func::SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let (members, is_snapshot) = self.analyze_struct_type(context, ty.clone())?;
+        let signature =
+            self.inner_specialize_signature(context, ty, members.clone(), is_snapshot)?;
+        Ok(ConcreteBoxedStructDeconstructLibfunc { members, signature })
     }
 }

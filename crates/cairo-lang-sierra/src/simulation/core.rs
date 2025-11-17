@@ -201,6 +201,10 @@ pub fn simulate<
         CoreConcreteLibfunc::Bool(libfunc) => simulate_bool_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::Felt252(libfunc) => simulate_felt252_libfunc(libfunc, inputs)?,
         CoreConcreteLibfunc::UnwrapNonZero(_) => (inputs, 0),
+        CoreConcreteLibfunc::Struct(StructConcreteLibfunc::BoxedStructDeconstruct(_)) => {
+            take_inputs!(let [CoreValue::Struct(members)] = inputs);
+            (members, 0)
+        }
         CoreConcreteLibfunc::Mem(
             MemConcreteLibfunc::Rename(_) | MemConcreteLibfunc::StoreTemp(_),
         )
