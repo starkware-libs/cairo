@@ -144,7 +144,7 @@ pub fn get_concrete_long_type_id<'db>(
             let ty =
                 snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty.clone()).unwrap();
             if ty == *inner_ty {
-                return sierra_concrete_long_id(db, ty.clone());
+                return sierra_concrete_long_id(db, ty);
             } else {
                 ConcreteTypeLongId {
                     generic_id: "Snapshot".into(),
