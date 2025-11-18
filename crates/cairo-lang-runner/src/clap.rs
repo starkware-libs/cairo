@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::profiling::ProfilerConfig;
 
-/// A clap-arg wrapper for Option<[ProfilerConfig]>.
+/// A clap-arg wrapper for Option<ProfilerConfig>.
 #[derive(ValueEnum, Clone, Default, Debug, Serialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "kebab-case")]
 pub enum RunProfilerConfigArg {
