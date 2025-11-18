@@ -354,12 +354,14 @@ fn generate_entry_point_wrapper<'db>(
             fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
                 core::internal::require_implicit::<System>();
                 core::internal::revoke_ap_tracking();
-                core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+                let Some(_) = core::gas::withdraw_gas() else {{
+                    core::panic_with_felt252('Out of gas');
+                }};
                 $arg_definitions$
                 assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-                core::option::OptionTraitImpl::expect(
-                    core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-                );
+                let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {{
+                    core::panic_with_felt252('Out of gas');
+                }};
                 let mut contract_state = {unsafe_new_contract_state_prefix}unsafe_new_contract_state();
                 $output_handling$
             }}
