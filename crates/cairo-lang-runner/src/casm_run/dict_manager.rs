@@ -9,7 +9,6 @@ pub struct DictTrackerExecScope {
     /// The data of the dictionary.
     data: HashMap<Felt252, MaybeRelocatable>,
     /// The index of the dictionary in the dict_infos segment.
-    #[allow(dead_code)]
     idx: usize,
 }
 
