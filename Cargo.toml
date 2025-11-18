@@ -112,7 +112,7 @@ clap = { version = "4.5.42", features = ["derive"] }
 colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
 const_format = "0.2.34"
-convert_case = "0.8.0"
+convert_case = "0.9.0"
 derivative = "2.2.0"
 diffy = "0.4.2"
 genco = "0.19.0"
