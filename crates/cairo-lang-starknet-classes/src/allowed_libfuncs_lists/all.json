@@ -31,6 +31,7 @@
         "bounded_int_trim_min",
         "bounded_int_wrap_non_zero",
         "box_forward_snapshot",
+        "struct_boxed_deconstruct",
         "branch_align",
         "bytes31_const",
         "bytes31_to_felt252",
