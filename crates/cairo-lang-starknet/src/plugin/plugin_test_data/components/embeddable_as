@@ -883,12 +883,14 @@ pub trait UnsafeNewContractStateTraitForMyImpl<
 fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractState>, +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, _>::do_nothing(@contract_state, );
     let mut arr = ArrayTrait::new();

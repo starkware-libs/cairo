@@ -317,12 +317,14 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x13b620794e5b3dc7cc2033d0b9381
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     let res = get_data(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -936,12 +938,14 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x20768e618c747c9e742de04464925
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1601,12 +1605,14 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x20768e618c747c9e742de04464925
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
     let mut arr = ArrayTrait::new();

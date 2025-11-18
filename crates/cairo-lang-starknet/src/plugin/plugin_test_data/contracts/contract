@@ -185,7 +185,9 @@ pub const TEST_CLASS_HASH: starknet::ClassHash = 0x512a6d7124a897370409ddf4a36e9
 fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut __arg_arg = core::option::OptionTraitImpl::expect(
         core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
@@ -195,9 +197,9 @@ fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     let res = get_something(@contract_state, ref __arg_arg, __arg_num);
     let mut arr = ArrayTrait::new();
@@ -213,7 +215,9 @@ fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
 fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut __arg_arg = core::option::OptionTraitImpl::expect(
         core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
@@ -223,9 +227,9 @@ fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     set_something(ref contract_state, ref __arg_arg, __arg_num);
     let mut arr = ArrayTrait::new();
@@ -240,7 +244,9 @@ fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
 fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     let __arg_from_address = core::option::OptionTraitImpl::expect(
         core::serde::Serde::<felt252>::deserialize(ref data),
         'Failed to deserialize param #1'
@@ -254,9 +260,9 @@ fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #3'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     l1_handler_func(ref contract_state, __arg_from_address, __arg_arg, __arg_num);
     let mut arr = ArrayTrait::new();
@@ -270,7 +276,9 @@ fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
 fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     let __arg_contract_address = core::option::OptionTraitImpl::expect(
         core::serde::Serde::<ContractAddress>::deserialize(ref data),
         'Failed to deserialize param #1'
@@ -284,9 +292,9 @@ fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #3'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     test_serde(ref contract_state, __arg_contract_address, __arg_class_hash, __arg_storage_address);
     let mut arr = ArrayTrait::new();
