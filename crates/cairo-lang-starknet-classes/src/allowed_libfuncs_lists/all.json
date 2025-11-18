@@ -95,6 +95,7 @@
         "get_class_hash_at_syscall",
         "get_execution_info_syscall",
         "get_execution_info_v2_syscall",
+        "box_from_temp_store",
         "hades_permutation",
         "i128_const",
         "i128_diff",

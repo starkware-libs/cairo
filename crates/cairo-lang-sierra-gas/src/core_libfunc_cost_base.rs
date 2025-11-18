@@ -371,6 +371,7 @@ pub fn core_libfunc_cost(
             BoxConcreteLibfunc::Unbox(_) | BoxConcreteLibfunc::ForwardSnapshot(_) => {
                 vec![ConstCost::default().into()]
             }
+            BoxConcreteLibfunc::FromTempStore(_) => vec![ConstCost::steps(4).into()],
         },
         Mem(libfunc) => match libfunc {
             StoreTemp(libfunc) => {

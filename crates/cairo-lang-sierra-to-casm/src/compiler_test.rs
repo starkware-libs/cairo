@@ -760,6 +760,93 @@ indoc! {"
         dw 5;
     "};
     "Get builtin costs with a const segment.")]
+#[test_case(indoc! {"
+        type felt252 = felt252;
+        type Box<felt252> = Box<felt252>;
+
+        libfunc felt252_const<42> = felt252_const<42>;
+        libfunc store_temp<felt252> = store_temp<felt252>;
+        libfunc drop<felt252> = drop<felt252>;
+        libfunc box_from_temp_store<felt252> = box_from_temp_store<felt252>;
+        libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+        felt252_const<42>() -> ([0]);
+        store_temp<felt252>([0]) -> ([0]);  // Allocate and store the constant felt252
+        drop<felt252>([0]) -> ();  // Drop the stored value
+        box_from_temp_store<felt252>() -> ([1]);  // Compute address for a felt252
+        store_temp<Box<felt252>>([1]) -> ([1]);
+        return([1]);
+
+        test_program@0() -> (Box<felt252>);
+    "},
+    false,
+    indoc! {"
+        [ap + 0] = 42, ap++;
+        call rel 5;
+        [ap + 0] = [ap + -2] + -1, ap++;
+        ret;
+        call rel 2;
+        ret;
+    "};
+    "box_from_temp_store with felt252 (size 1), after storing constant at [0].")]
+#[test_case(indoc! {"
+        type u128 = u128;
+        type felt252 = felt252;
+        type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+        type Box<core::integer::u256> = Box<core::integer::u256>;
+
+        libfunc u128_const<0> = u128_const<0>;
+        libfunc struct_construct<core::integer::u256> = struct_construct<core::integer::u256>;
+        libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
+        libfunc drop<core::integer::u256> = drop<core::integer::u256>;
+        libfunc box_from_temp_store<core::integer::u256> = box_from_temp_store<core::integer::u256>;
+        libfunc store_temp<Box<core::integer::u256>> = store_temp<Box<core::integer::u256>>;
+
+        u128_const<0>() -> ([0]);
+        u128_const<0>() -> ([1]);
+        struct_construct<core::integer::u256>([0], [1]) -> ([2]);
+        store_temp<core::integer::u256>([2]) -> ([2]);  // Store u256
+        drop<core::integer::u256>([2]) -> ();  // Drop the stored value
+        box_from_temp_store<core::integer::u256>() -> ([3]);  // Compute address for a u256
+        store_temp<Box<core::integer::u256>>([3]) -> ([3]);
+        return([3]);
+
+        test_program@0() -> (Box<core::integer::u256>);
+    "},
+    false,
+    indoc! {"
+        [ap + 0] = 0, ap++;
+        [ap + 0] = 0, ap++;
+        call rel 5;
+        [ap + 0] = [ap + -2] + -2, ap++;
+        ret;
+        call rel 2;
+        ret;
+    "};
+    "box_from_temp_store with u256 (size 2), after storing u256 at [0].")]
+#[test_case(indoc! {"
+        type Unit = Struct<ut@Tuple>;
+        type felt252 = felt252;
+        type Box<Unit> = Box<Unit>;
+
+        libfunc box_from_temp_store<Unit> = box_from_temp_store<Unit>;
+        libfunc store_temp<Box<Unit>> = store_temp<Box<Unit>>;
+
+        box_from_temp_store<Unit>() -> ([0]);  // No prior allocation for size 0 unit
+        store_temp<Box<Unit>>([0]) -> ([0]);
+        return([0]);
+
+        test_program@0() -> (Box<Unit>);
+    "},
+    false,
+    indoc! {"
+        call rel 5;
+        [ap + 0] = [ap + -2] + 0, ap++;
+        ret;
+        call rel 2;
+        ret;
+    "};
+    "box_from_temp_store with unit type (size 0), no prior allocation.")]
 fn sierra_to_casm(sierra_code: &str, gas_usage_check: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     let program_info = ProgramRegistryInfo::new(&program).unwrap();

@@ -39,6 +39,7 @@ define_libfunc_hierarchy! {
         Into(IntoBoxLibfunc),
         Unbox(UnboxLibfunc),
         ForwardSnapshot(BoxForwardSnapshotLibfunc),
+        FromTempStore(BoxFromTempStoreLibfunc),
     }, BoxConcreteLibfunc
 }
 
@@ -119,3 +120,37 @@ impl SignatureAndTypeGenericLibfunc for BoxForwardSnapshotLibfuncWrapped {
 
 pub type BoxForwardSnapshotLibfunc =
     WrapSignatureAndTypeGenericLibfunc<BoxForwardSnapshotLibfuncWrapped>;
+
+/// Libfunc for computing address of T by getting ap - |T| and returning it as a felt252.
+///
+/// This computes the address where a value of type T would be located after
+/// the libfunc execution completes. Useful for creating references to variables
+/// when ap change is unknown (e.g., for Box optimizations).
+#[derive(Default)]
+pub struct BoxFromTempStoreLibfuncWrapped {}
+
+impl SignatureAndTypeGenericLibfunc for BoxFromTempStoreLibfuncWrapped {
+    const STR_ID: &'static str = "box_from_temp_store";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        // The actual offset is computed in CASM based on type size
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: box_ty(context, ty)?,
+                // The result is a deferred expression since it's computed from ap
+                ref_info: OutputVarReferenceInfo::Deferred(
+                    crate::extensions::lib_func::DeferredOutputKind::Generic,
+                ),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+pub type BoxFromTempStoreLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<BoxFromTempStoreLibfuncWrapped>;
