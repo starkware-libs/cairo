@@ -8,7 +8,6 @@ use starknet_types_core::felt::Felt as Felt252;
 pub struct DictTrackerExecScope {
     /// The data of the dictionary.
     data: HashMap<Felt252, MaybeRelocatable>,
-    /// The index of the dictionary in the dict_infos segment.
     idx: usize,
 }
 
