@@ -63,16 +63,20 @@ fn build_local_into_box(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [operand] = builder.try_get_refs()?;
 
-    let base_offset = match &operand.cells[..] {
-        [] => 0,
-        [CellExpression::Deref(cell), ..] if cell.register == Register::FP => cell.offset.into(),
-        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-    };
     let cell = CellRef { register: Register::AP, offset: -2 };
-    let addr = CellExpression::BinOp {
-        op: CellOperator::Add,
-        a: cell,
-        b: DerefOrImmediate::Immediate(base_offset.into()),
+    let addr = match operand.cells.as_slice() {
+        [] | [CellExpression::Deref(CellRef { register: Register::FP, offset: 0 }), ..] => {
+            CellExpression::Deref(cell)
+        }
+        [CellExpression::Deref(CellRef { register: Register::FP, offset }), ..] => {
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: cell,
+                b: DerefOrImmediate::Immediate((*offset).into()),
+            }
+        }
+
+        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
     Ok(builder.build(
         casm!(call rel 0;).instructions,
