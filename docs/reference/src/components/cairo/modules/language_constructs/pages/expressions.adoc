@@ -1,6 +1,54 @@
 = Expressions
-
-This section is a work in progress.
-
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+ 
+Expressions produce values. They are used in variable initializers, function arguments, control
+flow constructs, and other contexts where evaluation yields a result.
+ 
+This overview mirrors the language syntax as specified in
+`crates/cairo-lang-syntax-codegen/src/cairo_spec.rs` (the `Expr` enum and its variants), and links
+to detailed subpages where available.
+ 
+== Categories of expressions
+ 
+- **Literals**. Immediate values such as numbers, booleans and short strings. See
+  xref:pages/literal-expressions.adoc[Literal expressions].
+- **Path expressions**. Names and qualified paths that resolve to values or constants. See
+  xref:pages/path-expressions.adoc[Path expressions].
+- **Parenthesized expressions**. Override the default precedence and grouping. See
+  xref:pages/parentheses.adoc[Parenthesized expressions].
+- **Operator expressions**.
+  - Unary operators include logical not, bitwise not, negation, reference, address-of, and related
+    forms as defined by the syntax. See xref:pages/operator-expressions.adoc[Operator expressions] (🚧)
+    and xref:pages/negation-operators.adoc[Negation operators].
+  - Binary operators include arithmetic, comparison, logical and bitwise families. See
+    xref:pages/operator-precedence.adoc[Operator precedence] and related operator pages (🚧).
+  - Error propagation uses the postfix `?` operator. See xref:pages/error-propagation-operator.adoc[Error propagation] (🚧).
+- **Function and method calls**. Invocation with positional or named arguments, including references.
+  See xref:pages/function-calls.adoc[Function calls] and xref:pages/method-calls.adoc[Method calls].
+- **Member access and indexing**. Field selection with `.` and indexing with `[]` where supported.
+  See xref:pages/member-access-expressions.adoc[Member access expressions].
+- **Tuple and struct construction**. Tuple literals and struct constructor calls. See
+  xref:pages/tuple-expressions.adoc[Tuple expressions] (🚧) and
+  xref:pages/struct-expressions.adoc[Struct expressions] (🚧).
+- **Array expressions**. Fixed-size array literals. See xref:pages/array-expressions.adoc[Array expressions].
+- **Blocks**. Braced sequences of statements with an optional tail expression. See
+  xref:pages/block-expression.adoc[Block expression].
+- **Control flow expressions**. `if`/`match` and loop forms (`for`, `loop`, `while`) evaluate to
+  values. See xref:pages/if-expressions.adoc[If expressions] (🚧),
+  xref:pages/match-expressions.adoc[Match expressions] (🚧),
+  xref:pages/for-loop-expressions.adoc[For loop expressions] (🚧).
+- **Closures**. Anonymous functions with parameter lists and an optional return type.
+ 
+== Evaluation order and typing
+ 
+- **Operator precedence**. See xref:pages/operator-precedence.adoc[Operator precedence]. Use
+  parentheses to adjust grouping when needed.
+- **Function argument evaluation**. See xref:pages/function-calls.adoc[Function calls] for
+  evaluation order and handling of reference arguments.
+- **Block typing**. See xref:pages/block-expression.adoc[Block expression] for how a block’s result
+  type is determined (value type, unit `()`, or the never type).
+ 
+== Expressions as statements
+ 
+Standalone expressions can appear as statements. See
+xref:pages/expression-statement.adoc[Expression statement].
+ 
