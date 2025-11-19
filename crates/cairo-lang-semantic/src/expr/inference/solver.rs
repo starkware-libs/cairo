@@ -73,10 +73,6 @@ pub enum Ambiguity<'db> {
     },
     WillNotInfer(ConcreteTraitId<'db>),
     NegativeImplWithUnresolvedGenericArgs {
-        impl_id: ImplId<'db>,
-        ty: TypeId<'db>,
-    },
-    NegativeImplWithUnresolvedGenericArgs2 {
         concrete_trait_id: ConcreteTraitId<'db>,
         ty: TypeId<'db>,
     },
@@ -100,12 +96,7 @@ impl<'db> Ambiguity<'db> {
                     concrete_trait_id.debug(db)
                 )
             }
-            Ambiguity::NegativeImplWithUnresolvedGenericArgs { impl_id, ty } => format!(
-                "Cannot infer negative impl in `{}` as it contains the unresolved type `{}`",
-                impl_id.format(db),
-                ty.format(db)
-            ),
-            Ambiguity::NegativeImplWithUnresolvedGenericArgs2 { concrete_trait_id, ty } => {
+            Ambiguity::NegativeImplWithUnresolvedGenericArgs { concrete_trait_id, ty } => {
                 format!(
                     "Cannot infer negative impl in `{:?}` as it contains the unresolved type `{}`",
                     concrete_trait_id.debug(db),
