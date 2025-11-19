@@ -10,5 +10,5 @@ publish = false
 log.workspace = true
 tracing.workspace = true
 
-cairo-lang-syntax-codegen = { path = "../../cairo-lang-syntax-codegen", version = "~2.13.1" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.13.1", features = ["tracing"] }
+cairo-lang-syntax-codegen = { path = "../../cairo-lang-syntax-codegen", version = "~2.14.0-rc.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.14.0-rc.0", features = ["tracing"] }
