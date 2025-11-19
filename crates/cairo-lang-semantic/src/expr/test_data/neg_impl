@@ -62,7 +62,7 @@ fn bar<T>(t: T) -> T {
 }
 
 //! > expected_diagnostics
-error: Cannot infer negative impl in `core::traits::Drop::<T>` as it contains the unresolved type `T`
+error: Trait has no implementation in context: test::MyTrait::<T>.
  --> lib.cairo:11:14
     MyTrait::f(t)
              ^
@@ -231,10 +231,10 @@ error: Trait has no implementation in context: test::Trait3.
 
 //! > ==========================================================================
 
-//! > Test negative failure with generic fixed size array.
+//! > Test negative impl failure with generic fixed size array.
 
 //! > test_runner_name
-test_function_diagnostics(expect_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -260,7 +260,3 @@ fn bar<T>() {
 }
 
 //! > expected_diagnostics
-error: Cannot infer negative impl in `core::metaprogramming::TypeEqual::<[T; 1], [T; 0]>` as it contains the unresolved type `[T; 1]`
- --> lib.cairo:12:5
-    MyImpl::<T, 1>::f();
-    ^^^^^^
