@@ -1081,6 +1081,27 @@ pub fn priv_type_is_var_free<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> boo
     }
 }
 
+pub fn extract_generic_params<'db>(
+    db: &'db dyn Database,
+    long_ty: &TypeLongId<'db>,
+    generic_parameters: &mut Vec<GenericParamId<'db>>,
+) {
+    match long_ty {
+        TypeLongId::Concrete(_) => (),
+        TypeLongId::Tuple(_) => (),
+        TypeLongId::Snapshot(ty) => extract_generic_params(db, ty.long(db), generic_parameters),
+        TypeLongId::GenericParameter(generic_param) => generic_parameters.push(*generic_param),
+        TypeLongId::Var(_) => (),
+        TypeLongId::Coupon(_) => (),
+        TypeLongId::FixedSizeArray { type_id, .. } => {
+            extract_generic_params(db, type_id.long(db), generic_parameters)
+        }
+        TypeLongId::ImplType(_) => (),
+        TypeLongId::Closure(_) => (),
+        TypeLongId::Missing(_) => (),
+    }
+}
+
 /// Query implementation of [PrivTypesSemantic::priv_type_is_var_free].
 #[salsa::tracked]
 pub fn priv_type_is_var_free_tracked<'db>(db: &'db dyn Database, ty: TypeId<'db>) -> bool {
