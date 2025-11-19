@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
@@ -126,7 +124,7 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         }
         .map_err(move |error| ExtensionError::LibfuncSpecialization {
             libfunc_id: libfunc_id.clone(),
-            generic_args: generic_args.iter().cloned().collect_vec(),
+            generic_args: generic_args.to_vec(),
             error,
         })
     }
@@ -143,7 +141,7 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         }
         .map_err(move |error| ExtensionError::LibfuncSpecialization {
             libfunc_id: libfunc_id.clone(),
-            generic_args: generic_args.iter().cloned().collect_vec(),
+            generic_args: generic_args.to_vec(),
             error,
         })
     }
