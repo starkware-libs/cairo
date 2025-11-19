@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::Write;
 
 use cairo_lang_debug::DebugWithDb;
@@ -209,6 +210,46 @@ impl<'db> TypeLongId<'db> {
                 }
             }
         }
+    }
+
+    pub fn extract_generic_params(
+        &self,
+        db: &'db dyn Database,
+        generic_parameters: &mut HashSet<GenericParamId<'db>>,
+    ) {
+        match self {
+            TypeLongId::Concrete(concrete_type_id) => {
+                for garg in concrete_type_id.generic_args(db) {
+                    garg.extract_generic_params(db, generic_parameters);
+                }
+            }
+            TypeLongId::Tuple(tys) => {
+                for ty in tys {
+                    ty.long(db).extract_generic_params(db, generic_parameters)
+                }
+            }
+            TypeLongId::Snapshot(ty) => ty.long(db).extract_generic_params(db, generic_parameters),
+            TypeLongId::GenericParameter(generic_param) => {
+                generic_parameters.insert(*generic_param);
+            }
+            TypeLongId::Var(_) => {}
+            TypeLongId::Coupon(_) => {}
+            TypeLongId::FixedSizeArray { type_id, .. } => {
+                type_id.long(db).extract_generic_params(db, generic_parameters)
+            }
+            TypeLongId::ImplType(impl_type_id) => {
+                if let Ok(concrete_trait_id) = impl_type_id.impl_id.concrete_trait(db) {
+                    for garg in concrete_trait_id.generic_args(db) {
+                        garg.extract_generic_params(db, generic_parameters);
+                    }
+                }
+                // TODO(ilya): Do we need to extract generic params from the impl.ty?
+            }
+            TypeLongId::Closure(_) => {
+                // TODO(ilya): Do we need to extract generic params from the closure??
+            }
+            TypeLongId::Missing(_) => {}
+        };
     }
 }
 impl<'db> DebugWithDb<'db> for TypeLongId<'db> {

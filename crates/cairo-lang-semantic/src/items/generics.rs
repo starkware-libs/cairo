@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt::Write;
 use std::hash::Hash;
 use std::sync::Arc;
@@ -101,6 +102,37 @@ impl<'db> GenericArgumentId<'db> {
     /// Short name of the generic argument.
     pub fn short_name(&self, db: &dyn Database) -> String {
         if let GenericArgumentId::Type(ty) = self { ty.short_name(db) } else { self.format(db) }
+    }
+
+    pub fn extract_generic_params(
+        &self,
+        db: &'db dyn Database,
+        generic_parameters: &mut HashSet<GenericParamId<'db>>,
+    ) {
+        match self {
+            GenericArgumentId::Type(ty) => {
+                ty.long(db).extract_generic_params(db, generic_parameters)
+            }
+            GenericArgumentId::Constant(const_value_id) => {
+                if let Ok(ty) = const_value_id.ty(db) {
+                    ty.long(db).extract_generic_params(db, generic_parameters)
+                }
+            }
+            GenericArgumentId::Impl(impl_id) => {
+                if let Ok(concrete_trait_id) = impl_id.concrete_trait(db) {
+                    for garg in concrete_trait_id.generic_args(db) {
+                        garg.extract_generic_params(db, generic_parameters);
+                    }
+                }
+            }
+            GenericArgumentId::NegImpl(negative_impl_id) => {
+                if let Ok(concrete_trait_id) = negative_impl_id.concrete_trait(db) {
+                    for garg in concrete_trait_id.generic_args(db) {
+                        garg.extract_generic_params(db, generic_parameters);
+                    }
+                }
+            }
+        }
     }
 }
 impl<'db> DebugWithDb<'db> for GenericArgumentId<'db> {

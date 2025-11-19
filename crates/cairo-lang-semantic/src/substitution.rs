@@ -56,8 +56,8 @@ pub enum RewriteResult {
 /// for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq, salsa::Update, Hash)]
 pub struct GenericSubstitution<'db> {
-    param_to_arg: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>>,
-    self_impl: Option<ImplId<'db>>,
+    pub param_to_arg: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>>,
+    pub self_impl: Option<ImplId<'db>>,
 }
 impl<'db> GenericSubstitution<'db> {
     pub fn from_impl(self_impl: ImplId<'db>) -> Self {

@@ -1,6 +1,6 @@
 //! Bidirectional type inference.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
@@ -14,6 +14,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -47,7 +48,7 @@ use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitTypeId,
     ConcreteTraitTypeLongId,
 };
-use crate::substitution::{HasDb, RewriteResult, SemanticRewriter};
+use crate::substitution::{GenericSubstitution, HasDb, RewriteResult, SemanticRewriter};
 use crate::types::{
     ClosureTypeLongId, ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId,
     ImplTypeById, ImplTypeId,
@@ -1187,38 +1188,61 @@ impl<'db, 'id> Inference<'db, 'id> {
                 return Ok(SolutionSet::Unique(concrete_trait_id));
             }
         }
+
+        let mut generic_params = HashSet::new();
         for garg in concrete_trait_id.generic_args(self.db) {
-            let GenericArgumentId::Type(ty) = garg else {
-                continue;
-            };
-            let ty = self.rewrite(*ty).no_err();
-            // If the negative impl has a generic argument that is not fully
-            // concrete we can't tell if we should rule out the candidate impl.
-            // For example if we have -TypeEqual<S, T> we can't tell if S and
-            // T are going to be assigned the same concrete type.
-            // We return `SolutionSet::Ambiguous` here to indicate that more
-            // information is needed.
-            // Closure can only have one type, even if it's not fully concrete, so can use
-            // it and not get ambiguity.
-            if !matches!(ty.long(self.db), TypeLongId::Closure(_)) && !ty.is_fully_concrete(self.db)
-            {
-                // TODO(ilya): Try to detect the ambiguity earlier in the
-                // inference process.
-                return Ok(SolutionSet::Ambiguous(
-                    Ambiguity::NegativeImplWithUnresolvedGenericArgs { concrete_trait_id, ty },
-                ));
-            }
+            garg.extract_generic_params(self.db, &mut generic_params);
         }
 
-        if !matches!(
+        let solution_set = if generic_params.is_empty() {
             self.trait_solution_set(
                 concrete_trait_id,
                 ImplVarTraitItemMappings::default(),
                 lookup_context,
-            )?,
-            SolutionSet::None
-        ) {
-            // If a negative impl has an impl, then we should skip it.
+            )?
+        } else {
+            let substitution: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>> =
+                generic_params
+                    .into_iter()
+                    .map(|param| {
+                        (
+                            param,
+                            GenericArgumentId::Type(
+                                self.new_type_var(Some(param.stable_ptr(self.db).untyped())),
+                            ),
+                        )
+                    })
+                    .collect();
+            let rewritten_concrete_trait_id =
+                GenericSubstitution { param_to_arg: substitution.clone(), self_impl: None }
+                    .substitute(self.db, concrete_trait_id)
+                    .unwrap();
+
+            let solution_set = self.trait_solution_set(
+                rewritten_concrete_trait_id,
+                ImplVarTraitItemMappings::default(),
+                lookup_context,
+            )?;
+
+            // Assign the newly created type variables with their corresponding generic parameters.
+            // This step prevents leaving type variables unresolved.
+            let db = self.db;
+            for (generic_param, garg) in substitution {
+                let GenericArgumentId::Type(ty) = garg else {
+                    panic!("Expected a type variable");
+                };
+                let TypeLongId::Var(var) = ty.long(self.db) else {
+                    panic!("Expected a type variable");
+                };
+                self.type_assignment
+                    .entry(var.id)
+                    .or_insert_with(|| TypeLongId::GenericParameter(generic_param).intern(db));
+            }
+
+            solution_set
+        };
+
+        if !matches!(solution_set, SolutionSet::None) {
             return Ok(SolutionSet::None);
         }
 

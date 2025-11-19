@@ -72,10 +72,6 @@ pub enum Ambiguity<'db> {
         var: InferenceVar,
     },
     WillNotInfer(ConcreteTraitId<'db>),
-    NegativeImplWithUnresolvedGenericArgs {
-        concrete_trait_id: ConcreteTraitId<'db>,
-        ty: TypeId<'db>,
-    },
 }
 impl<'db> Ambiguity<'db> {
     pub fn format(&self, db: &dyn Database) -> String {
@@ -94,13 +90,6 @@ impl<'db> Ambiguity<'db> {
                 format!(
                     "Cannot infer trait {:?}. First generic argument must be known.",
                     concrete_trait_id.debug(db)
-                )
-            }
-            Ambiguity::NegativeImplWithUnresolvedGenericArgs { concrete_trait_id, ty } => {
-                format!(
-                    "Cannot infer negative impl in `{:?}` as it contains the unresolved type `{}`",
-                    concrete_trait_id.debug(db),
-                    ty.format(db)
                 )
             }
         }
