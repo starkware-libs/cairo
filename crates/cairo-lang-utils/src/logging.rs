@@ -6,7 +6,6 @@ use tracing_subscriber::prelude::*;
 
 static INIT: Once = Once::new();
 
-#[allow(dead_code)]
 pub mod level {
     pub const TRACE: tracing::Level = tracing::Level::TRACE;
     pub const DEBUG: tracing::Level = tracing::Level::DEBUG;

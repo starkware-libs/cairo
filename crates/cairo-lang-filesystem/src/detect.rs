@@ -1,11 +1,19 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-#[allow(clippy::reversed_empty_ranges)]
 pub fn detect_corelib() -> Option<PathBuf> {
-    macro_rules! try_path {
-        ($base:expr, $up:expr) => {{
-            let mut path = $base.to_path_buf();
-            for _ in 0..$up {
+    for (base, up_options) in [
+        // This is the directory of Cargo.toml of the current crate.
+        // This is used for development of the compiler.
+        (std::env::var("CARGO_MANIFEST_DIR").ok().map(PathBuf::from), 1..=2),
+        // This is the directory of the executable.
+        (std::env::current_exe().ok(), 2..=4),
+        // This is the current directory.
+        (std::env::current_dir().ok(), 0..=0),
+    ] {
+        let Some(base) = base else { continue };
+        for up in up_options {
+            let mut path = base.clone();
+            for _ in 0..up {
                 path.pop();
             }
             path.push("corelib");
@@ -13,26 +21,7 @@ pub fn detect_corelib() -> Option<PathBuf> {
             if path.exists() {
                 return Some(path);
             }
-        }};
+        }
     }
-
-    if let Ok(cargo_dir) = std::env::var("CARGO_MANIFEST_DIR") {
-        // This is the directory of Cargo.toml of the current crate.
-        // This is used for development of the compiler.
-        let dir = Path::new(&cargo_dir);
-        try_path!(dir, 1);
-        try_path!(dir, 2);
-    }
-
-    if let Ok(dir) = std::env::current_exe() {
-        try_path!(&dir, 2);
-        try_path!(&dir, 3);
-        try_path!(&dir, 4);
-    }
-
-    if let Ok(dir) = std::env::current_dir() {
-        try_path!(&dir, 0);
-    }
-
     None
 }
