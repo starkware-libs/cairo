@@ -134,7 +134,7 @@ pub fn compile_test_prepared_db<'db>(
     let all_tests = find_all_tests(db, test_crate_ids);
 
     let func_ids = chain!(
-        executable_functions.clone().into_keys(),
+        executable_functions.keys().cloned(),
         all_entry_points.iter().cloned(),
         // TODO(maciektr): Remove test entrypoints after migration to executable attr.
         all_tests.iter().flat_map(|(func_id, _cfg)| {
