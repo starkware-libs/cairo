@@ -1,5 +1,3 @@
-use std::default::Default;
-
 use anyhow::{Result, ensure};
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::{ensure_diagnostics, get_sierra_program_for_functions};
