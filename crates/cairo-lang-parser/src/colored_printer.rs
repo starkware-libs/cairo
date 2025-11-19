@@ -16,10 +16,10 @@ impl ColoredPrinter<'_> {
         match &node.details {
             GreenNodeDetails::Token(text) => {
                 if self.verbose && node.kind == SyntaxKind::TokenMissing {
-                    self.result.push_str(format!("{}", "<m>".red()).as_str());
+                    self.result.push_str(&format!("{}", "<m>".red()));
                 } else {
                     self.result
-                        .push_str(set_color(text.long(self.db), node.kind).to_string().as_str());
+                        .push_str(&set_color(text.long(self.db), node.kind).to_string());
                 }
             }
             GreenNodeDetails::Node { .. } => {
