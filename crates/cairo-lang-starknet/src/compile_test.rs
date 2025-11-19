@@ -27,14 +27,14 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("multi_component::contract_with_4_components")]
 fn test_compile_path_from_contracts_crate(example_contract_path: &str) {
     let contract = get_test_contract(
-        format!("cairo_level_tests::contracts::{example_contract_path}").as_str(),
+        &format!("cairo_level_tests::contracts::{example_contract_path}"),
     );
     let example_file_name = example_contract_path.replace("::", "__");
     let list_selector = ListSelector::ListName("all".to_string());
     contract.validate_version_compatible(list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
-        &get_example_file_path(format!("{example_file_name}.contract_class.json").as_str()),
+        &get_example_file_path(&format!("{example_file_name}.contract_class.json")),
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
@@ -42,7 +42,7 @@ fn test_compile_path_from_contracts_crate(example_contract_path: &str) {
 
     // There is a separate file for the sierra code as it is hard to review inside the json.
     compare_contents_or_fix_with_path(
-        &get_example_file_path(format!("{example_file_name}.sierra").as_str()),
+        &get_example_file_path(&format!("{example_file_name}.sierra")),
         sierra_program.to_string(),
     );
 }
