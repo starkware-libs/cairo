@@ -20,10 +20,19 @@ pub enum Flag {
     ///
     /// Default is false as it makes panic unprovable.
     UnsafePanic(bool),
+    /// Whether to use future_sierra in the generated code.
+    ///
+    /// Default is false as it makes panic unprovable.
+    FutureSierra(bool),
 }
 
 /// Returns the value of the `unsafe_panic` flag, or `false` if the flag is not set.
 pub fn flag_unsafe_panic(db: &dyn salsa::Database) -> bool {
     let flag = FlagId::new(db, FlagLongId("unsafe_panic".into()));
     if let Some(flag) = db.get_flag(flag) { *flag == Flag::UnsafePanic(true) } else { false }
+}
+
+pub fn flag_future_sierra(db: &dyn salsa::Database) -> bool {
+    let flag = FlagId::new(db, FlagLongId("future_sierra".into()));
+    if let Some(flag) = db.get_flag(flag) { *flag == Flag::FutureSierra(true) } else { false }
 }
