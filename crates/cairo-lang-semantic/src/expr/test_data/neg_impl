@@ -228,3 +228,39 @@ error: Trait has no implementation in context: test::Trait3.
  --> lib.cairo:24:13
     Trait3::bar();
             ^^^
+
+//! > ==========================================================================
+
+//! > Test negative failure with generic fixed size array.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    bar::<felt252>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::metaprogramming::TypeEqual;
+trait MyTrait {
+    fn f();
+}
+
+impl MyImpl<T, const SIZE: usize, -TypeEqual<[T; SIZE], [T; 0]>> of MyTrait {
+    #[inline]
+    fn f() {}
+}
+
+fn bar<T>() {
+    MyImpl::<T, 1>::f();
+}
+
+//! > expected_diagnostics
+error: Cannot infer negative impl in `core::metaprogramming::TypeEqual::<[T; 1], [T; 0]>` as it contains the unresolved type `[T; 1]`
+ --> lib.cairo:12:5
+    MyImpl::<T, 1>::f();
+    ^^^^^^
