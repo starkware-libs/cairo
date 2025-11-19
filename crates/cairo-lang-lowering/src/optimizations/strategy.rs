@@ -1,4 +1,5 @@
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::flag_future_sierra;
 use cairo_lang_utils::{Intern, define_short_id};
 use salsa::Database;
 
@@ -6,6 +7,7 @@ use super::cse::cse;
 use super::dedup_blocks::dedup_blocks;
 use super::early_unsafe_panic::early_unsafe_panic;
 use super::gas_redeposit::gas_redeposit;
+use super::reboxing::apply_reboxing;
 use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
 use crate::Lowered;
@@ -38,6 +40,7 @@ pub enum OptimizationPhase<'db> {
     EarlyUnsafePanic,
     OptimizeMatches,
     OptimizeRemappings,
+    Reboxing,
     ReorderStatements,
     ReorganizeBlocks,
     ReturnOptimization,
@@ -60,6 +63,31 @@ pub enum OptimizationPhase<'db> {
 }
 
 impl<'db> OptimizationPhase<'db> {
+    /// Returns the name of the optimization phase for logging purposes.
+    fn name(&self) -> &'static str {
+        match self {
+            OptimizationPhase::ApplyInlining { .. } => "ApplyInlining",
+            OptimizationPhase::BranchInversion => "BranchInversion",
+            OptimizationPhase::CancelOps => "CancelOps",
+            OptimizationPhase::ConstFolding => "ConstFolding",
+            OptimizationPhase::Cse => "Cse",
+            OptimizationPhase::EarlyUnsafePanic => "EarlyUnsafePanic",
+            OptimizationPhase::DedupBlocks => "DedupBlocks",
+            OptimizationPhase::OptimizeMatches => "OptimizeMatches",
+            OptimizationPhase::OptimizeRemappings => "OptimizeRemappings",
+            OptimizationPhase::Reboxing => "Reboxing",
+            OptimizationPhase::ReorderStatements => "ReorderStatements",
+            OptimizationPhase::ReorganizeBlocks => "ReorganizeBlocks",
+            OptimizationPhase::ReturnOptimization => "ReturnOptimization",
+            OptimizationPhase::SplitStructs => "SplitStructs",
+            OptimizationPhase::TrimUnreachable => "TrimUnreachable",
+            OptimizationPhase::LowerImplicits => "LowerImplicits",
+            OptimizationPhase::GasRedeposit => "GasRedeposit",
+            OptimizationPhase::Validate => "Validate",
+            OptimizationPhase::SubStrategy { .. } => "SubStrategy",
+        }
+    }
+
     /// Applies the optimization phase to the lowering.
     ///
     /// Assumes `lowered` is a lowering of `function`.
@@ -69,6 +97,8 @@ impl<'db> OptimizationPhase<'db> {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
+        debug!("Applying optimization: {}", self.name());
+
         match self {
             OptimizationPhase::ApplyInlining { enable_const_folding } => {
                 apply_inlining(db, function, lowered, enable_const_folding)?
@@ -81,6 +111,11 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
+            OptimizationPhase::Reboxing => {
+                if flag_future_sierra(db) {
+                    apply_reboxing(db, lowered);
+                }
+            }
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
             OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
@@ -157,6 +192,7 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::ReorderStatements,
                 OptimizationPhase::OptimizeMatches,
                 OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::Reboxing,
                 OptimizationPhase::CancelOps,
                 OptimizationPhase::ReorganizeBlocks,
                 // Performing CSE here after blocks are the most contiguous, to reach maximum
