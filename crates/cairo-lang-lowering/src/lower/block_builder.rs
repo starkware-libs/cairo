@@ -477,7 +477,6 @@ impl<'db> SealedGotoCallsite<'db> {
 }
 
 /// A sealed [BlockBuilder], ready to be merged with sibling blocks to end the block.
-#[allow(clippy::large_enum_variant)]
 pub type SealedBlockBuilder<'db> = Option<SealedGotoCallsite<'db>>;
 
 pub struct BlockStructRecomposer<'a, 'b, 'db> {
