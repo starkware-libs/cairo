@@ -83,6 +83,7 @@ pub fn gas_redeposit<'db>(
                 with_coupon: false,
                 outputs: vec![],
                 location,
+                is_specialization_inlining: false,
             }),
         );
     }

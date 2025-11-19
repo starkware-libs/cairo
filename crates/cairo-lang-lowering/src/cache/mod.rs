@@ -988,6 +988,7 @@ struct StatementCallCached {
     with_coupon: bool,
     outputs: Vec<usize>,
     location: LocationIdCached,
+    is_specialization_inlining: bool,
 }
 impl StatementCallCached {
     fn new<'db>(stmt: StatementCall<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
@@ -997,6 +998,7 @@ impl StatementCallCached {
             with_coupon: stmt.with_coupon,
             outputs: stmt.outputs.iter().map(|var| var.index()).collect(),
             location: LocationIdCached::new(stmt.location, ctx),
+            is_specialization_inlining: stmt.is_specialization_inlining,
         }
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> StatementCall<'db> {
@@ -1010,6 +1012,7 @@ impl StatementCallCached {
                 .map(|var_id| ctx.lowered_variables_id[var_id])
                 .collect(),
             location: self.location.embed(ctx),
+            is_specialization_inlining: self.is_specialization_inlining,
         }
     }
 }

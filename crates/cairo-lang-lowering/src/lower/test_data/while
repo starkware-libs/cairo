@@ -39,28 +39,27 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt252) <- 5
-  (v4: core::RangeCheck, v5: core::gas::GasBuiltin, v6: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v0, v1, v3)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95]{5, }(v0, v1)
 End:
-  Match(match_enum(v6) {
-    PanicResult::Ok(v7) => blk1,
-    PanicResult::Err(v8) => blk2,
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
   })
 
 blk1:
 Statements:
-  (v9: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v10: core::felt252, v11: ()) <- struct_destructure(v7)
-  (v12: (core::felt252,)) <- struct_construct(v10)
-  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v12)
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: core::felt252, v10: ()) <- struct_destructure(v6)
+  (v11: (core::felt252,)) <- struct_construct(v9)
+  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v11)
 End:
-  Return(v4, v9, v13)
+  Return(v3, v8, v12)
 
 blk2:
 Statements:
-  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v8)
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
 End:
-  Return(v4, v5, v14)
+  Return(v3, v4, v13)
 
 
 Generated loop lowering for source location:
@@ -315,30 +314,29 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 0
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100](v0, v1, v2)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100]{0, }(v0, v1)
 End:
-  Match(match_enum(v5) {
-    PanicResult::Ok(v6) => blk1,
-    PanicResult::Err(v7) => blk2,
+  Match(match_enum(v4) {
+    PanicResult::Ok(v5) => blk1,
+    PanicResult::Err(v6) => blk2,
   })
 
 blk1:
 Statements:
-  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
-  (v9: core::felt252, v10: ()) <- struct_destructure(v6)
-  (v11: core::felt252) <- 1
-  (v12: core::felt252) <- core::felt252_add(v9, v11)
-  (v13: (core::felt252,)) <- struct_construct(v12)
-  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v13)
+  (v7: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v8: core::felt252, v9: ()) <- struct_destructure(v5)
+  (v10: core::felt252) <- 1
+  (v11: core::felt252) <- core::felt252_add(v8, v10)
+  (v12: (core::felt252,)) <- struct_construct(v11)
+  (v13: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v12)
 End:
-  Return(v3, v8, v14)
+  Return(v2, v7, v13)
 
 blk2:
 Statements:
-  (v15: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v7)
+  (v14: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v6)
 End:
-  Return(v3, v4, v15)
+  Return(v2, v3, v14)
 
 
 Generated loop lowering for source location:

@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::try_extract_matches;
 use salsa::Setter;
 
 use crate::db::{LoweringGroup, lowering_group_input};
@@ -56,16 +57,17 @@ fn test_specialized_function(
                 "Got diagnostics for the caller {semantic_diagnostics}\n{lowering_diagnostics}."
             );
         });
-    let Some(Statement::Call(call)) = lowered_caller
+    let Some(specialized_id) = lowered_caller
         .blocks
         .iter()
         .flat_map(|(_, b)| b.statements.iter())
-        .rfind(|statement| matches!(statement, Statement::Call(_)))
+        .filter_map(|statement| {
+            try_extract_matches!(statement, Statement::Call)
+                .and_then(|call| call.function.body(db).ok().flatten())
+        })
+        .last()
     else {
         panic!("Could not find the last call in the caller function.");
-    };
-    let Ok(Some(specialized_id)) = call.function.body(db) else {
-        panic!("Expected function body, got: {}", call.function.full_path(db));
     };
     let lowered_specialized =
         db.lowered_body(specialized_id, LoweringStage::Monomorphized).unwrap();

@@ -127,6 +127,7 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
                 with_coupon,
                 outputs,
                 location: _,
+                is_specialization_inlining: _,
             }) => CanonicStatement::Call {
                 function: *function,
                 inputs: inputs.iter().map(|input| self.handle_input(input)).collect(),

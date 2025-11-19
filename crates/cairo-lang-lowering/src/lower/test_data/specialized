@@ -793,3 +793,80 @@ Statements:
   (v5: ()) <- test::bar(v0, v1)
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Test specialization with recursion.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function
+fn foo(b: felt252) {
+    bar1(false, 100000);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar1(keep: bool, a: felt252) -> felt252 {
+    if keep {
+        if a == 0 {
+            return 0;
+        }
+        return bar1(keep, a - 1);
+    }
+    return 3;
+}
+
+fn bar2(a: felt252) -> felt252 {
+    if a == 0 {
+        return 0;
+    }
+    return bar1(a - 1);
+}
+
+//! > semantic_diagnostics
+error: Wrong number of arguments. Expected 2, found: 1
+ --> lib.cairo:15:12
+    return bar1(a - 1);
+           ^^^^^^^^^^^
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
+blk0 (root):
+Statements:
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252,)>) <- test::bar1{bool::False({}), 100000, }(v0, v1)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: ()) <- struct_construct()
+  (v10: ((),)) <- struct_construct(v9)
+  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v10)
+End:
+  Return(v3, v8, v11)
+
+blk2:
+Statements:
+  (v12: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v12)
+
+//! > specialized_lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::bool) <- bool::False({})
+  (v1: core::felt252) <- 100000
+  (v2: core::felt252) <- test::bar1(v0, v1)
+End:
+  Return(v2)
