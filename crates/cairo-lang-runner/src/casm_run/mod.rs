@@ -1608,7 +1608,7 @@ fn secp256r1_new(
     y: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
+    deduct_gas!(gas_counter, SECP256R1_NEW);
     let modulus = <secp256r1::Fq as PrimeField>::MODULUS.into();
     if x >= modulus || y >= modulus {
         fail_syscall!(b"Coordinates out of range");
@@ -1671,7 +1671,7 @@ fn secp256r1_get_point_from_x(
     y_parity: bool,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, SECP256R1_NEW);
+    deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
     if x >= <secp256r1::Fq as PrimeField>::MODULUS.into() {
         fail_syscall!(b"Coordinates out of range");
     }
