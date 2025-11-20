@@ -20,7 +20,9 @@ cairo-lang-runnable-utils = { path = "../cairo-lang-runnable-utils", version = "
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.14.0-rc.0" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "~2.14.0-rc.0" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.14.0-rc.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = [
+  "tracing",
+] }
 cairo-vm.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
@@ -32,4 +34,6 @@ cairo-lang-compiler = { path = "../cairo-lang-compiler" }
 cairo-lang-debug = { path = "../cairo-lang-debug" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = [
+  "tracing",
+] }

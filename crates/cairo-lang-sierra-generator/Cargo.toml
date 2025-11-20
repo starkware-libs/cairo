@@ -22,7 +22,9 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.14.0-rc.0" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "~2.14.0-rc.0", optional = true, features = [
   "testing",
 ] }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = [
+  "tracing",
+] }
 itertools = { workspace = true, default-features = true }
 num-traits = { workspace = true }
 salsa.workspace = true

@@ -15,7 +15,9 @@ cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.14.
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.14.0-rc.0" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "~2.14.0-rc.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.14.0-rc.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = [
+  "tracing",
+] }
 indent.workspace = true
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
