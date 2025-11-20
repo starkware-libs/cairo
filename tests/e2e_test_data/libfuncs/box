@@ -728,3 +728,217 @@ return([3]);
 
 test::helper@F0() -> (Box<test::A>);
 test::foo@F1() -> (Tuple<Box<core::integer::u256>, Box<core::integer::u256>>);
+
+//! > ==========================================================================
+
+//! > local_into_box with fp-based variable
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+fn foo(x: felt252) -> Box<felt252> {
+    local_into_box(x)
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -2] + -3, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc local_into_box<felt252> = local_into_box<felt252>;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+local_into_box<felt252>([0]) -> ([1]);
+store_temp<Box<felt252>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: felt252) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > reference operator with zero-sized type
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+fn foo(x: ()) -> Box<()> {
+    local_into_box(x)
+}
+
+//! > casm
+call rel 4;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc local_into_box<Unit> = local_into_box<Unit>;
+libfunc store_temp<Box<Unit>> = store_temp<Box<Unit>>;
+
+F0:
+local_into_box<Unit>([0]) -> ([1]);
+store_temp<Box<Unit>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: Unit) -> (Box<Unit>);
+
+//! > ==========================================================================
+
+//! > reference operator non-local zero-sized type
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+
+fn foo() -> Box<()> {
+    local_into_box(())
+}
+
+//! > casm
+call rel 4;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc local_into_box<Unit> = local_into_box<Unit>;
+libfunc store_temp<Box<Unit>> = store_temp<Box<Unit>>;
+
+F0:
+struct_construct<Unit>() -> ([0]);
+local_into_box<Unit>([0]) -> ([1]);
+store_temp<Box<Unit>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0() -> (Box<Unit>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 400})
+
+//! > ==========================================================================
+
+//! > local_into_box with size 3 tuple
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+fn foo(x: (felt252, felt252, felt252)) -> Box<(felt252, felt252, felt252)> {
+    local_into_box(x)
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -2] + -5, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Tuple<felt252, felt252, felt252>> = Box<Tuple<felt252, felt252, felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc local_into_box<Tuple<felt252, felt252, felt252>> = local_into_box<Tuple<felt252, felt252, felt252>>;
+libfunc store_temp<Box<Tuple<felt252, felt252, felt252>>> = store_temp<Box<Tuple<felt252, felt252, felt252>>>;
+
+F0:
+local_into_box<Tuple<felt252, felt252, felt252>>([0]) -> ([1]);
+store_temp<Box<Tuple<felt252, felt252, felt252>>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: Tuple<felt252, felt252, felt252>) -> (Box<Tuple<felt252, felt252, felt252>>);
+
+//! > ==========================================================================
+
+//! > local into box with offset 0.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern fn local_into_box<T>(value: T) -> Box<T> nopanic;
+
+#[inline(never)]
+fn bar() -> felt252 {
+    1000
+}
+
+fn foo() -> Box<felt252> {
+    let local_with_offset_0 = bar();
+    core::internal::revoke_ap_tracking();
+    local_into_box(local_with_offset_0)
+}
+
+//! > casm
+[ap + 0] = 1000, ap++;
+ret;
+ap += 1;
+call rel -5;
+[fp + 0] = [ap + -1];
+call rel 4;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > function_costs
+test::bar: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap({Const: 900})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Uninitialized<felt252> = Uninitialized<felt252> [storable: false, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 1000> = Const<felt252, 1000> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 1000>> = const_as_immediate<Const<felt252, 1000>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc alloc_local<felt252> = alloc_local<felt252>;
+libfunc finalize_locals = finalize_locals;
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc store_local<felt252> = store_local<felt252>;
+libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc local_into_box<felt252> = local_into_box<felt252>;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+const_as_immediate<Const<felt252, 1000>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+return([0]);
+F1:
+alloc_local<felt252>() -> ([1]);
+finalize_locals() -> ();
+disable_ap_tracking() -> ();
+function_call<user@test::bar>() -> ([0]);
+store_local<felt252>([1], [0]) -> ([0]);
+revoke_ap_tracking() -> ();
+local_into_box<felt252>([0]) -> ([2]);
+store_temp<Box<felt252>>([2]) -> ([2]);
+return([2]);
+
+test::bar@F0() -> (felt252);
+test::foo@F1() -> (Box<felt252>);

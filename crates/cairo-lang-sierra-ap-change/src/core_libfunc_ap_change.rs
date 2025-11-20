@@ -111,6 +111,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(_) => vec![ApChange::Known(1)],
+            BoxConcreteLibfunc::LocalInto(_) => vec![ApChange::Known(2)],
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
             BoxConcreteLibfunc::ForwardSnapshot(_) => vec![ApChange::Known(0)],
         },
