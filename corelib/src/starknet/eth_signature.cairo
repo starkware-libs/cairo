@@ -8,7 +8,8 @@ use core::keccak::keccak_u256s_be_inputs;
 use core::option::OptionTrait;
 #[allow(unused_imports)]
 use starknet::secp256_trait::{
-    Secp256PointTrait, Secp256Trait, Signature, is_signature_entry_valid, recover_public_key,
+    Secp256PointTrait, Secp256Trait, Signature, is_signature_entry_valid, is_signature_s_valid,
+    recover_public_key,
 };
 #[allow(unused_imports)]
 use starknet::secp256k1::Secp256k1Point;
@@ -92,7 +93,7 @@ pub fn is_eth_signature_valid(
     if !is_signature_entry_valid::<Secp256k1Point>(signature.r) {
         return Err('Signature out of range');
     }
-    if !is_signature_entry_valid::<Secp256k1Point>(signature.s) {
+    if !is_signature_s_valid::<Secp256k1Point>(signature.s) {
         return Err('Signature out of range');
     }
 
