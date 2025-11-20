@@ -230,6 +230,32 @@ pub fn is_signature_entry_valid<
     value != 0_u256 && value < Secp256Impl::get_curve_size()
 }
 
+/// Checks whether the given `s` is in the range [1, N / 2), where N is the size of the curve.
+///
+/// For ECDSA signatures to be secure, the `s` component must be in the range [1, N / 2),
+/// where N is the order of the curve.
+/// This function validates that a given value meets this requirement.
+///
+/// # Returns
+///
+/// Returns `true` if the value is in the valid range [1, N / 2), `false` otherwise.
+///
+/// # Examples
+///
+/// ```
+/// use starknet::secp256r1::Secp256r1Point;
+/// use starknet::secp256_trait::is_signature_s_valid;
+///
+/// assert!(!is_signature_s_valid::<Secp256r1Point>(0));
+/// ```
+pub(crate) fn is_signature_s_valid<
+    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>,
+>(
+    s: u256,
+) -> bool {
+    s != 0_u256 && s <= Secp256Impl::get_curve_size() / 2
+}
+
 /// Checks whether a signature is valid given a public key point and a message hash.
 ///
 /// # Examples
@@ -259,8 +285,7 @@ pub fn is_valid_signature<
 >(
     msg_hash: u256, r: u256, s: u256, public_key: Secp256Point,
 ) -> bool {
-    if !is_signature_entry_valid::<Secp256Point>(r)
-        || !is_signature_entry_valid::<Secp256Point>(s) {
+    if !is_signature_entry_valid::<Secp256Point>(r) || !is_signature_s_valid::<Secp256Point>(s) {
         return false;
     }
 
@@ -312,7 +337,7 @@ pub fn recover_public_key<
     msg_hash: u256, signature: Signature,
 ) -> Option<Secp256Point> {
     let Signature { r, s, y_parity } = signature;
-    if !is_signature_entry_valid::<Secp256Point>(s) {
+    if !is_signature_entry_valid::<Secp256Point>(r) || !is_signature_s_valid::<Secp256Point>(s) {
         return None;
     }
     // Note this additionally checks that `r` is valid.
