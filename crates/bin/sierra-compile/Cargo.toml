@@ -14,10 +14,10 @@ log.workspace = true
 mimalloc = { workspace = true, optional = true }
 tracing.workspace = true
 
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.14.0-rc.0" }
-cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "~2.14.0-rc.0" }
-cairo-lang-sierra-type-size = { path = "../../cairo-lang-sierra-type-size", version = "~2.14.0-rc.0" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.14.0-rc.0", features = ["tracing"] }
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.14.0" }
+cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "~2.14.0" }
+cairo-lang-sierra-type-size = { path = "../../cairo-lang-sierra-type-size", version = "~2.14.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.14.0", features = ["tracing"] }
 
 [features]
 mimalloc = ["dep:mimalloc"]
