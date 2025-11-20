@@ -1,6 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
+use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
+use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use num_bigint::ToBigInt;
@@ -9,6 +10,7 @@ use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
 use crate::references::ReferenceExpression;
+use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra box operations.
 pub fn build(
@@ -17,6 +19,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         BoxConcreteLibfunc::Into(_) => build_into_box(builder),
+        BoxConcreteLibfunc::LocalInto(_) => build_local_into_box(builder),
         BoxConcreteLibfunc::Unbox(libfunc) => build_unbox(&libfunc.ty, builder),
         BoxConcreteLibfunc::ForwardSnapshot(_) => build_identity(builder),
     }
@@ -51,6 +54,34 @@ fn build_into_box(
         casm_builder,
         [("Fallthrough", &[&[addr]], None)],
         Default::default(),
+    ))
+}
+
+/// Handles instruction for wrapping a local object of type T into a box.
+fn build_local_into_box(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [operand] = builder.try_get_refs()?;
+
+    let cell = CellRef { register: Register::AP, offset: -2 };
+    let addr = match operand.cells.as_slice() {
+        [] | [CellExpression::Deref(CellRef { register: Register::FP, offset: 0 }), ..] => {
+            CellExpression::Deref(cell)
+        }
+        [CellExpression::Deref(CellRef { register: Register::FP, offset }), ..] => {
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: cell,
+                b: DerefOrImmediate::Immediate((*offset).into()),
+            }
+        }
+
+        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+    };
+    Ok(builder.build(
+        casm!(call rel 0;).instructions,
+        vec![RelocationEntry { instruction_idx: 0, relocation: Relocation::EndOfProgram }],
+        [[ReferenceExpression::from_cell(addr)].into_iter()].into_iter(),
     ))
 }
 
