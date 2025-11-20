@@ -134,62 +134,70 @@ main
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 24: 18 (withdraw_gas([0], [1]) { fallthrough([3], [4]) 47([5], [6]) })
-  statement 27: 6 (felt252_is_zero([7]) { fallthrough() 37([8]) })
-  statement 42: 5 (store_temp<RangeCheck>([3]) -> ([3]))
-  statement 43: 5 (store_temp<GasBuiltin>([13]) -> ([13]))
-  statement 44: 5 (store_temp<felt252>([15]) -> ([15]))
-  statement 45: 5 (function_call<user@test::main[31-113]>([3], [13], [15]) -> ([16], [17], [18]))
-  statement 46: 5 (return([16], [17], [18]))
-  statement 15: 3 (store_temp<core::panics::PanicResult::<((),)>>([12]) -> ([12]))
-  statement 35: 3 (store_temp<core::panics::PanicResult::<(core::felt252, ())>>([12]) -> ([12]))
-  statement 2: 1 (store_temp<RangeCheck>([0]) -> ([0]))
-  statement 3: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
-  statement 4: 1 (store_temp<felt252>([2]) -> ([2]))
-  statement 5: 1 (function_call<user@test::main[31-113]>([0], [1], [2]) -> ([3], [4], [5]))
-  statement 6: 1 (enum_match<core::panics::PanicResult::<(core::felt252, ())>>([5]) { fallthrough([6]) 17([7]) })
-  statement 13: 1 (store_temp<RangeCheck>([3]) -> ([3]))
-  statement 14: 1 (store_temp<GasBuiltin>([8]) -> ([8]))
-  statement 16: 1 (return([3], [8], [12]))
-  statement 33: 1 (store_temp<RangeCheck>([3]) -> ([3]))
-  statement 34: 1 (store_temp<GasBuiltin>([9]) -> ([9]))
-  statement 36: 1 (return([3], [9], [12]))
+  statement 39: 15 (withdraw_gas([0], [1]) { fallthrough([3], [4]) 62([5], [6]) })
+  statement 42: 5 (felt252_is_zero([7]) { fallthrough() 52([8]) })
+  statement 57: 4 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 58: 4 (store_temp<GasBuiltin>([13]) -> ([13]))
+  statement 59: 4 (store_temp<felt252>([15]) -> ([15]))
+  statement 60: 4 (function_call<user@test::main[31-113]>([3], [13], [15]) -> ([16], [17], [18]))
+  statement 61: 4 (return([16], [17], [18]))
+  statement 13: 3 (store_temp<core::panics::PanicResult::<((),)>>([11]) -> ([11]))
+  statement 22: 3 (withdraw_gas([0], [1]) { fallthrough([2], [3]) 31([4], [5]) })
+  statement 50: 3 (store_temp<core::panics::PanicResult::<(core::felt252, ())>>([12]) -> ([12]))
+  statement 1: 1 (store_temp<RangeCheck>([0]) -> ([0]))
+  statement 2: 1 (store_temp<GasBuiltin>([1]) -> ([1]))
+  statement 3: 1 (function_call<user@test::main[31-113]{5, }>([0], [1]) -> ([2], [3], [4]))
+  statement 4: 1 (enum_match<core::panics::PanicResult::<(core::felt252, ())>>([4]) { fallthrough([5]) 15([6]) })
+  statement 11: 1 (store_temp<RangeCheck>([2]) -> ([2]))
+  statement 12: 1 (store_temp<GasBuiltin>([7]) -> ([7]))
+  statement 14: 1 (return([2], [7], [11]))
+  statement 26: 1 (store_temp<RangeCheck>([2]) -> ([2]))
+  statement 27: 1 (store_temp<GasBuiltin>([6]) -> ([6]))
+  statement 28: 1 (store_temp<felt252>([7]) -> ([7]))
+  statement 29: 1 (function_call<user@test::main[31-113]>([2], [6], [7]) -> ([8], [9], [10]))
+  statement 30: 1 (return([8], [9], [10]))
+  statement 48: 1 (store_temp<RangeCheck>([3]) -> ([3]))
+  statement 49: 1 (store_temp<GasBuiltin>([9]) -> ([9]))
+  statement 51: 1 (return([3], [9], [12]))
 Weight by concrete libfunc:
   libfunc withdraw_gas: 18
   libfunc store_temp<GasBuiltin>: 8
   libfunc store_temp<RangeCheck>: 8
-  libfunc felt252_is_zero: 6
-  libfunc function_call<user@test::main[31-113]>: 6
-  libfunc store_temp<felt252>: 6
+  libfunc felt252_is_zero: 5
+  libfunc function_call<user@test::main[31-113]>: 5
+  libfunc store_temp<felt252>: 5
   libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
   libfunc store_temp<core::panics::PanicResult::<(core::felt252, ())>>: 3
   libfunc enum_match<core::panics::PanicResult::<(core::felt252, ())>>: 1
+  libfunc function_call<user@test::main[31-113]{5, }>: 1
   return: 7
 Weight by generic libfunc:
-  libfunc store_temp: 28
+  libfunc store_temp: 27
   libfunc withdraw_gas: 18
-  libfunc felt252_is_zero: 6
   libfunc function_call: 6
+  libfunc felt252_is_zero: 5
   libfunc enum_match: 1
   return: 7
 Weight by user function (inc. generated):
-  function test::main[31-113]: 55
-  function test::main: 11
+  function test::main[31-113]: 46
+  function test::main: 10
+  function test::main[31-113]{5, }: 8
 Weight by original user function (exc. generated):
-  function test::main: 66
+  function test::main: 56
+  function test::main[31-113]{5, }: 8
 Weight by Cairo function:
-  function lib.cairo::main: 60
-  function core::Felt252PartialEq::eq: 6
+  function lib.cairo::main: 59
+  function core::Felt252PartialEq::eq: 5
 Weight by Sierra stack trace:
-  test::main: 66
-  test::main -> test::main[31-113]: 55
-  test::main -> test::main[31-113] -> test::main[31-113]: 46
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 37
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 28
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 19
-  test::main -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 10
+  test::main: 64
+  test::main -> test::main[31-113]{5, }: 54
+  test::main -> test::main[31-113]{5, } -> test::main[31-113]: 46
+  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113]: 37
+  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 28
+  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 19
+  test::main -> test::main[31-113]{5, } -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113] -> test::main[31-113]: 10
 Weight by Cairo stack trace:
-  test::main: 66
+  test::main: 64
 
 //! > ==========================================================================
 

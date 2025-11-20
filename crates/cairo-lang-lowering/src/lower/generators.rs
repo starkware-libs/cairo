@@ -93,6 +93,7 @@ impl<'db> Call<'db> {
             with_coupon,
             outputs,
             location: self.location,
+            is_specialization_base_call: false,
         }));
 
         CallResult { returns, extra_outputs }

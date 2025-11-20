@@ -123,6 +123,7 @@ fn create_panic_block<'db>(
             with_coupon: false,
             outputs: vec![never_var],
             location,
+            is_specialization_base_call: false,
         })],
         end: BlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {

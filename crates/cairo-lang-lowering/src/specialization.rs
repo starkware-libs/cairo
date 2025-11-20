@@ -17,8 +17,8 @@ use crate::ids::{self, LocationId, SemanticFunctionIdEx, SpecializedFunction};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::objects::StatementEnumConstruct as StatementEnumConstructObj;
 use crate::{
-    Block, BlockEnd, DependencyType, Lowered, LoweringStage, Statement, StatementCall,
-    StatementConst, StatementSnapshot, StatementStructConstruct, VarUsage, VariableId,
+    Block, BlockEnd, Lowered, LoweringStage, Statement, StatementCall, StatementConst,
+    StatementSnapshot, StatementStructConstruct, VarUsage, VariableId,
 };
 
 // A const argument for a specialized function.
@@ -169,6 +169,7 @@ pub fn specialized_function_lowered<'db>(
                             with_coupon: false,
                             outputs: vec![arr_var],
                             location: variables[var_id].location,
+                            is_specialization_base_call: false,
                         }));
                     }
                     SpecializationArg::Struct(args) => {
@@ -239,6 +240,7 @@ pub fn specialized_function_lowered<'db>(
                         with_coupon: false,
                         outputs: vec![var_id],
                         location,
+                        is_specialization_base_call: false,
                     }));
                 }
                 SpecializationArgBuildingState::BuildStruct(ids) => {
@@ -274,6 +276,7 @@ pub fn specialized_function_lowered<'db>(
         inputs,
         outputs,
         location,
+        is_specialization_base_call: true,
     }));
     block_builder.alloc(Block { statements, end: BlockEnd::Return(ret_usage, location) });
     Ok(Lowered {
@@ -296,14 +299,6 @@ pub fn priv_should_specialize<'db>(
     else {
         panic!("Expected a specialized function");
     };
-
-    // Breaks cycles.
-    // We cannot estimate the size of functions in a cycle, since the implicits computation requires
-    // the finalized lowering of all the functions in the cycle which requires us to know the
-    // answer of the current function.
-    if db.concrete_in_cycle(*base, DependencyType::Call, LoweringStage::Monomorphized)? {
-        return Ok(false);
-    }
 
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
     Ok(db.estimate_size(*base)?.saturating_mul(8)

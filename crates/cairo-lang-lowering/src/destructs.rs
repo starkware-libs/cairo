@@ -389,6 +389,7 @@ pub fn add_destructs<'db>(
                         with_coupon: false,
                         outputs: vec![output_var],
                         location: variables.variables[plain_destruct.var_id].location,
+                        is_specialization_base_call: false,
                     })
                 }
 
@@ -415,6 +416,7 @@ pub fn add_destructs<'db>(
                         with_coupon: false,
                         outputs: vec![new_panic_var, output_var],
                         location,
+                        is_specialization_base_call: false,
                     });
                     last_panic_var = new_panic_var;
                 }

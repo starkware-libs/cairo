@@ -41,10 +41,10 @@ use crate::ids::{
 use crate::specialization::SpecializationArg;
 use crate::utils::InliningStrategy;
 use crate::{
-    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
-    Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VarUsage, Variable, VariableArena, VariableId,
+    Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchEnumInfo,
+    MatchExternInfo, MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap,
+    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
+    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableArena, VariableId,
 };
 
 /// Keeps track of equivalent values that variables might be replaced with.
@@ -432,7 +432,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             };
             let call_stmt = |function, inputs, outputs| {
                 let with_coupon = false;
-                Statement::Call(StatementCall { function, inputs, with_coupon, outputs, location })
+                Statement::Call(StatementCall {
+                    function,
+                    inputs,
+                    with_coupon,
+                    outputs,
+                    location,
+                    is_specialization_base_call: false,
+                })
             };
             let arr_var = new_var(corelib::core_array_felt252_ty(db));
             let mut arr = self.variables.alloc(arr_var.clone());
@@ -676,11 +683,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
-        // Avoid specializing with the same base as the current function as it may lead to infinite
-        // specialization.
+        // Avoid specializing with a function that is in the same SCC as the caller.
         if base == self.caller_base {
             return None;
         }
+
+        let scc = self.db.lowered_scc(base, DependencyType::Call, LoweringStage::Monomorphized);
+        if scc.len() > 1 && scc.contains(&self.caller_base) {
+            return None;
+        }
+
         if call_stmt.inputs.iter().all(|arg| self.var_info.get(&arg.var_id).is_none()) {
             // No const inputs
             return None;
@@ -760,6 +772,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             with_coupon: call_stmt.with_coupon,
             outputs: std::mem::take(&mut call_stmt.outputs),
             location: call_stmt.location,
+            is_specialization_base_call: false,
         }))
     }
 
@@ -1022,6 +1035,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         with_coupon: false,
                         outputs: vec![result],
                         location: info.location,
+                        is_specialization_base_call: false,
                     }));
                     return Some(BlockEnd::Match {
                         info: MatchInfo::Enum(MatchEnumInfo {
@@ -1070,6 +1084,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         with_coupon: false,
                         outputs: vec![success_output],
                         location: info.location,
+                        is_specialization_base_call: false,
                     }));
                     return Some(BlockEnd::Goto(
                         info.arms[success_arm].block_id,
@@ -1142,6 +1157,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                                     with_coupon: false,
                                     outputs: vec![arm.var_ids[0]],
                                     location: info.location,
+                                    is_specialization_base_call: false,
                                 }),
                             ]);
                             return Some(BlockEnd::Goto(arm.block_id, Default::default()));
