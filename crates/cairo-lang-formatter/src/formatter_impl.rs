@@ -900,9 +900,6 @@ pub trait SyntaxNodeFormat {
     fn force_no_space_before(&self, db: &dyn Database) -> bool;
     /// Returns true if a token should never have a space after it.
     fn force_no_space_after(&self, db: &dyn Database) -> bool;
-    /// Returns true if the line is allowed to break after the node.
-    /// Only applicable for terminal nodes.
-    fn allow_newline_after(&self, db: &dyn Database) -> bool;
     /// Returns the number of allowed empty lines between two consecutive children of this node.
     fn allowed_empty_between(&self, db: &dyn Database) -> usize;
     /// Returns the break point properties before and after a specific node if a break point should

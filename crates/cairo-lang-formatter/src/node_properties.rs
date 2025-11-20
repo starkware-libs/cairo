@@ -189,10 +189,6 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             _ => false,
         }
     }
-    // TODO(gil): consider removing this function as it is no longer used.
-    fn allow_newline_after(&self, _db: &dyn Database) -> bool {
-        false
-    }
     fn allowed_empty_between(&self, db: &dyn Database) -> usize {
         match self.kind(db) {
             SyntaxKind::ModuleItemList | SyntaxKind::ImplItemList | SyntaxKind::TraitItemList => 2,
