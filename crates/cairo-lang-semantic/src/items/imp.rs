@@ -2135,7 +2135,7 @@ pub fn find_candidates_at_context<'db>(
             let globals = db.crate_global_impls(crate_id);
             let globals = globals.get(&filter.trait_id);
             res.extend(locals);
-            res.extend(globals.into_iter().flat_map(|s| s.clone().into_iter()))
+            res.extend(globals.into_iter().flat_map(|s| s.iter().cloned()))
         }
         _ => {
             let candidates_by_head = db.trait_candidate_by_head(crate_id, filter.trait_id);
