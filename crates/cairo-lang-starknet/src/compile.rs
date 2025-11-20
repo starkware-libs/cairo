@@ -67,34 +67,38 @@ pub fn compile_contract_in_prepared_db<'db>(
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
-    let mut contracts = find_contracts(db, &main_crate_ids);
-
-    // TODO(ilya): Add contract names.
-    if let Some(contract_path) = contract_path {
-        contracts.retain(|contract| contract.submodule_id.full_path(db) == contract_path);
-    };
-    let contract = match contracts.len() {
-        0 => {
-            // Report diagnostics as they might reveal the reason why no contract was found.
+    let contracts = find_contracts(db, &main_crate_ids);
+    if contracts.is_empty() {
+        // Report diagnostics as they might reveal the reason why no contract was found.
+        compiler_config.diagnostics_reporter.ensure(db)?;
+        anyhow::bail!("No contracts found.");
+    }
+    let name = |contract: &ContractDeclaration<'db>| contract.submodule_id.full_path(db);
+    let contract = if let Some(contract_path) = contract_path {
+        if let Some(contract) = contracts.iter().find(|contract| name(contract) == contract_path) {
+            contract
+        } else {
+            // Report diagnostics as they might reveal the reason why the contract was not found.
             compiler_config.diagnostics_reporter.ensure(db)?;
-            anyhow::bail!("Contract not found.");
-        }
-        1 => &contracts[0],
-        _ => {
-            let contract_names =
-                contracts.iter().map(|contract| contract.submodule_id.full_path(db)).join("\n  ");
             anyhow::bail!(
-                "More than one contract found in the main crate: \n  {}\nUse --contract-path to \
-                 specify which to compile.",
-                contract_names
+                "No contract matching `--contract-path={contract_path}`, available contracts \
+                 are:\n  {}",
+                contracts.iter().map(name).join("\n  ")
             );
         }
+    } else if let [contract] = contracts.as_slice() {
+        contract
+    } else {
+        anyhow::bail!(
+            "More than one contract found in the main crate:\n  {}\nUse --contract-path to \
+             specify which to compile.",
+            contracts.iter().map(name).join("\n  ")
+        );
     };
 
-    let contracts = vec![contract];
-    let mut classes = compile_prepared_db(db, &contracts, compiler_config)?;
-    assert_eq!(classes.len(), 1);
-    Ok(classes.remove(0))
+    let [class] =
+        compile_prepared_db(db, &[contract], compiler_config)?.into_iter().collect_array().unwrap();
+    Ok(class)
 }
 
 /// Runs Starknet contracts compiler.
