@@ -178,9 +178,9 @@ impl NodesAggregator {
     /// Adds a node for a token node (similar to an empty struct).
     pub fn add_terminal(self, pure_name: &str, is_keyword: bool) -> Self {
         self.add_struct(
-            StructBuilder::new_terminal(format!("Terminal{pure_name}").as_str(), is_keyword)
+            StructBuilder::new_terminal(&format!("Terminal{pure_name}"), is_keyword)
                 .node("leading_trivia", "Trivia")
-                .node("token", format!("Token{pure_name}").as_str())
+                .node("token", &format!("Token{pure_name}"))
                 .node("trailing_trivia", "Trivia"),
         )
     }
@@ -206,11 +206,11 @@ impl NodesAggregator {
     /// created here and TypeClause should exist independently.
     pub fn add_option(self, name: &str) -> Self {
         self.add_enum(
-            EnumBuilder::new(format!("Option{name}").as_str())
+            EnumBuilder::new(&format!("Option{name}"))
                 .node("Empty")
                 .node_with_explicit_kind(name, name),
         )
-        .add_struct(StructBuilder::new(format!("Option{name}Empty").as_str()))
+        .add_struct(StructBuilder::new(&format!("Option{name}Empty")))
     }
 
     /// Adds an enum containing all the tokens as variants.
