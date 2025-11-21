@@ -21,7 +21,7 @@ impl EthAddressStorePacking of starknet::StorePacking<EthAddress, felt252> {
     }
 
     fn unpack(value: felt252) -> EthAddress {
-        EthAddress { address: value }
+        value.try_into().expect('StoreEthAddress - non u160')
     }
 }
 
