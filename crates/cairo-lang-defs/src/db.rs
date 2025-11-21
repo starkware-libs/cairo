@@ -374,7 +374,9 @@ impl<T: Database + ?Sized> DefsGroup for T {}
 
 /// Initializes the [`DefsGroup`] database to a proper state.
 pub fn init_defs_group(db: &mut dyn Database) {
+    defs_group_input(db).set_default_macro_plugins(db).to(Some(Vec::new()));
     defs_group_input(db).set_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
+    defs_group_input(db).set_default_inline_macro_plugins(db).to(Some(OrderedHashMap::default()));
     defs_group_input(db).set_inline_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
 }
 
