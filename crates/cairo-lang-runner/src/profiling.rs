@@ -118,9 +118,10 @@ impl ProfilingInfo {
 
             cur_weight += 1;
 
-            // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
-            // save lookups.
-            let sierra_statement_idx = builder.casm_program().sierra_statement_index_by_pc(real_pc);
+            // Use cached lookup to avoid repeated binary searches for the same PC.
+            let sierra_statement_idx = *pc_to_sierra_statement_idx
+                .entry(real_pc)
+                .or_insert_with(|| builder.casm_program().sierra_statement_index_by_pc(real_pc));
             let user_function_idx = user_function_idx_by_sierra_statement_idx(
                 builder.sierra_program(),
                 sierra_statement_idx,
@@ -451,23 +452,33 @@ impl<'a> ProfilingInfoProcessor<'a> {
         raw_profiling_info: &ProfilingInfo,
         params: &ProfilingInfoProcessorParams,
     ) -> ProcessedProfilingInfo {
-        let sierra_statement_weights_iter = raw_profiling_info
+        let ordered_sierra_statement_weights: Vec<_> = raw_profiling_info
             .sierra_statement_weights
-            .iter_sorted_by_key(|(pc, count)| (usize::MAX - **count, **pc));
+            .iter_sorted_by_key(|(pc, count)| (usize::MAX - **count, **pc))
+            .collect();
 
-        let sierra_statement_weights =
-            self.process_sierra_statement_weights(sierra_statement_weights_iter.clone(), params);
+
+        let sierra_statement_weights = self.process_sierra_statement_weights(
+            ordered_sierra_statement_weights.iter().copied(),
+            params,
+        );
 
         let stack_trace_weights = self.process_stack_trace_weights(raw_profiling_info, params);
 
-        let libfunc_weights =
-            self.process_libfunc_weights(sierra_statement_weights_iter.clone(), params);
+        let libfunc_weights = self.process_libfunc_weights(
+            ordered_sierra_statement_weights.iter().copied(),
+            params,
+        );
 
-        let user_function_weights =
-            self.process_user_function_weights(sierra_statement_weights_iter.clone(), params);
+        let user_function_weights = self.process_user_function_weights(
+            ordered_sierra_statement_weights.iter().copied(),
+            params,
+        );
 
-        let cairo_function_weights =
-            self.process_cairo_function_weights(sierra_statement_weights_iter, params);
+        let cairo_function_weights = self.process_cairo_function_weights(
+            ordered_sierra_statement_weights.iter().copied(),
+            params,
+        );
 
         let scoped_sierra_statement_weights =
             self.process_scoped_sierra_statement_weights(raw_profiling_info, params);
@@ -483,15 +494,16 @@ impl<'a> ProfilingInfoProcessor<'a> {
     }
 
     /// Process the weights per Sierra statement.
-    fn process_sierra_statement_weights(
+    fn process_sierra_statement_weights<'weights>(
         &self,
-        sierra_statement_weights_iter: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        sierra_statement_weights_iter: impl IntoIterator<Item = (&'weights StatementIdx, &'weights usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<StatementIdx, (usize, GenStatement<StatementIdx>)>> {
         require(params.process_by_statement)?;
 
         Some(
             sierra_statement_weights_iter
+                .into_iter()
                 .filter(|&(_, weight)| *weight >= params.min_weight)
                 .map(|(statement_idx, weight)| {
                     (*statement_idx, (*weight, self.statement_idx_to_gen_statement(statement_idx)))
@@ -534,9 +546,9 @@ impl<'a> ProfilingInfoProcessor<'a> {
     }
 
     /// Process the weights per libfunc.
-    fn process_libfunc_weights(
+    fn process_libfunc_weights<'weights>(
         &self,
-        sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        sierra_statement_weights: impl IntoIterator<Item = (&'weights StatementIdx, &'weights usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> LibfuncWeights {
         if !params.process_by_concrete_libfunc && !params.process_by_generic_libfunc {
@@ -591,9 +603,9 @@ impl<'a> ProfilingInfoProcessor<'a> {
     }
 
     /// Process the weights per user function.
-    fn process_user_function_weights(
+    fn process_user_function_weights<'weights>(
         &self,
-        sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        sierra_statement_weights: impl IntoIterator<Item = (&'weights StatementIdx, &'weights usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> UserFunctionWeights {
         if !params.process_by_user_function && !params.process_by_original_user_function {
@@ -647,9 +659,9 @@ impl<'a> ProfilingInfoProcessor<'a> {
     }
 
     /// Process the weights per Cairo function.
-    fn process_cairo_function_weights(
+    fn process_cairo_function_weights<'weights>(
         &self,
-        sierra_statement_weights: std::vec::IntoIter<(&StatementIdx, &usize)>,
+        sierra_statement_weights: impl IntoIterator<Item = (&'weights StatementIdx, &'weights usize)>,
         params: &ProfilingInfoProcessorParams,
     ) -> Option<OrderedHashMap<String, usize>> {
         require(params.process_by_cairo_function)?;
