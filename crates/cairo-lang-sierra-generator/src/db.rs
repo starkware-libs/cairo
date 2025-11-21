@@ -340,7 +340,7 @@ fn get_type_info(
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
             let info = cycle_breaker_info(db, ty)?;
             return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
-                long_id: db.get_concrete_long_type_id(ty)?.as_ref().clone(),
+                long_id: (**db.get_concrete_long_type_id(ty)?).clone(),
                 storable: true,
                 droppable: info.droppable,
                 duplicatable: info.duplicatable,
@@ -348,7 +348,7 @@ fn get_type_info(
             });
         }
         SierraGeneratorTypeLongId::Phantom(ty) => {
-            let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
+            let long_id = (**db.get_concrete_long_type_id(ty)?).clone();
             return Ok(cairo_lang_sierra::extensions::types::TypeInfo {
                 long_id,
                 storable: false,

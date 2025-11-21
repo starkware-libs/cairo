@@ -235,7 +235,7 @@ impl VirtualFileInput {
     fn into_virtual_file(self, db: &dyn Database) -> VirtualFile<'_> {
         VirtualFile {
             parent: self.parent.map(|(id, span)| SpanInFile {
-                file_id: id.as_ref().clone().into_file_long_id(db).intern(db),
+                file_id: (*id).clone().into_file_long_id(db).intern(db),
                 span,
             }),
             name: SmolStrId::from(db, self.name),
@@ -468,7 +468,7 @@ impl<'db> Directory<'db> {
             Directory::Real(path) => Directory::Real(path.join(name)),
             Directory::Virtual { files: _, dirs } => {
                 if let Some(dir) = dirs.get(name) {
-                    dir.as_ref().clone()
+                    (**dir).clone()
                 } else {
                     Directory::Virtual { files: BTreeMap::new(), dirs: BTreeMap::new() }
                 }

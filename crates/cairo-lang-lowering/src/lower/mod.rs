@@ -1201,7 +1201,7 @@ fn lower_expr_desnap<'db>(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let expr = lower_expr(ctx, builder, expr.inner)?;
     if let LoweredExpr::Snapshot { expr, .. } = &expr {
-        return Ok(expr.as_ref().clone());
+        return Ok((**expr).clone());
     }
     let input = expr.as_var_usage(ctx, builder)?;
 
