@@ -225,7 +225,9 @@ pub fn core_libfunc_cost(
             EcConcreteLibfunc::IsZero(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
-            EcConcreteLibfunc::Neg(_) => vec![ConstCost::default().into()],
+            EcConcreteLibfunc::Neg(_) | EcConcreteLibfunc::NegNz(_) => {
+                vec![ConstCost::default().into()]
+            }
             EcConcreteLibfunc::StateAdd(_) => vec![ConstCost::steps(10).into()],
             EcConcreteLibfunc::TryNew(_) => {
                 vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
