@@ -281,6 +281,7 @@ fn main() -> anyhow::Result<()> {
     let cairo_run_config = CairoRunConfig {
         trace_enabled,
         relocate_mem: args.run.proof_outputs.memory_file.is_some(),
+        relocate_trace: args.run.proof_outputs.trace_file.is_some(),
         layout: args.run.layout,
         dynamic_layout_params,
         proof_mode: args.run.standalone,
