@@ -261,7 +261,7 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     where
         Key: Ord,
     {
-        self.0.into_iter().sorted_by(|(lhs, _), (rhs, _)| lhs.cmp(rhs))
+        self.0.into_iter().sorted_by(|(key_a, _), (key_b, _)| key_a.cmp(key_b))
     }
 
     /// Iterates the map in an ascending order of the keys produced by the given function `f`.
