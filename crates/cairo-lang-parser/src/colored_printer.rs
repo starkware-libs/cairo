@@ -19,7 +19,7 @@ impl ColoredPrinter<'_> {
                     self.result.push_str(format!("{}", "<m>".red()).as_str());
                 } else {
                     self.result
-                        .push_str(set_color(text.long(self.db), node.kind).to_string().as_str());
+                        .push_str(&set_color(text.long(self.db), node.kind).to_string());
                 }
             }
             GreenNodeDetails::Node { .. } => {
