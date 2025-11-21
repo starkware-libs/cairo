@@ -236,7 +236,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             Statement::Desnap(StatementDesnap { input, output }) => {
                 if let Some(VarInfo::Snapshot(info)) = self.var_info.get(&input.var_id) {
-                    self.var_info.insert(*output, info.as_ref().clone());
+                    self.var_info.insert(*output, (**info).clone());
                 }
             }
             Statement::Call(call_stmt) => {
@@ -609,7 +609,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             Some(Statement::Const(StatementConst::new_boxed(const_value?, stmt.outputs[0])))
         } else if id == self.unbox {
             if let VarInfo::Box(inner) = self.var_info.get(&stmt.inputs[0].var_id)? {
-                let inner = inner.as_ref().clone();
+                let inner = (**inner).clone();
                 if let VarInfo::Const(inner) =
                     self.var_info.entry(stmt.outputs[0]).insert_entry(inner).get()
                 {
@@ -844,7 +844,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let arm = &info.arms[variant.idx];
             let variant_ty = variant.ty;
             let output = arm.var_ids[0];
-            let payload = payload.as_ref().clone();
+            let payload = (**payload).clone();
             let unwrapped =
                 self.variables[input].info.droppable.is_ok().then_some(()).and_then(|_| {
                     let (extra_snapshots, inner) = payload.peel_snapshots();
