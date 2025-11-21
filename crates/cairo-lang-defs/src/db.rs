@@ -973,7 +973,9 @@ fn priv_module_data_helper<'db>(
         files.push(file_id);
 
         let priv_module_data = module_sub_files(db, module_id, file_id).maybe_as_ref()?;
-        diagnostics_notes.extend(priv_module_data.diagnostics_notes.clone().into_iter());
+        diagnostics_notes.extend(
+            priv_module_data.diagnostics_notes.iter().map(|(k, v)| (*k, v.clone())),
+        );
         file_queue.extend(priv_module_data.files.keys().copied());
         for diag in &priv_module_data.plugin_diagnostics {
             plugin_diagnostics.push((module_id, diag.clone()));
