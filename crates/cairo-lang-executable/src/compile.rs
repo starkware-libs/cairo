@@ -228,7 +228,7 @@ pub fn compile_executable_function_in_prepared_db<'db>(
 
     // Since we build the entry point asking for a single function - we know it will be first, and
     // that it will be available.
-    let executable_func = sierra_program.funcs[0].clone();
+    let executable_func = &sierra_program.funcs[0];
     assert_eq!(executable_func.id, db.intern_sierra_function(executable.function_id(db).unwrap()));
     let builder = RunnableBuilder::new(sierra_program.clone(), None).map_err(|err| {
         let mut locs = vec![];
@@ -245,7 +245,7 @@ pub fn compile_executable_function_in_prepared_db<'db>(
     // If syscalls are allowed it means we allow for unsound programs.
     let allow_unsound = config.allow_syscalls;
     let wrapper = builder
-        .create_wrapper_info(&executable_func, EntryCodeConfig::executable(allow_unsound))?;
+        .create_wrapper_info(executable_func, EntryCodeConfig::executable(allow_unsound))?;
     let compiled_function = CompiledFunction { program: builder.casm_program().clone(), wrapper };
     Ok(CompileExecutableResult { compiled_function, builder, debug_info: debug_info.clone() })
 }
