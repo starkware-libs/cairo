@@ -18,8 +18,12 @@ salsa.workspace = true
 
 [dev-dependencies]
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.14.0-rc.0" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.14.0-rc.0", features = ["testing"] }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.14.0-rc.0", features = [
+  "testing",
+] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0-rc.0", features = [
+  "tracing",
+] }
 indoc.workspace = true
 tracing.workspace = true
