@@ -43,7 +43,7 @@ fn test_resolve_labels() {
     let (statements, _statements_location) =
         resolve_labels_and_extract_locations(statements, &label_replacer);
     assert_eq!(
-        statements.iter().map(|x| format!("{x}")).collect::<Vec<String>>(),
+        statements.iter().map(|x| x.to_string()).collect::<Vec<String>>(),
         vec![
             // labels 7 and 5 (instruction index 0).
             "Instruction0() -> ()",
