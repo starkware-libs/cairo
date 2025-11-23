@@ -60,6 +60,7 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
                 with_coupon: stmt.with_coupon,
                 outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
                 location: self.map_location(stmt.location),
+                is_specialization_base_call: stmt.is_specialization_base_call,
             }),
             Statement::StructConstruct(stmt) => {
                 Statement::StructConstruct(StatementStructConstruct {

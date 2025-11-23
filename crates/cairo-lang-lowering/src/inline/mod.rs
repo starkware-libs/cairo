@@ -61,7 +61,6 @@ pub fn priv_should_inline<'db>(
     if db.priv_never_inline(function_id)? {
         return Ok(false);
     }
-
     // Breaks cycles.
     if db.concrete_in_cycle(function_id, DependencyType::Call, LoweringStage::Monomorphized)? {
         return Ok(false);
@@ -342,6 +341,7 @@ where
             if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
                 calling_function_id.long(db)
                 && specialized.base == called_func
+                && stmt.is_specialization_base_call
             {
                 // A specialized function should always inline its base.
                 return Ok(Some((stmt, called_func)));
