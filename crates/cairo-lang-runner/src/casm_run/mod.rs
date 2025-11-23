@@ -2420,7 +2420,7 @@ pub fn run_function<'a, 'b: 'a>(
 }
 
 /// Formats the given felts as a debug string.
-fn format_for_debug(mut felts: IntoIter<Felt252>) -> String {
+pub fn format_for_debug(mut felts: IntoIter<Felt252>) -> String {
     let mut items = Vec::new();
     while let Some(item) = format_next_item(&mut felts) {
         items.push(item);
