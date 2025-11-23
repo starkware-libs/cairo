@@ -98,6 +98,7 @@ pub fn lower_panics<'db>(
                     with_coupon: false,
                     outputs: vec![],
                     location: end.location,
+                    is_specialization_base_call: false,
                 }));
             }
         }
@@ -154,6 +155,7 @@ fn lower_unsafe_panic<'db>(
                 with_coupon: false,
                 outputs: vec![],
                 location: err_data.location,
+                is_specialization_base_call: false,
             }));
         }
 
@@ -317,6 +319,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
                 with_coupon: call.with_coupon,
                 outputs: vec![panic_result_var],
                 location,
+                is_specialization_base_call: call.is_specialization_base_call,
             }));
             return Ok((BlockEnd::Panic(VarUsage { var_id: panic_result_var, location }), None));
         }
@@ -344,6 +347,7 @@ impl<'db> PanicBlockLoweringContext<'db> {
             with_coupon: call.with_coupon,
             outputs: call_outputs,
             location,
+            is_specialization_base_call: call.is_specialization_base_call,
         }));
 
         // Start constructing a match on the result.
