@@ -183,7 +183,6 @@ pub impl EcStateImpl of EcStateTrait {
     /// * `p` - The non-zero point to subtract
     #[inline]
     fn sub(ref self: EcState, p: NonZeroEcPoint) {
-        // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well, or a `ec_state_sub`.
         ec_state_add(ref self, -p);
     }
 
@@ -372,6 +371,14 @@ pub impl EcPointImpl of EcPointTrait {
 impl EcPointNeg of Neg<EcPoint> {
     fn neg(a: EcPoint) -> EcPoint {
         ec_neg(a)
+    }
+}
+
+impl NonZeroEcPointNeg of Neg<NonZeroEcPoint> {
+    fn neg(a: NonZeroEcPoint) -> NonZeroEcPoint {
+        // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well.
+        let p: EcPoint = a.into();
+        (-p).try_into().unwrap()
     }
 }
 

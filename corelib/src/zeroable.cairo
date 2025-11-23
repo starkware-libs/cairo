@@ -82,14 +82,23 @@ pub extern type NonZero<T>;
 impl NonZeroCopy<T> of Copy<NonZero<T>>;
 impl NonZeroDrop<T> of Drop<NonZero<T>>;
 
-impl NonZeroNeg<T, +Neg<T>, +TryInto<T, NonZero<T>>> of Neg<NonZero<T>> {
-    fn neg(a: NonZero<T>) -> NonZero<T> {
-        // TODO(orizi): Optimize using bounded integers.
-        let value: T = a.into();
-        let negated: T = -value;
-        negated.try_into().unwrap()
+pub(crate) mod non_zero_neg {
+    pub impl Impl<T, +Neg<T>, +TryInto<T, NonZero<T>>> of Neg<NonZero<T>> {
+        fn neg(a: NonZero<T>) -> NonZero<T> {
+            // TODO(orizi): Optimize using bounded integers.
+            let value: T = a.into();
+            let negated: T = -value;
+            negated.try_into().unwrap()
+        }
     }
 }
+
+impl NonZeroI8Neg = non_zero_neg::Impl<i8>;
+impl NonZeroI16Neg = non_zero_neg::Impl<i16>;
+impl NonZeroI32Neg = non_zero_neg::Impl<i32>;
+impl NonZeroI64Neg = non_zero_neg::Impl<i64>;
+impl NonZeroI128Neg = non_zero_neg::Impl<i128>;
+impl NonZeroFelt252Neg = non_zero_neg::Impl<felt252>;
 
 /// Represents the result of checking whether a value is zero.
 pub(crate) enum IsZeroResult<T> {
