@@ -104,9 +104,8 @@ macro_rules! ref_expr {
 struct MockSpecializationContext {}
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        let long_id = cairo_lang_sierra::ConcreteTypeLongIdParser::new()
-            .parse(id.to_string().as_str())
-            .unwrap();
+        let long_id =
+            cairo_lang_sierra::ConcreteTypeLongIdParser::new().parse(&id.debug_name?).unwrap();
         Some(
             CoreType::specialize_by_id(self, &long_id.generic_id, &long_id.generic_args)
                 .ok()?
@@ -122,7 +121,7 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         generic_args: &[cairo_lang_sierra::program::GenericArg],
     ) -> Option<ConcreteTypeId> {
         Some(if generic_args.is_empty() {
-            id.to_string().into()
+            id.0.into()
         } else {
             format!(
                 "{id}<{}>",
@@ -216,9 +215,7 @@ impl std::fmt::Debug for ReducedCompiledInvocation {
 ///
 /// Currently, only works if all the libfunc's types (both inputs and output) are of size 1.
 pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> ReducedCompiledInvocation {
-    let long_id = cairo_lang_sierra::ConcreteLibfuncLongIdParser::new()
-        .parse(libfunc.to_string().as_str())
-        .unwrap();
+    let long_id = cairo_lang_sierra::ConcreteLibfuncLongIdParser::new().parse(libfunc).unwrap();
     let context = MockSpecializationContext {};
     let libfunc =
         CoreLibfunc::specialize_by_id(&context, &long_id.generic_id, &long_id.generic_args)

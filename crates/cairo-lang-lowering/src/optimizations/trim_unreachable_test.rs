@@ -26,9 +26,9 @@ fn test_trim_unreachable(
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
+        &inputs["function"],
+        &inputs["function_name"],
+        &inputs["module_code"],
     )
     .split();
 

@@ -24,9 +24,9 @@ fn test_cse(
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
+        &inputs["function"],
+        &inputs["function_name"],
+        inputs.get("module_code").map_or("", String::as_str),
     )
     .split();
 
