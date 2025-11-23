@@ -973,14 +973,12 @@ fn priv_module_data_helper<'db>(
         files.push(file_id);
 
         let priv_module_data = module_sub_files(db, module_id, file_id).maybe_as_ref()?;
-        diagnostics_notes.extend(priv_module_data.diagnostics_notes.clone().into_iter());
+        diagnostics_notes
+            .extend(priv_module_data.diagnostics_notes.iter().map(|(k, v)| (*k, v.clone())));
         file_queue.extend(priv_module_data.files.keys().copied());
-        for diag in &priv_module_data.plugin_diagnostics {
-            plugin_diagnostics.push((module_id, diag.clone()));
-        }
-        aux_data.extend(
-            priv_module_data.aux_data.iter().map(|(file, aux_data)| (*file, aux_data.clone())),
-        );
+        plugin_diagnostics
+            .extend(priv_module_data.plugin_diagnostics.iter().map(|v| (module_id, v.clone())));
+        aux_data.extend(priv_module_data.aux_data.iter().map(|(k, v)| (*k, v.clone())));
         for item_ast in &priv_module_data.items {
             match item_ast.clone() {
                 ast::ModuleItem::Constant(constant) => {
