@@ -285,6 +285,7 @@ fn main() -> anyhow::Result<()> {
         layout: args.run.layout,
         dynamic_layout_params,
         proof_mode: args.run.standalone,
+        fill_holes: args.run.standalone,
         secure_run: args.run.secure_run,
         allow_missing_builtins: args.run.allow_missing_builtins,
         disable_trace_padding: args.run.disable_trace_padding.unwrap_or_default(),
