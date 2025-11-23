@@ -262,48 +262,46 @@ foo
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
-  (v3: core::integer::u32) <- 14
-  (v4: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v2, v3)
-  (v5: core::array::Array::<core::integer::u32>, v6: @core::array::Array::<core::integer::u32>) <- snapshot(v4)
-  (v7: core::integer::u32) <- 0
-  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::integer::u32, ())>) <- test::foo[83-134](v0, v1, v7, v6)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::u32, ())>) <- test::foo[83-134]{0, @array![14], }(v0, v1)
 End:
-  Match(match_enum(v10) {
-    PanicResult::Ok(v11) => blk1,
-    PanicResult::Err(v12) => blk4,
+  Match(match_enum(v4) {
+    PanicResult::Ok(v5) => blk1,
+    PanicResult::Err(v6) => blk4,
   })
 
 blk1:
 Statements:
+  (v7: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
+  (v8: core::integer::u32) <- 14
+  (v9: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v7, v8)
 End:
-  Match(match core::array::array_pop_front::<core::integer::u32>(v5) {
-    Option::Some(v13, v14) => blk2,
-    Option::None(v15) => blk3,
+  Match(match core::array::array_pop_front::<core::integer::u32>(v9) {
+    Option::Some(v10, v11) => blk2,
+    Option::None(v12) => blk3,
   })
 
 blk2:
 Statements:
-  (v16: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v9)
-  (v17: core::array::Array::<core::integer::u32>, v18: @core::array::Array::<core::integer::u32>) <- snapshot(v13)
-  (v19: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v18)
-  (v20: (core::integer::u32,)) <- struct_construct(v19)
-  (v21: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v20)
+  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v14: core::array::Array::<core::integer::u32>, v15: @core::array::Array::<core::integer::u32>) <- snapshot(v10)
+  (v16: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v15)
+  (v17: (core::integer::u32,)) <- struct_construct(v16)
+  (v18: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v17)
 End:
-  Return(v8, v16, v21)
+  Return(v2, v13, v18)
 
 blk3:
 Statements:
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v23: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v22)
+  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v20: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v19)
 End:
-  Return(v8, v9, v23)
+  Return(v2, v3, v20)
 
 blk4:
 Statements:
-  (v24: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v12)
+  (v21: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v6)
 End:
-  Return(v8, v9, v24)
+  Return(v2, v3, v21)
 
 //! > ==========================================================================
 

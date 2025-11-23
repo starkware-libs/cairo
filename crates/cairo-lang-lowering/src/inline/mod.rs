@@ -61,9 +61,17 @@ pub fn priv_should_inline<'db>(
     if db.priv_never_inline(function_id)? {
         return Ok(false);
     }
-
-    // Breaks cycles.
-    if db.concrete_in_cycle(function_id, DependencyType::Call, LoweringStage::Monomorphized)? {
+    // Prevents inlining of functions that may call themselves, by checking if the base of the
+    // function (the function without specialization) is in a call cycle (we cannot use the
+    // specialized version as it may call the base function with different specialization which may
+    // cause long inlining chains).
+    // TODO(Tomerstarkware): allow inlining of specialized recursive functions for one level of recursion.   
+    let base = match function_id.long(db) {
+        ConcreteFunctionWithBodyLongId::Semantic(_)
+        | ConcreteFunctionWithBodyLongId::Generated(_) => function_id,
+        ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.base,
+    };
+    if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::Monomorphized)? {
         return Ok(false);
     }
 
@@ -342,6 +350,7 @@ where
             if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
                 calling_function_id.long(db)
                 && specialized.base == called_func
+                && stmt.is_specialization_base_call
             {
                 // A specialized function should always inline its base.
                 return Ok(Some((stmt, called_func)));
