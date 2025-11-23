@@ -23,7 +23,7 @@ pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
 /// Nulls are allowed and length must be <= 31.
 pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String> {
     if length == 0 {
-        return if value.is_zero() { Some("".to_string()) } else { None };
+        return if value.is_zero() { Some(String::new()) } else { None };
     }
     if length > 31 {
         // A short string can't be longer than 31 bytes.
@@ -38,7 +38,7 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
         return None;
     }
 
-    let mut as_string = "".to_string();
+    let mut as_string = String::new();
     for byte in bytes {
         if byte == 0 {
             as_string.push_str(r"\0");
