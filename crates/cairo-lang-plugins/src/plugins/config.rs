@@ -131,6 +131,7 @@ fn handle_undropped_item<'a>(
             let items = get_kept_items_nodes(db, cfg_set, body.iter_items(db), diagnostics)?;
             let mut builder = PatchBuilder::new(db, &trait_item);
             builder.add_node(trait_item.attributes(db).as_syntax_node());
+            builder.add_node(trait_item.visibility(db).as_syntax_node());
             builder.add_node(trait_item.trait_kw(db).as_syntax_node());
             builder.add_node(trait_item.name(db).as_syntax_node());
             builder.add_node(trait_item.generic_params(db).as_syntax_node());
@@ -146,6 +147,7 @@ fn handle_undropped_item<'a>(
             let items = get_kept_items_nodes(db, cfg_set, body.iter_items(db), diagnostics)?;
             let mut builder = PatchBuilder::new(db, &impl_item);
             builder.add_node(impl_item.attributes(db).as_syntax_node());
+            builder.add_node(impl_item.visibility(db).as_syntax_node());
             builder.add_node(impl_item.impl_kw(db).as_syntax_node());
             builder.add_node(impl_item.name(db).as_syntax_node());
             builder.add_node(impl_item.generic_params(db).as_syntax_node());

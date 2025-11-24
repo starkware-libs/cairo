@@ -440,3 +440,27 @@ error: `or` operator expects at least two arguments.
  --> test_src/lib.cairo:11:7
 #[cfg(or())]
       ^^^^
+
+//! > ==========================================================================
+
+//! > Test cfg of members does not update visibility.
+
+//! > test_runner_name
+test_expand_plugin(expect_diagnostics: false)
+
+//! > cfg
+[]
+
+//! > cairo_code
+pub trait MyTrait {
+    #[cfg(missing_feature)]
+    fn removed() -> felt252 {
+        0
+    }
+}
+
+//! > expanded_cairo_code
+pub trait MyTrait {
+}
+
+//! > expected_diagnostics
