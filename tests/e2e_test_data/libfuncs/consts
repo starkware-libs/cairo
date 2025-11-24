@@ -1036,3 +1036,154 @@ test::foo@F0() -> (Box<NonZero<core::integer::u512>>);
 
 //! > function_costs
 test::foo: SmallOrderedMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const generator EcPoint.
+
+//! > test_runner_name
+WithOptsE2ETestRunner
+
+//! > cairo_code
+use core::ec::EcPoint;
+
+mod value {
+    extern type Const<T, const X: felt252, const Y: felt252>;
+}
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<EcPoint> nopanic;
+
+fn foo() -> Box<EcPoint> {
+    const_as_box::<
+        value::Const<
+            EcPoint,
+            0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca,
+            0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f,
+        >,
+        0,
+    >()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 874739451078007766457464989774322083649278607533249481151382481072868806602;
+dw 152666792071518830868575557812948353041420400780739481342941381225525861407;
+
+//! > sierra_code
+type Box<EcPoint> = Box<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407> = Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407> [storable: false, drop: false, dup: false, zero_sized: false];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc const_as_box<Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>, 0> = const_as_box<Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>, 0>;
+
+F0:
+const_as_box<Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>, 0>() -> ([0]);
+return([0]);
+
+test::foo@F0() -> (Box<EcPoint>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const zero EcPoint.
+
+//! > test_runner_name
+WithOptsE2ETestRunner
+
+//! > cairo_code
+use core::ec::EcPoint;
+
+mod value {
+    extern type Const<T, const X: felt252, const Y: felt252>;
+}
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<EcPoint> nopanic;
+
+fn foo() -> Box<EcPoint> {
+    const_as_box::<value::Const<EcPoint, 0, 0>, 0>()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 0;
+dw 0;
+
+//! > sierra_code
+type Box<EcPoint> = Box<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<EcPoint, 0, 0> = Const<EcPoint, 0, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc const_as_box<Const<EcPoint, 0, 0>, 0> = const_as_box<Const<EcPoint, 0, 0>, 0>;
+
+F0:
+const_as_box<Const<EcPoint, 0, 0>, 0>() -> ([0]);
+return([0]);
+
+test::foo@F0() -> (Box<EcPoint>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 300})
+
+//! > ==========================================================================
+
+//! > const non-zero generator EcPoint.
+
+//! > test_runner_name
+WithOptsE2ETestRunner
+
+//! > cairo_code
+use core::ec::EcPoint;
+
+mod value {
+    extern type Const<T, const X: felt252, const Y: felt252>;
+}
+mod nz {
+    extern type Const<T, C>;
+}
+extern fn const_as_box<T, const SEGMENT_INDEX: felt252>() -> Box<NonZero<EcPoint>> nopanic;
+
+fn foo() -> Box<NonZero<EcPoint>> {
+    const_as_box::<
+        nz::Const<
+            NonZero<EcPoint>,
+            value::Const<
+                EcPoint,
+                0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca,
+                0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f,
+            >,
+        >,
+        0,
+    >()
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -1] + 4, ap++;
+ret;
+ret;
+dw 874739451078007766457464989774322083649278607533249481151382481072868806602;
+dw 152666792071518830868575557812948353041420400780739481342941381225525861407;
+
+//! > sierra_code
+type Box<NonZero<EcPoint>> = Box<NonZero<EcPoint>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<NonZero<EcPoint>, Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>> = Const<NonZero<EcPoint>, Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>> [storable: false, drop: false, dup: false, zero_sized: false];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407> = Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_box<Const<NonZero<EcPoint>, Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>>, 0> = const_as_box<Const<NonZero<EcPoint>, Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>>, 0>;
+
+F0:
+const_as_box<Const<NonZero<EcPoint>, Const<EcPoint, 874739451078007766457464989774322083649278607533249481151382481072868806602, 152666792071518830868575557812948353041420400780739481342941381225525861407>>, 0>() -> ([0]);
+return([0]);
+
+test::foo@F0() -> (Box<NonZero<EcPoint>>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 300})

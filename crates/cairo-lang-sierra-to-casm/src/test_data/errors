@@ -1109,3 +1109,66 @@ type OutOfRange = Const<ClassHash, 361850278866613110698659328152149712041468702
 
 //! > error
 Error during type specialization of `OutOfRange`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > EC negative x.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type EcPoint = EcPoint;
+type ValidPoint = Const<EcPoint, 1, 1130673244253924969006665885121925533155264548256591442770131812330730973800>;
+type InvalidPoint = Const<EcPoint, -1, 14985303859878276524652518297008158829868122004499355227972672702239519519>;
+
+//! > error
+Error during type specialization of `InvalidPoint`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > EC negative y.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type EcPoint = EcPoint;
+type ValidPoint = Const<EcPoint, 1, 1130673244253924969006665885121925533155264548256591442770131812330730973800>;
+type InvalidPoint = Const<EcPoint, 1, -1130673244253924969006665885121925533155264548256591442770131812330730973800>;
+
+//! > error
+Error during type specialization of `InvalidPoint`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > EC invalid point.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type EcPoint = EcPoint;
+type ValidPoint = Const<EcPoint, 0, 0>;
+type InvalidPoint = Const<EcPoint, 1, 1>;
+
+//! > error
+Error during type specialization of `InvalidPoint`: Could not specialize type
+
+//! > ==========================================================================
+
+//! > EC invalid non-zero point.
+
+//! > test_runner_name
+compiler_errors
+
+//! > sierra_code
+type EcPoint = EcPoint;
+type NonZeroEcPoint = NonZero<EcPoint>;
+type ValidPoint1 = Const<EcPoint, 1, 1130673244253924969006665885121925533155264548256591442770131812330730973800>;
+type ValidNonZeroPoint = Const<NonZeroEcPoint, ValidPoint1>;
+type ValidPoint2 = Const<EcPoint, 0, 0>;
+type InvalidNonZeroPoint = Const<NonZeroEcPoint, ValidPoint2>;
+
+//! > error
+Error during type specialization of `InvalidNonZeroPoint`: Could not specialize type
