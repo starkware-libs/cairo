@@ -217,6 +217,11 @@ pub trait Store<T> {
     ///
     /// The operation writes zeroes to storage starting from the specified base address and offset,
     /// and continues for the size of the type as determined by the `size()` function.
+    ///
+    /// Note: This is a flat operation. It only zeros the storage slots that belong to this value as
+    /// determined by `size()`. It does not traverse or delete storage that is pointed to by
+    /// pointers within the value (e.g., ByteArray data stored via pointers). To fully clear such
+    /// nested data, users should handle clearing on the nested storage components as well.
     #[inline]
     fn scrub(
         address_domain: u32, base: StorageBaseAddress, offset: u8,
