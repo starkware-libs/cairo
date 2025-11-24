@@ -139,7 +139,7 @@ fn lower_unsafe_panic<'db>(
         let Some(Statement::StructConstruct(tuple_construct)) = block.statements.pop() else {
             panic!("Expected a tuple construct before the panic.");
         };
-         // Assert `err_data` is produced by the statement that was removed above.
+        // Assert `err_data` is produced by the statement that was removed above.
         assert_eq!(tuple_construct.output, err_data.var_id);
 
         let panic_construct_statement = block.statements.pop();
