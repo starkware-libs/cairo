@@ -2271,7 +2271,7 @@ pub fn execute_core_hint(
 }
 
 /// Reads a range of `Felt252`s from the VM.
-fn read_felts(
+pub fn read_felts(
     vm: &mut VirtualMachine,
     start: &ResOperand,
     end: &ResOperand,
