@@ -107,7 +107,7 @@ pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 // a trait.
 
 // ================================ Naming of parsing functions ================================
-// try_parse_<something>: returns a TryParseElementResult. A `Ok` with green ID with a kind
+// try_parse_<something>: returns a TryParseResult. A `Ok` with green ID with a kind
 // that represents 'something' or a `Err` if 'something' can't be parsed.
 // If the error kind is Failure, the current token is not consumed, otherwise (Success or
 // error of kind FailureAndSkipped) it is (taken or skipped). Used when something may or may not be
