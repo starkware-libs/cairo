@@ -1102,6 +1102,42 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let output = info.arms[arm_idx].var_ids[0];
             statements.push(self.propagate_const_and_get_statement(value.clone(), output));
             Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
+        } else if id == self.bounded_int_trim_min {
+            let input_var = info.inputs[0].var_id;
+            let ConstValue::Int(value, ty) = self.as_const(input_var)?.long(self.db) else {
+                return None;
+            };
+            let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
+                range.min == *value
+            } else {
+                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.0 == *value
+            };
+            let arm_idx = if is_trimmed {
+                0
+            } else {
+                let output = info.arms[1].var_ids[0];
+                statements.push(self.propagate_const_and_get_statement(value.clone(), output));
+                1
+            };
+            Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
+        } else if id == self.bounded_int_trim_max {
+            let input_var = info.inputs[0].var_id;
+            let ConstValue::Int(value, ty) = self.as_const(input_var)?.long(self.db) else {
+                return None;
+            };
+            let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
+                range.max == *value
+            } else {
+                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.1 == *value
+            };
+            let arm_idx = if is_trimmed {
+                0
+            } else {
+                let output = info.arms[1].var_ids[0];
+                statements.push(self.propagate_const_and_get_statement(value.clone(), output));
+                1
+            };
+            Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
         } else if id == self.array_get {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
             if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id)
@@ -1414,6 +1450,10 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     bounded_int_sub: ExternFunctionId<'db>,
     /// The `bounded_int_constrain` libfunc.
     bounded_int_constrain: ExternFunctionId<'db>,
+    /// The `bounded_int_trim_min` libfunc.
+    bounded_int_trim_min: ExternFunctionId<'db>,
+    /// The `bounded_int_trim_max` libfunc.
+    bounded_int_trim_max: ExternFunctionId<'db>,
     /// The `array_get` libfunc.
     array_get: ExternFunctionId<'db>,
     /// The `array_snapshot_pop_front` libfunc.
@@ -1556,6 +1596,8 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             bounded_int_add: bounded_int_module.extern_function_id("bounded_int_add"),
             bounded_int_sub: bounded_int_module.extern_function_id("bounded_int_sub"),
             bounded_int_constrain: bounded_int_module.extern_function_id("bounded_int_constrain"),
+            bounded_int_trim_min: bounded_int_module.extern_function_id("bounded_int_trim_min"),
+            bounded_int_trim_max: bounded_int_module.extern_function_id("bounded_int_trim_max"),
             array_get: array_module.extern_function_id("array_get"),
             array_snapshot_pop_front: array_module.extern_function_id("array_snapshot_pop_front"),
             array_snapshot_pop_back: array_module.extern_function_id("array_snapshot_pop_back"),

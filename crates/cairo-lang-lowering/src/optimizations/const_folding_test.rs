@@ -37,12 +37,18 @@ fn test_match_optimizer(
     let mut before = db
         .lowered_body(function_id, LoweringStage::PreOptimizations)
         .unwrap_or_else(|_| {
-            let semantic_diags = db.module_semantic_diagnostics(test_function.module_id).unwrap();
-            let lowering_diags = db.module_lowering_diagnostics(test_function.module_id);
+            let semantic_diags = db
+                .module_semantic_diagnostics(test_function.module_id)
+                .unwrap_or_default()
+                .format(db);
+            let lowering_diags = db
+                .module_lowering_diagnostics(test_function.module_id)
+                .unwrap_or_default()
+                .format(db);
 
             panic!(
                 "Failed to get lowered body for function {function_id:?}.\nSemantic diagnostics: \
-                 {semantic_diags:?}\nLowering diagnostics: {lowering_diags:?}",
+                 {semantic_diags}\nLowering diagnostics: {lowering_diags}",
             )
         })
         .clone();
