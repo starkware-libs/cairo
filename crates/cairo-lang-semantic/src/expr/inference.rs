@@ -1151,7 +1151,7 @@ impl<'db, 'id> Inference<'db, 'id> {
         })
     }
 
-    /// Computes the solution set for an negative impl variable with a recursive query.
+    /// Computes the solution set for a negative impl variable with a recursive query.
     fn negative_impl_var_solution_set(
         &mut self,
         var: LocalNegativeImplVarId,
