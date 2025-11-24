@@ -32,10 +32,7 @@ pub mod unordered_hash_map;
 pub mod unordered_hash_set;
 
 /// Similar to From / TryFrom, but returns an option.
-pub trait OptionFrom<T>
-where
-    Self: Sized,
-{
+pub trait OptionFrom<T>: Sized {
     fn option_from(other: T) -> Option<Self>;
 }
 
