@@ -431,9 +431,6 @@ impl<'db> SmolStrId<'db> {
         SmolStrId::new(db, content.into())
     }
 
-    pub fn from_arcstr(db: &'db dyn Database, content: &Arc<str>) -> Self {
-        SmolStrId::from(db, content.clone())
-    }
 
     pub fn to_string(&self, db: &dyn Database) -> String {
         self.long(db).to_string()
