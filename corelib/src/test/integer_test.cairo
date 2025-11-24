@@ -1871,6 +1871,70 @@ fn test_signed_int_diff() {
     assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
 
+#[inline(never)]
+fn noopt<T>(t: T) -> T {
+    t
+}
+
+#[test]
+fn test_signed_int_neg() {
+    assert_eq!(-noopt(1), -1_i8);
+    assert_eq!(-noopt(0), 0_i8);
+    assert_eq!(-noopt(-1), 1_i8);
+    assert_eq!(-noopt(Bounded::<i8>::MAX), Bounded::<i8>::MIN + 1);
+    assert_eq!(-noopt(Bounded::<i8>::MIN + 1), Bounded::<i8>::MAX);
+    assert_eq!(-noopt(1), -1_i16);
+    assert_eq!(-noopt(0), 0_i16);
+    assert_eq!(-noopt(-1), 1_i16);
+    assert_eq!(-noopt(Bounded::<i16>::MAX), Bounded::<i16>::MIN + 1);
+    assert_eq!(-noopt(Bounded::<i16>::MIN + 1), Bounded::<i16>::MAX);
+    assert_eq!(-noopt(1), -1_i32);
+    assert_eq!(-noopt(0), 0_i32);
+    assert_eq!(-noopt(-1), 1_i32);
+    assert_eq!(-noopt(Bounded::<i32>::MAX), Bounded::<i32>::MIN + 1);
+    assert_eq!(-noopt(Bounded::<i32>::MIN + 1), Bounded::<i32>::MAX);
+    assert_eq!(-noopt(1), -1_i64);
+    assert_eq!(-noopt(0), 0_i64);
+    assert_eq!(-noopt(-1), 1_i64);
+    assert_eq!(-noopt(Bounded::<i64>::MAX), Bounded::<i64>::MIN + 1);
+    assert_eq!(-noopt(Bounded::<i64>::MIN + 1), Bounded::<i64>::MAX);
+    assert_eq!(-noopt(1), -1_i128);
+    assert_eq!(-noopt(0), 0_i128);
+    assert_eq!(-noopt(-1), 1_i128);
+    assert_eq!(-noopt(Bounded::<i128>::MAX), Bounded::<i128>::MIN + 1);
+    assert_eq!(-noopt(Bounded::<i128>::MIN + 1), Bounded::<i128>::MAX);
+}
+
+#[test]
+#[should_panic(expected: 'i8_neg Underflow')]
+fn test_signed_int_neg_i8_min() {
+    -noopt(Bounded::<i8>::MIN);
+}
+
+#[test]
+#[should_panic(expected: 'i16_neg Underflow')]
+fn test_signed_int_neg_i16_min() {
+    -noopt(Bounded::<i16>::MIN);
+}
+
+#[test]
+#[should_panic(expected: 'i32_neg Underflow')]
+fn test_signed_int_neg_i32_min() {
+    -noopt(Bounded::<i32>::MIN);
+}
+
+#[test]
+#[should_panic(expected: 'i64_neg Underflow')]
+fn test_signed_int_neg_i64_min() {
+    -noopt(Bounded::<i64>::MIN);
+}
+
+#[test]
+#[should_panic(expected: 'i128_neg Underflow')]
+fn test_signed_int_neg_i128_min() {
+    -noopt(Bounded::<i128>::MIN);
+}
+
 #[feature("bounded-int-utils")]
 mod bounded_int {
     use crate::internal::bounded_int::{
