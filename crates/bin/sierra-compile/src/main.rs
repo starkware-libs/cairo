@@ -53,5 +53,5 @@ fn main() -> anyhow::Result<()> {
     )
     .with_context(|| "Compilation failed.")?;
 
-    fs::write(args.output, format!("{cairo_program}")).with_context(|| "Failed to write output.")
+    fs::write(args.output, cairo_program.to_string()).with_context(|| "Failed to write output.")
 }
