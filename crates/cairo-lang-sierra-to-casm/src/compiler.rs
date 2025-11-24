@@ -394,6 +394,13 @@ fn extract_const_value(
                 }
                 _ => return Err(CompilationError::ConstDataMismatch),
             },
+            CoreTypeConcrete::EcPoint(_) => match &const_type.inner_data[..] {
+                [GenericArg::Value(x), GenericArg::Value(y)] => {
+                    values.push(x.clone());
+                    values.push(y.clone());
+                }
+                _ => return Err(CompilationError::ConstDataMismatch),
+            },
             _ => match &const_type.inner_data[..] {
                 [GenericArg::Value(value)] => {
                     values.push(value.clone());
