@@ -44,7 +44,6 @@ unsafe impl<Key: salsa::Update + Eq + Hash, Value: salsa::Update> salsa::Update
     // This code was taken from the salsa::Update trait implementation for IndexMap.
     // It is defined privately in macro_rules! maybe_update_map in the db-ext-macro repo.
     unsafe fn maybe_update(old_pointer: *mut Self, new_map: Self) -> bool {
-        let new_map = new_map;
         let old_map: &mut Self = unsafe { &mut *old_pointer };
 
         // To be considered "equal", the set of keys
