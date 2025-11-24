@@ -216,9 +216,7 @@ impl std::fmt::Debug for ReducedCompiledInvocation {
 ///
 /// Currently, only works if all the libfunc's types (both inputs and output) are of size 1.
 pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> ReducedCompiledInvocation {
-    let long_id = cairo_lang_sierra::ConcreteLibfuncLongIdParser::new()
-        .parse(libfunc)
-        .unwrap();
+    let long_id = cairo_lang_sierra::ConcreteLibfuncLongIdParser::new().parse(libfunc).unwrap();
     let context = MockSpecializationContext {};
     let libfunc =
         CoreLibfunc::specialize_by_id(&context, &long_id.generic_id, &long_id.generic_args)
