@@ -1605,12 +1605,14 @@ fn __wrapper__I1I1__foo<TContractState, impl X: HasComponent<TContractState>,
 impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I1<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I1I1::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1649,12 +1651,14 @@ fn __wrapper__I1I2__foo<TContractState, impl X: HasComponent<TContractState>,
 impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I2<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I1I2::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1693,12 +1697,14 @@ fn __wrapper__I2I__foo<TContractState, impl X: HasComponent<TContractState>,
 impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI2I<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     I2I::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1829,12 +1835,14 @@ impl ContractStateI2I of
 fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     foo(@contract_state, );
     let mut arr = ArrayTrait::new();

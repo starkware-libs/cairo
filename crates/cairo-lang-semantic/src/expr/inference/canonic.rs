@@ -184,8 +184,6 @@ impl<T> ResultNoErrEx<T> for Result<T, NoError> {
     fn no_err(self) -> T {
         match self {
             Ok(v) => v,
-            #[allow(unreachable_patterns)]
-            Err(err) => match err {},
         }
     }
 }

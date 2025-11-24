@@ -37,6 +37,7 @@ pub type BoxType = GenericTypeArgGenericTypeWrapper<BoxTypeWrapped>;
 define_libfunc_hierarchy! {
     pub enum BoxLibfunc {
         Into(IntoBoxLibfunc),
+        LocalInto(LocalIntoBoxLibfunc),
         Unbox(UnboxLibfunc),
         ForwardSnapshot(BoxForwardSnapshotLibfunc),
     }, BoxConcreteLibfunc
@@ -72,6 +73,31 @@ impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
     }
 }
 pub type IntoBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoBoxLibfuncWrapped>;
+
+/// Libfunc for wrapping a local object of type T into a box.
+#[derive(Default)]
+pub struct LocalIntoBoxLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for LocalIntoBoxLibfuncWrapped {
+    const STR_ID: &'static str = "local_into_box";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
+            vec![ty.clone()],
+            vec![OutputVarInfo {
+                ty: box_ty(context, ty)?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                    param_idx: 0,
+                }),
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+pub type LocalIntoBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<LocalIntoBoxLibfuncWrapped>;
 
 /// Libfunc for unboxing a `Box<T>` back into a T.
 #[derive(Default)]

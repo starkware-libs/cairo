@@ -104,15 +104,17 @@ use starknet::storage::Map as LegacyMap;
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     let __arg_amount = core::option::OptionTraitImpl::expect(
         core::serde::Serde::<usize>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -126,12 +128,14 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
 fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -917,15 +921,17 @@ use starknet::storage::Map as LegacyMap;
 fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     let __arg_amount = core::option::OptionTraitImpl::expect(
         core::serde::Serde::<usize>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -939,12 +945,14 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
 fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
-    core::option::OptionTraitImpl::expect(core::gas::withdraw_gas(), 'Out of gas');
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    core::option::OptionTraitImpl::expect(
-        core::gas::withdraw_gas_all(core::gas::get_builtin_costs()), 'Out of gas',
-    );
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
     let mut arr = ArrayTrait::new();

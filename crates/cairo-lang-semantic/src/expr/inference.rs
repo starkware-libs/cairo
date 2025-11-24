@@ -1205,7 +1205,7 @@ impl<'db, 'id> Inference<'db, 'id> {
                 // TODO(ilya): Try to detect the ambiguity earlier in the
                 // inference process.
                 return Ok(SolutionSet::Ambiguous(
-                    Ambiguity::NegativeImplWithUnresolvedGenericArgs2 { concrete_trait_id, ty },
+                    Ambiguity::NegativeImplWithUnresolvedGenericArgs { concrete_trait_id, ty },
                 ));
             }
         }

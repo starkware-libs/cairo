@@ -1,6 +1,82 @@
 = Visibility
 
-This section is a work in progress.
+Visibility controls whether items can be accessed from other modules and crates.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Overview
+
+- Items are private by default.
+- Supported specifiers:
+-- `pub` – public everywhere.
+-- `pub(crate)` – public within the current crate.
+- Other `pub(...)` forms (for example, `pub(super)`, `pub(in path)`) are not supported.
+
+NOTE: Using `pub(...)` with any argument other than `crate` results in a compiler diagnostic (Unsupported `pub` argument).
+
+== Where visibility applies
+
+- Modules: `mod` declares a private module; `pub mod` exposes the module (and allows access to its public members).
+- Functions: `fn` and `extern fn` can be `pub` or `pub(crate)`; otherwise they are private.
+- Types: `struct` and `enum` visibility is set on the type declaration.
+-- Struct fields are private by default; fields can be made public with `pub`.
+-- Enum variants follow the enum's visibility (no per-variant visibility modifier).
+- Traits and impls:
+-- `pub trait` exposes the trait. Methods in trait definitions do not carry separate visibility modifiers.
+-- `pub impl ...` is used to expose implementations.
+- Re-exports: `pub use` re-exports items through a public path.
+
+== Resolution rules
+
+An item's reachability depends on both its own visibility and the visibility of all ancestor modules on the access path. A `pub` item is not reachable through a non-`pub` module.
+
+See also:
+* xref:pages/modules-and-source-files.adoc[Modules & source files]
+* xref:pages/path.adoc[Paths]
+* xref:pages/use.adoc[Use declarations]
+* xref:pages/items.adoc[Items]
+
+== Examples
+
+=== Public module and re-exports
+
+[source,cairo]
+----
+// corelib/src/starknet.cairo
+pub mod storage_access;
+pub use storage_access::{StorageAddress, Store};
+----
+
+=== Crate-visible items
+
+[source,cairo]
+----
+// corelib/src/zeroable.cairo
+pub(crate) trait Zeroable<T> {
+    fn zero() -> T;
+}
+----
+
+=== Public struct with a public field
+
+[source,cairo]
+----
+// corelib/src/pedersen.cairo
+#[derive(Copy, Drop, Debug)]
+pub struct HashState {
+    pub state: felt252,
+}
+----
+
+=== Public implementations
+
+[source,cairo]
+----
+// corelib/src/integer.cairo (representative pattern)
+pub impl U128Add of Add<u128> {
+    fn add(lhs: u128, rhs: u128) -> u128 { /* ... */ }
+}
+----
+
+== Unsupported forms
+
+- `pub(super)` and `pub(in path)` are not supported.
+- Any `pub(...)` argument other than `crate` is rejected by the compiler.

@@ -111,6 +111,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(_) => vec![ApChange::Known(1)],
+            BoxConcreteLibfunc::LocalInto(_) => vec![ApChange::Known(2)],
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
             BoxConcreteLibfunc::ForwardSnapshot(_) => vec![ApChange::Known(0)],
         },
@@ -149,7 +150,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-            EcConcreteLibfunc::Neg(_) => vec![ApChange::Known(0)],
+            EcConcreteLibfunc::Neg(_) | EcConcreteLibfunc::NegNz(_) => vec![ApChange::Known(0)],
             EcConcreteLibfunc::StateAdd(_) => vec![ApChange::Known(9)],
             EcConcreteLibfunc::TryNew(_) => vec![ApChange::Known(6), ApChange::Known(6)],
             EcConcreteLibfunc::StateFinalize(_) => vec![ApChange::Known(11), ApChange::Known(3)],
@@ -299,7 +300,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         Struct(libfunc) => match libfunc {
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)
-            | StructConcreteLibfunc::SnapshotDeconstruct(_) => {
+            | StructConcreteLibfunc::SnapshotDeconstruct(_)
+            | StructConcreteLibfunc::BoxedDeconstruct(_) => {
                 vec![ApChange::Known(0)]
             }
         },

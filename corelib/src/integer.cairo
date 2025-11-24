@@ -98,10 +98,12 @@ enum U128sFromFelt252Result {
     Wide: (u128, u128),
 }
 
-extern fn u128s_from_felt252(a: felt252) -> U128sFromFelt252Result implicits(RangeCheck) nopanic;
+extern const fn u128s_from_felt252(
+    a: felt252,
+) -> U128sFromFelt252Result implicits(RangeCheck) nopanic;
 
 #[panic_with('u128_from Overflow', u128_from_felt252)]
-fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopanic {
+const fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt252(a) {
         U128sFromFelt252Result::Narrow(x) => Some(x),
         U128sFromFelt252Result::Wide(_x) => None,
@@ -1111,7 +1113,7 @@ impl U256BitOr of BitOr<u256> {
     }
 }
 
-fn u256_from_felt252(lhs: felt252) -> u256 implicits(RangeCheck) nopanic {
+const fn u256_from_felt252(lhs: felt252) -> u256 implicits(RangeCheck) nopanic {
     match u128s_from_felt252(lhs) {
         U128sFromFelt252Result::Narrow(low) => u256 { low, high: 0_u128 },
         U128sFromFelt252Result::Wide((high, low)) => u256 { low, high },
@@ -1343,7 +1345,7 @@ pub(crate) impl U64IntoFelt252 of Into<u64, felt252> {
 }
 
 pub(crate) impl Felt252TryIntoU128 of TryInto<felt252, u128> {
-    fn try_into(self: felt252) -> Option<u128> {
+    const fn try_into(self: felt252) -> Option<u128> {
         u128_try_from_felt252(self)
     }
 }
@@ -1355,7 +1357,7 @@ pub(crate) impl U128IntoFelt252 of Into<u128, felt252> {
 }
 
 pub(crate) impl Felt252IntoU256 of Into<felt252, u256> {
-    fn into(self: felt252) -> u256 {
+    const fn into(self: felt252) -> u256 {
         u256_from_felt252(self)
     }
 }
@@ -1979,8 +1981,12 @@ impl I8Sub of Sub<i8> {
 
 impl I8Neg of Neg<i8> {
     #[inline]
+    #[feature("bounded-int-utils")]
     fn neg(a: i8) -> i8 {
-        0 - a
+        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
+            crate::panic_with_felt252('i8_neg Underflow');
+        };
+        upcast(core::internal::bounded_int::NegateHelper::negate(a))
     }
 }
 
@@ -2065,8 +2071,12 @@ impl I16Sub of Sub<i16> {
 
 impl I16Neg of Neg<i16> {
     #[inline]
+    #[feature("bounded-int-utils")]
     fn neg(a: i16) -> i16 {
-        0 - a
+        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
+            crate::panic_with_felt252('i16_neg Underflow');
+        };
+        upcast(core::internal::bounded_int::NegateHelper::negate(a))
     }
 }
 
@@ -2152,8 +2162,12 @@ impl I32Sub of Sub<i32> {
 
 impl I32Neg of Neg<i32> {
     #[inline]
+    #[feature("bounded-int-utils")]
     fn neg(a: i32) -> i32 {
-        0 - a
+        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
+            crate::panic_with_felt252('i32_neg Underflow');
+        };
+        upcast(core::internal::bounded_int::NegateHelper::negate(a))
     }
 }
 
@@ -2239,8 +2253,12 @@ impl I64Sub of Sub<i64> {
 
 impl I64Neg of Neg<i64> {
     #[inline]
+    #[feature("bounded-int-utils")]
     fn neg(a: i64) -> i64 {
-        0 - a
+        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
+            crate::panic_with_felt252('i64_neg Underflow');
+        };
+        upcast(core::internal::bounded_int::NegateHelper::negate(a))
     }
 }
 
@@ -2331,8 +2349,12 @@ impl I128Sub of Sub<i128> {
 
 impl I128Neg of Neg<i128> {
     #[inline]
+    #[feature("bounded-int-utils")]
     fn neg(a: i128) -> i128 {
-        0 - a
+        let core::internal::OptionRev::Some(a) = core::internal::bounded_int::trim_min(a) else {
+            crate::panic_with_felt252('i128_neg Underflow');
+        };
+        upcast(core::internal::bounded_int::NegateHelper::negate(a))
     }
 }
 

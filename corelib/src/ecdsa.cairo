@@ -13,7 +13,7 @@
 //! * x = 0x1ef15c18599971b7beced415a40f0c7deacfd9b0d1819e03d723d8bc943cfca
 //! * y = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f
 
-use crate::ec::{self, EcPoint, EcPointTrait, EcStateTrait};
+use crate::ec::{self, EcPointTrait, EcStateTrait};
 use crate::math;
 #[allow(unused_imports)]
 use crate::option::OptionTrait;
@@ -55,35 +55,29 @@ use crate::zeroable::IsZeroResult;
 pub fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252,
 ) -> bool {
-    // TODO(orizi): Change to || once it does not prevent `a == 0` comparison optimization.
     // Check that s != 0 (mod stark_curve::ORDER).
-    if signature_s == 0 {
-        return false;
-    }
-    if signature_s == ec::stark_curve::ORDER {
-        return false;
-    }
-    if signature_r == ec::stark_curve::ORDER {
+    if signature_s == 0
+        || signature_s == ec::stark_curve::ORDER
+        || signature_r == ec::stark_curve::ORDER {
         return false;
     }
 
     // Check that the public key is the x coordinate of a point on the curve and get such a point.
-    let public_key_point = match EcPointTrait::new_nz_from_x(public_key) {
-        Some(point) => point,
-        None => { return false; },
+    let Some(public_key_point) = EcPointTrait::new_nz_from_x(public_key) else {
+        return false;
     };
 
     // Check that `r` is the x coordinate of a point on the curve and get such a point.
     // Note that this ensures that `r != 0`.
-    let signature_r_point = match EcPointTrait::new_nz_from_x(signature_r) {
-        Some(point) => point,
-        None => { return false; },
+    let Some(signature_r_point) = EcPointTrait::new_nz_from_x(signature_r) else {
+        return false;
     };
 
     // Retrieve the generator point.
-    let gen_point = match EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
-        Some(point) => point,
-        None => { return false; },
+    let Some(gen_point) = EcPointTrait::new_nz(
+        ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y,
+    ) else {
+        return false;
     };
 
     // Initialize an EC state.
@@ -100,10 +94,10 @@ pub fn check_ecdsa_signature(
     // Calculate `sR.x`.
     let mut sR_state = init_ec.clone();
     sR_state.add_mul(signature_s, signature_r_point);
-    let sR_x = match sR_state.finalize_nz() {
-        Some(pt) => pt.x(),
-        None => { return false; },
+    let Some(sR_nz) = sR_state.finalize_nz() else {
+        return false;
     };
+    let sR_x = sR_nz.x();
 
     // Calculate a state with `z * G`.
     let mut zG_state = init_ec.clone();
@@ -120,19 +114,15 @@ pub fn check_ecdsa_signature(
     // Check the `(zG + rQ).x = sR.x` case.
     let mut zG_plus_eQ_state = zG_state.clone();
     zG_plus_eQ_state.add(rQ);
-    if let Some(pt) = zG_plus_eQ_state.finalize_nz() {
-        if pt.x() == sR_x {
-            return true;
-        }
+    if let Some(pt) = zG_plus_eQ_state.finalize_nz() && pt.x() == sR_x {
+        return true;
     }
 
     // Check the `(zG - rQ).x = sR.x` case.
     let mut zG_minus_eQ_state = zG_state;
     zG_minus_eQ_state.sub(rQ);
-    if let Some(pt) = zG_minus_eQ_state.finalize_nz() {
-        if pt.x() == sR_x {
-            return true;
-        }
+    if let Some(pt) = zG_minus_eQ_state.finalize_nz() && pt.x() == sR_x {
+        return true;
     }
 
     false
@@ -170,15 +160,8 @@ pub fn check_ecdsa_signature(
 pub fn recover_public_key(
     message_hash: felt252, signature_r: felt252, signature_s: felt252, y_parity: bool,
 ) -> Option<felt252> {
-    let mut signature_r_point = EcPointTrait::new_from_x(signature_r)?;
-    let y: u256 = signature_r_point.try_into()?.y().into();
-    // If the actual parity of the actual y is different than requested, flip the parity.
-    if (y.low & 1 == 1) != y_parity {
-        signature_r_point = -signature_r_point;
-    }
-
-    // Retrieve the generator point.
-    let gen_point = EcPointTrait::new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)?;
+    let r_point = EcPointTrait::new_nz_from_x(signature_r)?;
+    let gen_point = EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)?;
 
     // a Valid signature should satisfy:
     // zG + rQ = sR.
@@ -194,13 +177,23 @@ pub fn recover_public_key(
     //   Q.x = ((s/r)R - (z/r)G).x.
     let r_nz: u256 = signature_r.into();
     let r_nz = r_nz.try_into()?;
-    let ord_nz: u256 = ec::stark_curve::ORDER.into();
-    let ord_nz = ord_nz.try_into()?;
-    let r_inv = math::u256_inv_mod(r_nz, ord_nz)?.into();
-    let s_div_r: felt252 = math::u256_mul_mod_n(signature_s.into(), r_inv, ord_nz).try_into()?;
-    let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ord_nz).try_into()?;
-    let s_div_rR: EcPoint = signature_r_point.mul(s_div_r);
-    let z_div_rG: EcPoint = gen_point.mul(z_div_r);
-
-    Some((s_div_rR - z_div_rG).try_into()?.x())
+    use ec::stark_curve::ORDER as ORD;
+    const ORD_U256: u256 = ORD.into();
+    const ORD_NZ: NonZero<u256> = ORD_U256.try_into().unwrap();
+    let r_inv = math::u256_inv_mod(r_nz, ORD_NZ)?.into();
+    let s_div_r: felt252 = math::u256_mul_mod_n(signature_s.into(), r_inv, ORD_NZ).try_into()?;
+    let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ORD_NZ).try_into()?;
+    let mut state = EcStateTrait::init();
+    let ord = ORD;
+    state.add_mul(ord - z_div_r, gen_point);
+    // Checking if the actual parity of the point's y is different than the requested, and if so,
+    // flipping the multiplier instead of negating the point to match the requested parity.
+    let y: u256 = r_point.y().into();
+    let r_multiplier = if (y.low & 1 != 0) ^ y_parity {
+        ord - s_div_r
+    } else {
+        s_div_r
+    };
+    state.add_mul(r_multiplier, r_point);
+    Some(state.finalize_nz()?.x())
 }

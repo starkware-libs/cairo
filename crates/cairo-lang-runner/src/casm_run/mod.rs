@@ -2,7 +2,7 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::collections::{HashMap, VecDeque};
 use std::ops::{Shl, Sub};
-use std::rc::Rc;
+use std::sync::Arc;
 use std::vec::IntoIter;
 
 use ark_ff::{BigInteger, PrimeField};
@@ -468,7 +468,8 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         _ap_tracking_data: &ApTracking,
         _reference_ids: &HashMap<String, usize>,
         _references: &[HintReference],
-        _constants: Rc<HashMap<String, Felt252>>,
+        _accessible_scopes: &[String],
+        _constants: Arc<HashMap<String, Felt252>>,
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
@@ -1608,7 +1609,7 @@ fn secp256r1_new(
     y: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
+    deduct_gas!(gas_counter, SECP256R1_NEW);
     let modulus = <secp256r1::Fq as PrimeField>::MODULUS.into();
     if x >= modulus || y >= modulus {
         fail_syscall!(b"Coordinates out of range");
@@ -1671,7 +1672,7 @@ fn secp256r1_get_point_from_x(
     y_parity: bool,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, SECP256R1_NEW);
+    deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
     if x >= <secp256r1::Fq as PrimeField>::MODULUS.into() {
         fail_syscall!(b"Coordinates out of range");
     }
@@ -2339,8 +2340,8 @@ pub fn run_function_with_runner(
     additional_initialization(&mut runner.vm)?;
 
     runner.run_until_pc(end, hint_processor).map_err(CairoRunError::from)?;
-    runner.end_run(true, false, hint_processor).map_err(CairoRunError::from)?;
-    runner.relocate(true).map_err(CairoRunError::from)?;
+    runner.end_run(true, false, hint_processor, false).map_err(CairoRunError::from)?;
+    runner.relocate(true, true).map_err(CairoRunError::from)?;
     Ok(())
 }
 

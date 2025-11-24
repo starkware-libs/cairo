@@ -259,9 +259,9 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     /// A consuming version of `iter_sorted`.
     pub fn into_iter_sorted(self) -> impl Iterator<Item = (Key, Value)>
     where
-        Key: Ord + Clone,
+        Key: Ord,
     {
-        self.0.into_iter().sorted_by_key(|(key, _)| (*key).clone())
+        self.0.into_iter().sorted_by(|(lhs, _), (rhs, _)| lhs.cmp(rhs))
     }
 
     /// Iterates the map in an ascending order of the keys produced by the given function `f`.

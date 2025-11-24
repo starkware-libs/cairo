@@ -189,7 +189,6 @@ impl SierraCasmRunner {
         starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
         run_profiler: Option<ProfilingInfoCollectionConfig>,
     ) -> Result<Self, RunnerError> {
-        // Find all contracts.
         Ok(Self {
             builder: RunnableBuilder::new(sierra_program, metadata_config)?,
             starknet_contracts_info,

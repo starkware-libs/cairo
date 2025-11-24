@@ -33,8 +33,7 @@ enum Libfuncs {
     Bool: BitwiseLibfuncs<bool>,
     Felt252: Felt252Libfuncs,
     Conversions: ConversionsLibfuncs,
-    CheckECDSA: (felt252, felt252, felt252, felt252),
-    RecoverECDSA: (felt252, felt252, felt252, bool),
+    Ec: EcLibfuncs,
     Sha256: ByteArray,
     ArrayU128: ArrayLibfuncs<u128>,
     ArrayU256: ArrayLibfuncs<u256>,
@@ -127,6 +126,14 @@ enum Felt252TryIntoLibfuncs {
     StorageAddress: felt252,
 }
 
+enum EcLibfuncs {
+    PointNewNz: (felt252, felt252),
+    PointNewNzFromX: felt252,
+    PointCoordinates: NonZero<core::ec::EcPoint>,
+    PointNeg: core::ec::EcPoint,
+    StateUsage: core::ec::EcPoint,
+}
+
 enum ArrayLibfuncs<T> {
     New,
     Append: (Array<T>, T),
@@ -212,12 +219,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Bool(libfuncs) => bitwise_libfuncs(libfuncs),
         Libfuncs::Felt252(libfuncs) => felt252_libfuncs(libfuncs),
         Libfuncs::Conversions(libfuncs) => conversions_libfuncs(libfuncs),
-        Libfuncs::CheckECDSA((
-            a, b, c, d,
-        )) => use_and_panic(core::ecdsa::check_ecdsa_signature(a, b, c, d)),
-        Libfuncs::RecoverECDSA((
-            a, b, c, d,
-        )) => use_and_panic(core::ecdsa::recover_public_key(a, b, c, d)),
+        Libfuncs::Ec(libfuncs) => ec_libfuncs(libfuncs),
         Libfuncs::Sha256(input) => use_and_panic(core::sha256::compute_sha256_byte_array(@input)),
         Libfuncs::ArrayU128(libfuncs) => array_libfuncs(libfuncs),
         Libfuncs::ArrayU256(libfuncs) => array_libfuncs(libfuncs),
@@ -368,6 +370,25 @@ fn felt252_try_into_libfuncs(libfuncs: Felt252TryIntoLibfuncs) {
         Felt252TryIntoLibfuncs::StorageAddress(v) => use_and_panic::<
             Option<starknet::StorageAddress>,
         >(v.try_into()),
+    }
+}
+use core::ec::{EcPointTrait, EcStateTrait};
+
+fn ec_libfuncs(libfuncs: EcLibfuncs) {
+    match libfuncs {
+        EcLibfuncs::PointNewNz((x, y)) => use_and_panic(EcPointTrait::new_nz(x, y)),
+        EcLibfuncs::PointNewNzFromX(x) => use_and_panic(EcPointTrait::new_from_x(x)),
+        EcLibfuncs::PointCoordinates(p) => use_and_panic(p.coordinates()),
+        EcLibfuncs::PointNeg(p) => use_and_panic(-p),
+        EcLibfuncs::StateUsage(p) => use_and_panic(
+            {
+                let mut state = EcStateTrait::init();
+                let p = p.try_into().unwrap();
+                state.add(p);
+                state.add_mul(5, p);
+                state.finalize()
+            },
+        ),
     }
 }
 

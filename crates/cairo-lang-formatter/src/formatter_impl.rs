@@ -182,7 +182,7 @@ pub enum BreakLinePointIndentation {
 pub struct BreakLinePointProperties {
     /// Indicates that the break line point was added instead of an empty line in the code, which
     /// means it must be preserved in the output. Notice that the number of consecutive empty line
-    /// break points is limited and not all empty lines in the code creates an empty line break
+    /// break points is limited and not all empty lines in the code create an empty line break
     /// points.
     pub is_empty_line_breakpoint: bool,
     /// Breaking precedence, lower values will break first.
@@ -900,9 +900,6 @@ pub trait SyntaxNodeFormat {
     fn force_no_space_before(&self, db: &dyn Database) -> bool;
     /// Returns true if a token should never have a space after it.
     fn force_no_space_after(&self, db: &dyn Database) -> bool;
-    /// Returns true if the line is allowed to break after the node.
-    /// Only applicable for terminal nodes.
-    fn allow_newline_after(&self, db: &dyn Database) -> bool;
     /// Returns the number of allowed empty lines between two consecutive children of this node.
     fn allowed_empty_between(&self, db: &dyn Database) -> usize;
     /// Returns the break point properties before and after a specific node if a break point should

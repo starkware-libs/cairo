@@ -6,7 +6,7 @@ use itertools::Itertools;
 /// Ap change information for a Sierra program.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ApChangeInfo {
-    /// The values of variables at matching libfuncs at given statements indices.
+    /// The values of variables at matching libfuncs at given statement indices.
     pub variable_values: OrderedHashMap<StatementIdx, usize>,
     /// The ap_change of calling the given function.
     pub function_ap_change: OrderedHashMap<FunctionId, usize>,

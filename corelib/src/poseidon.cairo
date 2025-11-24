@@ -25,7 +25,6 @@
 
 use crate::array::{Span, SpanTrait};
 use crate::hash::HashStateTrait;
-use crate::option::OptionTrait;
 
 pub extern type Poseidon;
 
@@ -145,6 +144,8 @@ fn _poseidon_hash_span_inner(
         return HashState { s0: s0 + *x, s1, s2, odd: true }.finalize();
     };
     let next_state = hades_permutation(s0 + *x, s1 + *y, s2);
-    crate::gas::withdraw_gas_all(builtin_costs).expect('Out of gas');
+    let Some(_) = crate::gas::withdraw_gas_all(builtin_costs) else {
+        core::panic_with_felt252('Out of gas');
+    };
     _poseidon_hash_span_inner(builtin_costs, next_state, ref span)
 }

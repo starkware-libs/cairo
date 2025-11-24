@@ -46,7 +46,7 @@ pub fn create_virtual_file<'a>(
 }
 
 /// Mocked struct which implements [crate::types::TokenStream]
-/// It's main purpose is being used for testing the [crate::parser::Parser::parse_token_stream]
+/// Its main purpose is being used for testing the [crate::parser::Parser::parse_token_stream]
 #[derive(Debug, Clone)]
 pub struct MockTokenStream {
     /// Field that holds all the tokens that are part of the stream
@@ -58,7 +58,7 @@ pub struct MockTokenStream {
 pub struct MockToken {
     /// Just a text of a given [MockToken]
     pub content: String,
-    /// It's offsets are related to the other tokens present in the same [MockTokenStream].
+    /// Its offsets are related to the other tokens present in the same [MockTokenStream].
     pub span: TextSpan,
 }
 

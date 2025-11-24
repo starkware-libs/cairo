@@ -65,7 +65,7 @@ impl NoGenericArgsGenericLibfunc for GasReserveCreateLibfunc {
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                         OutputVarInfo {
-                            ty: gas_reserve_type.clone(),
+                            ty: gas_reserve_type,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 2 },
                         },
                     ],

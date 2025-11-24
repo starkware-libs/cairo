@@ -264,16 +264,15 @@ pub fn is_valid_signature<
         return false;
     }
 
-    let n_nz = match Secp256Impl::get_curve_size().try_into() {
-        Some(v) => v,
-        None => { return false; },
+    let Some(order) = Secp256Impl::get_curve_size().try_into() else {
+        return false;
     };
-    let s_inv = match u256_inv_mod(s, n_nz) {
-        Some(v) => v.into(),
-        None => { return false; },
+    let Some(s_inv) = u256_inv_mod(s, order) else {
+        return false;
     };
-    let u1 = u256_mul_mod_n(msg_hash, s_inv, n_nz);
-    let u2 = u256_mul_mod_n(r, s_inv, n_nz);
+    let s_inv = s_inv.into();
+    let u1 = u256_mul_mod_n(msg_hash, s_inv, order);
+    let u2 = u256_mul_mod_n(r, s_inv, order);
 
     let generator_point = Secp256Impl::get_generator_point();
     let point1 = generator_point.mul(u1).unwrap_syscall();
@@ -313,6 +312,10 @@ pub fn recover_public_key<
     msg_hash: u256, signature: Signature,
 ) -> Option<Secp256Point> {
     let Signature { r, s, y_parity } = signature;
+    if !is_signature_entry_valid::<Secp256Point>(s) {
+        return None;
+    }
+    // Note this additionally checks that `r` is valid.
     let r_point = Secp256Impl::secp256_ec_get_point_from_x_syscall(x: r, :y_parity)
         .unwrap_syscall()?;
     let generator_point = Secp256Impl::get_generator_point();

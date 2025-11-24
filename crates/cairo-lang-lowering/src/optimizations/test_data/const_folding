@@ -6858,3 +6858,321 @@ End:
   Return(v2)
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Bounded int trim_min on non-min.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    match trim_min(0_i8) {
+        core::internal::OptionRev::Some(x) => upcast(x),
+        core::internal::OptionRev::None => 200,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_min, upcast};
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 0
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_min::<core::integer::i8, core::internal::bounded_int::trim_impl::Min::<core::integer::i8, -127, 127>>(v0) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<-127, 127>, core::felt252>(v1)
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 0
+  (v1: core::internal::bounded_int::BoundedInt::<-127, 127>) <- 0
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 0
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Bounded int trim_min on min.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    match trim_min(-0x80_i8) {
+        core::internal::OptionRev::Some(x) => upcast(x),
+        core::internal::OptionRev::None => 200,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_min, upcast};
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- -128
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_min::<core::integer::i8, core::internal::bounded_int::trim_impl::Min::<core::integer::i8, -127, 127>>(v0) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<-127, 127>, core::felt252>(v1)
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- -128
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<-127, 127>, core::felt252>(v1)
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Bounded int trim_max on non-max.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    match trim_max(0_i8) {
+        core::internal::OptionRev::Some(x) => upcast(x),
+        core::internal::OptionRev::None => 200,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_max, upcast};
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 0
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::i8, core::internal::bounded_int::trim_impl::Max::<core::integer::i8, -128, 126>>(v0) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<-128, 126>, core::felt252>(v1)
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 0
+  (v1: core::internal::bounded_int::BoundedInt::<-128, 126>) <- 0
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 0
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Bounded int trim_max on max.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo() -> felt252 {
+    match trim_max(0x7f_i8) {
+        core::internal::OptionRev::Some(x) => upcast(x),
+        core::internal::OptionRev::None => 200,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[feature("bounded-int-utils")]
+use core::internal::bounded_int::{trim_max, upcast};
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 127
+End:
+  Match(match core::internal::bounded_int::bounded_int_trim_max::<core::integer::i8, core::internal::bounded_int::trim_impl::Max::<core::integer::i8, -128, 126>>(v0) {
+    OptionRev::None => blk1,
+    OptionRev::Some(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<-128, 126>, core::felt252>(v1)
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::integer::i8) <- 127
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 200
+End:
+  Goto(blk3, {v2 -> v3})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- core::internal::bounded_int::upcast::<core::internal::bounded_int::BoundedInt::<-128, 126>, core::felt252>(v1)
+End:
+  Goto(blk3, {v4 -> v3})
+
+blk3:
+Statements:
+End:
+  Return(v3)
+
+//! > lowering_diagnostics

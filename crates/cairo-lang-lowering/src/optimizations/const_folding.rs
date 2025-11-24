@@ -47,7 +47,7 @@ use crate::{
     VarUsage, Variable, VariableArena, VariableId,
 };
 
-/// Keeps track of equivalent values that a variables might be replaced with.
+/// Keeps track of equivalent values that variables might be replaced with.
 /// Note: We don't keep track of types as we assume the usage is always correct.
 #[derive(Debug, Clone)]
 enum VarInfo<'db> {
@@ -685,41 +685,68 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             // No const inputs
             return None;
         }
-
-        let mut const_args = vec![];
+        let mut specialization_args = vec![];
         let mut new_args = vec![];
         for arg in &call_stmt.inputs {
             if let Some(var_info) = self.var_info.get(&arg.var_id)
-                && let Some(c) =
-                    self.try_get_specialization_arg(var_info.clone(), self.variables[arg.var_id].ty)
+                && self.variables[arg.var_id].info.droppable.is_ok()
+                && let Some(specialization_arg) = self.try_get_specialization_arg(
+                    var_info.clone(),
+                    self.variables[arg.var_id].ty,
+                    &mut new_args,
+                )
             {
-                const_args.push(Some(c.clone()));
+                specialization_args.push(specialization_arg);
+            } else {
+                specialization_args.push(SpecializationArg::NotSpecialized);
+                new_args.push(*arg);
                 continue;
-            }
-            const_args.push(None);
-            new_args.push(*arg);
+            };
         }
 
-        if new_args.len() == call_stmt.inputs.len() {
+        if specialization_args.iter().all(|arg| matches!(arg, SpecializationArg::NotSpecialized)) {
             // No argument was assigned -> no specialization.
             return None;
         }
-
         if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
             base.long(self.db)
         {
             // Canonicalize the specialization rather than adding a specialization of a specialized
             // function.
             base = specialized_function.base;
-            let mut new_args_iter = const_args.into_iter();
-            const_args = specialized_function.args.to_vec();
-            for arg in &mut const_args {
-                if arg.is_none() {
-                    *arg = new_args_iter.next().unwrap_or_default();
+            let mut new_args_iter = specialization_args.into_iter();
+            let mut old_args = specialized_function.args.to_vec();
+            let mut stack = vec![];
+            for arg in old_args.iter_mut().rev() {
+                stack.push(arg);
+            }
+            while let Some(arg) = stack.pop() {
+                match arg {
+                    SpecializationArg::Const { .. } => {}
+                    SpecializationArg::Snapshot(inner) => {
+                        stack.push(inner.as_mut());
+                    }
+                    SpecializationArg::Enum { payload, .. } => {
+                        stack.push(payload.as_mut());
+                    }
+                    SpecializationArg::Array(_, values) => {
+                        for value in values.iter_mut().rev() {
+                            stack.push(value);
+                        }
+                    }
+                    SpecializationArg::Struct(specialization_args) => {
+                        for arg in specialization_args.iter_mut().rev() {
+                            stack.push(arg);
+                        }
+                    }
+                    SpecializationArg::NotSpecialized => {
+                        *arg = new_args_iter.next().unwrap_or(SpecializationArg::NotSpecialized);
+                    }
                 }
             }
+            specialization_args = old_args;
         }
-        let specialized = SpecializedFunction { base, args: const_args.into() };
+        let specialized = SpecializedFunction { base, args: specialization_args.into() };
         let specialized_func_id =
             ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 
@@ -1075,6 +1102,42 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let output = info.arms[arm_idx].var_ids[0];
             statements.push(self.propagate_const_and_get_statement(value.clone(), output));
             Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
+        } else if id == self.bounded_int_trim_min {
+            let input_var = info.inputs[0].var_id;
+            let ConstValue::Int(value, ty) = self.as_const(input_var)?.long(self.db) else {
+                return None;
+            };
+            let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
+                range.min == *value
+            } else {
+                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.0 == *value
+            };
+            let arm_idx = if is_trimmed {
+                0
+            } else {
+                let output = info.arms[1].var_ids[0];
+                statements.push(self.propagate_const_and_get_statement(value.clone(), output));
+                1
+            };
+            Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
+        } else if id == self.bounded_int_trim_max {
+            let input_var = info.inputs[0].var_id;
+            let ConstValue::Int(value, ty) = self.as_const(input_var)?.long(self.db) else {
+                return None;
+            };
+            let is_trimmed = if let Some(range) = self.type_value_ranges.get(ty) {
+                range.max == *value
+            } else {
+                corelib::try_extract_bounded_int_type_ranges(db, *ty)?.1 == *value
+            };
+            let arm_idx = if is_trimmed {
+                0
+            } else {
+                let output = info.arms[1].var_ids[0];
+                statements.push(self.propagate_const_and_get_statement(value.clone(), output));
+                1
+            };
+            Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
         } else if id == self.array_get {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
             if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id)
@@ -1223,6 +1286,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         &self,
         var_info: VarInfo<'db>,
         ty: TypeId<'db>,
+        unknown_vars: &mut Vec<VarUsage<'db>>,
     ) -> Option<SpecializationArg<'db>> {
         if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
             // Skip zero-sized constants as they are not supported in sierra-gen.
@@ -1235,9 +1299,15 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 .map(|value| SpecializationArg::Const { value: *value, boxed: true }),
             VarInfo::Snapshot(info) => {
                 let desnap_ty = *extract_matches!(ty.long(self.db), TypeLongId::Snapshot);
-                Some(SpecializationArg::Snapshot(
-                    self.try_get_specialization_arg(info.as_ref().clone(), desnap_ty)?.into(),
-                ))
+                // Use a local accumulator to avoid mutating unknown_vars if we return None.
+                let mut local_unknown_vars: Vec<VarUsage<'db>> = Vec::new();
+                let inner = self.try_get_specialization_arg(
+                    info.as_ref().clone(),
+                    desnap_ty,
+                    &mut local_unknown_vars,
+                )?;
+                unknown_vars.extend(local_unknown_vars);
+                Some(SpecializationArg::Snapshot(Box::new(inner)))
             }
             VarInfo::Array(infos) => {
                 let TypeLongId::Concrete(concrete_ty) = ty.long(self.db) else {
@@ -1247,13 +1317,21 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 else {
                     unreachable!("Expected a single type generic argument");
                 };
-                Some(SpecializationArg::Array(
-                    *inner_ty,
-                    infos
-                        .into_iter()
-                        .map(|info| self.try_get_specialization_arg(info?, *inner_ty))
-                        .collect::<Option<Vec<_>>>()?,
-                ))
+                // Accumulate into locals first; only extend unknown_vars if we end up specializing.
+                let mut vars = vec![];
+                let mut args = vec![];
+                for info in infos {
+                    let info = info?;
+                    let arg = self.try_get_specialization_arg(info, *inner_ty, &mut vars)?;
+                    args.push(arg);
+                }
+                if !args.is_empty()
+                    && args.iter().all(|arg| matches!(arg, SpecializationArg::NotSpecialized))
+                {
+                    return None;
+                }
+                unknown_vars.extend(vars);
+                Some(SpecializationArg::Array(*inner_ty, args))
             }
             VarInfo::Struct(infos) => {
                 let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
@@ -1264,15 +1342,39 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 };
 
                 let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
-                let struct_args = zip_eq(members.values(), infos)
-                    .map(|(member, opt_var_info)| {
-                        self.try_get_specialization_arg(opt_var_info?.clone(), member.ty)
-                    })
-                    .collect::<Option<Vec<_>>>()?;
-
+                let mut struct_args = Vec::new();
+                // Accumulate into locals first; only extend unknown_vars if we end up specializing.
+                let mut vars = vec![];
+                for (member, opt_var_info) in zip_eq(members.values(), infos) {
+                    let var_info = opt_var_info?;
+                    let arg = self.try_get_specialization_arg(var_info, member.ty, &mut vars)?;
+                    struct_args.push(arg);
+                }
+                if !struct_args.is_empty()
+                    && struct_args
+                        .iter()
+                        .all(|arg| matches!(arg, SpecializationArg::NotSpecialized))
+                {
+                    return None;
+                }
+                unknown_vars.extend(vars);
                 Some(SpecializationArg::Struct(struct_args))
             }
-            _ => None,
+            VarInfo::Enum { variant, payload } => {
+                let mut local_unknown_vars = vec![];
+                let payload_arg = self.try_get_specialization_arg(
+                    payload.as_ref().clone(),
+                    variant.ty,
+                    &mut local_unknown_vars,
+                )?;
+
+                unknown_vars.extend(local_unknown_vars);
+                Some(SpecializationArg::Enum { variant, payload: Box::new(payload_arg) })
+            }
+            VarInfo::Var(var_usage) => {
+                unknown_vars.push(var_usage);
+                Some(SpecializationArg::NotSpecialized)
+            }
         }
     }
 
@@ -1348,6 +1450,10 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     bounded_int_sub: ExternFunctionId<'db>,
     /// The `bounded_int_constrain` libfunc.
     bounded_int_constrain: ExternFunctionId<'db>,
+    /// The `bounded_int_trim_min` libfunc.
+    bounded_int_trim_min: ExternFunctionId<'db>,
+    /// The `bounded_int_trim_max` libfunc.
+    bounded_int_trim_max: ExternFunctionId<'db>,
     /// The `array_get` libfunc.
     array_get: ExternFunctionId<'db>,
     /// The `array_snapshot_pop_front` libfunc.
@@ -1490,6 +1596,8 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             bounded_int_add: bounded_int_module.extern_function_id("bounded_int_add"),
             bounded_int_sub: bounded_int_module.extern_function_id("bounded_int_sub"),
             bounded_int_constrain: bounded_int_module.extern_function_id("bounded_int_constrain"),
+            bounded_int_trim_min: bounded_int_module.extern_function_id("bounded_int_trim_min"),
+            bounded_int_trim_max: bounded_int_module.extern_function_id("bounded_int_trim_max"),
             array_get: array_module.extern_function_id("array_get"),
             array_snapshot_pop_front: array_module.extern_function_id("array_snapshot_pop_front"),
             array_snapshot_pop_back: array_module.extern_function_id("array_snapshot_pop_back"),

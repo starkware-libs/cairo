@@ -298,10 +298,10 @@ pub fn test_expr_diagnostics(
 
     let diagnostics = setup_test_expr(
         db,
-        inputs["expr_code"].as_str(),
-        inputs["module_code"].as_str(),
-        inputs["function_body"].as_str(),
-        inputs.get("crate_settings").map(|x| x.as_str()),
+        &inputs["expr_code"],
+        &inputs["module_code"],
+        &inputs["function_body"],
+        inputs.get("crate_settings").map(String::as_str),
     )
     .get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
@@ -320,10 +320,10 @@ pub fn test_function_diagnostics(
 
     let diagnostics = setup_test_function_ex(
         db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-        inputs.get("crate_settings").map(|x| x.as_str()),
+        &inputs["function"],
+        &inputs["function_name"],
+        &inputs["module_code"],
+        inputs.get("crate_settings").map(String::as_str),
         None,
     )
     .get_diagnostics();

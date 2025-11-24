@@ -139,7 +139,7 @@ impl SyscallGenericLibfunc for CallContractLibfunc {
     }
 }
 
-/// Libfunc for a deploying a declared class system call.
+/// Libfunc for deploying a declared class system call.
 #[derive(Default)]
 pub struct DeployLibfunc {}
 impl SyscallGenericLibfunc for DeployLibfunc {

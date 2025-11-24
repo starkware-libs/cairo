@@ -20,7 +20,7 @@ macro_rules! define_generic_identity {
         }
         impl From<&str> for $type_name {
             fn from(name: &str) -> Self {
-                Self::from_string(name.to_string())
+                Self::from_string(name)
             }
         }
         impl From<String> for $type_name {
@@ -64,7 +64,7 @@ macro_rules! define_identity {
         }
         impl From<&str> for $type_name {
             fn from(name: &str) -> Self {
-                Self::from_string(name.to_string())
+                Self::from_string(name)
             }
         }
         impl From<String> for $type_name {
@@ -119,7 +119,7 @@ impl UserTypeId {
 }
 impl From<&str> for UserTypeId {
     fn from(name: &str) -> Self {
-        Self::from_string(name.to_string())
+        Self::from_string(name)
     }
 }
 impl From<String> for UserTypeId {

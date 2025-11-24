@@ -30,9 +30,9 @@ fn test_cache_check(
 
     let (test_function, _semantic_diagnostics) = setup_test_function(
         db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
+        &inputs["function"],
+        &inputs["function_name"],
+        &inputs["module_code"],
     )
     .split();
 
@@ -48,9 +48,9 @@ fn test_cache_check(
     let cached_file = BlobLongId::Virtual(artifact).intern(&new_db);
     let (test_function, semantic_diagnostics) = setup_test_function_ex(
         &new_db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
+        &inputs["function"],
+        &inputs["function_name"],
+        &inputs["module_code"],
         None,
         Some(cached_file),
     )

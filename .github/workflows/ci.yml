@@ -11,10 +11,10 @@ jobs:
   ensure-no_std:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2025-11-02
+          toolchain: nightly-2025-11-17
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: |
@@ -23,11 +23,11 @@ jobs:
   syntax-codegen-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2025-11-02
+          toolchain: nightly-2025-11-17
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --profile=ci-dev -p cairo-lang-syntax-codegen
@@ -75,7 +75,7 @@ jobs:
           - cairo-lang-utils --no-default-features --features=serde,parity-scale-codec
           - tests
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -106,11 +106,11 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2025-11-02
+          toolchain: nightly-2025-11-17
       - uses: Swatinem/rust-cache@v2
       - run: scripts/rust_fmt.sh --check
 
@@ -118,7 +118,7 @@ jobs:
   cairofmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_fmt.sh --check
@@ -132,7 +132,7 @@ jobs:
           - tests/bug_samples --starknet
           - crates/cairo-lang-starknet/cairo_level_tests/ --starknet
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: |
@@ -153,18 +153,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Machete
         uses: bnjbvr/cargo-machete@v0.8.0
 
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           components: clippy
-          toolchain: nightly-2025-11-02
+          toolchain: nightly-2025-11-17
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
@@ -172,7 +172,7 @@ jobs:
   taplo:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@taplo
@@ -182,16 +182,16 @@ jobs:
   typos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: crate-ci/typos@v1.37.0
 
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2025-11-02
+          toolchain: nightly-2025-11-17
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh
@@ -199,7 +199,7 @@ jobs:
   sierra-updated-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: '0'
       - run: >

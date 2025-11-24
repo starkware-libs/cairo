@@ -68,7 +68,7 @@ pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
     ConstCost { steps: 9, holes: 0, range_checks: 1, range_checks96: 0 };
-/// The cost not dependent on the number of keys and access.
+/// The cost not dependent on the number of keys and accesses.
 pub const DICT_SQUASH_FIXED_COST: ConstCost =
     ConstCost { steps: 57, holes: 0, range_checks: 3, range_checks96: 0 };
 
@@ -225,7 +225,9 @@ pub fn core_libfunc_cost(
             EcConcreteLibfunc::IsZero(_) => {
                 vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()]
             }
-            EcConcreteLibfunc::Neg(_) => vec![ConstCost::default().into()],
+            EcConcreteLibfunc::Neg(_) | EcConcreteLibfunc::NegNz(_) => {
+                vec![ConstCost::default().into()]
+            }
             EcConcreteLibfunc::StateAdd(_) => vec![ConstCost::steps(10).into()],
             EcConcreteLibfunc::TryNew(_) => {
                 vec![ConstCost::steps(7).into(), ConstCost::steps(7).into()]
@@ -368,6 +370,9 @@ pub fn core_libfunc_cost(
                     std::cmp::max(1, info_provider.type_size(&libfunc.ty).try_into().unwrap());
                 vec![ConstCost::steps(n_steps).into()]
             }
+            BoxConcreteLibfunc::LocalInto(_) => {
+                vec![ConstCost::steps(3).into()]
+            }
             BoxConcreteLibfunc::Unbox(_) | BoxConcreteLibfunc::ForwardSnapshot(_) => {
                 vec![ConstCost::default().into()]
             }
@@ -412,7 +417,8 @@ pub fn core_libfunc_cost(
         Struct(
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)
-            | StructConcreteLibfunc::SnapshotDeconstruct(_),
+            | StructConcreteLibfunc::SnapshotDeconstruct(_)
+            | StructConcreteLibfunc::BoxedDeconstruct(_),
         ) => {
             vec![ConstCost::default().into()]
         }

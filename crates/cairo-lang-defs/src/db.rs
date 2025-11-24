@@ -188,8 +188,8 @@ pub trait DefsGroup: Database {
     fn crate_modules<'db>(&'db self, crate_id: CrateId<'db>) -> &'db [ModuleId<'db>] {
         crate_modules(self.as_dyn_database(), crate_id)
     }
-    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
-        file_modules(self.as_dyn_database(), file_id)
+    fn file_modules<'db>(&'db self, file_id: FileId<'db>) -> Maybe<&'db Vec<ModuleId<'db>>> {
+        file_modules(self.as_dyn_database(), file_id).maybe_as_ref()
     }
 
     /// Returns the [ModuleData] of all modules in the crate's cache, and the loading data of the
@@ -654,8 +654,9 @@ fn file_to_module_mapping<'db>(
     mapping
 }
 
-fn file_modules<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<&'db [ModuleId<'db>]> {
-    Ok(file_to_module_mapping(db).get(&file_id).to_maybe()?)
+#[salsa::tracked(returns(ref))]
+fn file_modules<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<Vec<ModuleId<'db>>> {
+    file_to_module_mapping(db).get(&file_id).cloned().to_maybe()
 }
 
 #[salsa::tracked]
@@ -972,14 +973,12 @@ fn priv_module_data_helper<'db>(
         files.push(file_id);
 
         let priv_module_data = module_sub_files(db, module_id, file_id).maybe_as_ref()?;
-        diagnostics_notes.extend(priv_module_data.diagnostics_notes.clone().into_iter());
+        diagnostics_notes
+            .extend(priv_module_data.diagnostics_notes.iter().map(|(k, v)| (*k, v.clone())));
         file_queue.extend(priv_module_data.files.keys().copied());
-        for diag in &priv_module_data.plugin_diagnostics {
-            plugin_diagnostics.push((module_id, diag.clone()));
-        }
-        aux_data.extend(
-            priv_module_data.aux_data.iter().map(|(file, aux_data)| (*file, aux_data.clone())),
-        );
+        plugin_diagnostics
+            .extend(priv_module_data.plugin_diagnostics.iter().map(|v| (module_id, v.clone())));
+        aux_data.extend(priv_module_data.aux_data.iter().map(|(k, v)| (*k, v.clone())));
         for item_ast in &priv_module_data.items {
             match item_ast.clone() {
                 ast::ModuleItem::Constant(constant) => {
@@ -1472,6 +1471,7 @@ pub fn module_constants_ids<'db>(
     Ok(module_constants_ids_helper(db, module_id.module_data(db)?))
 }
 
+#[salsa::tracked]
 pub fn module_constant_by_id<'db>(
     db: &'db dyn Database,
     constant_id: ConstantId<'db>,
@@ -1495,6 +1495,7 @@ fn module_submodules_ids<'db>(
     Ok(module_submodules_ids_helper(db, module_id.module_data(db)?))
 }
 
+#[salsa::tracked]
 pub fn module_submodule_by_id<'db>(
     db: &'db dyn Database,
     submodule_id: SubmoduleId<'db>,
@@ -1517,6 +1518,8 @@ pub fn module_free_functions_ids<'db>(
 ) -> Maybe<&'db [FreeFunctionId<'db>]> {
     Ok(module_free_functions_ids_helper(db, module_id.module_data(db)?))
 }
+
+#[salsa::tracked]
 pub fn module_free_function_by_id<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
@@ -1538,6 +1541,8 @@ pub fn module_uses_ids<'db>(
 ) -> Maybe<&'db [UseId<'db>]> {
     Ok(module_uses_ids_helper(db, module_id.module_data(db)?))
 }
+
+#[salsa::tracked]
 pub fn module_use_by_id<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
@@ -1547,6 +1552,7 @@ pub fn module_use_by_id<'db>(
 }
 
 /// Returns the `use *` of the given module, by its ID.
+#[salsa::tracked]
 pub fn module_global_use_by_id<'db>(
     db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
@@ -1570,6 +1576,7 @@ pub fn module_structs_ids<'db>(
     Ok(module_structs_ids_helper(db, module_id.module_data(db)?))
 }
 
+#[salsa::tracked]
 pub fn module_struct_by_id<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
@@ -1593,6 +1600,7 @@ pub fn module_enums_ids<'db>(
     Ok(module_enums_ids_helper(db, module_id.module_data(db)?))
 }
 
+#[salsa::tracked]
 pub fn module_enum_by_id<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
@@ -1616,6 +1624,7 @@ pub fn module_type_aliases_ids<'db>(
     Ok(module_type_aliases_ids_helper(db, module_id.module_data(db)?))
 }
 
+#[salsa::tracked]
 pub fn module_type_alias_by_id<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
@@ -1639,6 +1648,7 @@ pub fn module_impl_aliases_ids<'db>(
     Ok(module_impl_aliases_ids_helper(db, module_id.module_data(db)?))
 }
 
+#[salsa::tracked]
 pub fn module_impl_alias_by_id<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
@@ -1662,6 +1672,7 @@ pub fn module_traits_ids<'db>(
     Ok(module_traits_ids_helper(db, module_id.module_data(db)?))
 }
 
+#[salsa::tracked]
 pub fn module_trait_by_id<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
@@ -1684,6 +1695,8 @@ pub fn module_impls_ids<'db>(
 ) -> Maybe<&'db [ImplDefId<'db>]> {
     Ok(module_impls_ids_helper(db, module_id.module_data(db)?))
 }
+
+#[salsa::tracked]
 pub fn module_impl_by_id<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
@@ -1705,6 +1718,8 @@ pub fn module_extern_types_ids<'db>(
 ) -> Maybe<&'db [ExternTypeId<'db>]> {
     Ok(module_extern_types_ids_helper(db, module_id.module_data(db)?))
 }
+
+#[salsa::tracked]
 pub fn module_extern_type_by_id<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
@@ -1728,7 +1743,9 @@ pub fn module_macro_declarations_ids<'db>(
 ) -> Maybe<&'db [MacroDeclarationId<'db>]> {
     Ok(module_macro_declarations_ids_helper(db, module_id.module_data(db)?))
 }
+
 /// Returns the macro declaration of the given id.
+#[salsa::tracked]
 pub fn module_macro_declaration_by_id<'db>(
     db: &'db dyn Database,
     macro_declaration_id: MacroDeclarationId<'db>,
@@ -1751,7 +1768,8 @@ pub fn module_macro_calls_ids<'db>(
 ) -> Maybe<&'db [MacroCallId<'db>]> {
     Ok(module_macro_calls_ids_helper(db, module_id.module_data(db)?))
 }
-/// Query implementation of [DefsGroup::module_macro_call_by_id].
+
+#[salsa::tracked]
 fn module_macro_call_by_id<'db>(
     db: &'db dyn Database,
     macro_call_id: MacroCallId<'db>,
@@ -1774,6 +1792,8 @@ pub fn module_extern_functions_ids<'db>(
 ) -> Maybe<&'db [ExternFunctionId<'db>]> {
     Ok(module_extern_functions_ids_helper(db, module_id.module_data(db)?))
 }
+
+#[salsa::tracked]
 pub fn module_extern_function_by_id<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,

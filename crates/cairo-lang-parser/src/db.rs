@@ -98,5 +98,5 @@ fn file_syntax_diagnostics<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
 ) -> Diagnostics<'db, ParserDiagnostic<'db>> {
-    file_syntax_data(db, file_id).diagnostics(db).clone()
+    file_syntax_data(db, file_id).diagnostics(db)
 }
