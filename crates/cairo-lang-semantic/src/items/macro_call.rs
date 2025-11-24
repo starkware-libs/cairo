@@ -147,7 +147,7 @@ fn priv_macro_call_data<'db>(
     let generated_file_long_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
         name: macro_name,
-        content: SmolStrId::from_arcstr(db, &expanded_code.text),
+        content: SmolStrId::from(db, expanded_code.text.as_ref()),
         code_mappings: expanded_code.code_mappings.clone(),
         kind: FileKind::Module,
         original_item_removed: false,
