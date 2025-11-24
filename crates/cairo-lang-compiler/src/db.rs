@@ -11,6 +11,7 @@ use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
 use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_lowering::optimizations::config::Optimizations;
+use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
@@ -20,7 +21,6 @@ use cairo_lang_sierra_generator::db::init_sierra_gen_group;
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
 use salsa::Database;
 
-use crate::InliningStrategy;
 use crate::project::update_crate_roots_from_project_config;
 
 /// Estimates the size of a function by compiling it to CASM.
