@@ -16,16 +16,16 @@ impl ColoredPrinter<'_> {
         match &node.details {
             GreenNodeDetails::Token(text) => {
                 if self.verbose && node.kind == SyntaxKind::TokenMissing {
-                    self.result.push_str(format!("{}", "<m>".red()).as_str());
+                    self.result.push_str(&format!("{}", "<m>".red()));
                 } else {
                     self.result.push_str(&set_color(text.long(self.db), node.kind).to_string());
                 }
             }
             GreenNodeDetails::Node { .. } => {
                 if self.verbose && is_missing_kind(node.kind) {
-                    self.result.push_str(format!("{}", "<m>".red()).as_str());
+                    self.result.push_str(&format!("{}", "<m>".red()));
                 } else if self.verbose && is_empty_kind(node.kind) {
-                    self.result.push_str(format!("{}", "<e>".red()).as_str());
+                    self.result.push_str(&format!("{}", "<e>".red()));
                 } else {
                     for child in syntax_node.get_children(self.db).iter() {
                         self.print(child);

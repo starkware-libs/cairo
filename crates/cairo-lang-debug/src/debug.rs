@@ -21,7 +21,6 @@ pub trait DebugWithDb<'db> {
         DebugWith { value: BoxRef::Ref(self), db }
     }
 
-    #[allow(dead_code)]
     fn into_debug<'me>(self, db: &'db Self::Db) -> DebugWith<'me, 'db, Self::Db>
     where
         Self: Sized + 'me,
