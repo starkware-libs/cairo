@@ -97,8 +97,8 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
             }
         };
 
-        // Update current_node in ctx.known_nodes.
-        ctx.known_nodes.insert(current_node_id.clone(), current_wrapper_node.clone());
+    // Update current_node in ctx.known_nodes after processing all neighbors.
+    ctx.known_nodes.insert(current_node_id.clone(), current_wrapper_node.clone());
     }
 
     if current_wrapper_node.lowlink != current_wrapper_node.index {
