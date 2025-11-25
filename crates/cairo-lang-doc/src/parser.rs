@@ -209,7 +209,7 @@ impl<'db> DocumentationCommentParser<'db> {
                                                 .trim_end_matches("`")
                                                 .to_string()
                                         } else {
-                                            dest_url.clone().to_string()
+                                            dest_url.to_string()
                                         };
                                     current_link = Some(CommentLinkToken {
                                         label: "".to_string(),
@@ -218,12 +218,13 @@ impl<'db> DocumentationCommentParser<'db> {
                                     });
                                 }
                                 _ => {
+                                    let dest_url_string = dest_url.clone().into_string();
                                     current_link = Some(CommentLinkToken {
                                         label: "".to_string(),
-                                        path: Some(dest_url.clone().into_string()),
+                                        path: Some(dest_url_string.clone()),
                                         resolved_item: self.resolve_linked_item(
                                             item_id,
-                                            dest_url.clone().into_string(),
+                                            dest_url_string,
                                         ), // Or resolve item here
                                     });
                                 }
