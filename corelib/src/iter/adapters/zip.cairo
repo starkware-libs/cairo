@@ -23,7 +23,7 @@ pub fn zipped_iterator<A, B>(a: A, b: B) -> Zip<A, B> {
 /// # Examples
 ///
 /// ```
-/// use std::iter::zip;
+/// use core::iter::zip;
 ///
 /// let xs = array![1, 2, 3];
 /// let ys = array![4, 5, 6];
@@ -34,6 +34,7 @@ pub fn zipped_iterator<A, B>(a: A, b: B) -> Zip<A, B> {
 /// assert_eq!(iter.next().unwrap(), (2, 5));
 /// assert_eq!(iter.next().unwrap(), (3, 6));
 /// assert!(iter.next().is_none());
+/// ```
 #[inline]
 pub fn zip<
     A,
