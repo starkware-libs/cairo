@@ -199,7 +199,7 @@ pub fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
 /// # Examples
 ///
 /// ```
-/// use core::math::u256_inv_mod;
+/// use core::math::u256_div_mod_n;
 ///
 /// let result = u256_div_mod_n(17, 7, 29);
 /// assert!(result == Some(19));
