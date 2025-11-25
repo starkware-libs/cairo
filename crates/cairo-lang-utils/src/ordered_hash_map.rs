@@ -81,6 +81,13 @@ impl<Key, Value, BH> OrderedHashMap<Key, Value, BH> {
     }
 }
 
+impl<Key, Value, BH> OrderedHashMap<Key, Value, BH> {
+    /// Returns true if the map contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
 impl<Key: Eq + Hash, Value, BH: BuildHasher> OrderedHashMap<Key, Value, BH> {
     /// Returns true if the maps are equal, ignoring the order of the entries.
     pub fn eq_unordered(&self, other: &Self) -> bool
