@@ -1,7 +1,5 @@
 //! Logic for computing the strongly connected component of a node in a graph.
 
-use core::hash::Hash;
-
 use super::graph_node::GraphNode;
 use crate::unordered_hash_map::UnorderedHashMap;
 
