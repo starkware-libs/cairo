@@ -23,8 +23,8 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
 
     // ── 2. Generate the body per kind ────────────────────────────────────────────
     let body = match &input.data {
-        syn::Data::Struct(s) => emit_struct_debug(name, generics, db.clone(), s),
-        syn::Data::Enum(e) => emit_enum_debug(name, generics, db.clone(), e),
+       syn::Data::Struct(s) => emit_struct_debug(name, generics, &db, s),
+        syn::Data::Enum(e) => emit_enum_debug(name, generics, &db, e),
         syn::Data::Union(_) => panic!("Unions are not supported"),
     };
 
@@ -37,10 +37,10 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
 fn emit_struct_debug(
     name: &syn::Ident,
     generics: &Generics,
-    db: TokenStream2,
+    db: &TokenStream2,
     structure: &syn::DataStruct,
 ) -> TokenStream2 {
-    let (pat, prints) = emit_fields_debug(db.clone(), name.to_string(), &structure.fields);
+    let (pat, prints) = emit_fields_debug(db, name.to_string(), &structure.fields);
 
     // a) impl-side generics  = original + 'a + T
     let impl_generics = create_impl_generics(name, generics);
@@ -70,14 +70,14 @@ fn emit_struct_debug(
 fn emit_enum_debug(
     name: &syn::Ident,
     generics: &Generics,
-    db: TokenStream2,
+    db: &TokenStream2,
     enm: &syn::DataEnum,
 ) -> TokenStream2 {
     // Debug prints - these will show up during compilation if CAIRO_DEBUG_MACRO is set
     let mut arms = quote! {};
     for v in enm.variants.iter() {
         let v_ident = &v.ident;
-        let (pat, prints) = emit_fields_debug(db.clone(), v_ident.to_string(), &v.fields);
+        let (pat, prints) = emit_fields_debug(db, v_ident.to_string(), &v.fields);
         arms = quote! {
             #arms
             #name :: #v_ident #pat => { #prints }
@@ -111,7 +111,7 @@ fn emit_enum_debug(
 /// a type called [syn::Fields].
 /// This function builds and returns an unpacking pattern and code for `fmt()` on these fields.
 fn emit_fields_debug(
-    db: TokenStream2,
+    db: &TokenStream2,
     name: String,
     fields: &syn::Fields,
 ) -> (TokenStream2, TokenStream2) {
