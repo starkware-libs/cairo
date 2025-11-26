@@ -1,4 +1,4 @@
-pub trait IntoOrPanic: Sized + Copy + core::fmt::Debug {
+pub trait IntoOrPanic: Copy + core::fmt::Debug {
     fn into_or_panic<T>(self) -> T
     where
         T: TryFrom<Self> + core::fmt::Debug,
