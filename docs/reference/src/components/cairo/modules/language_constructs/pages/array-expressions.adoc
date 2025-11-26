@@ -1,6 +1,71 @@
 = Array expressions
 
-This section is a work in progress.
+Array expressions construct array values directly in place.
+They correspond to the `FixedSizeArray` expression in the Cairo syntax (see
+`crates/cairo-lang-syntax-codegen/src/cairo_spec.rs`, variant `ExprFixedSizeArray`).
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+Two forms are supported:
+
+- List form: `[expr1, expr2, ..., exprN]`
+- Repeat form: `[expr; size]`
+
+Parsing follows the syntax spec:
+
+- List form is an `ExprList` inside brackets with no size clause.
+- Repeat form is a single `expr` followed by `;` and a `size` expression.
+
+[NOTE]
+====
+Only one form is used at a time. Mixing both (e.g., `[a, b; 3]`) is not valid.
+====
+
+== Typing and semantics
+
+- All elements must have the same type. The array’s element type is that common type.
+- In the list form, the array length is the number of elements provided.
+- In the repeat form, the array length is given by `size` and the array is initialized by
+  repeating the single element expression.
+- The element expression in the repeat form is evaluated according to the language’s
+  evaluation rules; refer to xref:pages/expressions.adoc[Expressions] for general evaluation
+  order. Do not rely on side effects repeating unless guaranteed by the semantics of the
+  expression and compiler.
+- Empty arrays (`[]`) require type context to determine the element type. Where no such context
+  exists, a type annotation is typically required.
+
+[NOTE]
+====
+Indexing uses the general indexing expression form `array[index]` (see
+xref:pages/member-access-expressions.adoc[Member access expressions] for indexing).
+====
+
+== Examples
+
+[source,cairo]
+----
+// List form: explicit elements.
+let xs = [1, 2, 3];
+
+// Nested arrays.
+let grid = [[1, 2], [3, 4]];
+
+// Repeat form: repeat the element 0 four times.
+let zeros = [0; 4];
+
+// Using type context for an empty array (element type provided by the annotation).
+let empty: Array::<felt252> = [];
+----
+
+Invalid examples (illustrative):
+
+- Heterogeneous elements: `[1, true]`
+- Mixed forms: `[1, 2; 3]`
+
+== Related
+
+- xref:pages/expressions.adoc[Expressions]
+- xref:pages/array-types.adoc[Array types] (🚧)
+- xref:pages/slice-types.adoc[Slice types] (🚧)
+- xref:pages/tuple-expressions.adoc[Tuple expressions]
+
