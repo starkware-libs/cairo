@@ -4,7 +4,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{LanguageElementId, MacroCallId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, skip_diagnostic};
 use cairo_lang_filesystem::ids::{
-    CodeMapping, CodeOrigin, FileKind, FileLongId, SmolStrId, VirtualFile,
+    CodeMapping, CodeOrigin, FileId, FileKind, FileLongId, SmolStrId, VirtualFile,
 };
 use cairo_lang_filesystem::span::{TextOffset, TextSpan};
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
@@ -20,7 +20,6 @@ use crate::items::macro_declaration::{
     MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::module::ModuleSemantic;
-use crate::lsp_helpers::LspHelpers;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
 /// The data associated with a macro call in item context.
@@ -32,6 +31,8 @@ pub struct MacroCallData<'db> {
     pub defsite_module_id: ModuleId<'db>,
     pub callsite_module_id: ModuleId<'db>,
     pub expansion_mappings: Arc<[CodeMapping]>,
+    // Virtual file generated during macro expansion, None if expansion failed.
+    pub expansion_file: Option<FileId<'db>>,
     pub parent_macro_call_data: Option<Arc<ResolverMacroData<'db>>>,
 }
 
@@ -56,16 +57,15 @@ fn priv_macro_call_data<'db>(
         let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
         let code_mappings: Arc<[CodeMapping]> = [mapping].into();
         let parent_macro_call_data = resolver.macro_call_data;
-        let generated_file_long_id = FileLongId::Virtual(VirtualFile {
+        let generated_file_id = FileLongId::Virtual(VirtualFile {
             parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
             name: macro_name,
             content: SmolStrId::from(db, content),
             code_mappings: code_mappings.clone(),
             kind: FileKind::Module,
             original_item_removed: false,
-        });
-        db.accumulate_inline_macro_expansion(&generated_file_long_id);
-        let generated_file_id = generated_file_long_id.intern(db);
+        })
+        .intern(db);
         let macro_call_module =
             ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: true };
         return Ok(MacroCallData {
@@ -75,6 +75,7 @@ fn priv_macro_call_data<'db>(
             defsite_module_id: callsite_module_id,
             callsite_module_id,
             expansion_mappings: code_mappings,
+            expansion_file: Some(generated_file_id),
             parent_macro_call_data,
         });
     }
@@ -97,6 +98,7 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id: callsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
+                expansion_file: None,
                 parent_macro_call_data: None,
             });
         }
@@ -107,6 +109,7 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id: callsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
+                expansion_file: None,
                 parent_macro_call_data: None,
             });
         }
@@ -121,6 +124,7 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
+                expansion_file: None,
                 parent_macro_call_data: None,
             });
         }
@@ -138,22 +142,22 @@ fn priv_macro_call_data<'db>(
             defsite_module_id,
             callsite_module_id,
             expansion_mappings: Arc::new([]),
+            expansion_file: None,
             parent_macro_call_data: None,
         });
     };
     let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
     let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
     let parent_macro_call_data = resolver.macro_call_data;
-    let generated_file_long_id = FileLongId::Virtual(VirtualFile {
+    let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
         name: macro_name,
         content: SmolStrId::from_arcstr(db, &expanded_code.text),
         code_mappings: expanded_code.code_mappings.clone(),
         kind: FileKind::Module,
         original_item_removed: false,
-    });
-    db.accumulate_inline_macro_expansion(&generated_file_long_id);
-    let generated_file_id = generated_file_long_id.intern(db);
+    })
+    .intern(db);
     let macro_call_module =
         ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: false };
     Ok(MacroCallData {
@@ -162,6 +166,7 @@ fn priv_macro_call_data<'db>(
         defsite_module_id,
         callsite_module_id,
         expansion_mappings: expanded_code.code_mappings,
+        expansion_file: Some(generated_file_id),
         parent_macro_call_data,
     })
 }
@@ -234,6 +239,7 @@ fn priv_macro_call_data_initial<'db>(
         defsite_module_id: module_id,
         callsite_module_id: module_id,
         expansion_mappings: Arc::new([]),
+        expansion_file: None,
         parent_macro_call_data: None,
     })
 }
