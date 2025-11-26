@@ -37,7 +37,6 @@ use crate::items::structure::StructSemantic;
 use crate::items::trt::TraitSemantic;
 use crate::items::us::{SemanticUseEx, UseSemantic};
 use crate::items::visibility::Visibility;
-use crate::lsp_helpers::InlineMacroExpansionAccumulator;
 use crate::plugin::{AnalyzerPlugin, InternedPluginSuite, PluginSuite};
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 
@@ -195,17 +194,6 @@ fn module_semantic_diagnostics_tracked<'db>(
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
     module_semantic_diagnostics(db, module_id)
-}
-
-pub fn module_inline_macro_expansions<'db>(
-    db: &'db dyn Database,
-    module_id: ModuleId<'db>,
-) -> Vec<&'db InlineMacroExpansionAccumulator> {
-    module_semantic_diagnostics_tracked::accumulated::<InlineMacroExpansionAccumulator>(
-        db,
-        (),
-        module_id,
-    )
 }
 
 fn module_semantic_diagnostics<'db>(
