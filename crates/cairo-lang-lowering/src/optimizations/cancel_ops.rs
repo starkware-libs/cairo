@@ -113,10 +113,10 @@ impl<'db, 'a> CancelOpsContext<'db, 'a> {
     fn rename_var(&mut self, from: VariableId, to: VariableId) {
         self.var_remapper.renamed_vars.insert(from, to);
 
-        let mut aliases = Vec::from_iter(chain(
+        let mut aliases: Vec<_> = chain(
             std::iter::once(from),
             get_entry_as_slice(&self.aliases, &from).iter().copied(),
-        ));
+        ).collect();
         // Optimize for the case where the alias list of `to` is empty.
         match self.aliases.entry(to) {
             std::collections::hash_map::Entry::Occupied(entry) => {
