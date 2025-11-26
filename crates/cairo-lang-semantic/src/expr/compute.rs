@@ -3687,7 +3687,7 @@ fn method_call_expr<'db>(
     // Extracting the possible traits that should be imported, in order to use the method.
     let module_id = ctx.resolver.module_id;
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let lexpr_clone = lexpr.clone();
+    let lexpr_stable_ptr = lexpr.stable_ptr().untyped();
     let db = ctx.db;
     let (function_id, actual_trait_id, fixed_lexpr, mutability) =
         compute_method_function_call_data(
@@ -3707,7 +3707,7 @@ fn method_call_expr<'db>(
                         method_name,
                         lookup_context,
                         module_id,
-                        lexpr_clone.stable_ptr().untyped(),
+                        lexpr_stable_ptr,
                     )
                 };
                 Some(CannotCallMethod { ty, method_name, inference_errors, relevant_traits })
