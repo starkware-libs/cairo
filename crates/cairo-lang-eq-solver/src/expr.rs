@@ -10,13 +10,13 @@ mod test;
 
 /// A linear expression of variables.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Expr<Var: Clone + Debug + PartialEq + Eq + Hash> {
+pub struct Expr<Var: Clone + Debug + Eq + Hash> {
     /// The constant term of the expression.
     pub const_term: i32,
     /// The coefficient for every variable in the expression.
     pub var_to_coef: OrderedHashMap<Var, i64>,
 }
-impl<Var: Clone + Debug + PartialEq + Eq + Hash> Expr<Var> {
+impl<Var: Clone + Debug + Eq + Hash> Expr<Var> {
     /// Creates a cost expression based on const value only.
     pub fn from_const(const_term: i32) -> Self {
         Self { const_term, var_to_coef: Default::default() }
@@ -28,14 +28,14 @@ impl<Var: Clone + Debug + PartialEq + Eq + Hash> Expr<Var> {
     }
 }
 
-impl<Var: Clone + Debug + PartialEq + Eq + Hash> HasZero for Expr<Var> {
+impl<Var: Clone + Debug + Eq + Hash> HasZero for Expr<Var> {
     fn zero() -> Self {
         Self::from_const(0)
     }
 }
 
 // Expr operators can be optimized if necessary.
-impl<Var: Clone + Debug + PartialEq + Eq + Hash> std::ops::Add for Expr<Var> {
+impl<Var: Clone + Debug + Eq + Hash> std::ops::Add for Expr<Var> {
     type Output = Self;
     fn add(self, other: Self) -> Self {
         Self {
@@ -45,7 +45,7 @@ impl<Var: Clone + Debug + PartialEq + Eq + Hash> std::ops::Add for Expr<Var> {
     }
 }
 
-impl<Var: Clone + Debug + PartialEq + Eq + Hash> std::ops::Sub for Expr<Var> {
+impl<Var: Clone + Debug + Eq + Hash> std::ops::Sub for Expr<Var> {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
         Self {
