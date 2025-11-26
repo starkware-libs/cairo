@@ -174,7 +174,7 @@ macro_rules! add_rewrite_identity {
 pub trait SemanticObject<TRewriter, Error>: Sized {
     fn default_rewrite(&mut self, rewriter: &mut TRewriter) -> Result<RewriteResult, Error>;
 }
-impl<T: Clone, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Vec<T>, E> for TRewriter {
+impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Vec<T>, E> for TRewriter {
     fn internal_rewrite(&mut self, value: &mut Vec<T>) -> Result<RewriteResult, E> {
         let mut result = RewriteResult::NoChange;
         for el in value.iter_mut() {
