@@ -178,8 +178,8 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     ///
     /// ```
     /// let mut ba = "";
-    /// ba.append_byte(0);
-    /// assert!(ba == "0");
+    /// ba.append_byte(0x41); // Appending a single byte 'A'
+    /// assert!(ba == "A");
     /// ```
     fn append_byte(ref self: ByteArray, byte: u8) {
         if self.pending_word_len == 0 {
