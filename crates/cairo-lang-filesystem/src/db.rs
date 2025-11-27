@@ -456,7 +456,7 @@ pub fn update_file_overrides_input_helper(
     let db_ref: &dyn Database = db;
     let mut overrides = files_group_input(db_ref).file_overrides(db_ref).clone().unwrap();
     match content {
-        Some(content) => overrides.insert(file.clone(), content),
+        Some(content) => overrides.insert(file, content),
         None => overrides.swap_remove(&file),
     };
     overrides
