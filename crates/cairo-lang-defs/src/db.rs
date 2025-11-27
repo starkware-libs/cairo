@@ -1873,7 +1873,7 @@ pub trait DefsGroupEx: DefsGroup {
     ///
     /// *Note*: Sets the following Salsa input: `DefsGroup::macro_plugin_overrides`.
     fn set_override_crate_macro_plugins<'db>(
-        &mut self,
+        &'db mut self,
         crate_id: CrateId<'db>,
         plugins: Arc<Vec<MacroPluginId<'db>>>,
     ) {
@@ -1890,7 +1890,7 @@ pub trait DefsGroupEx: DefsGroup {
     ///
     /// *Note*: Sets the following Salsa input: `DefsGroup::inline_macro_plugin_overrides`.
     fn set_override_crate_inline_macro_plugins<'db>(
-        &mut self,
+        &'db mut self,
         crate_id: CrateId<'db>,
         plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>,
     ) {

@@ -528,6 +528,7 @@ pub trait SemanticGroupEx: Database {
         semantic_group_input(db_ref).set_analyzer_plugin_overrides(self).to(Some(overrides));
     }
 }
+
 impl<T: Database + ?Sized> SemanticGroupEx for T {}
 
 /// An extension trait for [`SemanticGroup`] to manage plugin setters.
