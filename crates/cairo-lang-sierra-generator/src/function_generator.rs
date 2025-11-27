@@ -138,6 +138,7 @@ fn get_function_ap_change_and_code<'db>(
         entry_point: label_id,
         parameters,
         variable_locations: result.variable_locations,
+        signature_location: lowered_function.signature.location,
     })
 }
 
@@ -194,6 +195,7 @@ pub fn priv_get_dummy_function<'db>(
         entry_point: label_id,
         parameters,
         variable_locations: vec![],
+        signature_location: lowered_function.signature.location,
     })
 }
 

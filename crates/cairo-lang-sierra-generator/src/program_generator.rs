@@ -260,7 +260,15 @@ impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SierraProgramDebugInfo<'db> {
     pub statements_locations: StatementsLocations<'db>,
-    pub variable_location: OrderedHashMap<FunctionId, OrderedHashMap<VarId, LocationId<'db>>>,
+    pub functions_info: OrderedHashMap<FunctionId, FunctionDebugInfo<'db>>,
+}
+
+/// The debug info of a sierra function.
+/// Contains a signature location and locations of sierra variables of this function.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FunctionDebugInfo<'db> {
+    pub signature_location: LocationId<'db>,
+    pub variables_locations: OrderedHashMap<VarId, LocationId<'db>>,
 }
 
 #[salsa::tracked(returns(ref))]
@@ -289,13 +297,13 @@ pub fn get_sierra_program_for_functions<'db>(
         }
     }
 
-    let AssembledProgram { program, statements_locations, variable_location } =
+    let AssembledProgram { program, statements_locations, functions_info } =
         assemble_program(db, functions, statements);
     Ok(SierraProgramWithDebug {
         program,
         debug_info: SierraProgramDebugInfo {
             statements_locations: StatementsLocations::from_locations_vec(db, statements_locations),
-            variable_location,
+            functions_info,
         },
     })
 }
@@ -306,8 +314,8 @@ struct AssembledProgram<'db> {
     program: program::Program,
     /// The locations per statement.
     statements_locations: Vec<Option<LocationId<'db>>>,
-    /// The locations of variables per function.
-    variable_location: OrderedHashMap<FunctionId, OrderedHashMap<VarId, LocationId<'db>>>,
+    /// The debug info of sierra functions.
+    functions_info: OrderedHashMap<FunctionId, FunctionDebugInfo<'db>>,
 }
 
 /// Given a list of functions and statements, generates a Sierra program.
@@ -318,9 +326,17 @@ fn assemble_program<'db>(
     statements: Vec<pre_sierra::StatementWithLocation<'db>>,
 ) -> AssembledProgram<'db> {
     let label_replacer = LabelReplacer::from_statements(&statements);
-    let variable_location = functions
+    let functions_info = functions
         .iter()
-        .map(|f| (f.id.clone(), f.variable_locations.iter().cloned().collect()))
+        .map(|f| {
+            (
+                f.id.clone(),
+                FunctionDebugInfo {
+                    signature_location: f.signature_location,
+                    variables_locations: f.variable_locations.iter().cloned().collect(),
+                },
+            )
+        })
         .collect();
     let funcs = functions
         .into_iter()
@@ -346,7 +362,7 @@ fn assemble_program<'db>(
         statements: resolved_statements,
         funcs,
     };
-    AssembledProgram { program, statements_locations, variable_location }
+    AssembledProgram { program, statements_locations, functions_info }
 }
 
 /// Tries extracting a ConcreteFunctionWithBodyId from a pre-Sierra statement.
