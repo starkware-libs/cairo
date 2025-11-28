@@ -24,7 +24,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         syntax: &ast::ExprInlineMacro<'db>,
         metadata: &MacroPluginMetadata<'_>,
     ) -> InlinePluginResult<'db> {
-        let Some(legacy_inline_macro) = syntax.clone().as_legacy_inline_macro(db) else {
+        let Some(legacy_inline_macro) = syntax.as_legacy_inline_macro(db) else {
             return InlinePluginResult::diagnostic_only(not_legacy_macro_diagnostic(
                 syntax.as_syntax_node().stable_ptr(db),
             ));

@@ -845,16 +845,16 @@ fn compute_expr_inline_macro_semantic<'db>(
 ) -> Maybe<Expr<'db>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_long_id = FileLongId::Virtual(VirtualFile {
+    let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
         name: SmolStrId::from(ctx.db, name),
         content: SmolStrId::from(ctx.db, content),
         code_mappings: info.mappings.clone(),
         kind: FileKind::Expr,
         original_item_removed: true,
-    });
-    ctx.db.accumulate_inline_macro_expansion(&new_file_long_id);
-    let new_file_id = new_file_long_id.intern(ctx.db);
+    })
+    .intern(ctx.db);
+    ctx.resolver.files.push(new_file_id);
     let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
@@ -916,16 +916,16 @@ fn expand_macro_for_statement<'db>(
 ) -> Maybe<Option<ExprAndId<'db>>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
     let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_long_id = FileLongId::Virtual(VirtualFile {
+    let new_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
         name: SmolStrId::from(ctx.db, name),
         content: SmolStrId::from_arcstr(ctx.db, &content),
         code_mappings: info.mappings.clone(),
         kind: FileKind::StatementList,
         original_item_removed: true,
-    });
-    ctx.db.accumulate_inline_macro_expansion(&new_file_long_id);
-    let new_file_id = new_file_long_id.intern(ctx.db);
+    })
+    .intern(ctx.db);
+    ctx.resolver.files.push(new_file_id);
     let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
     if let Err(diag_added) = parser_diagnostics.check_error_free() {
         for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
@@ -3687,7 +3687,7 @@ fn method_call_expr<'db>(
     // Extracting the possible traits that should be imported, in order to use the method.
     let module_id = ctx.resolver.module_id;
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let lexpr_clone = lexpr.clone();
+    let lexpr_stable_ptr = lexpr.stable_ptr().untyped();
     let db = ctx.db;
     let (function_id, actual_trait_id, fixed_lexpr, mutability) =
         compute_method_function_call_data(
@@ -3707,7 +3707,7 @@ fn method_call_expr<'db>(
                         method_name,
                         lookup_context,
                         module_id,
-                        lexpr_clone.stable_ptr().untyped(),
+                        lexpr_stable_ptr,
                     )
                 };
                 Some(CannotCallMethod { ty, method_name, inference_errors, relevant_traits })

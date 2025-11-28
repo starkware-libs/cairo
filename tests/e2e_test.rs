@@ -296,7 +296,7 @@ fn run_e2e_test(
             .iter()
             .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
             .join("\n");
-      res.insert("function_costs".into(), function_costs_str);
+        res.insert("function_costs".into(), function_costs_str.to_string());
     }
 
     TestRunnerResult::success(res)
