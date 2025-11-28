@@ -20,7 +20,6 @@ use crate::items::macro_declaration::{
     MacroDeclarationSemantic, MatcherContext, expand_macro_rule, is_macro_rule_match,
 };
 use crate::items::module::ModuleSemantic;
-use crate::lsp_helpers::LspHelpers;
 use crate::resolve::{ResolutionContext, ResolvedGenericItem, Resolver, ResolverMacroData};
 
 /// The data associated with a macro call in item context.
@@ -56,16 +55,15 @@ fn priv_macro_call_data<'db>(
         let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
         let code_mappings: Arc<[CodeMapping]> = [mapping].into();
         let parent_macro_call_data = resolver.macro_call_data;
-        let generated_file_long_id = FileLongId::Virtual(VirtualFile {
+        let generated_file_id = FileLongId::Virtual(VirtualFile {
             parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
             name: macro_name,
             content: SmolStrId::from(db, content),
             code_mappings: code_mappings.clone(),
             kind: FileKind::Module,
             original_item_removed: false,
-        });
-        db.accumulate_inline_macro_expansion(&generated_file_long_id);
-        let generated_file_id = generated_file_long_id.intern(db);
+        })
+        .intern(db);
         let macro_call_module =
             ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: true };
         return Ok(MacroCallData {
@@ -144,16 +142,15 @@ fn priv_macro_call_data<'db>(
     let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
     let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
     let parent_macro_call_data = resolver.macro_call_data;
-    let generated_file_long_id = FileLongId::Virtual(VirtualFile {
+    let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
         name: macro_name,
         content: SmolStrId::from_arcstr(db, &expanded_code.text),
         code_mappings: expanded_code.code_mappings.clone(),
         kind: FileKind::Module,
         original_item_removed: false,
-    });
-    db.accumulate_inline_macro_expansion(&generated_file_long_id);
-    let generated_file_id = generated_file_long_id.intern(db);
+    })
+    .intern(db);
     let macro_call_module =
         ModuleId::MacroCall { id: macro_call_id, generated_file_id, is_expose: false };
     Ok(MacroCallData {

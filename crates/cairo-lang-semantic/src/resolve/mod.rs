@@ -12,7 +12,7 @@ use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateSettings, FilesGroup, default_crate_settings,
 };
-use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, SmolStrId};
+use cairo_lang_filesystem::ids::{CodeMapping, CrateId, CrateLongId, FileId, SmolStrId};
 use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
@@ -196,6 +196,8 @@ pub struct ResolverData<'db> {
     pub feature_config: FeatureConfig<'db>,
     /// The set of used `use` items in the current context.
     pub used_uses: OrderedHashSet<UseId<'db>>,
+    /// Virtual files generated during inline macro expansion.
+    pub files: Vec<FileId<'db>>,
 }
 impl<'db> ResolverData<'db> {
     pub fn new(module_id: ModuleId<'db>, inference_id: InferenceId<'db>) -> Self {
@@ -209,6 +211,7 @@ impl<'db> ResolverData<'db> {
             trait_or_impl_ctx: TraitOrImplContext::None,
             feature_config: Default::default(),
             used_uses: Default::default(),
+            files: vec![],
         }
     }
     pub fn clone_with_inference_id(
@@ -226,6 +229,7 @@ impl<'db> ResolverData<'db> {
             trait_or_impl_ctx: self.trait_or_impl_ctx,
             feature_config: self.feature_config.clone(),
             used_uses: self.used_uses.clone(),
+            files: self.files.clone(),
         }
     }
 }
