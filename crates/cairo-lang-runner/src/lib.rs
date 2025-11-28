@@ -294,14 +294,15 @@ impl SierraCasmRunner {
         let (results_data, gas_counter) = self.get_results_data(&return_types, &memory, ap);
         assert!(results_data.len() <= 1);
 
-        let value = if results_data.is_empty() {
+        let value = match results_data.into_iter().next() {
             // No result type - no panic.
-            RunResultValue::Success(vec![])
-        } else {
-            let (ty, values) = results_data[0].clone();
-            let inner_ty =
-                self.inner_type_from_panic_wrapper(&ty, func).map(|it| self.builder.type_size(&it));
-            Self::handle_main_return_value(inner_ty, values, &memory)
+            None => RunResultValue::Success(vec![]),
+            Some((ty, values)) => {
+                let inner_ty = self
+                    .inner_type_from_panic_wrapper(&ty, func)
+                    .map(|it| self.builder.type_size(&it));
+                Self::handle_main_return_value(inner_ty, values, &memory)
+            }
         };
 
         let Self { builder, starknet_contracts_info: _, run_profiler } = self;
