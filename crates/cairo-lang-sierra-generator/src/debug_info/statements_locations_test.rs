@@ -8,8 +8,8 @@ use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
+use crate::debug_info::statements_locations::maybe_containing_function_identifier_for_tests;
 use crate::replace_ids::replace_sierra_ids;
-use crate::statements_locations::maybe_containing_function_identifier_for_tests;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 /// Compiles a single function to Sierra and checks the generated code, together with the

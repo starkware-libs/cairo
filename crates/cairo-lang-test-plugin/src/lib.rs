@@ -16,10 +16,10 @@ use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::ProgramArtifact;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::debug_info::StatementsLocations;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
-use cairo_lang_sierra_generator::statements_locations::StatementsLocations;
 use cairo_lang_starknet::contract::{
     ContractDeclaration, ContractInfo, find_contracts, get_contract_abi_functions,
     get_contracts_info,
