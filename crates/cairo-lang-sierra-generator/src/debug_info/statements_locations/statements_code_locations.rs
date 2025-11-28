@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
+use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use salsa::Database;
 use serde::{Deserialize, Serialize};
 
 /// A full path to a Cairo source file.
@@ -47,4 +50,24 @@ impl From<StatementsSourceCodeLocations> for Annotations {
             serde_json::Value::from_iter([("statements_code_locations", mapping)]),
         )])
     }
+}
+
+/// Returns a location in the user file corresponding to the given [StableLocation].
+/// It consists of a full path to the file, a text span in the file and a boolean indicating
+/// if the location is a part of a macro expansion.
+pub fn maybe_code_location<'db>(
+    db: &'db dyn Database,
+    location: StableLocation<'db>,
+) -> Option<(SourceFileFullPath, SourceCodeSpan, bool)> {
+    let is_macro =
+        matches!(location.file_id(db).long(db), FileLongId::Virtual(_) | FileLongId::External(_));
+    let location = location.span_in_file(db).user_location(db);
+    let file_full_path = location.file_id.full_path(db);
+    let position = location.span.position_in_file(db, location.file_id)?;
+    let source_location = SourceCodeSpan {
+        start: SourceCodeLocation { col: position.start.col, line: position.start.line },
+        end: SourceCodeLocation { col: position.end.col, line: position.end.line },
+    };
+
+    Some((SourceFileFullPath(file_full_path), source_location, is_macro))
 }
