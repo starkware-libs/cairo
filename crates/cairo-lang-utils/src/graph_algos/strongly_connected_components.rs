@@ -61,14 +61,14 @@ pub fn compute_scc<Node: GraphNode>(root: &Node) -> Vec<Node::NodeId> {
 
 /// The recursive call to compute the SCC of a given node.
 fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, current_node: &Node) {
-    let mut current_wrapper_node = SccAlgoNode {
+    let mut current_lowlink = ctx.next_index;
+    let current_node_id = current_node.get_id();
+    ctx.known_nodes.insert(current_node_id.clone(), SccAlgoNode {
         node: current_node.clone(),
         index: ctx.next_index,
-        lowlink: ctx.next_index,
+        lowlink: current_lowlink,
         on_stack: true,
-    };
-    let current_node_id = current_node.get_id();
-    ctx.known_nodes.insert(current_node_id.clone(), current_wrapper_node.clone());
+    });
     ctx.next_index += 1;
     ctx.stack.push(current_node_id.clone());
 
@@ -79,8 +79,8 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
                 // neighbor was not visited yet. Visit it and maybe apply its lowlink to root.
                 compute_scc_recursive(ctx, &neighbor);
                 // Now neighbor should be in known_nodes.
-                current_wrapper_node.lowlink = core::cmp::min(
-                    current_wrapper_node.lowlink,
+                current_lowlink = core::cmp::min(
+                    current_lowlink,
                     ctx.known_nodes[&neighbor_id].lowlink,
                 );
             }
@@ -97,8 +97,8 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
             }
         };
 
-        // Update current_node in ctx.known_nodes.
-        ctx.known_nodes.insert(current_node_id.clone(), current_wrapper_node.clone());
+        // Update current_node's lowlink in ctx.known_nodes without re-cloning the wrapper node.
+        ctx.known_nodes[&current_node_id].lowlink = current_lowlink;
     }
 
     if current_wrapper_node.lowlink != current_wrapper_node.index {
