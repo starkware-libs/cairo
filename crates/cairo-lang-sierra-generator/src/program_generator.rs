@@ -8,7 +8,7 @@ use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
-use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId, VarId};
+use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{self, DeclaredTypeInfo, Program, StatementIdx};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -18,12 +18,12 @@ use itertools::{Itertools, chain};
 use salsa::Database;
 
 use crate::db::{SierraGenGroup, sierra_concrete_long_id};
+use crate::debug_info::{FunctionDebugInfo, SierraProgramDebugInfo, StatementsLocations};
 use crate::extra_sierra_info::type_has_const_size;
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{LabelReplacer, resolve_labels_and_extract_locations};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::statements_locations::StatementsLocations;
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
@@ -255,20 +255,6 @@ impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
         }
         Ok(())
     }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct SierraProgramDebugInfo<'db> {
-    pub statements_locations: StatementsLocations<'db>,
-    pub functions_info: OrderedHashMap<FunctionId, FunctionDebugInfo<'db>>,
-}
-
-/// The debug info of a sierra function.
-/// Contains a signature location and locations of sierra variables of this function.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct FunctionDebugInfo<'db> {
-    pub signature_location: LocationId<'db>,
-    pub variables_locations: OrderedHashMap<VarId, LocationId<'db>>,
 }
 
 #[salsa::tracked(returns(ref))]
