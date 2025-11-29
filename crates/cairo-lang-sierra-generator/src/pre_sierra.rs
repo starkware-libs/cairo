@@ -51,6 +51,8 @@ pub struct Function<'db> {
     pub parameters: Vec<program::Param>,
     /// The location per variable in the function.
     pub variable_locations: Vec<(sierra::ids::VarId, LocationId<'db>)>,
+    /// Location of the function signature.
+    pub signature_location: LocationId<'db>,
 }
 
 unsafe impl<'db> salsa::Update for Function<'db> {
