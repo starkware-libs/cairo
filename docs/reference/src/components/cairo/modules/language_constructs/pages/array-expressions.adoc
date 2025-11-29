@@ -54,7 +54,8 @@ let grid = [[1, 2], [3, 4]];
 let zeros = [0; 4];
 
 // Using type context for an empty array (element type provided by the annotation).
-let empty: Array::<felt252> = [];
+let empty: [felt252; 0] = [];
+
 ----
 
 Invalid examples (illustrative):
