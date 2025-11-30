@@ -23,7 +23,7 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
 
     // ── 2. Generate the body per kind ────────────────────────────────────────────
     let body = match &input.data {
-       syn::Data::Struct(s) => emit_struct_debug(name, generics, &db, s),
+        syn::Data::Struct(s) => emit_struct_debug(name, generics, &db, s),
         syn::Data::Enum(e) => emit_enum_debug(name, generics, &db, e),
         syn::Data::Union(_) => panic!("Unions are not supported"),
     };
