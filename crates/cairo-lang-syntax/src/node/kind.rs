@@ -2,7 +2,18 @@
 use core::fmt;
 
 use serde::{Deserialize, Serialize};
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    salsa::Update,
+    cairo_lang_proc_macros::HeapSize,
+)]
 pub enum SyntaxKind {
     Trivia,
     ExprList,

@@ -21,6 +21,8 @@ pub mod deque;
 pub mod extract_matches;
 #[cfg(feature = "std")]
 pub mod graph_algos;
+#[cfg(feature = "std")]
+pub mod heap_size;
 pub mod iterators;
 #[cfg(feature = "tracing")]
 pub mod logging;
@@ -30,6 +32,9 @@ pub mod ordered_hash_set;
 pub mod small_ordered_map;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
+
+#[cfg(feature = "std")]
+pub use heap_size::HeapSize;
 
 /// Similar to From / TryFrom, but returns an option.
 pub trait OptionFrom<T>: Sized {
@@ -104,7 +109,7 @@ pub trait Intern<'db, Target> {
 macro_rules! define_short_id {
     ($short_id:ident, $long_id:path) => {
         // 1. Modern interned struct.
-        #[salsa::interned(revisions = usize::MAX)]
+        #[cairo_lang_proc_macros::interned(revisions = usize::MAX)]
         pub struct $short_id<'db> {
             #[returns(ref)]
             pub long: $long_id,
@@ -143,6 +148,14 @@ macro_rules! define_short_id {
                 use cairo_lang_debug::helper::{Fallback, HelperDebug};
 
                 HelperDebug::<$long_id, dyn salsa::Database>::helper_debug(self.long(db), db).fmt(f)
+            }
+        }
+
+        // 5. HeapSize implementation - short ids are just wrappers around salsa::Id (no heap
+        //    allocation).
+        impl<'db> cairo_lang_utils::HeapSize for $short_id<'db> {
+            fn heap_size(&self) -> usize {
+                0
             }
         }
     };

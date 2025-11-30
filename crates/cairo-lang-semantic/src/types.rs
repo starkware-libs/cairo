@@ -9,7 +9,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_proc_macros::SemanticObject;
+use cairo_lang_proc_macros::{HeapSize, SemanticObject};
 use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -44,7 +44,7 @@ use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericIte
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub enum TypeLongId<'db> {
     Concrete(ConcreteTypeId<'db>),
     /// Some expressions might have invalid types during processing, either due to errors or
@@ -313,7 +313,7 @@ pub enum TypeHead<'db> {
     FixedSizeArray,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub enum ConcreteTypeId<'db> {
     Struct(ConcreteStructId<'db>),
     Enum(ConcreteEnumId<'db>),
@@ -384,7 +384,7 @@ impl<'db> DebugWithDb<'db> for ConcreteTypeId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ConcreteStructLongId<'db> {
     pub struct_id: StructId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -404,7 +404,7 @@ impl<'db> DebugWithDb<'db> for ConcreteStructLongId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ConcreteEnumLongId<'db> {
     pub enum_id: EnumId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -425,7 +425,7 @@ impl<'db> ConcreteEnumId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ConcreteExternTypeLongId<'db> {
     pub extern_type_id: ExternTypeId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -439,7 +439,7 @@ impl<'db> ConcreteExternTypeId<'db> {
 }
 
 /// A type id of a closure function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ClosureTypeLongId<'db> {
     pub param_tys: Vec<TypeId<'db>>,
     pub ret_ty: TypeId<'db>,
@@ -463,7 +463,7 @@ impl<'db> DebugWithDb<'db> for ClosureTypeLongId<'db> {
 }
 
 /// An impl item of kind type.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
 pub struct ImplTypeId<'db> {
     /// The impl the item type is in.
     impl_id: ImplId<'db>,
