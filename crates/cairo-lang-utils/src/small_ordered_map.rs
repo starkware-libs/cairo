@@ -16,7 +16,15 @@ impl<Key: Eq, Value> SmallOrderedMap<Key, Value> {
 impl<Key: Eq, Value: Eq> SmallOrderedMap<Key, Value> {
     /// Checks if the two maps have the same keys and values.
     pub fn eq_unordered(&self, other: &Self) -> bool {
-        self.0 == other.0
+        if self.len() != other.len() {
+            return false;
+        }
+
+        self.iter()
+            .all(|(key, value)| match other.get(key) {
+                Some(other_value) => other_value == value,
+                None => false,
+            })
     }
 }
 impl<Key: Eq, Value: Eq> PartialEq for SmallOrderedMap<Key, Value> {
