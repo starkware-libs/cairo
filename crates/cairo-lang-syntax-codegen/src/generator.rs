@@ -76,7 +76,7 @@ fn generate_kinds_code() -> rust::Tokens {
         name_tokens(&spec, |k| matches!(k, NodeKind::Terminal { is_keyword, .. } if *is_keyword));
 
     tokens.extend(quote! {
-        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update)]
+        #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update, cairo_lang_proc_macros::HeapSize)]
         pub enum SyntaxKind {
             $(for t in kinds => $t,)
         }
@@ -192,6 +192,8 @@ fn generate_ast_code() -> rust::Tokens {
         use cairo_lang_filesystem::span::TextWidth;
         use cairo_lang_filesystem::ids::SmolStrId;
         use cairo_lang_utils::{extract_matches, Intern};
+        use cairo_lang_proc_macros::HeapSize;
+
         use salsa::Database;
 
         use super::element_list::ElementList;
@@ -261,7 +263,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
                 }.intern(db))
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -317,7 +319,7 @@ fn gen_separated_list_code(
                 }.intern(db))
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -451,7 +453,7 @@ fn gen_enum_code(
         pub enum $(&name)<'db>{
             $enum_body
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -534,7 +536,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
                     GreenNodeDetails::Token)
             }
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> TypedStablePtr<'db> for $(&ptr_name)<'db> {
             type SyntaxNode = $(&name)<'db>;
@@ -682,7 +684,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         impl<'db> $(&name)<'db> {
             $body
         }
-        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
         pub struct $(&ptr_name)<'db>(pub SyntaxStablePtrId<'db>);
         impl<'db> $(&ptr_name)<'db> {
             $ptr_getters
