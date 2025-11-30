@@ -3277,6 +3277,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 "generic arg",
             ),
         );
+        self.unglue::<TerminalGE<'_>, TerminalGT<'_>, TerminalEq<'_>>(">", "=");
         let rangle = self.parse_token::<TerminalGT<'_>>();
         GenericArgs::new_green(self.db, langle, generic_args, rangle)
     }
@@ -3554,21 +3555,40 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Consumes a '&&' token and pushes two '&' tokens into the token stream.
     /// If the current token is not '&&', does nothing.
     fn unglue_andand_for_unary(&mut self) {
-        if self.peek().kind != SyntaxKind::TerminalAndAnd {
+        self.unglue::<TerminalAndAnd<'_>, TerminalAnd<'_>, TerminalAnd<'_>>("&", "&");
+    }
+
+    /// Consumes a `Original` token and replaces it instead with its split into `First` and `Second`
+    /// tokens and pushes them into the token stream. If the current token is not 'Original',
+    /// does nothing.
+    fn unglue<
+        Original: syntax::node::Terminal<'a>,
+        First: syntax::node::Terminal<'a>,
+        Second: syntax::node::Terminal<'a>,
+    >(
+        &mut self,
+        first: &'static str,
+        second: &'static str,
+    ) {
+        if self.peek().kind != Original::KIND {
             return;
         }
-
-        // Consume the && token and create base '&' token from it.
-        let and_terminal = LexerTerminal {
-            text: SmolStrId::from(self.db, "&"),
-            kind: SyntaxKind::TerminalAnd,
-            ..self.advance() // Consume the && token and grab its trivia.
-        };
-
-        // The second '&' (hence pushing it first) was glued to the first, so no leading trivia.
-        self.terminals.push_front(LexerTerminal { leading_trivia: vec![], ..and_terminal });
-        // The first '&' was glued to the second, hence no trailing trivia.
-        self.terminals.push_front(LexerTerminal { trailing_trivia: vec![], ..and_terminal });
+        // Consume the >= token and grab its trivia.
+        let orig = self.advance();
+        // Pushing the second first, with the trailing trivia.
+        self.terminals.push_front(LexerTerminal {
+            text: SmolStrId::from(self.db, second),
+            kind: Second::KIND,
+            leading_trivia: vec![],
+            trailing_trivia: orig.trailing_trivia,
+        });
+        // Pushing the first second, with the leading trivia.
+        self.terminals.push_front(LexerTerminal {
+            text: SmolStrId::from(self.db, first),
+            kind: First::KIND,
+            leading_trivia: orig.leading_trivia,
+            trailing_trivia: vec![],
+        });
     }
 
     /// Move forward one terminal.
