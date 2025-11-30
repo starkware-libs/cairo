@@ -50,7 +50,7 @@ pub(crate) use rbrack;
 
 macro_rules! rangle {
     () => {
-        SyntaxKind::TerminalGT
+        SyntaxKind::TerminalGT | SyntaxKind::TerminalGE
     };
 }
 pub(crate) use rangle;

@@ -26,6 +26,8 @@ fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   // bla2
     z = 5;
     func1(x);
+    let x :Option<felt252>=Some(5);
+    let x :Option<felt252> =Some(5);
     func2::<int>(x)
     return x;
 
