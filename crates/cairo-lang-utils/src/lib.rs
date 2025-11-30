@@ -104,7 +104,7 @@ pub trait Intern<'db, Target> {
 macro_rules! define_short_id {
     ($short_id:ident, $long_id:path) => {
         // 1. Modern interned struct.
-        #[salsa::interned(revisions = usize::MAX)]
+        #[salsa::interned(revisions = usize::MAX, heap_size = cairo_lang_utils::interned_heap_size)]
         pub struct $short_id<'db> {
             #[returns(ref)]
             pub long: $long_id,
@@ -157,4 +157,10 @@ macro_rules! define_short_id {
 #[must_use = "This function is only relevant to create a possible return."]
 pub fn require(condition: bool) -> Option<()> {
     condition.then_some(())
+}
+
+/// Returns the heap size of interned values, which is always 0 since they don't own heap memory.
+#[cfg(feature = "heapsize")]
+pub fn interned_heap_size<T>(_value: &T) -> usize {
+    0
 }

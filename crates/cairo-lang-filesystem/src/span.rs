@@ -27,6 +27,7 @@ mod test;
     Deserialize,
     salsa::Update,
 )]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub struct TextWidth(u32);
 impl TextWidth {
     pub const ZERO: Self = Self(0);
@@ -95,6 +96,7 @@ impl Sum for TextWidth {
     Deserialize,
     salsa::Update,
 )]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub struct TextOffset(TextWidth);
 impl TextOffset {
     pub const START: Self = Self(TextWidth::ZERO);
@@ -129,6 +131,7 @@ impl Sub for TextOffset {
 #[derive(
     Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
 )]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub struct TextSpan {
     pub start: TextOffset,
     pub end: TextOffset,

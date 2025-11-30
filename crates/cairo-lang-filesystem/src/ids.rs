@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+#[cfg(feature = "heapsize")]
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_utils::{Intern, define_short_id};
 use itertools::Itertools;
 use path_clean::PathClean;
@@ -60,6 +62,7 @@ impl CrateInput {
 
 /// A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub enum CrateLongId<'db> {
     /// A crate that appears in crate_roots(), and on the filesystem.
     Real { name: SmolStrId<'db>, discriminator: Option<String> },
@@ -128,6 +131,7 @@ impl UnstableSalsaId for CrateId<'_> {
 
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub struct FlagLongId(pub String);
 define_short_id!(FlagId, FlagLongId);
 
@@ -153,6 +157,7 @@ impl FileInput {
 /// We use a higher level FileId struct, because not all files are on disk. Some might be online.
 /// Some might be virtual/computed on demand.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub enum FileLongId<'db> {
     OnDisk(PathBuf),
     Virtual(VirtualFile<'db>),
@@ -160,6 +165,7 @@ pub enum FileLongId<'db> {
 }
 /// Whether the file holds syntax for a module or for an expression.
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub enum FileKind {
     Module,
     Expr,
@@ -168,6 +174,7 @@ pub enum FileKind {
 
 /// A mapping for a code rewrite.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub struct CodeMapping {
     pub span: TextSpan,
     pub origin: CodeOrigin,
@@ -191,6 +198,7 @@ impl CodeMapping {
 
 /// The origin of a code mapping.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub enum CodeOrigin {
     /// The origin is a copied node starting at the given offset.
     Start(TextOffset),
@@ -248,6 +256,7 @@ impl VirtualFileInput {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub struct VirtualFile<'db> {
     pub parent: Option<SpanInFile<'db>>,
     pub name: SmolStrId<'db>,
@@ -496,6 +505,7 @@ impl<'db> Directory<'db> {
 
 /// A FileId for data that is not necessarily a valid UTF-8 string.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub enum BlobLongId {
     OnDisk(PathBuf),
     Virtual(Vec<u8>),
@@ -520,6 +530,7 @@ impl<'db> BlobId<'db> {
 
 /// A location within a file.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[cfg_attr(feature = "heapsize", derive(HeapSize))]
 pub struct SpanInFile<'db> {
     pub file_id: FileId<'db>,
     pub span: TextSpan,

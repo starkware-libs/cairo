@@ -7,6 +7,7 @@ license-file.workspace = true
 description = "Cairo semantic model."
 
 [features]
+heapsize = ["get-size2", "cairo-lang-debug/heapsize", "cairo-lang-defs/heapsize", "cairo-lang-filesystem/heapsize", "cairo-lang-syntax/heapsize", "cairo-lang-utils/heapsize"]
 testing = ["dep:cairo-lang-test-utils", "dep:toml"]
 
 [dependencies]
@@ -23,6 +24,7 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "~2.14.0"
   "testing",
 ] }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0", features = ["tracing"] }
+get-size2 = { workspace = true, optional = true }
 id-arena.workspace = true
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }

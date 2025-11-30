@@ -3,11 +3,17 @@ use quote::quote;
 use syn::{ItemFn, parse_macro_input};
 
 mod debug;
+mod heapsize;
 mod rewriter;
 
 #[proc_macro_derive(DebugWithDb, attributes(debug_db, hide_field_debug_with_db))]
 pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
     debug::derive_debug_with_db(input)
+}
+
+#[proc_macro_derive(HeapSize)]
+pub fn derive_heap_size(input: TokenStream) -> TokenStream {
+    heapsize::derive_heap_size(input)
 }
 
 #[proc_macro_derive(SemanticObject, attributes(dont_rewrite))]

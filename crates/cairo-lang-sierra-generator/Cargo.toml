@@ -8,6 +8,7 @@ license-file.workspace = true
 description = "Sierra code generation from lowered Cairo representation."
 
 [features]
+heapsize = ["get-size2", "cairo-lang-debug/heapsize", "cairo-lang-defs/heapsize", "cairo-lang-filesystem/heapsize", "cairo-lang-lowering/heapsize", "cairo-lang-semantic/heapsize", "cairo-lang-syntax/heapsize", "cairo-lang-utils/heapsize"]
 testing = ["dep:cairo-lang-test-utils"]
 
 [dependencies]
@@ -23,6 +24,7 @@ cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "~2.14.0"
   "testing",
 ] }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0", features = ["tracing"] }
+get-size2 = { workspace = true, optional = true }
 itertools = { workspace = true, default-features = true }
 num-traits = { workspace = true }
 salsa.workspace = true

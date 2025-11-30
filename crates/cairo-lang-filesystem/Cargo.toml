@@ -8,7 +8,9 @@ description = "Virtual filesystem for the compiler."
 
 [dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.14.0" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.14.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0", features = ["serde"] }
+get-size2 = { workspace = true, features = ["derive"], optional = true }
 itertools.workspace = true
 path-clean.workspace = true
 salsa.workspace = true
@@ -16,6 +18,9 @@ semver.workspace = true
 serde = { workspace = true, default-features = true }
 smol_str.workspace = true
 toml.workspace = true
+
+[features]
+heapsize = ["get-size2", "cairo-lang-debug/heapsize", "cairo-lang-utils/heapsize"]
 
 [dev-dependencies]
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
