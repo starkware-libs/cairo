@@ -264,3 +264,42 @@ error: Cannot infer negative impl in `core::metaprogramming::TypeEqual::<[T; 1],
  --> lib.cairo:12:5
     MyImpl::<T, 1>::f();
     ^^^^^^
+
+//! > ==========================================================================
+
+//! > Test anonynous impl inside negative impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function
+fn foo() {
+    Bad::<u128>::bad();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait NegImpl<T, +Drop<T>> {}
+
+pub trait Bad<T> {
+    fn bad() -> T;
+}
+
+pub impl ImplBad<T, -NegImpl<T, _>> of Bad<T> {
+    fn bad() -> T {
+        panic!("Bad::bad() called")
+    }
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::traits::Drop::<T>.
+ --> lib.cairo:7:22
+pub impl ImplBad<T, -NegImpl<T, _>> of Bad<T> {
+                     ^^^^^^^
+
+error: Candidate impl test::ImplBad::<core::integer::u128, _> has an unused generic parameter.
+ --> lib.cairo:13:18
+    Bad::<u128>::bad();
+                 ^^^
