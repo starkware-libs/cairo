@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::ids::SmolStrId;
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
@@ -118,7 +118,7 @@ pub struct Variant<'db> {
     pub idx: usize,
 }
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
 pub struct ConcreteVariant<'db> {
     pub concrete_enum_id: ConcreteEnumId<'db>,
     pub id: VariantId<'db>,

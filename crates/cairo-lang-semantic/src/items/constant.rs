@@ -11,7 +11,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
     skip_diagnostic,
 };
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
@@ -156,7 +156,7 @@ pub fn canonical_felt252(value: &BigInt) -> BigInt {
 }
 
 /// A constant value.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
 pub enum ConstValue<'db> {
     Int(#[dont_rewrite] BigInt, TypeId<'db>),
     Struct(Vec<ConstValueId<'db>>, TypeId<'db>),
@@ -229,7 +229,7 @@ impl<'db> ConstValue<'db> {
 }
 
 /// An impl item of kind const.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
 pub struct ImplConstantId<'db> {
     /// The impl the item const is in.
     impl_id: ImplId<'db>,

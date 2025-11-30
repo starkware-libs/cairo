@@ -10,7 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Tracked;
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{
     AssociatedItemConstraints, GenericArgValue, OptionAssociatedItemConstraints,
@@ -48,7 +48,7 @@ use crate::{ConcreteTraitId, ConcreteTraitLongId, SemanticDiagnostic, TypeId, Ty
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub enum GenericArgumentId<'db> {
     Type(TypeId<'db>),
     Constant(ConstValueId<'db>),
@@ -159,7 +159,7 @@ pub enum GenericArgumentHead<'db> {
 }
 
 /// Generic parameter.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
 pub enum GenericParam<'db> {
     Type(GenericParamType<'db>),
     // TODO(spapini): Add expression.
@@ -221,18 +221,24 @@ pub fn generic_params_to_args<'db>(
     params.iter().map(|param| param.as_arg(db)).collect()
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(
+    Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+)]
 #[debug_db(dyn Database)]
 pub struct GenericParamType<'db> {
     pub id: GenericParamId<'db>,
 }
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(
+    Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+)]
 #[debug_db(dyn Database)]
 pub struct GenericParamConst<'db> {
     pub id: GenericParamId<'db>,
     pub ty: TypeId<'db>,
 }
-#[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+)]
 #[debug_db(dyn Database)]
 pub struct GenericParamImpl<'db> {
     pub id: GenericParamId<'db>,
