@@ -19,7 +19,7 @@ use cairo_lang_runner::profiling::{
     ProfilingInfo, ProfilingInfoProcessor, ProfilingInfoProcessorParams,
 };
 use cairo_lang_runner::{Arg, CairoHintProcessor, ProfilingInfoCollectionConfig};
-use cairo_lang_sierra_generator::program_generator::SierraProgramDebugInfo;
+use cairo_lang_sierra_generator::debug_info::SierraProgramDebugInfo;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};

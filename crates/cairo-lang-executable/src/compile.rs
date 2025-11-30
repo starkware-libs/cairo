@@ -16,10 +16,9 @@ use cairo_lang_runnable_utils::builder::{
     CasmProgramWrapperInfo, EntryCodeConfig, RunnableBuilder,
 };
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::debug_info::SierraProgramDebugInfo;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
-use cairo_lang_sierra_generator::program_generator::{
-    SierraProgramDebugInfo, SierraProgramWithDebug,
-};
+use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::write_comma_separated;
 use itertools::Itertools;
