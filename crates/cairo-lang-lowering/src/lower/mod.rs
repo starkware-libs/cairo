@@ -1988,7 +1988,7 @@ fn add_closure_call_function<'db>(
     .intern(db);
     let function_with_body_id = FunctionWithBodyLongId::Generated {
         parent: encapsulated_ctx.semantic_function_id,
-        key: GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.wrapper_location),
+        key: GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.params_location),
     }
     .intern(db);
     let signature =
@@ -2069,7 +2069,7 @@ fn add_closure_call_function<'db>(
         parameters,
     };
     encapsulated_ctx.lowerings.insert(
-        GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.wrapper_location),
+        GeneratedFunctionKey::TraitFunc(trait_function, closure_ty.params_location),
         lowered,
     );
     Ok(())
@@ -2092,7 +2092,7 @@ fn lower_expr_closure<'db>(
         ctx,
         capture_var_usage,
         &closure_info,
-        closure_ty.wrapper_location,
+        closure_ty.params_location,
     );
     add_closure_call_function(
         ctx,

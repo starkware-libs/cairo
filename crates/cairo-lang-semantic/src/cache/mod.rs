@@ -1331,7 +1331,7 @@ struct ClosureTypeCached {
     ret_ty: TypeIdCached,
     captured_types: Vec<TypeIdCached>,
     parent_function: SemanticFunctionIdCached,
-    wrapper_location: SyntaxStablePtrIdCached,
+    params_location: SyntaxStablePtrIdCached,
 }
 
 impl ClosureTypeCached {
@@ -1355,8 +1355,8 @@ impl ClosureTypeCached {
                 closure_type_id.parent_function.unwrap(),
                 ctx,
             ),
-            wrapper_location: SyntaxStablePtrIdCached::new(
-                closure_type_id.wrapper_location.stable_ptr(),
+            params_location: SyntaxStablePtrIdCached::new(
+                closure_type_id.params_location.stable_ptr(),
                 &mut ctx.defs_ctx,
             ),
         }
@@ -1367,8 +1367,8 @@ impl ClosureTypeCached {
             ret_ty: self.ret_ty.embed(ctx),
             captured_types: self.captured_types.into_iter().map(|ty| ty.embed(ctx)).collect(),
             parent_function: Ok(self.parent_function.embed(ctx)),
-            wrapper_location: StableLocation::new(
-                self.wrapper_location.get_embedded(&ctx.defs_loading_data),
+            params_location: StableLocation::new(
+                self.params_location.get_embedded(&ctx.defs_loading_data),
             ),
         }
     }
