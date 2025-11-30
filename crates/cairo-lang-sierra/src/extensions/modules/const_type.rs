@@ -1,6 +1,9 @@
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
+use num_bigint::BigInt;
 use num_traits::{ToPrimitive, Zero};
+use starknet_types_core::curve::AffinePoint;
+use starknet_types_core::felt::{CAIRO_PRIME_BIGINT, Felt as Felt252};
 
 use super::boxing::box_ty;
 use super::consts::ConstGenLibfunc;
@@ -14,6 +17,7 @@ use super::starknet::interoperability::{
 use super::structure::StructType;
 use super::utils::Range;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::ec::EcPointType;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
@@ -79,6 +83,8 @@ fn validate_const_data(
         return validate_const_enum_data(context, &inner_type_info, inner_data);
     } else if *inner_generic_id == NonZeroType::ID {
         return validate_const_nz_data(context, &inner_type_info, inner_data);
+    } else if *inner_generic_id == EcPointType::ID {
+        return validate_const_ec_data(context, inner_data);
     }
     let type_range = if *inner_generic_id == ContractAddressType::id() {
         Range::half_open(0, ContractAddressConstLibfuncWrapped::bound())
@@ -172,12 +178,22 @@ fn validate_const_nz_data(
     if wrapped_ty_from_const != wrapped_ty_from_nz {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
-
-    // Check the direct value case.
-    if matches!(inner_const_data.as_slice(), [GenericArg::Value(value)] if !value.is_zero()) {
-        // Validate that the inner type is a valid integer type, by calling `from_type_info`.
-        Range::from_type_info(&context.get_type_info(wrapped_ty_from_nz)?)?;
-        return Ok(());
+    // Check the direct value cases.
+    match inner_const_data.as_slice() {
+        [GenericArg::Value(value)] if !value.is_zero() => {
+            // Validate that the inner type is a valid integer type, by calling `from_type_info`.
+            Range::from_type_info(&context.get_type_info(wrapped_ty_from_nz)?)?;
+            return Ok(());
+        }
+        [GenericArg::Value(_x), GenericArg::Value(y)] if !y.is_zero() => {
+            // Validate that the inner type is a valid ec point type.
+            if context.get_type_info(wrapped_ty_from_nz)?.long_id.generic_id == EcPointType::ID {
+                return Ok(());
+            } else {
+                return Err(SpecializationError::UnsupportedGenericArg);
+            }
+        }
+        _ => {}
     }
     let struct_generic_args =
         extract_type_generic_args::<StructType>(context, &wrapped_ty_from_nz)?;
@@ -205,6 +221,28 @@ fn validate_const_nz_data(
     }
 
     if is_non_zero { Ok(()) } else { Err(SpecializationError::UnsupportedGenericArg) }
+}
+
+/// Given a
+fn validate_const_ec_data(
+    _context: &dyn TypeSpecializationContext,
+    inner_data: &[GenericArg],
+) -> Result<(), SpecializationError> {
+    // Assert that the inner data is the `x` and `y` values of the point on the `ec` curve.
+    let [GenericArg::Value(x), GenericArg::Value(y)] = inner_data else {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    };
+    if x.is_zero() && y.is_zero() {
+        return Ok(());
+    }
+    let prime: &BigInt = &CAIRO_PRIME_BIGINT;
+    if x < &BigInt::ZERO || x >= prime || y < &BigInt::ZERO || y >= prime {
+        return Err(SpecializationError::UnsupportedGenericArg);
+    }
+    match AffinePoint::new(Felt252::from(x), Felt252::from(y)) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(SpecializationError::UnsupportedGenericArg),
+    }
 }
 
 /// Validates the type is a `Const` type, and extracts the inner type and the rest of the generic

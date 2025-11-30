@@ -74,9 +74,7 @@ pub fn check_ecdsa_signature(
     };
 
     // Retrieve the generator point.
-    let Some(gen_point) = EcPointTrait::new_nz(
-        ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y,
-    ) else {
+    let Some(gen_point) = generator_point() else {
         return false;
     };
 
@@ -161,7 +159,7 @@ pub fn recover_public_key(
     message_hash: felt252, signature_r: felt252, signature_s: felt252, y_parity: bool,
 ) -> Option<felt252> {
     let r_point = EcPointTrait::new_nz_from_x(signature_r)?;
-    let gen_point = EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)?;
+    let gen_point = generator_point()?;
 
     // a Valid signature should satisfy:
     // zG + rQ = sR.
@@ -196,4 +194,50 @@ pub fn recover_public_key(
     };
     state.add_mul(r_multiplier, r_point);
     Some(state.finalize_nz()?.x())
+}
+
+// TODO(orizi): Remove this function on next Sierra release.
+/// Returns the generator point of the elliptic curve.
+///
+/// Note: Cannot actually fail, as the generator point is always valid.
+#[cfg(not(sierra: "future"))]
+fn generator_point() -> Option<ec::NonZeroEcPoint> {
+    EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)
+}
+
+// TODO(orizi): Remove this function and use `generator::value()` directly on next Sierra release.
+/// Returns the generator point of the elliptic curve.
+///
+/// Note: Cannot actually fail, as the generator point is always valid.
+#[cfg(sierra: "future")]
+fn generator_point() -> Option<ec::NonZeroEcPoint> {
+    Some(generator::value())
+}
+
+#[cfg(sierra: "future")]
+mod generator {
+    use crate::ec;
+
+    mod v {
+        /// Const type variant for the EcPoint type.
+        pub extern type Const<T, const X: felt252, const Y: felt252>;
+    }
+
+    mod nz {
+        /// Non-zero const type variant for the EcPoint type.
+        pub extern type Const<T, C>;
+    }
+
+    /// Extern declaration for fetching the actual value.
+    extern fn const_as_immediate<T>() -> NonZero<ec::EcPoint> nopanic;
+
+    /// Returns the generator point of the elliptic curve.
+    pub fn value() -> ec::NonZeroEcPoint {
+        const_as_immediate::<
+            nz::Const<
+                ec::NonZeroEcPoint,
+                v::Const<ec::EcPoint, ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y>,
+            >,
+        >()
+    }
 }
