@@ -51,7 +51,7 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         SyntaxKind::FixedSizeArraySize => 0..0,
         SyntaxKind::OptionFixedSizeArraySizeEmpty => 0..0,
         SyntaxKind::ExprClosure => 0..0,
-        SyntaxKind::ClosureParamWrapperNAry => 0..0,
+        SyntaxKind::ClosureParams => 0..0,
         SyntaxKind::StructArgExpr => 0..0,
         SyntaxKind::OptionStructArgExprEmpty => 0..0,
         // Key fields: identifier.

@@ -279,7 +279,7 @@ impl<'db> FunctionLongId<'db> {
                     return Ok(Some(
                         GeneratedFunction {
                             parent,
-                            key: GeneratedFunctionKey::TraitFunc(function, ty.wrapper_location),
+                            key: GeneratedFunctionKey::TraitFunc(function, ty.params_location),
                         }
                         .body(db),
                     ));

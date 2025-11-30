@@ -1687,11 +1687,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalFor if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_for_expr().into())
             }
-            SyntaxKind::TerminalOr if lbrace_allowed == LbraceAllowed::Allow => {
-                Ok(self.expect_closure_expr_nary().into())
-            }
-            SyntaxKind::TerminalOrOr if lbrace_allowed == LbraceAllowed::Allow => {
-                Ok(self.expect_closure_expr_nullary().into())
+            SyntaxKind::TerminalOr | SyntaxKind::TerminalOrOr
+                if lbrace_allowed == LbraceAllowed::Allow =>
+            {
+                Ok(self.expect_closure_expr().into())
             }
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -2495,28 +2494,15 @@ impl<'a, 'mt> Parser<'a, 'mt> {
 
     /// Assumes the current token is `|`.
     /// Expected pattern: `| <params> | <ReturnTypeClause> <expression>`.
-    fn expect_closure_expr_nary(&mut self) -> ExprClosureGreen<'a> {
+    fn expect_closure_expr(&mut self) -> ExprClosureGreen<'a> {
+        self.unglue::<TerminalOrOr<'_>, TerminalOr<'_>, TerminalOr<'_>>("|", "|");
         let leftor = self.take::<TerminalOr<'a>>();
         let params = self.parse_closure_param_list();
         let rightor = self.parse_token::<TerminalOr<'a>>();
-
-        self.parse_closure_expr_body(
-            ClosureParamWrapperNAry::new_green(self.db, leftor, params, rightor).into(),
-        )
-    }
-    /// Assumes the current token is `||`.
-    /// Expected pattern: `|| <ReturnTypeClause> <expression> `.
-    fn expect_closure_expr_nullary(&mut self) -> ExprClosureGreen<'a> {
-        let wrapper = self.take::<TerminalOrOr<'a>>().into();
-        self.parse_closure_expr_body(wrapper)
-    }
-    fn parse_closure_expr_body(
-        &mut self,
-        wrapper: ClosureParamWrapperGreen<'a>,
-    ) -> ExprClosureGreen<'a> {
+        let params = ClosureParams::new_green(self.db, leftor, params, rightor);
         let mut block_required = self.peek().kind == SyntaxKind::TerminalArrow;
 
-        let return_type_clause = self.parse_option_return_type_clause();
+        let return_ty = self.parse_option_return_type_clause();
         let optional_no_panic = if self.peek().kind == SyntaxKind::TerminalNoPanic {
             block_required = true;
             self.take::<TerminalNoPanic<'a>>().into()
@@ -2525,7 +2511,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         };
         let expr = if block_required { self.parse_block().into() } else { self.parse_expr() };
 
-        ExprClosure::new_green(self.db, wrapper, return_type_clause, optional_no_panic, expr)
+        ExprClosure::new_green(self.db, params, return_ty, optional_no_panic, expr)
     }
 
     /// Assumes the current token is LBrack.

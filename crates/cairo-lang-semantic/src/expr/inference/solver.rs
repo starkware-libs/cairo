@@ -590,7 +590,7 @@ impl<'db> LiteInference<'db> {
             }
             (TypeLongId::Tuple(_), _) => CanConformResult::Rejected,
             (TypeLongId::Closure(candidate), TypeLongId::Closure(target)) => {
-                if candidate.wrapper_location != target.wrapper_location {
+                if candidate.params_location != target.params_location {
                     return CanConformResult::Rejected;
                 }
 

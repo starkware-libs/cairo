@@ -27,8 +27,8 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::attribute::consts::UNUSED_VARIABLES;
 use cairo_lang_syntax::node::ast::{
-    BinaryOperator, BlockOrIf, ClosureParamWrapper, ConditionListAnd, ExprPtr,
-    OptionReturnTypeClause, PatternListOr, PatternStructParam, TerminalIdentifier, UnaryOperator,
+    BinaryOperator, BlockOrIf, ConditionListAnd, ExprPtr, OptionReturnTypeClause, PatternListOr,
+    PatternStructParam, TerminalIdentifier, UnaryOperator,
 };
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -2336,20 +2336,14 @@ fn compute_expr_closure_semantic<'db>(
     ctx.are_closures_in_context = true;
     let db = ctx.db;
     let (params, ret_ty, body) = ctx.run_in_subscope(|new_ctx| {
-        let params = if let ClosureParamWrapper::NAry(params) = syntax.wrapper(db) {
-            function_signature_params(
-                new_ctx.diagnostics,
-                new_ctx.db,
-                new_ctx.resolver,
-                params.params(db).elements(db),
-                None,
-                &mut new_ctx.environment,
-            )
-            .into_iter()
-            .collect()
-        } else {
-            vec![]
-        };
+        let params = function_signature_params(
+            new_ctx.diagnostics,
+            new_ctx.db,
+            new_ctx.resolver,
+            syntax.params(db).params(db).elements(db),
+            None,
+            &mut new_ctx.environment,
+        );
         let closure_type =
             TypeLongId::Tuple(params.iter().map(|param| param.ty).collect()).intern(new_ctx.db);
         if let Some(param_types) = params_tuple_ty
@@ -2438,7 +2432,7 @@ fn compute_expr_closure_semantic<'db>(
         ret_ty,
         captured_types,
         parent_function,
-        wrapper_location: StableLocation::new(syntax.wrapper(db).stable_ptr(db).into()),
+        params_location: StableLocation::new(syntax.params(db).stable_ptr(db).into()),
     })
     .intern(ctx.db);
 

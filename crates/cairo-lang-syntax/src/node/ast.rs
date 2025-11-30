@@ -6256,18 +6256,18 @@ pub struct ExprClosure<'db> {
     node: SyntaxNode<'db>,
 }
 impl<'db> ExprClosure<'db> {
-    pub const INDEX_WRAPPER: usize = 0;
+    pub const INDEX_PARAMS: usize = 0;
     pub const INDEX_RET_TY: usize = 1;
     pub const INDEX_OPTIONAL_NO_PANIC: usize = 2;
     pub const INDEX_EXPR: usize = 3;
     pub fn new_green(
         db: &'db dyn Database,
-        wrapper: ClosureParamWrapperGreen<'db>,
+        params: ClosureParamsGreen<'db>,
         ret_ty: OptionReturnTypeClauseGreen<'db>,
         optional_no_panic: OptionTerminalNoPanicGreen<'db>,
         expr: ExprGreen<'db>,
     ) -> ExprClosureGreen<'db> {
-        let children = [wrapper.0, ret_ty.0, optional_no_panic.0, expr.0];
+        let children = [params.0, ret_ty.0, optional_no_panic.0, expr.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ExprClosureGreen(
             GreenNode {
@@ -6279,8 +6279,8 @@ impl<'db> ExprClosure<'db> {
     }
 }
 impl<'db> ExprClosure<'db> {
-    pub fn wrapper(&self, db: &'db dyn Database) -> ClosureParamWrapper<'db> {
-        ClosureParamWrapper::from_syntax_node(db, self.node.get_children(db)[0])
+    pub fn params(&self, db: &'db dyn Database) -> ClosureParams<'db> {
+        ClosureParams::from_syntax_node(db, self.node.get_children(db)[0])
     }
     pub fn ret_ty(&self, db: &'db dyn Database) -> OptionReturnTypeClause<'db> {
         OptionReturnTypeClause::from_syntax_node(db, self.node.get_children(db)[1])
@@ -6321,7 +6321,7 @@ impl<'db> TypedSyntaxNode<'db> for ExprClosure<'db> {
                 kind: SyntaxKind::ExprClosure,
                 details: GreenNodeDetails::Node {
                     children: [
-                        ClosureParamWrapper::missing(db).0,
+                        ClosureParams::missing(db).0,
                         OptionReturnTypeClause::missing(db).0,
                         OptionTerminalNoPanic::missing(db).0,
                         Expr::missing(db).0,
@@ -6356,103 +6356,10 @@ impl<'db> TypedSyntaxNode<'db> for ExprClosure<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub enum ClosureParamWrapper<'db> {
-    Nullary(TerminalOrOr<'db>),
-    NAry(ClosureParamWrapperNAry<'db>),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ClosureParamWrapperPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> TypedStablePtr<'db> for ClosureParamWrapperPtr<'db> {
-    type SyntaxNode = ClosureParamWrapper<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> Self::SyntaxNode {
-        ClosureParamWrapper::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<ClosureParamWrapperPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ClosureParamWrapperPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-impl<'db> From<TerminalOrOrPtr<'db>> for ClosureParamWrapperPtr<'db> {
-    fn from(value: TerminalOrOrPtr<'db>) -> Self {
-        Self(value.0)
-    }
-}
-impl<'db> From<ClosureParamWrapperNAryPtr<'db>> for ClosureParamWrapperPtr<'db> {
-    fn from(value: ClosureParamWrapperNAryPtr<'db>) -> Self {
-        Self(value.0)
-    }
-}
-impl<'db> From<TerminalOrOrGreen<'db>> for ClosureParamWrapperGreen<'db> {
-    fn from(value: TerminalOrOrGreen<'db>) -> Self {
-        Self(value.0)
-    }
-}
-impl<'db> From<ClosureParamWrapperNAryGreen<'db>> for ClosureParamWrapperGreen<'db> {
-    fn from(value: ClosureParamWrapperNAryGreen<'db>) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ClosureParamWrapperGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ClosureParamWrapper<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = None;
-    type StablePtr = ClosureParamWrapperPtr<'db>;
-    type Green = ClosureParamWrapperGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        panic!("No missing variant.");
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::TerminalOrOr => {
-                ClosureParamWrapper::Nullary(TerminalOrOr::from_syntax_node(db, node))
-            }
-            SyntaxKind::ClosureParamWrapperNAry => {
-                ClosureParamWrapper::NAry(ClosureParamWrapperNAry::from_syntax_node(db, node))
-            }
-            _ => panic!(
-                "Unexpected syntax kind {:?} when constructing {}.",
-                kind, "ClosureParamWrapper"
-            ),
-        }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::TerminalOrOr => {
-                Some(ClosureParamWrapper::Nullary(TerminalOrOr::from_syntax_node(db, node)))
-            }
-            SyntaxKind::ClosureParamWrapperNAry => {
-                Some(ClosureParamWrapper::NAry(ClosureParamWrapperNAry::from_syntax_node(db, node)))
-            }
-            _ => None,
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        match self {
-            ClosureParamWrapper::Nullary(x) => x.as_syntax_node(),
-            ClosureParamWrapper::NAry(x) => x.as_syntax_node(),
-        }
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ClosureParamWrapperPtr(self.as_syntax_node().stable_ptr(db))
-    }
-}
-impl<'db> ClosureParamWrapper<'db> {
-    /// Checks if a kind of a variant of [ClosureParamWrapper].
-    pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::TerminalOrOr | SyntaxKind::ClosureParamWrapperNAry)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct ClosureParamWrapperNAry<'db> {
+pub struct ClosureParams<'db> {
     node: SyntaxNode<'db>,
 }
-impl<'db> ClosureParamWrapperNAry<'db> {
+impl<'db> ClosureParams<'db> {
     pub const INDEX_LEFTOR: usize = 0;
     pub const INDEX_PARAMS: usize = 1;
     pub const INDEX_RIGHTOR: usize = 2;
@@ -6461,19 +6368,19 @@ impl<'db> ClosureParamWrapperNAry<'db> {
         leftor: TerminalOrGreen<'db>,
         params: ParamListGreen<'db>,
         rightor: TerminalOrGreen<'db>,
-    ) -> ClosureParamWrapperNAryGreen<'db> {
+    ) -> ClosureParamsGreen<'db> {
         let children = [leftor.0, params.0, rightor.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        ClosureParamWrapperNAryGreen(
+        ClosureParamsGreen(
             GreenNode {
-                kind: SyntaxKind::ClosureParamWrapperNAry,
+                kind: SyntaxKind::ClosureParams,
                 details: GreenNodeDetails::Node { children: children.into(), width },
             }
             .intern(db),
         )
     }
 }
-impl<'db> ClosureParamWrapperNAry<'db> {
+impl<'db> ClosureParams<'db> {
     pub fn leftor(&self, db: &'db dyn Database) -> TerminalOr<'db> {
         TerminalOr::from_syntax_node(db, self.node.get_children(db)[0])
     }
@@ -6485,32 +6392,32 @@ impl<'db> ClosureParamWrapperNAry<'db> {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ClosureParamWrapperNAryPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> ClosureParamWrapperNAryPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for ClosureParamWrapperNAryPtr<'db> {
-    type SyntaxNode = ClosureParamWrapperNAry<'db>;
+pub struct ClosureParamsPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> ClosureParamsPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for ClosureParamsPtr<'db> {
+    type SyntaxNode = ClosureParams<'db>;
     fn untyped(self) -> SyntaxStablePtrId<'db> {
         self.0
     }
-    fn lookup(&self, db: &'db dyn Database) -> ClosureParamWrapperNAry<'db> {
-        ClosureParamWrapperNAry::from_syntax_node(db, self.0.lookup(db))
+    fn lookup(&self, db: &'db dyn Database) -> ClosureParams<'db> {
+        ClosureParams::from_syntax_node(db, self.0.lookup(db))
     }
 }
-impl<'db> From<ClosureParamWrapperNAryPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: ClosureParamWrapperNAryPtr<'db>) -> Self {
+impl<'db> From<ClosureParamsPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: ClosureParamsPtr<'db>) -> Self {
         ptr.untyped()
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct ClosureParamWrapperNAryGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for ClosureParamWrapperNAry<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ClosureParamWrapperNAry);
-    type StablePtr = ClosureParamWrapperNAryPtr<'db>;
-    type Green = ClosureParamWrapperNAryGreen<'db>;
+pub struct ClosureParamsGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for ClosureParams<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ClosureParams);
+    type StablePtr = ClosureParamsPtr<'db>;
+    type Green = ClosureParamsGreen<'db>;
     fn missing(db: &'db dyn Database) -> Self::Green {
-        ClosureParamWrapperNAryGreen(
+        ClosureParamsGreen(
             GreenNode {
-                kind: SyntaxKind::ClosureParamWrapperNAry,
+                kind: SyntaxKind::ClosureParams,
                 details: GreenNodeDetails::Node {
                     children: [
                         TerminalOr::missing(db).0,
@@ -6528,16 +6435,16 @@ impl<'db> TypedSyntaxNode<'db> for ClosureParamWrapperNAry<'db> {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ClosureParamWrapperNAry,
+            SyntaxKind::ClosureParams,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ClosureParamWrapperNAry
+            SyntaxKind::ClosureParams
         );
         Self { node }
     }
     fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
         let kind = node.kind(db);
-        if kind == SyntaxKind::ClosureParamWrapperNAry {
+        if kind == SyntaxKind::ClosureParams {
             Some(Self::from_syntax_node(db, node))
         } else {
             None
@@ -6547,7 +6454,7 @@ impl<'db> TypedSyntaxNode<'db> for ClosureParamWrapperNAry<'db> {
         self.node
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        ClosureParamWrapperNAryPtr(self.node.stable_ptr(db))
+        ClosureParamsPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]

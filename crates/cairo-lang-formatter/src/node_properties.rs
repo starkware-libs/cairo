@@ -45,11 +45,19 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 true
             }
             SyntaxKind::TokenOr => {
-                matches!(self.grandparent_kind(db), Some(SyntaxKind::ExprClosure))
+                // Forcing no space before for the last `|` of closure params.
+                if let Some(terminal) = self.parent(db)
+                    && let Some(params) = terminal.parent(db)
+                    && params.kind(db) == SyntaxKind::ClosureParams
+                    && let Some(last) = params.get_children(db).last()
+                    && last == &terminal
+                {
+                    true
+                } else {
+                    false
+                }
             }
-            SyntaxKind::TokenOrOr => {
-                matches!(self.parent_kind(db), Some(SyntaxKind::ExprClosure))
-            }
+            SyntaxKind::TokenOrOr => false,
             SyntaxKind::TokenLBrack
                 if !matches!(
                     self.grandparent_kind(db),
@@ -85,11 +93,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             {
                 true
             }
-            SyntaxKind::ParamList
-                if self.parent_kind(db) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
-            {
-                true
-            }
+            SyntaxKind::ParamList if self.parent_kind(db) == Some(SyntaxKind::ExprClosure) => true,
             _ => false,
         }
     }
@@ -115,11 +119,19 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 Some(SyntaxKind::PatternStruct | SyntaxKind::ExprStructCtorCall)
             ),
             SyntaxKind::TokenOr => {
-                matches!(self.grandparent_kind(db), Some(SyntaxKind::ExprClosure))
+                // Forcing no space after for the first `|` of closure params.
+                if let Some(terminal) = self.parent(db)
+                    && let Some(params) = terminal.parent(db)
+                    && params.kind(db) == SyntaxKind::ClosureParams
+                    && let Some(first) = params.get_children(db).first()
+                    && first == &terminal
+                {
+                    true
+                } else {
+                    false
+                }
             }
-            SyntaxKind::TokenOrOr => {
-                matches!(self.parent_kind(db), Some(SyntaxKind::ExprClosure))
-            }
+            SyntaxKind::TokenOrOr => false,
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
                     self.parent_kind(db),
@@ -181,11 +193,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             {
                 true
             }
-            SyntaxKind::ParamList
-                if self.parent_kind(db) == Some(SyntaxKind::ClosureParamWrapperNAry) =>
-            {
-                true
-            }
+            SyntaxKind::ParamList if self.parent_kind(db) == Some(SyntaxKind::ExprClosure) => true,
             _ => false,
         }
     }
@@ -285,7 +293,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             },
 
             Some(SyntaxKind::ExprClosure) => match self.kind(db) {
-                SyntaxKind::ClosureParamWrapperNAry => Some(3),
+                SyntaxKind::ClosureParams => Some(3),
                 SyntaxKind::ReturnTypeClause => Some(2),
                 SyntaxKind::ExprBlock => Some(1),
                 _ => None,
@@ -744,9 +752,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                         true,
                     ))
                 }
-                SyntaxKind::TerminalOrOr
-                    if !matches!(self.parent_kind(db), Some(SyntaxKind::ExprClosure)) =>
-                {
+                SyntaxKind::TerminalOrOr => {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         12,
                         BreakLinePointIndentation::Indented,
@@ -767,7 +773,7 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 SyntaxKind::TerminalOr
                     if !matches!(
                         self.parent_kind(db),
-                        Some(SyntaxKind::PatternListOr | SyntaxKind::ClosureParamWrapperNAry)
+                        Some(SyntaxKind::PatternListOr | SyntaxKind::ClosureParams)
                     ) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
