@@ -413,8 +413,7 @@ fn handle_component_embeddable_as_impl_item<'db>(
             ("args_node".to_string(), args_node),
         ]
         .into(),
-    )
-    .mapped(db, &item_function);
+    );
 
     Some(impl_function)
 }
