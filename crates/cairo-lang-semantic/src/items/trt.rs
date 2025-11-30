@@ -11,7 +11,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::ids::SmolStrId;
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::helpers::OptionWrappedGenericParamListHelper;
@@ -54,7 +54,7 @@ use crate::{
 #[path = "trt_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ConcreteTraitLongId<'db> {
     pub trait_id: TraitId<'db>,
     pub generic_args: Vec<GenericArgumentId<'db>>,
@@ -112,7 +112,7 @@ impl<'db> ConcreteTraitId<'db> {
 }
 
 /// The ID of a generic function in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitGenericFunctionLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
@@ -154,7 +154,7 @@ impl<'db> ConcreteTraitGenericFunctionId<'db> {
 }
 
 /// The ID of a type item in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitTypeLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
@@ -196,7 +196,7 @@ impl<'db> ConcreteTraitTypeId<'db> {
 }
 
 /// The ID of a constant item in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitConstantLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
@@ -238,7 +238,7 @@ impl<'db> ConcreteTraitConstantId<'db> {
 }
 
 /// The ID of a impl item in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitImplLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.

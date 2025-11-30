@@ -1,17 +1,18 @@
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_proc_macros::HeapSize;
 use salsa::Database;
 
 use super::ids::GreenId;
 use super::kind::SyntaxKind;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub enum GreenNodeDetails<'a> {
     Token(SmolStrId<'a>),
     Node { children: Vec<GreenId<'a>>, width: TextWidth },
 }
 /// Green node. Underlying untyped representation of the syntax tree.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub struct GreenNode<'a> {
     pub kind: SyntaxKind,
     pub details: GreenNodeDetails<'a>,

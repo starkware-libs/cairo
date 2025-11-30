@@ -1,13 +1,14 @@
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_utils::define_short_id;
 use salsa::Database;
 
 use crate::plugin::AnalyzerPlugin;
 
 /// An Id allowing interning [`AnalyzerPlugin`] into Salsa database.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, HeapSize)]
 pub struct AnalyzerPluginLongId(pub Arc<dyn AnalyzerPlugin>);
 
 impl AnalyzerPlugin for AnalyzerPluginLongId {

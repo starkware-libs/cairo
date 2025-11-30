@@ -9,6 +9,7 @@ use std::ops::{Deref, DerefMut};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{DiagnosticNote, Diagnostics};
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{concrete_destruct_trait, concrete_panic_destruct_trait};
 use cairo_lang_semantic::expr::inference::InferenceError;
@@ -33,7 +34,7 @@ use crate::ids::{FunctionId, LocationId, Signature};
 
 /// The Location struct represents the source location of a lowered object. It is used to store the
 /// most relevant source location for a lowering object.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
 pub struct Location<'db> {
     /// The stable location of the object.
     pub stable_location: StableLocation<'db>,

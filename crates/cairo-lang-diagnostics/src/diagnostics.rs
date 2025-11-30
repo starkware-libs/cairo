@@ -5,6 +5,7 @@ use std::sync::Arc;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::get_originating_location;
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use salsa::Database;
@@ -85,7 +86,7 @@ impl<'db> UserLocationWithPluginNotes<'db> for SpanInFile<'db> {
 
 /// A note about a diagnostic.
 /// May include a relevant diagnostic location.
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
 pub struct DiagnosticNote<'a> {
     pub text: String,
     pub location: Option<SpanInFile<'a>>,
@@ -116,7 +117,7 @@ impl<'a> DebugWithDb<'a> for DiagnosticNote<'a> {
 ///
 /// It must not be constructed directly. Instead, it is returned by [DiagnosticsBuilder::add]
 /// when a diagnostic is reported.
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
 pub struct DiagnosticAdded;
 
 pub fn skip_diagnostic() -> DiagnosticAdded {

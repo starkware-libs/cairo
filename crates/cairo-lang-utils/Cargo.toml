@@ -32,6 +32,7 @@ tracing.workspace = true
 
 [features]
 default = ["std", "tracing"]
+env_logger = ["tracing"]
 parity-scale-codec = ["dep:parity-scale-codec"]
 schemars = ["dep:schemars", "serde", "std"]
 serde = ["dep:serde", "indexmap/serde", "num-bigint/serde", "smol_str/serde"]

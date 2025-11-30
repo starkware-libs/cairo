@@ -1,5 +1,6 @@
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::TextWidth;
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_utils::define_short_id;
 use salsa::Database;
 
@@ -18,7 +19,7 @@ impl<'a> GreenId<'a> {
     }
 }
 
-#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash, salsa::Update, HeapSize)]
 pub struct SyntaxStablePtrId<'a>(pub SyntaxNode<'a>);
 
 impl<'a> SyntaxStablePtrId<'a> {

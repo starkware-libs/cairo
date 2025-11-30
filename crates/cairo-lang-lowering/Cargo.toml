@@ -29,7 +29,9 @@ serde = { workspace = true, default-features = true }
 starknet-types-core.workspace = true
 thiserror.workspace = true
 
+
 [dev-dependencies]
+
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }

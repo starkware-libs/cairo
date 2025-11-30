@@ -517,6 +517,7 @@ dependencies = [
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
  "cairo-lang-parser",
+ "cairo-lang-proc-macros",
  "cairo-lang-syntax",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
@@ -536,6 +537,7 @@ version = "2.14.0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
+ "cairo-lang-proc-macros",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "indoc",
@@ -638,6 +640,7 @@ name = "cairo-lang-filesystem"
 version = "2.14.0"
 dependencies = [
  "cairo-lang-debug",
+ "cairo-lang-proc-macros",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "indoc",
@@ -759,7 +762,9 @@ name = "cairo-lang-proc-macros"
 version = "2.14.0"
 dependencies = [
  "cairo-lang-debug",
+ "cairo-lang-utils",
  "expect-test",
+ "proc-macro2",
  "quote",
  "salsa",
  "syn 2.0.111",
@@ -934,6 +939,7 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-lowering",
  "cairo-lang-plugins",
+ "cairo-lang-proc-macros",
  "cairo-lang-semantic",
  "cairo-lang-sierra",
  "cairo-lang-syntax",
