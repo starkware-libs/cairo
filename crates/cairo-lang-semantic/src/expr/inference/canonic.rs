@@ -588,7 +588,7 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, MapperError> for Mapper<'db, '_> {
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Impl(var.id)))?;
-        let var = ImplVar { id, inference_id: self.mapping.target_inference_id, ..var.clone() };
+        let var = ImplVar { id, inference_id: self.mapping.target_inference_id, ..var };
 
         *value = ImplLongId::ImplVar(var.intern(self.get_db()));
         Ok(RewriteResult::Modified)
@@ -620,8 +620,7 @@ impl<'db> SemanticRewriter<NegativeImplLongId<'db>, MapperError> for Mapper<'db,
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::NegativeImpl(var.id)))?;
-        let var =
-            NegativeImplVar { id, inference_id: self.mapping.target_inference_id, ..var.clone() };
+        let var = NegativeImplVar { id, inference_id: self.mapping.target_inference_id, ..var };
 
         *value = NegativeImplLongId::NegativeImplVar(var.intern(self.get_db()));
         Ok(RewriteResult::Modified)
