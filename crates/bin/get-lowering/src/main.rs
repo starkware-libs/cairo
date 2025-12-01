@@ -217,7 +217,7 @@ fn get_all_funcs<'db>(
     Ok(res)
 }
 
-/// Given a function name and list of crates, returns the Concrete id of the function.
+/// Given a function name and a list of crates, returns the concrete ID of the function.
 fn get_func_id_by_name<'db>(
     db: &'db dyn Database,
     crate_ids: &[CrateId<'db>],
