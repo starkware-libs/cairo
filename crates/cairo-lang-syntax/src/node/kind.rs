@@ -48,7 +48,7 @@ pub enum SyntaxKind {
     FixedSizeArraySize,
     OptionFixedSizeArraySizeEmpty,
     ExprClosure,
-    ClosureParamWrapperNAry,
+    ClosureParams,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,

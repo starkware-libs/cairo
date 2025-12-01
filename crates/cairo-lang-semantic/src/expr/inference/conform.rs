@@ -178,7 +178,7 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                 let TypeLongId::Closure(closure1) = long_ty1 else {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 };
-                if closure0.wrapper_location != closure1.wrapper_location {
+                if closure0.params_location != closure1.params_location {
                     return Err(self.set_error(InferenceError::TypeKindMismatch { ty0, ty1 }));
                 }
                 let param_tys = zip_eq(closure0.param_tys.clone(), closure1.param_tys)
@@ -194,7 +194,7 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
                         param_tys,
                         ret_ty,
                         captured_types,
-                        wrapper_location: closure0.wrapper_location,
+                        params_location: closure0.params_location,
                         parent_function: closure0.parent_function,
                     })
                     .intern(self.db),

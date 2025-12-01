@@ -21,7 +21,7 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: ExprClosure
-    ├── wrapper (kind: ClosureParamWrapperNAry)
+    ├── params (kind: ClosureParams)
     │   ├── leftor (kind: TokenOr): '|'
     │   ├── params (kind: ParamList)
     │   │   ├── item #0 (kind: Param)
@@ -93,7 +93,10 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: ExprClosure
-    ├── wrapper (kind: TokenOrOr): '||'
+    ├── params (kind: ClosureParams)
+    │   ├── leftor (kind: TokenOr): '|'
+    │   ├── params (kind: ParamList) []
+    │   └── rightor (kind: TokenOr): '|'
     ├── ret_ty (kind: ReturnTypeClause)
     │   ├── arrow (kind: TokenArrow): '->'
     │   └── ty (kind: ExprPath) <ignored>
@@ -143,7 +146,10 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: ExprClosure
-    ├── wrapper (kind: TokenOrOr): '||'
+    ├── params (kind: ClosureParams)
+    │   ├── leftor (kind: TokenOr): '|'
+    │   ├── params (kind: ParamList) []
+    │   └── rightor (kind: TokenOr): '|'
     ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
     ├── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     └── expr (kind: ExprBlock)
@@ -177,7 +183,10 @@ ExprPath
 
 //! > expected_tree
 └── Top level kind: ExprClosure
-    ├── wrapper (kind: TokenOrOr): '||'
+    ├── params (kind: ClosureParams)
+    │   ├── leftor (kind: TokenOr): '|'
+    │   ├── params (kind: ParamList) []
+    │   └── rightor (kind: TokenOr): '|'
     ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
     ├── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     └── expr (kind: TokenLiteralNumber): '3'
@@ -218,7 +227,10 @@ error: Missing token ';'.
 
 //! > expected_tree
 └── Top level kind: ExprClosure
-    ├── wrapper (kind: TokenOrOr): '||'
+    ├── params (kind: ClosureParams)
+    │   ├── leftor (kind: TokenOr): '|'
+    │   ├── params (kind: ParamList) []
+    │   └── rightor (kind: TokenOr): '|'
     ├── ret_ty (kind: ReturnTypeClause)
     │   ├── arrow (kind: TokenArrow): '->'
     │   └── ty (kind: ExprPath) <ignored>
@@ -264,7 +276,10 @@ error: Missing token ';'.
 
 //! > expected_tree
 └── Top level kind: ExprClosure
-    ├── wrapper (kind: TokenOrOr): '||'
+    ├── params (kind: ClosureParams)
+    │   ├── leftor (kind: TokenOr): '|'
+    │   ├── params (kind: ParamList) []
+    │   └── rightor (kind: TokenOr): '|'
     ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
     ├── optional_no_panic (kind: TokenNoPanic): 'nopanic'
     └── expr (kind: ExprBlock)

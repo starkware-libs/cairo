@@ -449,16 +449,16 @@ pub struct ClosureTypeLongId<'db> {
     pub captured_types: Vec<TypeId<'db>>,
     /// The parent function of the closure or an error.
     pub parent_function: Maybe<FunctionId<'db>>,
-    /// Every closure has a unique type that is based on the stable location of its wrapper.
+    /// Every closure has a unique type that is based on the stable location of its params.
     #[dont_rewrite]
-    pub wrapper_location: StableLocation<'db>,
+    pub params_location: StableLocation<'db>,
 }
 
 impl<'db> DebugWithDb<'db> for ClosureTypeLongId<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        write!(f, "{{closure@{:?}}}", self.wrapper_location.debug(db))
+        write!(f, "{{closure@{:?}}}", self.params_location.debug(db))
     }
 }
 
