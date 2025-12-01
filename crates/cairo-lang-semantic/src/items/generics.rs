@@ -468,7 +468,7 @@ fn generic_param_data<'db>(
         module_id,
         &generic_param_syntax,
         parent_item_id,
-    );
+    )?;
     let inference = &mut resolver.inference();
     inference.finalize(&mut diagnostics, generic_param_syntax.stable_ptr(db).untyped());
 
@@ -603,7 +603,7 @@ fn semantic_from_generic_param_ast<'db>(
     module_id: ModuleId<'db>,
     param_syntax: &ast::GenericParam<'db>,
     parent_item_id: GenericItemId<'db>,
-) -> GenericParam<'db> {
+) -> Maybe<GenericParam<'db>> {
     let id = GenericParamLongId(module_id, param_syntax.stable_ptr(db)).intern(db);
     let mut item_constraints_into_option = |constraint| match constraint {
         OptionAssociatedItemConstraints::Empty(_) => None,
@@ -617,7 +617,7 @@ fn semantic_from_generic_param_ast<'db>(
             Some(associated_type_args)
         }
     };
-    match param_syntax {
+    Ok(match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db));
@@ -663,16 +663,22 @@ fn semantic_from_generic_param_ast<'db>(
             }
 
             let path_syntax = syntax.trait_path(db);
-            GenericParam::NegImpl(impl_generic_param_semantic(
-                db,
-                resolver,
-                diagnostics,
-                &path_syntax,
-                None,
-                id,
-            ))
+
+            let neg_impl =
+                impl_generic_param_semantic(db, resolver, diagnostics, &path_syntax, None, id);
+            for param in db.trait_generic_params(neg_impl.concrete_trait?.trait_id(db))? {
+                if matches!(param, GenericParam::Type(_) | GenericParam::Const(_)) {
+                    continue;
+                }
+                diagnostics.report(
+                    param.stable_ptr(db),
+                    SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl,
+                );
+            }
+
+            GenericParam::NegImpl(neg_impl)
         }
-    }
+    })
 }
 
 /// Computes the semantic model of an impl generic parameter given its trait path.
