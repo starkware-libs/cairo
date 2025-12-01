@@ -7,10 +7,10 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LocalVarId, LookupItemId,
-    MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId, TraitConstantId,
-    TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericKind,
+    GenericParamId, GlobalUseId, ImplAliasId, ImplDefId, ImplFunctionId, ImplImplDefId, LocalVarId,
+    LookupItemId, MacroCallId, MemberId, NamedLanguageElementId, ParamId, StructId,
+    TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
@@ -1214,18 +1214,23 @@ impl<'db, 'id> Inference<'db, 'id> {
                 lookup_context,
             )?
         } else {
-            let substitution: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>> =
-                neg_impl_generic_params
-                    .into_iter()
-                    .map(|param| {
-                        (
-                            param,
-                            GenericArgumentId::Type(
-                                self.new_type_var(Some(param.stable_ptr(self.db).untyped())),
-                            ),
-                        )
-                    })
-                    .collect();
+            let mut substitution: OrderedHashMap<GenericParamId<'db>, GenericArgumentId<'db>> =
+                Default::default();
+
+            for param in neg_impl_generic_params {
+                let garg = match param.kind(self.db) {
+                    GenericKind::Type => GenericArgumentId::Type(
+                        self.new_type_var(Some(param.stable_ptr(self.db).untyped())),
+                    ),
+                    GenericKind::Const | GenericKind::Impl | GenericKind::NegImpl => {
+                        return Ok(SolutionSet::Ambiguous(
+                            Ambiguity::NegativeImplWithUnsupportedGenericParam(param),
+                        ));
+                    }
+                };
+
+                substitution.insert(param, garg);
+            }
             let rewritten_concrete_trait_id =
                 GenericSubstitution { param_to_arg: substitution.clone(), self_impl: None }
                     .substitute(self.db, concrete_trait_id)

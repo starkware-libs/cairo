@@ -294,3 +294,44 @@ error[E2196]: Negative impls may only use type or const generic parameters.
  --> lib.cairo:1:19
 pub trait NegImpl<+Drop<u32>> {}
                   ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test negative impl with generic const inside a type.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    bar::<5>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::metaprogramming::TypeEqual;
+pub trait NegImpl<T> {}
+
+struct A<const B: u32> {}
+
+fn bar<const B: u32>() {
+    Bad::bad();
+}
+
+pub trait Bad {
+    fn bad() -> u32;
+}
+
+pub impl ImplBad<const C: u32, -TypeEqual<A<C>, A<0>>> of Bad {
+    fn bad() -> u32 {
+        C
+    }
+}
+
+//! > expected_diagnostics
+error[E2311]: Trait has no implementation in context: test::Bad.
+ --> lib.cairo:7:10
+    Bad::bad();
+         ^^^
