@@ -1,3 +1,8 @@
+use std::sync::Arc;
+
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -11,12 +16,27 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 /// Compiles a single function to Sierra and checks the generated code.
 pub fn test_function_generator(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
-    let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
+    let db = if let Some(v) = args.get("future_sierra").map(|s| s.to_lowercase())
+        && v == "true"
+    {
+        // When turning on future_sierra, we might affect other tests using the same db, so an empty
+        // db is needed.
+        let mut db = SierraGenDatabaseForTesting::new_empty();
+        db.set_flag(
+            FlagLongId("add_withdraw_gas".into()),
+            Some(Arc::new(Flag::AddWithdrawGas(false))),
+        );
+        db.set_flag(FlagLongId("future_sierra".into()), Some(Arc::new(Flag::FutureSierra(true))));
+        db
+    } else {
+        SierraGenDatabaseForTesting::without_add_withdraw_gas()
+    };
+    let db = &db;
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
