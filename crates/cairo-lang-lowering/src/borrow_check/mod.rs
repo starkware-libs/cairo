@@ -78,7 +78,7 @@ impl<'db> DropPosition<'db> {
             text.into(),
             location.stable_location.span_in_file(db),
         ));
-        notes.extend(location.notes.clone());
+        notes.extend(location.notes.iter().cloned());
     }
 }
 
