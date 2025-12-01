@@ -11,7 +11,8 @@ See xref:pages/operator-precedence.adoc[Operator precedence] for their relative 
 
 == Logical operators (`&&`, `\|\|`)
 
-Logical operators evaluate their left operand first and may skip evaluating the right operand (short-circuiting):
+Logical operators evaluate their left operand first and may skip evaluating the right
+operand (short-circuiting):
 
 - `a && b`: evaluates `b` only if `a` is `true`.
 - `a \|\| b`: evaluates `b` only if `a` is `false`.
@@ -34,11 +35,13 @@ fn main() {
 }
 ----
 
-Const evaluation: logical `&&` / `\|\|` are supported and preserve short-circuit semantics in const contexts. See xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+Const evaluation: logical `&&` / `\|\|` are supported and preserve short-circuit semantics
+in const contexts. See xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
 
 == Bitwise boolean operators on `bool` (`&`, `\|`, `^`)
 
-The bitwise operators are also defined for `bool` via traits in the core library and do not short-circuit: both operands are always evaluated.
+The bitwise operators are also defined for `bool` via traits in the core library and do not
+short-circuit: both operands are always evaluated.
 
 - `a & b` – bitwise-and on `bool` values.
 - `a \| b` – bitwise-or on `bool` values.
@@ -60,12 +63,14 @@ Implementation reference (core library traits for `bool`): `BitAnd`, `BitOr`, `B
 
 == Negation
 
-Boolean negation is written with `!` and returns a `bool`. See xref:pages/negation-operators.adoc[Negation operators].
+Boolean negation is written with `!` and returns a `bool`. See
+xref:pages/negation-operators.adoc[Negation operators].
 
 == Typing rules
 
 - Operands to boolean operators must be of type `bool`.
-- There are no implicit conversions from non-boolean types; Cairo does not have “truthy/falsy” values.
+- There are no implicit conversions from non-boolean types; Cairo does not have “truthy/falsy”
+  values.
 
 == Related topics
 
