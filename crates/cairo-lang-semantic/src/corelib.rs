@@ -1012,6 +1012,9 @@ pub struct CoreInfo<'db> {
     pub downcast_fn: GenericFunctionId<'db>,
     pub into_box: ExternFunctionId<'db>,
     pub unbox: ExternFunctionId<'db>,
+    pub box_forward_snapshot: ExternFunctionId<'db>,
+    pub tuple_from_span: ExternFunctionId<'db>,
+    pub fixed_size_array_info_impl: ImplDefId<'db>,
     pub tuple_submodule: ModuleId<'db>,
     pub fixed_size_array_submodule: ModuleId<'db>,
     pub keyword_docs_submodule: ModuleId<'db>,
@@ -1057,6 +1060,7 @@ impl<'db> CoreInfo<'db> {
         let fn_module = ops.submodule("function");
         let fn_trt = fn_module.trait_id("Fn");
         let fn_once_trt = fn_module.trait_id("FnOnce");
+        let array_module = core.submodule("array");
         let box_module = core.submodule("box");
         let box_trt = box_module.trait_id("BoxTrait");
         let index_module = ops.submodule("index");
@@ -1159,6 +1163,9 @@ impl<'db> CoreInfo<'db> {
             downcast_fn: bounded_int.generic_function_id("downcast"),
             into_box: box_module.extern_function_id("into_box"),
             unbox: box_module.extern_function_id("unbox"),
+            box_forward_snapshot: box_module.extern_function_id("box_forward_snapshot"),
+            tuple_from_span: array_module.extern_function_id("tuple_from_span"),
+            fixed_size_array_info_impl: array_module.impl_def_id("FixedSizedArrayInfoImpl"),
             tuple_submodule,
             fixed_size_array_submodule,
             keyword_docs_submodule: core.submodule("keyword_docs").id,

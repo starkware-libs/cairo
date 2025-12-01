@@ -2341,3 +2341,93 @@ blk8:
 Statements:
 End:
   Return(v11)
+
+//! > ==========================================================================
+
+//! > Span to fixed size array.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a, b] => *a + *b,
+        [a, b, c] => *a + *b + *c,
+        s => s.len(),
+    }
+}
+
+//! > graph
+Root: 12
+12 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(11) }
+11 Deconstruct { input: v0, outputs: [v1], next: NodeId(10) }
+10 SliceDestructure { input: v1, fixed_array_ty: TypeId(76ee8), outputs: [v5, v6], success: NodeId(9), failure: NodeId(7) }
+9 BindVar { input: v5, output: PatternVarId(4), next: NodeId(8) }
+8 BindVar { input: v6, output: PatternVarId(5), next: NodeId(0) }
+7 SliceDestructure { input: v1, fixed_array_ty: TypeId(18b92c), outputs: [v2, v3, v4], success: NodeId(6), failure: NodeId(3) }
+6 BindVar { input: v2, output: PatternVarId(1), next: NodeId(5) }
+5 BindVar { input: v3, output: PatternVarId(2), next: NodeId(4) }
+4 BindVar { input: v4, output: PatternVarId(3), next: NodeId(1) }
+3 BindVar { input: v0, output: PatternVarId(0), next: NodeId(2) }
+2 ArmExpr { expr: ExprId(15) }
+1 ArmExpr { expr: ExprId(13) }
+0 ArmExpr { expr: ExprId(5) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::integer::u32>) <- struct_destructure(v0)
+End:
+  Match(match core::array::tuple_from_span::<[core::integer::u32; 2], core::array::FixedSizedArrayInfoImpl::<core::integer::u32, 2>>(v1) {
+    Option::Some(v2) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::box::Box::<@[core::integer::u32; 2]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 2]>(v2)
+  (v4: @[core::integer::u32; 2]) <- unbox(v3)
+  (v5: @core::integer::u32, v6: @core::integer::u32) <- struct_destructure(v4)
+  (v19: core::integer::u32) <- desnap(v5)
+  (v20: core::integer::u32) <- desnap(v6)
+  (v21: core::integer::u32) <- core::integer::U32Add::add(v19, v20)
+End:
+  Goto(blk5, {v21 -> v22})
+
+blk2:
+Statements:
+End:
+  Match(match core::array::tuple_from_span::<[core::integer::u32; 3], core::array::FixedSizedArrayInfoImpl::<core::integer::u32, 3>>(v1) {
+    Option::Some(v7) => blk3,
+    Option::None => blk4,
+  })
+
+blk3:
+Statements:
+  (v8: core::box::Box::<@[core::integer::u32; 3]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 3]>(v7)
+  (v9: @[core::integer::u32; 3]) <- unbox(v8)
+  (v10: @core::integer::u32, v11: @core::integer::u32, v12: @core::integer::u32) <- struct_destructure(v9)
+  (v14: core::integer::u32) <- desnap(v10)
+  (v15: core::integer::u32) <- desnap(v11)
+  (v16: core::integer::u32) <- core::integer::U32Add::add(v14, v15)
+  (v17: core::integer::u32) <- desnap(v12)
+  (v18: core::integer::u32) <- core::integer::U32Add::add(v16, v17)
+End:
+  Goto(blk5, {v18 -> v22})
+
+blk4:
+Statements:
+  (v13: core::integer::u32) <- core::array::SpanImpl::<core::integer::u32>::len(v0)
+End:
+  Goto(blk5, {v13 -> v22})
+
+blk5:
+Statements:
+End:
+  Return(v22)

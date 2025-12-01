@@ -203,7 +203,7 @@ fn foo(s: (felt252, felt252, felt252)) {
 foo
 
 //! > expected_diagnostics
-error[E2106]: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array.
+error[E2106]: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array or a span.
  --> lib.cairo:2:9
     let [_a, _b, _c] = s;
         ^^^^^^^^^^^^
@@ -313,3 +313,103 @@ error[E2049]: Redefinition of variable name "_b" in pattern.
  --> lib.cairo:7:19
         ((_b, _), _b) => (),
                   ^^
+
+//! > ==========================================================================
+
+//! > Test type mismatch in span pattern arm surfaces as confusing ToSpanTrait error.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let a: Array<u8> = array![1, 2, 3];
+    let c: u16 = 0;
+    match a.span() {
+        [x, y, z] => c + *x + *y + *z,
+        _ => 0,
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2311]: Trait has no implementation in context: core::array::ToSpanTrait::<core::array::Array::<core::integer::u8>, core::integer::u16>.
+ --> lib.cairo:4:13
+    match a.span() {
+            ^^^^
+
+//! > ==========================================================================
+
+//! > Test array pattern on Array instead of Span.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let a: Array<u8> = array![1, 2, 3];
+    match a {
+        [_x, _y, _z] => {},
+        _ => {},
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2106]: Unexpected type for fixed size array pattern. "core::array::Array::<core::integer::u8>" is not a fixed size array or a span.
+ --> lib.cairo:4:9
+        [_x, _y, _z] => {},
+        ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test array pattern on fixed size array value.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    let a: [u8; 3] = [1, 2, 3];
+    match a {
+        [_x, _y, _z] => {},
+        _ => {},
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test span into fixed size array patttern.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    let [a, b] = s else {
+        return 0;
+    };
+    *a + *b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

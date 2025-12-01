@@ -13,6 +13,26 @@ fn test_match_multienum_binding() {
 }
 
 #[test]
+fn test_match_span_to_fixed_size_array() {
+    let span: Span<u32> = array![10, 20, 30].span();
+
+    match span {
+        [_a, _b, _c, _d] => {
+            panic!("Expected 3 elements, but got 4");
+        },
+        [_a, _b] => {
+            panic!("Expected 3 elements, but got 2");
+        },
+        [a, b, c] => {
+            assert_eq!(a, @10);
+            assert_eq!(b, @20);
+            assert_eq!(c, @30);
+        },
+        _ => panic!("Expected 3 elements, but got a different pattern"),
+    }
+}
+
+#[test]
 fn test_match_extern_multilevel() {
     if true {
         let x: Option<Option<Option<felt252>>> = Some(Some(None));

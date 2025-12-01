@@ -3097,24 +3097,48 @@ fn compute_tuple_like_pattern_semantic<'db>(
                 TypeLongId::Missing(diag_added),
             ),
         };
-    // Assert that the pattern is of the same type as the expr.
-    match (pattern_syntax, &long_ty) {
-        (_, TypeLongId::Var(_) | TypeLongId::Missing(_))
-        | (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
-        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
-        _ => {
-            long_ty = TypeLongId::Missing(
-                ctx.diagnostics.report(pattern_syntax.stable_ptr(db), unexpected_pattern(ty)),
-            );
-        }
-    };
-    let patterns_syntax = match pattern_syntax {
+
+    let patterns_syntax_elements = match pattern_syntax {
         ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(db).elements_vec(db),
         ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
             pattern_fixed_size_array.patterns(db).elements_vec(db)
         }
         _ => unreachable!(),
     };
+
+    // Assert that the pattern is of the same type as the expr.
+    match (pattern_syntax, &long_ty) {
+        (_, TypeLongId::Var(_) | TypeLongId::Missing(_))
+        | (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
+        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
+        (
+            ast::Pattern::FixedSizeArray(_),
+            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)),
+        ) => {
+            if let [GenericArgumentId::Type(inner_ty)] =
+                concrete_struct_id.long(db).generic_args[..]
+                && let Ok(span_ty) = try_get_core_ty_by_name(
+                    ctx.db,
+                    SmolStrId::from(db, "Span"),
+                    vec![GenericArgumentId::Type(inner_ty)],
+                )
+            {
+                ctx.resolver.inference().conform_ty(ty, span_ty).unwrap();
+
+                long_ty = TypeLongId::FixedSizeArray {
+                    type_id: wrap_in_snapshots(db, inner_ty, 1),
+                    size: ConstValue::Int(patterns_syntax_elements.len().into(), get_usize_ty(db))
+                        .intern(db),
+                };
+            }
+        }
+        _ => {
+            long_ty = TypeLongId::Missing(
+                ctx.diagnostics.report(pattern_syntax.stable_ptr(db), unexpected_pattern(ty)),
+            );
+        }
+    };
+
     let mut inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
         TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
@@ -3123,7 +3147,8 @@ fn compute_tuple_like_pattern_semantic<'db>(
             } else {
                 let inference = &mut ctx.resolver.inference();
                 let expected_size =
-                    ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db)).intern(db);
+                    ConstValue::Int(patterns_syntax_elements.len().into(), get_usize_ty(db))
+                        .intern(db);
                 if let Err(err) = inference.conform_const(size, expected_size) {
                     let _ = inference.report_on_pending_error(
                         err,
@@ -3131,7 +3156,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
                         pattern_syntax.stable_ptr(db).untyped(),
                     );
                 }
-                patterns_syntax.len()
+                patterns_syntax_elements.len()
             };
 
             [inner_ty].repeat(size)
@@ -3139,7 +3164,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
         TypeLongId::Var(_) => {
             let inference = &mut ctx.resolver.inference();
             let (inner_tys, tuple_like_ty) = if matches!(pattern_syntax, ast::Pattern::Tuple(_)) {
-                let inner_tys: Vec<_> = patterns_syntax
+                let inner_tys: Vec<_> = patterns_syntax_elements
                     .iter()
                     .map(|e| inference.new_type_var(Some(e.stable_ptr(db).untyped())))
                     .collect();
@@ -3147,11 +3172,14 @@ fn compute_tuple_like_pattern_semantic<'db>(
             } else {
                 let var = inference.new_type_var(Some(pattern_syntax.stable_ptr(db).untyped()));
                 (
-                    vec![var; patterns_syntax.len()],
+                    vec![var; patterns_syntax_elements.len()],
                     TypeLongId::FixedSizeArray {
                         type_id: var,
-                        size: ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db))
-                            .intern(db),
+                        size: ConstValue::Int(
+                            patterns_syntax_elements.len().into(),
+                            get_usize_ty(db),
+                        )
+                        .intern(db),
                     },
                 )
             };
@@ -3163,21 +3191,21 @@ fn compute_tuple_like_pattern_semantic<'db>(
         }
         TypeLongId::Missing(diag_added) => {
             let missing = TypeId::missing(db, diag_added);
-            vec![missing; patterns_syntax.len()]
+            vec![missing; patterns_syntax_elements.len()]
         }
         _ => unreachable!(),
     };
     let size = inner_tys.len();
-    if size != patterns_syntax.len() {
+    if size != patterns_syntax_elements.len() {
         let diag_added = ctx.diagnostics.report(
             pattern_syntax.stable_ptr(db),
-            wrong_number_of_elements(size, patterns_syntax.len()),
+            wrong_number_of_elements(size, patterns_syntax_elements.len()),
         );
         let missing = TypeId::missing(db, diag_added);
 
-        inner_tys = vec![missing; patterns_syntax.len()];
+        inner_tys = vec![missing; patterns_syntax_elements.len()];
     }
-    let subpatterns = zip_eq(patterns_syntax, inner_tys)
+    let subpatterns = zip_eq(patterns_syntax_elements, inner_tys)
         .map(|(pattern_ast, ty)| {
             let ty = wrapping_info.wrap(db, ty);
             compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map).id

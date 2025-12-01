@@ -741,7 +741,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UnexpectedFixedSizeArrayPattern(ty) => {
                 format!(
                     "Unexpected type for fixed size array pattern. \"{}\" is not a fixed size \
-                     array.",
+                     array or a span.",
                     ty.format(db),
                 )
             }
