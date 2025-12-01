@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_defs::ids::{GenericParamId, LanguageElementId};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::Entry;
@@ -73,7 +73,9 @@ pub enum Ambiguity<'db> {
     },
     WillNotInfer(ConcreteTraitId<'db>),
     NegativeImplWithUnsupportedExtractedArgs(GenericArgumentId<'db>),
+    NegativeImplWithUnsupportedGenericParam(GenericParamId<'db>),
 }
+
 impl<'db> Ambiguity<'db> {
     pub fn format(&self, db: &dyn Database) -> String {
         match self {
@@ -95,6 +97,9 @@ impl<'db> Ambiguity<'db> {
             }
             Ambiguity::NegativeImplWithUnsupportedExtractedArgs(garg) => {
                 format!("Negative impl has an unsupported generic argument {:?}.", garg.debug(db),)
+            }
+            Ambiguity::NegativeImplWithUnsupportedGenericParam(gparam) => {
+                format!("Negative impl has an unsupported generic argument {:?}.", gparam.debug(db),)
             }
         }
     }
