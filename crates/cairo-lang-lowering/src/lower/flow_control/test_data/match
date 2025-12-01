@@ -2341,3 +2341,615 @@ blk8:
 Statements:
 End:
   Return(v11)
+
+//! > ==========================================================================
+
+//! > Span to fixed size array.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a, b] => *a + *b,
+        [a, b, c] => *a + *b + *c,
+        s => s.len(),
+    }
+}
+
+//! > graph
+Root: 12
+12 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(11) }
+11 Deconstruct { input: v0, outputs: [v1], next: NodeId(10) }
+10 SliceDestructure { input: v1, outputs: [v5, v6], success: NodeId(9), failure: NodeId(7)}
+9 BindVar { input: v5, output: PatternVarId(4), next: NodeId(8) }
+8 BindVar { input: v6, output: PatternVarId(5), next: NodeId(0) }
+7 SliceDestructure { input: v1, outputs: [v2, v3, v4], success: NodeId(6), failure: NodeId(3)}
+6 BindVar { input: v2, output: PatternVarId(1), next: NodeId(5) }
+5 BindVar { input: v3, output: PatternVarId(2), next: NodeId(4) }
+4 BindVar { input: v4, output: PatternVarId(3), next: NodeId(1) }
+3 BindVar { input: v0, output: PatternVarId(0), next: NodeId(2) }
+2 ArmExpr { expr: ExprId(15) }
+1 ArmExpr { expr: ExprId(13) }
+0 ArmExpr { expr: ExprId(5) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::integer::u32>) <- struct_destructure(v0)
+  (v2: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v3: core::option::Option::<@core::box::Box::<[core::integer::u32; 2]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 2, _>::try_into(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::box::Box::<@[core::integer::u32; 2]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 2]>(v4)
+  (v6: @[core::integer::u32; 2]) <- unbox(v5)
+  (v7: @core::integer::u32, v8: @core::integer::u32) <- struct_destructure(v6)
+  (v25: core::integer::u32) <- desnap(v7)
+  (v26: core::integer::u32) <- desnap(v8)
+  (v27: core::integer::u32) <- core::integer::U32Add::add(v25, v26)
+End:
+  Goto(blk5, {v27 -> v28})
+
+blk2:
+Statements:
+  (v10: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v11: core::option::Option::<@core::box::Box::<[core::integer::u32; 3]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 3, _>::try_into(v10)
+End:
+  Match(match_enum(v11) {
+    Option::Some(v12) => blk3,
+    Option::None(v18) => blk4,
+  })
+
+blk3:
+Statements:
+  (v13: core::box::Box::<@[core::integer::u32; 3]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 3]>(v12)
+  (v14: @[core::integer::u32; 3]) <- unbox(v13)
+  (v15: @core::integer::u32, v16: @core::integer::u32, v17: @core::integer::u32) <- struct_destructure(v14)
+  (v20: core::integer::u32) <- desnap(v15)
+  (v21: core::integer::u32) <- desnap(v16)
+  (v22: core::integer::u32) <- core::integer::U32Add::add(v20, v21)
+  (v23: core::integer::u32) <- desnap(v17)
+  (v24: core::integer::u32) <- core::integer::U32Add::add(v22, v23)
+End:
+  Goto(blk5, {v24 -> v28})
+
+blk4:
+Statements:
+  (v19: core::integer::u32) <- core::array::SpanImpl::<core::integer::u32>::len(v0)
+End:
+  Goto(blk5, {v19 -> v28})
+
+blk5:
+Statements:
+End:
+  Return(v28)
+
+//! > ==========================================================================
+
+//! > Span to fixed size array with empty pattern.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a] => *a,
+        [] => 0,
+        _ => s.len(),
+    }
+}
+
+//! > graph
+Root: 7
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1], next: NodeId(5) }
+5 SliceDestructure { input: v1, outputs: [v2], success: NodeId(4), failure: NodeId(3)}
+4 BindVar { input: v2, output: PatternVarId(0), next: NodeId(0) }
+3 SliceDestructure { input: v1, outputs: [], success: NodeId(1), failure: NodeId(2)}
+2 ArmExpr { expr: ExprId(5) }
+1 ArmExpr { expr: ExprId(3) }
+0 ArmExpr { expr: ExprId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::integer::u32>) <- struct_destructure(v0)
+  (v2: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v3: core::option::Option::<@core::box::Box::<[core::integer::u32; 1]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 1, _>::try_into(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::box::Box::<@[core::integer::u32; 1]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 1]>(v4)
+  (v6: @[core::integer::u32; 1]) <- unbox(v5)
+  (v7: @core::integer::u32) <- struct_destructure(v6)
+  (v17: core::integer::u32) <- desnap(v7)
+End:
+  Goto(blk5, {v17 -> v18})
+
+blk2:
+Statements:
+  (v9: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v10: core::option::Option::<@core::box::Box::<[core::integer::u32; 0]>>) <- core::array::SpanTryIntoEmptyFixedSizedArray::<core::integer::u32, core::integer::u32Drop>::try_into(v9)
+End:
+  Match(match_enum(v10) {
+    Option::Some(v11) => blk3,
+    Option::None(v14) => blk4,
+  })
+
+blk3:
+Statements:
+  (v12: core::box::Box::<@[core::integer::u32; 0]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 0]>(v11)
+  (v13: @[core::integer::u32; 0]) <- unbox(v12)
+  () <- struct_destructure(v13)
+  (v16: core::integer::u32) <- 0
+End:
+  Goto(blk5, {v16 -> v18})
+
+blk4:
+Statements:
+  (v15: core::integer::u32) <- core::array::SpanImpl::<core::integer::u32>::len(v0)
+End:
+  Goto(blk5, {v15 -> v18})
+
+blk5:
+Statements:
+End:
+  Return(v18)
+
+//! > ==========================================================================
+
+//! > Span to fixed size array with wildcard between sizes.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a, b] => *a + *b,
+        _ => 0,
+        [a, b, c] => *a + *b + *c,
+    }
+}
+
+//! > graph
+Root: 7
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1], next: NodeId(5) }
+5 SliceDestructure { input: v1, outputs: [v2, v3], success: NodeId(4), failure: NodeId(1)}
+4 BindVar { input: v2, output: PatternVarId(0), next: NodeId(3) }
+3 BindVar { input: v3, output: PatternVarId(1), next: NodeId(0) }
+2 ArmExpr { expr: ExprId(14) }
+1 ArmExpr { expr: ExprId(6) }
+0 ArmExpr { expr: ExprId(5) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning[E3004]: Unreachable pattern arm.
+ --> lib.cairo:5:22
+        [a, b, c] => *a + *b + *c,
+                     ^^^^^^^^^^^^
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::integer::u32>) <- struct_destructure(v0)
+  (v2: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v3: core::option::Option::<@core::box::Box::<[core::integer::u32; 2]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 2, _>::try_into(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::box::Box::<@[core::integer::u32; 2]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 2]>(v4)
+  (v6: @[core::integer::u32; 2]) <- unbox(v5)
+  (v7: @core::integer::u32, v8: @core::integer::u32) <- struct_destructure(v6)
+  (v11: core::integer::u32) <- desnap(v7)
+  (v12: core::integer::u32) <- desnap(v8)
+  (v13: core::integer::u32) <- core::integer::U32Add::add(v11, v12)
+End:
+  Goto(blk3, {v13 -> v14})
+
+blk2:
+Statements:
+  (v10: core::integer::u32) <- 0
+End:
+  Goto(blk3, {v10 -> v14})
+
+blk3:
+Statements:
+End:
+  Return(v14)
+
+//! > ==========================================================================
+
+//! > Span to fixed size array with duplicate size.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a, b] => *a + *b,
+        [a, b] => *a + *b,
+        _ => 0,
+    }
+}
+
+//! > graph
+Root: 7
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1], next: NodeId(5) }
+5 SliceDestructure { input: v1, outputs: [v2, v3], success: NodeId(4), failure: NodeId(2)}
+4 BindVar { input: v2, output: PatternVarId(0), next: NodeId(3) }
+3 BindVar { input: v3, output: PatternVarId(2), next: NodeId(0) }
+2 ArmExpr { expr: ExprId(11) }
+1 ArmExpr { expr: ExprId(10) }
+0 ArmExpr { expr: ExprId(5) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning[E3004]: Unreachable pattern arm.
+ --> lib.cairo:4:19
+        [a, b] => *a + *b,
+                  ^^^^^^^
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::integer::u32>) <- struct_destructure(v0)
+  (v2: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v3: core::option::Option::<@core::box::Box::<[core::integer::u32; 2]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 2, _>::try_into(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::box::Box::<@[core::integer::u32; 2]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 2]>(v4)
+  (v6: @[core::integer::u32; 2]) <- unbox(v5)
+  (v7: @core::integer::u32, v8: @core::integer::u32) <- struct_destructure(v6)
+  (v11: core::integer::u32) <- desnap(v7)
+  (v12: core::integer::u32) <- desnap(v8)
+  (v13: core::integer::u32) <- core::integer::U32Add::add(v11, v12)
+End:
+  Goto(blk3, {v13 -> v14})
+
+blk2:
+Statements:
+  (v10: core::integer::u32) <- 0
+End:
+  Goto(blk3, {v10 -> v14})
+
+blk3:
+Statements:
+End:
+  Return(v14)
+
+//! > ==========================================================================
+
+//! > Two pattern with the same arm.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a, b] | [a, b, _] => *a + *b,
+        _ => 0,
+    }
+}
+
+//! > graph
+Root: 9
+9 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(8) }
+8 Deconstruct { input: v0, outputs: [v1], next: NodeId(7) }
+7 SliceDestructure { input: v1, outputs: [v5, v6], success: NodeId(6), failure: NodeId(4)}
+6 BindVar { input: v5, output: PatternVarId(2), next: NodeId(5) }
+5 BindVar { input: v6, output: PatternVarId(3), next: NodeId(0) }
+4 SliceDestructure { input: v1, outputs: [v2, v3, v4], success: NodeId(3), failure: NodeId(1)}
+3 BindVar { input: v2, output: PatternVarId(0), next: NodeId(2) }
+2 BindVar { input: v3, output: PatternVarId(1), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(6) }
+0 ArmExpr { expr: ExprId(5) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::integer::u32>) <- struct_destructure(v0)
+  (v2: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v3: core::option::Option::<@core::box::Box::<[core::integer::u32; 2]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 2, _>::try_into(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::box::Box::<@[core::integer::u32; 2]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 2]>(v4)
+  (v6: @[core::integer::u32; 2]) <- unbox(v5)
+  (v7: @core::integer::u32, v8: @core::integer::u32) <- struct_destructure(v6)
+End:
+  Goto(blk5, {v7 -> v20, v8 -> v21})
+
+blk2:
+Statements:
+  (v10: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v11: core::option::Option::<@core::box::Box::<[core::integer::u32; 3]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 3, _>::try_into(v10)
+End:
+  Match(match_enum(v11) {
+    Option::Some(v12) => blk3,
+    Option::None(v18) => blk4,
+  })
+
+blk3:
+Statements:
+  (v13: core::box::Box::<@[core::integer::u32; 3]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 3]>(v12)
+  (v14: @[core::integer::u32; 3]) <- unbox(v13)
+  (v15: @core::integer::u32, v16: @core::integer::u32, v17: @core::integer::u32) <- struct_destructure(v14)
+End:
+  Goto(blk5, {v15 -> v20, v16 -> v21})
+
+blk4:
+Statements:
+  (v19: core::integer::u32) <- 0
+End:
+  Goto(blk6, {v19 -> v25})
+
+blk5:
+Statements:
+  (v22: core::integer::u32) <- desnap(v20)
+  (v23: core::integer::u32) <- desnap(v21)
+  (v24: core::integer::u32) <- core::integer::U32Add::add(v22, v23)
+End:
+  Goto(blk6, {v24 -> v25})
+
+blk6:
+Statements:
+End:
+  Return(v25)
+
+//! > ==========================================================================
+
+//! > Span to fixed size array with inner pattern mismatch.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false)
+
+//! > function_code
+fn foo(s: Span<bool>) -> felt252 {
+    match s {
+        [true, true] => 1,
+        [true, false] => 2,
+        _ => 0,
+    }
+}
+
+//! > graph
+Root: 7
+7 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(6) }
+6 Deconstruct { input: v0, outputs: [v1], next: NodeId(5) }
+5 SliceDestructure { input: v1, outputs: [v2, v3], success: NodeId(4), failure: NodeId(2)}
+4 EnumMatch { matched_var: v2, variants: (NodeId(2), v4), (NodeId(3), v5)}
+3 EnumMatch { matched_var: v3, variants: (NodeId(1), v6), (NodeId(0), v7)}
+2 ArmExpr { expr: ExprId(7) }
+1 ArmExpr { expr: ExprId(6) }
+0 ArmExpr { expr: ExprId(3) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::bool>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::bool>) <- struct_destructure(v0)
+  (v2: core::array::Span::<core::bool>) <- struct_construct(v1)
+  (v3: core::option::Option::<@core::box::Box::<[core::bool; 2]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::bool, 2, _>::try_into(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::box::Box::<@[core::bool; 2]>) <- core::box::box_forward_snapshot::<[core::bool; 2]>(v4)
+  (v6: @[core::bool; 2]) <- unbox(v5)
+  (v7: @core::bool, v8: @core::bool) <- struct_destructure(v6)
+End:
+  Match(match_enum(v7) {
+    bool::False(v10) => blk3,
+    bool::True(v11) => blk4,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Match(match_enum(v8) {
+    bool::False(v12) => blk5,
+    bool::True(v13) => blk6,
+  })
+
+blk5:
+Statements:
+  (v15: core::felt252) <- 2
+End:
+  Goto(blk8, {v15 -> v17})
+
+blk6:
+Statements:
+  (v16: core::felt252) <- 1
+End:
+  Goto(blk8, {v16 -> v17})
+
+blk7:
+Statements:
+  (v14: core::felt252) <- 0
+End:
+  Goto(blk8, {v14 -> v17})
+
+blk8:
+Statements:
+End:
+  Return(v17)
+
+//! > ==========================================================================
+
+//! > Span to fixed size array with non-exhaustive sizes.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a] => *a,
+        [a, b] => *a + *b,
+    }
+}
+
+//! > graph
+Root: 9
+9 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(8) }
+8 Deconstruct { input: v0, outputs: [v1], next: NodeId(7) }
+7 SliceDestructure { input: v1, outputs: [v4], success: NodeId(6), failure: NodeId(5)}
+6 BindVar { input: v4, output: PatternVarId(2), next: NodeId(0) }
+5 SliceDestructure { input: v1, outputs: [v2, v3], success: NodeId(4), failure: NodeId(2)}
+4 BindVar { input: v2, output: PatternVarId(0), next: NodeId(3) }
+3 BindVar { input: v3, output: PatternVarId(1), next: NodeId(1) }
+2 Missing
+1 ArmExpr { expr: ExprId(7) }
+0 ArmExpr { expr: ExprId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error[E3004]: Match is non-exhaustive: `_` not covered.
+ --> lib.cairo:2:5-5:5
+      match s {
+ _____^
+| ...
+|     }
+|_____^
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+
+//! > ==========================================================================
+
+//! > Span to fixed size array with size after wildcard.
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: true)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a] => *a,
+        _ => 0,
+        [a, b] => *a + *b,
+    }
+}
+
+//! > graph
+Root: 6
+6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
+5 Deconstruct { input: v0, outputs: [v1], next: NodeId(4) }
+4 SliceDestructure { input: v1, outputs: [v2], success: NodeId(3), failure: NodeId(1)}
+3 BindVar { input: v2, output: PatternVarId(0), next: NodeId(0) }
+2 ArmExpr { expr: ExprId(8) }
+1 ArmExpr { expr: ExprId(3) }
+0 ArmExpr { expr: ExprId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+warning[E3004]: Unreachable pattern arm.
+ --> lib.cairo:5:19
+        [a, b] => *a + *b,
+                  ^^^^^^^
+
+//! > lowered
+Parameters: v0: core::array::Span::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: @core::array::Array::<core::integer::u32>) <- struct_destructure(v0)
+  (v2: core::array::Span::<core::integer::u32>) <- struct_construct(v1)
+  (v3: core::option::Option::<@core::box::Box::<[core::integer::u32; 1]>>) <- core::array::SpanTryIntoFixedSizedArray::<core::integer::u32, 1, _>::try_into(v2)
+End:
+  Match(match_enum(v3) {
+    Option::Some(v4) => blk1,
+    Option::None(v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::box::Box::<@[core::integer::u32; 1]>) <- core::box::box_forward_snapshot::<[core::integer::u32; 1]>(v4)
+  (v6: @[core::integer::u32; 1]) <- unbox(v5)
+  (v7: @core::integer::u32) <- struct_destructure(v6)
+  (v10: core::integer::u32) <- desnap(v7)
+End:
+  Goto(blk3, {v10 -> v11})
+
+blk2:
+Statements:
+  (v9: core::integer::u32) <- 0
+End:
+  Goto(blk3, {v9 -> v11})
+
+blk3:
+Statements:
+End:
+  Return(v11)
