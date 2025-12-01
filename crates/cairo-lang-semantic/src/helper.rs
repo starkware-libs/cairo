@@ -1,4 +1,6 @@
-use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{
+    ExternFunctionId, FreeFunctionId, ImplDefId, ModuleId, ModuleItemId, TraitId,
+};
 use cairo_lang_filesystem::ids::SmolStrId;
 use salsa::Database;
 
@@ -64,6 +66,15 @@ impl<'a> ModuleHelper<'a> {
     /// Returns the id of a generic function named `name` in the current module.
     pub fn generic_function_id(&self, name: &'a str) -> GenericFunctionId<'a> {
         corelib::get_generic_function_id(self.db, self.id, SmolStrId::from(self.db, name))
+    }
+    /// Returns the id of an impl named `name` in the current module.
+    pub fn impl_def_id(&self, name: &str) -> ImplDefId<'a> {
+        let Ok(Some(ModuleItemId::Impl(id))) =
+            self.db.module_item_by_name(self.id, SmolStrId::from(self.db, name))
+        else {
+            panic!("`{name}` not found in `{}`.", self.id.full_path(self.db));
+        };
+        id
     }
     /// Returns the id of a type named `name` in the current module, with the given
     /// `generic_args`.

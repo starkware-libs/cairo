@@ -6,6 +6,7 @@ use cairo_lang_semantic::{
     self as semantic, GenericArgumentId, MatchArmSelector, ValueSelectorArm, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
+use cairo_lang_utils::Intern;
 use itertools::{Itertools, zip_eq};
 use num_bigint::BigInt;
 
@@ -19,7 +20,7 @@ use crate::lower::context::{LoweredExpr, LoweredExprExternEnum, VarRequest};
 use crate::lower::external::extern_facade_expr;
 use crate::lower::flow_control::graph::{
     ArmExpr, BindVar, BooleanIf, Deconstruct, Downcast, EnumMatch, EqualsLiteral, EvaluateExpr,
-    FlowControlNode, LetElseSuccess, NodeId, Upcast, ValueMatch, WhileBody,
+    FlowControlNode, LetElseSuccess, NodeId, SliceDestructure, Upcast, ValueMatch, WhileBody,
 };
 use crate::lower::lower_let_else::lower_success_arm_body;
 use crate::lower::{
@@ -59,6 +60,7 @@ pub fn lower_node(ctx: &mut LowerGraphContext<'_, '_, '_>, id: NodeId) -> Maybe<
         FlowControlNode::Deconstruct(node) => lower_deconstruct(ctx, id, node, builder),
         FlowControlNode::Upcast(node) => lower_upcast(ctx, id, node, builder),
         FlowControlNode::Downcast(node) => lower_downcast(ctx, id, node, builder),
+        FlowControlNode::SliceDestructure(node) => lower_slice_destructure(ctx, id, node, builder),
         FlowControlNode::LetElseSuccess(node) => lower_let_else_success(ctx, id, node, builder),
         FlowControlNode::Missing(diag_added) => Err(*diag_added),
     }
@@ -520,6 +522,130 @@ fn lower_downcast<'db>(
             },
         ],
         location: ctx.location,
+    });
+
+    ctx.finalize_with_match(id, builder, match_info);
+    Ok(())
+}
+
+/// Lowers a [`SliceDestructure`] node.
+///
+/// The input is `@Array<T>` (already extracted from the Span by a preceding `Deconstruct`).
+///
+/// Generates:
+/// `tuple_from_span<[T; N]>(@Array<T>)` as an extern match:
+///    - Success: `@Box<[T; N]>` → `box_forward_snapshot` → unbox → destructure `@[T; N]` into N
+///      elements
+///    - Failure: continue to failure node
+fn lower_slice_destructure<'db>(
+    ctx: &mut LowerGraphContext<'db, '_, '_>,
+    id: NodeId,
+    node: &SliceDestructure<'db>,
+    builder: BlockBuilder<'db>,
+) -> Maybe<()> {
+    let db = ctx.ctx.db;
+    let location = ctx.location;
+    let snapshot_array_usage = ctx.var_usage(node.input);
+
+    // Call tuple_from_span<[T; N]>(@Array<T>).
+    let fixed_array_ty = node.fixed_array_ty;
+    let snapshot_box_ty =
+        semantic::TypeLongId::Snapshot(corelib::core_box_ty(db, fixed_array_ty)).intern(db);
+
+    // Construct the FixedSizedArrayInfo impl for the generic arg.
+    // FixedSizedArrayInfoImpl<T, SIZE> of FixedSizedArrayInfo<[T; SIZE]>
+    let (elem_ty, size) = match fixed_array_ty.long(db) {
+        semantic::TypeLongId::FixedSizeArray { type_id, size } => (type_id, size),
+        _ => unreachable!("SliceDestructure fixed_array_ty must be a FixedSizeArray"),
+    };
+    let info = db.core_info();
+    let impl_generic_args =
+        vec![GenericArgumentId::Type(*elem_ty), GenericArgumentId::Constant(*size)];
+    let concrete_impl = semantic::ConcreteImplLongId {
+        impl_def_id: info.fixed_size_array_info_impl,
+        generic_args: impl_generic_args,
+    }
+    .intern(db);
+    let impl_id = semantic::items::imp::ImplLongId::Concrete(concrete_impl).intern(db);
+
+    let function_id = semantic::items::functions::GenericFunctionId::Extern(info.tuple_from_span)
+        .concretize(
+            db,
+            vec![GenericArgumentId::Type(fixed_array_ty), GenericArgumentId::Impl(impl_id)],
+        )
+        .lowered(db);
+
+    // Success branch: receives @Box<[T; N]>, then forward snapshot + unbox + desnap +
+    // destructure.
+    let mut success_builder = ctx.create_child_builder(&builder);
+
+    // The extern match gives us @Box<[T; N]>.
+    let boxed_var = ctx.ctx.new_var(VarRequest { ty: snapshot_box_ty, location });
+
+    // box_forward_snapshot: @Box<[T; N]> -> Box<@[T; N]>
+    let snapshot_inner_ty = semantic::TypeLongId::Snapshot(fixed_array_ty).intern(db);
+    let box_of_snapshot_ty = corelib::core_box_ty(db, snapshot_inner_ty);
+    let fwd_fn = semantic::items::functions::GenericFunctionId::Extern(info.box_forward_snapshot)
+        .concretize(db, vec![GenericArgumentId::Type(fixed_array_ty)])
+        .lowered(db);
+    let fwd_result = generators::Call {
+        function: fwd_fn,
+        inputs: vec![VarUsage { var_id: boxed_var, location }],
+        coupon_input: None,
+        extra_ret_tys: vec![],
+        ret_tys: vec![box_of_snapshot_ty],
+        location,
+    }
+    .add(ctx.ctx, &mut success_builder.statements);
+    let box_of_snapshot_usage = fwd_result.returns.into_iter().next().unwrap();
+
+    // Unbox: Box<@[T; N]> -> @[T; N]
+    let snapshot_fixed_array_usage = generators::Unbox { input: box_of_snapshot_usage, location }
+        .add(ctx.ctx, &mut success_builder.statements);
+
+    // Destructure @[T; N] -> (@v0, @v1, ..., @vN-1)
+    let elem_var_reqs: Vec<_> = node
+        .outputs
+        .iter()
+        .map(|output| VarRequest { ty: output.ty(ctx.graph), location: output.location(ctx.graph) })
+        .collect();
+    let elem_var_ids = generators::StructDestructure {
+        input: snapshot_fixed_array_usage,
+        var_reqs: elem_var_reqs,
+    }
+    .add(ctx.ctx, &mut success_builder.statements);
+
+    for (output, var_id) in zip_eq(&node.outputs, elem_var_ids) {
+        ctx.register_var(*output, var_id);
+    }
+
+    let success_block_id = ctx.register_child_builder(node.success, success_builder);
+
+    // Failure branch: no outputs.
+    let failure_block_id = ctx.assign_child_block_id(node.failure, &builder);
+
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: function_id,
+        inputs: vec![snapshot_array_usage],
+        arms: vec![
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_some_variant(
+                    db,
+                    snapshot_box_ty,
+                )),
+                block_id: success_block_id,
+                var_ids: vec![boxed_var],
+            },
+            MatchArm {
+                arm_selector: MatchArmSelector::VariantId(corelib::option_none_variant(
+                    db,
+                    snapshot_box_ty,
+                )),
+                block_id: failure_block_id,
+                var_ids: vec![],
+            },
+        ],
+        location,
     });
 
     ctx.finalize_with_match(id, builder, match_info);
