@@ -29,12 +29,12 @@ fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
 error: Missing token '}'.
- --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
+ --> src/parser_test_data/cairo_test_files/test1.cairo:32:14
     return x;
              ^
 
 error: Missing tokens. Expected an item after attributes.
- --> src/parser_test_data/cairo_test_files/test1.cairo:62:26
+ --> src/parser_test_data/cairo_test_files/test1.cairo:64:26
 #[attribute_without_item]
                          ^
 
@@ -500,7 +500,95 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │                       └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #12 (kind: StatementExpr)
+    │   │       │   ├── child #12 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
+    │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │           └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   ├── type_clause (kind: TypeClause)
+    │   │       │   │   │   ├── colon (kind: TokenColon): ':'
+    │   │       │   │   │   └── ty (kind: ExprPath)
+    │   │       │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │       └── segments (kind: ExprPathInner)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentWithGenericArgs)
+    │   │       │   │   │               ├── ident (kind: TokenIdentifier): 'Option'
+    │   │       │   │   │               ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │   │       │   │   │               └── generic_args (kind: GenericArgs)
+    │   │       │   │   │                   ├── langle (kind: TokenLT): '<'
+    │   │       │   │   │                   ├── generic_args (kind: GenericArgList)
+    │   │       │   │   │                   │   └── item #0 (kind: GenericArgUnnamed)
+    │   │       │   │   │                   │       └── value (kind: GenericArgValueExpr)
+    │   │       │   │   │                   │           └── expr (kind: ExprPath)
+    │   │       │   │   │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │                   │               └── segments (kind: ExprPathInner)
+    │   │       │   │   │                   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   │                       └── ident (kind: TokenIdentifier): 'felt252'
+    │   │       │   │   │                   └── rangle (kind: TokenGT): '>'
+    │   │       │   │   ├── eq (kind: TokenEq): '='
+    │   │       │   │   ├── rhs (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           └── ident (kind: TokenIdentifier): 'Some'
+    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │       ├── arguments (kind: ArgList)
+    │   │       │   │   │       │   └── item #0 (kind: Arg)
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #13 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
+    │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │           └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   ├── type_clause (kind: TypeClause)
+    │   │       │   │   │   ├── colon (kind: TokenColon): ':'
+    │   │       │   │   │   └── ty (kind: ExprPath)
+    │   │       │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │       └── segments (kind: ExprPathInner)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentWithGenericArgs)
+    │   │       │   │   │               ├── ident (kind: TokenIdentifier): 'Option'
+    │   │       │   │   │               ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │   │       │   │   │               └── generic_args (kind: GenericArgs)
+    │   │       │   │   │                   ├── langle (kind: TokenLT): '<'
+    │   │       │   │   │                   ├── generic_args (kind: GenericArgList)
+    │   │       │   │   │                   │   └── item #0 (kind: GenericArgUnnamed)
+    │   │       │   │   │                   │       └── value (kind: GenericArgValueExpr)
+    │   │       │   │   │                   │           └── expr (kind: ExprPath)
+    │   │       │   │   │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │                   │               └── segments (kind: ExprPathInner)
+    │   │       │   │   │                   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   │                       └── ident (kind: TokenIdentifier): 'felt252'
+    │   │       │   │   │                   └── rangle (kind: TokenGT): '>'
+    │   │       │   │   ├── eq (kind: TokenEq): '='
+    │   │       │   │   ├── rhs (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           └── ident (kind: TokenIdentifier): 'Some'
+    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │       ├── arguments (kind: ArgList)
+    │   │       │   │   │       │   └── item #0 (kind: Arg)
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #14 (kind: StatementExpr)
     │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
@@ -533,7 +621,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │       │                       └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    │   │       │   └── child #13 (kind: StatementReturn)
+    │   │       │   └── child #15 (kind: StatementReturn)
     │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr_clause (kind: ExprClause)
@@ -990,12 +1078,12 @@ fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
 error: Missing token '}'.
- --> src/parser_test_data/cairo_test_files/test1.cairo:30:14
+ --> src/parser_test_data/cairo_test_files/test1.cairo:32:14
     return x;
              ^
 
 error: Missing tokens. Expected an item after attributes.
- --> src/parser_test_data/cairo_test_files/test1.cairo:62:26
+ --> src/parser_test_data/cairo_test_files/test1.cairo:64:26
 #[attribute_without_item]
                          ^
 
@@ -2101,7 +2189,182 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
-    │   │       │   ├── child #12 (kind: StatementExpr)
+    │   │       │   ├── child #12 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
+    │   │       │   │   ├── let_kw (kind: TerminalLet)
+    │   │       │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   ├── token (kind: TokenLet): 'let'
+    │   │       │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │           └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── token (kind: TokenIdentifier): 'x'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │                   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── type_clause (kind: TypeClause)
+    │   │       │   │   │   ├── colon (kind: TerminalColon)
+    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │   ├── token (kind: TokenColon): ':'
+    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   └── ty (kind: ExprPath)
+    │   │       │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │       └── segments (kind: ExprPathInner)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentWithGenericArgs)
+    │   │       │   │   │               ├── ident (kind: TerminalIdentifier)
+    │   │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               │   ├── token (kind: TokenIdentifier): 'Option'
+    │   │       │   │   │               │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │   │       │   │   │               └── generic_args (kind: GenericArgs)
+    │   │       │   │   │                   ├── langle (kind: TerminalLT)
+    │   │       │   │   │                   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │                   │   ├── token (kind: TokenLT): '<'
+    │   │       │   │   │                   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │                   ├── generic_args (kind: GenericArgList)
+    │   │       │   │   │                   │   └── item #0 (kind: GenericArgUnnamed)
+    │   │       │   │   │                   │       └── value (kind: GenericArgValueExpr)
+    │   │       │   │   │                   │           └── expr (kind: ExprPath)
+    │   │       │   │   │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │                   │               └── segments (kind: ExprPathInner)
+    │   │       │   │   │                   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   │                       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │                   │                           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │                   │                           ├── token (kind: TokenIdentifier): 'felt252'
+    │   │       │   │   │                   │                           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │                   └── rangle (kind: TerminalGT)
+    │   │       │   │   │                       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │                       ├── token (kind: TokenGT): '>'
+    │   │       │   │   │                       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   ├── eq (kind: TerminalEq)
+    │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   ├── token (kind: TokenEq): '='
+    │   │       │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   ├── rhs (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │               ├── token (kind: TokenIdentifier): 'Some'
+    │   │       │   │   │   │               └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: TerminalLParen)
+    │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
+    │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       ├── arguments (kind: ArgList)
+    │   │       │   │   │       │   └── item #0 (kind: Arg)
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: TerminalLiteralNumber)
+    │   │       │   │   │       │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │               ├── token (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │       │               └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       └── rparen (kind: TerminalRParen)
+    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           ├── token (kind: TokenRParen): ')'
+    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
+    │   │       │   │   └── semicolon (kind: TerminalSemicolon)
+    │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │       ├── token (kind: TokenSemicolon): ';'
+    │   │       │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │           └── child #0 (kind: TokenNewline).
+    │   │       │   ├── child #13 (kind: StatementLet)
+    │   │       │   │   ├── attributes (kind: AttributeList) []
+    │   │       │   │   ├── let_kw (kind: TerminalLet)
+    │   │       │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   ├── token (kind: TokenLet): 'let'
+    │   │       │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │           └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── token (kind: TokenIdentifier): 'x'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │                   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── type_clause (kind: TypeClause)
+    │   │       │   │   │   ├── colon (kind: TerminalColon)
+    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │   ├── token (kind: TokenColon): ':'
+    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   └── ty (kind: ExprPath)
+    │   │       │   │   │       ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │       └── segments (kind: ExprPathInner)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentWithGenericArgs)
+    │   │       │   │   │               ├── ident (kind: TerminalIdentifier)
+    │   │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               │   ├── token (kind: TokenIdentifier): 'Option'
+    │   │       │   │   │               │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │   │       │   │   │               └── generic_args (kind: GenericArgs)
+    │   │       │   │   │                   ├── langle (kind: TerminalLT)
+    │   │       │   │   │                   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │                   │   ├── token (kind: TokenLT): '<'
+    │   │       │   │   │                   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │                   ├── generic_args (kind: GenericArgList)
+    │   │       │   │   │                   │   └── item #0 (kind: GenericArgUnnamed)
+    │   │       │   │   │                   │       └── value (kind: GenericArgValueExpr)
+    │   │       │   │   │                   │           └── expr (kind: ExprPath)
+    │   │       │   │   │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │                   │               └── segments (kind: ExprPathInner)
+    │   │       │   │   │                   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │                   │                       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │                   │                           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │                   │                           ├── token (kind: TokenIdentifier): 'felt252'
+    │   │       │   │   │                   │                           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │                   └── rangle (kind: TerminalGT)
+    │   │       │   │   │                       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │                       ├── token (kind: TokenGT): '>'
+    │   │       │   │   │                       └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │                           └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── eq (kind: TerminalEq)
+    │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   ├── token (kind: TokenEq): '='
+    │   │       │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   ├── rhs (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │       │   │   │   │   └── segments (kind: ExprPathInner)
+    │   │       │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │               ├── token (kind: TokenIdentifier): 'Some'
+    │   │       │   │   │   │               └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: TerminalLParen)
+    │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
+    │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       ├── arguments (kind: ArgList)
+    │   │       │   │   │       │   └── item #0 (kind: Arg)
+    │   │       │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │       │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       │           └── value (kind: TerminalLiteralNumber)
+    │   │       │   │   │       │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │               ├── token (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │       │               └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       └── rparen (kind: TerminalRParen)
+    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           ├── token (kind: TokenRParen): ')'
+    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   ├── let_else_clause (kind: OptionLetElseClauseEmpty) []
+    │   │       │   │   └── semicolon (kind: TerminalSemicolon)
+    │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │       ├── token (kind: TokenSemicolon): ';'
+    │   │       │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │           └── child #0 (kind: TokenNewline).
+    │   │       │   ├── child #14 (kind: StatementExpr)
     │   │       │   │   ├── attributes (kind: AttributeList) []
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
@@ -2160,7 +2423,7 @@ error: Missing tokens. Expected an item after attributes.
     │   │       │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │   │   │               └── child #0 (kind: TokenNewline).
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    │   │       │   └── child #13 (kind: StatementReturn)
+    │   │       │   └── child #15 (kind: StatementReturn)
     │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── return_kw (kind: TerminalReturn)
     │   │       │       │   ├── leading_trivia (kind: Trivia)

@@ -254,12 +254,9 @@ impl OutsideTraitSafeDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTr
 }
 
 
-lib.cairo:7:1-15:1
-  #[starknet::embeddable]
- _^
-| ...
-| }
-|_^
+lib.cairo:7:1
+#[starknet::embeddable]
+^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImpl<
@@ -1287,12 +1284,9 @@ impl OutsideTraitWithDestructSafeDispatcherImpl of OutsideTraitWithDestructSafeD
 }
 
 
-lib.cairo:6:1-13:1
-  #[starknet::embeddable]
- _^
-| ...
-| }
-|_^
+lib.cairo:6:1
+#[starknet::embeddable]
+^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<
@@ -1458,12 +1452,9 @@ impl OutsideTraitWithPanicDestructSafeDispatcherImpl of OutsideTraitWithPanicDes
 }
 
 
-lib.cairo:20:1-27:1
-  #[starknet::embeddable]
- _^
-| ...
-| }
-|_^
+lib.cairo:20:1
+#[starknet::embeddable]
+^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<
@@ -3003,12 +2994,9 @@ impl OutsideTraitWithDropSafeDispatcherImpl of OutsideTraitWithDropSafeDispatche
 }
 
 
-lib.cairo:6:1-13:1
-  #[starknet::embeddable]
- _^
-| ...
-| }
-|_^
+lib.cairo:6:1
+#[starknet::embeddable]
+^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImplWithDrop<

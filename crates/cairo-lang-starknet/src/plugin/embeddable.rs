@@ -19,12 +19,13 @@ use super::utils::{GenericParamExtract, forbid_attributes_in_impl};
 pub fn handle_embeddable<'db>(
     db: &'db dyn Database,
     item_impl: ast::ItemImpl<'db>,
+    embeddable_attr: ast::Attribute<'db>,
 ) -> PluginResult<'db> {
     let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
-                item_impl.stable_ptr(db),
+                embeddable_attr.stable_ptr(db),
                 "Making empty impls embeddable is disallowed.".to_string(),
             )],
             remove_original_item: false,
@@ -198,7 +199,7 @@ pub fn handle_embeddable<'db>(
         .into(),
     );
 
-    let mut builder = PatchBuilder::new(db, &item_impl);
+    let mut builder = PatchBuilder::new(db, &embeddable_attr);
     builder.add_modified(code);
     let (content, code_mappings) = builder.build();
     PluginResult {
