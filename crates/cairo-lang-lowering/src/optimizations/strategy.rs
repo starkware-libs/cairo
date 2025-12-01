@@ -7,6 +7,7 @@ use super::cse::cse;
 use super::dedup_blocks::dedup_blocks;
 use super::early_unsafe_panic::early_unsafe_panic;
 use super::gas_redeposit::gas_redeposit;
+use super::reboxing::apply_reboxing;
 use super::trim_unreachable::trim_unreachable;
 use super::validate::validate;
 use crate::Lowered;
@@ -39,6 +40,7 @@ pub enum OptimizationPhase<'db> {
     EarlyUnsafePanic,
     OptimizeMatches,
     OptimizeRemappings,
+    Reboxing,
     ReorderStatements,
     ReorganizeBlocks,
     ReturnOptimization,
@@ -84,6 +86,7 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
+            OptimizationPhase::Reboxing => apply_reboxing(db, lowered),
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
             OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
@@ -160,6 +163,7 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::ReorderStatements,
                 OptimizationPhase::OptimizeMatches,
                 OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::Reboxing,
                 OptimizationPhase::CancelOps,
                 OptimizationPhase::ReorganizeBlocks,
                 // Performing CSE here after blocks are the most contiguous, to reach maximum
