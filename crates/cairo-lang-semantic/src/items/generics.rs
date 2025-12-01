@@ -115,22 +115,16 @@ impl<'db> GenericArgumentId<'db> {
                 ty.long(db).extract_generic_params(db, generic_parameters)?
             }
             GenericArgumentId::Constant(const_value_id) => {
-                if let Ok(ty) = const_value_id.ty(db) {
-                    ty.long(db).extract_generic_params(db, generic_parameters)?
-                }
+                const_value_id.ty(db)?.long(db).extract_generic_params(db, generic_parameters)?
             }
             GenericArgumentId::Impl(impl_id) => {
-                if let Ok(concrete_trait_id) = impl_id.concrete_trait(db) {
-                    for garg in concrete_trait_id.generic_args(db) {
-                        garg.extract_generic_params(db, generic_parameters)?;
-                    }
+                for garg in impl_id.concrete_trait(db)?.generic_args(db) {
+                    garg.extract_generic_params(db, generic_parameters)?;
                 }
             }
             GenericArgumentId::NegImpl(negative_impl_id) => {
-                if let Ok(concrete_trait_id) = negative_impl_id.concrete_trait(db) {
-                    for garg in concrete_trait_id.generic_args(db) {
-                        garg.extract_generic_params(db, generic_parameters)?;
-                    }
+                for garg in negative_impl_id.concrete_trait(db)?.generic_args(db) {
+                    garg.extract_generic_params(db, generic_parameters)?;
                 }
             }
         }
