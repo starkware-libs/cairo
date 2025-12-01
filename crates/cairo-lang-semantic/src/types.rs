@@ -14,6 +14,7 @@ use cairo_lang_syntax::attribute::consts::MUST_USE_ATTR;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode, ast};
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, extract_matches, try_extract_matches};
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
@@ -209,6 +210,54 @@ impl<'db> TypeLongId<'db> {
                 }
             }
         }
+    }
+
+    /// A utility function for extracting the generic parameters arguments from TypeLongId.
+    pub fn extract_generic_params(
+        &self,
+        db: &'db dyn Database,
+        generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+    ) -> Maybe<()> {
+        match self {
+            TypeLongId::Concrete(concrete_type_id) => {
+                for garg in concrete_type_id.generic_args(db) {
+                    garg.extract_generic_params(db, generic_parameters)?;
+                }
+            }
+            TypeLongId::Tuple(tys) => {
+                for ty in tys {
+                    ty.long(db).extract_generic_params(db, generic_parameters)?
+                }
+            }
+            TypeLongId::Snapshot(ty) => {
+                ty.long(db).extract_generic_params(db, generic_parameters)?
+            }
+            TypeLongId::GenericParameter(generic_param) => {
+                generic_parameters.insert(*generic_param);
+            }
+            TypeLongId::Var(_) => {}
+            TypeLongId::Coupon(_) => {}
+            TypeLongId::FixedSizeArray { type_id, .. } => {
+                type_id.long(db).extract_generic_params(db, generic_parameters)?
+            }
+            TypeLongId::ImplType(impl_type_id) => {
+                let concrete_trait_id = impl_type_id.impl_id.concrete_trait(db)?;
+                for garg in concrete_trait_id.generic_args(db) {
+                    garg.extract_generic_params(db, generic_parameters)?;
+                }
+            }
+            TypeLongId::Closure(closure_ty) => {
+                for ty in chain!(
+                    &closure_ty.param_tys,
+                    &closure_ty.captured_types,
+                    std::iter::once(&closure_ty.ret_ty)
+                ) {
+                    ty.long(db).extract_generic_params(db, generic_parameters)?
+                }
+            }
+            TypeLongId::Missing(diag_added) => return Err(*diag_added),
+        };
+        Ok(())
     }
 }
 impl<'db> DebugWithDb<'db> for TypeLongId<'db> {
