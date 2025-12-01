@@ -260,3 +260,37 @@ fn bar<T>() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test anonymous impl inside negative impl.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+    Bad::<u128>::bad();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+pub trait NegImpl<+Drop<u32>> {}
+
+pub trait Bad<T> {
+    fn bad() -> T;
+}
+
+pub impl ImplBad<T, -NegImpl<_>> of Bad<T> {
+    fn bad() -> T {
+        panic!("Bad::bad() called")
+    }
+}
+
+//! > expected_diagnostics
+error: Negative impls may only use type or const generic parameters.
+ --> lib.cairo:1:19
+pub trait NegImpl<+Drop<u32>> {}
+                  ^^^^^^^^^^

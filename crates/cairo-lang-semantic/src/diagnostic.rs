@@ -1111,6 +1111,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 "Consider using `return`, `continue`, ..."
             )
             .into(),
+            SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => {
+                "Negative impls may only use type or const generic parameters.".into()
+            }
         }
     }
     fn location(&self, db: &'db dyn Database) -> SpanInFile<'db> {
@@ -1554,6 +1557,7 @@ pub enum SemanticDiagnosticKind<'db> {
     UndefinedMacroPlaceholder(SmolStrId<'db>),
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
+    OnlyTypeOrConstParamsInNegImpl,
 }
 
 /// The kind of an expression with multiple possible return types.
