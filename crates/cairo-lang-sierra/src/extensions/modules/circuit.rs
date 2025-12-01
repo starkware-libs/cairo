@@ -162,7 +162,7 @@ impl NamedType for AddModGate {
     }
 }
 
-// Represents the action of adding two fields elements in the circuits builtin.
+// Represents the action of subtracting two field elements in the circuits builtin.
 #[derive(Default)]
 pub struct SubModGate {}
 impl NamedType for SubModGate {
