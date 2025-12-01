@@ -7,7 +7,7 @@ The differences between the two are:
 
 // TODO(spapini): Link to snapshot and reference.
 * The expression can be coerced to either a xref:linear-types.adoc#snapshot[snapshot] `@expr` or a reference `ref expr`,
-  depending on the method's signature.
+  depending on the method's signature. See xref:linear-types.adoc[Linear types] for more details.
 * `method` must be a trait function.
 
 == `self` and methods
