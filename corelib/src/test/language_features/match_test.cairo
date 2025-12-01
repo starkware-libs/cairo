@@ -13,6 +13,29 @@ fn test_match_multienum_binding() {
 }
 
 #[test]
+fn test_match_span_to_fixed_size_array() {
+    let span: Span<u32> = array![10, 20, 30].span();
+
+    match span {
+        [_a, _b, _c, _d] => { panic!("Expected 3 elements, but got 4"); },
+        [_a, _b] => { panic!("Expected 3 elements, but got 2"); },
+        [a, b, c] => { assert_eq!((*a, *b, *c), (10, 20, 30)); },
+        _ => panic!("Expected 3 elements, but got a different pattern"),
+    }
+}
+
+#[test]
+fn test_match_span_empty_pattern() {
+    let span: Span<u32> = array![].span();
+
+    match span {
+        [_a] => { panic!("Expected 0 elements, but got 1"); },
+        [] => {},
+        _ => panic!("Expected 0 elements, but got a different count"),
+    }
+}
+
+#[test]
 fn test_match_extern_multilevel() {
     if true {
         let x: Option<Option<Option<felt252>>> = Some(Some(None));
@@ -23,4 +46,18 @@ fn test_match_extern_multilevel() {
         }
     }
     panic!("Match expression did not return - this should be unreachable");
+}
+
+
+#[test]
+fn test_match_span_inner_pattern_mismatch() {
+    let matcher = |s: Array<Option<felt252>>| match s.span() {
+        [Some(_)] => 1,
+        [None] => 2,
+        _ => 0,
+    };
+
+    assert_eq!(matcher(array![Some(42)]), 1);
+    assert_eq!(matcher(array![None]), 2);
+    assert_eq!(matcher(array![Some(1), Some(2)]), 0);
 }
