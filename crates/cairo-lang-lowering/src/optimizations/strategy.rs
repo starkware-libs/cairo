@@ -69,6 +69,8 @@ impl<'db> OptimizationPhase<'db> {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
+        debug!("Applying optimization: {self:?}");
+
         match self {
             OptimizationPhase::ApplyInlining { enable_const_folding } => {
                 apply_inlining(db, function, lowered, enable_const_folding)?

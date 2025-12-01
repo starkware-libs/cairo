@@ -102,12 +102,14 @@ pub fn dump_to_test_file(
     for (test_name, test) in tests {
         let mut tag_strings = vec![TAG_PREFIX.to_string() + &test_name];
         for (tag, content) in test.attributes {
-            tag_strings.push(
-                TAG_PREFIX.to_string()
-                    + &tag
-                    + if content.is_empty() { "" } else { "\n" }
-                    + &content,
-            );
+            if tag != "test_name" {
+                tag_strings.push(
+                    TAG_PREFIX.to_string()
+                        + &tag
+                        + if content.is_empty() { "" } else { "\n" }
+                        + &content,
+                );
+            }
         }
         test_strings.push(tag_strings.join("\n\n"));
     }
@@ -139,8 +141,11 @@ impl TestBuilder {
     }
 
     fn set_test_name(&mut self, line: String, line_num: usize) {
-        self.current_test_name = Some(line);
-        self.current_test = Some(Test { attributes: OrderedHashMap::default(), line_num });
+        self.current_test_name = Some(line.clone());
+        self.current_test = Some(Test {
+            attributes: OrderedHashMap::from([("test_name".to_string(), line)]),
+            line_num,
+        });
     }
 
     fn add_content_line(&mut self, line: String) {
