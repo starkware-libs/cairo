@@ -1,6 +1,74 @@
 = Boolean operators
 
-This section is a work in progress.
+Boolean operators combine or negate boolean (`bool`) values.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+There are two groups of operators that work with `bool`:
+
+- Logical operators: `&&`, `\|\|` (short-circuiting)
+- Bitwise operators on `bool`: `&`, `\|`, `^` (no short-circuit)
+
+See xref:pages/operator-precedence.adoc[Operator precedence] for their relative precedence.
+
+== Logical operators (`&&`, `\|\|`)
+
+Logical operators evaluate their left operand first and may skip evaluating the right operand (short-circuiting):
+
+- `a && b`: evaluates `b` only if `a` is `true`.
+- `a \|\| b`: evaluates `b` only if `a` is `false`.
+
+Both operands and the result are of type `bool`.
+
+[#logical-examples]
+[source,rust]
+----
+fn expensive() -> bool { true }
+
+fn main() {
+    let a = false && expensive(); // RHS not evaluated; a == false
+    let b = true  || expensive(); // RHS not evaluated; b == true
+
+    // Typical usage with conditions
+    let x = true;
+    let y = false;
+    if x && !y { /* ... */ }
+}
+----
+
+Const evaluation: logical `&&` / `\|\|` are supported and preserve short-circuit semantics in const contexts. See xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+
+== Bitwise boolean operators on `bool` (`&`, `\|`, `^`)
+
+The bitwise operators are also defined for `bool` via traits in the core library and do not short-circuit: both operands are always evaluated.
+
+- `a & b` – bitwise-and on `bool` values.
+- `a \| b` – bitwise-or on `bool` values.
+- `a ^ b` – bitwise-xor on `bool` values.
+
+[#bitwise-examples]
+[source,rust]
+----
+fn side_effect() -> bool { /* ... */ false }
+
+fn main() {
+    let a = false & side_effect(); // side_effect() IS evaluated
+    let b = true  | side_effect(); // side_effect() IS evaluated
+    let c = true  ^ false;         // c == true
+}
+----
+
+Implementation reference (core library traits for `bool`): `BitAnd`, `BitOr`, `BitXor`.
+
+== Negation
+
+Boolean negation is written with `!` and returns a `bool`. See xref:pages/negation-operators.adoc[Negation operators].
+
+== Typing rules
+
+- Operands to boolean operators must be of type `bool`.
+- There are no implicit conversions from non-boolean types; Cairo does not have “truthy/falsy” values.
+
+== Related topics
+
+- xref:pages/boolean-types.adoc[Boolean types]
+- xref:pages/operator-precedence.adoc[Operator precedence]
+- xref:language_semantics:constant-evaluation.adoc[Constant evaluation]
