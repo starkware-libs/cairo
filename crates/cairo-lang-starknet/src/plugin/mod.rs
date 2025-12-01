@@ -41,8 +41,11 @@ impl MacroPlugin for StarknetPlugin {
         match item_ast {
             ast::ModuleItem::Module(module_ast) => handle_module(db, module_ast),
             ast::ModuleItem::Trait(trait_ast) => handle_trait(db, trait_ast),
-            ast::ModuleItem::Impl(impl_ast) if impl_ast.has_attr(db, EMBEDDABLE_ATTR) => {
-                handle_embeddable(db, impl_ast)
+            ast::ModuleItem::Impl(impl_ast) => {
+                let Some(attr) = impl_ast.find_attr(db, EMBEDDABLE_ATTR) else {
+                    return PluginResult::default();
+                };
+                handle_embeddable(db, impl_ast, attr)
             }
             ast::ModuleItem::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
                 handle_module_by_storage(db, struct_ast, metadata).unwrap_or_default()

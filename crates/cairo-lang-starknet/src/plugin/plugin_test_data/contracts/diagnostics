@@ -8080,12 +8080,9 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
 }
 
 
-lib.cairo:7:1-15:1
-  #[starknet::embeddable]
- _^
-| ...
-| }
-|_^
+lib.cairo:7:1
+#[starknet::embeddable]
+^^^^^^^^^^^^^^^^^^^^^^^
 embeddable:
 
 trait UnsafeNewContractStateTraitForEmbeddableImpl<
