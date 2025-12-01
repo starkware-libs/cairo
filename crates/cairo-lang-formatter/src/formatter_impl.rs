@@ -937,7 +937,6 @@ pub struct FormatterImpl<'a> {
     is_current_line_whitespaces: bool,
     /// Indicates whether the last element handled was a comment.
     is_last_element_comment: bool,
-    is_merging_use_items: bool,
 }
 impl<'a> FormatterImpl<'a> {
     pub fn new(db: &'a dyn Database, config: FormatterConfig) -> Self {
@@ -947,7 +946,6 @@ impl<'a> FormatterImpl<'a> {
             line_state: PendingLineState::new(),
             empty_lines_allowance: 0,
             is_current_line_whitespaces: true,
-            is_merging_use_items: false,
             is_last_element_comment: false,
         }
     }
@@ -959,11 +957,6 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     fn format_node(&mut self, syntax_node: &SyntaxNode<'a>) {
-        if self.is_merging_use_items {
-            // When merging, only format this node once and return to avoid recursion.
-            self.line_state.line_buffer.push_str(syntax_node.get_text(self.db).trim());
-            return;
-        }
         // If we encounter a token tree node, i.e. a macro, we try to parse it as a
         // [ast::WrappedArgList] (the syntax kind of legacy macro calls). If successful, we
         // format the wrapped arg list according to the rules of wrapped arg lists, otherwise we
