@@ -1,0 +1,781 @@
+//! > Test reboxing
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+main
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop, Copy)]
+struct A {
+    a: felt252,
+    b: felt252,
+}
+
+//! > function_code
+fn main(boxed_a: Box<A>) -> Box<felt252> {
+    let b = boxed_a.b;
+    BoxTrait::new(b)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v4
+
+//! > before
+Parameters: v0: core::box::Box::<test::A>
+blk0 (root):
+Statements:
+  (v1: test::A) <- core::box::unbox::<test::A>(v0)
+  (v2: core::felt252, v3: core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::box::Box::<test::A>
+blk0 (root):
+Statements:
+  (v1: test::A) <- core::box::unbox::<test::A>(v0)
+  (v2: core::felt252, v3: core::felt252) <- struct_destructure(v1)
+  (v5: core::box::Box::<core::felt252>, v4: core::box::Box::<core::felt252>) <- struct_destructure(v0)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test reboxing with multiple members
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+multi_member
+
+//! > TODO(eytan-starkware): Support multiple members by unboxing each member separately.
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop, Copy)]
+struct Point {
+    x: u32,
+    y: u32,
+    z: u32,
+}
+
+//! > function_code
+fn multi_member(boxed_p: Box<Point>) -> (Box<u32>, Box<u32>) {
+    let x = boxed_p.x;
+    let z = boxed_p.z;
+    (BoxTrait::new(x), BoxTrait::new(z))
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v9, v10
+
+//! > before
+Parameters: v0: core::box::Box::<test::Point>
+blk0 (root):
+Statements:
+  (v1: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v2: core::integer::u32, v3: core::integer::u32, v4: core::integer::u32) <- struct_destructure(v1)
+  (v5: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v6: core::integer::u32, v7: core::integer::u32, v8: core::integer::u32) <- struct_destructure(v5)
+  (v9: core::box::Box::<core::integer::u32>) <- core::box::into_box::<core::integer::u32>(v2)
+  (v10: core::box::Box::<core::integer::u32>) <- core::box::into_box::<core::integer::u32>(v8)
+  (v11: (core::box::Box::<core::integer::u32>, core::box::Box::<core::integer::u32>)) <- struct_construct(v9, v10)
+End:
+  Return(v11)
+
+//! > after
+Parameters: v0: core::box::Box::<test::Point>
+blk0 (root):
+Statements:
+  (v1: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v2: core::integer::u32, v3: core::integer::u32, v4: core::integer::u32) <- struct_destructure(v1)
+  (v5: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v6: core::integer::u32, v7: core::integer::u32, v8: core::integer::u32) <- struct_destructure(v5)
+  (v9: core::box::Box::<core::integer::u32>, v12: core::box::Box::<core::integer::u32>, v13: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
+  (v14: core::box::Box::<core::integer::u32>, v15: core::box::Box::<core::integer::u32>, v10: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
+  (v11: (core::box::Box::<core::integer::u32>, core::box::Box::<core::integer::u32>)) <- struct_construct(v9, v10)
+End:
+  Return(v11)
+
+//! > ==========================================================================
+
+//! > Test reboxing with nested struct
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+nested_struct
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop, Copy)]
+struct Inner {
+    value: felt252,
+}
+
+#[derive(Drop, Copy)]
+struct Outer {
+    inner: Inner,
+    other: felt252,
+}
+
+//! > function_code
+fn nested_struct(boxed_o: Box<Outer>) -> Box<Inner> {
+    let inner = boxed_o.inner;
+    BoxTrait::new(inner)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v4
+
+//! > before
+Parameters: v0: core::box::Box::<test::Outer>
+blk0 (root):
+Statements:
+  (v1: test::Outer) <- core::box::unbox::<test::Outer>(v0)
+  (v2: test::Inner, v3: core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<test::Inner>) <- core::box::into_box::<test::Inner>(v2)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::box::Box::<test::Outer>
+blk0 (root):
+Statements:
+  (v1: test::Outer) <- core::box::unbox::<test::Outer>(v0)
+  (v2: test::Inner, v3: core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<test::Inner>, v5: core::box::Box::<core::felt252>) <- struct_destructure(v0)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test reboxing with snapshot struct
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+with_snapshot
+
+//! > TODO(eytan-starkware): Add snapshot support
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop)]
+struct Data {
+    non_copy: NonCopy,
+    b: felt252,
+}
+
+#[derive(Drop)]
+struct NonCopy {
+    a: felt252,
+}
+
+//! > function_code
+fn with_snapshot(boxed: Box<@Data>) -> Box<@NonCopy> {
+    let unboxed = boxed.unbox();
+    let non_copy = unboxed.non_copy;
+    BoxTrait::new(non_copy)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v4
+
+//! > before
+Parameters: v0: core::box::Box::<@test::Data>
+blk0 (root):
+Statements:
+  (v1: @test::Data) <- core::box::unbox::<@test::Data>(v0)
+  (v2: @test::NonCopy, v3: @core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<@test::NonCopy>) <- core::box::into_box::<@test::NonCopy>(v2)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::box::Box::<@test::Data>
+blk0 (root):
+Statements:
+  (v1: @test::Data) <- core::box::unbox::<@test::Data>(v0)
+  (v2: @test::NonCopy, v3: @core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<@test::NonCopy>) <- core::box::into_box::<@test::NonCopy>(v2)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test reboxing without destructure (rebox whole struct)
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+rebox_whole
+
+//! > TODO(eytan-starkware): Add support for whole var reboxing
+
+//! > module_code
+use core::box::BoxTrait;
+
+struct Simple {
+    value: felt252,
+}
+
+//! > function_code
+fn rebox_whole(boxed_s: Box<Simple>) -> Box<Simple> {
+    let s2 = boxed_s.unbox();
+    BoxTrait::new(s2)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v2
+
+//! > before
+Parameters: v0: core::box::Box::<test::Simple>
+blk0 (root):
+Statements:
+  (v1: test::Simple) <- core::box::unbox::<test::Simple>(v0)
+  (v2: core::box::Box::<test::Simple>) <- core::box::into_box::<test::Simple>(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::box::Box::<test::Simple>
+blk0 (root):
+Statements:
+  (v1: test::Simple) <- core::box::unbox::<test::Simple>(v0)
+  (v2: core::box::Box::<test::Simple>) <- core::box::into_box::<test::Simple>(v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test no reboxing opportunity (independent operations)
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+no_opportunity
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop, Copy)]
+struct Data {
+    a: felt252,
+    b: felt252,
+}
+
+//! > function_code
+fn no_opportunity(boxed_d: Box<Data>, x: felt252) -> Box<felt252> {
+    let _unused = boxed_d.a;
+    BoxTrait::new(x)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+
+//! > before
+Parameters: v0: core::box::Box::<test::Data>, v1: core::felt252
+blk0 (root):
+Statements:
+  (v5: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v1)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::box::Box::<test::Data>, v1: core::felt252
+blk0 (root):
+Statements:
+  (v5: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v1)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test reboxing with enum
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+enum_rebox
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop, Copy)]
+enum MyEnum {
+    A: u32,
+    B: u32,
+}
+
+//! > function_code
+fn enum_rebox(boxed_e: Box<MyEnum>) -> Box<u32> {
+    let a = match boxed_e.unbox() {
+        MyEnum::A(x) => x,
+        MyEnum::B(x) => x,
+    };
+    BoxTrait::new(a)
+}
+
+//! > semantic_diagnostics
+error[E0007]: Type "core::box::Box::<test::MyEnum>" has no member "A"
+ --> lib.cairo:9:16
+    let a = be.A;
+               ^
+
+//! > lowering_diagnostics
+
+//! > candidates
+
+//! > before
+Parameters: v0: core::box::Box::<test::MyEnum>
+blk0 (root):
+Statements:
+  (v1: test::MyEnum) <- core::box::unbox::<test::MyEnum>(v0)
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v2 -> v4})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+  (v5: core::box::Box::<core::integer::u32>) <- core::box::into_box::<core::integer::u32>(v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::box::Box::<test::MyEnum>
+blk0 (root):
+Statements:
+  (v1: test::MyEnum) <- core::box::unbox::<test::MyEnum>(v0)
+End:
+  Match(match_enum(v1) {
+    MyEnum::A(v2) => blk1,
+    MyEnum::B(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v2 -> v4})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk3:
+Statements:
+  (v5: core::box::Box::<core::integer::u32>) <- core::box::into_box::<core::integer::u32>(v4)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test reboxing with tuple
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+tuple_rebox
+
+//! > module_code
+use core::box::BoxTrait;
+
+//! > function_code
+fn tuple_rebox(boxed_t: Box<(u32, felt252, u64)>) -> Box<felt252> {
+    let (_, mid, _) = boxed_t.unbox();
+    BoxTrait::new(mid)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v5
+
+//! > before
+Parameters: v0: core::box::Box::<(core::integer::u32, core::felt252, core::integer::u64)>
+blk0 (root):
+Statements:
+  (v1: (core::integer::u32, core::felt252, core::integer::u64)) <- core::box::unbox::<(core::integer::u32, core::felt252, core::integer::u64)>(v0)
+  (v2: core::integer::u32, v3: core::felt252, v4: core::integer::u64) <- struct_destructure(v1)
+  (v5: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v3)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::box::Box::<(core::integer::u32, core::felt252, core::integer::u64)>
+blk0 (root):
+Statements:
+  (v1: (core::integer::u32, core::felt252, core::integer::u64)) <- core::box::unbox::<(core::integer::u32, core::felt252, core::integer::u64)>(v0)
+  (v2: core::integer::u32, v3: core::felt252, v4: core::integer::u64) <- struct_destructure(v1)
+  (v6: core::box::Box::<core::integer::u32>, v5: core::box::Box::<core::felt252>, v7: core::box::Box::<core::integer::u64>) <- struct_destructure(v0)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test reboxing with non-Copy struct
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+non_copy_struct_rebox
+
+//! > TODO(eytan-starkware): Add support for non-copy structs where applicable
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop)]
+struct NonCopyStruct {
+    arr: Array<felt252>,
+    val: felt252,
+}
+
+//! > function_code
+fn non_copy_struct_rebox(boxed_s: Box<NonCopyStruct>) -> Box<felt252> {
+    let unboxed = boxed_s.unbox();
+    let val = unboxed.val;
+    BoxTrait::new(val)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v4
+
+//! > before
+Parameters: v0: core::box::Box::<test::NonCopyStruct>
+blk0 (root):
+Statements:
+  (v1: test::NonCopyStruct) <- core::box::unbox::<test::NonCopyStruct>(v0)
+  (v2: core::array::Array::<core::felt252>, v3: core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::box::Box::<test::NonCopyStruct>
+blk0 (root):
+Statements:
+  (v1: test::NonCopyStruct) <- core::box::unbox::<test::NonCopyStruct>(v0)
+  (v2: core::array::Array::<core::felt252>, v3: core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v3)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test reboxing with non-Copy tuple
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+non_copy_tuple_rebox
+
+//! > module_code
+use core::box::BoxTrait;
+
+//! > function_code
+fn non_copy_tuple_rebox(boxed_t: Box<(Array<felt252>, felt252)>) -> Box<felt252> {
+    let unboxed = boxed_t.unbox();
+    let (_, val) = unboxed;
+    BoxTrait::new(val)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v4
+
+//! > before
+Parameters: v0: core::box::Box::<(core::array::Array::<core::felt252>, core::felt252)>
+blk0 (root):
+Statements:
+  (v1: (core::array::Array::<core::felt252>, core::felt252)) <- core::box::unbox::<(core::array::Array::<core::felt252>, core::felt252)>(v0)
+  (v2: core::array::Array::<core::felt252>, v3: core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::box::Box::<(core::array::Array::<core::felt252>, core::felt252)>
+blk0 (root):
+Statements:
+  (v1: (core::array::Array::<core::felt252>, core::felt252)) <- core::box::unbox::<(core::array::Array::<core::felt252>, core::felt252)>(v0)
+  (v2: core::array::Array::<core::felt252>, v3: core::felt252) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v3)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test reboxing with branch-specific unbox assignments
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+branch_mut_unbox
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop, Copy)]
+struct Pair {
+    left: felt252,
+    right: felt252,
+}
+
+//! > function_code
+fn branch_mut_unbox(flag: bool, boxed_p1: Box<Pair>, boxed_p2: Box<Pair>) -> Box<felt252> {
+    let mut x = boxed_p1.unbox();
+    if flag {
+        x = boxed_p1.unbox();
+    } else {
+        x = boxed_p2.unbox();
+    }
+    let v = x.right;
+    BoxTrait::new(v)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+
+//! > before
+Parameters: v0: core::bool, v1: core::box::Box::<test::Pair>, v2: core::box::Box::<test::Pair>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v4) => blk1,
+    bool::True(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: test::Pair) <- core::box::unbox::<test::Pair>(v2)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: test::Pair) <- core::box::unbox::<test::Pair>(v1)
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+  (v9: core::felt252, v10: core::felt252) <- struct_destructure(v7)
+  (v11: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v10)
+End:
+  Return(v11)
+
+//! > after
+Parameters: v0: core::bool, v1: core::box::Box::<test::Pair>, v2: core::box::Box::<test::Pair>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v4) => blk1,
+    bool::True(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: test::Pair) <- core::box::unbox::<test::Pair>(v2)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: test::Pair) <- core::box::unbox::<test::Pair>(v1)
+End:
+  Goto(blk3, {v8 -> v7})
+
+blk3:
+Statements:
+  (v9: core::felt252, v10: core::felt252) <- struct_destructure(v7)
+  (v11: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v10)
+End:
+  Return(v11)
+
+//! > ==========================================================================
+
+//! > Test reboxing with loop break remapping
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+loop_break_unbox
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Drop, Copy)]
+struct Pair {
+    left: felt252,
+    right: felt252,
+}
+
+//! > function_code
+fn loop_break_unbox(boxed_p: Box<Pair>) -> Box<felt252> {
+    let mut x: Pair = boxed_p.unbox();
+    loop {
+        x = boxed_p.unbox();
+        break;
+    }
+    let r = x.right;
+    BoxTrait::new(r)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v6
+
+//! > before
+Parameters: v0: core::box::Box::<test::Pair>
+blk0 (root):
+Statements:
+  (v2: test::Pair) <- core::box::unbox::<test::Pair>(v0)
+  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v2)
+  (v6: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v5)
+End:
+  Return(v6)
+
+//! > after
+Parameters: v0: core::box::Box::<test::Pair>
+blk0 (root):
+Statements:
+  (v2: test::Pair) <- core::box::unbox::<test::Pair>(v0)
+  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v2)
+  (v7: core::box::Box::<core::felt252>, v6: core::box::Box::<core::felt252>) <- struct_destructure(v0)
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Test reboxing with non-drop struct and member
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+main
+
+//! > TODO(eytan-starkware): Support non-drop by unboxing each member.
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Copy)]
+struct NonDrop {
+    b: felt252,
+}
+
+#[derive(Copy)]
+struct A {
+    a: felt252,
+    non_drop: NonDrop,
+}
+
+//! > function_code
+fn main(boxed_a: Box<A>) -> (Box<felt252>, NonDrop) {
+    let unboxed = boxed_a.unbox();
+    let member_a = unboxed.a;
+    (BoxTrait::new(member_a), unboxed.non_drop)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v4
+
+//! > before
+Parameters: v0: core::box::Box::<test::A>
+blk0 (root):
+Statements:
+  (v1: test::A) <- core::box::unbox::<test::A>(v0)
+  (v2: core::felt252, v3: test::NonDrop) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v2)
+  (v5: (core::box::Box::<core::felt252>, test::NonDrop)) <- struct_construct(v4, v3)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::box::Box::<test::A>
+blk0 (root):
+Statements:
+  (v1: test::A) <- core::box::unbox::<test::A>(v0)
+  (v2: core::felt252, v3: test::NonDrop) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v2)
+  (v5: (core::box::Box::<core::felt252>, test::NonDrop)) <- struct_construct(v4, v3)
+End:
+  Return(v5)
