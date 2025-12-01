@@ -5,10 +5,9 @@ This expression is roughly equivalent to the xref:function-calls.adoc[function c
 expression `method(expr, arguments...)`.
 The differences between the two are:
 
-// TODO(spapini): Link to snapshot and reference.
-* The expression can be coerced to either a snapshot `@expr` or a reference `ref expr`,
-  depending on the method's signature.
-* `method` must be a trait function.
+* The expression can be coerced to either a xref:linear-types.adoc#snapshot[snapshot] `@expr` or
+  a reference `ref expr`, depending on the method's signature.
+  See xref:linear-types.adoc[Linear types] for more details.
 
 == `self` and methods
 Methods can be defined only in traits and impls.
