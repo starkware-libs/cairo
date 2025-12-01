@@ -232,4 +232,6 @@ mod my_second_contract {
 }
 ----
 
-// TODO(yuval): add links to compilation, abi format, declaring/deployment from hello_starknet.
+- xref:https://github.com/letmehateu/cairo/blob/main/docs/reference/src/components/cairo/modules/getting_started/pages/compiling-starknet-contracts.adoc[Compiling Starknet Contracts] — Learn how to compile contracts to Sierra and CASM
+- link:https://github.com/letmehateu/cairo/blob/main/docs/reference/src/components/cairo/modules/language_semantics/pages/application-binary-interface.adoc[Application Binary Interface] — Contract ABI format and serialization
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-starknet/cairo_level_tests/contracts/hello_starknet.cairo[hello_starknet.cairo] — Complete example contract
