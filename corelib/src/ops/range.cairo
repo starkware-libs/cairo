@@ -53,6 +53,7 @@ pub impl RangeImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeTrait<T> {
     ///
     /// assert!(!(3..3).contains(@3));
     /// assert!(!(3..2).contains(@3));
+    /// ```
     fn contains(self: @Range<T>, item: @T) -> bool {
         self.start <= item && item < self.end
     }
