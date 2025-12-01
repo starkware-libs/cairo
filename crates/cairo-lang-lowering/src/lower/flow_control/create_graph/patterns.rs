@@ -6,10 +6,11 @@ use cairo_lang_semantic::corelib::{CorelibSemantic, validate_literal};
 use cairo_lang_semantic::expr::compute::unwrap_pattern_type;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::types::wrap_in_snapshots;
 use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, ExprNumericLiteral,
-    PatternEnumVariant, PatternLiteral, PatternStruct, PatternTuple, PatternWrappingInfo, TypeId,
-    TypeLongId, corelib,
+    GenericArgumentId, PatternEnumVariant, PatternLiteral, PatternStruct, PatternTuple,
+    PatternWrappingInfo, TypeId, TypeLongId, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::ExprPtr;
@@ -26,7 +27,9 @@ use super::filtered_patterns::{Bindings, FilteredPatterns};
 use crate::diagnostic::{LoweringDiagnosticKind, MatchDiagnostic, MatchError};
 use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
-use crate::lower::flow_control::graph::{Downcast, EqualsLiteral, Upcast, ValueMatch};
+use crate::lower::flow_control::graph::{
+    Downcast, EqualsLiteral, SliceDestructure, Upcast, ValueMatch,
+};
 
 /// A callback that gets a [FilteredPatterns] and constructs a node that continues the pattern
 /// matching restricted to the filtered patterns.
@@ -150,21 +153,6 @@ pub fn create_node_for_patterns<'db>(
             create_node_for_enum(params, input_var, concrete_enum_id, wrapping_info)
         }
         TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
-            // Check if any non-any pattern is a FixedSizeArray (i.e. Span destructure).
-            // Span destructuring in match/if-let is not yet supported in lowering.
-            let has_fixed_size_array_pattern = patterns
-                .iter()
-                .flatten()
-                .any(|p| matches!(p, semantic::Pattern::FixedSizeArray(..)));
-            if has_fixed_size_array_pattern {
-                return graph.report_with_missing_node(
-                    first_non_any_pattern.stable_ptr(),
-                    LoweringDiagnosticKind::MatchError(MatchError {
-                        kind: graph.kind(),
-                        error: MatchDiagnostic::UnsupportedMatchedType(long_ty.format(ctx.db)),
-                    }),
-                );
-            }
             create_node_for_struct(params, input_var, concrete_struct_id, wrapping_info)
         }
         TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, wrapping_info),
@@ -352,6 +340,15 @@ fn create_node_for_struct<'db>(
     concrete_struct_id: ConcreteStructId<'db>,
     wrapping_info: PatternWrappingInfo,
 ) -> NodeId {
+    if let Some(elem_ty) = should_create_slice_destructure_chain(
+        params.ctx.db,
+        params.patterns,
+        concrete_struct_id,
+        wrapping_info,
+    ) {
+        return create_slice_destructure_chain(params, input_var, concrete_struct_id, elem_ty);
+    }
+
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
 
     let members = match ctx.db.concrete_struct_members(concrete_struct_id) {
@@ -388,6 +385,239 @@ fn create_node_for_struct<'db>(
         outputs: inner_vars,
         next: node,
     }))
+}
+
+/// Decides whether [create_slice_destructure_chain] should be used for the given patterns and
+/// struct type. Returns `Some(elem_ty)` (the `T` of `Span<T>`) when slice destructure should be
+/// attempted, `None` to fall back to ordinary struct destructure.
+fn should_create_slice_destructure_chain<'db>(
+    db: &'db dyn Database,
+    patterns: &[PatternOption<'_, 'db>],
+    concrete_struct_id: ConcreteStructId<'db>,
+    wrapping_info: PatternWrappingInfo,
+) -> Option<TypeId<'db>> {
+    if !patterns.iter().any(|p| matches!(p, Some(semantic::Pattern::FixedSizeArray(..)))) {
+        return None;
+    }
+    // Semantic rejects matching on `@Span<T>` / `Box<Span<T>>` with fixed-size array patterns
+    // (see the `conform_ty(ty, Span<_>)` check in `try_get_match_expr_long_ty`), so by the time
+    // this function is entered `wrapping_info` is always trivial. `lower_slice_destructure` and
+    // the `StructConstruct(Span<T>)` it emits rely on this: `snapshot_array_var` below must be
+    // exactly `@Array<T>`, not a wrapped variant.
+    if wrapping_info.n_outer_snapshots != 0 || wrapping_info.n_boxed_inner_snapshots.is_some() {
+        return None;
+    }
+    // Semantic also guarantees that a `FixedSizeArray` pattern against a struct type has been
+    // validated to be `Span<T>`, so `concrete_struct_id` here is always `Span<elem_ty>`.
+    let [GenericArgumentId::Type(elem_ty)] = concrete_struct_id.long(db).generic_args[..] else {
+        return None;
+    };
+    Some(elem_ty)
+}
+
+/// Creates a chain of [`SliceDestructure`] nodes for matching a `Span<T>` against fixed-size
+/// array patterns with different sizes.
+///
+/// Each size is tried in order. On failure, the next size is attempted. If all sizes fail,
+/// the wildcard/otherwise patterns are used.
+///
+/// Caller must have verified via [should_create_slice_destructure_chain] that this is the right
+/// path and supplied the corresponding `elem_ty`.
+fn create_slice_destructure_chain<'db>(
+    params: CreateNodeParams<'db, '_, '_>,
+    input_var: FlowControlVar,
+    concrete_struct_id: ConcreteStructId<'db>,
+    elem_ty: TypeId<'db>,
+) -> NodeId {
+    let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
+    // Deconstruct Span<T> to get its single member @Array<T>.
+    let members = match ctx.db.concrete_struct_members(concrete_struct_id) {
+        Ok(members) => members,
+        Err(diag_added) => return graph.add_node(FlowControlNode::Missing(diag_added)),
+    };
+    let (snapshot_member_id, snapshot_array_ty) = match members.iter().exactly_one() {
+        Ok((_, member)) => (member.id, member.ty),
+        Err(e) => panic!("Got wrong number of `Span` members: `{e:?}`."),
+    };
+    let snapshot_array_var = graph.new_var(snapshot_array_ty, location);
+
+    // Group patterns by array size. Wildcards/otherwise and catch-all `Span { .. }` struct
+    // patterns are added to all groups. Use an OrderedHashMap to preserve insertion order
+    // (first-seen size first).
+    let mut size_groups: OrderedHashMap<usize, SizeGroupInfo<'_, '_>> = OrderedHashMap::default();
+    let mut wildcard_filter = FilteredPatterns::default();
+    // For arms that fall through to the non-FSA path, collect the inner pattern that should be
+    // matched against `snapshot_array_var`. For `Otherwise`/`_`/variable arms this is `None`.
+    // For `Span { snapshot: inner }` arms this is the pattern on the `snapshot` field (or `None`
+    // if the field is elided, as in `Span { .. }`).
+    let mut fallback_inner_patterns: Vec<Option<semantic::Pattern<'db>>> = vec![];
+    // Whether any non-wildcard (`Pattern::Struct`) arm contributes to the fallback. Used to
+    // decide between the original `"_"` non-exhaustive path string and a more descriptive
+    // `"Span { snapshot: ... }"` path when struct patterns are present.
+    let mut has_struct_arm = false;
+
+    for (idx, pattern) in patterns.iter().enumerate() {
+        match pattern {
+            Some(semantic::Pattern::FixedSizeArray(p)) => {
+                let n = p.elements_patterns.len();
+                let group = size_groups.entry(n).or_default();
+
+                group.filter.add(idx);
+                group.inner_patterns.push(*pattern);
+            }
+            Some(semantic::Pattern::Struct(PatternStruct { field_patterns, .. })) => {
+                // `should_create_slice_destructure_chain` has already ensured the matched type is
+                // `Span<T>`, so this struct pattern is a `Span<...>` pattern. Since `Span<T>` has a
+                // single `snapshot: @Array<T>` member, the struct pattern acts as a catch-all for
+                // the FSA chain — it always matches *some* `Span<T>` — and we only need to capture
+                // the inner pattern for the snapshot field.
+                let snapshot_field_pattern = field_patterns
+                    .iter()
+                    .find(|(_, member)| member.id == snapshot_member_id)
+                    .map(|(p, _)| get_pattern(ctx, *p));
+                // Only Variable/Otherwise (or missing) inner patterns are supported here. More
+                // complex patterns would require dispatching them against an FSA path inside the
+                // chain, which isn't implemented. Falling back to the regular struct-destructure
+                // route is not possible once we've committed to the chain, so report an error.
+                match snapshot_field_pattern {
+                    None
+                    | Some(semantic::Pattern::Variable(..))
+                    | Some(semantic::Pattern::Otherwise(..)) => {}
+                    Some(other) => {
+                        return graph.report_with_missing_node(
+                            other.stable_ptr().untyped(),
+                            LoweringDiagnosticKind::UnexpectedError,
+                        );
+                    }
+                }
+                wildcard_filter.add(idx);
+                fallback_inner_patterns.push(snapshot_field_pattern.cloned());
+                has_struct_arm = true;
+                for group in size_groups.values_mut() {
+                    group.filter.add(idx);
+                    group.inner_patterns.push(None);
+                }
+                // A catch-all struct pattern makes every subsequent arm unreachable, so we stop
+                // adding to `size_groups`. The match-completeness pass will flag the dead arms.
+                break;
+            }
+            Some(semantic::Pattern::Otherwise(..)) | None => {
+                wildcard_filter.add(idx);
+                fallback_inner_patterns.push(None);
+                for group in size_groups.values_mut() {
+                    group.filter.add(idx);
+                    group.inner_patterns.push(None);
+                }
+                // Patterns after the wildcard pattern are unreachable, so we can break.
+                break;
+            }
+            Some(pattern) => {
+                // This should not be reachable without getting a semantic error.
+                return graph.report_with_missing_node(
+                    pattern.stable_ptr().untyped(),
+                    LoweringDiagnosticKind::UnexpectedError,
+                );
+            }
+        }
+    }
+
+    // Build the chain from back to front, since we need the fallback node before we can create a
+    // node. The final fallback is either the plain wildcard-only callback (when no struct arms
+    // are present) or a dispatch on `snapshot_array_var` that applies bindings from
+    // `Span { snapshot: inner }` arms.
+    // Note: `"_"` is used as the pattern for the non-exhaustive diagnostic, as there is no `[..]`
+    // pattern.
+    let mut failure_node = if has_struct_arm {
+        let fallback_patterns_ref: Vec<PatternOption<'_, 'db>> =
+            fallback_inner_patterns.iter().map(|p| p.as_ref()).collect();
+        let wildcard_filter_for_lift = wildcard_filter.clone();
+        create_node_for_patterns(
+            CreateNodeParams {
+                ctx,
+                graph,
+                patterns: &fallback_patterns_ref,
+                build_node_callback: &mut |graph, pattern_indices, path| {
+                    let struct_name =
+                        concrete_struct_id.struct_id(ctx.db).name(ctx.db).long(ctx.db);
+                    build_node_callback(
+                        graph,
+                        pattern_indices.lift(&wildcard_filter_for_lift),
+                        format!("{struct_name} {{ snapshot: {path} }}"),
+                    )
+                },
+                location,
+            },
+            snapshot_array_var,
+        )
+    } else {
+        build_node_callback(graph, wildcard_filter, "_".into())
+    };
+
+    for (size, group) in size_groups.into_iter().rev() {
+        let types = vec![wrap_in_snapshots(ctx.db, elem_ty, 1); size];
+        let inner_vars = types.iter().map(|ty| graph.new_var(*ty, location)).collect_vec();
+
+        // Build the success path: process element patterns within this size group.
+        let group_filter = group.filter;
+        let group_patterns: Vec<PatternOption<'_, 'db>> = group.inner_patterns;
+        let success = create_node_for_tuple_inner(
+            CreateNodeParams {
+                ctx,
+                graph,
+                patterns: &group_patterns,
+                build_node_callback: &mut |graph, pattern_indices, path| {
+                    build_node_callback(
+                        graph,
+                        pattern_indices.lift(&group_filter),
+                        format!("[{path}]"),
+                    )
+                },
+                location,
+            },
+            &inner_vars,
+            &types,
+            0,
+            None,
+        );
+
+        failure_node = graph.add_node(FlowControlNode::SliceDestructure(SliceDestructure {
+            input: snapshot_array_var,
+            element_ty: elem_ty,
+            outputs: inner_vars,
+            success,
+            failure: failure_node,
+        }));
+    }
+
+    // Wrap in a Deconstruct to extract @Array<T> from Span<T> once.
+    graph.add_node(FlowControlNode::Deconstruct(Deconstruct {
+        input: input_var,
+        outputs: vec![snapshot_array_var],
+        next: failure_node,
+    }))
+}
+
+/// Information accumulated for a single array-size group while lowering a `Span<T>` match.
+///
+/// When matching a `Span<T>` against multiple fixed-size array patterns (e.g. `[a, b]`,
+/// `[a, b, c]`), the patterns are partitioned by their length. Each distinct length gets its
+/// own `SizeGroupInfo`.
+#[derive(Default)]
+struct SizeGroupInfo<'a, 'db> {
+    /// The indices (into the original list of match arms) of the patterns that belong to this
+    /// size group — including any trailing wildcard/`_` patterns, which apply to every group.
+    filter: FilteredPatterns,
+    /// The per-arm patterns to dispatch on once the span has been destructured into a
+    /// fixed-size array of this length. Wildcards appear as `None`.
+    ///
+    /// Note: unlike [VariantInfo::inner_patterns], which stores the inner pattern of each
+    /// `EnumVariant` arm, here we store the whole `FixedSizeArray` pattern. The next stage —
+    /// [create_node_for_tuple_inner] — walks elements by index and extracts
+    /// `elements_patterns[item_idx]` itself (see the `FixedSizeArray` arm in that function), so
+    /// pre-unpacking would just force us to duplicate or undo that logic. Enum variants have a
+    /// single inner pattern and feed into [create_node_for_patterns], which wants it already
+    /// unwrapped, hence the asymmetry.
+    inner_patterns: Vec<PatternOption<'a, 'db>>,
 }
 
 /// Helper function for [create_node_for_tuple].
@@ -443,6 +673,13 @@ fn create_node_for_tuple_inner<'db>(
                 {
                     patterns_on_current_item.push(Some(inner_pattern))
                 }
+            }
+            Some(semantic::Pattern::FixedSizeArray(semantic::PatternFixedSizeArray {
+                elements_patterns,
+                ..
+            })) if current_member.is_none() => {
+                patterns_on_current_item
+                    .push(Some(get_pattern(ctx, elements_patterns[item_idx]).clone()));
             }
             Some(
                 pattern @ (semantic::Pattern::StringLiteral(..)
