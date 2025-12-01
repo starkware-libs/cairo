@@ -27,3 +27,146 @@ struct_deconstruct<core::integer::u256>([1]) -> ([2], [3])
 drop<u128>([2]) -> ()
 store_temp<u128>([3]) -> ([3])
 return([3])
+
+//! > ==========================================================================
+
+//! > Test that boxing a member of a boxed struct does not do any copying.
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(a: Box<u256>) -> Box<u128> {
+    let val: u256 = a.unbox();
+    BoxTrait::new(val.high)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+dup<Box<core::integer::u256>>([0]) -> ([0], [1])
+unbox<core::integer::u256>([1]) -> ([2])
+drop<core::integer::u256>([2]) -> ()
+struct_boxed_deconstruct<core::integer::u256>([0]) -> ([3], [4])
+drop<Box<u128>>([3]) -> ()
+store_temp<Box<u128>>([4]) -> ([4])
+return([4])
+
+//! > ==========================================================================
+
+//! > Test reboxing if a member of a snaphosted boxed struct.
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(a: @Box<u256>) -> Box<u128> {
+    BoxTrait::new(a.unbox().high)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+rename<Box<core::integer::u256>>([0]) -> ([1])
+dup<Box<core::integer::u256>>([1]) -> ([1], [2])
+unbox<core::integer::u256>([2]) -> ([3])
+drop<core::integer::u256>([3]) -> ()
+struct_boxed_deconstruct<core::integer::u256>([1]) -> ([4], [5])
+drop<Box<u128>>([4]) -> ()
+store_temp<Box<u128>>([5]) -> ([5])
+return([5])
+
+//! > ==========================================================================
+
+//! > Test reboxing of a non-copyable member of a snapshotted boxed struct.
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(box: @Box<A>) -> Box<@Array<felt252>> {
+    BoxTrait::new(box.as_snapshot().unbox().a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {
+    a: Array<felt252>,
+    b: Array<felt252>,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > TODO(eytan-starkware): We want reboxing to apply to sierra in the future,
+//! > so we will see struct_boxed_deconstruct.
+
+//! > sierra_code
+label_test::foo::0:
+box_forward_snapshot<test::A>([0]) -> ([1])
+unbox<Snapshot<test::A>>([1]) -> ([2])
+store_temp<Snapshot<test::A>>([2]) -> ([2])
+struct_snapshot_deconstruct<test::A>([2]) -> ([3], [4])
+drop<Snapshot<Array<felt252>>>([4]) -> ()
+into_box<Snapshot<Array<felt252>>>([3]) -> ([5])
+return([5])
+
+//! > ==========================================================================
+
+//! > Test reboxing of a boxed snapshotted struct.
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(box: Box<@A>) -> Box<@Array<felt252>> {
+    BoxTrait::new(box.unbox().a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {
+    a: Array<felt252>,
+    b: Array<felt252>,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > TODO(eytan-starkware): We want reboxing to apply to sierra in the future,
+//! > so we will see struct_boxed_deconstruct.
+
+//! > sierra_code
+label_test::foo::0:
+unbox<Snapshot<test::A>>([0]) -> ([1])
+store_temp<Snapshot<test::A>>([1]) -> ([1])
+struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3])
+drop<Snapshot<Array<felt252>>>([3]) -> ()
+into_box<Snapshot<Array<felt252>>>([2]) -> ([4])
+return([4])
