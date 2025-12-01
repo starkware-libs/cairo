@@ -1195,6 +1195,7 @@ enum TypeCached {
     ImplType(ImplTypeCached),
     FixedSizeArray(TypeIdCached, ConstValueCached),
     ClosureType(ClosureTypeCached),
+    Coupon(SemanticFunctionIdCached),
 }
 
 impl TypeCached {
@@ -1222,7 +1223,10 @@ impl TypeCached {
             TypeLongId::Closure(closure_ty) => {
                 TypeCached::ClosureType(ClosureTypeCached::new(closure_ty, ctx))
             }
-            TypeLongId::Var(_) | TypeLongId::Missing(_) | TypeLongId::Coupon(_) => {
+            TypeLongId::Coupon(func_id) => {
+                TypeCached::Coupon(SemanticFunctionIdCached::new(func_id, ctx))
+            }
+            TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 unreachable!("type {:?} is not supported for caching", type_id.debug(ctx.db))
             }
         }
@@ -1243,6 +1247,7 @@ impl TypeCached {
                 size: size.embed(ctx).intern(ctx.db),
             },
             TypeCached::ClosureType(closure_ty) => TypeLongId::Closure(closure_ty.embed(ctx)),
+            TypeCached::Coupon(coupon) => TypeLongId::Coupon(coupon.embed(ctx)),
         }
     }
 }
