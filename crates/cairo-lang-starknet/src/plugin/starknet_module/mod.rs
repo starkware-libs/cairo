@@ -245,7 +245,7 @@ fn grand_grand_parent_starknet_module<'db>(
     db: &'db dyn Database,
 ) -> Option<(ast::ItemModule<'db>, StarknetModuleKind, ast::Attribute<'db>)> {
     // Get the containing module node. The parent is the item list, the grand parent is the module
-    // body, and the grand grand parent is the module.
+    // body, and the grand parent is the module.
     let module_node = item_node.grandparent(db)?.parent(db)?;
     let module_ast = ast::ItemModule::cast(db, module_node)?;
     let (module_kind, attr) = StarknetModuleKind::from_module(db, &module_ast)?;
