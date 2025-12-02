@@ -156,7 +156,7 @@ fn build_u128_mul_guarantee_verify(
         // The final 256 bits result should equal a1_b * 2 ** 64 + a0_b, where the lower 128
         // bits are packed into `res_low` and the higher bits go into `res_high`.
         //
-        // Since a0_b, a1_b are comprised of verified u64 * u128 => each fits within 192 bits.
+        // Since a0_b and a1_b consist of verified u64 * u128 => each fits within 192 bits.
         // * The lower 128 bits of a0_b should go into the resulting `res_low` and the
         // upper 64 bits must carry over to the resulting `res_high`.
         // * Let's mark `b = b1 * 2**64 + b0` (same split as in `a`). Then
