@@ -6,7 +6,66 @@ Their individual usages and meanings are defined in the linked pages.
 [cols="1,1,1",options="header"]
 |===
 | Symbol | Name | Usage
-| TODO   | TODO | TODO
+| `;`
+| Semicolon
+| Statement terminator
+
+| `:`
+| Colon
+| Type annotations, trait bounds
+
+| `::`
+| Path separator
+| Namespace and module paths
+
+| `.`
+| Dot
+| Member access, method calls
+
+| `,`
+| Comma
+| Separator in lists, tuples, function arguments
+
+| `->`
+| Arrow
+| Function return type
+
+| `=>`
+| Fat arrow
+| xref:match-expressions.adoc[Match] arms
+
+| `?`
+| Question mark
+| xref:error-propagation-operator.adoc[Error propagation]
+
+| `@`
+| At
+| xref:linear-types.adoc#snapshot[Snapshot] operator
+
+| `#`
+| Hash
+| Attributes (e.g., `#[derive(Copy)]`)
+
+| `_`
+| Underscore
+| Wildcard pattern, unused variable
+
+| `*`
+| Star
+| Dereference operator (in patterns)
+
+| `&`
+| Ampersand
+| Bitwise AND, reference (context-dependent)
+
+| `!`
+| Exclamation
+| Macro invocation, logical NOT
+
+| `|`
+| Pipe
+| Bitwise OR, closure parameters
+
 |===
 
 == Brackets
