@@ -1,4 +1,4 @@
-//! This module is responsible of computing the semantic model of expressions and statements in
+//! This module is responsible for computing the semantic model of expressions and statements in
 //! the code, while type checking.
 //! It is invoked by queries for function bodies and other code blocks.
 
