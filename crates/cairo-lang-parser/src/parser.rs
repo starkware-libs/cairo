@@ -95,7 +95,7 @@ pub enum TryParseFailure {
     /// determines the failure should be consumed.
     DoNothing,
 }
-/// The result of a try_parse_* functions.
+/// The result of a try_parse_* function.
 pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 
 // ====================================== Naming of items ======================================
@@ -412,7 +412,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                                 post_visibility_offset,
                             );
                         }
-                        // TODO(Dean): This produce a slightly worse diagnostic than before.
+                        // TODO(Dean): This produces a slightly worse diagnostic than before.
                         self.skip_taken_node_with_offset(
                             path,
                             ParserDiagnosticKind::SkippedElement {

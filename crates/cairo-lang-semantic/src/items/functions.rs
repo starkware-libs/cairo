@@ -720,7 +720,7 @@ impl<'db> DebugWithDb<'db> for ConcreteFunction<'db> {
 pub struct Signature<'db> {
     pub params: Vec<semantic::Parameter<'db>>,
     pub return_type: semantic::TypeId<'db>,
-    /// implicit parameters
+    /// Implicit parameters
     pub implicits: Vec<semantic::TypeId<'db>>,
     #[dont_rewrite]
     pub panicable: bool,
