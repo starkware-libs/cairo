@@ -2,7 +2,7 @@
 
 An `lvalue` is a syntax element that represents a target that can be assigned values.
 The syntax of an `lvalue` is a member-path: A sequence of identifiers separated by dots.
-Example: 'a', `foo.bar.baz`.
+Example: `a`, `foo.bar.baz`.
 
 The first identifier must be a mutable xref:let-statement.adoc[local variable]
 (defined with the `mut` keyword).
@@ -20,8 +20,67 @@ A variable does not represent a single memory target.
 Instead, it is a logical placeholder for some memory target.
 The meaning of assignment is that the variable now refers to a different memory target.
 
+In modern Cairo, this behavior is tightly connected with the language’s ownership and linear-type semantics.
+A mutable variable does not imply a mutable memory location; instead it means the *binding* attached
+to the variable name may be reassigned to refer to a newly created value.
+Thus, assignment is equivalent to *rebinding* under the hood.
+This has several practical implications:
+
+* Assigning to an lvalue never overwrites an existing memory cell.
+* Shadowing-like behavior is used internally: a new value is created and the variable now owns that value.
+* If the previous value was moved elsewhere or consumed, the old binding becomes invalid.
+
+These rules ensure Cairo remains provable while still supporting familiar assignment syntax.
+
 == Member borrowing
 
 Assigning to a member path (e.g. `a.b`) is possible since the compiler keeps track of the
 individual member values. Not only variables are now logical placeholders, but also members.
 
+When a struct is marked as mutable (because its parent binding is mutable), each of its
+fields acts as an independent logical placeholder. Member-path assignment therefore
+rebinds only the specific field, not the entire struct or its underlying memory.
+
+However, this behavior only applies to user-defined composite types such as structs.
+Other built-in types in Cairo follow different rules:
+
+* Built-in arrays are immutable once created and cannot be mutated through indexing.
+* Mutable collections (resizable or “updateable” data structures) must be constructed using
+  language-provided abstractions such as dictionaries, rather than relying on lvalue assignment.
+
+Member-path mutation also interacts with references and snapshots:
+
+* A *mutable reference* (`ref`) may act as an lvalue and allow assignment.
+* A *snapshot* (using `@`) is always read-only; attempting to assign to a snapshot or
+  anything derived from it results in a compile-time error.
+* A moved value cannot be used as an lvalue anymore, because its ownership has been transferred.
+
+== Additional Notes on lvalues in modern Cairo
+
+=== Ownership and assignment validity
+
+Cairo enforces ownership rules for all values. An lvalue assignment is only valid if the
+left-hand side still owns its value and was declared mutable. If ownership of a variable
+has been moved (e.g., passed to a function that consumes it), it cannot be used as the
+target of an assignment.
+
+=== Composite types and field updates
+
+Struct fields may be assigned through member-paths as long as the parent binding is mutable.
+This rebinding affects only the specified field. This mechanism does *not* generalize to
+every aggregate type: for example, arrays or tuples cannot be mutated element-by-element.
+
+=== References and snapshots
+
+Only mutable references support assignment. Immutable references and snapshots cannot be
+used as lvalues. This ensures correctness in proofs and prevents unexpected mutation of
+borrowed data.
+
+=== Practical guidance
+
+* Use `let mut` intentionally: it grants rebinding, not memory mutation.
+* When designing data structures meant to change over time, use abstractions intended for mutability
+  (e.g., `Felt252Dict<T>`), not arrays.
+* Consider ownership flow: a variable that has been moved can no longer appear as an lvalue.
+* Use member-path assignment to update struct fields, but prefer explicit reconstruction
+  for non-struct types.
