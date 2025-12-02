@@ -66,7 +66,7 @@ fn test_lowering_consistency() {
 /// Prints the lowering of a concrete function:
 ///
 /// Usage example:
-///     cargo run --bin get-lowering corelib/ core::poseidon::poseidon_hash_span
+///     cargo run --bin get-lowering corelib/ core::poseidon::_poseidon_hash_span_inner
 ///
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
 #[derive(Parser, Debug)]
