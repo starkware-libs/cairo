@@ -404,13 +404,13 @@ pub struct StatementCall<'db> {
     pub with_coupon: bool,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
-    /// Is the call is to be inlined as part of the specialization wrapper function.
+    /// Is the call to be inlined as part of the specialization wrapper function.
     pub is_specialization_base_call: bool,
     /// Location for the call.
     pub location: LocationId<'db>,
 }
 
-/// A statement that construct a variant of an enum with a single argument, and binds it to a
+/// A statement that constructs a variant of an enum with a single argument, and binds it to a
 /// variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementEnumConstruct<'db> {
