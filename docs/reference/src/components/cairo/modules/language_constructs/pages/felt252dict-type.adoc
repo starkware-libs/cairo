@@ -17,7 +17,7 @@ let mut dict = Felt252DictTrait::new();
     let val11 = dict[11]; // 111
     let val12 = dict[12]; // 0
     dict.insert(10, 120);
-    let val10 = dict[10]; // 120
+    let new_val10 = dict[10]; // 120
 ----
 
 == Dictionary Entry
