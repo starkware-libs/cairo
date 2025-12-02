@@ -83,7 +83,7 @@ fn test() {
 
 A variable can be introduced inside a match arm.
 
-for example:
+For example:
 [source]
 ----
 match opt {
