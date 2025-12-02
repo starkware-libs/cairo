@@ -278,7 +278,7 @@ impl NoGenericArgsGenericLibfunc for EcIsZeroLibfunc {
     }
 }
 
-/// Libfunc for initializing an EC state from an EC point.
+/// Libfunc for creating a new EC state.
 #[derive(Default)]
 pub struct EcStateInitLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateInitLibfunc {
@@ -299,7 +299,7 @@ impl NoGenericArgsGenericLibfunc for EcStateInitLibfunc {
     }
 }
 
-/// Libfunc for initializing an EC state from an EC point.
+/// Libfunc for updating an EC state by adding a non-zero EC point.
 #[derive(Default)]
 pub struct EcStateAddLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
@@ -324,7 +324,7 @@ impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
     }
 }
 
-/// Libfunc for initializing an EC state from an EC point.
+/// Libfunc for trying to finalize an EC state; returns a non-zero EC point on success, otherwise nothing.
 #[derive(Default)]
 pub struct EcStateFinalizeLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
