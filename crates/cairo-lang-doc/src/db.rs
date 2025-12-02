@@ -154,16 +154,18 @@ fn extract_item_outer_documentation<'db>(
 ) -> Option<String> {
     // Get the text of the item (trivia + definition)
     let raw_text = item_id.stable_location(db)?.syntax_node(db).get_text(db);
-    Some(
-        raw_text
+    let comment_lines: Vec<&str> = raw_text
         .lines()
         .filter(|line| !line.trim().is_empty())
         // Takes all the lines before the definition.
         // Anything other than doc comments will be filtered out later.
         .take_while_ref(|line| is_comment_line(line) || line.trim_start().starts_with("#"))
-        .filter_map(|line| extract_comment_from_code_line(line, &["///"]))
-        .join("\n"),
-    )
+        .filter_map(|line| extract_comment_line_content(line, &["///"]))
+        .collect();
+    if comment_lines.is_empty() {
+        return None;
+    }
+    Some(dedent_comment_block(&comment_lines))
 }
 
 /// Gets the module level comments of the item.
@@ -187,12 +189,16 @@ fn extract_item_module_level_documentation<'db>(
 
 /// Only gets the comments inside the item.
 fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> String {
-    raw_text
+    let comment_lines: Vec<&str> = raw_text
         .lines()
         .filter(|line| !line.trim().is_empty())
         .skip_while(|line| is_comment_line(line))
-        .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
-        .join("\n")
+        .filter_map(|line| extract_comment_line_content(line, &["//!"]))
+        .collect();
+    if comment_lines.is_empty() {
+        return String::new();
+    }
+    dedent_comment_block(&comment_lines)
 }
 
 /// Gets the module level comments of certain file.
@@ -201,39 +207,62 @@ fn extract_item_module_level_documentation_from_file<'db>(
     file_id: FileId<'db>,
 ) -> Option<String> {
     let file_content = db.file_content(file_id)?.to_string();
-    Some(
-        file_content
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .take_while_ref(|line| is_comment_line(line))
-            .filter_map(|line| extract_comment_from_code_line(line, &["//!"]))
-            .join("\n"),
-    )
+    let comment_lines: Vec<&str> = file_content
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .take_while_ref(|line| is_comment_line(line))
+        .filter_map(|line| extract_comment_line_content(line, &["//!"]))
+        .collect();
+    if comment_lines.is_empty() {
+        return None;
+    }
+    Some(dedent_comment_block(&comment_lines))
 }
 
-/// This function does 3 things to the line of comment:
-/// 1. Removes indentation
-/// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space
-///    after the prefix).
-/// 3. If the comment starts with a slash, returns None.
-fn extract_comment_from_code_line(line: &str, comment_markers: &[&'static str]) -> Option<String> {
+/// Extracts the content from a comment line (without the marker and leading indentation).
+/// Returns None if the line is not a doc comment or starts with a slash after the marker.
+fn extract_comment_line_content<'a>(
+    line: &'a str,
+    comment_markers: &[&'static str],
+) -> Option<&'a str> {
     // Remove indentation.
     let dedent = line.trim_start();
     // Check if this is a doc comment.
     for comment_marker in comment_markers {
         if let Some(content) = dedent.strip_prefix(*comment_marker) {
-            // TODO(mkaput): The way how removing this indentation is performed is probably
-            //   wrong. The code should probably learn how many spaces are used at the first
-            //   line of comments block, and then remove the same amount of spaces in the
-            //   block, instead of assuming just one space.
-            // Remove inner indentation if one exists.
+            // Skip lines that start with a slash (like /// or //!).
             if content.starts_with('/') {
                 return None;
             }
-            return Some(content.strip_prefix(' ').unwrap_or(content).to_string());
+            return Some(content);
         }
     }
     None
+}
+
+/// Removes the common leading indentation from a block of comment lines.
+/// This function finds the minimum indentation (number of spaces after the comment marker)
+/// across all non-empty lines and removes that amount from each line.
+fn dedent_comment_block(lines: &[&str]) -> String {
+    if lines.is_empty() {
+        return String::new();
+    }
+
+    // Find the minimum indentation (number of leading spaces) across all lines.
+    let min_indent = lines
+        .iter()
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() { None } else { Some(line.len() - line.trim_start().len()) }
+        })
+        .min()
+        .unwrap_or(0);
+
+    // Remove the minimum indentation from each line.
+    lines
+        .iter()
+        .map(|line| if line.len() >= min_indent { &line[min_indent..] } else { line })
+        .join("\n")
 }
 
 /// Check whether the code line is a comment line.
