@@ -74,7 +74,7 @@ fn test_connected_cycles() {
 
     // Make sure the cycle that's not in the SCC of the root is not covered.
     assert_eq!(feedback_set(0, graph.clone()), [0]);
-    // We do find in in the other case.
+    // We do find it in the other case.
     assert_eq!(feedback_set(5, graph), [5]);
 }
 
