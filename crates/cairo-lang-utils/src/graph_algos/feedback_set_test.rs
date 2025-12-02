@@ -58,7 +58,7 @@ fn test_root_points_to_cycle() {
 
     // Make sure the cycle that's not in the SCC of the root is not covered.
     assert!(feedback_set(10, graph.clone()).is_empty());
-    // We do find in in the other case.
+    // We do find it in the other case.
     assert_eq!(feedback_set(1, graph), [1]);
 }
 
