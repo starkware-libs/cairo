@@ -147,11 +147,6 @@ pub fn generate_crate_cache<'db>(
                     function_ids.push(FunctionWithBodyId::Trait(*trait_func));
                 }
             }
-            for trait_id in db.module_traits_ids(*module_id)?.iter() {
-                for trait_func in db.trait_functions(*trait_id)?.values() {
-                    function_ids.push(FunctionWithBodyId::Trait(*trait_func));
-                }
-            }
         }
     }
 
