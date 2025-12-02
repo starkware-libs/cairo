@@ -4,7 +4,8 @@ use cairo_lang_plugins::plugins::HIDDEN_ATTR_SYNTAX;
 use cairo_lang_semantic::keyword::SELF_PARAM_KW;
 use cairo_lang_syntax::attribute::consts::IMPLICIT_PRECEDENCE_ATTR;
 use cairo_lang_syntax::node::ast::{
-    self, FunctionWithBody, OptionReturnTypeClause, OptionTypeClause, OptionWrappedGenericParamList,
+    self, Attribute, FunctionWithBody, OptionReturnTypeClause, OptionTypeClause,
+    OptionWrappedGenericParamList,
 };
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
@@ -18,7 +19,7 @@ use super::consts::{
     IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
     RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
-use super::utils::{AstPathExtract, ParamEx, has_v0_attribute, maybe_strip_underscore};
+use super::utils::{AstPathExtract, ParamEx, find_v0_attribute, maybe_strip_underscore};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,43 +28,30 @@ pub enum EntryPointKind {
     Constructor,
     L1Handler,
 }
-impl EntryPointKind {
-    /// Returns the entry point kind if the given function is indeed marked as an entry point.
-    pub fn try_from_function_with_body<'db>(
-        db: &'db dyn Database,
-        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
-        item_function: &FunctionWithBody<'db>,
-    ) -> Option<Self> {
-        if has_v0_attribute(
-            db,
-            diagnostics,
-            &ast::ModuleItem::FreeFunction(item_function.clone()),
-            EXTERNAL_ATTR,
-        ) {
-            Some(EntryPointKind::External)
-        } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
-            Some(EntryPointKind::Constructor)
-        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
-            Some(EntryPointKind::L1Handler)
-        } else {
-            None
-        }
-    }
 
-    /// Returns the entry point kind if the attributes mark it as an entry point.
-    pub fn try_from_attrs<'db>(
+/// Helper trait for entry point kind extraction.
+pub trait GetEntryPointKind<'db> {
+    /// Returns the entry point kind and its trigger attribute if the attributes mark it as an entry
+    /// point.
+    fn entry_point_kind(
+        &self,
         db: &'db dyn Database,
         diagnostics: &mut Vec<PluginDiagnostic<'db>>,
-        attrs: &impl QueryAttrs<'db>,
-    ) -> Option<Self> {
-        if has_v0_attribute(db, diagnostics, attrs, EXTERNAL_ATTR) {
-            Some(EntryPointKind::External)
-        } else if attrs.has_attr(db, CONSTRUCTOR_ATTR) {
-            Some(EntryPointKind::Constructor)
-        } else if attrs.has_attr(db, L1_HANDLER_ATTR) {
-            Some(EntryPointKind::L1Handler)
+    ) -> Option<(EntryPointKind, Attribute<'db>)>;
+}
+
+impl<'db> GetEntryPointKind<'db> for FunctionWithBody<'db> {
+    fn entry_point_kind(
+        &self,
+        db: &'db dyn Database,
+        diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    ) -> Option<(EntryPointKind, Attribute<'db>)> {
+        if let Some(trigger) = find_v0_attribute(db, diagnostics, self, EXTERNAL_ATTR) {
+            Some((EntryPointKind::External, trigger))
+        } else if let Some(trigger) = self.find_attr(db, CONSTRUCTOR_ATTR) {
+            Some((EntryPointKind::Constructor, trigger))
         } else {
-            None
+            self.find_attr(db, L1_HANDLER_ATTR).map(|trigger| (EntryPointKind::L1Handler, trigger))
         }
     }
 }
@@ -125,6 +113,7 @@ fn generate_submodule<'db>(
 
 /// Parameters for generating an entry point, used when calling `handle_entry_point`.
 pub struct EntryPointGenerationParams<'db, 'a> {
+    pub trigger_attribute: Attribute<'db>,
     pub entry_point_kind: EntryPointKind,
     pub item_function: &'a FunctionWithBody<'db>,
     pub wrapped_function_path: RewriteNode<'db>,
@@ -137,6 +126,7 @@ pub struct EntryPointGenerationParams<'db, 'a> {
 pub fn handle_entry_point<'db, 'a>(
     db: &'db dyn Database,
     EntryPointGenerationParams {
+        trigger_attribute,
         entry_point_kind,
         item_function,
         wrapped_function_path,
@@ -195,7 +185,8 @@ pub fn handle_entry_point<'db, 'a>(
         unsafe_new_contract_state_prefix,
     ) {
         Ok(generated_function) => {
-            data.generated_wrapper_functions.push(generated_function);
+            data.generated_wrapper_functions
+                .push(generated_function.mapped(db, &trigger_attribute));
             data.generated_wrapper_functions.push(RewriteNode::text("\n"));
             let generated = match entry_point_kind {
                 EntryPointKind::Constructor => &mut data.constructor_functions,
@@ -205,14 +196,17 @@ pub fn handle_entry_point<'db, 'a>(
                 }
                 EntryPointKind::External => &mut data.external_functions,
             };
-            generated.push(RewriteNode::interpolate_patched(
-                "\n    pub use super::$wrapper_function_name$ as $function_name$;",
-                &[
-                    ("wrapper_function_name".into(), wrapper_function_name),
-                    ("function_name".into(), function_name),
-                ]
-                .into(),
-            ));
+            generated.push(
+                RewriteNode::interpolate_patched(
+                    "\n    pub use super::$wrapper_function_name$ as $function_name$;",
+                    &[
+                        ("wrapper_function_name".into(), wrapper_function_name),
+                        ("function_name".into(), function_name),
+                    ]
+                    .into(),
+                )
+                .mapped(db, &trigger_attribute),
+            );
         }
         Err(entry_point_diagnostics) => {
             diagnostics.extend(entry_point_diagnostics);
@@ -374,7 +368,7 @@ fn generate_entry_point_wrapper<'db>(
             ("implicit_precedence".to_string(), implicit_precedence),
         ]
         .into(),
-    ).mapped(db, function))
+    ))
 }
 
 /// Validates the second parameter of an L1 handler is `from_address: felt252` or `_from_address:
