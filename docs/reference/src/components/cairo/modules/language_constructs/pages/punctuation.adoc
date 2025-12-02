@@ -56,7 +56,7 @@ Their individual usages and meanings are defined in the linked pages.
 
 | `&`
 | Ampersand
-| Bitwise AND, reference (context-dependent)
+| Bitwise AND, representation-pointer (context-dependent)
 
 | `!`
 | Exclamation
