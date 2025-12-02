@@ -28,6 +28,7 @@ salsa.workspace = true
 serde = { workspace = true, default-features = true }
 starknet-types-core.workspace = true
 thiserror.workspace = true
+tracing = { workspace = true, features = ["log"] }
 
 [dev-dependencies]
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
