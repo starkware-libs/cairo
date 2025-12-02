@@ -237,7 +237,7 @@ impl<'db> ConcreteTraitConstantId<'db> {
     }
 }
 
-/// The ID of a impl item in a concrete trait.
+/// The ID of an impl item in a concrete trait.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitImplLongId<'db> {
