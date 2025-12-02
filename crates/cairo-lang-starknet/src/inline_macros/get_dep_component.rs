@@ -81,8 +81,6 @@ fn get_dep_component_generate_code_helper<'db>(
 
         // Verify the first element has only a `ref` modifier.
         if !matches!(contract_arg_modifiers, Some([ast::Modifier::Ref(_)])) {
-            // TODO(Gil): The generated diagnostics points to the whole inline macro, it should
-            // point to the arg.
             let diagnostics = vec![PluginDiagnostic::error_with_inner_span(
                 db,
                 syntax.stable_ptr(db),
