@@ -379,7 +379,7 @@ impl<'a> DebugWithDb<'a> for FunctionLongId<'a> {
 /// A key for generated functions.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum GeneratedFunctionKey<'db> {
-    /// Generated loop functions are identified by the loop expr_id.
+    /// Generated loop functions are identified by the loop's AST pointer (ExprPtr).
     Loop(ExprPtr<'db>),
     TraitFunc(TraitFunctionId<'db>, StableLocation<'db>),
 }
