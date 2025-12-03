@@ -4,7 +4,7 @@
 /// item, and keep the user defined formatting.
 pub const FMT_SKIP_ATTR: &str = "cairofmt::skip";
 
-/// An attribute to mark a function as a function that should be inlined.
+/// An attribute to mark a function as one that should be inlined.
 pub const INLINE_ATTR: &str = "inline";
 
 /// An attribute to define a type as a type that must be used, or a function as a function that its
