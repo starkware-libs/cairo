@@ -940,11 +940,9 @@ impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
- --> lib.cairo:5:5-6:56
-      #[external(v0)]
- _____^
-|     fn foo(ref self: ContractState, x: super::MyType) {}
-|________________________________________________________^
+ --> lib.cairo:5:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1382,18 +1380,14 @@ warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
 ^^^^^^^^^^^^^^^^^^^^^
 
 error[E0006]: Type not found.
- --> lib.cairo:5:5-6:47
-      #[external(v0)]
- _____^
-|     fn foo<T>(ref self: ContractState, x: T) {}
-|_______________________________________________^
+ --> lib.cairo:5:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 error: Trait has no implementation in context: core::serde::Serde::<<missing>>.
- --> lib.cairo:5:5-6:47
-      #[external(v0)]
- _____^
-|     fn foo<T>(ref self: ContractState, x: T) {}
-|_______________________________________________^
+ --> lib.cairo:5:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 error: Variable not dropped.
  --> lib.cairo:6:40
@@ -17790,18 +17784,14 @@ error[E0006]: Type not found.
                                            ^^^^^^^
 
 error[E0006]: Type not found.
- --> lib.cairo:6:5-7:54
-      #[external(v0)]
- _____^
-|     fn foo(ref self: ContractState, value: BadType) {}
-|______________________________________________________^
+ --> lib.cairo:6:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 error: Trait has no implementation in context: core::serde::Serde::<<missing>>.
- --> lib.cairo:6:5-7:54
-      #[external(v0)]
- _____^
-|     fn foo(ref self: ContractState, value: BadType) {}
-|______________________________________________________^
+ --> lib.cairo:6:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -18031,9 +18021,9 @@ error: Parameter type of impl function `Impl::foo` is incompatible with `Interfa
                                                ^^^^^^^
 
 error: Unexpected argument type. Expected: "core::integer::u256", found: "core::felt252".
- --> lib.cairo:15:9
-        fn foo(ref self: ContractState, value: felt252) {}
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ --> lib.cairo:13:5
+    #[abi(embed_v0)]
+    ^^^^^^^^^^^^^^^^
 
 //! > generated_cairo_code
 lib.cairo:
