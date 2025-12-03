@@ -208,6 +208,7 @@ fn main() -> anyhow::Result<()> {
             let config = ExecutableConfig {
                 allow_syscalls: args.build.allow_syscalls,
                 unsafe_panic: args.build.unsafe_panic,
+                builtin_list: None,
             };
 
             let mut db = prepare_db(&config)?;

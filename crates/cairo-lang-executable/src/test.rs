@@ -6,10 +6,13 @@ use cairo_lang_executable_plugin::executable_plugin_suite;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
-use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
+use cairo_lang_test_utils::{
+    bool_input, get_direct_or_file_content, verify_diagnostics_expectation,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_vm::types::builtin_name::BuiltinName;
 
-use crate::compile;
+use crate::compile::{self, ExecutableConfig};
 
 /// Salsa database configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
@@ -37,6 +40,23 @@ impl TestFileRunner for CompileExecutableTestRunner {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
         let (test_module, semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
+        let mut config = ExecutableConfig::default();
+        if bool_input(&inputs["standalone_mode"]) {
+            config.builtin_list = Some(vec![
+                BuiltinName::output,
+                BuiltinName::pedersen,
+                BuiltinName::range_check,
+                BuiltinName::ecdsa,
+                BuiltinName::bitwise,
+                BuiltinName::ec_op,
+                BuiltinName::keccak,
+                BuiltinName::poseidon,
+                BuiltinName::range_check96,
+                BuiltinName::add_mod,
+                BuiltinName::mul_mod,
+            ]);
+        }
+
         let result = compile::compile_executable_in_prepared_db(
             &db,
             None,
@@ -46,7 +66,7 @@ impl TestFileRunner for CompileExecutableTestRunner {
                 .long(&db)
                 .clone()
                 .into_crate_input(&db)]),
-            Default::default(),
+            config,
         )
         .map(|compiled| compiled.compiled_function.to_string())
         .unwrap_or_else(|e| e.to_string());
