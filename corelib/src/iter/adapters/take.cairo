@@ -1,3 +1,5 @@
+use crate::num::traits::CheckedSub;
+
 /// An iterator that only iterates over the first `n` iterations of `iter`.
 ///
 /// This `struct` is created by the [`take`] method on [`Iterator`]. See its
@@ -19,8 +21,8 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
     type Item = TIter::Item;
     #[inline]
     fn next(ref self: Take<I>) -> Option<Self::Item> {
-        if self.n != 0 {
-            self.n -= 1;
+        if let Some(updated_n) = self.n.checked_sub(1) {
+            self.n = updated_n;
             self.iter.next()
         } else {
             None
@@ -31,12 +33,12 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
     fn nth<+Destruct<Take<I>>, +Destruct<Self::Item>>(
         ref self: Take<I>, n: usize,
     ) -> Option<Self::Item> {
-        if self.n > n {
-            self.n -= n + 1;
+        if let Some(updated_n) = self.n.checked_sub(n + 1) {
+            self.n = updated_n;
             self.iter.nth(n)
         } else {
             if self.n != 0 {
-                let _ = self.iter.advance_by(self.n - 1);
+                let _ = self.iter.advance_by(self.n);
                 self.n = 0;
             }
             None
@@ -47,8 +49,8 @@ impl TakeIterator<I, impl TIter: Iterator<I>, +Drop<I>> of Iterator<Take<I>> {
     fn advance_by<+Destruct<Take<I>>, +Destruct<Self::Item>>(
         ref self: Take<I>, n: usize,
     ) -> Result<(), NonZero<usize>> {
-        if self.n >= n {
-            self.n -= n;
+        if let Some(updated_n) = self.n.checked_sub(n) {
+            self.n = updated_n;
             match self.iter.advance_by(n) {
                 Ok(_) => Ok(()),
                 Err(rem_nz) => {
