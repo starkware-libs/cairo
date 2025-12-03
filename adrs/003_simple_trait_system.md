@@ -50,7 +50,7 @@ fn foo<A, impl VarImpl: MyTrait<A, felt252>>() {
 Impls have a GenericArg, and can be passed as a GenericValue.
 
 ### Inference
-At first, no inference would be supported. This will result in a more verbose and explicit code, but
+At first, no inference would be supported. This will result in more verbose and explicit code, but
 less ergonomic. These can be added in a later phase.
 
 ### Usage
