@@ -53,7 +53,8 @@ pub struct Parser<'a, 'mt> {
     pending_trivia: Vec<TriviumGreen<'a>>,
     /// The current offset, excluding the current terminal.
     offset: TextOffset,
-    /// The width of the current terminal being handled (excluding the trivia length of this terminal).
+    /// The width of the current terminal being handled (excluding the trivia length of this
+    /// terminal).
     current_width: TextWidth,
     /// The length of the trailing trivia following the last read token.
     last_trivia_length: TextWidth,
@@ -101,7 +102,7 @@ pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 // To avoid confusion, there is a naming convention for the language items.
 // An item is called <item_scope>Item<item_kind>, where item_scope is in {Module, Trait, Impl}, and
 // item_kind is in {Const, Enum, ExternFunction, ExternType, Function, Impl, InlineMacro, Module,
-// Struct, Trait, Type, TypeAlias, Use} (note: not all combinations are supported).
+// Struct, Trait, Type, TypeAlias, Use} (note that not all combinations are supported).
 // For example, ModuleItemFunction is a function item in a module, TraitItemConst is a const item in
 // a trait.
 
