@@ -50,7 +50,7 @@ pub enum AttributeArgVariant<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
-/// The data on a name part of an argument.
+/// The data for the name part of an argument.
 pub struct NameInfo<'a> {
     /// The name of the argument.
     pub text: SmolStrId<'a>,
@@ -86,7 +86,7 @@ impl<'a> DebugWithDb<'a> for Attribute<'a> {
 }
 
 pub trait AttributeStructurize<'a> {
-    /// Return the structured attribute for the given [ast::Attribute].
+    /// Returns the structured attribute for the given [ast::Attribute].
     fn structurize(self, db: &'a dyn Database) -> Attribute<'a>;
 }
 
@@ -115,7 +115,7 @@ impl<'a> AttributeStructurize<'a> for ast::Attribute<'a> {
 }
 
 pub trait AttributeListStructurize<'a> {
-    /// Return structured attributes for the given [ast::AttributeList].
+    /// Returns structured attributes for the given [ast::AttributeList].
     fn structurize(self, db: &'a dyn Database) -> Vec<Attribute<'a>>;
 }
 
