@@ -27,7 +27,7 @@ match enum_val {
 MyEnum::Variant0(value0)
 ```
 
-This is a deviation from the rust syntax
+This is a deviation from the Rust syntax
 ```
 enum MyEnum {
     Variant0,

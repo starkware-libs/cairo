@@ -7,7 +7,7 @@ Accepted ?
 
 ## Context
 This suggestion introduces a basic `trait` and `impl` system.
-* It is flexible enough to allow anything that can be expressed in rust's trait system, excluding
+* It is flexible enough to allow anything that can be expressed in Rust's trait system, excluding
   dynamics.
 * It is simple, without edge cases, and hopefully easy on the compiler work.
 
