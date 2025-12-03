@@ -2980,9 +2980,9 @@ Statements:
   (v5: core::felt252, v6: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
   (v7: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v6)
   (v8: @core::felt252, v9: @core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v4)
-  (v10: core::felt252) <- desnap(v8)
-  (v11: core::felt252) <- 0
-  (v12: core::felt252) <- core::felt252_sub(v10, v11)
+  (v10: core::felt252) <- 0
+  (v11: core::felt252) <- desnap(v8)
+  (v12: core::felt252) <- core::felt252_sub(v11, v10)
 End:
   Match(match core::felt252_is_zero(v12) {
     IsZeroResult::Zero => blk1,
@@ -3019,9 +3019,9 @@ Statements:
   (v5: core::felt252, v6: core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v3)
   (v7: core::dict::SquashedFelt252Dict::<core::felt252>) <- core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash(v6)
   (v8: @core::felt252, v9: @core::dict::Felt252Dict::<core::felt252>) <- struct_destructure(v4)
-  (v10: core::felt252) <- desnap(v8)
-  (v11: core::felt252) <- 0
-  (v12: core::felt252) <- core::felt252_sub(v10, v11)
+  (v10: core::felt252) <- 0
+  (v11: core::felt252) <- desnap(v8)
+  (v12: core::felt252) <- core::felt252_sub(v11, v10)
 End:
   Goto(blk1, {})
 
