@@ -324,7 +324,8 @@ impl NoGenericArgsGenericLibfunc for EcStateAddLibfunc {
     }
 }
 
-/// Libfunc for trying to finalize an EC state; returns a non-zero EC point on success, otherwise nothing.
+/// Libfunc for trying to finalize an EC state; returns a non-zero EC point if the resulting point
+/// is not zero, on success, otherwise returns nothing.
 #[derive(Default)]
 pub struct EcStateFinalizeLibfunc {}
 impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
