@@ -162,7 +162,7 @@ pub fn compile_prepared_db<'db>(
     Ok(sierra_program_with_debug)
 }
 
-/// Checks if parallelism is available for warmup.
+/// Checks if parallelism is available for the warmup.
 fn should_warmup() -> bool {
     rayon::current_num_threads() > 1
 }
