@@ -1,6 +1,119 @@
 = Comparison operators
 
-This section is a work in progress.
+Comparison in Cairo is provided by the relational operators `<`, `<=`, `>`, `>=`.
+All of them evaluate to `bool` and are trait-driven by `core::traits::PartialOrd<T>`.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+- `lhs < rhs` → `bool`
+- `lhs <= rhs` → `bool`
+- `lhs > rhs` → `bool`
+- `lhs >= rhs` → `bool`
+
+== Semantics (PartialOrd)
+
+The semantics of the comparison operators are trait-driven via `core::traits::PartialOrd<T>`:
+
+- `<` calls `PartialOrd::lt(T, T) -> bool`.
+- `>`, `>=`, and `<=` default to implementations derived from `lt`:
+  - `gt(lhs, rhs) = lt(rhs, lhs)`
+  - `ge(lhs, rhs) = !lt(lhs, rhs)`
+  - `le(lhs, rhs) = ge(rhs, lhs)`
+- `PartialOrd` is not derivable; implement it manually for user-defined types.
+- Snapshots are supported: if `T: PartialOrd + Copy`, then `PartialOrd<@T>` is provided so that
+  comparisons on `@T` work automatically by delegating to `PartialOrd<T>`.
+
+If no suitable `PartialOrd` implementation is available for the operand type, the comparison is a
+type error (trait resolution fails).
+
+== Precedence and associativity
+
+Relational operators share the same precedence level as equality operators (`==`, `!=`) and bind:
+
+- Tighter than logical `&&` and `||`.
+- Looser than bitwise `&`, `^`, `|`, arithmetic `+`, `-`, `*`, `/`, `%`, indexing `[]`, and
+  member access `.`.
+
+This is defined in `crates/cairo-lang-parser/src/operators.rs`.
+
+== Examples
+
+=== Primitives
+
+[source,cairo]
+----
+fn main() {
+    assert!(1 < 2);
+    assert!(2 <= 2);
+    assert!(3 > 1);
+    assert!(3 >= 3);
+}
+----
+
+=== Manual implementation for a custom type
+
+Implement `PartialOrd` by defining `lt`; other comparisons are derived by default.
+
+[source,cairo]
+----
+#[derive(Copy, Drop, PartialEq)]
+struct Point { x: u32, y: u32 }
+
+impl PointPartialOrd of PartialOrd<Point> {
+    fn lt(lhs: Point, rhs: Point) -> bool {
+        let lhs_dist = lhs.x * lhs.x + lhs.y * lhs.y;
+        let rhs_dist = rhs.x * rhs.x + rhs.y * rhs.y;
+        lhs_dist < rhs_dist
+    }
+}
+
+fn main() {
+    let p1 = Point { x: 1, y: 1 }; // dist = 2
+    let p2 = Point { x: 2, y: 2 }; // dist = 8
+    assert!(p1 < p2);
+    assert!(p1 <= p2);
+    assert!(p2 > p1);
+    assert!(p2 >= p1);
+}
+----
+
+=== Generics requiring PartialOrd
+
+[source,cairo]
+----
+fn min<T, +PartialOrd<T>, +Drop<T>, +Copy<T>>(a: T, b: T) -> T {
+    if a > b { b } else { a }
+}
+----
+
+=== Snapshots
+
+If `T: PartialOrd + Copy`, comparisons on `@T` are supported automatically via `PartialOrd<@T>`.
+
+[source,cairo]
+----
+#[derive(Copy, Drop, PartialEq)]
+struct Pair { a: u32, b: u32 }
+
+impl PairOrd of PartialOrd<Pair> {
+    fn lt(lhs: Pair, rhs: Pair) -> bool {
+        if lhs.a != rhs.a { lhs.a < rhs.a } else { lhs.b < rhs.b }
+    }
+}
+
+fn less(a: @Pair, b: @Pair) -> bool {
+    a < b // uses PartialOrd<@Pair> derived from PartialOrd<Pair>
+}
+----
+
+== Notes
+
+- `PartialOrd` must be implemented for the operand type to use comparison operators.
+- Consider overriding the default `gt`/`ge`/`le` if custom logic can be optimized beyond the
+  defaults derived from `lt`.
+
+== References (source)
+
+- Parser precedence: `crates/cairo-lang-parser/src/operators.rs`.
+- Trait and behavior: `corelib/src/traits.cairo` (`PartialOrd`).
+- Utilities using comparisons: `corelib/src/cmp.cairo` (`min`, `max`, `minmax`).
