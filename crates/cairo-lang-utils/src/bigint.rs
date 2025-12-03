@@ -91,7 +91,7 @@ fn big_int_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema
     #[allow(dead_code)]
     #[derive(JsonSchema)]
     pub struct BigUint {
-        data: Vec<u64>, // BigDigit is platform-dependent: u64 on 64-bit targets, u32 on 32-bit targets.
+        data: Vec<u64>, // BigDigit is u64 or u32.
     }
 
     #[allow(dead_code)]
