@@ -31,7 +31,7 @@ To set up a development environment, please follow these steps:
 . Follow the instructions in link:https://marketplace.visualstudio.com/items?itemName=starkware.cairo1[vscode-cairo].
 
 The `rustfmt` configuration used by cairo requires a nightly version of Rust.
-You can install the nightly version by running.
+You can install the nightly version by running:
 
 [source,bash]
 ----
