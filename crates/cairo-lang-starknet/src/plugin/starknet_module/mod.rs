@@ -258,6 +258,6 @@ fn grand_grand_parent_starknet_module<'db>(
 pub fn backwards_compatible_storage(edition: Edition) -> bool {
     match edition {
         Edition::V2023_01 | Edition::V2023_10 | Edition::V2023_11 => true,
-        Edition::V2024_07 => false,
+        Edition::V2024_07 | Edition::V2025_12 => false,
     }
 }

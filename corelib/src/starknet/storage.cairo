@@ -260,7 +260,7 @@ impl StorableStoragePointer0OffsetReadAccess<
     type Value = T;
     fn read(self: @StoragePointer0Offset<T>) -> T {
         starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::Store::<T>::read(0, *self.__storage_pointer_address__),
+            starknet::Store::<T>::read(0, self.__storage_pointer_address__),
         )
     }
 }
@@ -275,7 +275,7 @@ impl MutableStorableStoragePointer0OffsetReadAccess<
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
                 MutableTrait::<T>::InnerType,
-            >::read(0, *self.__storage_pointer_address__),
+            >::read(0, self.__storage_pointer_address__),
         )
     }
 }
@@ -305,9 +305,7 @@ pub impl StorableStoragePointerReadAccess<
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
                 T,
-            >::read_at_offset(
-                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__,
-            ),
+            >::read_at_offset(0, self.__storage_pointer_address__, self.__storage_pointer_offset__),
         )
     }
 }
@@ -322,9 +320,7 @@ impl MutableStorableStoragePointerReadAccess<
         starknet::SyscallResultTrait::unwrap_syscall(
             starknet::Store::<
                 MutableTrait::<T>::InnerType,
-            >::read_at_offset(
-                0, *self.__storage_pointer_address__, *self.__storage_pointer_offset__,
-            ),
+            >::read_at_offset(0, self.__storage_pointer_address__, self.__storage_pointer_offset__),
         )
     }
 }
@@ -479,7 +475,7 @@ pub trait PendingStoragePathTrait<T, S> {
 impl PendingStoragePathImpl<T, S> of PendingStoragePathTrait<T, S> {
     fn new(storage_path: @StoragePath<S>, pending_key: felt252) -> PendingStoragePath<T> {
         PendingStoragePath {
-            __hash_state__: *storage_path.__hash_state__, __pending_key__: pending_key,
+            __hash_state__: storage_path.__hash_state__, __pending_key__: pending_key,
         }
     }
 }
@@ -495,7 +491,7 @@ impl PendingStoragePathAsPath<T> of StorageAsPath<PendingStoragePath<T>> {
             T,
         > {
             __hash_state__: core::hash::HashStateTrait::update(
-                *self.__hash_state__, *self.__pending_key__,
+                self.__hash_state__, self.__pending_key__,
             ),
         }
     }
