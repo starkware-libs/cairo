@@ -38,7 +38,7 @@ where
         Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
             .map_err(|error| serde::de::Error::custom(format!("{error}"))),
         None => Err(serde::de::Error::custom(format!(
-            "{s} does not start with `0x`, which is missing."
+            "{s} does not start with `0x`."
         ))),
     }
 }
@@ -60,7 +60,7 @@ where
     deserialize_from_str::<D>(s)
 }
 
-// A wrapper for BigInt that serializes as hex.
+/// A wrapper for BigInt that serializes as hex.
 #[derive(Default, Clone, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
@@ -91,7 +91,7 @@ fn big_int_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema
     #[allow(dead_code)]
     #[derive(JsonSchema)]
     pub struct BigUint {
-        data: Vec<u64>, // BigDigit is u64 or u32.
+        data: Vec<u64>, // BigDigit is platform-dependent: u64 on 64-bit targets, u32 on 32-bit targets.
     }
 
     #[allow(dead_code)]
@@ -165,7 +165,7 @@ where
         type Value = Vec<BigInt>;
 
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "a sequence of bigint hex strings")
+            write!(f, "a sequence of BigInt values encoded as hex strings")
         }
 
         fn visit_seq<A: serde::de::SeqAccess<'de>>(
