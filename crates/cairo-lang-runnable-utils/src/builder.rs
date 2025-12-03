@@ -258,6 +258,10 @@ pub struct EntryCodeConfig {
     /// Whether to allow unsound operations in the program.
     /// Currently relevant for supporting emulated builtins.
     pub allow_unsound: bool,
+
+    /// An optional list of builtins to use in the entry code (if its none the builtins will be
+    /// inferred from the param_types)
+    pub builtin_list: Option<Vec<BuiltinName>>,
 }
 impl EntryCodeConfig {
     /// Returns a configuration for testing purposes.
@@ -265,12 +269,12 @@ impl EntryCodeConfig {
     /// This configuration will not finalize the segment arena after calling the function, to
     /// prevent failure in case of functions returning values.
     pub fn testing() -> Self {
-        Self { testing: true, allow_unsound: true }
+        Self { testing: true, allow_unsound: true, builtin_list: None }
     }
 
     /// Returns a configuration for execution purposes.
-    pub fn executable(allow_unsound: bool) -> Self {
-        Self { testing: false, allow_unsound }
+    pub fn executable(allow_unsound: bool, builtin_list: Option<Vec<BuiltinName>>) -> Self {
+        Self { testing: false, allow_unsound, builtin_list }
     }
 }
 
@@ -305,8 +309,19 @@ pub fn create_entry_code_from_params(
     config: EntryCodeConfig,
 ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
     let mut helper = EntryCodeHelper::new(config);
-
-    helper.process_builtins(param_types);
+    if let Some(builtin_list) = &helper.config.builtin_list {
+        helper.builtins = builtin_list.clone();
+        let mut builtin_offset = 3;
+        for builtin_name in helper.builtins.iter().rev() {
+            helper.input_builtin_vars.insert(
+                *builtin_name,
+                helper.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
+            );
+            builtin_offset += 1;
+        }
+    } else {
+        helper.process_builtins(param_types);
+    }
     helper.process_params(param_types);
     casm_build_extend!(helper.ctx, let () = call FUNCTION;);
     helper.process_output(return_types);
@@ -398,16 +413,26 @@ impl EntryCodeHelper {
         self.has_post_calculation_loop = self.got_segment_arena && !self.config.testing;
 
         if self.has_post_calculation_loop {
-            for name in self.input_builtin_vars.keys() {
-                if name != &BuiltinName::segment_arena {
+            for (generic_ty, _ty_size) in param_types {
+                if let Some(name) = self.builtin_ty_to_vm_name.get(generic_ty)
+                    && name != &BuiltinName::segment_arena
+                {
                     casm_build_extend!(self.ctx, localvar local;);
                     self.local_exprs.push(self.ctx.get_value(local, false));
                 }
             }
+
+            if !self.config.testing {
+                // Add a local variable for the output builtin
+                casm_build_extend!(self.ctx, localvar local;);
+                self.local_exprs.push(self.ctx.get_value(local, false));
+            }
+
             if !self.local_exprs.is_empty() {
                 casm_build_extend!(self.ctx, ap += self.local_exprs.len(););
             }
         }
+
         if self.got_segment_arena {
             casm_build_extend! {self.ctx,
                 tempvar segment_arena;
@@ -542,7 +567,7 @@ impl EntryCodeHelper {
             self.output_builtin_vars.insert(BuiltinName::output, ptr_end);
         }
         assert_eq!(unprocessed_return_size, 0);
-        assert_eq!(self.input_builtin_vars.len(), self.output_builtin_vars.len());
+
         if self.has_post_calculation_loop {
             // Storing local data on FP - as we have a loop now.
             for (cell, local_expr) in zip_eq(
@@ -551,6 +576,21 @@ impl EntryCodeHelper {
             ) {
                 let local_cell = self.ctx.add_var(local_expr.clone());
                 casm_build_extend!(self.ctx, assert local_cell = cell;);
+            }
+        }
+
+        for (name, var) in self.input_builtin_vars.iter() {
+            if name != &BuiltinName::segment_arena {
+                self.output_builtin_vars.entry(*name).or_insert_with(|| {
+                    assert!(
+                        self.config.builtin_list.is_some(),
+                        "if builtin_list is not some, output builtins should cover all input \
+                         builtins"
+                    );
+
+                    self.local_exprs.push(self.ctx.get_value(*var, false));
+                    *var
+                });
             }
         }
     }
