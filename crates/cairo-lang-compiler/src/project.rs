@@ -14,7 +14,7 @@ use salsa::Database;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProjectError {
-    #[error("Only files with .cairo extension can be compiled.")]
+    #[error("Only files with a .cairo extension can be compiled.")]
     BadFileExtension,
     #[error("Couldn't read {path}: No such file.")]
     NoSuchFile { path: String },
