@@ -3831,7 +3831,7 @@ fn member_access_expr<'db>(
             } else {
                 wrap_in_snapshots(ctx.db, member.ty, n_snapshots)
             };
-            Ok(Expr::MemberAccess(ExprMemberAccess {
+            let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
                 concrete_struct_id: derefed_expr_concrete_struct_id,
                 member: member.id,
@@ -3839,7 +3839,18 @@ fn member_access_expr<'db>(
                 member_path,
                 n_snapshots,
                 stable_ptr,
-            }))
+            });
+            // Adding desnaps after the member accesses.
+            let desnaps =
+                if ctx.resolver.settings.edition.member_access_desnaps() { n_snapshots } else { 0 };
+            for _ in 0..desnaps {
+                let TypeLongId::Snapshot(ty) = final_expr.ty().long(db) else {
+                    unreachable!("Expected snapshot type");
+                };
+                let inner = ctx.arenas.exprs.alloc(final_expr);
+                final_expr = Expr::Desnap(ExprDesnap { inner, ty: *ty, stable_ptr });
+            }
+            Ok(final_expr)
         }
 
         TypeLongId::Snapshot(_) => {

@@ -55,7 +55,7 @@ pub impl RangeImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeTrait<T> {
     /// assert!(!(3..2).contains(@3));
     /// ```
     fn contains(self: @Range<T>, item: @T) -> bool {
-        self.start <= item && item < self.end
+        @self.start <= item && item < @self.end
     }
 
     /// Returns `true` if the range contains no items.
@@ -69,7 +69,7 @@ pub impl RangeImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeTrait<T> {
     /// ```
     #[inline]
     fn is_empty(self: @Range<T>) -> bool {
-        !(self.start < self.end)
+        !(@self.start < @self.end)
     }
 }
 
@@ -194,7 +194,7 @@ pub impl RangeInclusiveImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeInclusiveT
     /// assert!(!(3..=2).contains(@3));
     /// ```
     fn contains(self: @RangeInclusive<T>, item: @T) -> bool {
-        self.start <= item && item <= self.end
+        @self.start <= item && item <= @self.end
     }
 
     /// Returns `true` if the range contains no items.
@@ -208,7 +208,7 @@ pub impl RangeInclusiveImpl<T, +Destruct<T>, +PartialOrd<@T>> of RangeInclusiveT
     /// ```
     #[inline]
     fn is_empty(self: @RangeInclusive<T>) -> bool {
-        self.start > self.end
+        @self.start > @self.end
     }
 }
 

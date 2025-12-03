@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `PartialEq` trait.
-pub fn handle_partial_eq(info: &PluginTypeInfo<'_>) -> String {
+pub fn handle_partial_eq(info: &PluginTypeInfo<'_>, member_access_desnaps: bool) -> String {
     const PARTIAL_EQ_TRAIT: &str = "core::traits::PartialEq";
     let header = info.impl_header(PARTIAL_EQ_TRAIT, &[PARTIAL_EQ_TRAIT]);
     let full_typename = info.full_typename();
@@ -43,11 +43,13 @@ pub fn handle_partial_eq(info: &PluginTypeInfo<'_>) -> String {
                     info.members_info
                         .iter()
                         .map(|member| {
-                            format!(
-                                "{imp}::eq(lhs.{member}, rhs.{member})",
-                                member = member.name,
-                                imp = member.impl_name(PARTIAL_EQ_TRAIT),
-                            )
+                            let imp = member.impl_name(PARTIAL_EQ_TRAIT);
+                            let member = &member.name;
+                            if member_access_desnaps {
+                                format!("{imp}::eq(@lhs.{member}, @rhs.{member})")
+                            } else {
+                                format!("{imp}::eq(lhs.{member}, rhs.{member})")
+                            }
                         })
                         .join(" && ")
                 }

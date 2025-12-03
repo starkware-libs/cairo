@@ -921,8 +921,8 @@ impl U384TryIntoU256 of TryInto<u384, u256> {
 
 impl U384Serde of Serde<u384> {
     fn serialize(self: @u384, ref output: Array<felt252>) {
-        output.append(conversions::two_u96_into_felt252(*self.limb0, *self.limb1));
-        output.append(conversions::two_u96_into_felt252(*self.limb2, *self.limb3));
+        output.append(conversions::two_u96_into_felt252(self.limb0, self.limb1));
+        output.append(conversions::two_u96_into_felt252(self.limb2, self.limb3));
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<u384> {

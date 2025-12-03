@@ -1186,9 +1186,36 @@ fn lower_expr_snapshot<'db>(
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a snapshot: {:?}", expr.debug(&ctx.expr_formatter));
-    let location = ctx.get_location(expr.stable_ptr.untyped());
-    let expr = Box::new(lower_expr(ctx, builder, expr.inner)?);
-    Ok(LoweredExpr::Snapshot { expr, location })
+    // Finding the number of snapshots happening directly one after the other.
+    let mut snap_count = 1;
+    let mut inner = expr.inner;
+    while let semantic::Expr::Snapshot(next) = &ctx.function_body.arenas.exprs[inner] {
+        snap_count += 1;
+        inner = next.inner;
+    }
+    // Now removing desnaps happening immediately after, if can be squashed with the snaps.
+    while let semantic::Expr::Desnap(next) = &ctx.function_body.arenas.exprs[inner]
+        && snap_count > 0
+    {
+        snap_count -= 1;
+        inner = next.inner;
+    }
+    // Lowering the uncanceled part of the expression.
+    let mut result = lower_expr(ctx, builder, inner)?;
+    let mut expr = expr;
+    // Adding the leftover snapshots.
+    for _ in 0..snap_count {
+        let location = ctx.get_location(expr.stable_ptr.untyped());
+        result = LoweredExpr::Snapshot { expr: result.into(), location };
+        if let semantic::Expr::Snapshot(next) = &ctx.function_body.arenas.exprs[expr.inner] {
+            expr = next;
+        } else {
+            // When the break occurs we must be in the last iteration of the for (as `snap_count`
+            // can be at most the number of to snapshot expressions.
+            break;
+        };
+    }
+    Ok(result)
 }
 
 /// Lowers an expression of type [semantic::ExprDesnap].

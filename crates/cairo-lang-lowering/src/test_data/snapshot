@@ -463,3 +463,47 @@ Statements:
   (v1: core::integer::u8, v2: @core::integer::u8) <- snapshot(v0)
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Test struct snapshot auto member access desnap.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2025_12"
+
+//! > function
+fn foo(
+    a: @A,
+) -> (@Array<felt252>, @Array<felt252>, @@Array<felt252>, felt252, @felt252, @felt252, @@felt252) {
+    (@a.a, @(@a).a, @@(@a).a, a.b, @a.b, @(@a).b, @@(@a).b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array<felt252>,
+    b: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: @test::A
+blk0 (root):
+Statements:
+  (v1: @test::A, v2: @@test::A) <- snapshot(v0)
+  (v3: @@core::array::Array::<core::felt252>, v4: @@core::felt252) <- struct_destructure(v2)
+  (v5: @core::array::Array::<core::felt252>, v6: @core::felt252) <- struct_destructure(v0)
+  (v7: @core::array::Array::<core::felt252>) <- desnap(v3)
+  (v8: core::felt252) <- desnap(v6)
+  (v9: @core::felt252) <- desnap(v4)
+  (v10: (@core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>, @@core::array::Array::<core::felt252>, core::felt252, @core::felt252, @core::felt252, @@core::felt252)) <- struct_construct(v5, v7, v3, v8, v6, v9, v4)
+End:
+  Return(v10)

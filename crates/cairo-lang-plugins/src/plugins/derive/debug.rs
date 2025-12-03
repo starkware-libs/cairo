@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Debug` trait.
-pub fn handle_debug(info: &PluginTypeInfo<'_>) -> String {
+pub fn handle_debug(info: &PluginTypeInfo<'_>, member_access_desnaps: bool) -> String {
     const DEBUG_TRAIT: &str = "core::fmt::Debug";
     let header = info.impl_header(DEBUG_TRAIT, &[DEBUG_TRAIT]);
     let full_typename = info.full_typename();
@@ -41,14 +41,25 @@ pub fn handle_debug(info: &PluginTypeInfo<'_>) -> String {
                         write!(f, \" }}}}\")",
                     info.members_info
                         .iter()
-                        .map(|member| formatdoc!(
-                            "
+                        .map(|member| {
+                            let imp = member.impl_name(DEBUG_TRAIT);
+                            let member = &member.name;
+                            if member_access_desnaps {
+                                formatdoc!(
+                                    "
 
-                                write!(f, \" {member}: \")?;
-                                {imp}::fmt(self.{member}, ref f)?;",
-                            member = member.name,
-                            imp = member.impl_name(DEBUG_TRAIT),
-                        ))
+                                        write!(f, \" {member}: \")?;
+                                        {imp}::fmt(@self.{member}, ref f)?;",
+                                )
+                            } else {
+                                formatdoc!(
+                                    "
+
+                                        write!(f, \" {member}: \")?;
+                                        {imp}::fmt(self.{member}, ref f)?;",
+                                )
+                            }
+                        })
                         .join("\nwrite!(f, \",\")?;"),
                 )
             }
