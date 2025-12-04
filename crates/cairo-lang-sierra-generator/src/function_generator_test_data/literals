@@ -16,6 +16,7 @@ fn foo() -> () {
 foo
 
 //! > module_code
+#[inline(never)]
 fn bar(x: felt252) {
     bar(x)
 }

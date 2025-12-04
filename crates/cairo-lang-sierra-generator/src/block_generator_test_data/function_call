@@ -72,9 +72,11 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
+#[inline(never)]
 fn bar(a: felt252, b: felt252) -> felt252 {
     bar(a, b)
 }
+#[inline(never)]
 fn bar2(a: felt252, b: felt252) -> felt252 {
     bar2(a, b)
 }
