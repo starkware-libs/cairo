@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252, b: felt252) {
     f(ref a, b);
     g(ref a, b);
@@ -42,7 +42,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252, b: felt252) {
     let x = f(ref a, b);
     match x {
@@ -100,7 +100,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252, b: felt252) -> felt252 {
     match f(a, b) {
         MyEnum::A(y) => y,
@@ -157,7 +157,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252, b: felt252) -> felt252 {
     match f(ref a, b) {
         MyEnum::A(y) => y,
@@ -214,7 +214,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252, b: felt252) {
     let x = f(ref a, b);
     match x {
@@ -272,7 +272,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252, b: felt252) -> felt252 {
     match f(ref a, b) {
         MyEnum::A(y) => y,
@@ -329,7 +329,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(mut arr: Array<felt252>, mut b: (felt252,)) -> Array<felt252> {
     let y = match f(ref arr, ref b) {
         MyEnum::A(_x) => arr,
@@ -371,7 +371,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let _unused = gas::withdraw_gas();
 }
@@ -414,7 +414,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> Option<()> {
     gas::withdraw_gas()
 }
@@ -461,7 +461,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> Option<()> {
     return gas::withdraw_gas();
 }

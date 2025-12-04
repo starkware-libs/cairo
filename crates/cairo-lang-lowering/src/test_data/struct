@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> MyStruct {
     MyStruct { a: (), c: (3, 7), b: a }
 }
@@ -41,7 +41,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(s: MyStruct) -> felt252 {
     s.b
 }
@@ -75,7 +75,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(s: MyStruct) -> (felt252, felt252) {
     let MyStruct { a: _, c: (v, _), b } = s;
     (v, b)
@@ -112,7 +112,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(s: MyStruct) -> MyStruct {
     MyStruct { c: (1, 2), ..s }
 }
@@ -151,7 +151,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> MyStruct {
     MyStruct { c: f2(), a: (), b: f1() }
 }

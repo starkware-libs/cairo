@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let a = (1, 2);
     let (_x, _y) = immovable(a);

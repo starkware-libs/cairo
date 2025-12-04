@@ -33,7 +33,7 @@ fn test_early_unsafe_panic(
     db.set_flag(unsafe_panic_flag_id, Some(Arc::new(Flag::UnsafePanic(true))));
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
-        &inputs["function"],
+        &inputs["function_code"],
         &inputs["function_name"],
         &inputs["module_code"],
     )

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_usage
 
-//! > function
+//! > function_code
 fn foo(mut a: A, ref b: A) {
     let c = 5_usize;
     loop {
@@ -45,7 +45,7 @@ Loop 8:4:
 //! > test_runner_name
 test_function_usage
 
-//! > function
+//! > function_code
 fn foo(mut a: A, ref b: A) {
     let c = 5_usize;
     let only_used_in_condition = 5;
@@ -80,7 +80,7 @@ While 9:4:
 //! > test_runner_name
 test_function_usage
 
-//! > function
+//! > function_code
 fn foo(mut a: A, ref b: B) {
     let c = 5_usize;
     let only_used_in_condition = 5;
@@ -122,7 +122,7 @@ While 11:4:
 //! > test_runner_name
 test_function_usage
 
-//! > function
+//! > function_code
 fn foo(a: u32) {
     |b: u32| {
         || a + b;
@@ -153,7 +153,7 @@ Closure 1:4:
 //! > test_runner_name
 test_function_usage
 
-//! > function
+//! > function_code
 fn foo(a: u32) {
     let arr = array![1, 2, 3];
     for b in arr {
@@ -181,7 +181,7 @@ For 2:4:
 //! > test_runner_name
 test_function_usage
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     let mut counter = 0;
     let outer = array![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -218,7 +218,7 @@ For 4:4:
 //! > test_runner_name
 test_function_usage
 
-//! > function
+//! > function_code
 fn foo(mut a: Span<u32>, mut b: Span<u32>) -> Option<usize> {
     let Some(_) = a.pop_front() else {
         return b.pop_front().map(|q| *q);

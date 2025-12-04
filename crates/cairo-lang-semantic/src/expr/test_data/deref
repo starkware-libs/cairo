@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let s1 = S1 { a: 1, b: 2 };
     let s2 = S2 { inner: s1, c: 5 };
@@ -65,7 +65,7 @@ impl S3SnapDeref of core::ops::Deref<@S3> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let s1 = S1 { a: 1, b: 2 };
     let s2 = S2 { inner: s1, c: 5 };
@@ -110,7 +110,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let a = BoxTrait::new(@array![1_u32]);
     let _ = a.len();
@@ -130,7 +130,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut a = BoxTrait::new(@array![1_u32]);
     let _ = (*a);
@@ -150,7 +150,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut a = S1 { inner: 1 };
     let _ = (*a);
@@ -180,7 +180,7 @@ impl S1DerefMut of core::ops::DerefMut<S1> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let a = S1 { inner: 1 };
     let _ = (*a);

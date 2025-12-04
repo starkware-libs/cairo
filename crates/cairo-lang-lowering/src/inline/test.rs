@@ -25,7 +25,7 @@ fn test_function_inlining(
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
-        &inputs["function"],
+        &inputs["function_code"],
         &inputs["function_name"],
         &inputs["module_code"],
     )

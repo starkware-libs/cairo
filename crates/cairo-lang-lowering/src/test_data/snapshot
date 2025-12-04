@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252) {
     bar(@x)
 }
@@ -34,7 +34,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(orig: @A) -> @A {
     bar(orig.a, orig.b);
     let A { a, b } = orig;
@@ -74,7 +74,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(orig: @A) -> @A {
     match orig {
         A::A(a) => bar0(a),
@@ -141,7 +141,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(value: @felt252) -> felt252 {
     *value
 }
@@ -170,7 +170,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(value: @Array::<felt252>) -> Array<felt252> {
     *value
 }
@@ -199,7 +199,7 @@ note: Trait has no implementation in context: core::traits::Copy::<core::array::
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> usize {
     bar(@a.b);
     a.b
@@ -235,7 +235,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> usize {
     let mut array: Array<u32> = array![14];
     let mut i = 0;
@@ -310,7 +310,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> @u8 {
     let mut a = A { b: 8 };
     loop {
@@ -351,7 +351,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let a = A { b: 7 };
     loop {
@@ -391,7 +391,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> @A {
     let mut a = A { m: 7 };
     let _z = @a;
@@ -429,7 +429,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> @u8 {
     let mut a = A { m: Member { m: 7 } };
     let _z = @a.m.m;

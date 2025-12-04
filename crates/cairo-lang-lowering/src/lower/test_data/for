@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let mut x = 1;
     let y = x + 1;
@@ -177,7 +177,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     let v = 1_u32;
     v.foo()
@@ -280,7 +280,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo(a: Box<Span<felt252>>) -> Array<felt252> {
     let mut arr = array![];
     for b in a {

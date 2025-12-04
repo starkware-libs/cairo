@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(p: felt252) {
     p = 7;
     a = 1 + 2;
@@ -52,7 +52,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "()".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x: ByteArray = "error";
 }
@@ -71,7 +71,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x: felt252 = "error";
 }
@@ -94,7 +94,7 @@ error: Mismatched types. The type `core::felt252` cannot be created from a strin
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x: felt252 = 252;
 }
@@ -113,7 +113,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x: ByteArray = 252;
 }

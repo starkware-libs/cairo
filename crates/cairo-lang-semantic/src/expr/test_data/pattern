@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: (felt252, felt252)) {}
 
 //! > function_name
@@ -20,7 +20,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(s2: Struct2) {
     let Struct2 { member1: _, member2: _, member3: _ } = s2;
     let Struct2 { member1: _, member2: _, .. } = s2;
@@ -50,7 +50,7 @@ struct Struct2 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: MyStruct) {
     let MyStruct { a: _ } = s;
 }
@@ -77,7 +77,7 @@ error[E0003]: Missing member "b".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: MyStruct) {
     let MyStruct { a, b } = s;
 }
@@ -106,7 +106,7 @@ error: Struct "test::MyStruct" has no member "b"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: MyStruct) {
     let MyStruct { a: _, b: _, a: _, b: _ } = s;
 }
@@ -138,7 +138,7 @@ error: Redefinition of member "b" on struct "test::MyStruct".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: MyStruct) {
     let MyStruct { a: _, c: _, a: _ } = s;
 }
@@ -175,7 +175,7 @@ error[E0003]: Missing member "b".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: [felt252; 3]) {
     let [_a, _b] = s;
 }
@@ -198,7 +198,7 @@ error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: (felt252, felt252, felt252)) {
     let [_a, _b, _c] = s;
 }
@@ -221,7 +221,7 @@ error: Unexpected type for fixed size array pattern. "(core::felt252, core::felt
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: [felt252; 3]) {
     let (_a, _b, _c) = s;
 }
@@ -244,7 +244,7 @@ error: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(s: [felt252; 3]) {
     let (unresolved,) = if true {} else {
         (array![(1, 2, 3)],)
@@ -278,7 +278,7 @@ error: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let (_a, _a) = (1, 2);
 }
@@ -301,7 +301,7 @@ error: Redefinition of variable name "_a" in pattern.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     match (1, 2) {
         (_a, _a) => (),

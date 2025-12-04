@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_scrub_units
 
-//! > function
+//! > function_code
 fn foo(a: Option<()>) {
     bar::<(), MyDestruct>(a.expect('Should be some.'))
 }

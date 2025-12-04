@@ -320,7 +320,7 @@ pub fn test_function_diagnostics(
 
     let diagnostics = setup_test_function_ex(
         db,
-        &inputs["function"],
+        &inputs["function_code"],
         &inputs["function_name"],
         &inputs["module_code"],
         inputs.get("crate_settings").map(String::as_str),

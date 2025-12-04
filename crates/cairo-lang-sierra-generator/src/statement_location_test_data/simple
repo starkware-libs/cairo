@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_sierra_locations
 
-//! > function
+//! > function_code
 fn foo(a: felt252, b: felt252) -> felt252 {
     let b = felt252_add(a, 5);
     bar(b, b, b)
@@ -113,7 +113,7 @@ In function: lib.cairo::foo
 //! > test_runner_name
 test_sierra_locations
 
-//! > function
+//! > function_code
 fn foo(my_enum: MyEnum) -> u8 {
     match my_enum {
         MyEnum::A(a) => a,
@@ -952,7 +952,7 @@ In function: lib.cairo::foo
 //! > test_runner_name
 test_sierra_locations
 
-//! > function
+//! > function_code
 
 //! > function_name
 main
@@ -994,7 +994,7 @@ In function: lib.cairo::main
 //! > test_runner_name
 test_sierra_locations
 
-//! > function
+//! > function_code
 
 //! > function_name
 main
@@ -1070,7 +1070,7 @@ In function: lib.cairo::main
 //! > test_runner_name
 test_sierra_locations
 
-//! > function
+//! > function_code
 
 //! > function_name
 test_pedersen
@@ -1226,7 +1226,7 @@ In function: lib.cairo::test_pedersen
 //! > test_runner_name
 test_sierra_locations
 
-//! > function
+//! > function_code
 fn foo() {
     let x = 10; // highlighted
     let y = 20; // highlighted
@@ -2260,7 +2260,7 @@ In function: writeln_macro::writeln_macro
 //! > test_runner_name
 test_sierra_locations
 
-//! > function
+//! > function_code
 fn some_array_checks() {
     assert!(array![1, 2] != array![2, 1], "");
 }

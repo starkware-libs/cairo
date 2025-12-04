@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     loop {
         // Some statements to prevent the loop function from being inlined.
@@ -45,7 +45,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     loop {
         // Some statements to prevent the loop function from being inlined.

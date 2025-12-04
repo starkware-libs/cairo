@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     if a == 2 {
         bar(a)

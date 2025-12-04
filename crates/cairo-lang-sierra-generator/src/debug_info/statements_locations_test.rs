@@ -23,7 +23,7 @@ pub fn test_sierra_locations(
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
-        inputs["function"].as_str(),
+        inputs["function_code"].as_str(),
         inputs["function_name"].as_str(),
         &module_code,
     )

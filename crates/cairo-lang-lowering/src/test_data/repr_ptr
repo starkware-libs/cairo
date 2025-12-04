@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(s: Point) {
     bar(&s.x);
     baz(&s.y);
@@ -51,7 +51,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = 3;
     bar(&x, &&x, &&&x);
@@ -94,7 +94,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut x = 1;
     bar(&x);
@@ -134,7 +134,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: @u32) {
     bar(&x)
 }
@@ -172,7 +172,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(opt: Option<u32>) {
     match opt {
         Option::Some(x) => bar(&x),

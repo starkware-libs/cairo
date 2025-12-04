@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let mut x = 5;
     loop {
@@ -159,7 +159,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let mut x = 5;
     loop {
@@ -314,7 +314,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo(mut a: A, ref b: A) {
     let c = 5_usize;
     loop {
@@ -477,7 +477,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let mut x = 5;
     loop {
@@ -680,7 +680,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     loop {
         break;
@@ -746,7 +746,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     let mut x = A { a: 3, b: 4 };
     loop {
@@ -916,7 +916,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let mut s = S {};
     loop {
@@ -1003,7 +1003,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     let t = T { s: S {} };
     loop {
@@ -1092,7 +1092,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     let a = A { b: B { c: 3 } };
     loop {
@@ -1218,7 +1218,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     let a = A { b: B { c: 3 } };
     loop {
@@ -1345,7 +1345,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     let mut a = A { x: 0 };
     let mut i = 0;
@@ -1508,7 +1508,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::impl_in_trait();
 }
@@ -1587,7 +1587,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     let mut x = 5;
     loop {
@@ -1877,7 +1877,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo(a: u32) -> u32 {
     loop {
         if a == 0 {
@@ -2023,7 +2023,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<u32>) -> u32 {
     while let Some(v) = a.pop_front() {
         if v == 1 {
@@ -2360,7 +2360,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<u32>) -> u32 {
     while let Some(v) = a.pop_front() {
         if v == 1 {
@@ -2697,7 +2697,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> Result<(), u32> {
     for _ in 1..5_u32 {
         bar()?;
@@ -2937,7 +2937,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> Result<(), u32> {
     loop {
         bar()?;

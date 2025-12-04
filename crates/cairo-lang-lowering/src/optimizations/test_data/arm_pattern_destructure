@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(mut z: felt252) {
     let y = bar(ref z);
     match y {

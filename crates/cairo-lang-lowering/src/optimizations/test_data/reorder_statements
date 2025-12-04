@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_reorder_statements
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     let opt = get_option();
 
@@ -186,7 +186,7 @@ End:
 //! > test_runner_name
 test_reorder_statements
 
-//! > function
+//! > function_code
 fn foo() {
     let a = true;
 
@@ -283,7 +283,7 @@ End:
 //! > test_runner_name
 test_reorder_statements
 
-//! > function
+//! > function_code
 fn foo(a: felt252) {
     let b = NonDupStruct { a };
     let NonDupStruct { a: _ } = b;
@@ -328,7 +328,7 @@ End:
 //! > test_runner_name
 test_reorder_statements
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let a = true;
     let v = 5;

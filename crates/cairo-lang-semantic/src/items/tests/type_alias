@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: RenamedStruct) -> felt252 {
     a.a
 }
@@ -27,7 +27,7 @@ type RenamedStruct = MyStruct;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: RenamedEnum) -> felt252 {
     match a {
         MyEnum::f(v) => v,
@@ -53,7 +53,7 @@ type RenamedEnum = MyEnum;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: RenamedTuple) -> felt252 {
     let (v, _) = a;
     v
@@ -74,7 +74,7 @@ type RenamedTuple = (felt252, u128);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: OptionFelt252) -> felt252 {
     match a {
         Some(v) => v,
@@ -97,7 +97,7 @@ type OptionFelt252 = Option::<felt252>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: RenamedTuple<u128>) -> u128 {
     let (_, v) = a;
     v
@@ -118,7 +118,7 @@ type RenamedTuple<T> = (felt252, T);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A<bool>) -> (felt252, u128, bool) {
     a
 }
@@ -139,7 +139,7 @@ type B<P1, P2, P3> = (P1, P3, P2);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A<5>) -> felt252 {
     let (v, _) = a;
     v
@@ -164,7 +164,7 @@ fn foo(a: A<5>) -> felt252 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> B {
     a
 }
@@ -194,7 +194,7 @@ type B = A;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> A {
     a
 }
@@ -218,7 +218,7 @@ type A = A;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: Alias) -> felt252 {
     a.a
 }

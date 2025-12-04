@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 #[feature("bounded-int-utils")]
 fn foo() {
     let _a: u8 = 0x100;
@@ -74,7 +74,7 @@ error: The value does not fit within the range of type core::internal::bounded_i
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _a: u8 = 'aa';
     let _a: u16 = 'aba';
@@ -132,7 +132,7 @@ error: The value does not fit within the range of type core::felt252.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 #[feature("bounded-int-utils")]
 fn foo() -> (
     felt252,
