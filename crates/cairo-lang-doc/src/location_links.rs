@@ -12,7 +12,7 @@ use salsa::Database;
 
 use crate::documentable_item::DocumentableItemId;
 
-/// A helper struct to map parts of item signature on respective documentable items.
+/// A helper struct to map parts of item signature to the respective documentable items.
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct LocationLink<'db> {
     /// Link's start offset in documentable item's signature.
@@ -66,7 +66,7 @@ fn get_virtual_syntax_file_signature<'db>(
             .as_syntax_node();
 
     let diagnostics = sig_db.file_syntax_diagnostics(virtual_file);
-    // allow single "Missing token '{'..." error
+    // Allow a single "Missing token '{'..." error
     if diagnostics.0.error_count <= 1 { Ok(syntax_file) } else { Err(DiagnosticAdded) }
 }
 
@@ -129,7 +129,7 @@ fn move_location_links<'db>(
     location_links
 }
 
-/// Performs set of actions to return formatted signature with [`LocationLink`]s adjusted.
+/// Performs a set of actions to return formatted signature with [`LocationLink`]s adjusted.
 pub fn format_signature<'db>(
     db: &'db dyn Database,
     signature: String,
