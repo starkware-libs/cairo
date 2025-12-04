@@ -140,7 +140,7 @@ fn impl_alias_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = impl_alias_id.module_id(db);
+    let module_id = impl_alias_id.parent_module(db);
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     impl_alias_generic_params_data_helper(
         db,
@@ -191,7 +191,7 @@ fn impl_alias_impl_def<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplDefId<'db>> {
-    let module_id = impl_alias_id.module_id(db);
+    let module_id = impl_alias_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
@@ -245,7 +245,7 @@ pub trait ImplAliasSemantic<'db>: Database {
     /// Returns the resolved type of a type alias.
     fn impl_alias_resolved_impl(&'db self, id: ImplAliasId<'db>) -> Maybe<ImplId<'db>> {
         let db = self.as_dyn_database();
-        if let Some(data) = db.cached_crate_semantic_data(id.module_id(db).owning_crate(db)) {
+        if let Some(data) = db.cached_crate_semantic_data(id.parent_module(db).owning_crate(db)) {
             if let Some(resolved_impl) = data.impl_aliases_resolved_impls.get(&id) {
                 return Ok(*resolved_impl);
             } else {

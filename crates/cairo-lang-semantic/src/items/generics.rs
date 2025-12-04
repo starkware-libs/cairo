@@ -264,7 +264,7 @@ fn generic_impl_param_trait<'db>(
     db: &'db dyn Database,
     generic_param_id: GenericParamId<'db>,
 ) -> Maybe<TraitId<'db>> {
-    let module_id = generic_param_id.module_id(db);
+    let module_id = generic_param_id.parent_module(db);
     let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
     let generic_params_syntax = extract_matches!(
         option_generic_params_syntax,
@@ -305,7 +305,7 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
     generic_param_id: GenericParamId<'db>,
 ) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
     let db: &dyn Database = db;
-    let module_id = generic_param_id.module_id(db);
+    let module_id = generic_param_id.parent_module(db);
     let mut diagnostics: cairo_lang_diagnostics::DiagnosticsBuilder<'_, SemanticDiagnostic<'_>> =
         SemanticDiagnostics::default();
     let parent_item_id = generic_param_id.generic_item(db);
@@ -363,7 +363,7 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
         .trait_generic_params_ids(trait_id)?
         .iter()
         .map(|param_syntax| {
-            GenericParamLongId(trait_id.module_id(db), param_syntax.stable_ptr(db)).intern(db)
+            GenericParamLongId(trait_id.parent_module(db), param_syntax.stable_ptr(db)).intern(db)
         })
         .collect::<Vec<_>>();
 
@@ -420,12 +420,12 @@ fn generic_param_data<'db>(
             )),
             diagnostics: diagnostics.build(),
             resolver_data: Arc::new(ResolverData::new(
-                generic_param_id.module_id(db),
+                generic_param_id.parent_module(db),
                 InferenceId::GenericParam(generic_param_id),
             )),
         });
     }
-    let module_id = generic_param_id.module_id(db);
+    let module_id = generic_param_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let parent_item_id = generic_param_id.generic_item(db);
     let lookup_item: LookupItemId<'_> = parent_item_id.into();

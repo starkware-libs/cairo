@@ -295,7 +295,7 @@ fn trait_generic_params_data<'db>(
     trait_id: TraitId<'db>,
     in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = trait_id.module_id(db);
+    let module_id = trait_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_ast = db.module_trait_by_id(trait_id)?;
 
@@ -347,7 +347,7 @@ fn trait_generic_params_ids<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<Vec<GenericParamId<'db>>> {
-    let module_id = trait_id.module_id(db);
+    let module_id = trait_id.parent_module(db);
     let trait_ast = db.module_trait_by_id(trait_id)?;
 
     let generic_params = &trait_ast.generic_params(db);
@@ -595,7 +595,7 @@ fn priv_trait_definition_data<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<TraitDefinitionData<'db>> {
-    let module_id = trait_id.module_id(db);
+    let module_id = trait_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -734,7 +734,7 @@ fn priv_trait_type_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = trait_type_id.module_id(db);
+    let module_id = trait_type_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_type_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
@@ -939,7 +939,7 @@ fn priv_trait_function_generic_params_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = trait_function_id.module_id(db);
+    let module_id = trait_function_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let trait_id = trait_function_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;

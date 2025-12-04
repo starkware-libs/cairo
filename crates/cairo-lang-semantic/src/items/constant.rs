@@ -333,7 +333,7 @@ pub fn constant_semantic_data_helper<'db>(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.module_id(db), inference_id),
+        None => Resolver::new(db, element_id.parent_module(db), inference_id),
     };
     resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
@@ -376,7 +376,7 @@ pub fn constant_semantic_data_cycle_helper<'db>(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.module_id(db), inference_id),
+        None => Resolver::new(db, element_id.parent_module(db), inference_id),
     };
 
     let resolver_data = Arc::new(resolver.data);
