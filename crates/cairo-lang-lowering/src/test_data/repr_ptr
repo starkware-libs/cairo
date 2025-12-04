@@ -20,12 +20,6 @@ struct Point {
 extern fn bar(x: &u32) nopanic;
 extern fn baz(y: &u32) nopanic;
 
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -62,12 +56,6 @@ foo
 
 //! > module_code
 extern fn bar(x: &u32, y: &&u32, z: &&&u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -107,12 +95,6 @@ foo
 //! > module_code
 extern fn bar(x: &u32) nopanic;
 
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -144,12 +126,6 @@ foo
 
 //! > module_code
 extern fn bar(x: &@u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -185,12 +161,6 @@ foo
 
 //! > module_code
 extern fn bar(x: &u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 

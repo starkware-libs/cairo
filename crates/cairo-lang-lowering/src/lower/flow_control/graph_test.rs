@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::setup_test_function_ex;
 use cairo_lang_semantic::{self as semantic, ExprVarMemberPath};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
@@ -39,11 +39,13 @@ fn test_create_graph(
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(
+    let (test_function, semantic_diagnostics) = setup_test_function_ex(
         db,
         inputs["function_code"].as_str(),
         "foo",
         inputs.get("module_code").unwrap_or(&"".into()),
+        None,
+        None,
     )
     .split();
     let semantic_db: &dyn Database = db;

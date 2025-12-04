@@ -31,13 +31,7 @@ fn test_generated_function(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        db,
-        inputs["function_code"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-    )
-    .split();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
 
     let mut writer = String::new();
     if let Ok(multi_lowering) = db.priv_function_with_body_multi_lowering(test_function.function_id)
