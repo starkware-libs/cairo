@@ -66,7 +66,7 @@ fn generate_kinds_code() -> rust::Tokens {
         use serde::{Deserialize, Serialize};
     };
 
-    // SyntaxKind.
+    // Definition of SyntaxKind.
     let kinds = name_tokens(&spec, |k| !matches!(k, NodeKind::Enum { .. }));
     let token_kinds = name_tokens(&spec, |k| matches!(k, NodeKind::Token { .. }));
     let keyword_token_kinds =

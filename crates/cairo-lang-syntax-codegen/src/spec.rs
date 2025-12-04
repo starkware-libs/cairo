@@ -38,7 +38,7 @@ pub struct Variant {
 
 // Helpers to build AST specifications.
 
-/// Builds spec for a struct node.
+/// Builds a spec for a struct node.
 pub struct StructBuilder {
     name: String,
     members: Vec<Member>,
@@ -71,7 +71,7 @@ impl StructBuilder {
         }
     }
 }
-/// Builds spec for an enum node.
+/// Builds a spec for an enum node.
 pub struct EnumBuilder {
     name: String,
     variants: Vec<Variant>,
