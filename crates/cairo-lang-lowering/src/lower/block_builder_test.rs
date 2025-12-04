@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::corelib::unit_ty;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
-use cairo_lang_semantic::test_utils::{TestFunction, setup_test_function};
+use cairo_lang_semantic::test_utils::{TestFunction, setup_test_function_ex};
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{self as semantic, Expr, Statement, StatementId};
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -56,11 +56,13 @@ fn test_merge_block_builders(
     // as a dummy function body.
     // Note that the function body is not lowered at any point, and it is only used to parse the
     // semantic to lowering map.
-    let test_function = setup_test_function(
+    let test_function = setup_test_function_ex(
         &db,
         &format!("fn foo ({}) {{ {} }}", &inputs["variables"], &inputs["block_definitions"]),
         "foo",
         inputs.get("module_code").unwrap_or(&"".into()),
+        None,
+        None,
     )
     .unwrap();
 
