@@ -2,7 +2,7 @@ use salsa::Database;
 
 use crate::node::SyntaxNode;
 
-/// `WalkEvent` describes tree walking process.
+/// `WalkEvent` describes the tree walking process.
 #[derive(Debug, Copy, Clone)]
 pub enum WalkEvent<T> {
     /// Fired before traversing the node.
