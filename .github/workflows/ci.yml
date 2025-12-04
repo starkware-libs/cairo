@@ -155,7 +155,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Machete
-        uses: bnjbvr/cargo-machete@v0.8.0
+        uses: bnjbvr/cargo-machete@v0.9.1
 
   clippy:
     runs-on: ubuntu-latest
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: crate-ci/typos@v1.37.0
+      - uses: crate-ci/typos@v1.39.0
 
   docs:
     runs-on: ubuntu-latest
