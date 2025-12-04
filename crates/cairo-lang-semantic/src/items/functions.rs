@@ -183,14 +183,14 @@ impl<'db> GenericFunctionId<'db> {
     /// Returns the ModuleId of the function's definition if possible.
     pub fn module_id(&self, db: &'db dyn Database) -> Option<ModuleId<'db>> {
         match self {
-            GenericFunctionId::Free(free_function) => Some(free_function.module_id(db)),
-            GenericFunctionId::Extern(extern_function) => Some(extern_function.module_id(db)),
+            GenericFunctionId::Free(free_function) => Some(free_function.parent_module(db)),
+            GenericFunctionId::Extern(extern_function) => Some(extern_function.parent_module(db)),
             GenericFunctionId::Impl(impl_generic_function_id) => {
                 // Return the module file of the impl containing the function.
                 if let ImplLongId::Concrete(concrete_impl_id) =
                     impl_generic_function_id.impl_id.long(db)
                 {
-                    Some(concrete_impl_id.impl_def_id(db).module_id(db))
+                    Some(concrete_impl_id.impl_def_id(db).parent_module(db))
                 } else {
                     None
                 }

@@ -38,7 +38,7 @@ fn extern_type_declaration_generic_params_data<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = extern_type_id.module_id(db);
+    let module_id = extern_type_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?;
 

@@ -1743,7 +1743,7 @@ impl LanguageElementCached {
         ctx: &mut DefCacheSavingContext<'db>,
     ) -> Self {
         Self {
-            module_id: ModuleIdCached::new(language_element.module_id(ctx.db), ctx),
+            module_id: ModuleIdCached::new(language_element.parent_module(ctx.db), ctx),
             stable_ptr: SyntaxStablePtrIdCached::new(
                 language_element.untyped_stable_ptr(ctx.db),
                 ctx,

@@ -657,7 +657,7 @@ impl<'db> ShallowGenericArg<'db> {
     pub fn module_id(&self, db: &'db dyn Database) -> Option<ModuleId<'db>> {
         match self {
             ShallowGenericArg::GenericParameter(_) => None,
-            ShallowGenericArg::GenericType(ty) => Some(ty.module_id(db)),
+            ShallowGenericArg::GenericType(ty) => Some(ty.parent_module(db)),
             ShallowGenericArg::Snapshot(inner) => inner.module_id(db),
             ShallowGenericArg::Tuple => TypeLongId::Tuple(vec![]).module_id(db),
             ShallowGenericArg::FixedSizeArray => TypeLongId::FixedSizeArray {
