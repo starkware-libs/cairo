@@ -2,10 +2,10 @@
 
 Cairo is an expression-oriented language, where most syntax productions producing values or
 causing effects when evaluated are _expressions_.
-Many expressions can nest within each other, and sequence of evaluation is driven by precedence
+Many expressions can nest within each other, and the sequence of evaluation is driven by precedence
 and associativity rules.
 
-There are not a lot of statements kinds, which role is limited to containing explicitly sequential
+There are not a lot of statement kinds, whose role is limited to containing explicitly sequential
 xref:expression-statement.adoc[expression evaluation] and declaring xref:items.adoc[items]
 and xref:let-statement.adoc[variables] in xref:block-expression.adoc[code blocks].
 
