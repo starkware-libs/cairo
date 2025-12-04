@@ -157,20 +157,7 @@ pub fn handle_entry_point<'db, 'a>(
         ))
     }
 
-    let mut declaration_node = RewriteNode::from_ast_trimmed(&declaration);
-    let original_parameters = declaration_node
-        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
-        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
     let params = declaration.signature(db).parameters(db);
-    for (param_idx, param) in params.elements(db).enumerate() {
-        // This assumes `mut` can only appear alone.
-        if param.is_mut_param(db) {
-            original_parameters
-                .modify_child(db, param_idx * 2)
-                .modify_child(db, ast::Param::INDEX_MODIFIERS)
-                .set_str("".to_string());
-        }
-    }
     let function_name = RewriteNode::from_ast_trimmed(&name_node);
     let wrapper_function_name = RewriteNode::interpolate_patched(
         &format!("{WRAPPER_PREFIX}{}", wrapper_identifier),
