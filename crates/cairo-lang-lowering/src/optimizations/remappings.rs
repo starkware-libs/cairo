@@ -113,11 +113,11 @@ fn map_var_id_impl(
     if let Some(res) = var_representatives[var.index()] {
         return res;
     }
-    let new_var = if let Some([single_var]) = dest_to_srcs[var.index()]
+    let new_var = if let Ok(single_var) = dest_to_srcs[var.index()]
         .iter()
         .map(|src| map_var_id_impl(dest_to_srcs, var_representatives, *src))
         .unique()
-        .collect_array()
+        .exactly_one()
     {
         single_var
     } else {
