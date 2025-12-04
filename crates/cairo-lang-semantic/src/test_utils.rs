@@ -311,7 +311,7 @@ pub fn test_expr_diagnostics(
     let diagnostics = setup_test_expr(
         db,
         &inputs["expr_code"],
-        &inputs["module_code"],
+        inputs.get("module_code").map_or("", String::as_str),
         &inputs["function_body"],
         inputs.get("crate_settings").map(String::as_str),
     )

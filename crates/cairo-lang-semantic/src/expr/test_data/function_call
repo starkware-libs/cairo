@@ -197,8 +197,6 @@ fn foo() -> () {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::integer::u8".
  --> lib.cairo:1:13
@@ -217,8 +215,6 @@ fn foo() -> u8 {}
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u8", found: "()".
@@ -298,8 +294,6 @@ fn foo() -> () {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
