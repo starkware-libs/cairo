@@ -132,8 +132,6 @@ fn foo(x: u128) -> u128 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics

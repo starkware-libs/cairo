@@ -155,8 +155,6 @@ test_expr_diagnostics(expect_diagnostics: true)
 //! > expr_code
 9_u32.sqrt()
 
-//! > module_code
-
 //! > function_body
 
 //! > expected_diagnostics

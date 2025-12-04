@@ -132,8 +132,6 @@ fn foo(a: u32) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > usage
@@ -163,8 +161,6 @@ fn foo(a: u32) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -197,8 +193,6 @@ fn foo() -> u32 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > usage
@@ -229,8 +223,6 @@ fn foo(mut a: Span<u32>, mut b: Span<u32>) -> Option<usize> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

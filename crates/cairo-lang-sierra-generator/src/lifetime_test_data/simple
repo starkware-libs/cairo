@@ -16,8 +16,6 @@ fn foo(x: felt252, y: felt252) -> felt252 {
     a
 }
 
-//! > module_code
-
 //! > lowering_format
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):

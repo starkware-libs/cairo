@@ -17,8 +17,6 @@ fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<
 //! > function_name
 serialize_array_felt_helper
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
