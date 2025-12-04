@@ -36,13 +36,7 @@ fn check_find_local_variables(
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
-    let test_function = setup_test_function(
-        db,
-        inputs["function_code"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-    )
-    .unwrap();
+    let test_function = setup_test_function(db, inputs).unwrap();
 
     db.module_lowering_diagnostics(test_function.module_id)
         .unwrap()
