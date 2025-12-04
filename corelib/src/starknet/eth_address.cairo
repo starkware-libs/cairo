@@ -72,7 +72,7 @@ impl EthAddressZero of core::num::traits::Zero<EthAddress> {
 
     #[inline]
     fn is_zero(self: @EthAddress) -> bool {
-        core::num::traits::Zero::<felt252>::is_zero(self.address)
+        core::num::traits::Zero::<felt252>::is_zero(@self.address)
     }
 
     #[inline]

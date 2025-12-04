@@ -5,7 +5,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Clone` trait.
-pub fn handle_clone(info: &PluginTypeInfo<'_>) -> String {
+pub fn handle_clone(info: &PluginTypeInfo<'_>, member_access_desnaps: bool) -> String {
     const CLONE_TRAIT: &str = "core::clone::Clone";
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let full_typename = info.full_typename();
@@ -44,12 +44,14 @@ pub fn handle_clone(info: &PluginTypeInfo<'_>) -> String {
                 }}
                 ",
                 info.members_info.iter().map(|member| {
-                    format!(
-                        "let {member} = {destruct_with} {{ value: {imp}::clone(self.{member}) }};",
-                        member=member.name,
-                        destruct_with=member.destruct_with(),
-                        imp=member.impl_name(CLONE_TRAIT),
-                    )
+                    let destruct_with = member.destruct_with();
+                    let imp = member.impl_name(CLONE_TRAIT);
+                    let member = &member.name;
+                    if member_access_desnaps {
+                        format!("let {member} = {destruct_with} {{ value: {imp}::clone(@self.{member}) }};")
+                    } else {
+                        format!("let {member} = {destruct_with} {{ value: {imp}::clone(self.{member}) }};")
+                    }
                 }).join("\n        "),
                 info.members_info.iter().map(|member| {
                     format!("{member}: {member}.value,", member=member.name)

@@ -94,9 +94,9 @@ impl ByteArrayDefault of Default<ByteArray> {
 }
 impl ByteArraySerde of Serde<ByteArray> {
     fn serialize(self: @ByteArray, ref output: Array<felt252>) {
-        Serde::serialize(self.data, ref output);
-        Serde::serialize(self.pending_word, ref output);
-        Serde::serialize(self.pending_word_len, ref output);
+        Serde::serialize(@self.data, ref output);
+        Serde::serialize(@self.pending_word, ref output);
+        Serde::serialize(@self.pending_word_len, ref output);
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<ByteArray> {
@@ -152,7 +152,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// assert!(ba == "12");
     /// ```
     fn append(ref self: ByteArray, other: @ByteArray) {
-        self.append_from_parts(other.data.span(), *other.pending_word, *other.pending_word_len);
+        self.append_from_parts(other.data.span(), other.pending_word, other.pending_word_len);
     }
 
     /// Concatenates two `ByteArray`s and returns the result.
@@ -230,13 +230,13 @@ pub impl ByteArrayImpl of ByteArrayTrait {
         let index_in_word: usize = upcast(index_in_word);
         if word_index == self.data.len() {
             // Index is in pending word.
-            if index_in_word >= upcast(*self.pending_word_len) {
+            if index_in_word >= upcast(self.pending_word_len) {
                 return None;
             }
             // index_in_word is from MSB, we need index from LSB.
             return Some(
                 u8_at_u256(
-                    (*self.pending_word).into(), upcast(*self.pending_word_len) - 1 - index_in_word,
+                    (self.pending_word).into(), upcast(self.pending_word_len) - 1 - index_in_word,
                 ),
             );
         }
@@ -258,7 +258,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     fn rev(self: @ByteArray) -> ByteArray {
         let mut result = Default::default();
 
-        result.append_word_rev(*self.pending_word, upcast(*self.pending_word_len));
+        result.append_word_rev(self.pending_word, upcast(self.pending_word_len));
 
         let mut data = self.data.span();
         while let Some(current_word) = data.pop_back() {
@@ -866,16 +866,16 @@ impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
             return None;
         }
         let (start_word, start_offset) = helpers::index_parts_with_offset_b31(
-            range.start, *self.first_char_start_offset,
+            range.start, self.first_char_start_offset,
         );
         let (end_word, end_offset) = helpers::index_parts_with_offset_b31(
-            range.end, *self.first_char_start_offset,
+            range.end, self.first_char_start_offset,
         );
         let data_slice_len = end_word.checked_sub(start_word)?;
 
         let remainder_with_end_offset_trimmed = if self.data.len() == end_word {
-            let offset = helpers::index_checked_sub(*self.remainder_len, end_offset)?;
-            split_bytes31(*self.remainder_word, offset).high
+            let offset = helpers::index_checked_sub(self.remainder_len, end_offset)?;
+            split_bytes31(self.remainder_word, offset).high
         } else {
             let word = self.data.get(end_word)?;
             if let Some(end_offset) = helpers::index_is_zero(end_offset) {
@@ -960,7 +960,7 @@ impl ByteArrayToByteSpan of ToByteSpanTrait<ByteArray> {
         ByteSpan {
             data: self.data.span(),
             first_char_start_offset: 0,
-            remainder_word: *self.pending_word,
+            remainder_word: self.pending_word,
             remainder_len: downcast(self.pending_word_len).expect('In [0,30] by assumption'),
         }
     }
@@ -1198,7 +1198,7 @@ mod helpers {
     /// Calculates the length of a `ByteSpan` in bytes.
     pub fn calc_bytearray_len(arr: @ByteArray) -> usize {
         let data_bytes = bounded_int::mul(arr.data.len(), BYTES_IN_BYTES31_UNIT_INT);
-        let arr_bytes = bounded_int::add(*arr.pending_word_len, data_bytes);
+        let arr_bytes = bounded_int::add(arr.pending_word_len, data_bytes);
 
         downcast(arr_bytes).unwrap()
     }
@@ -1329,7 +1329,7 @@ mod helpers {
     /// If out of bounds: returns `None`.
     pub fn byte_at(self: @ByteSpan, index: usize) -> Option<u8> {
         let (word_index, msb_index) = index_parts_with_offset_b31(
-            index, *self.first_char_start_offset,
+            index, self.first_char_start_offset,
         );
 
         match self.data.get(word_index) {
@@ -1346,14 +1346,14 @@ mod helpers {
 
                 // Compute LSB index: remainder_len - 1 - msb_index.
                 let lsb_index_bounded = bounded_int::sub(
-                    bounded_int::sub(*self.remainder_len, ONE_TYPED), msb_index,
+                    bounded_int::sub(self.remainder_len, ONE_TYPED), msb_index,
                 );
 
                 // Check if in bounds and extract non-negative index.
                 let Err(lsb_index) = bounded_int::constrain::<_, 0>(lsb_index_bounded) else {
                     return None; // Out of bounds: index >= remainder_len.
                 };
-                Some(u8_at_u256((*self.remainder_word).into(), upcast(lsb_index)))
+                Some(u8_at_u256((self.remainder_word).into(), upcast(lsb_index)))
             },
         }
     }
