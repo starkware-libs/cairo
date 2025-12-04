@@ -66,7 +66,7 @@ fn generate_kinds_code() -> rust::Tokens {
         use serde::{Deserialize, Serialize};
     };
 
-    // SyntaxKind.
+    // Definition of SyntaxKind.
     let kinds = name_tokens(&spec, |k| !matches!(k, NodeKind::Enum { .. }));
     let token_kinds = name_tokens(&spec, |k| matches!(k, NodeKind::Token { .. }));
     let keyword_token_kinds =
@@ -505,7 +505,7 @@ fn gen_enum_code(
             }
         }
         impl<'db> $(&name)<'db> {
-            $("/// Checks if a kind of a variant of [")$(&name)$("].")
+            $("/// Checks if the given kind is one of the variants of [")$(&name)$("].")
             pub fn is_variant(kind: SyntaxKind) -> bool {
                 matches!(kind, $(for v in &variants join (|) => SyntaxKind::$(&v.kind)))
             }
