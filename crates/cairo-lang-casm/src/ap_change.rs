@@ -40,7 +40,7 @@ impl std::error::Error for ApChangeError {}
 
 /// Trait for applying ap changes.
 pub trait ApplyApChange: Sized {
-    /// Attempts to apply ap change, fail on overflow only.
+    /// Attempts to apply an AP change; fails only on overflow.
     fn apply_known_ap_change(self, ap_change: usize) -> Option<Self>;
     /// Can unknown ap change be applied.
     fn can_apply_unknown(&self) -> bool;
