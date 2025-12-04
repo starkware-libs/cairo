@@ -60,7 +60,7 @@ fn test_merge_block_builders(
         &db,
         &format!("fn foo ({}) {{ {} }}", &inputs["variables"], &inputs["block_definitions"]),
         "foo",
-        inputs.get("module_code").unwrap_or(&"".into()),
+        inputs.get("module_code").map_or("", String::as_str),
         None,
         None,
     )

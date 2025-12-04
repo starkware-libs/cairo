@@ -43,7 +43,7 @@ fn test_create_graph(
         db,
         inputs["function_code"].as_str(),
         "foo",
-        inputs.get("module_code").unwrap_or(&"".into()),
+        inputs.get("module_code").map_or("", String::as_str),
         None,
         None,
     )
