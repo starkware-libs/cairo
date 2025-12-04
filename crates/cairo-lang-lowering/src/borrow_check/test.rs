@@ -24,13 +24,7 @@ fn test_borrow_check(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        db,
-        &inputs["function_code"],
-        &inputs["function_name"],
-        &inputs["module_code"],
-    )
-    .split();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     let lowering = if let Ok(lowered) = db.function_with_body_lowering(

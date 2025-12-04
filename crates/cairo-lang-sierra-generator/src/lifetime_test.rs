@@ -37,13 +37,7 @@ fn check_variable_lifetime(
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
 
     // Parse code and create semantic model.
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        db,
-        inputs["function_code"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-    )
-    .split();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     assert_eq!(lowering_diagnostics.0.error_count, 0);

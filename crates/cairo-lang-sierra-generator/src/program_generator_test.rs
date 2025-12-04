@@ -48,13 +48,7 @@ fn test_dummy_program_generator(
     let db = &SierraGenDatabaseForTesting::default();
 
     // Parse code and create semantic model.
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        db,
-        inputs["function_code"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-    )
-    .split();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
 
     // Compile the function.
     let function_id =
