@@ -22,7 +22,7 @@ impl<'a> GreenId<'a> {
 pub struct SyntaxStablePtrId<'a>(pub SyntaxNode<'a>);
 
 impl<'a> SyntaxStablePtrId<'a> {
-    /// Lookups a syntax node using a stable syntax pointer.
+    /// Looks up a syntax node using a stable syntax pointer.
     /// Should only be called on the root from which the stable pointer was generated.
     pub fn lookup(&self, _db: &'a dyn Database) -> SyntaxNode<'a> {
         self.0
@@ -37,8 +37,8 @@ impl<'a> SyntaxStablePtrId<'a> {
     }
     /// Returns the stable pointer of the `n`th parent of this stable pointer.
     /// n = 0: returns itself.
-    /// n = 1: return the parent.
-    /// n = 2: return the grandparent.
+    /// n = 1: returns the parent.
+    /// n = 2: returns the grandparent.
     /// And so on...
     /// Assumes that the `n`th parent exists. Panics otherwise.
     pub fn nth_parent<'r: 'a>(&self, db: &'r dyn Database, n: usize) -> SyntaxStablePtrId<'a> {
