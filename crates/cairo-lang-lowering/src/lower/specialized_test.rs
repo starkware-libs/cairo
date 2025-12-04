@@ -38,7 +38,7 @@ fn test_specialized_function(
     )));
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
-        inputs["function"].as_str(),
+        inputs["function_code"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
     )

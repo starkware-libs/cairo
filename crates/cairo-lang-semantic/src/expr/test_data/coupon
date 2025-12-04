@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 type A = foo::Coupon;
 type B = bar::Coupon; // Invalid: missing type annotation.
 type C = bar::<u8>::Coupon;
@@ -67,7 +67,7 @@ fn get_coupon<S, T>() -> bar::<S, T>::Coupon {}
 fn get_coupon2<S, T>() -> bar2::<S, T>::Coupon {}
 fn get_struct<S>() -> MyStruct<S> {}
 
-//! > function
+//! > function_code
 fn foo() {
     let mut x = get_coupon();
     x = get_coupon::<u8>();
@@ -147,7 +147,7 @@ mod m {
 
 fn use_drop<A, +Drop<A>>(x: A) {}
 
-//! > function
+//! > function_code
 fn foo0(x: m::bar::Coupon) {
     use_drop(x);
 }
@@ -181,7 +181,7 @@ fn bar<S, T>(x: T) {}
 
 fn bar2<S, T>(x: T) {}
 
-//! > function
+//! > function_code
 fn foo(x: bar::<u8, u16>::Coupon) {
     bar(1); // Cannot infer S.
     bar(1, __coupon__: x); // Valid call. S is inferred from the coupon.
@@ -219,7 +219,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > module_code
 
-//! > function
+//! > function_code
 fn foo(x: foo::Coupon) {
     foo(x, __coupon__: x);
 }

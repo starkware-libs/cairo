@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: felt252 = (3, 3);
 }
@@ -26,7 +26,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?1)".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: felt252 = @3_felt252;
     let _: @u32 = @3_felt252;
@@ -55,7 +55,7 @@ error: Unexpected argument type. Expected: "@core::integer::u32", found: "@core:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: felt252 = *3_u32;
 }
@@ -78,7 +78,7 @@ error: Type `core::integer::u32` cannot be dereferenced
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: [felt252; 2] = [3_u16; 2];
 }
@@ -101,7 +101,7 @@ error: Unexpected argument type. Expected: "[core::felt252; 2]", found: "[core::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: [felt252; 2] = [3_u16, 3_u32];
 }
@@ -124,7 +124,7 @@ error: Unexpected argument type. Expected: "core::integer::u16", found: "core::i
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: MyGenericType<felt252> = MyGenericType { x: 3_u32 };
 }
@@ -150,7 +150,7 @@ error: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(other: MyGenericType<u32>) {
     let _: MyGenericType<felt252> = MyGenericType { x: 3_felt252, ..other };
 }
@@ -176,7 +176,7 @@ error: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: Option<felt252> = Some(3_u16);
 }
@@ -199,7 +199,7 @@ error: Unexpected argument type. Expected: "core::option::Option::<core::felt252
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     1_felt252.issue(@2_felt252);
 }
@@ -233,7 +233,7 @@ error: `test::ImplIssue::Index` type mismatch: `@core::felt252` and `core::felt2
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: Box<u32> = &3_u32;
     let _: Box<@felt252> = &3_u32;
@@ -262,7 +262,7 @@ error: Unexpected argument type. Expected: "core::box::Box::<@core::felt252>", f
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(mut param: u32) {
     let mut x = 3_u32;
     let _r = &x;

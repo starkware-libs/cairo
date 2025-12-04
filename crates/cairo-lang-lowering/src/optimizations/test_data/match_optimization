@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Option<u16> {
     let v = get_option();
     match v {
@@ -137,7 +137,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> Option<u16> {
     let v = get_option();
 
@@ -323,7 +323,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let opt = get_option();
     match opt {
@@ -553,7 +553,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() {
     gas::withdraw_gas().expect('Out of gas');
 }
@@ -726,7 +726,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) -> u32 {
     let b = match a {
         MyEnum::A(_) => MyEnum::A(5),
@@ -854,7 +854,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: u32, c: Color) -> Color {
     let c = match c {
         Color::Red(x) => {
@@ -1044,7 +1044,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: u32, c: Color) -> Color {
     let c = match c {
         Color::Red(x) => {
@@ -1237,7 +1237,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: Array<felt252>, ref b: Array<felt252>) -> Option<()> {
     let _ = double_merge(ref a, ref b)?;
     let _ = double_merge(ref a, ref b)?;
@@ -1662,7 +1662,7 @@ test_match_optimizer
 
 //! > test_comments
 
-//! > function
+//! > function_code
 fn foo(ref input: Span<felt252>) -> Option<@felt252> {
     let mut snapshot = input.snapshot;
     let item = array_snapshot_pop_front(ref snapshot);
@@ -1795,7 +1795,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> MyStruct {
     let v = Some(1);
     let res = MyStruct { v };
@@ -1846,7 +1846,7 @@ test_match_optimizer
 
 //! > test_comments
 
-//! > function
+//! > function_code
 fn foo(ref input: Span<felt252>) -> felt252 {
     let res: Option<@Box<[felt252; 4]>> = input.multi_pop_front();
 
@@ -1976,7 +1976,7 @@ test_match_optimizer
 //! > test_comments
 optimization is not applicable.
 
-//! > function
+//! > function_code
 fn foo(b: bool) -> felt252 {
     let v = if b {
         true

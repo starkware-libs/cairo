@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let MyEnum::A(x): felt252 = MyEnum::A(7) else {
         return;
@@ -58,7 +58,7 @@ error: Wrong enum in pattern. Expected: "test::MyEnum". Got: "test::MyEnum2".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let MyEnum::A(x) = MyEnum::A(7) else {
         return x;

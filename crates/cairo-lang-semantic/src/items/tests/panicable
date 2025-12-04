@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo_panic() {
     bar_panic();
     bar_nopanic();
@@ -25,7 +25,7 @@ fn bar_nopanic() nopanic {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo_nopanic() nopanic {
     bar_panic();
     bar_nopanic();

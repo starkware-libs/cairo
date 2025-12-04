@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x = MY_CONST + my_module::CONST_IN_MODULE;
     let (_y, _z) = FELT_TUPLE;
@@ -37,7 +37,7 @@ mod my_module {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -180,7 +180,7 @@ note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -202,7 +202,7 @@ const DEFAULT_VAR: bool = 1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -224,7 +224,7 @@ const B: u8 = -1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -258,7 +258,7 @@ const C: i8 = B;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> (felt252, felt252, u256, i8) {
     (FELT_WRAPAROUND_OVER, FELT_WRAPAROUND_UNDER, U256_CALCULATION, BASIC_CALCULATION)
 }
@@ -350,7 +350,7 @@ error: The value does not fit within the range of type core::zeroable::NonZero::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> () {
     {
         const X: u8 = 2;
@@ -386,7 +386,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> () {
     const A: u8 = 1;
     const A: u8 = 2;
@@ -477,7 +477,7 @@ warning: Unused constant. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(param: u8) -> () {
     const A: u8 = param;
     let local: u8 = 1;
@@ -508,7 +508,7 @@ error: This expression is not supported as constant.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -552,7 +552,7 @@ note: In `test::my_unwrap::<core::starknet::class_hash::ClassHash>`:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     const A: Option<Option<Option<felt252>>> = Some(Some(Some(1_felt252)));
     const _B: felt252 = if let Some(a) = A && let Some(b) = a && let Some(c) = b {
@@ -576,7 +576,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name

@@ -3,7 +3,7 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo(opt: Option<felt252>) -> felt252 {
     expect(opt)
 }

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(b: A) -> felt252 {
     match (b, 4) {
         (A::a(_x), _) => { 1 },
@@ -53,7 +53,7 @@ error: Mismatched types. The type `test::A` cannot be created from a numeric lit
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: bool) -> felt252 {
     match a + 1 {
         A::a(_) => 0,
@@ -93,7 +93,7 @@ error: Trait has no implementation in context: core::traits::Add::<core::bool>.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: felt252, b: bool) -> felt252 {
     match a {
         0 => 0_felt252,
@@ -123,7 +123,7 @@ error: Match arms have incompatible types: "core::felt252" and "core::bool"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         true => 2,
@@ -158,7 +158,7 @@ error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(x: Option<()>) {
     match x {
         Some(_) => true,
@@ -187,7 +187,7 @@ error: Unexpected return type. Expected: "()", found: "core::bool".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) -> felt252 {
     match a {
         MyEnum::A(mut x) | MyEnum::B((x, _)) => x,
@@ -230,7 +230,7 @@ error: variable is bound inconsistently across alternatives separated by `|` bou
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let a = MyEnum::A(5);
     match a {
@@ -262,7 +262,7 @@ error: Unexpected argument type. Expected: "test::MyEnum::<core::integer::u32>",
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::One, _) => 2,
@@ -292,7 +292,7 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::One(_), _) => 2,
@@ -319,7 +319,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::One(_), _) => 2,
@@ -346,7 +346,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo<T>(a: Option<T>) -> felt252 {
     match a {
         Some => 2,
@@ -376,7 +376,7 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::One(_), _) => 2,
@@ -404,7 +404,7 @@ use A::Two;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn fb() -> Option<()> {
     let x = None;
     match x {
@@ -432,7 +432,7 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn fb() -> Option<()> {
     let x = None;
     match x {
@@ -460,7 +460,7 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     let x = Some(3);
     match x {
@@ -487,7 +487,7 @@ error: Type mismatch: `core::option::Option::<core::integer::u32>` and `core::op
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(x: Result<Option<u8>, felt252>) {
     let _y = match x {
         Ok(Some(x)) | Err(x) => x,
@@ -513,7 +513,7 @@ error: Expected type "core::integer::u8", found: "core::felt252".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(x: Result<Option<u8>, felt252>) {
     let _y = match x {
         Ok(Ok(x)) | Err(x) => x,
@@ -544,7 +544,7 @@ error: Missing variable in pattern.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar(x: felt252) {
     foo(Ok(Some(x)));
 }

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo(5_u64);
     MyTrait::foo(3_u32);
@@ -34,7 +34,7 @@ impl MyImplU32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -64,7 +64,7 @@ impl MyImplU32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -91,7 +91,7 @@ error: Parameter of trait function `MyTrait::foo` can't be defined as mutable.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(x: felt252) nopanic {
     foo(x);
 }
@@ -34,7 +34,7 @@ error: Call cycle of `nopanic` functions is not allowed.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252) {
     match core::gas::withdraw_gas() {
         Some(_) => foo(x),
@@ -81,7 +81,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252, costs: core::gas::BuiltinCosts) nopanic {
     match core::gas::withdraw_gas_all(costs) {
         Some(_) => foo(x, costs),
@@ -128,7 +128,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name

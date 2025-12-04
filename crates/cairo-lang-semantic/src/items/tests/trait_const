@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::foo() + MyImpl::X;
 }
@@ -32,7 +32,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -63,7 +63,7 @@ warning: In an impl, paths of the same impl are not allowed. Did you mean to use
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -94,7 +94,7 @@ warning: In an impl, paths of the same impl are not allowed. Did you mean to use
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -121,7 +121,7 @@ impl MyImpl<T> of MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -153,7 +153,7 @@ warning: In an impl, paths of the same impl must be fully explicit. Either use `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -180,7 +180,7 @@ error: Expected type "core::integer::u32", found: "core::integer::i32".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::foo();
 }
@@ -209,7 +209,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::foo();
 }
@@ -242,7 +242,7 @@ error: Trait has no implementation in context: core::traits::Neg::<core::integer
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -275,7 +275,7 @@ error: Trait has no implementation in context: core::traits::PartialOrd::<core::
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -306,7 +306,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -341,7 +341,7 @@ error: Unexpected return type. Expected: "core::integer::u16", found: "core::int
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -393,7 +393,7 @@ error: Trait has no implementation in context: test::AnotherTrait0.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -429,7 +429,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -475,7 +475,7 @@ error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTr
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -499,7 +499,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -529,7 +529,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -569,7 +569,7 @@ error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTr
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: u32 = MyImpl::my_function;
 }
@@ -602,7 +602,7 @@ error: Expected variable or constant, found function.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -627,7 +627,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -656,7 +656,7 @@ error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -683,7 +683,7 @@ error: Cycle detected while resolving 'const' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -717,7 +717,7 @@ error: Cycle detected while resolving 'const' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> i32 {
     MyImpl::Y
 }
@@ -752,7 +752,7 @@ error: Trait has no implementation in context: test::MyTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> u64 {
     MAX_U64 - 5
 }

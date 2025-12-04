@@ -3,7 +3,7 @@
 //! > test_runner_name
 GetRedepositTestRunner
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         heavy_op1()
@@ -99,7 +99,7 @@ End:
 //! > test_runner_name
 GetRedepositTestRunner
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         heavy_op1()

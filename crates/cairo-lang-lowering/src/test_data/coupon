@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: bar::Coupon) {
     bar(__coupon__: x);
 }
@@ -33,7 +33,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: MyImpl::bar::Coupon) {
     5.bar(__coupon__: x);
 }
@@ -69,7 +69,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: MyTrait::<felt252>::bar::Coupon) {
     5.bar(__coupon__: x);
 }
@@ -105,7 +105,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(x: bar::Coupon) -> bar::Coupon {
     bar(__coupon__: x);
     x // Variable was previously moved.
@@ -140,7 +140,7 @@ note: Trait has no implementation in context: core::traits::Copy::<test::bar::Co
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: bar::Coupon) {
     bar(__coupon__: x);
 }
@@ -172,7 +172,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: bar::Coupon) {
     bar(__coupon__: x);
 }

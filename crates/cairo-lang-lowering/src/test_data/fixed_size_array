@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = [10, 20, 30];
     bar(x);
@@ -41,7 +41,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> [felt252; 3] {
     [get_10(); 3]
 }
@@ -80,7 +80,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> [MyStruct; 3] {
     foo_ex()
 }
@@ -128,7 +128,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> [MyStruct; 3] {
     [MyStruct { x: 10 }; 3]
 }
@@ -160,7 +160,7 @@ error: Fixed size array inner type must implement the `Copy` trait when the arra
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> [MyStruct; 3] {
     foo_ex()
 }
@@ -205,7 +205,7 @@ error: Fixed size array inner type must implement the `Copy` trait when the arra
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> [MyStruct; 1] {
     [MyStruct { x: 10 }; 1]
 }
@@ -240,7 +240,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> [u32; 0] {
     [0_u32; 0]
 }

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: bool, x: felt252) -> felt252 {
     if a {
         1
@@ -49,7 +49,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         1
@@ -95,7 +95,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     if 0 == x {
         return 10;
@@ -143,7 +143,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
     if x + y == z - w {
         0
@@ -193,7 +193,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     if a == 0 || a == 5 {
         0
@@ -260,7 +260,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) -> felt252 {
     if let MyEnum::A(x) = a {
         x
@@ -322,7 +322,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let mut y = 0;
     if let MyEnum::A(x) = a() {
@@ -393,7 +393,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(z: felt252) -> felt252 {
     let mut y = 0;
     if let (MyEnum::A(x), true) = (a(), z == 6) {
@@ -501,7 +501,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(z: felt252) -> felt252 {
     let mut y = 0;
     if let (MyEnum::A(x), 3) = (a(), z) {
@@ -587,7 +587,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let mut y = 0;
     if let x = y {
@@ -621,7 +621,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     if let _ = a {
@@ -661,7 +661,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) -> felt252 {
     let mut y = 0;
     if let _ = a {
@@ -710,7 +710,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: [u16; 2]) -> felt252 {
     let mut y = 0;
     if let [_, _] = a {
@@ -750,7 +750,7 @@ error: Unsupported type in if-let. Type: `[core::integer::u16; 2]`.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) -> felt252 {
     loop {
         // Some statements to prevent the loop function from being inlined.
@@ -798,7 +798,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: Option<felt252>) -> felt252 {
     let mut y = 0;
     if let None | Some(_) = a {
@@ -841,7 +841,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: Option<Result<felt252, felt252>>) -> felt252 {
     let mut y = 0;
     if let Some(Err(v)) | Some(Ok(v)) = a {
@@ -915,7 +915,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: Option<Option<Option<felt252>>>, x: felt252) -> felt252 {
     if let Some(b) = a && let Some(c) = b && x == 3 && let Some(d) = c {
         return d;
@@ -1006,7 +1006,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: Option<Option<felt252>>) -> felt252 {
     if let Some(b) = a && let Some(c) = b {
         c
@@ -1070,7 +1070,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum, b: MyEnum, c: MyEnum2, d: MyEnum2, e: MyEnum3) {
     // TODO(lior): Fix the locations in this test.
     if let MyEnum::A(_x) = a {}

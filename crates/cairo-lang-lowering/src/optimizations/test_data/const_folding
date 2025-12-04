@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let b = a - 0;
     b - 0
@@ -47,7 +47,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     PRIME_MINUS_1 + 2
 }
@@ -89,7 +89,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     0 - 1
 }
@@ -130,7 +130,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     PRIME_MINUS_1 * 2
 }
@@ -172,7 +172,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     (PRIME_MINUS_1 + 2) * 2
 }
@@ -218,7 +218,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Box<felt252> {
     BoxTrait::new(0)
 }
@@ -257,7 +257,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 struct A {
     a: felt252,
 }
@@ -302,7 +302,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Box<Option<felt252>> {
     BoxTrait::new(Some(2))
 }
@@ -343,7 +343,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     BoxTrait::new(2).unbox()
 }
@@ -384,7 +384,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     8 / 4
 }
@@ -498,7 +498,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     x / 0
 }
@@ -608,7 +608,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u256) -> u256 {
     x / 4
 }
@@ -721,7 +721,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u256) -> u256 {
     x / 0
 }
@@ -833,7 +833,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u128) -> u128 {
     x / 1_u64.into()
 }
@@ -946,7 +946,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u64) -> u64 {
     x / 1_u128.try_into().unwrap()
 }
@@ -1169,7 +1169,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     x / 300_u16.try_into().unwrap()
 }
@@ -1393,7 +1393,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> starknet::StorageBaseAddress {
     starknet::storage_access::storage_base_address_from_felt252(10)
 }
@@ -1432,7 +1432,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> starknet::storage::StorageBaseAddress {
     starknet::storage::StorageBase::<felt252> { __base_address__: 1337 }.deref().finalize()
 }
@@ -1480,7 +1480,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     1 + 3
 }
@@ -1591,7 +1591,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     250 + 50
 }
@@ -1702,7 +1702,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     7 - 5
 }
@@ -1813,7 +1813,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     1 - 3
 }
@@ -1924,7 +1924,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     5 * 3
 }
@@ -2037,7 +2037,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> i8 {
     -50 + 100
 }
@@ -2163,7 +2163,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> i8 {
     100 + 100
 }
@@ -2289,7 +2289,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> i8 {
     -100 + -100
 }
@@ -2415,7 +2415,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> i8 {
     50 - 100
 }
@@ -2541,7 +2541,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> i8 {
     100 - -100
 }
@@ -2667,7 +2667,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> i8 {
     -100 - 100
 }
@@ -2793,7 +2793,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     100_i8 < 90_i8
 }
@@ -2874,7 +2874,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     90_i8 < 100_i8
 }
@@ -2955,7 +2955,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let x: (felt252, Felt252Dict<felt252>) = (0, Default::<Felt252Dict>::default());
     let (l, _) = @x;
@@ -3053,7 +3053,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: i8) -> i8 {
     x / 0
 }
@@ -3329,7 +3329,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> i8 {
     8 / 4
 }
@@ -3605,7 +3605,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> (u8, bool) {
     core::integer::AbsAndSign::<i8, u8>::abs_and_sign(6_i8)
 }
@@ -3696,7 +3696,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> (u8, bool) {
     core::integer::AbsAndSign::<i8, u8>::abs_and_sign(-6_i8)
 }
@@ -3787,7 +3787,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     ~5
 }
@@ -3830,7 +3830,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 #[feature("bounded-int-utils")]
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(-5) {
@@ -3915,7 +3915,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 #[feature("bounded-int-utils")]
 fn foo() -> Result<Box<NonZero<BoundedInt<-0x80, -1>>>, Box<NonZero<BoundedInt<0, 0x7f>>>> {
     match core::internal::bounded_int::constrain::<NonZero<i8>, 0>(5) {
@@ -4000,7 +4000,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     1_u8 == 1
 }
@@ -4080,7 +4080,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     2_u8 == 1
 }
@@ -4160,7 +4160,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     x * 0
 }
@@ -4271,7 +4271,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     x + 0
 }
@@ -4379,7 +4379,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     0 + x
 }
@@ -4487,7 +4487,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     x - 0
 }
@@ -4595,7 +4595,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     x + 1
 }
@@ -4707,7 +4707,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> u8 {
     x - 1
 }
@@ -4819,7 +4819,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: u8) -> bool {
     x == 0
 }
@@ -4900,7 +4900,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: @Array<u8>) -> Option<Box<@u8>> {
     x.get(0)
 }
@@ -4979,7 +4979,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: BoundedInt<0, 10>) -> u8 {
     match x {
         0 => 1,
@@ -5221,7 +5221,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     match 5 {
         0 => 1,
@@ -5452,7 +5452,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Option<Box<@u8>> {
     array![0, 1, 2].get(1)
 }
@@ -5547,7 +5547,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Option<Box<@u8>> {
     array![0, 1, 2].get(5)
 }
@@ -5639,7 +5639,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(v: u8) -> Option<Box<@u8>> {
     array![v, v, v].get(1)
 }
@@ -5728,7 +5728,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(v: u8) -> Option<Box<@u8>> {
     array![v, v, v].get(5)
 }
@@ -5814,7 +5814,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> usize {
     array![x, x].len()
 }
@@ -5859,7 +5859,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     let mut arr = array![];
     arr.pop_front()
@@ -5938,7 +5938,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     let mut arr = array![1];
     arr.pop_front()
@@ -6024,7 +6024,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Option<@felt252> {
     let mut span = array![].span();
     span.pop_front()
@@ -6105,7 +6105,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> Option<@felt252> {
     let mut span = array![].span();
     span.pop_back()
@@ -6186,7 +6186,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() {
     core::panics::panic_with_byte_array(@"hello world");
 }
@@ -6245,7 +6245,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let v = @Some(1);
     match v {
@@ -6329,7 +6329,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let v = Some(@1);
     match v {
@@ -6413,7 +6413,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let v = Some(a);
     match v {
@@ -6489,7 +6489,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let v = @Some(a);
     match v {
@@ -6570,7 +6570,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     1 + 2
 }
@@ -6611,7 +6611,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     5 - 3
 }
@@ -6652,7 +6652,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2 * 3
 }
@@ -6693,7 +6693,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     1 + 2 * 3 - 4
 }
@@ -6742,7 +6742,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = core::felt252_div(6, 30);
     x * 5
@@ -6788,7 +6788,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     core::felt252_div(a, 1)
 }
@@ -6827,7 +6827,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: NonZero<felt252>) -> felt252 {
     core::felt252_div(0, a)
 }
@@ -6866,7 +6866,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match trim_min(0_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),
@@ -6946,7 +6946,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match trim_min(-0x80_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),
@@ -7025,7 +7025,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match trim_max(0_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),
@@ -7105,7 +7105,7 @@ End:
 //! > test_runner_name
 test_match_optimizer
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match trim_max(0x7f_i8) {
         core::internal::OptionRev::Some(x) => upcast(x),

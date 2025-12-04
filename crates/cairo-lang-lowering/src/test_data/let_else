@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) {
     let MyEnum::A(x) = a else {
         bar(0);
@@ -57,7 +57,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) {
     let MyEnum::A((x, y, _, z)) = a else {
         bar(0);

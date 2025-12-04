@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     while true {
         1;
@@ -30,7 +30,7 @@ error: Can only break with a value inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     while let Some(x) = Some(5) && 4 == 7 {
         1;
@@ -57,7 +57,7 @@ error: Unsupported feature.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     while let Some = Some(5) {
         1;
@@ -83,7 +83,7 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let a = A::B(());
     while let A::B = a {

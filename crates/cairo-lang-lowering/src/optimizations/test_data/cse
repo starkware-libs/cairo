@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_cse
 
-//! > function
+//! > function_code
 fn foo(x: u32, y: u32) -> ((u32, u32), (u32, u32)) {
     ((x, y), (x, y))
 }
@@ -43,7 +43,7 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function
+//! > function_code
 use core::option::Option;
 
 fn foo(x: u32) -> (Option<u32>, Option<u32>) {
@@ -85,7 +85,7 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function
+//! > function_code
 fn foo(x: u32) -> (@u32, @u32) {
     (@x, @x)
 }
@@ -125,7 +125,7 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function
+//! > function_code
 fn foo(x: @u32) -> (u32, u32) {
     (*x, *x)
 }
@@ -165,7 +165,7 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function
+//! > function_code
 fn foo(tuple: (u32, u32)) -> (u32, u32, u32, u32) {
     let (a, b) = tuple;
     let (c, d) = tuple;
@@ -207,7 +207,7 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function
+//! > function_code
 fn foo(x: u32, y: u32) -> u32 {
     let tuple1 = (x, y);
     let tuple2 = (x, y); // Duplicate struct construct
@@ -272,7 +272,7 @@ End:
 //! > test_runner_name
 test_cse
 
-//! > function
+//! > function_code
 fn foo(x: u32, y: u32, z: u32) -> ((u32, u32), (u32, u32)) {
     let tuple1 = (x, y); // Different inputs
     let tuple2 = (x, z); // Should NOT be eliminated

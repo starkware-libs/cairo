@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(flag: bool, x: u128) -> Option<A> {
     let a = A { x };
     if flag {
@@ -70,7 +70,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(d: Felt252Dict<felt252>) {
     get_total_signed_weight(d);
 }
@@ -102,7 +102,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: B) {
     may_panic();
     may_panic();
@@ -198,7 +198,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: bool, d: A) -> A {
     if a {
         may_panic();
@@ -276,7 +276,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: Option<()>) {
     bar::<(), MyDestruct>(a.expect('Should be Some.'))
 }
@@ -334,7 +334,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _a = A {};
 }

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let b = (a,);
     let c = (b,);
@@ -46,7 +46,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: ((felt252,),)) -> ((felt252,),) {
     let (b,) = a;
     let (c,) = b;
@@ -87,7 +87,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let (b,) = match a {
         0 => (0,),
@@ -170,7 +170,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let arr = array![10, 11, 12];
 
@@ -309,7 +309,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let snap = @a;
     let desnap = *snap;
@@ -354,7 +354,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: u32) -> u32 {
     a + a
 }
@@ -465,7 +465,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: (u32,)) -> MyStruct {
     let (b,) = a;
     MyStruct { b }
@@ -508,7 +508,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: (u32,), b: felt252) -> u32 {
     let d = @if b == 0 {
         let (c,) = a;
@@ -639,7 +639,7 @@ End:
 //! > test_runner_name
 test_cancel_ops
 
-//! > function
+//! > function_code
 fn foo(a: (felt252, felt252)) -> (felt252, felt252) {
     let (b, c) = a;
     let a = (b, c);
