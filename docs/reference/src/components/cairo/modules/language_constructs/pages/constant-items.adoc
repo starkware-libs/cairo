@@ -1,6 +1,116 @@
 = Constant items
 
-This section is a work in progress.
+    == Overview
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+    Constant items define named compile-time values. They are resolved, type-checked and evaluated
+    during semantic analysis and can be referenced from code like normal names. Their values are
+    immutable and do not incur runtime computation.
+
+    Implementation reference: `crates/cairo-lang-semantic/src/items/constant.rs`.
+
+    See also: xref:../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
+
+    == Syntax
+
+    ```cairo
+    const NAME: Type = expr;
+    ```
+
+    - The type annotation is required.
+    - `expr` must be valid in const context (see below).
+
+    == Where constants can appear
+
+    - Module scope: defines a module-level name.
+    - Block scope: inside functions and nested blocks (evaluated at compile time; no runtime cost).
+
+    == Semantics summary
+
+    - Const items are evaluated during semantic analysis to a `ConstValue`.
+    - The initializer expression must be admissible in const context; otherwise diagnostics are
+      emitted and the value is treated as missing for subsequent checks.
+    - Name resolution and type conformance are performed before evaluation; the declared type must
+      match the computed expression type.
+
+    For the full evaluation rules and interpreter details, see
+    xref:../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
+
+    == Allowed constructs (summary)
+
+    The following are supported in const initializers (non-exhaustive; see the link above for the
+    authoritative list validated by the compiler):
+
+    - Literals, with literal-range validation for the target type
+    - Tuples
+    - Struct construction without a `base`
+    - Enum variant construction
+    - Member access on const structs/tuples
+    - Fixed-size arrays: explicit items, or value-and-size form with const size
+    - `snapshot` / `desnap` on const values
+    - Logical operators `&&` / `||` on `bool` (short-circuiting semantics)
+    - `match` on enum consts (pattern matching and destructuring)
+    - `if` with boolean conditions (including `let`-patterns in conditions)
+    - Blocks containing `let`/expression statements evaluated from const values
+
+    == Function calls in const context
+
+    Calls inside const expressions are permitted when any of the following holds:
+
+    - The function is explicitly const-enabled in its signature.
+    - The call resolves to specific const-enabled trait implementations from the core library.
+    - Specific externs are allowed by the compiler for casting, zero checks, and related utilities.
+
+    See the detailed lists in xref:../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
+
+    == Numeric and type notes
+
+    - `felt252` values are canonicalized modulo the field prime during evaluation.
+    - `u256` is represented conceptually as a pair of `u128` values `(low, high)`.
+    - `NonZero<T>` values are wrapped/validated during evaluation.
+    - Division-related operations check for division by zero at evaluation time.
+
+    == Examples
+
+    Basic module-level constants:
+
+    ```cairo
+    const TEN: felt252 = 10;
+    const FLAG: bool = true;
+    const PAIR: (u8, u8) = (1_u8, 2_u8);
+    ```
+
+    Block-level constants and control flow:
+
+    ```cairo
+    fn demo() {
+        const CHOICE: Option<(felt252, u8)> = Some((1, 2_u8));
+        const HEAD: felt252 = match CHOICE { Some((v, _)) => v, None => 0 };
+
+        const TRUE: bool = true;
+        const V: felt252 = if TRUE { 4 } else { 5 };
+        assert(HEAD == 1, 'match');
+        assert(V == 4, 'if');
+    }
+    ```
+
+    Cross-type constants (casts validated at compile time):
+
+    ```cairo
+    const MAX_U8: u8 = 255;
+    const NEG_ONE: felt252 = -1;
+    ```
+
+    == Diagnostics
+
+    Typical errors reported for const items include:
+
+    - Unsupported construct in const context
+    - Type mismatch between declared type and initializer
+    - Division by zero in const evaluation
+    - Excessive constant evaluation depth (indicating recursion/expansion issues)
+
+    == See also
+
+    - xref:../language_semantics/pages/constant-evaluation.adoc[Constant evaluation]
+    - `crates/cairo-lang-semantic/src/items/constant.rs`
+    - `crates/cairo-lang-lowering/src/optimizations/const_folding.rs`
