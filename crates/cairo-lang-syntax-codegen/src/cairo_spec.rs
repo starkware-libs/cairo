@@ -1,6 +1,6 @@
 use crate::spec::{EnumBuilder, Node, NodesAggregator, StructBuilder};
 
-/// The specific syntax of Cairo.
+/// The syntax specification of Cairo.
 pub fn get_spec() -> Vec<Node> {
     NodesAggregator::default()
     .add_list("Trivia", "Trivium")
