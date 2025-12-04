@@ -148,7 +148,7 @@ where
             }
         }
 
-        // If we have a variable the lives in more then one arm we need to enable ap tracking
+        // If we have a variable that lives in more than one arm we need to enable ap tracking
         // If there are no variables of interest in any of the arms, we can disable ap tracking.
         if any_merges {
             self.ap_tracking_configuration.enable_ap_tracking.insert(block_id);
