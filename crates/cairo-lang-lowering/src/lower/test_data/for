@@ -54,41 +54,39 @@ Final lowering:
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 1
-  (v3: core::felt252) <- 2
-  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v5: core::felt252) <- 10
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::felt252) <- 10
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v5: core::felt252) <- 11
   (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
-  (v7: core::felt252) <- 11
+  (v7: core::felt252) <- 12
   (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
-  (v9: core::felt252) <- 12
+  (v9: core::felt252) <- 13
   (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
-  (v11: core::felt252) <- 13
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v11)
-  (v13: core::array::Array::<core::felt252>, v14: @core::array::Array::<core::felt252>) <- snapshot(v12)
-  (v15: core::array::Span::<core::felt252>) <- struct_construct(v14)
-  (v16: core::array::SpanIter::<core::felt252>) <- struct_construct(v15)
-  (v17: core::RangeCheck, v18: core::gas::GasBuiltin, v19: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164](v0, v1, v16, v2, v3)
+  (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v10)
+  (v13: core::array::Span::<core::felt252>) <- struct_construct(v12)
+  (v14: core::array::SpanIter::<core::felt252>) <- struct_construct(v13)
+  (v15: core::RangeCheck, v16: core::gas::GasBuiltin, v17: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164]{NotSpecialized, 1, 2, }(v0, v1, v14)
 End:
-  Match(match_enum(v19) {
-    PanicResult::Ok(v20) => blk1,
-    PanicResult::Err(v21) => blk2,
+  Match(match_enum(v17) {
+    PanicResult::Ok(v18) => blk1,
+    PanicResult::Err(v19) => blk2,
   })
 
 blk1:
 Statements:
-  (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v18)
-  (v23: core::array::SpanIter::<core::felt252>, v24: core::felt252, v25: ()) <- struct_destructure(v20)
-  (v26: (core::felt252,)) <- struct_construct(v24)
-  (v27: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v26)
+  (v20: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v16)
+  (v21: core::array::SpanIter::<core::felt252>, v22: core::felt252, v23: ()) <- struct_destructure(v18)
+  (v24: (core::felt252,)) <- struct_construct(v22)
+  (v25: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v24)
 End:
-  Return(v17, v22, v27)
+  Return(v15, v20, v25)
 
 blk2:
 Statements:
-  (v28: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v21)
+  (v26: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v19)
 End:
-  Return(v17, v18, v28)
+  Return(v15, v16, v26)
 
 
 Generated loop lowering for source location:
@@ -169,6 +167,56 @@ Statements:
   (v28: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v27)
 End:
   Return(v7, v8, v28)
+
+
+Final lowering of specialized call "test::foo[118-164]{NotSpecialized, 1, 2, }":
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::SpanIter::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk4,
+  })
+
+blk1:
+Statements:
+  (v7: core::array::Span::<core::felt252>) <- struct_destructure(v2)
+  (v8: @core::array::Array::<core::felt252>) <- struct_destructure(v7)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v8) {
+    Option::Some(v9, v10) => blk2,
+    Option::None(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v13: core::felt252) <- 3
+  (v14: core::array::Span::<core::felt252>) <- struct_construct(v9)
+  (v15: core::array::SpanIter::<core::felt252>) <- struct_construct(v14)
+  (v16: core::RangeCheck, v17: core::gas::GasBuiltin, v18: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- test::foo[118-164]{NotSpecialized, NotSpecialized, 2, }(v3, v12, v15, v13)
+End:
+  Return(v16, v17, v18)
+
+blk3:
+Statements:
+  (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v20: core::felt252) <- 1
+  (v21: core::array::Span::<core::felt252>) <- struct_construct(v11)
+  (v22: core::array::SpanIter::<core::felt252>) <- struct_construct(v21)
+  (v23: ()) <- struct_construct()
+  (v24: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v22, v20, v23)
+  (v25: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v24)
+End:
+  Return(v3, v19, v25)
+
+blk4:
+Statements:
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v26)
+End:
+  Return(v5, v6, v27)
 
 //! > ==========================================================================
 
@@ -376,6 +424,57 @@ End:
 
 
 Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::SpanIter::<core::felt252>, v3: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v4, v5) => blk1,
+    Option::None(v6, v7) => blk4,
+  })
+
+blk1:
+Statements:
+  (v8: core::array::Span::<core::felt252>) <- struct_destructure(v2)
+  (v9: @core::array::Array::<core::felt252>) <- struct_destructure(v8)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v9) {
+    Option::Some(v10, v11) => blk2,
+    Option::None(v12) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v14: @core::felt252) <- core::box::unbox::<@core::felt252>(v11)
+  (v15: core::felt252) <- desnap(v14)
+  (v16: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v15)
+  (v17: core::array::Span::<core::felt252>) <- struct_construct(v10)
+  (v18: core::array::SpanIter::<core::felt252>) <- struct_construct(v17)
+  (v19: core::RangeCheck, v20: core::gas::GasBuiltin, v21: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- test::foo[78-125](v4, v13, v18, v16)
+End:
+  Return(v19, v20, v21)
+
+blk3:
+Statements:
+  (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v23: core::array::Span::<core::felt252>) <- struct_construct(v12)
+  (v24: core::array::SpanIter::<core::felt252>) <- struct_construct(v23)
+  (v25: ()) <- struct_construct()
+  (v26: (core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())) <- struct_construct(v24, v3, v25)
+  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Ok(v26)
+End:
+  Return(v4, v22, v27)
+
+blk4:
+Statements:
+  (v28: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v29: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v28)
+End:
+  Return(v6, v7, v29)
+
+
+Final lowering of specialized call "test::foo[78-125]":
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::SpanIter::<core::felt252>, v3: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
