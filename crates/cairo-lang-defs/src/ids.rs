@@ -911,7 +911,7 @@ define_language_element_id_as_enum! {
 }
 define_language_element_id_as_enum! {
     #[toplevel]
-    /// The ID of a impl item with generic parameters.
+    /// The ID of an impl item with generic parameters.
     pub enum GenericImplItemId<'db> {
         Type(ImplTypeDefId<'db>),
     }

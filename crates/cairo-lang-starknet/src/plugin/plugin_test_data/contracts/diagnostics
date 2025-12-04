@@ -940,11 +940,9 @@ impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
- --> lib.cairo:5:5-6:56
-      #[external(v0)]
- _____^
-|     fn foo(ref self: ContractState, x: super::MyType) {}
-|________________________________________________________^
+ --> lib.cairo:5:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 
@@ -1382,18 +1380,14 @@ warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
 ^^^^^^^^^^^^^^^^^^^^^
 
 error[E0006]: Type not found.
- --> lib.cairo:5:5-6:47
-      #[external(v0)]
- _____^
-|     fn foo<T>(ref self: ContractState, x: T) {}
-|_______________________________________________^
+ --> lib.cairo:5:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 error: Trait has no implementation in context: core::serde::Serde::<<missing>>.
- --> lib.cairo:5:5-6:47
-      #[external(v0)]
- _____^
-|     fn foo<T>(ref self: ContractState, x: T) {}
-|_______________________________________________^
+ --> lib.cairo:5:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
 
 error: Variable not dropped.
  --> lib.cairo:6:40
@@ -17752,6 +17746,1158 @@ impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
 
 
 lib.cairo:8:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
+
+//! > ==========================================================================
+
+//! > Test broken function signature through plugin.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::contract]
+pub mod my_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn foo(ref self: ContractState, value: BadType) {}
+}
+
+//! > expected_diagnostics
+warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+
+error[E0006]: Type not found.
+ --> lib.cairo:7:44
+    fn foo(ref self: ContractState, value: BadType) {}
+                                           ^^^^^^^
+
+error[E0006]: Type not found.
+ --> lib.cairo:6:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
+
+error: Trait has no implementation in context: core::serde::Serde::<<missing>>.
+ --> lib.cairo:6:5
+    #[external(v0)]
+    ^^^^^^^^^^^^^^^
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+pub mod my_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn foo(ref self: ContractState, value: BadType) {}
+}
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+#[phantom]
+pub struct Storage {
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBase {
+}
+#[doc(hidden)]
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBaseMut {
+}
+#[doc(hidden)]
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
+        }
+    }
+}
+
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x1f8613d56d66d984da05cc17f5069dd7c5f35d3a46672cb071c8687a93d643e.try_into().unwrap();
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let __arg_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<BadType>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let mut contract_state = unsafe_new_contract_state();
+    foo(ref contract_state, __arg_value);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+#[doc(hidden)]
+pub mod __external {
+    pub use super::__wrapper__foo as foo;
+}
+#[doc(hidden)]
+pub mod __l1_handler {
+}
+#[doc(hidden)]
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl EventDrop<> of core::traits::Drop::<Event>;
+
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+lib.cairo:3:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+
+
+lib.cairo:3:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
+
+//! > ==========================================================================
+
+//! > Test interface mismatch error through plugin.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::interface]
+pub trait Interface<TContractState> {
+    fn foo(ref self: TContractState, value: u256);
+}
+
+#[starknet::contract]
+pub mod my_contract {
+    use super::Interface;
+
+    #[storage]
+    struct Storage {}
+
+    #[abi(embed_v0)]
+    impl Impl of Interface<ContractState> {
+        fn foo(ref self: ContractState, value: felt252) {}
+    }
+}
+
+//! > expected_diagnostics
+error: Parameter type of impl function `Impl::foo` is incompatible with `Interface::foo`. Expected: `core::integer::u256`, actual: `core::felt252`.
+ --> lib.cairo:15:48
+        fn foo(ref self: ContractState, value: felt252) {}
+                                               ^^^^^^^
+
+error: Unexpected argument type. Expected: "core::integer::u256", found: "core::felt252".
+ --> lib.cairo:13:5
+    #[abi(embed_v0)]
+    ^^^^^^^^^^^^^^^^
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::interface]
+pub trait Interface<TContractState> {
+    fn foo(ref self: TContractState, value: u256);
+}
+
+#[starknet::contract]
+pub mod my_contract {
+    use super::Interface;
+
+    #[storage]
+    struct Storage {}
+
+    #[abi(embed_v0)]
+    impl Impl of Interface<ContractState> {
+        fn foo(ref self: ContractState, value: felt252) {}
+    }
+}
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+InterfaceDispatcherTrait:
+
+#[doc(group: "dispatchers")]
+pub trait InterfaceDispatcherTrait<T> {
+    fn foo(self: T, value: u256);
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+pub struct InterfaceDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl InterfaceDispatcherImpl of InterfaceDispatcherTrait<InterfaceDispatcher> {
+    fn foo(self: InterfaceDispatcher, value: u256) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u256>::serialize(@value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+pub struct InterfaceLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+#[doc(group: "dispatchers")]
+impl InterfaceLibraryDispatcherImpl of InterfaceDispatcherTrait<InterfaceLibraryDispatcher> {
+    fn foo(self: InterfaceLibraryDispatcher, value: u256) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u256>::serialize(@value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+
+}
+
+#[doc(group: "dispatchers")]
+pub trait InterfaceSafeDispatcherTrait<T> {
+    #[unstable(feature: "safe_dispatcher")]
+    fn foo(self: T, value: u256) -> starknet::SyscallResult<()>;
+}
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+pub struct InterfaceSafeLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
+}
+
+#[doc(group: "dispatchers")]
+impl InterfaceSafeLibraryDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeLibraryDispatcher> {
+    fn foo(self: InterfaceSafeLibraryDispatcher, value: u256) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u256>::serialize(@value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[doc(group: "dispatchers")]
+#[derive(Copy, Drop, starknet::Store, Serde)]
+pub struct InterfaceSafeDispatcher {
+    pub contract_address: starknet::ContractAddress,
+}
+
+#[doc(group: "dispatchers")]
+impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDispatcher> {
+    fn foo(self: InterfaceSafeDispatcher, value: u256) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u256>::serialize(@value, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("foo"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(group: "dispatchers")]
+impl InterfaceDispatcherCopy<> of core::traits::Copy::<InterfaceDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceDispatcherDrop<> of core::traits::Drop::<InterfaceDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceDispatcherSerde<> of core::serde::Serde::<InterfaceDispatcher> {
+    fn serialize(self: @InterfaceDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(InterfaceDispatcher {
+            contract_address: contract_address.value,
+        })
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl InterfaceDispatcherStore<> of starknet::Store::<InterfaceDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<InterfaceDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceDispatcher {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: InterfaceDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let InterfaceDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceDispatcher {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: InterfaceDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let InterfaceDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl InterfaceDispatcherSubPointersImpl of starknet::storage::SubPointers<InterfaceDispatcher> {
+    type SubPointersType = InterfaceDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<InterfaceDispatcher>) -> InterfaceDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceDispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl InterfaceDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<InterfaceDispatcher> {
+    type SubPointersType = InterfaceDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceDispatcher>>) -> InterfaceDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceDispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(group: "dispatchers")]
+impl InterfaceLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceLibraryDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceLibraryDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceLibraryDispatcher> {
+    fn serialize(self: @InterfaceLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        core::option::Option::Some(InterfaceLibraryDispatcher {
+            class_hash: class_hash.value,
+        })
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl InterfaceLibraryDispatcherStore<> of starknet::Store::<InterfaceLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<InterfaceLibraryDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceLibraryDispatcher {
+                class_hash: class_hash.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: InterfaceLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let InterfaceLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceLibraryDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceLibraryDispatcher {
+                class_hash: class_hash.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: InterfaceLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let InterfaceLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+#[doc(hidden)]
+impl InterfaceLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<InterfaceLibraryDispatcher> {
+    type SubPointersType = InterfaceLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<InterfaceLibraryDispatcher>) -> InterfaceLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceLibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+#[doc(hidden)]
+impl InterfaceLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<InterfaceLibraryDispatcher> {
+    type SubPointersType = InterfaceLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceLibraryDispatcher>>) -> InterfaceLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceLibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(group: "dispatchers")]
+impl InterfaceSafeLibraryDispatcherCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceSafeLibraryDispatcherDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceSafeLibraryDispatcherSerde<> of core::serde::Serde::<InterfaceSafeLibraryDispatcher> {
+    fn serialize(self: @InterfaceSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeLibraryDispatcher> {
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
+        core::option::Option::Some(InterfaceSafeLibraryDispatcher {
+            class_hash: class_hash.value,
+        })
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl InterfaceSafeLibraryDispatcherStore<> of starknet::Store::<InterfaceSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<InterfaceSafeLibraryDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceSafeLibraryDispatcher {
+                class_hash: class_hash.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let InterfaceSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceSafeLibraryDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceSafeLibraryDispatcher {
+                class_hash: class_hash.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: InterfaceSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let InterfaceSafeLibraryDispatcher {
+            class_hash,
+        } = value;
+        let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
+        starknet::Store::<starknet::ClassHash>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, class_hash.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceSafeLibraryDispatcherSubPointers {
+    pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
+}
+#[doc(hidden)]
+impl InterfaceSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<InterfaceSafeLibraryDispatcher> {
+    type SubPointersType = InterfaceSafeLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<InterfaceSafeLibraryDispatcher>) -> InterfaceSafeLibraryDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceSafeLibraryDispatcherSubPointers {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceSafeLibraryDispatcherSubPointersMut {
+    pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
+}
+#[doc(hidden)]
+impl InterfaceSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<InterfaceSafeLibraryDispatcher> {
+    type SubPointersType = InterfaceSafeLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeLibraryDispatcher>>) -> InterfaceSafeLibraryDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __class_hash_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceSafeLibraryDispatcherSubPointersMut {
+           class_hash: __class_hash_value__,
+        }
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(group: "dispatchers")]
+impl InterfaceSafeDispatcherCopy<> of core::traits::Copy::<InterfaceSafeDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceSafeDispatcherDrop<> of core::traits::Drop::<InterfaceSafeDispatcher>;
+#[doc(group: "dispatchers")]
+impl InterfaceSafeDispatcherSerde<> of core::serde::Serde::<InterfaceSafeDispatcher> {
+    fn serialize(self: @InterfaceSafeDispatcher, ref output: core::array::Array<felt252>) {
+        core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<InterfaceSafeDispatcher> {
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
+        core::option::Option::Some(InterfaceSafeDispatcher {
+            contract_address: contract_address.value,
+        })
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl InterfaceSafeDispatcherStore<> of starknet::Store::<InterfaceSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<InterfaceSafeDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceSafeDispatcher {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let InterfaceSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceSafeDispatcher> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
+        starknet::SyscallResult::Ok(
+            InterfaceSafeDispatcher {
+                contract_address: contract_address.value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: InterfaceSafeDispatcher) -> starknet::SyscallResult<()> {
+        let __store_derive_address_domain__ = address_domain;
+        let __store_derive_base__ = base;
+        let __store_derive_offset__ = offset;
+        let InterfaceSafeDispatcher {
+            contract_address,
+        } = value;
+        let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__, contract_address.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceSafeDispatcherSubPointers {
+    pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
+}
+#[doc(hidden)]
+impl InterfaceSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<InterfaceSafeDispatcher> {
+    type SubPointersType = InterfaceSafeDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<InterfaceSafeDispatcher>) -> InterfaceSafeDispatcherSubPointers {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceSafeDispatcherSubPointers {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct InterfaceSafeDispatcherSubPointersMut {
+    pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
+}
+#[doc(hidden)]
+impl InterfaceSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<InterfaceSafeDispatcher> {
+    type SubPointersType = InterfaceSafeDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<InterfaceSafeDispatcher>>) -> InterfaceSafeDispatcherSubPointersMut {
+        let base_address = self.__storage_pointer_address__;
+        let mut current_offset = self.__storage_pointer_offset__;
+        let __contract_address_value__ = starknet::storage::StoragePointer {
+            __storage_pointer_address__: base_address,
+            __storage_pointer_offset__: current_offset,
+        };
+                InterfaceSafeDispatcherSubPointersMut {
+           contract_address: __contract_address_value__,
+        }
+    }
+}
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointers>;
+#[doc(hidden)]
+impl InterfaceDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceDispatcherSubPointersMut>;
+#[doc(hidden)]
+impl InterfaceDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceDispatcherSubPointersMut>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointers>;
+#[doc(hidden)]
+impl InterfaceLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
+impl InterfaceLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceLibraryDispatcherSubPointersMut>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointers>;
+#[doc(hidden)]
+impl InterfaceSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+#[doc(hidden)]
+impl InterfaceSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeLibraryDispatcherSubPointersMut>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceSafeDispatcherSubPointersDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointers>;
+#[doc(hidden)]
+impl InterfaceSafeDispatcherSubPointersCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointers>;
+
+
+lib.cairo:1:1
+#[starknet::interface]
+^^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl InterfaceSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<InterfaceSafeDispatcherSubPointersMut>;
+#[doc(hidden)]
+impl InterfaceSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<InterfaceSafeDispatcherSubPointersMut>;
+
+
+lib.cairo:6:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+#[phantom]
+pub struct Storage {
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBase {
+}
+#[doc(hidden)]
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBaseMut {
+}
+#[doc(hidden)]
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
+        }
+    }
+}
+
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x2e3d710211a1db4f11c437acdeb9f49e98b109fc39b2ff41ee561e832266625.try_into().unwrap();
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__Impl__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let __arg_value = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let mut contract_state = unsafe_new_contract_state();
+    Impl::foo(ref contract_state, __arg_value);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+#[doc(hidden)]
+pub mod __external {
+    pub use super::__wrapper__Impl__foo as foo;
+}
+#[doc(hidden)]
+pub mod __l1_handler {
+}
+#[doc(hidden)]
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+lib.cairo:6:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl EventDrop<> of core::traits::Drop::<Event>;
+
+
+lib.cairo:6:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+lib.cairo:10:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+
+
+lib.cairo:10:5
     #[storage]
     ^^^^^^^^^^
 impls:

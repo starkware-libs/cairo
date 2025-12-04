@@ -746,7 +746,7 @@ fn format_final_part(slice: &str) -> String {
     if ensure_whitespace && !result.starts_with(' ') { format!(" {result}") } else { result }
 }
 
-/// Takes a list of [`GenericParamId`]s and formats it into a string representation used for
+/// Takes a list of [`GenericParamId`]s and formats them into a string representation used for
 /// signature documentation.
 fn format_resolver_generic_params<'db>(
     db: &'db dyn Database,
@@ -863,7 +863,7 @@ fn write_function_signature<'db>(
     Ok(())
 }
 
-/// Retrieves [`SyntaxKind::TypeClause`] text from a [`SyntaxNode`].
+/// Retrieves the [`SyntaxKind::TypeClause`] text from a [`SyntaxNode`].
 fn get_type_clause<'db>(syntax_node: SyntaxNode<'db>, db: &'db dyn Database) -> Option<String> {
     for child in syntax_node.get_children(db).iter() {
         if child.kind(db) == SyntaxKind::TypeClause {
@@ -1028,7 +1028,7 @@ fn write_type_signature<'db>(
     Ok(())
 }
 
-/// Returns relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
+/// Returns relevant [`DocumentableItemId`] from [`GenericItemId`] if one can be retrieved.
 fn resolve_generic_item<'db>(
     generic_item_id: GenericItemId<'db>,
     db: &'db dyn Database,
@@ -1050,7 +1050,7 @@ fn resolve_generic_item<'db>(
     }
 }
 
-/// Returns relevant [`DocumentableItemId`] for [`GenericModuleItemId`].
+/// Returns relevant [`DocumentableItemId`] from [`GenericModuleItemId`].
 fn resolve_generic_module_item<'db>(
     generic_module_item_id: GenericModuleItemId<'db>,
 ) -> DocumentableItemId<'db> {
@@ -1091,7 +1091,7 @@ fn resolve_generic_module_item<'db>(
     }
 }
 
-/// Returns relevant [`DocumentableItemId`] for [`GenericArgumentId`] if one can be retrieved.
+/// Returns relevant [`DocumentableItemId`] from [`GenericArgumentId`] if one can be retrieved.
 fn resolve_generic_arg<'db>(
     generic_arg_id: GenericArgumentId<'db>,
     db: &'db dyn Database,
@@ -1115,7 +1115,7 @@ fn resolve_generic_arg<'db>(
     }
 }
 
-/// Returns relevant [`DocumentableItemId`] for [`TypeId`] if one can be retrieved.
+/// Returns relevant [`DocumentableItemId`] from [`TypeId`] if one can be retrieved.
 fn resolve_type<'db>(
     db: &'db dyn Database,
     type_id: TypeId<'db>,

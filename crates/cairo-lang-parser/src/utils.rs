@@ -44,9 +44,9 @@ impl SimpleParserDatabase {
         if diagnostics.check_error_free().is_ok() { Ok(node) } else { Err(diagnostics) }
     }
 
-    /// Parses new file and return its syntax root with diagnostics.
+    /// Parses a new file and returns its syntax root with diagnostics.
     ///
-    /// This function creates new virtual file with the given content and parses it.
+    /// This function creates a new virtual file with the given content and parses it.
     /// Diagnostics gathered by the parser are returned alongside the result.
     pub fn parse_virtual_with_diagnostics(
         &self,

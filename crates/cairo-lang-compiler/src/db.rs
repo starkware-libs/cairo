@@ -40,7 +40,7 @@ fn estimate_code_size(
         Err(err) => {
             if err.is_ap_overflow_error() {
                 // If the compilation failed due to an AP overflow, we don't want to panic as it can
-                // happen for valid code. In this case, the function is probably too large for
+                // happen for valid code. In this case, the function is probably too large to
                 // inline so we can just return the max size.
                 return Ok(isize::MAX);
             }

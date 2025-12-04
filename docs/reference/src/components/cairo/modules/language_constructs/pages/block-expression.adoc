@@ -31,7 +31,7 @@ let five: i32 = {
     5
 };
 
-// Block evaluates to never-type, which is coerced to explicitly set i32.
+// Block evaluates to never-type, which is coerced to set i32 explicitly.
 let never: i32 = {
     return 6;
 };

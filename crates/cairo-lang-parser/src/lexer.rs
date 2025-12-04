@@ -88,7 +88,7 @@ impl Lexer {
         TokenWhitespace::new_green(db, SmolStrId::from(db, text)).into()
     }
 
-    /// Assumes the next character '\n'.
+    /// Assumes the next character is '\n'.
     fn match_trivium_newline<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take();
         let span = self.consume_text_span();

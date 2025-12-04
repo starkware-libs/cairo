@@ -83,5 +83,5 @@ possible to declare a function or variable with such names.
 
 [NOTE]
 ====
-No contextual keywords are in use as for now.
+No contextual keywords are in use for now.
 ====

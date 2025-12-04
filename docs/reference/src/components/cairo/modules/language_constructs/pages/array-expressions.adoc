@@ -36,8 +36,7 @@ Only one form is used at a time. Mixing both (e.g., `[a, b; 3]`) is not valid.
 
 [NOTE]
 ====
-Indexing uses the general indexing expression form `array[index]` (see
-xref:pages/member-access-expressions.adoc[Member access expressions] for indexing).
+Indexing uses the general indexing expression form `array[index]`.
 ====
 
 == Examples

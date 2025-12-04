@@ -140,6 +140,7 @@ pub fn handle_embeddable<'db>(
         handle_entry_point(
             db,
             EntryPointGenerationParams {
+                trigger_attribute: embeddable_attr.clone(),
                 entry_point_kind: EntryPointKind::External,
                 item_function: &item_function,
                 wrapped_function_path: function_path,

@@ -14,7 +14,7 @@ Some properties:
 - Rebinding may not change the type.
 - Rebinding affects outer scopes.
 
-This is opposed to "let"/"var" in other languages, that are effectively, shadowing:
+This is opposed to "let"/"var" in other languages, that are effectively shadowing:
 
 - May change type.
 - Do not affect outer scopes.

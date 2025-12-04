@@ -1,4 +1,4 @@
-//! This module is responsible of computing the semantic model of expressions and statements in
+//! This module is responsible for computing the semantic model of expressions and statements in
 //! the code, while type checking.
 //! It is invoked by queries for function bodies and other code blocks.
 
@@ -2835,7 +2835,7 @@ fn maybe_compute_pattern_semantic<'db>(
             if let Ok(ResolvedGenericItem::Variant(_)) = item_result {
                 // If the path resolves to a variant, it might still be a generic param, so we
                 // resolve it as a concrete path.
-                // Resolveing as concrete path first might create vars which will not be inferred so
+                // Resolving as concrete path first might create vars which will not be inferred so
                 // we use the generic path first.
                 let item = ctx.resolver.resolve_concrete_path_ex(
                     &mut Default::default(),
@@ -4669,7 +4669,7 @@ pub fn compute_and_append_statement_semantic<'db>(
             )));
             Ok(())
         }
-        // Dianogstics reported on syntax level already.
+        // Diagnostics reported on syntax level already.
         ast::Statement::Missing(_) => return Err(skip_diagnostic()),
     };
     ctx.restore_features(feature_restore);

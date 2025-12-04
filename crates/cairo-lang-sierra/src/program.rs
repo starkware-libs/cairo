@@ -15,7 +15,7 @@ use crate::ids::{
     VarId,
 };
 
-/// Version-tagged representation of Sierra program.
+/// Version-tagged representation of a Sierra program.
 ///
 /// Always prefer using this struct as saved artifacts instead of inner ones.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -101,7 +101,7 @@ impl ProgramArtifact {
         Self { program, debug_info: None }
     }
 
-    /// Add [`DebugInfo`] to the [`ProgramArtifact`], replacing existing one.
+    /// Add [`DebugInfo`] to the [`ProgramArtifact`], replacing the existing one.
     pub fn with_debug_info(self, debug_info: DebugInfo) -> Self {
         Self { program: self.program, debug_info: Some(debug_info) }
     }

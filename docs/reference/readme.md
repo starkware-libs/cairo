@@ -1,66 +1,95 @@
-The docs are written in [AsciiDoc](https://asciidoc.org/)(`.adoc`). You can view the docs locally in many ways.
+## Viewing the Documentation
 
-- View on IDE
-- View in HTML
-- View in PDF
+The documentation is written in [AsciiDoc](https://asciidoc.org/) (`.adoc`).
+You can view it in several ways:
 
-## View on IDE
+* View in IDE
+* Convert to HTML
+* Convert to PDF
 
-- Install `AsciiDoc`plugins in `VSCode` or `Intellij IDEA`
+---
 
-## View in HTML
+## View in IDE
+
+Install an AsciiDoc plugin for your IDE:
+
+* **VS Code**: *AsciiDoc by asciidoctor*
+* **IntelliJ IDEA**: *AsciiDoc Plugin*
+
+After installing the plugin, open any `.adoc` file in `cairo/docs/reference`.
+
+---
+
+## View as HTML
+
 ### Install `asciidoctor`
 
-- Mac OS
+**macOS:**
+
 ```bash
 brew install asciidoctor
 ```
 
-- Ubuntu
+**Ubuntu:**
+
 ```bash
-apt-get install asciidoctor
+sudo apt-get install asciidoctor
 ```
 
 ### Convert to HTML
-> Tip:`pwd` is `cairo/docs/reference`
 
-- Convert a single file
+> **Tip:** run the commands from `cairo/docs/reference`
+
+**Convert a single file:**
+
 ```bash
 asciidoctor src/Summary.adoc
 ```
 
-- Convert all files
+**Convert all `.adoc` files:**
+
 ```bash
 asciidoctor src/*.adoc
 ```
 
-Now `HTML` versions of the documentation will be generated.
+HTML files will be created in the same directory as the source files.
 
-## View in PDF
-### Install `asciidoctor`
-> Note: when you install `asciidoctor`, `asciidoctor-pdf` will also be installed.
+---
 
-- Mac OS
+## View as PDF
+
+### Install `asciidoctor-pdf`
+
+> **Note:** `asciidoctor-pdf` is **not installed automatically** with `asciidoctor`.
+
+**macOS:**
+
 ```bash
-brew install asciidoctor
+brew install asciidoctor-pdf
 ```
 
-- Ubuntu
+**Ubuntu:**
+(`asciidoctor-pdf` is not always available in apt, so RubyGems is used)
+
 ```bash
-apt-get install asciidoctor
+sudo apt-get install ruby ruby-dev
+sudo gem install asciidoctor-pdf
 ```
 
 ### Convert to PDF
-> Tip: `pwd` is `cairo/docs/reference`
 
-- Convert a single file
+> **Tip:** run the commands from `cairo/docs/reference`
+
+**Convert a single file:**
+
 ```bash
 asciidoctor-pdf src/Summary.adoc
 ```
 
-- Convert all files
+**Convert all `.adoc` files:**
+
 ```bash
 asciidoctor-pdf src/*.adoc
 ```
 
-Now `PDF` versions of the documentation will be generated.
+PDF files will be created next to the source `.adoc` files.

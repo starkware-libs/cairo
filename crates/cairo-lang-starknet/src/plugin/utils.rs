@@ -153,34 +153,32 @@ pub fn maybe_strip_underscore(s: &str) -> &str {
 
 // === Attributes utilities ===
 
-/// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
-/// validates that the attribute is v0.
-pub fn has_v0_attribute<'db>(
+/// Finds the attributes with the name `attr_name`. If exists also validates that the attribute is
+/// v0.
+pub fn find_v0_attribute<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     object: &impl QueryAttrs<'db>,
     attr_name: &'db str,
-) -> bool {
-    has_v0_attribute_ex(db, diagnostics, object, attr_name, || None)
+) -> Option<Attribute<'db>> {
+    find_v0_attribute_ex(db, diagnostics, object, attr_name, || None)
 }
 
-/// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
-/// validates that the attribute is v0, and adds a warning if supplied `deprecated` returns a value.
-pub fn has_v0_attribute_ex<'db>(
+/// Finds the attributes with the name `attr_name`. If exists also validates that the attribute is
+/// v0, and adds a warning if supplied `deprecated` returns a value.
+pub fn find_v0_attribute_ex<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     object: &impl QueryAttrs<'db>,
     attr_name: &'db str,
     deprecated: impl FnOnce() -> Option<String>,
-) -> bool {
-    let Some(attr) = object.find_attr(db, attr_name) else {
-        return false;
-    };
+) -> Option<Attribute<'db>> {
+    let attr = object.find_attr(db, attr_name)?;
     validate_v0(db, diagnostics, &attr, attr_name);
     if let Some(deprecated) = deprecated() {
         diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr(db), deprecated));
     }
-    true
+    Some(attr)
 }
 
 /// Assuming the attribute is `name`, validates it's in the form "#[name(v0)]".

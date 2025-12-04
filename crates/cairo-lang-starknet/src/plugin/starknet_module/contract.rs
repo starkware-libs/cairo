@@ -5,7 +5,7 @@ use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_plugins::plugins::HasItemsInCfgEx;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
-use cairo_lang_syntax::node::ast::OptionTypeClause;
+use cairo_lang_syntax::node::ast::{Attribute, OptionTypeClause};
 use cairo_lang_syntax::node::helpers::{
     BodyItems, GetIdentifier, PathSegmentEx, QueryAttrs, is_single_arg_attr,
 };
@@ -25,10 +25,11 @@ use crate::plugin::consts::{
     EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME, SUBSTORAGE_ATTR,
 };
 use crate::plugin::entry_point::{
-    EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData, handle_entry_point,
+    EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData, GetEntryPointKind,
+    handle_entry_point,
 };
 use crate::plugin::storage::handle_storage_struct;
-use crate::plugin::utils::{forbid_attributes_in_impl, has_v0_attribute_ex};
+use crate::plugin::utils::{find_v0_attribute_ex, forbid_attributes_in_impl};
 
 /// Accumulated data specific for contract generation.
 #[derive(Default)]
@@ -369,8 +370,7 @@ fn generate_constructor_deploy_function<'db>(
 
     for item in body.iter_items(db) {
         if let ast::ModuleItem::FreeFunction(func) = item
-            && let Some(EntryPointKind::Constructor) =
-                EntryPointKind::try_from_function_with_body(db, diagnostics, &func)
+            && let Some((EntryPointKind::Constructor, _)) = func.entry_point_kind(db, diagnostics)
         {
             let signature_params = func.declaration(db).signature(db).parameters(db);
             let params = signature_params.elements(db);
@@ -434,31 +434,6 @@ fn generate_deploy_function<'db>(
     ))
 }
 
-/// Handles a contract entrypoint function.
-fn handle_contract_entry_point<'db>(
-    entry_point_kind: EntryPointKind,
-    item_function: &ast::FunctionWithBody<'db>,
-    wrapped_function_path: RewriteNode<'db>,
-    wrapper_identifier: String,
-    db: &'db dyn Database,
-    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
-    data: &mut EntryPointsGenerationData<'db>,
-) {
-    handle_entry_point(
-        db,
-        EntryPointGenerationParams {
-            entry_point_kind,
-            item_function,
-            wrapped_function_path,
-            wrapper_identifier,
-            unsafe_new_contract_state_prefix: "",
-            generic_params: RewriteNode::empty(),
-        },
-        diagnostics,
-        data,
-    )
-}
-
 /// Handles a free function inside a contract module.
 fn handle_contract_free_function<'db>(
     db: &'db dyn Database,
@@ -466,19 +441,24 @@ fn handle_contract_free_function<'db>(
     item_function: &ast::FunctionWithBody<'db>,
     data: &mut EntryPointsGenerationData<'db>,
 ) {
-    let Some(entry_point_kind) =
-        EntryPointKind::try_from_function_with_body(db, diagnostics, item_function)
+    let Some((entry_point_kind, trigger_attribute)) =
+        item_function.entry_point_kind(db, diagnostics)
     else {
         return;
     };
     let function_name = item_function.declaration(db).name(db);
-    let function_name_node = RewriteNode::from_ast_trimmed(&function_name);
-    handle_contract_entry_point(
-        entry_point_kind,
-        item_function,
-        function_name_node,
-        function_name.text(db).to_string(db),
+
+    handle_entry_point(
         db,
+        EntryPointGenerationParams {
+            trigger_attribute,
+            entry_point_kind,
+            item_function,
+            wrapped_function_path: RewriteNode::from_ast_trimmed(&function_name),
+            wrapper_identifier: function_name.text(db).to_string(db),
+            unsafe_new_contract_state_prefix: "",
+            generic_params: RewriteNode::empty(),
+        },
         diagnostics,
         data,
     );
@@ -492,10 +472,9 @@ fn handle_contract_impl<'db, 'a>(
     metadata: &'a MacroPluginMetadata<'a>,
     data: &mut EntryPointsGenerationData<'db>,
 ) {
-    let abi_config = impl_abi_config(db, diagnostics, imp);
-    if abi_config == ImplAbiConfig::None {
+    let Some((abi_config, abi_attr)) = impl_abi_config(db, diagnostics, imp) else {
         return;
-    }
+    };
     let ast::MaybeImplBody::Some(impl_body) = imp.body(db) else {
         return;
     };
@@ -511,16 +490,14 @@ fn handle_contract_impl<'db, 'a>(
         let ast::ImplItem::Function(item_function) = item else {
             continue;
         };
-        let entry_point_kind = if abi_config == ImplAbiConfig::PerItem {
-            let Some(entry_point_kind) =
-                EntryPointKind::try_from_attrs(db, diagnostics, &item_function)
-            else {
+        let (entry_point_kind, trigger_attribute) = if abi_config == ImplAbiConfig::PerItem {
+            let Some((kind, trigger)) = item_function.entry_point_kind(db, diagnostics) else {
                 continue;
             };
-            entry_point_kind
+            (kind, trigger)
         } else {
             // matches!(abi_config, ImplAbiConfig::Embed | ImplAbiConfig::External)
-            EntryPointKind::External
+            (EntryPointKind::External, abi_attr.clone())
         };
         let function_name = item_function.declaration(db).name(db);
         let function_name_node = RewriteNode::interpolate_patched(
@@ -533,12 +510,17 @@ fn handle_contract_impl<'db, 'a>(
         );
         let wrapper_identifier =
             format!("{}__{}", impl_name.text(db).long(db), function_name.text(db).long(db));
-        handle_contract_entry_point(
-            entry_point_kind,
-            &item_function,
-            function_name_node,
-            wrapper_identifier,
+        handle_entry_point(
             db,
+            EntryPointGenerationParams {
+                trigger_attribute,
+                entry_point_kind,
+                item_function: &item_function,
+                wrapped_function_path: function_name_node,
+                wrapper_identifier,
+                unsafe_new_contract_state_prefix: "",
+                generic_params: RewriteNode::empty(),
+            },
             diagnostics,
             data,
         );
@@ -548,8 +530,6 @@ fn handle_contract_impl<'db, 'a>(
 /// The configuration of an impl addition to the abi.
 #[derive(PartialEq, Eq)]
 enum ImplAbiConfig {
-    /// No ABI configuration.
-    None,
     /// The impl is marked with `#[abi(per_item)]`. Each item should provide its own configuration.
     PerItem,
     /// The impl is marked with `#[abi(embed_v0)]`. The entire impl and the interface are embedded
@@ -561,17 +541,18 @@ enum ImplAbiConfig {
 }
 
 /// Returns the configuration of an impl addition to the abi using `#[abi(...)]` or the old
-/// equivalent `#[external(v0)]`.
+/// equivalent `#[external(v0)]`, as well as the actual attribute.
+/// If none exists - returns None.
 fn impl_abi_config<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     imp: &ast::ItemImpl<'db>,
-) -> ImplAbiConfig {
+) -> Option<(ImplAbiConfig, Attribute<'db>)> {
     if let Some(abi_attr) = imp.find_attr(db, ABI_ATTR) {
         if is_single_arg_attr(db, &abi_attr, ABI_ATTR_PER_ITEM_ARG) {
-            ImplAbiConfig::PerItem
+            Some((ImplAbiConfig::PerItem, abi_attr))
         } else if is_single_arg_attr(db, &abi_attr, ABI_ATTR_EMBED_V0_ARG) {
-            ImplAbiConfig::Embed
+            Some((ImplAbiConfig::Embed, abi_attr))
         } else {
             diagnostics.push(PluginDiagnostic::error(
                 abi_attr.stable_ptr(db),
@@ -580,17 +561,16 @@ fn impl_abi_config<'db>(
                      '{ABI_ATTR_PER_ITEM_ARG}' or '{ABI_ATTR_EMBED_V0_ARG}' argument.",
                 ),
             ));
-            ImplAbiConfig::None
+            None
         }
-    } else if has_v0_attribute_ex(db, diagnostics, imp, EXTERNAL_ATTR, || {
-        Some(format!(
-            "The '{EXTERNAL_ATTR}' attribute on impls is deprecated. Use \
-             '{ABI_ATTR}({ABI_ATTR_PER_ITEM_ARG})' or '{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})'."
-        ))
-    }) {
-        ImplAbiConfig::External
     } else {
-        ImplAbiConfig::None
+        let attr = find_v0_attribute_ex(db, diagnostics, imp, EXTERNAL_ATTR, || {
+            Some(format!(
+                "The '{EXTERNAL_ATTR}' attribute on impls is deprecated. Use \
+                 '{ABI_ATTR}({ABI_ATTR_PER_ITEM_ARG})' or '{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})'."
+            ))
+        })?;
+        Some((ImplAbiConfig::External, attr))
     }
 }
 

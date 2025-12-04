@@ -924,7 +924,7 @@ impl<'db> ImplDefinitionData<'db> {
         self.item_id_by_name.get(&item_name).cloned()
     }
 }
-/// Stores metadata for a impl item, including its ID and feature kind.
+/// Stores metadata for an impl item, including its ID and feature kind.
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct ImplItemInfo<'db> {
     /// The unique identifier of the impl item.
