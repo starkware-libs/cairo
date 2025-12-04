@@ -1145,8 +1145,6 @@ fn foo(x: Option<felt252>) -> felt252 {
     }
 }
 
-//! > module_code
-
 //! > graph
 Root: 1
 1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }

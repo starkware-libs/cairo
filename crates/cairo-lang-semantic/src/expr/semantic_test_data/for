@@ -10,8 +10,6 @@ for _a in array![1, 2].span() {
     break;
 }
 
-//! > module_code
-
 //! > expected_semantics
 For(
     ExprFor {

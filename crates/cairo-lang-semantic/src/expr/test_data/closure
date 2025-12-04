@@ -14,8 +14,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::integer::i32", found: "core::integer::u32".
  --> lib.cairo:2:11
@@ -40,8 +38,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -61,8 +57,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::integer::i32", found: "core::integer::u32".
@@ -87,8 +81,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::integer::i32", found: "{closure@lib.cairo:2:19: 2:21}".
@@ -189,8 +181,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
@@ -304,8 +294,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -325,8 +313,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: core::traits::Into::<core::integer::u256, core::integer::u32>.
@@ -448,8 +434,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Arguments to closure functions cannot be references
  --> lib.cairo:6:23
@@ -475,8 +459,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -497,8 +479,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -525,8 +505,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Type "?0" can not error propagate
@@ -579,8 +557,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: `break` only allowed inside a `loop`.
  --> lib.cairo:4:13
@@ -607,8 +583,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: `continue` only allowed inside a `loop`.
  --> lib.cairo:4:13
@@ -633,8 +607,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Capture of mutable variables in a closure is not supported
@@ -678,8 +650,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Call expression requires a function, found `core::integer::u32`.
@@ -736,8 +706,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Cannot assign to an immutable variable.
  --> lib.cairo:3:9
@@ -761,8 +729,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Closure parameters cannot be references
  --> lib.cairo:2:14
@@ -784,8 +750,6 @@ fn foo() -> Option<u32> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -863,8 +827,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Named arguments are not supported in this context.

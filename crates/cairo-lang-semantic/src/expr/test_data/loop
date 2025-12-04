@@ -17,8 +17,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:19
@@ -46,8 +44,6 @@ fn foo(x: Option<()>) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23-9:1
@@ -72,8 +68,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
@@ -94,8 +88,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: `break` only allowed inside a `loop`.
@@ -120,8 +112,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -138,8 +128,6 @@ fn foo() -> bool {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
@@ -162,8 +150,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -182,8 +168,6 @@ fn foo() -> bool {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
@@ -208,8 +192,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:1:13
@@ -233,8 +215,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -251,8 +231,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: `break` only allowed inside a `loop`.
@@ -378,8 +356,6 @@ fn foo(a: u32) -> Option<bool> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Loop has incompatible return types: "core::never" and "()"

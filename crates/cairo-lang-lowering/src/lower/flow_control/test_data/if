@@ -317,8 +317,6 @@ fn foo() -> felt252 {
     }
 }
 
-//! > module_code
-
 //! > graph
 Root: 3
 3 EvaluateExpr { expr: ExprId(3), var_id: v0, next: NodeId(2) }
@@ -374,8 +372,6 @@ fn foo() -> felt252 {
         1
     }
 }
-
-//! > module_code
 
 //! > graph
 Root: 3
@@ -439,8 +435,6 @@ fn foo() -> felt252 {
     }
 }
 
-//! > module_code
-
 //! > graph
 Root: 3
 3 EvaluateExpr { expr: ExprId(1), var_id: v0, next: NodeId(2) }
@@ -497,8 +491,6 @@ fn foo(x: Option<Option<felt252>>) -> felt252 {
         1
     }
 }
-
-//! > module_code
 
 //! > graph
 Root: 4
@@ -573,8 +565,6 @@ fn foo() -> felt252 {
     }
 }
 
-//! > module_code
-
 //! > graph
 Root: 5
 5 EvaluateExpr { expr: ExprId(1), var_id: v1, next: NodeId(4) }
@@ -645,8 +635,6 @@ fn foo(x: Option<felt252>) -> felt252 {
         1
     }
 }
-
-//! > module_code
 
 //! > graph
 Root: 2

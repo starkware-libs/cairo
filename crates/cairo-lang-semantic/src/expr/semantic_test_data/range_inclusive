@@ -8,8 +8,6 @@ test_expr_semantics(expect_diagnostics: false)
 //! > expr_code
 1..=10_u8
 
-//! > module_code
-
 //! > expected_semantics
 FunctionCall(
     ExprFunctionCall {

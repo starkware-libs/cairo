@@ -13,8 +13,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -55,8 +53,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "[core::integer::u32; 2]", found: "[?1; 3]".
  --> lib.cairo:2:24
@@ -86,8 +82,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Fixed size array type must have exactly one type.

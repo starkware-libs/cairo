@@ -16,8 +16,6 @@ fn foo(a: A<felt252>) -> A<A<felt252>> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
  --> lib.cairo:6:28
@@ -478,8 +476,6 @@ impl Felt252Introspect of Introspect<felt252> {}
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Inference cycle detected

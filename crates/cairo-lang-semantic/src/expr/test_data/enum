@@ -27,8 +27,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Wrong number of arguments. Expected 1, found: 0
  --> lib.cairo:13:17

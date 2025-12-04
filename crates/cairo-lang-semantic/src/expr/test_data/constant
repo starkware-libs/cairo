@@ -361,8 +361,6 @@ fn foo() -> () {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:15
@@ -406,8 +404,6 @@ fn foo() -> () {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Multiple definitions of constant "A".
@@ -488,8 +484,6 @@ fn foo(param: u8) -> () {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: This expression is not supported as constant.
  --> lib.cairo:2:19
@@ -564,8 +558,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 

@@ -119,8 +119,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -138,8 +136,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
