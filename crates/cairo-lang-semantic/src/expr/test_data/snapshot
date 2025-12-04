@@ -36,8 +36,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "@?1".
 It is possible that the type inference failed because the types differ in the number of snapshots.
@@ -61,8 +59,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "@core::felt252", found: "core::felt252".

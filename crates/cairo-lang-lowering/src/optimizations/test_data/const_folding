@@ -12,8 +12,6 @@ fn foo(a: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -96,8 +94,6 @@ fn foo() -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -226,8 +222,6 @@ fn foo() -> Box<felt252> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -269,8 +263,6 @@ fn foo() -> Box<A> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -309,8 +301,6 @@ fn foo() -> Box<Option<felt252>> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -351,8 +341,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -391,8 +379,6 @@ fn foo() -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -506,8 +492,6 @@ fn foo(x: u8) -> u8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -615,8 +599,6 @@ fn foo(x: u256) -> u256 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -729,8 +711,6 @@ fn foo(x: u256) -> u256 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -840,8 +820,6 @@ fn foo(x: u128) -> u128 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -953,8 +931,6 @@ fn foo(x: u64) -> u64 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1176,8 +1152,6 @@ fn foo(x: u8) -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1401,8 +1375,6 @@ fn foo() -> starknet::StorageBaseAddress {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -1487,8 +1459,6 @@ fn foo() -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1599,8 +1569,6 @@ fn foo() -> u8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -1709,8 +1677,6 @@ fn foo() -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1821,8 +1787,6 @@ fn foo() -> u8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -1931,8 +1895,6 @@ fn foo() -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -2044,8 +2006,6 @@ fn foo() -> i8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -2171,8 +2131,6 @@ fn foo() -> i8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -2296,8 +2254,6 @@ fn foo() -> i8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -2423,8 +2379,6 @@ fn foo() -> i8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -2548,8 +2502,6 @@ fn foo() -> i8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -2675,8 +2627,6 @@ fn foo() -> i8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -2801,8 +2751,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -2881,8 +2829,6 @@ fn foo() -> bool {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -2964,8 +2910,6 @@ fn foo() -> bool {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -3060,8 +3004,6 @@ fn foo(x: i8) -> i8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -3337,8 +3279,6 @@ fn foo() -> i8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -3613,8 +3553,6 @@ fn foo() -> (u8, bool) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -3704,8 +3642,6 @@ fn foo() -> (u8, bool) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -3794,8 +3730,6 @@ fn foo() -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -4008,8 +3942,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -4088,8 +4020,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -4167,8 +4097,6 @@ fn foo(x: u8) -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -4279,8 +4207,6 @@ fn foo(x: u8) -> u8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -4386,8 +4312,6 @@ fn foo(x: u8) -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -4495,8 +4419,6 @@ fn foo(x: u8) -> u8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -4602,8 +4524,6 @@ fn foo(x: u8) -> u8 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -4715,8 +4635,6 @@ fn foo(x: u8) -> u8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -4827,8 +4745,6 @@ fn foo(x: u8) -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -4907,8 +4823,6 @@ fn foo(x: @Array<u8>) -> Option<Box<@u8>> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -5242,8 +5156,6 @@ fn foo() -> u8 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -5460,8 +5372,6 @@ fn foo() -> Option<Box<@u8>> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -5555,8 +5465,6 @@ fn foo() -> Option<Box<@u8>> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -5647,8 +5555,6 @@ fn foo(v: u8) -> Option<Box<@u8>> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -5736,8 +5642,6 @@ fn foo(v: u8) -> Option<Box<@u8>> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -5822,8 +5726,6 @@ fn foo(x: felt252) -> usize {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -5867,8 +5769,6 @@ fn foo() -> Option<felt252> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -5946,8 +5846,6 @@ fn foo() -> Option<felt252> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -6033,8 +5931,6 @@ fn foo() -> Option<@felt252> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6114,8 +6010,6 @@ fn foo() -> Option<@felt252> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6194,8 +6088,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6256,8 +6148,6 @@ fn foo() -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -6341,8 +6231,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6425,8 +6313,6 @@ fn foo(a: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6500,8 +6386,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -6578,8 +6462,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6618,8 +6500,6 @@ fn foo() -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -6660,8 +6540,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6700,8 +6578,6 @@ fn foo() -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -6751,8 +6627,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6796,8 +6670,6 @@ fn foo(a: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -6834,8 +6706,6 @@ fn foo(a: NonZero<felt252>) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

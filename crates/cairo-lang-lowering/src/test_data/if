@@ -15,8 +15,6 @@ fn foo(a: bool, x: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -61,8 +59,6 @@ fn foo(x: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -105,8 +101,6 @@ fn foo(x: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -155,8 +149,6 @@ fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -204,8 +196,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -600,8 +590,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -813,8 +801,6 @@ fn foo(a: Option<felt252>) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -855,8 +841,6 @@ fn foo(a: Option<Result<felt252, felt252>>) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -925,8 +909,6 @@ fn foo(a: Option<Option<Option<felt252>>>, x: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1017,8 +999,6 @@ fn foo(a: Option<Option<felt252>>) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

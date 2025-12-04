@@ -40,8 +40,6 @@ fn foo(a: u128, b: bool) implicits(RangeCheck) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Consecutive comparison operators are not allowed: '>' followed by '>'
  --> lib.cairo:6:11
@@ -82,8 +80,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: The value does not fit within the range of type core::integer::u8.

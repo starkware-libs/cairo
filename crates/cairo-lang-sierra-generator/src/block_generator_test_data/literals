@@ -16,8 +16,6 @@ fn foo() -> (felt252, felt252, felt252, u128, u128) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics

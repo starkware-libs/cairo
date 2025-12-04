@@ -379,8 +379,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -421,8 +419,6 @@ fn foo() -> Option<()> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -468,8 +464,6 @@ fn foo() -> Option<()> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

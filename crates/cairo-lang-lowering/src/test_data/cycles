@@ -11,8 +11,6 @@ fn foo(x: felt252) nopanic {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -44,8 +42,6 @@ fn foo(x: felt252) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -91,8 +87,6 @@ fn foo(x: felt252, costs: core::gas::BuiltinCosts) nopanic {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

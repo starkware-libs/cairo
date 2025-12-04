@@ -93,8 +93,6 @@ If(
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: true)
 
-//! > module_code
-
 //! > function_body
 let a: bool = true;
 
@@ -164,8 +162,6 @@ error: If blocks have incompatible types: "core::integer::u32" and "core::intege
 
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: true)
-
-//! > module_code
 
 //! > function_body
 let a: bool = true;
@@ -274,8 +270,6 @@ error: If blocks have incompatible types: "core::integer::u32" and "core::intege
 
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: false)
-
-//! > module_code
 
 //! > function_body
 let a: Option<Option<felt252>> = Some(Some(1));

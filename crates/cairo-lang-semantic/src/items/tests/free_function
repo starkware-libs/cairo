@@ -9,8 +9,6 @@ fn foo(a: bool, a: felt252) {}
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Redefinition of parameter name "a" in function "test::foo".
  --> lib.cairo:1:17
@@ -29,8 +27,6 @@ fn foo(a: bool) implicits(felt252, bool) {}
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 

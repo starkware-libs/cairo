@@ -11,8 +11,6 @@ fn foo(a: u128, b: u128, c: u128) -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Expected type "core::bool", found: "core::integer::u128".
  --> lib.cairo:2:5

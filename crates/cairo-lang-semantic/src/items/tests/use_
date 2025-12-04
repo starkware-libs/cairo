@@ -12,8 +12,6 @@ fn foo(a: myU32) -> u32 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================

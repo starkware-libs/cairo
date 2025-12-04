@@ -3,8 +3,6 @@
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: true)
 
-//! > module_code
-
 //! > function_body
 let cond = true;
 
@@ -98,8 +96,6 @@ Loop(
 
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: true)
-
-//! > module_code
 
 //! > function_body
 let cond = true;

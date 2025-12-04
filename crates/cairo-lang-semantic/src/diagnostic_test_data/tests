@@ -271,8 +271,6 @@ test_expr_diagnostics(expect_diagnostics: true)
   x
 }
 
-//! > module_code
-
 //! > function_body
 
 //! > expected_diagnostics
@@ -302,8 +300,6 @@ test_expr_diagnostics(expect_diagnostics: true)
   z.member_call(y);
 }
 
-//! > module_code
-
 //! > function_body
 
 //! > expected_diagnostics
@@ -329,8 +325,6 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
   Option::<felt252>::None;
 }
 
-//! > module_code
-
 //! > function_body
 
 //! > expected_diagnostics
@@ -350,8 +344,6 @@ test_expr_diagnostics(expect_diagnostics: warnings_only)
 {
   Result::<felt252, felt252>::Err(4);
 }
-
-//! > module_code
 
 //! > function_body
 
@@ -857,8 +849,6 @@ test_expr_diagnostics(expect_diagnostics: true)
 {
   let _fail = array![()];
 }
-
-//! > module_code
 
 //! > function_body
 

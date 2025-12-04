@@ -11,8 +11,6 @@ fn foo() -> Option<felt252> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -30,8 +28,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -83,8 +79,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:27
@@ -105,8 +99,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
@@ -129,8 +121,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -147,8 +137,6 @@ fn foo() -> never {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::never", found: "core::felt252".
@@ -475,8 +463,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -561,8 +547,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -607,8 +591,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
@@ -656,8 +638,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E0006]: Function not found.
@@ -747,8 +727,6 @@ fn foo() -> Option {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
