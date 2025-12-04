@@ -505,7 +505,7 @@ fn gen_enum_code(
             }
         }
         impl<'db> $(&name)<'db> {
-            $("/// Checks if the given kind is one of the variants of [")$(&name)$("].")
+            $("/// Checks if a kind of a variant of [")$(&name)$("].")
             pub fn is_variant(kind: SyntaxKind) -> bool {
                 matches!(kind, $(for v in &variants join (|) => SyntaxKind::$(&v.kind)))
             }
