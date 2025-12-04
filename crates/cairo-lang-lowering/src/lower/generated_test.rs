@@ -5,14 +5,16 @@ use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_filesystem::location_marks::get_location_marks;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{Intern, try_extract_matches};
 
-use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
-use crate::ids::{ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction};
+use crate::ids::{
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionLongId, GeneratedFunction,
+};
 use crate::test_utils::LoweringDatabaseForTesting;
+use crate::{LoweringStage, Statement};
 
 cairo_lang_test_utils::test_file_test!(
     generated,
@@ -64,6 +66,33 @@ fn test_generated_function(
             lowering.debug(&LoweredFormatter::new(db, &lowering.variables))
         )
         .unwrap();
+        let calls = lowering
+            .blocks
+            .iter()
+            .flat_map(|(_, block)| {
+                block
+                    .statements
+                    .iter()
+                    .filter_map(|statement| try_extract_matches!(statement, Statement::Call))
+            })
+            .flat_map(|call| match call.function.long(db) {
+                FunctionLongId::Semantic(_) => None,
+                FunctionLongId::Generated(generated) => Some((
+                    generated.key,
+                    ConcreteFunctionWithBodyLongId::Generated(*generated).intern(db),
+                )),
+                FunctionLongId::Specialized(specialized) => try_extract_matches!(
+                    specialized.base.function_id(db).unwrap().long(db),
+                    FunctionLongId::Generated
+                )
+                .map(|generated| {
+                    (
+                        generated.key,
+                        ConcreteFunctionWithBodyLongId::Specialized(specialized.clone()).intern(db),
+                    )
+                }),
+            })
+            .collect::<OrderedHashMap<_, _>>();
 
         for (key, lowering) in multi_lowering.generated_lowerings.iter() {
             let generated_id = ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
@@ -96,7 +125,7 @@ fn test_generated_function(
             )
             .unwrap();
 
-            let lowering = db.lowered_body(generated_id, LoweringStage::Final).unwrap();
+            let lowering = db.lowered_body(*calls.get(key).unwrap_or(&generated_id), LoweringStage::Final).unwrap();
             writeln!(
                 &mut writer,
                 "Final lowering:\n{:?}",
