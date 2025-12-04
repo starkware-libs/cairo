@@ -15,6 +15,7 @@
 
 [![GitHub Workflow Status](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml/badge.svg)](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml)
 [![Project license](https://img.shields.io/github/license/starkware-libs/cairo.svg?style=flat-square)](LICENSE)
+[![Releases](https://img.shields.io/github/v/release/starkware-libs/cairo)](https://github.com/starkware-libs/cairo/releases)
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://github.com/starkware-libs/cairo/blob/main/docs/CONTRIBUTING.md)
 
 </div>
