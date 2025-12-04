@@ -31,7 +31,7 @@
 //! }
 //! ```
 //!
-//! Any type that implements the `Store` trait (or it's optimized `StorePacked` variant) can be used
+//! Any type that implements the `Store` trait (or its optimized `StorePacked` variant) can be used
 //! in storage.  This type can simply be derived using `#[derive(Store)]` - provided that all of the
 //! members of the type also implement `Store`.
 //!

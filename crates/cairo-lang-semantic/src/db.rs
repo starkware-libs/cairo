@@ -394,7 +394,7 @@ fn add_unused_import_diagnostics<'db>(
 ) {
     let _iife = (|| {
         let item = db.use_resolved_item(use_id).ok()?;
-        // TODO(orizi): Properly handle usages of impls, and than add warnings on their usages as
+        // TODO(orizi): Properly handle usages of impls, and then add warnings on their usages as
         // well.
         require(!matches!(
             item,
