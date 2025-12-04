@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 #[cairofmt::skip]
 fn foo(a: A) -> A {
     A {
@@ -58,7 +58,7 @@ error: Unknown member.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) {
     a.f;
     a.a::b;
@@ -109,7 +109,7 @@ error[E0007]: Type "core::felt252" has no member "a"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> A {
     A { a: 4, ..a }
 }

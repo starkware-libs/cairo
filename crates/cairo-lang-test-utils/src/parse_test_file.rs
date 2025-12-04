@@ -30,7 +30,7 @@ pub struct Test {
 
 impl Test {
     fn format_inputs(&mut self, test_name: &str, is_fix_mode: bool, errors: &mut Vec<String>) {
-        let attributes_to_format = vec!["function", "function_code", "cairo_code", "module_code"];
+        let attributes_to_format = vec!["function_code", "cairo_code", "module_code"];
         let formatter = CairoFormatter::new(Default::default());
         for attribute in attributes_to_format {
             if let Some(value) = self.attributes.get_mut(attribute) {

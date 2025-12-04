@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: u8) -> Option<u8> {
     let b: Option<u8> = a.try_into();
     b
@@ -39,7 +39,7 @@ impl DowncastableTryInto<
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: u8) -> u8 {
     bar(a)
 }
@@ -74,7 +74,7 @@ error: Trait has no implementation in context: test::MyTrait::<T>.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     MyTrait2::foo(5_u32)
 }
@@ -110,7 +110,7 @@ error: Trait has no implementation in context: test::MyTrait2::<core::integer::u
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     I2::foo(5_u32)
 }
@@ -146,7 +146,7 @@ error: Trait has implementation in context: test::MyTrait::<core::integer::u32>.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -186,12 +186,12 @@ impl TConsumerImpl<T, +core::fmt::Debug<T>, +Drop<T>, -Producer<T>> of Consumer<
 
 //! > ==========================================================================
 
-//! > Test negative impls infer negative impl 
+//! > Test negative impls infer negative impl
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     Trait3::bar();
 }
@@ -236,7 +236,7 @@ error: Trait has no implementation in context: test::Trait3.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar::<felt252>();
 }
@@ -268,7 +268,7 @@ fn bar<T>() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     Bad::<u128>::bad();
 }

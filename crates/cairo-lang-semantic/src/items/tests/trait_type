@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::foo1(3_u32);
     MyImpl::foo2(3_u32);
@@ -44,7 +44,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -80,7 +80,7 @@ impl MyImplU32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -102,7 +102,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -124,7 +124,7 @@ trait MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::<u32>::foo1(3_u32);
     MyImpl::<u32>::foo2(3_u32);
@@ -165,7 +165,7 @@ impl MyImpl<T> of MyTrait<T, u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -196,7 +196,7 @@ warning: In a trait, paths of the same trait are not allowed. Did you mean to us
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -227,7 +227,7 @@ warning: In a trait, paths of the same trait are not allowed. Did you mean to us
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -256,7 +256,7 @@ impl MyImpl of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -282,7 +282,7 @@ warning: In a trait, paths of the same trait must be fully explicit. Either use 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -329,7 +329,7 @@ warning: In an impl, paths of the same impl are not allowed. Did you mean to use
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -373,7 +373,7 @@ warning: In an impl, paths of the same impl are not allowed. Did you mean to use
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -412,7 +412,7 @@ error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -444,7 +444,7 @@ warning: In an impl, paths of the same impl must be fully explicit. Either use `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -491,7 +491,7 @@ warning: In an impl, paths of the impl's trait are not allowed. Did you mean to 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: warnings_only)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -538,7 +538,7 @@ warning: In an impl, paths of the impl's trait are not allowed. Did you mean to 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -576,7 +576,7 @@ impl MyImpl_u32 of MyTrait<u32> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -632,7 +632,7 @@ error: Return type of impl function `MyImpl::foo4` is incompatible with `MyTrait
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = MyStruct { value: 3_u32 };
     let _: MyStruct<u32> = MyImpl::foo(x);
@@ -667,7 +667,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::foo(Some(3));
 }
@@ -696,7 +696,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -729,7 +729,7 @@ Candidate `core::result::ResultTrait::unwrap` inference failed with: Type mismat
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::foo(3);
 }
@@ -758,7 +758,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -789,7 +789,7 @@ error: Trait has no implementation in context: core::traits::Neg::<core::integer
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: usize = MyImpl::foo(3, 4);
 }
@@ -822,7 +822,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -853,7 +853,7 @@ error: Trait has no implementation in context: core::traits::Add::<core::option:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyImpl::foo(array![0]);
 }
@@ -884,7 +884,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -917,7 +917,7 @@ Candidate `core::ops::index::IndexView::index` inference failed with: Trait has 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -950,7 +950,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -992,7 +992,7 @@ error: Return type of impl function `MyImpl::bar2` is incompatible with `MyTrait
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1049,7 +1049,7 @@ error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::Anot
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1093,7 +1093,7 @@ fn bar3() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1163,7 +1163,7 @@ error: `test::MyImpl::MyType` type mismatch: `core::integer::u32` and `core::int
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1224,7 +1224,7 @@ error: Trait has no implementation in context: test::AnotherTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1291,7 +1291,7 @@ error: Trait `test::AnotherTrait` has multiple implementations, in: `test::Anoth
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1334,7 +1334,7 @@ fn bar3() {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1363,7 +1363,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1396,7 +1396,7 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1459,7 +1459,7 @@ fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1559,7 +1559,7 @@ fn error_propagation(x: Option<MyTrait::MyType1>) -> Option<MyTrait::MyType2> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1619,7 +1619,7 @@ fn complex2(
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1716,7 +1716,7 @@ error: Unexpected return type. Expected: "@(core::integer::u16, core::option::Op
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(x: MyImpl::my_function) {
     let _: MyImpl::my_function = 3;
 }
@@ -1754,7 +1754,7 @@ error: Not a type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1783,7 +1783,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1816,7 +1816,7 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1843,7 +1843,7 @@ error: Cycle detected while resolving type-alias/impl-type items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1877,7 +1877,7 @@ error: Cycle detected while resolving type-alias/impl-type items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1906,7 +1906,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1940,7 +1940,7 @@ error: `Self` is not supported in this context.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1980,7 +1980,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     let x: MyImpl::<u32>::ty = 4;
     x
@@ -2007,7 +2007,7 @@ impl MyImpl<K> of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     let x: MyTrait::ty = 4_u32;
     x
@@ -2039,7 +2039,7 @@ error: Candidate impl test::MyImpl::<?0> has an unused generic parameter.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     MyTrait::<u32>::foo()
 }
@@ -2069,7 +2069,7 @@ impl MyImpl<K, +Default<K>> of MyTrait<u32, K> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
     DepAdd::<felt252>::other_add(x, y)
 }
@@ -2098,7 +2098,7 @@ impl DepAdd<T> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
     OtherAdd::<felt252>::other_add(x, y)
 }
@@ -2127,7 +2127,7 @@ impl DepAdd<T> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     bar::<_, DepAdd>(3_felt252, 4)
 }
@@ -2159,7 +2159,7 @@ impl DepAdd<T, +Drop<T>> of OtherAdd<T, T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = Trt::foo();
     x.t
@@ -2192,7 +2192,7 @@ error: Trait has no implementation in context: test::Trt.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2217,7 +2217,7 @@ fn bar<T, impl TrtImp: Trt<T>>(x: T) -> TrtImp::Assoc {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     array![12, 13, 14].first()
 }
@@ -2247,7 +2247,7 @@ impl ArrayFirst<T> of FirstTrait<Array<T>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _: MyImpl::ty = 5;
 }
@@ -2282,7 +2282,7 @@ error: Trait has no implementation in context: test::MyTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bar<+MyTrait, +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>>(
     _y: MyTrait::ty,
 ) -> felt252 {
@@ -2307,7 +2307,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<
     impl I1: MyTrait,
     impl I2: MyTrait,
@@ -2339,7 +2339,7 @@ error: Unexpected return type. Expected: "core::felt252", found: "core::integer:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<
     +MyTrait,
     +core::metaprogramming::TypeEqual<MyTrait::ty, felt252>,
@@ -2375,7 +2375,7 @@ error: Type mismatch: `core::felt252` and `core::integer::u32`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 ///TODO(TomerStarkware): remove diagnostic and make it compile without errors.
 fn bar<
     +MyTrait,
@@ -2420,12 +2420,12 @@ error: Trait has no implementation in context: test::TraitWithInferredParams::<c
 
 //! > ==========================================================================
 
-//! > Associated type bounds with TypeEqual, only bound associated types to another associated type. 
+//! > Associated type bounds with TypeEqual, only bound associated types to another associated type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bar<
     impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
 >() -> I1::ty {
@@ -2461,12 +2461,12 @@ impl MyImplfelt252 of MyTrait {
 
 //! > ==========================================================================
 
-//! > Associated type bounds with TypeEqual, only bound associated types to another associated type wrong type. 
+//! > Associated type bounds with TypeEqual, only bound associated types to another associated type wrong type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<
     impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
 >() -> I1::ty {
@@ -2505,12 +2505,12 @@ error: Trait has no implementation in context: core::metaprogramming::TypeEqual:
 
 //! > ==========================================================================
 
-//! > Associated type bounds with TypeEqual, only bound associated types to another associated inferring type. 
+//! > Associated type bounds with TypeEqual, only bound associated types to another associated inferring type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<
     impl I1: MyTrait, impl I2: MyTrait, +core::metaprogramming::TypeEqual<I1::ty, I2::ty>,
 >() -> I2::ty {
@@ -2538,12 +2538,12 @@ error: Trait has no implementation in context: core::metaprogramming::TypeEqual:
 
 //! > ==========================================================================
 
-//! > Reimplementing TypeEqual trait. 
+//! > Reimplementing TypeEqual trait.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2560,12 +2560,12 @@ impl I of core::metaprogramming::TypeEqual<u32, felt252>;
 
 //! > ==========================================================================
 
-//! > TypeEqual with 3 generic parameters. 
+//! > TypeEqual with 3 generic parameters.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2587,7 +2587,7 @@ fn bar<T, impl I: core::metaprogramming::TypeEqual<T, T, T>>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2609,7 +2609,7 @@ fn bar<T, const C: u32, impl I: core::metaprogramming::TypeEqual<T, C>>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 ///TODO(TomerStarkware): change diagnostics to mismatch types instead of missing impl.
 fn foo() {
     let _: felt252 = MyTrait::my_function();
@@ -2643,7 +2643,7 @@ error: `test::MyImpl::MyType` type mismatch: `core::felt252` and `core::integer:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bar<+MyTrait[ty: felt252]>(y: MyTrait::ty) -> felt252 {
     y + 3
 }
@@ -2666,7 +2666,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32], impl I2: MyTrait[ty: I1::ty]>() -> I2::ty {
     3_u8
 }
@@ -2693,7 +2693,7 @@ fn bar<impl I1: MyTrait[ty: u32], impl I2: MyTrait[ty: I1::ty]>() -> I2::ty {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<+MyTrait[ty: felt252], +core::metaprogramming::TypeEqual<MyTrait::ty, u32>>(
     _y: MyTrait::ty,
 ) -> MyTrait::ty {
@@ -2720,12 +2720,12 @@ error: Type mismatch: `core::felt252` and `core::integer::u32`.
 
 //! > ==========================================================================
 
-//! > Associated type bounds, only bound associated types to another associated type. 
+//! > Associated type bounds, only bound associated types to another associated type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait, impl I2: MyTrait[ty: I1::ty]>() -> I1::ty {
     I2::foo()
 }
@@ -2759,12 +2759,12 @@ impl MyImplfelt252 of MyTrait {
 
 //! > ==========================================================================
 
-//! > Associated type bounds, bound associated types together and pass wrong type. 
+//! > Associated type bounds, bound associated types together and pass wrong type.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: I2::ty], impl I2: MyTrait>() -> I1::ty {
     I2::foo()
 }
@@ -2806,7 +2806,7 @@ error: Type mismatch: `core::integer::u32` and `I2::ty`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: felt252]>() -> I1::ty {
     I1::foo()
 }
@@ -2837,7 +2837,7 @@ fn bar2<impl J1: MyTrait>() -> J1::ty {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
     I1::foo()
 }
@@ -2865,7 +2865,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
     I1::foo()
 }
@@ -2896,7 +2896,7 @@ fn bar2<impl I1: MyTrait[ty: u8]>() -> I1::ty {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32]>() -> I1::ty {
     I1::foo()
 }
@@ -2940,7 +2940,7 @@ error: Trait `test::MyTrait` has multiple implementations, in: `test::I1`, `test
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
     I1::foo()
 }
@@ -2969,7 +2969,7 @@ fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
     I1::foo()
 }
@@ -2997,7 +2997,7 @@ fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32]>() {
     I1::foo();
 }
@@ -3033,7 +3033,7 @@ error: Type mismatch: `core::integer::u8` and `core::integer::u32`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32]>() {
     I1::foo();
 }
@@ -3073,7 +3073,7 @@ error: Expected an impl of `test::MyTrait`. Got an impl of `test::OtherTrait`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>>() {
     OtherTrait::foo(5_u32);
 }
@@ -3100,7 +3100,7 @@ trait OtherTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bar<impl I1: MyTrait[ty: u32], +OtherTrait<I1::ty>, +OtherTrait<u32>>() {
     OtherTrait::foo(5_u32);
 }
@@ -3131,7 +3131,7 @@ error: Trait `test::OtherTrait::<core::integer::u32>` has multiple implementatio
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -3162,7 +3162,7 @@ error: Generic parameter trait of impl function `I::foo` is incompatible with `T
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> S<M> {
     S { x: 3_felt252 }
 }

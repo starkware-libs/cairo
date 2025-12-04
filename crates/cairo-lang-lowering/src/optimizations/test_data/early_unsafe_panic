@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_early_unsafe_panic
 
-//! > function
+//! > function_code
 fn foo(a: Option<u32>) -> u32 {
     match a {
         Some(x) => x,
@@ -81,7 +81,7 @@ End:
 //! > test_runner_name
 test_early_unsafe_panic
 
-//! > function
+//! > function_code
 fn foo(a: Option<u32>) -> u32 {
     a.unwrap();
     core::panic_with_felt252('error')

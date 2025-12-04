@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo() {
     let (a, _, b) = get_val();
     test_func(a, b)
@@ -44,7 +44,7 @@ return()
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo() -> (felt252, felt252) {
     let tuple = get_val();
     let (_a, b) = tuple;
@@ -84,7 +84,7 @@ return([0])
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo() {
     let arr = get_val();
     test_func(arr.span());

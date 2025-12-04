@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = 7_felt252;
     if x {
@@ -39,7 +39,7 @@ error: Unexpected return type. Expected: "()", found: "core::bool".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let x = 7_u64;
     if x {
@@ -66,7 +66,7 @@ error: Condition has type "core::integer::u64", expected bool.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let x = Some(7_u64);
     if let MyEnum::A(y) = x {
@@ -102,7 +102,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let x = Some(7_u64);
     if let Some(y) = x || true {
@@ -130,7 +130,7 @@ error: Operator '||' is not allowed in let chains. Consider wrapping the express
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let x = Some(7_u64);
     if let Some = x {
@@ -158,7 +158,7 @@ warning: Pattern missing subpattern for the payload of variant. Consider using `
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> bool {
     let a = A::B(());
     if let A::B = a {
@@ -185,7 +185,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: Option<Option<Option<felt252>>>) {
     if let Some(b) = a && let Some(_c) = b {}
     // The opposite order doesn't work.

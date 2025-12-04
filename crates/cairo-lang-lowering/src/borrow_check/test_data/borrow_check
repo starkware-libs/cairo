@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: ACopy, y: ADrop) {
     if true {
         use_a_copy(x);
@@ -69,7 +69,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: ACopy, y: ADrop) -> ADrop {
     if true {
         use_a_copy(x);
@@ -153,7 +153,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(ref x: ADrop, y: ADrop) {
     use_a_drop(x);
     bar();
@@ -199,7 +199,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(ref self: Query<felt252>, value: felt252) {
     self.data.append(value)
 }
@@ -233,7 +233,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo() {
     let mut arr: Array<u256> = Default::default();
     arr.append(1.into());
@@ -267,7 +267,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(ref a: A) {
     1 + 1;
 }
@@ -311,7 +311,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: ADrop, mut y: ADrop) -> ADrop {
     if true {
         use_a_drop(y);
@@ -379,7 +379,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo() {
     let arr = array!['err_code'];
     let mut b = arr;
@@ -427,7 +427,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: NonCopy) -> Option<NonCopy> {
     use_non_copy(x);
     do_match_extern(x)
@@ -492,7 +492,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(mut x: MyStruct) -> MyStruct {
     x.a = 17;
     use_non_copy(x.b);
@@ -542,7 +542,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
     invalidate(s1.a);
     invalidate(s2.a);
@@ -602,7 +602,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(ref self: MyStruct) {
     if self.b == 0 {
         self.a = Default::default();
@@ -675,7 +675,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(mut v: MyStruct) -> u8 {
     if v.b == 0 {
         v.a = Default::default();
@@ -739,7 +739,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(mut x: MyStruct) -> MyStruct {
     x.a = 17;
     x.a += 1;
@@ -793,7 +793,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(ref a: A) {
     if true {
         bar(@a.x);
@@ -855,7 +855,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(mut x: MyStruct) -> MyStruct {
     let _arr = array![{
         x.a = 17;
@@ -913,7 +913,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: MyStruct) -> MyStruct {
     consume(x.b);
     x
@@ -961,7 +961,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: NonDrop) {
     if let Some(x) = maybe_consume(x) {
         foo(x)
@@ -1030,7 +1030,7 @@ note: Trait has no implementation in context: core::traits::PanicDestruct::<test
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: Wrapper) {
     if x.inner.is_zero() {
         use_x(x);
@@ -1089,7 +1089,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: Wrapper) {
     if x.inner.is_zero() {
         use_x(x); // First use.
@@ -1172,7 +1172,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(x: Wrapper) -> u16 {
     let w = if x.inner.is_zero() {
         Wrapper { inner: 6 }
@@ -1235,7 +1235,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo() {
     let _foo = ();
 }

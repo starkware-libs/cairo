@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let c = |a| {
         a + 3
@@ -35,7 +35,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = 8;
     let c = |a| {

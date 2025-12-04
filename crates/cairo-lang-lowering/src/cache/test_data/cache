@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_cache_check
 
-//! > function
+//! > function_code
 fn foo(x: ACopy, y: ADrop) {
     if true {
         use_a_copy(x);
@@ -42,12 +42,12 @@ End:
 
 //! > ==========================================================================
 
-//! > Cache Generated Impl 
+//! > Cache Generated Impl
 
 //! > test_runner_name
 test_cache_check
 
-//! > function
+//! > function_code
 fn foo() -> u32 {
     let x = |a| {
         a + 5
@@ -81,7 +81,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function
+//! > function_code
 fn foo() {
     bar::<MyOuter>();
 }
@@ -126,7 +126,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function
+//! > function_code
 fn foo() -> i32 {
     MyTrait::foo()
 }
@@ -163,7 +163,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function
+//! > function_code
 fn foo() -> i32 {
     MyTrait::foo()
 }
@@ -203,7 +203,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function
+//! > function_code
 fn foo() -> i32 {
     my_macro!(3)
 }
@@ -239,7 +239,7 @@ End:
 //! > test_runner_name
 test_cache_check
 
-//! > function
+//! > function_code
 fn foo() {
     bar();
 }

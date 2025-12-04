@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref x: felt252, a: bool) -> felt252 {
     x = 7;
     let mut data = array![];
@@ -40,7 +40,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref x: felt252, ref a: bool) -> felt252 {
     if true {
         x = 7;

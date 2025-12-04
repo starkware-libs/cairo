@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut _iter = array![10, 11, 12, 13_felt252].span();
     for _x in _iter {
@@ -31,7 +31,7 @@ error: Can only break with a value inside a `loop`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let arr = array![A { x: Some(1) }, A { x: None }, A { x: Some(2) }].span();
     for A(x) in arr {
@@ -65,7 +65,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     for (_a, _a) in array![(1, 2)] {}
 }

@@ -5,7 +5,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo() -> () {
     let x = 5;
     bar(x);

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_trim_unreachable
 
-//! > function
+//! > function_code
 fn foo(x: Option<NeverWithDrop>, a: u32) {
     match x {
         Some(i_am_never) => {
@@ -91,7 +91,7 @@ End:
 //! > test_runner_name
 test_trim_unreachable
 
-//! > function
+//! > function_code
 fn foo(never_ty: NeverWithDrop, a: u32) {
     if a == 0 {
         let _b: u16 = a.try_into().unwrap_or(0);

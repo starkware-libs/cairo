@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     bar(bar(a)) + bar(bar(a) + bar(a)) + bar(a)
 }
@@ -59,7 +59,7 @@ return([15])
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(b: bool) -> felt252 {
     let a = revoke_ap();
     let x = if b {
@@ -120,7 +120,7 @@ label_test::foo::2:
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     let a = x + x;
     foo(a) + a
@@ -159,7 +159,7 @@ return([6])
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = revoke_ap();
     let (y, _z) = dup::<felt252>(x);
@@ -202,7 +202,7 @@ return([2])
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(strct: MyStruct) -> felt252 {
     let MyStruct { a, b } = strct;
     immovable(b);
@@ -250,7 +250,7 @@ return([1])
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let strct1 = immovable(MyStruct1 { strct: MyStruct2 { value: immovable(12) } });
     let strct2 = strct1.strct;
@@ -333,7 +333,7 @@ return([16])
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(a: felt252, b: felt252) -> felt252 {
     let c = a + b;
 

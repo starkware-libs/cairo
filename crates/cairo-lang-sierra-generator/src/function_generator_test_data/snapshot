@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(ref arr: Array<felt252>) {
     arr.append(5);
     let _ = immovable(@arr);
@@ -59,7 +59,7 @@ return([9])
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(x: @u32) {
     *x + 1;
     if true {

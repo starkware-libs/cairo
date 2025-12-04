@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo() {
     bar(false, 1)
 }
@@ -49,7 +49,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo() {
     bar(false, BoxTrait::new(2))
 }
@@ -95,7 +95,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo() {
     bar(false, array![])
 }
@@ -142,7 +142,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo() {
     bar(false, array![1, 2, 3])
 }
@@ -199,7 +199,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo() {
     bar(false, array![])
 }
@@ -246,7 +246,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(x: felt252) {
     let mut arr = array![];
     bar(false, ref arr, arr.span(), x, 0, BoxTrait::new(1))
@@ -303,7 +303,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(b: felt252, e: felt252, d: felt252) {
     bar(false, S6 { a: 1, b, c: 3, d, e, f: 6 })
 }
@@ -362,7 +362,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(b: felt252) {
     // TODO(TomerStarkware): propagate array info in case of specialized function call.
     bar(false, SA1 { a: array![1, 2, 3], b, c: array![] })
@@ -424,7 +424,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(a: Array<felt252>) {
     // TODO(TomerStarkware): propagate array info in case of specialized function call.
     bar(false, SA1 { a, b: 7, c: array![5, 6] })
@@ -484,7 +484,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(a: NoDrop) {
     // TODO(TomerStarkware): Allow for specialzing with non-droppable fields.
     let c = NoDrop { a: 7 };
@@ -557,7 +557,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(a: felt252) {
     bar(false, S { a, b: 5 })
 }
@@ -610,7 +610,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(x: felt252, y: felt252) {
     let mut arr = array![];
     arr.append(Outer { inner: Inner { a: 1, b: x }, c: 3 });
@@ -689,7 +689,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(x: felt252) {
     bar(false, E::A(x))
 }
@@ -741,7 +741,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(b: felt252) {
     let s = S { a: 1, b };
     bar(false, E::A(s))
@@ -801,7 +801,7 @@ End:
 //! > test_runner_name
 test_specialized_function
 
-//! > function
+//! > function_code
 fn foo(b: felt252) {
     bar1(false, 100000);
 }

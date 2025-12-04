@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo(y: felt252) -> felt252 {
     let mut x = 5;
     while x != 0 {
@@ -147,7 +147,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo(ref arr: Array<felt252>, mut x: felt252) -> felt252 {
     while let true = (x != 0) {
         x = x - 1;
@@ -270,7 +270,7 @@ End:
 //! > test_runner_name
 test_generated_function
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let mut y = 0;
     while let MyEnum::A(x) = a() {

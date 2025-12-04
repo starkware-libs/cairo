@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>) {
     |d: u32| {
         let _ = a + d;
@@ -43,7 +43,7 @@ error: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(a: PanicDestructable) {
     || {
         let PanicDestructable { } = a;
@@ -85,7 +85,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<u32>) {
     |b: u32| {
         let _ = a.append(b);
@@ -115,7 +115,7 @@ error: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(a: S) {
     || {
         use_s(a)
@@ -165,7 +165,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<u32>) {
     let f = |b: u32| {
         let _ = a.append(b);
@@ -197,7 +197,7 @@ error: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(a: Array<u32>) {
     let f = |_b: u32| {
         let _ = a.len();
@@ -237,7 +237,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<u32>) {
     |_b: u32| {
         a = array![];
@@ -268,7 +268,7 @@ error: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = 8;
     let c = |a| {
@@ -308,7 +308,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = array![99_felt252];
     let c = |a| {
@@ -354,7 +354,7 @@ End:
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let mut x = 8;
     let c = |a| {
@@ -387,7 +387,7 @@ error: Capture of mutable variables in a closure is not supported
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn identity<T>(x: T) -> T {
     x
 }
@@ -428,7 +428,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_borrow_check
 
-//! > function
+//! > function_code
 fn foo(a: Destructable, b: Destructable) {
     let c = || {
         let Destructable { } = a;

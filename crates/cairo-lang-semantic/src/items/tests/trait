@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -182,7 +182,7 @@ impl abc of abc;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -212,7 +212,7 @@ impl MyImpl4 of foo;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -286,7 +286,7 @@ impl T2Drop of Drop<(felt252, NonCopy)>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -310,7 +310,7 @@ error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -336,7 +336,7 @@ impl MyImpl2<T> of MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -356,7 +356,7 @@ trait MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo()
 }
@@ -382,7 +382,7 @@ error: Trait has no implementation in context: test::MyTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo()
 }
@@ -414,7 +414,7 @@ error: Trait `test::MyTrait` has multiple implementations, in: `test::MyImpl1`, 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -440,7 +440,7 @@ impl MyImpl of MyTrait;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -482,7 +482,7 @@ impl MyImpl of MyTrait;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -541,7 +541,7 @@ error: Trait has no implementation in context: test::OtherTrait.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -586,7 +586,7 @@ error: Impl item impl `MyImpl::E` is not a member of trait `MyTrait`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -616,7 +616,7 @@ error: Parameter type of impl function `Felt252Identity::foo` is incompatible wi
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -646,7 +646,7 @@ error: Return type of impl function `Felt252Identity::foo` is incompatible with 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -670,7 +670,7 @@ impl Felt252Identity of Identity<felt252, felt252> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -698,7 +698,7 @@ error: Parameter type of impl function `Felt252Identity::foo` is incompatible wi
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -722,7 +722,7 @@ impl Felt252Identity of Identity<felt252> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -757,7 +757,7 @@ error: The name `X` is defined multiple times.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -783,7 +783,7 @@ error: The name `X` is defined multiple times.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -822,7 +822,7 @@ error: Expected an impl of `test::MyTrait::<core::integer::i32>`. Got an impl of
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -862,7 +862,7 @@ error: The number of parameters in the impl function `MyImpl::foo` is incompatib
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn bla() {}
 
 //! > function_name
@@ -903,7 +903,7 @@ impl imp4 of inner_imp {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -926,7 +926,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -954,7 +954,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -983,7 +983,7 @@ impl MyImpl of MyTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1016,7 +1016,7 @@ error: Unexpected return type. Expected: "core::integer::u32", found: "core::int
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1049,7 +1049,7 @@ error: `Self` can only be the first segment of a path.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1088,7 +1088,7 @@ error: Return type of impl function `MyImpl::foo` is incompatible with `MyTrait:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1133,7 +1133,7 @@ error: Trait has no implementation in context: core::iter::traits::iterator::Ite
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: *)
 
-//! > function
+//! > function_code
 fn foo1() -> felt252 {
     2
 }
@@ -1163,7 +1163,7 @@ fn bar<impl I: Tr>(x: A<I>) -> A<I> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: *)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -1187,7 +1187,7 @@ pub trait Tr<+Tr> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: *)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -1218,7 +1218,7 @@ impl Ifelt = I0<Ifelt>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -1248,7 +1248,7 @@ error: Parameter name of impl function I::foo is incompatible with Tr::foo param
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -1278,7 +1278,7 @@ error: Generic parameter trait of impl function `I::foo` is incompatible with `T
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -1308,7 +1308,7 @@ error: Generic parameter trait of impl function `I::foo` is incompatible with `T
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -1334,7 +1334,7 @@ impl I of Tr {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -1369,7 +1369,7 @@ error: Generic parameter kind of impl function `I::foo` is incompatible with `Tr
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }

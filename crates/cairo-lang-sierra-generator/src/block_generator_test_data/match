@@ -3,7 +3,7 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     match x {
         0 => 3,
@@ -68,7 +68,7 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo(x: felt252) -> felt252 {
     match x {
         0 => x,
@@ -130,7 +130,7 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo(opt: Option<@felt252>) -> felt252 {
     match opt {
         Some(x) => *x,
@@ -192,7 +192,7 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<u32>) {
     a.pop_front().unwrap();
     a.pop_front().unwrap();

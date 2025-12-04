@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     let x = None;
     let _ = x.is_some();
@@ -32,7 +32,7 @@ impl OtherImpl of AnotherTrait {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     let x = None;
     x.is_foo();
@@ -110,7 +110,7 @@ error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic param
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(3_u8);
 }
@@ -140,7 +140,7 @@ mod callable {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(3_u8);
 }
@@ -174,7 +174,7 @@ fn bar<T, +unknown, +callable::CallableTrait<T>>(x: T) {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(3_u8);
 }
@@ -204,7 +204,7 @@ impl U8Callable of callable::CallableTrait<u8> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(3_u8);
 }
@@ -237,7 +237,7 @@ impl U16Callable of callable::CallableTrait<u16> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(3_u8);
 }
@@ -268,7 +268,7 @@ mod callable {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(3_u8);
 }
@@ -297,12 +297,12 @@ mod callable {
 
 //! > ==========================================================================
 
-//! > No impls found for method on a concrete self. 
+//! > No impls found for method on a concrete self.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     3_u16.bar();
 }
@@ -324,12 +324,12 @@ Candidate `test::MyTrait::bar` inference failed with: Trait has no implementatio
 
 //! > ==========================================================================
 
-//! > No impls found for method on a type-var self. 
+//! > No impls found for method on a type-var self.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     (3_u16 + 3_u16).bar();
 }
@@ -351,12 +351,12 @@ Candidate `test::MyTrait::bar` inference failed with: Trait has no implementatio
 
 //! > ==========================================================================
 
-//! > Wrong num of arguments. 
+//! > Wrong num of arguments.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     0.bar(1);
     0.bar(1, 2, 3);
@@ -391,7 +391,7 @@ error: Wrong number of arguments. Expected 3, found: 4
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let channel = PoseidonChannel {};
     channel.draw_felt();

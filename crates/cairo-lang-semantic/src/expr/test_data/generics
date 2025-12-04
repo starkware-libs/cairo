@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 extern type A<S>;
 extern fn bar<T>(x: T) -> A<T> nopanic;
 
@@ -31,7 +31,7 @@ error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", f
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     5.foo(true);
     MyTrait::foo(6, false);
@@ -59,7 +59,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut x = 5;
     x.foo();
@@ -85,7 +85,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     bar::<1, 1, 1, 1>();
     bar::<felt252, felt252>();
@@ -157,7 +157,7 @@ error: Expected 2 generic arguments, found 3.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     bar::<MyImpl>();
     bar::<AnotherImpl>();
@@ -197,7 +197,7 @@ error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `tes
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn f() {}
 
 //! > module_code
@@ -241,7 +241,7 @@ error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `tes
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn f() {
     MyImpl::<MyImpl2>::foo();
 }
@@ -274,7 +274,7 @@ f
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut x = bar();
     x = bar::<felt252, _>();
@@ -303,7 +303,7 @@ error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -326,7 +326,7 @@ struct B<impl Timpl1: ATrait<T>, T, impl Timpl2: ATrait2<T>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -349,7 +349,7 @@ struct B<T, impl Timpl2: ATrait2<T>, impl Timpl1: ATrait<T>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     // Failures.
     bar::<felt252, G: felt252>();
@@ -415,7 +415,7 @@ error: Generic argument `T` is out of order.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -437,7 +437,7 @@ fn bar<+unknown>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -459,7 +459,7 @@ fn bar<impl X: unknown>() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 trait Introspect<T> {}
 
 #[derive(Drop)]
@@ -499,7 +499,7 @@ error: Cycle detected while resolving generic param. Try specifying the generic 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -519,7 +519,7 @@ trait MyTrait<+Drop<T>, T> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -548,7 +548,7 @@ trait MyTrait<+Drop<T>, +Copy<T>> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -574,7 +574,7 @@ impl MyImpl<T> of MyTrait<T, T> {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar::<{ 1 + 2 }>();
 }
@@ -596,7 +596,7 @@ extern fn bar<const M: felt252>() nopanic;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _s: S<{ 1 - 2 }> = bar();
 }
@@ -634,7 +634,7 @@ error: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<1
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     bar::<1>()
 }
@@ -658,7 +658,7 @@ fn bar<const N: felt252>() -> felt252 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> S<1> {
     bar::<1>()
 }
@@ -689,7 +689,7 @@ fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> MyStruct<1> {
     let s = new();
     bar1(s);

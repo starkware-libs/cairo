@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: u256) -> u64 {
     U256TryIntoU64::try_into(a).unwrap()
 }
@@ -120,7 +120,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: u128) -> u128 {
     if false {
         x + 1

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let b = match a {
         5 => { 550 },
@@ -69,7 +69,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     match a {
         0 => 11,
@@ -149,7 +149,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252, x: felt252) -> felt252 {
     match x {
         0 => a + 1,
@@ -195,7 +195,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
     core::array::array_get(a, 1_u32)
 }
@@ -240,7 +240,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = 7;
     match x {
@@ -275,7 +275,7 @@ error: Match is non-exhaustive: `_` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(v: u8) {
     match v {
         0_u8 => 7,
@@ -351,7 +351,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(v: Number) {
     match v {
         0 => 7,
@@ -429,7 +429,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     match 5 {
         0_u8 => 7,
@@ -461,7 +461,7 @@ error: Type mismatch: `core::felt252` and `core::integer::u8`.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     match Some(5) {};
 }
@@ -489,7 +489,7 @@ error: Match is non-exhaustive: `_` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(e: EmptyEnum) {
     match e {};
 }
@@ -519,7 +519,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     match felt252_is_zero(5) {};
 }
@@ -547,7 +547,7 @@ error: Match is non-exhaustive: `_` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match get_a() {
         A::One(_) => 2,
@@ -611,7 +611,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -693,7 +693,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match get_a() {
         A::Two(_) => { 2 },
@@ -745,7 +745,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => { 2 },
@@ -795,7 +795,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: (felt252, felt252)) -> felt252 {
     match a {
         (0, 1) => 0,
@@ -862,7 +862,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: Option<Option<felt252>>) -> felt252 {
     match a {
         Some(Some(x)) => x,
@@ -896,7 +896,7 @@ error: Match is non-exhaustive: `Some(None(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -936,7 +936,7 @@ error: Match is non-exhaustive: `Three(_)` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: bool) -> felt252 {
     match a {
         true => 2,
@@ -982,7 +982,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: MyEnum) -> felt252 {
     match a {
         MyEnum::A(x) | MyEnum::B((x, _)) => x,
@@ -1059,7 +1059,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     match a {
         0 | 1 => 11,
@@ -1174,7 +1174,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     let x = (@a, b);
     let y = @x;
@@ -1320,7 +1320,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::Two(_), A::One(_)) => 5,
@@ -1364,7 +1364,7 @@ error: Match is non-exhaustive: `(One(_), Two(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     match (a, (a, b)) {
         (A::Two(_), (A::One(_), A::One(_))) => 8,
@@ -1484,7 +1484,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match (a, get_bool()) {
         (A::Two(_), true) => 5,
@@ -1606,7 +1606,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match 5_u256 {
         0 => 1,
@@ -1638,7 +1638,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(v: u32) -> felt252 {
     match v {
         0 => 1,
@@ -1739,7 +1739,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -1815,7 +1815,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(_) => 2,
@@ -1891,7 +1891,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A, b: A) -> felt252 {
     match (a, b) {
         (A::Two((t, _)), A::One(_)) => t + 3,
@@ -2090,7 +2090,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         A::Two(((_, (t,)), _)) => t + 3,
@@ -2170,7 +2170,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         A::Three(((_, (B::One(t),)), _)) => t + 3,
@@ -2263,7 +2263,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: ((felt252, (A,)), felt252)) -> felt252 {
     match a {
         ((_, (A::One(t),)), _) => t + 3,
@@ -2343,7 +2343,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: Option<felt252>) -> felt252 {
     match a {
         Some(_) => 5,
@@ -2394,7 +2394,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     match Some(a) {
         Some => 2,
@@ -2430,7 +2430,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     match Some(a) {
         Some(_) => 2,
@@ -2462,7 +2462,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(e: EmptyEnum) -> felt252 {
     match e {
         _ => { 1 },
@@ -2517,7 +2517,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: Option<Option<A>>) -> felt252 {
     match a {
         Some(Some(A::One)) => 3,
@@ -2558,7 +2558,7 @@ error: Match is non-exhaustive: `Some(None(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: Option<Option<A>>) -> felt252 {
     match a {
         Some(Some(A::One)) => 3,
@@ -2651,7 +2651,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(c: C) -> felt252 {
     match c {
         C::One(B::One(A::Two(x))) | C::One(B::One(A::One(x))) => x + x,
@@ -2726,7 +2726,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         Ok(Ok(Ok(x))) => x,
@@ -2864,7 +2864,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         // Ok(Ok(Ok(()))) => 1,
@@ -2907,7 +2907,7 @@ error: Match is non-exhaustive: `Ok(Ok(Ok(_)))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         Ok(Ok(Ok(()))) => 1,
@@ -2950,7 +2950,7 @@ error: Match is non-exhaustive: `Ok(Err(_))` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> felt252 {
     match a {
         // Ok(Ok(Ok(()))) => 1,
@@ -2993,7 +2993,7 @@ error: Match is non-exhaustive: `Ok(_)` not covered.
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(c: C) -> felt252 {
     match c {
         C::One(B::One(A::One)) => 1,
@@ -3038,7 +3038,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(c: C) -> felt252 {
     match c {
         C::One(B::One(A::One(x))) | C::One(B::Two(x)) => x + x,
@@ -3113,7 +3113,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(b: B) -> felt252 {
     match b {
         B::One(A::One((x, _))) => x,
@@ -3165,7 +3165,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: @B) -> felt252 {
     match x {
         B::Two(A::One(v)) => *****v,
@@ -3221,7 +3221,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match get_a() {
         A::One(Some(Some(v))) => v,
@@ -3296,7 +3296,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match @get_a() {
         A::One(Some(Some(v))) => *****v,
@@ -3378,7 +3378,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: Option<Option<A>>) -> felt252 {
     match x {
         Some(Some(A { opt: Some(v) })) => v,
@@ -3459,7 +3459,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: Option<Option<felt252>>) -> felt252 {
     match x {
         Some(Some(0)) => 0,
@@ -3540,7 +3540,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     match get_a() {}
 }

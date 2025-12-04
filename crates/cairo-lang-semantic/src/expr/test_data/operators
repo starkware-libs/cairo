@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: MyType) {
     a + a * a;
 }
@@ -27,7 +27,7 @@ error: Trait has no implementation in context: core::traits::Add::<test::MyType>
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
@@ -73,7 +73,7 @@ error: Unexpected return type. Expected: "()", found: "core::integer::u128".
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     -(1 == 2);
     -1_u8;
@@ -103,7 +103,7 @@ error: Trait has no implementation in context: core::traits::Neg::<core::bool>.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let x1 = Struct1 { x: 0 };
     let _y1 = x1[0];

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function
+//! > function_code
 fn foo(a: A<felt252>) -> felt252 {
     match a {
         A::Variant0(t) => { t },
@@ -27,7 +27,7 @@ enum A<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -51,7 +51,7 @@ error: Recursive type "test::A" has infinite size.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -72,7 +72,7 @@ enum A {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -99,7 +99,7 @@ error: Non-phantom type containing phantom type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -123,7 +123,7 @@ error: Cannot have array of type "()" that is zero sized.
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function
+//! > function_code
 fn foo() {}
 fn bar<E>() -> i32 {
     let E::aa(b) = makeE();
@@ -159,7 +159,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function
+//! > function_code
 fn foo() {}
 fn bar<T, E>() -> i32 {
     let T(a) = A::T(2);

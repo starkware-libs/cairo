@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_generator
 
-//! > function
+//! > function_code
 fn foo(a: felt252, b: felt252) -> felt252 {
     let b = felt252_add(a, 5);
     bar(b, b, b)

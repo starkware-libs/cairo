@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     Some(5)
 }
@@ -22,7 +22,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut arr = array::array_new();
     array::array_append(ref arr, 1);
@@ -45,7 +45,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > comments
 // TODO(spapini): Make better diagnostics.
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo();
 }
@@ -75,7 +75,7 @@ error: Inference cycle detected
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut _arr = array::array_new();
 }
@@ -98,7 +98,7 @@ error: Type annotations needed. Failed to infer ?0.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut _arr: felt252 = array::array_new::<felt252>();
 }
@@ -121,7 +121,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "core::array:
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     panic(array::array_new())
 }
@@ -140,7 +140,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> never {
     5_felt252
 }
@@ -163,7 +163,7 @@ fn foo() -> never {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo(5);
     MyTrait::foo(true);
@@ -196,7 +196,7 @@ impl MyImpl3 of MyTrait<Option<felt252>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo(true);
 }
@@ -234,7 +234,7 @@ error: Trait has no implementation in context: test::MyTrait::<core::bool>.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo(5);
     MyTrait::foo(Option::<felt252>::None);
@@ -273,7 +273,7 @@ error: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::foo(None);
 }
@@ -311,7 +311,7 @@ error: Trait `test::MyTrait::<core::option::Option::<?0>>` has multiple implemen
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(my_box: Box<MyStruct>) -> felt252 {
     box::unbox(my_box).a
 }
@@ -333,7 +333,7 @@ struct MyStruct {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(true);
 }
@@ -360,7 +360,7 @@ impl MyImpl1 of MyTrait<bool> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(Some(5));
 }
@@ -396,7 +396,7 @@ impl MyImpl4 of MyTrait<Option<bool>> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(true);
 }
@@ -436,7 +436,7 @@ error: Trait has no implementation in context: test::MyTrait::<core::bool>.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     A::<felt252> {}.foo();
 }
@@ -466,7 +466,7 @@ impl MyImpl<T> of MyTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let _ = (@5).clone();
     let _ = 5.clone();
@@ -486,7 +486,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     clone_loop(5)
 }
@@ -508,7 +508,7 @@ fn clone_loop<T, impl TClone: Clone<T>>(x: T) {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -530,7 +530,7 @@ impl I<impl TI: Drop<A>> of Drop<B>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     assert_eq(1, 2 + 3, '4');
 }
@@ -553,7 +553,7 @@ fn assert_eq<T, impl TPartialEq: PartialEq<T>>(a: T, b: T, err_code: felt252) {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let u256 { low: _, high: _ } = 123;
 }
@@ -572,7 +572,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -600,7 +600,7 @@ impl BashEx<S, +Bash<S>> of BashExTrait<S> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x = "hello";
 }
@@ -623,7 +623,7 @@ error: Type annotations needed. Failed to infer ?0.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     // A NumericLiteral<felt252> should be inferred here.
     let _x = 123;
@@ -648,7 +648,7 @@ impl MyImpl of NonExistingTrait {}
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function
+//! > function_code
 fn foo() {
     let mut data_hash = 0;
     data_hash = unknown_return_unknown();
@@ -672,7 +672,7 @@ error[E0006]: Function not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     bar(0_u8);
 }
@@ -712,7 +712,7 @@ error: Trait `test::MyTrait::<T>` has multiple implementations, in: `+MyTrait<T>
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = 5;
     let y: u32 = 5;
@@ -740,7 +740,7 @@ Consider adding or removing snapshots.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> Option {
     Some(5_u32)
 }
@@ -763,7 +763,7 @@ fn foo() -> Option {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     MyTrait::f();
 }
