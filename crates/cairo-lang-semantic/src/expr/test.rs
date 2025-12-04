@@ -107,9 +107,9 @@ fn test_expand_expr(
     let (test_expr, diagnostics) = setup_test_expr(
         db,
         inputs["expr_code"].as_str(),
-        inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
-        inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
-        inputs.get("crate_settings").map(|x| x.as_str()),
+        inputs.get("module_code").map_or("", String::as_str),
+        inputs.get("function_body").map_or("", String::as_str),
+        inputs.get("crate_settings").map(String::as_str),
     )
     .split();
     let sdb: &dyn Database = db;
@@ -137,9 +137,9 @@ fn test_expr_semantics(
     let (test_expr, diagnostics) = setup_test_expr(
         db,
         inputs["expr_code"].as_str(),
-        inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
-        inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
-        inputs.get("crate_settings").map(|x| x.as_str()),
+        inputs.get("module_code").map_or("", String::as_str),
+        inputs.get("function_body").map_or("", String::as_str),
+        inputs.get("crate_settings").map(String::as_str),
     )
     .split();
     let sdb: &dyn Database = db;
