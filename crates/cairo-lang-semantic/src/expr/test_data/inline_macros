@@ -283,12 +283,12 @@ error: Plugin diagnostic: Invalid format string: Unexpected character in placeho
     write!(f, "{x|}");
               ^^^^^^
 
-error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') cannot contain a ':'.
  --> lib.cairo:48:15
     write!(f, "{::x}");
               ^^^^^^^
 
-error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') cannot contain a ':'.
  --> lib.cairo:49:15
     write!(f, "{:x:y}");
               ^^^^^^^^
@@ -472,12 +472,12 @@ error: Plugin diagnostic: Invalid format string: Unexpected character in placeho
     writeln!(f, "{x|}");
                 ^^^^^^
 
-error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') cannot contain a ':'.
  --> lib.cairo:48:17
     writeln!(f, "{::x}");
                 ^^^^^^^
 
-error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') can not contain a ':'.
+error: Plugin diagnostic: Invalid format string: Unexpected character in placeholder: the formatting specification part (after the ':') cannot contain a ':'.
  --> lib.cairo:49:17
     writeln!(f, "{:x:y}");
                 ^^^^^^^^

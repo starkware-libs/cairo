@@ -20,7 +20,7 @@ fn main() {
 /// Trait containing abc function. Below a [`main`] function
 trait TraitTest {
     /// abc function returning u32.
-    /// Default impl of abc TraitTest function.
+    /// Default implementation of abc TraitTest function.
     fn abc() -> u32 {
         //! Default impl of abc TraitTest function inner comment.
         println!("default impl");
@@ -50,7 +50,7 @@ pub mod test_module {
     }
 }
 
-/// Point struct representing a point in a 2d space.
+/// Point struct representing a point in a 2D space.
 /// Example usage:
 /// ```
 ///   fn new_Point() {
@@ -68,7 +68,7 @@ struct Point {
 }
 
 /// Answer Enum representing an answer to a yes/no question.
-/// It will just refer in the docs to some wrong [item_that_does_not_exist] and also to
+/// It will just refer to items in the docs to some wrong [item_that_does_not_exist] and also to
 /// [this](another_not_existing_path).
 /// But [this](Answer::Yes) is an existing variant of Answer
 enum Answer {
@@ -150,12 +150,12 @@ fn abc() -> u32
 
 //! > Item documentation #4
 abc function returning u32.
-Default impl of abc TraitTest function. Default impl of abc TraitTest function inner comment.
+Default implementation of abc TraitTest function. Default impl of abc TraitTest function inner comment.
 
 //! > Item documentation tokens #4
 Content("abc function returning u32.")
 Content("\n")
-Content("Default impl of abc TraitTest function.")
+Content("Default implementation of abc TraitTest function.")
 Content(" ")
 Content("Default impl of abc TraitTest function inner comment.")
 
@@ -221,7 +221,7 @@ struct Point {
 }
 
 //! > Item documentation #9
-Point struct representing a point in a 2d space.
+Point struct representing a point in a 2D space.
 Example usage:
 ```cairo
   fn new_Point() {
@@ -232,7 +232,7 @@ Example usage:
 [Point::bang]
 
 //! > Item documentation tokens #9
-Content("Point struct representing a point in a 2d space.")
+Content("Point struct representing a point in a 2D space.")
 Content("\n")
 Content("Example usage:")
 Content("\n")
@@ -268,14 +268,14 @@ enum Answer {
 
 //! > Item documentation #12
 Answer Enum representing an answer to a yes/no question.
-It will just refer in the docs to some wrong [item_that_does_not_exist] and also to
+It will just refer to items in the docs to some wrong [item_that_does_not_exist] and also to
 [this](another_not_existing_path).
 But [this](Answer::Yes) is an existing variant of Answer
 
 //! > Item documentation tokens #12
 Content("Answer Enum representing an answer to a yes/no question.")
 Content("\n")
-Content("It will just refer in the docs to some wrong ")
+Content("It will just refer to items in the docs to some wrong ")
 CommentLinkToken { label: "item_that_does_not_exist", path: None, resolved_item_name: None }
 Content(" and also to")
 Content("\n")

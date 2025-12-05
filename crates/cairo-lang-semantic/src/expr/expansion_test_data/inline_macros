@@ -195,7 +195,7 @@ array![format!]
 array![format!]
 
 //! > diagnostics
-error: Plugin diagnostic: Macro can not be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
+error: Plugin diagnostic: Macro cannot be parsed as legacy macro. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:2:1
 array![format!]
 ^^^^^^^^^^^^^^^

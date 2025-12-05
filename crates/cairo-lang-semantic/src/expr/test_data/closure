@@ -507,7 +507,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Type "?0" can not error propagate
+error: Type "?0" cannot error propagate
  --> lib.cairo:4:14
         Some(a?)
              ^^

@@ -92,7 +92,7 @@ Or specify the contract path if multiple contracts are defined in the same proje
 cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json --contract-path path::to::contract
 ```
 
-Compile the ContractClass of a CompiledClass:
+Compile a Sierra ContractClass to CASM CompiledClass:
 ```bash
 cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
 ```

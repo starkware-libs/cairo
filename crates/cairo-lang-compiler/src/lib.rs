@@ -241,7 +241,7 @@ fn warmup_functions_blocking<'db>(
     });
 }
 
-///  Checks if there are diagnostics in the database and if there are None, returns
+///  Checks if there are diagnostics in the database and if there are none, returns
 ///  the [SierraProgramWithDebug] object of the requested functions
 pub fn get_sierra_program_for_functions<'db>(
     db: &'db dyn Database,

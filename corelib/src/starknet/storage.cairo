@@ -107,8 +107,8 @@
 //!
 //! # Storage Collections
 //!
-//! Cairo's memory collection types, like [`Felt252Dict`] and [`Array`], can not be used in storage.
-//! Consequently, any type that contains these types can not be used in storage either.
+//! Cairo's memory collection types, like [`Felt252Dict`] and [`Array`], cannot be used in storage.
+//! Consequently, any type that contains these types cannot be used in storage either.
 //! Instead, Cairo has two storage-only collection types: [`Map`] and [`Vec`].
 //!
 //! Instead of storing these _memory_ collections directly, you will need to reflect them into
