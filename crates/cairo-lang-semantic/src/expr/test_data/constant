@@ -623,10 +623,11 @@ const fn boom() -> bool {
     core::panic_with_felt252('boom')
 }
 
-const AND_TF: () = assert((true && false) == false);
-const OR_FT: () = assert((false || true) == true);
+const AND_TF: () = assert(!(true && false));
+const OR_FT: () = assert(false || true);
 
-const AND_SHORT_CIRCUIT: () = assert((false && boom()) == false);
-const OR_SHORT_CIRCUIT: () = assert((true || boom()) == true);
+const AND_SHORT_CIRCUIT: () = assert(!(false && boom()));
+const OR_SHORT_CIRCUIT: () = assert(true || boom());
+
 
 //! > expected_diagnostics
