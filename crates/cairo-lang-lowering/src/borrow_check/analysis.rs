@@ -1,5 +1,5 @@
 //! This module introduces the BackAnalysis utility that allows writing analyzers that go backwards
-//! in the flow of the program, on a Lowered representation.
+//! in the flow of the program, on the Lowered representation.
 
 use std::collections::HashMap;
 
