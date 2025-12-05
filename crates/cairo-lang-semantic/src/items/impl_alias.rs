@@ -34,7 +34,7 @@ pub struct ImplAliasData<'db> {
     pub resolver_data: Arc<ResolverData<'db>>,
 }
 
-/// Returns data about a type alias.
+/// Returns data about an impl alias.
 #[salsa::tracked(cycle_result=impl_alias_semantic_data_cycle, returns(ref))]
 fn impl_alias_semantic_data<'db>(
     db: &'db dyn Database,
@@ -134,7 +134,7 @@ pub fn impl_alias_semantic_data_cycle_helper<'db>(
     })
 }
 
-/// Returns the generic parameters data of a type alias.
+/// Returns the generic parameters data of an impl alias.
 #[salsa::tracked(returns(ref))]
 fn impl_alias_generic_params_data<'db>(
     db: &'db dyn Database,
@@ -232,7 +232,7 @@ pub trait ImplAliasSemantic<'db>: Database {
     fn impl_alias_impl_def(&'db self, id: ImplAliasId<'db>) -> Maybe<ImplDefId<'db>> {
         impl_alias_impl_def(self.as_dyn_database(), id)
     }
-    /// Returns the semantic diagnostics of a type alias.
+    /// Returns the semantic diagnostics of an impl alias.
     fn impl_alias_semantic_diagnostics(
         &'db self,
         id: ImplAliasId<'db>,
@@ -242,7 +242,7 @@ pub trait ImplAliasSemantic<'db>: Database {
             .map(|data| data.diagnostics.clone())
             .unwrap_or_default()
     }
-    /// Returns the resolved type of a type alias.
+    /// Returns the resolved impl of an impl alias.
     fn impl_alias_resolved_impl(&'db self, id: ImplAliasId<'db>) -> Maybe<ImplId<'db>> {
         let db = self.as_dyn_database();
         if let Some(data) = db.cached_crate_semantic_data(id.parent_module(db).owning_crate(db)) {
@@ -257,14 +257,14 @@ pub trait ImplAliasSemantic<'db>: Database {
         };
         impl_alias_semantic_data(self.as_dyn_database(), id, false).maybe_as_ref()?.resolved_impl
     }
-    /// Returns the generic parameters of a type alias.
+    /// Returns the generic parameters of an impl alias.
     fn impl_alias_generic_params(&'db self, id: ImplAliasId<'db>) -> Maybe<Vec<GenericParam<'db>>> {
         Ok(impl_alias_generic_params_data(self.as_dyn_database(), id)
             .maybe_as_ref()?
             .generic_params
             .clone())
     }
-    /// Returns the resolution resolved_items of a type alias.
+    /// Returns the resolver data of an impl alias.
     fn impl_alias_resolver_data(&'db self, id: ImplAliasId<'db>) -> Maybe<Arc<ResolverData<'db>>> {
         Ok(impl_alias_semantic_data(self.as_dyn_database(), id, false)
             .maybe_as_ref()?
