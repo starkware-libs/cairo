@@ -6,7 +6,7 @@ use crate::ids::{FlagId, FlagLongId};
 /// A compilation flag.
 #[derive(PartialEq, Eq, Debug, Clone, Serialize, Deserialize, Hash, salsa::Update)]
 pub enum Flag {
-    /// Whether automatically add `withdraw_gas` calls in code cycles.
+    /// Whether to automatically add `withdraw_gas` calls in code cycles.
     /// Default is true - automatically add.
     ///
     /// Additionally controls addition of `redeposit_gas` which happens on default.
