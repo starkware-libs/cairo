@@ -2029,7 +2029,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
     }
 
-    /// Parses a function call's argument, which contains possibly modifiers, and a argument clause.
+     /// Parses a function call's argument, which contains possibly modifiers, and an argument
+    /// clause.
     fn try_parse_function_argument(&mut self) -> TryParseResult<ArgGreen<'a>> {
         let modifiers_list = self.parse_modifier_list();
         let arg_clause = self.try_parse_argument_clause();
