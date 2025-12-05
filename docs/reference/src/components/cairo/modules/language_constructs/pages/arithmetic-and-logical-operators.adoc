@@ -1,6 +1,146 @@
-= Arithmetic and logical operators
+= Arithmetic operators
 
-This section is a work in progress.
+Arithmetic operations in Cairo are provided by the operators `+`, `-`, `*`, `/`, `%`.
+All of them are trait-driven by the corresponding traits in `core::traits`.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+- `lhs + rhs` → `T` (addition)
+- `lhs - rhs` → `T` (subtraction)
+- `lhs * rhs` → `T` (multiplication)
+- `lhs / rhs` → `T` (division)
+- `lhs % rhs` → `T` (remainder)
+
+== Semantics
+
+The semantics of arithmetic operators are trait-driven via `core::traits`:
+
+- `+` calls `Add::add(T, T) -> T`
+- `-` calls `Sub::sub(T, T) -> T`
+- `*` calls `Mul::mul(T, T) -> T`
+- `/` calls `Div::div(T, T) -> T`
+- `%` calls `Rem::rem(T, T) -> T`
+
+These traits are not derivable; implement them manually for user-defined types.
+
+If no suitable trait implementation is available for the operand type, the operation is a
+type error (trait resolution fails).
+
+== Precedence and associativity
+
+Arithmetic operators have different precedence levels defined in
+`crates/cairo-lang-parser/src/operators.rs`:
+
+- `*`, `/`, `%` share precedence level 2
+- `+`, `-` share precedence level 3
+
+All arithmetic operators bind:
+
+- Tighter than bitwise `&`, `^`, `|`, comparison `<`, `==`, and logical `&&`, `||`
+- Looser than unary operators, member access `.`, and indexing `[]`
+
+Within the same precedence level, operations are left-associative:
+`a - b - c` is parsed as `(a - b) - c`.
+
+== Examples
+
+=== Primitives
+
+[source,cairo]
+----
+fn main() {
+    assert!(2 + 3 == 5);
+    assert!(5 - 2 == 3);
+    assert!(3 * 4 == 12);
+    assert!(10 / 3 == 3);
+    assert!(10 % 3 == 1);
+}
+----
+
+=== Manual implementation for a custom type
+
+[source,cairo]
+----
+#[derive(Copy, Drop, PartialEq)]
+struct Point {
+    x: u32,
+    y: u32,
+}
+
+impl PointAdd of Add<Point> {
+    fn add(lhs: Point, rhs: Point) -> Point {
+        Point {
+            x: lhs.x + rhs.x,
+            y: lhs.y + rhs.y,
+        }
+    }
+}
+
+impl PointSub of Sub<Point> {
+    fn sub(lhs: Point, rhs: Point) -> Point {
+        Point {
+            x: lhs.x - rhs.x,
+            y: lhs.y - rhs.y,
+        }
+    }
+}
+
+fn main() {
+    let p1 = Point { x: 5, y: 10 };
+    let p2 = Point { x: 2, y: 3 };
+    let p3 = p1 + p2;
+    assert!(p3 == Point { x: 7, y: 13 });
+    let p4 = p3 - p1;
+    assert!(p4 == Point { x: 2, y: 3 });
+}
+----
+
+=== Generics requiring arithmetic traits
+
+[source,cairo]
+----
+fn average<T, +Add<T>, +Div<T>, +Drop<T>, +Copy<T>>(a: T, b: T, two: T) -> T {
+    (a + b) / two
+}
+
+fn main() {
+    let result = average(10_u32, 20_u32, 2_u32);
+    assert!(result == 15);
+}
+----
+
+=== Division and remainder together
+
+Cairo provides `DivRem` trait for efficient combined division and remainder:
+
+[source,cairo]
+----
+use core::traits::DivRem;
+
+fn main() {
+    let divisor: NonZero<u32> = 5_u32.try_into().unwrap();
+    let (quotient, remainder) = DivRem::div_rem(17_u32, divisor);
+    assert!(quotient == 3);
+    assert!(remainder == 2);
+}
+----
+
+== Notes
+
+- Division by zero panics at runtime for integer types
+- Division truncates toward zero: `7 / 3 == 2`, `-7 / 3 == -2`
+- The sign of the remainder matches the dividend: `7 % 3 == 1`, `-7 % 3 == -1`
+- For unsigned types, all arithmetic operations may panic on overflow
+- The unary negation operator `-` is separate and documented in
+  xref:pages/negation-operators.adoc[Negation operators]
+
+== Assignment operators
+
+Cairo also provides compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`) via traits in
+`core::ops`. See `core::ops::{AddAssign, SubAssign, MulAssign, DivAssign, RemAssign}`.
+
+== References (source)
+
+- Operator precedence: `crates/cairo-lang-parser/src/operators.rs` (lines 21-22)
+- Traits: `corelib/src/traits.cairo` (`Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`)
+- Assignment operators: `corelib/src/ops/arith.cairo`
