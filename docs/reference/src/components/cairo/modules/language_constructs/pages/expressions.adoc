@@ -50,5 +50,5 @@ to detailed subpages where available.
 == Expressions as statements
  
 Standalone expressions can appear as statements. See
-xref:pages/expression-statement.adoc[Expression statement].
+xref:expression-statement.adoc[Expression statement].
  
