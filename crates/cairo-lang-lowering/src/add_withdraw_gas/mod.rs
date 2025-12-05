@@ -86,7 +86,7 @@ fn add_withdraw_gas_to_function<'db>(
     Ok(())
 }
 
-/// Creates the panic block for the case `withdraw_gas` failure.
+/// Creates the panic block for the case of `withdraw_gas` failure.
 fn create_panic_block<'db>(
     db: &'db dyn Database,
     lowered: &mut Lowered<'db>,
