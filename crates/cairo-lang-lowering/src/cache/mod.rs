@@ -201,7 +201,7 @@ struct CacheLoadingContext<'db> {
     lowered_variables_id: Vec<VariableId>,
     db: &'db dyn Database,
 
-    /// data for loading the entire cache into the database.
+    /// Data for loading the entire cache into the database.
     data: CacheLoadingData<'db>,
 
     semantic_loading_data: Arc<SemanticCacheLoadingData<'db>>,
