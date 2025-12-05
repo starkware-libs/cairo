@@ -8,7 +8,7 @@ use crate::extensions::lib_func::{
 use crate::extensions::{NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericTypeId;
 
-/// Trait for implementing a IsZero library function for a type.
+/// Trait for implementing an IsZero library function for a type.
 pub trait IsZeroTraits: Default {
     /// The is_zero library function id.
     const IS_ZERO: &'static str;
