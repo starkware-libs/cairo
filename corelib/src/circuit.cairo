@@ -685,7 +685,7 @@ impl CircuitOutputsImpl<
 /// been verified.
 extern type CircuitFailureGuarantee;
 
-/// A type that contain that is used to guarantee that a u384 is less than another u384.
+/// A type that is used to guarantee that a u384 is less than another u384.
 extern type U96LimbsLtGuarantee<const LIMB_COUNT: usize>;
 
 /// Helper trait for finding the value of a const minus 1.
