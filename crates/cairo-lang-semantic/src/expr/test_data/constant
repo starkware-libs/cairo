@@ -599,7 +599,7 @@ const V_AS_I128: () = assert(V.try_into() == Some(-1_i128));
 
 //! > expected_diagnostics
 
-//! > ===========================================================================
+//! > ==========================================================================
 
 //! > Const logical operators: short-circuit and truth table
 
