@@ -102,7 +102,7 @@ impl CfgSet {
         self.0.insert(cfg);
     }
 
-    /// Combines two sets into new one.
+    /// Combines two sets into a new one.
     pub fn union(&self, other: &Self) -> Self {
         Self(self.0.union(&other.0).cloned().collect())
     }
