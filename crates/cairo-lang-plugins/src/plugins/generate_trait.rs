@@ -152,7 +152,7 @@ fn generate_trait_for_impl<'db>(
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
                     trait_ast.stable_ptr(db),
-                    "Generated trait can not have a missing path segment.".to_string(),
+                    "Generated trait cannot have a missing path segment.".to_string(),
                 )],
                 remove_original_item: false,
             };

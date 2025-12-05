@@ -488,7 +488,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 )
             }
             SemanticDiagnosticKind::ErrorPropagateOnNonErrorType(ty) => {
-                format!(r#"Type "{}" can not error propagate"#, ty.format(db))
+                format!(r#"Type "{}" cannot error propagate"#, ty.format(db))
             }
             SemanticDiagnosticKind::UnhandledMustUseType(ty) => {
                 format!(r#"Unhandled `#[must_use]` type `{}`"#, ty.format(db))

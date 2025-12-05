@@ -78,7 +78,7 @@ pub fn unsupported_bracket_diagnostic<'db, CallAst: InlineMacroCall<'db>>(
 pub fn not_legacy_macro_diagnostic(stable_ptr: SyntaxStablePtrId<'_>) -> PluginDiagnostic<'_> {
     PluginDiagnostic::error(
         stable_ptr,
-        "Macro can not be parsed as legacy macro. Expected an argument list wrapped in either \
+        "Macro cannot be parsed as legacy macro. Expected an argument list wrapped in either \
          parentheses, brackets, or braces."
             .to_string(),
     )

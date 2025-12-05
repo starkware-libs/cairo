@@ -526,7 +526,7 @@ fn extract_placeholder_argument(
                 }
                 if c == ':' {
                     return Err("Unexpected character in placeholder: the formatting \
-                                specification part (after the ':') can not contain a ':'");
+                                specification part (after the ':') cannot contain a ':'");
                 }
                 if c.is_ascii_graphic() {
                     formatting_spec.push(c);

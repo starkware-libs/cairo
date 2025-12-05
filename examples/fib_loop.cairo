@@ -1,4 +1,4 @@
-// Calculates fib...
+/// Calculates the n'th Fibonacci number using a loop.
 fn fib(mut a: felt252, mut b: felt252, mut n: felt252) -> felt252 {
     loop {
         if n == 0 {
