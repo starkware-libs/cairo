@@ -37,7 +37,7 @@ fn build_small_uint_overflowing_add(
             hint TestLessThan {lhs: deferred_a_plus_b, rhs: limit} into {dst: no_overflow};
             jump NoOverflow if no_overflow != 0;
             // Overflow:
-            // Here we know that `limit <= a + b < 2 * limit - 1`.
+            // Here we know that `limit <= a + b <= 2 * limit - 2`.
             tempvar temp_a_plus_b = deferred_a_plus_b;
             tempvar fixed_a_plus_b = temp_a_plus_b - limit;
             assert fixed_a_plus_b = *(range_check++);
