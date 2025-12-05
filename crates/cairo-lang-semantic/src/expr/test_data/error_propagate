@@ -149,7 +149,7 @@ fn foo() -> Option<felt252> {
 foo
 
 //! > expected_diagnostics
-error: Type "core::integer::u32" can not error propagate
+error: Type "core::integer::u32" cannot error propagate
  --> lib.cairo:2:5
     6_u32?;
     ^^^^^^
