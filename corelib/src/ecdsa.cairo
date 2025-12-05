@@ -26,7 +26,7 @@ use crate::zeroable::IsZeroResult;
 ///
 /// Note: the verification algorithm implemented by this function slightly deviates from the
 /// standard ECDSA.
-/// While this does not allow to create valid signatures if one does not possess the private key,
+/// While this does not allow creating valid signatures if one does not possess the private key,
 /// it means that the signature algorithm used should be modified accordingly.
 /// This function validates that `s` and `r` are not 0 or equal to the curve order,
 /// but does not check that `r, s < stark_curve::ORDER`, which should be checked by the caller.
