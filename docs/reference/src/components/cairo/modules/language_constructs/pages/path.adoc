@@ -33,7 +33,7 @@ The additional `::` is mandatory where ambiguity would otherwise arise, such as 
 For example, `x::<u32>::y::<u32>::z` is a concrete path. Otherwise, it can be omitted. For example,
 in type expressions `fn foo(x: Option<usize>)`.
 A concrete path refers to a concrete item (e.g. a function, type, etc.).
-When the generic arguments clause is not provided, or less generic arguments are provided than
+When the generic arguments clause is not provided, or fewer generic arguments are provided than
 the item expects, the compiler xref:inference.adoc[infers] the missing generic arguments.
 Examples:
 

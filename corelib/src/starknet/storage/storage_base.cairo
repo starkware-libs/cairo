@@ -22,7 +22,7 @@ impl StorageBaseCopy<T> of Copy<StorageBase<T>> {}
 impl StorageBaseAsPath<T> of StorageAsPath<StorageBase<T>> {
     type Value = T;
     fn as_path(self: @StorageBase<T>) -> StoragePath<T> {
-        StoragePathTrait::new(*self.__base_address__)
+        StoragePathTrait::new(self.__base_address__)
     }
 }
 

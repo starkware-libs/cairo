@@ -634,7 +634,7 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     /// ```
     #[inline]
     fn index(self: @Span<T>, index: usize) -> @T {
-        array_at(*self.snapshot, index).unbox()
+        array_at(self.snapshot, index).unbox()
     }
 }
 
@@ -832,7 +832,7 @@ pub struct ArrayIter<T> {
 
 impl ArrayIterClone<T, +crate::clone::Clone<T>, +Drop<T>> of crate::clone::Clone<ArrayIter<T>> {
     fn clone(self: @ArrayIter<T>) -> ArrayIter<T> {
-        ArrayIter { array: crate::clone::Clone::clone(self.array) }
+        ArrayIter { array: crate::clone::Clone::clone(@self.array) }
     }
 }
 

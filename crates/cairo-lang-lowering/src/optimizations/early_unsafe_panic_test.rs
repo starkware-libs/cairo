@@ -31,13 +31,7 @@ fn test_early_unsafe_panic(
     let db = &mut LoweringDatabaseForTesting::new();
     let unsafe_panic_flag_id = FlagLongId("unsafe_panic".into());
     db.set_flag(unsafe_panic_flag_id, Some(Arc::new(Flag::UnsafePanic(true))));
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        db,
-        &inputs["function_code"],
-        &inputs["function_name"],
-        &inputs["module_code"],
-    )
-    .split();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
 
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
