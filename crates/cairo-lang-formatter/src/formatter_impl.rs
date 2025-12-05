@@ -100,7 +100,7 @@ impl UseTree {
 
     /// Making sure `self` imports do not remain by themselves.
     fn organize_self_imports(&mut self) {
-        // First canonizing existing `self` to a direct module.
+        // First canonicalizing existing `self` to a direct module.
         for (segment, child) in self.children.iter_mut() {
             // Calling recursively to make sure all children are organized.
             child.organize_self_imports();
@@ -144,7 +144,7 @@ impl UseTree {
 }
 
 #[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
-/// Defines the break point behaviour.
+/// Defines the break point behavior.
 /// Defined in get_break_line_point_properties.
 pub enum BreakLinePointIndentation {
     /// Represents a break line point group which should be indented when broken. For example,
@@ -178,7 +178,7 @@ pub enum BreakLinePointIndentation {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-/// Properties defining the behaviour of a break line point.
+/// Properties defining the behavior of a break line point.
 pub struct BreakLinePointProperties {
     /// Indicates that the break line point was added instead of an empty line in the code, which
     /// means it must be preserved in the output. Notice that the number of consecutive empty line
@@ -187,7 +187,7 @@ pub struct BreakLinePointProperties {
     pub is_empty_line_breakpoint: bool,
     /// Breaking precedence, lower values will break first.
     pub precedence: usize,
-    /// Dictates the breaking indentation behaviour.
+    /// Dictates the breaking indentation behavior.
     pub break_indentation: BreakLinePointIndentation,
     /// Indicates whether a breakpoint is optional. An optional breakpoint may be broken only if
     /// the line is too long. A non-optional breakpoint is always broken.
@@ -277,9 +277,9 @@ enum LineComponent {
     /// zones. For example, the body of a function should be broken into separate lines before
     /// the function signature.
     ProtectedZone { builder: LineBuilder, precedence: usize },
-    /// Represent a space in the code.
+    /// Represents a space in the code.
     Space,
-    /// Represent a leading indent.
+    /// Represents a leading indent.
     Indent(usize),
     /// An optional break line point, that will be used if the line is too long.
     BreakLinePoint(BreakLinePointProperties),
