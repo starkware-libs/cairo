@@ -49,7 +49,7 @@ the `test.cairo` file within the `tests` directory, use the following command:
 cargo run --bin cairo-test -- --single-file tests/test.cairo
 ```
 
-Three projects within the Compiler repository are tested with cairo-test:
+Three projects within the Compiler repository being tested with cairo-test:
 
 1. The Cairo core library: Run `cargo run --bin cairo-test -- corelib`.
 2. Bug samples: Run `cargo run --bin cairo-test -- tests/bug_samples --starknet`.
