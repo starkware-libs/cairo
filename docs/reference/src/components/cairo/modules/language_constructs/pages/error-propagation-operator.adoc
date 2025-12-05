@@ -17,8 +17,8 @@ The `?` operator works with types that support early return on error:
 [source,cairo]
 ----
 match expr {
-    Result::Ok(val) => val,
-    Result::Err(err) => { return Result::Err(err); },
+    Ok(val) => val,
+    Err(err) => { return Err(err); },
 }
 ----
 
@@ -28,8 +28,8 @@ match expr {
 [source,cairo]
 ----
 match expr {
-    Option::Some(val) => val,
-    Option::None => { return Option::None; },
+    Some(val) => val,
+    None => { return None; },
 }
 ----
 
@@ -86,18 +86,6 @@ fn process_empty() -> Option<u8> {
     let s: ByteArray = "";
     let first = get_first_char(@s)?;  // Returns None, function exits early
     Option::Some(first)               // Never reached
-}
-----
-
-=== Multiple error propagation
-
-[source,cairo]
-----
-fn read_config() -> Result<u32, ByteArray> {
-    let file = open_file("config.txt")?;
-    let content = read_contents(file)?;
-    let value = parse_number(content)?;
-    Result::Ok(value)
 }
 ----
 
