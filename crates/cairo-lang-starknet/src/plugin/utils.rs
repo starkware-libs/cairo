@@ -15,8 +15,6 @@ use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
 pub trait ParamEx<'db> {
     /// Checks if the parameter is defined as a ref parameter.
     fn is_ref_param(&self, db: &'db dyn Database) -> bool;
-    /// Checks if the parameter is defined as a mutable parameter.
-    fn is_mut_param(&self, db: &'db dyn Database) -> bool;
     /// Extracts the snapshot type if the parameter's type is a snapshot. Otherwise, returns None.
     fn try_extract_snapshot(&self, db: &'db dyn Database) -> Option<ast::Expr<'db>>;
 }
@@ -26,13 +24,6 @@ impl<'db> ParamEx<'db> for ast::Param<'db> {
         // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
         // semantic level, we could just ask if it's a reference.
         matches!(param_modifiers, Some([Modifier::Ref(_)]))
-    }
-
-    fn is_mut_param(&self, db: &dyn Database) -> bool {
-        let param_modifiers = self.modifiers(db).elements(db).collect_array();
-        // TODO(yuval): This works only if "mut" is the only modifier. If the expansion was at the
-        // semantic level, we could just ask if it's a reference.
-        matches!(param_modifiers, Some([Modifier::Mut(_)]))
     }
 
     fn try_extract_snapshot(&self, db: &'db dyn Database) -> Option<ast::Expr<'db>> {
