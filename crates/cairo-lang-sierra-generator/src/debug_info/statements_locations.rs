@@ -6,11 +6,10 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use salsa::{Database, par_map};
 
-use crate::debug_info::statements_locations::statements_code_locations::maybe_code_location;
 use crate::debug_info::statements_locations::statements_functions::{
     maybe_containing_function_identifier, maybe_containing_function_identifier_for_tests,
 };
-use crate::debug_info::{StatementsFunctions, StatementsSourceCodeLocations};
+use crate::debug_info::{StatementsFunctions, StatementsSourceCodeLocations, maybe_code_location};
 
 pub mod statements_code_locations;
 pub mod statements_functions;
