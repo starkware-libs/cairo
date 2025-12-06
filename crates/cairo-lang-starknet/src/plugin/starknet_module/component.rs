@@ -107,7 +107,7 @@ fn get_embeddable_as_attr_value<'db>(
         return None;
     };
 
-    let [arg] = attribute_args.arguments(db).elements(db).collect_array()?;
+    let arg = attribute_args.arguments(db).elements(db).exactly_one().ok()?;
     let AttributeArgVariant::Unnamed(attr_arg_value) =
         AttributeArg::from_ast(arg.clone(), db).variant
     else {

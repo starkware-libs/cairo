@@ -618,7 +618,7 @@ fn maybe_resolve_type<'db>(
             core_box_ty(db, snapshot_ty)
         }
         ast::Expr::FixedSizeArray(array_syntax) => {
-            let Some([ty]) = &array_syntax.exprs(db).elements(db).collect_array() else {
+            let Ok(ty) = &array_syntax.exprs(db).elements(db).exactly_one() else {
                 return Err(
                     diagnostics.report(ty_syntax.stable_ptr(db), FixedSizeArrayTypeNonSingleType)
                 );

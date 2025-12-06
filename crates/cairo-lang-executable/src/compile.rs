@@ -131,16 +131,15 @@ pub fn compile_executable_in_prepared_db<'db>(
 
     let executables = find_executable_functions(db, main_crate_ids, executable_path);
 
-    let executable = match executables.len() {
-        0 => {
-            // Report diagnostics as they might reveal the reason why no executable was found.
+    match executables.iter().exactly_one() {
+        Ok(executable) => compile_executable_function_in_prepared_db(db, *executable, config),
+        Err(_) if executables.is_empty() => {
             anyhow::bail!("Requested `#[executable]` not found.");
         }
-        1 => executables[0],
-        _ => {
+        Err(_) => {
             let executable_names = executables
-                .iter()
-                .map(|executable| originating_function_path(db, *executable))
+                .into_iter()
+                .map(|executable| originating_function_path(db, executable))
                 .join("\n  ");
             anyhow::bail!(
                 "More than one executable found in the main crate: \n  {}\nUse --executable to \
@@ -148,9 +147,7 @@ pub fn compile_executable_in_prepared_db<'db>(
                 executable_names
             );
         }
-    };
-
-    compile_executable_function_in_prepared_db(db, executable, config)
+    }
 }
 
 /// Search crates identified by `main_crate_ids` for executable functions.

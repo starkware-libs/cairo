@@ -101,13 +101,12 @@ fn generate_panicable_code<'db>(
         .parameters(db)
         .elements(db)
         .map(|param| {
-            let ref_kw = if let Some([ast::Modifier::Ref(_)]) =
-                param.modifiers(db).elements(db).collect_array()
-            {
-                "ref "
-            } else {
-                ""
-            };
+            let ref_kw =
+                if let Ok(ast::Modifier::Ref(_)) = param.modifiers(db).elements(db).exactly_one() {
+                    "ref "
+                } else {
+                    ""
+                };
             format!("{}{}", ref_kw, param.name(db).as_syntax_node().get_text(db))
         })
         .join(", ");
@@ -157,14 +156,14 @@ fn extract_success_ty_and_variants<'a>(
     let ret_ty_path = try_extract_matches!(ret_ty_expr, ast::Expr::Path)?;
 
     // Currently only wrapping functions returning an Option<T>.
-    let Some([ast::PathSegment::WithGenericArgs(segment)]) =
-        ret_ty_path.segments(db).elements(db).collect_array()
+    let Ok(ast::PathSegment::WithGenericArgs(segment)) =
+        ret_ty_path.segments(db).elements(db).exactly_one()
     else {
         return None;
     };
     let ty = segment.identifier(db).long(db);
     if ty == "Option" {
-        let [inner] = segment.generic_args(db).generic_args(db).elements(db).collect_array()?;
+        let inner = segment.generic_args(db).generic_args(db).elements(db).exactly_one().ok()?;
         Some((inner.clone(), "Option::Some".to_owned(), "Option::None".to_owned()))
     } else if ty == "Result" {
         let [inner, _err] =
@@ -192,8 +191,7 @@ fn parse_arguments<'a>(
         return None;
     };
 
-    let Some([ast::PathSegment::Simple(segment)]) = name.segments(db).elements(db).collect_array()
-    else {
+    let Ok(ast::PathSegment::Simple(segment)) = name.segments(db).elements(db).exactly_one() else {
         return None;
     };
 
