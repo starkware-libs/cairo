@@ -115,7 +115,7 @@ impl<'db> GenericArgumentId<'db> {
                 ty.long(db).extract_generic_params(db, generic_parameters)?
             }
             GenericArgumentId::Constant(const_value_id) => {
-                const_value_id.ty(db)?.long(db).extract_generic_params(db, generic_parameters)?
+                const_value_id.extract_generic_params(db, generic_parameters)?;
             }
             GenericArgumentId::Impl(impl_id) => {
                 for garg in impl_id.concrete_trait(db)?.generic_args(db) {
