@@ -178,7 +178,7 @@ impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
                 };
                 format!(
                     "Expected a '!' after the identifier '{identifier}' to start an inline macro.
-Did you mean to write `{identifier}!{left}...{right}'?",
+Did you mean to write '{identifier}!{left}...{right}'?",
                 )
             }
             ParserDiagnosticKind::ReservedIdentifier { identifier } => {
