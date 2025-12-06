@@ -107,8 +107,8 @@ pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 // a trait.
 
 // ================================ Naming of parsing functions ================================
-// try_parse_<something>: returns a TryParseResult. An `Ok` with green ID with a kind
-// that represents 'something' or a `Err` if 'something' can't be parsed.
+// try_parse_<something>: returns a TryParseResult. An `Ok` with a green ID with a kind
+// that represents 'something' or an `Err` if 'something' can't be parsed.
 // If the error kind is Failure, the current token is not consumed, otherwise (Success or
 // error of kind FailureAndSkipped) it is (taken or skipped). Used when something may or may not be
 // there and we can act differently according to each case.
@@ -123,7 +123,7 @@ pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 //
 // expect_<something>: similar to parse_<something>, but assumes the current token is as expected.
 // Therefore, it always returns a GreenId of a node with a kind that represents 'something' and
-// never a missing kind.
+// never returns a missing kind.
 // Should only be called after checking the current token.
 
 const MAX_PRECEDENCE: usize = 1000;
