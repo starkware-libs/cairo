@@ -27,6 +27,7 @@ pub mod dedup_blocks;
 pub mod early_unsafe_panic;
 pub mod gas_redeposit;
 pub mod match_optimizer;
+pub mod reboxing;
 pub mod remappings;
 pub mod reorder_statements;
 pub mod return_optimization;
