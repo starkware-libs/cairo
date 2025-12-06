@@ -30,11 +30,11 @@ impl Default for SimpleParserDatabase {
 }
 
 impl SimpleParserDatabase {
-    /// Parses new file and returns its syntax root.
+    /// Parses a new file and returns its syntax root.
     ///
-    /// This is similar to [Self::parse_virtual_with_diagnostics], but is more ergonomic in cases
+    /// This is similar to [Self::parse_virtual_with_diagnostics], but it is more ergonomic in cases
     /// when exact diagnostics do not matter at the usage place. If the parser has emitted error
-    /// diagnostics, this function will return an error. If no error diagnostics has been
+    /// diagnostics, this function will return an error. If no error diagnostics have been
     /// emitted, the syntax root will be returned.
     pub fn parse_virtual(
         &self,
