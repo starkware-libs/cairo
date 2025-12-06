@@ -1,103 +1,102 @@
 = Item statement
 
- An _item statement_ is a statement that declares xref:items.adoc[items] inside a
- xref:block-expression.adoc[code block]. It reuses the same syntax as module-level
- items, but scopes the declaration to the enclosing block instead of the entire
- module.
+An _item statement_ is a statement that declares xref:items.adoc[items] inside a
+xref:block-expression.adoc[code block]. It reuses the same syntax as module-level
+items, but scopes the declaration to the enclosing block instead of the entire
+module.
 
- Item statements are mainly used to introduce compile-time constants or other
- reusable definitions local to a function or nested block.
+Item statements are mainly used to introduce compile-time constants or other
+reusable definitions local to a function or nested block.
 
- == Syntax
+== Syntax
 
- In statement position (inside a block), the following forms are parsed as
- item statements:
+In statement position (inside a block), the following forms are parsed as
+item statements:
 
- - xref:constant-items.adoc[Constant items] introduced by the `const` keyword.
- - `use` imports.
- - `type` aliases.
+- xref:constant-items.adoc[Constant items] introduced by the `const` keyword.
+- `use` imports.
+- `type` aliases.
 
- The syntax of each form is the same as for the corresponding module-level
- item; only the scope changes.
+The syntax of each form is the same as for the corresponding module-level
+item; only the scope changes.
 
- [source,cairo]
+[source,cairo]
  ----
  fn demo() {
      // const item statement – block-level constant.
-     const BLOCK_LIMIT: felt252 = 10;
 
-     // use item statement – import visible only in this block.
-     use my::module::MyType;
+    // use item statement – import visible only in this block.
+    use my::module::MyType;
 
-     // type alias item statement – alias local to the block.
-     type LocalFelt = felt252;
+    // type alias item statement – alias local to the block.
+    type LocalFelt = felt252;
 
-     // ... other statements and expressions ...
- }
- ----
+    // ... other statements and expressions ...
+}
+----
 
- Like other statements, item statements are normally terminated with a
- semicolon (`;`) when they appear in a list of statements in a block.
+Like other statements, item statements are normally terminated with a
+semicolon (`;`) when they appear in a list of statements in a block.
 
- == Where item statements can appear
+== Where item statements can appear
 
- Item statements may appear wherever a statement is permitted inside a
- xref:block-expression.adoc[block expression], for example:
+Item statements may appear wherever a statement is permitted inside a
+xref:block-expression.adoc[block expression], for example:
 
- - Inside function bodies.
- - Inside nested blocks such as those introduced by `if`, `match` or `loop`.
+- Inside function bodies.
+- Inside nested blocks such as those introduced by `if`, `match` or `loop`.
 
- At module scope the same syntactic forms are treated as module-level items,
- not as statements; their semantics are described in the corresponding item
- documentation.
+At module scope the same syntactic forms are treated as module-level items,
+not as statements; their semantics are described in the corresponding item
+documentation.
 
- == Semantics
+== Semantics
 
- - Each item statement introduces a name (constant, imported name or type
-   alias) that is visible from the point of declaration until the end of the
-   enclosing block, subject to the usual name resolution and shadowing rules.
- - A `const` item statement follows the semantics of
-   xref:constant-items.adoc[constant items]: it is evaluated at compile time
-   and may be used where a compile-time constant is required.
- - `use` item statements make the imported names available only within the
-   block where they are declared (and any nested blocks), without affecting
-   the surrounding module.
- - `type` alias item statements introduce a local alias for a type; the alias
-   is not visible outside the enclosing block.
+- Each item statement introduces a name (constant, imported name or type
+  alias) that is visible from the point of declaration until the end of the
+  enclosing block, subject to the usual name resolution and shadowing rules.
+- A `const` item statement follows the semantics of
+  xref:constant-items.adoc[constant items]: it is evaluated at compile time
+  and may be used where a compile-time constant is required.
+- `use` item statements make the imported names available only within the
+  block where they are declared (and any nested blocks), without affecting
+  the surrounding module.
+- `type` alias item statements introduce a local alias for a type; the alias
+  is not visible outside the enclosing block.
 
- Item statements participate in the same statement sequencing rules as other
- statements described in xref:statements.adoc[Statements], including the use
- of semicolons to separate statements in a block.
+Item statements participate in the same statement sequencing rules as other
+statements described in xref:statements.adoc[Statements], including the use
+of semicolons to separate statements in a block.
 
- == Examples
+== Examples
 
- [source,cairo]
- ----
- fn example(flag: bool) {
-     // Block-level constant used in subsequent statements.
-     const BASE: felt252 = 10;
+[source,cairo]
+----
+fn example(flag: bool) {
+    // Block-level constant used in subsequent statements.
+    const BASE: felt252 = 10;
 
-     if flag {
-         // Item statement inside a nested block.
-         const SCALE: felt252 = 2;
-         let value = BASE * SCALE;
-         // ...
-     } else {
-         // Local import only in the else branch.
-         use math::utils::clamp;
-         let value = clamp(BASE, 0, 100);
-         // ...
-     }
+    if flag {
+        // Item statement inside a nested block.
+        const SCALE: felt252 = 2;
+        let value = BASE * SCALE;
+        // ...
+    } else {
+        // Local import only in the else branch.
+        use math::utils::clamp;
+        let value = clamp(BASE, 0, 100);
+        // ...
+    }
 
-     // Local type alias for readability in this function.
-     type Pair = (felt252, felt252);
-     let p: Pair = (BASE, 0);
- }
- ----
+    // Local type alias for readability in this function.
+    type Pair = (felt252, felt252);
+    let p: Pair = (BASE, 0);
+}
+----
 
- == See also
+== See also
 
- - xref:statements.adoc[Statements]
- - xref:items.adoc[Items]
- - xref:constant-items.adoc[Constant items]
- - xref:block-expression.adoc[Block expressions]
+- xref:statements.adoc[Statements]
+- xref:items.adoc[Items]
+- xref:constant-items.adoc[Constant items]
+- xref:block-expression.adoc[Block expressions]
