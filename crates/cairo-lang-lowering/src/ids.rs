@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{FunctionsSemantic, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
@@ -29,7 +29,7 @@ use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 use crate::specialization::SpecializationArg;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub enum FunctionWithBodyLongId<'db> {
     Semantic(defs::ids::FunctionWithBodyId<'db>),
     Generated { parent: defs::ids::FunctionWithBodyId<'db>, key: GeneratedFunctionKey<'db> },
@@ -83,7 +83,7 @@ impl<'db> SemanticFunctionWithBodyIdEx<'db> for cairo_lang_defs::ids::FunctionWi
 }
 
 /// Concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub enum ConcreteFunctionWithBodyLongId<'db> {
     Semantic(semantic::ConcreteFunctionWithBodyId<'db>),
     Generated(GeneratedFunction<'db>),
@@ -239,7 +239,7 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
 }
 
 /// Function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub enum FunctionLongId<'db> {
     /// An original function from the user code.
     Semantic(semantic::FunctionId<'db>),
@@ -377,7 +377,7 @@ impl<'a> DebugWithDb<'a> for FunctionLongId<'a> {
 }
 
 /// A key for generated functions.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize, salsa::Update)]
 pub enum GeneratedFunctionKey<'db> {
     /// Generated loop functions are identified by the loop's AST pointer (ExprPtr).
     Loop(ExprPtr<'db>),
@@ -385,7 +385,7 @@ pub enum GeneratedFunctionKey<'db> {
 }
 
 /// Generated function.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub struct GeneratedFunction<'db> {
     pub parent: semantic::ConcreteFunctionWithBodyId<'db>,
     pub key: GeneratedFunctionKey<'db>,
@@ -443,7 +443,7 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
 /// than the original one.
 ///
 /// Specialized functions are identified by the base function and the arguments.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub struct SpecializedFunction<'db> {
     /// The base function.
     pub base: crate::ids::ConcreteFunctionWithBodyId<'db>,

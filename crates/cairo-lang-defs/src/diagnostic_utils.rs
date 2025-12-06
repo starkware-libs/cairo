@@ -3,12 +3,13 @@ use std::fmt;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use salsa::Database;
 
 /// A stable location of a real, concrete syntax.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, HeapSize, salsa::Update)]
 pub struct StableLocation<'db> {
     stable_ptr: SyntaxStablePtrId<'db>,
     /// An optional inner span of the stable location. Useful for diagnostics caused by inline

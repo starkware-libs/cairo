@@ -2,6 +2,7 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
@@ -22,7 +23,7 @@ use crate::{
 };
 
 // A const argument for a specialized function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub enum SpecializationArg<'db> {
     Const { value: ConstValueId<'db>, boxed: bool },
     Snapshot(Box<SpecializationArg<'db>>),

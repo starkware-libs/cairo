@@ -2,6 +2,7 @@ use std::hash::Hash;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, LocationId};
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
@@ -11,7 +12,7 @@ use salsa::Database;
 /// Represents the long ID of a pre-Sierra label.
 /// The long id consists of the parent function and a unique identifier inside the function.
 // TODO(lior): Make sure this struct can only be constructed by expr_generator_context.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, HeapSize)]
 pub struct LabelLongId<'db> {
     pub parent: ConcreteFunctionWithBodyId<'db>,
     // A unique identifier inside the function

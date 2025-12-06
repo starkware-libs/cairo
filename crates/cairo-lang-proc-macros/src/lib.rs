@@ -1,13 +1,21 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ItemFn, parse_macro_input};
+use syn::parse::Parser;
+use syn::punctuated::Punctuated;
+use syn::{ItemFn, Meta, Token, parse_macro_input};
 
 mod debug;
+mod heap_size;
 mod rewriter;
 
 #[proc_macro_derive(DebugWithDb, attributes(debug_db, hide_field_debug_with_db))]
 pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
     debug::derive_debug_with_db(input)
+}
+
+#[proc_macro_derive(HeapSize)]
+pub fn derive_heap_size(input: TokenStream) -> TokenStream {
+    heap_size::derive_heap_size(input)
 }
 
 #[proc_macro_derive(SemanticObject, attributes(dont_rewrite))]
@@ -54,4 +62,54 @@ pub fn test(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(output)
+}
+
+#[proc_macro_attribute]
+pub fn interned(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let parser = Punctuated::<Meta, Token![,]>::parse_terminated;
+    #[allow(unused_mut)]
+    let mut args: Punctuated<Meta, Token![,]> =
+        if attr.is_empty() { Punctuated::new() } else { parser.parse(attr).unwrap() };
+
+    let has_heap_size = args
+        .iter()
+        .any(|meta| matches!(meta, Meta::NameValue(nv) if nv.path.is_ident("heap_size")));
+
+    if !has_heap_size {
+        let heap_size: Meta = syn::parse_quote!(heap_size = cairo_lang_utils::HeapSize::heap_size);
+        args.push(heap_size);
+    }
+
+    let salsa_attr = quote! { #[salsa::interned(#args)] };
+    let item: proc_macro2::TokenStream = item.into();
+    let output = quote! {
+        #salsa_attr
+        #item
+    };
+    output.into()
+}
+
+#[proc_macro_attribute]
+pub fn tracked(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let parser = Punctuated::<Meta, Token![,]>::parse_terminated;
+    #[allow(unused_mut)]
+    let mut args: Punctuated<Meta, Token![,]> =
+        if attr.is_empty() { Punctuated::new() } else { parser.parse(attr).unwrap() };
+
+    let has_heap_size = args
+        .iter()
+        .any(|meta| matches!(meta, Meta::NameValue(nv) if nv.path.is_ident("heap_size")));
+
+    if !has_heap_size {
+        let heap_size: Meta = syn::parse_quote!(heap_size = cairo_lang_utils::HeapSize::heap_size);
+        args.push(heap_size);
+    }
+
+    let salsa_attr = quote! { #[salsa::tracked(#args)] };
+    let item: proc_macro2::TokenStream = item.into();
+    let output = quote! {
+        #salsa_attr
+        #item
+    };
+    output.into()
 }

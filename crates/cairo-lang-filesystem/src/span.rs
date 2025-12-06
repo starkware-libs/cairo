@@ -1,6 +1,7 @@
 use std::iter::Sum;
 use std::ops::{Add, Range, Sub};
 
+use cairo_lang_proc_macros::HeapSize;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +27,7 @@ mod test;
     Serialize,
     Deserialize,
     salsa::Update,
+    HeapSize,
 )]
 pub struct TextWidth(u32);
 impl TextWidth {
@@ -94,6 +96,7 @@ impl Sum for TextWidth {
     Serialize,
     Deserialize,
     salsa::Update,
+    HeapSize,
 )]
 pub struct TextOffset(TextWidth);
 impl TextOffset {
@@ -127,7 +130,18 @@ impl Sub for TextOffset {
 
 /// A range of text offsets that form a span (like text selection).
 #[derive(
-    Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    HeapSize,
 )]
 pub struct TextSpan {
     pub start: TextOffset,

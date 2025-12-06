@@ -13,7 +13,7 @@ use cairo_lang_defs::ids::{
     TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, skip_diagnostic};
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::deque::Deque;
@@ -69,7 +69,7 @@ pub mod solver;
 
 /// A type variable, created when a generic type argument is not passed, and thus is not known
 /// yet and needs to be inferred.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, HeapSize, salsa::Update)]
 pub struct TypeVar<'db> {
     pub inference_id: InferenceId<'db>,
     pub id: LocalTypeVarId,
@@ -77,14 +77,16 @@ pub struct TypeVar<'db> {
 
 /// A const variable, created when a generic const argument is not passed, and thus is not known
 /// yet and needs to be inferred.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, HeapSize, salsa::Update)]
 pub struct ConstVar<'db> {
     pub inference_id: InferenceId<'db>,
     pub id: LocalConstVarId,
 }
 
 /// An id for an inference context. Each inference variable is associated with an inference id.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(
+    Copy, Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+)]
 #[debug_db(dyn Database)]
 pub enum InferenceId<'db> {
     LookupItemDeclaration(LookupItemId<'db>),
@@ -103,7 +105,9 @@ pub enum InferenceId<'db> {
 
 /// An impl variable, created when a generic type argument is not passed, and thus is not known
 /// yet and needs to be inferred.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+)]
 #[debug_db(dyn Database)]
 pub struct ImplVar<'db> {
     pub inference_id: InferenceId<'db>,
@@ -120,7 +124,9 @@ impl<'db> ImplVar<'db> {
 }
 
 /// A negative impl variable
-#[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
+)]
 #[debug_db(dyn Database)]
 pub struct NegativeImplVar<'db> {
     pub inference_id: InferenceId<'db>,
@@ -131,15 +137,15 @@ pub struct NegativeImplVar<'db> {
     pub lookup_context: ImplLookupContextId<'db>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
 pub struct LocalTypeVarId(pub usize);
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
 pub struct LocalImplVarId(pub usize);
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
 pub struct LocalNegativeImplVarId(pub usize);
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, SemanticObject, HeapSize, salsa::Update)]
 pub struct LocalConstVarId(pub usize);
 
 define_short_id!(ImplVarId, ImplVar<'db>);

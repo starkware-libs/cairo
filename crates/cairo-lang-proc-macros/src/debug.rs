@@ -1,6 +1,6 @@
 //! Procedural macros.
 use proc_macro::TokenStream;
-use quote::__private::{Span, TokenStream as TokenStream2};
+use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
 use syn::{DeriveInput, Generics, parse_macro_input, parse_quote};
 

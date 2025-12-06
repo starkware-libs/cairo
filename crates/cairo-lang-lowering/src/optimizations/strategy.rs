@@ -1,4 +1,5 @@
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_utils::{Intern, define_short_id};
 use salsa::Database;
 
@@ -25,7 +26,7 @@ use crate::optimizations::split_structs::split_structs;
 use crate::reorganize_blocks::reorganize_blocks;
 
 /// Enum of the optimization phases that can be used in a strategy.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize)]
 pub enum OptimizationPhase<'db> {
     ApplyInlining {
         enable_const_folding: bool,
@@ -115,7 +116,7 @@ impl<'db> OptimizationPhase<'db> {
 define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>);
 
 /// A strategy is a sequence of optimization phases.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, HeapSize)]
 pub struct OptimizationStrategy<'db>(pub Vec<OptimizationPhase<'db>>);
 
 impl<'db> OptimizationStrategyId<'db> {
