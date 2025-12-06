@@ -21,16 +21,14 @@ The syntax of each form is the same as for the corresponding module-level
 item; only the scope changes.
 
 [source,cairo]
- ----
- fn demo() {
-     // const item statement – block-level constant.
-
+----
+fn demo() {
+    // const item statement – block-level constant.
+    const BLOCK_LIMIT: felt252 = 10;
     // use item statement – import visible only in this block.
     use my::module::MyType;
-
     // type alias item statement – alias local to the block.
     type LocalFelt = felt252;
-
     // ... other statements and expressions ...
 }
 ----
