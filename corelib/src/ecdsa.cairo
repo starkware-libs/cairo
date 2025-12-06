@@ -184,7 +184,7 @@ pub fn recover_public_key(
     let mut state = EcStateTrait::init();
     let ord = ORD;
     state.add_mul(ord - z_div_r, gen_point);
-    // Checking if the actual parity of the point's y is different than the requested, and if so,
+    // Checking if the actual parity of the point's y is different from the requested, and if so,
     // flipping the multiplier instead of negating the point to match the requested parity.
     let y: u256 = r_point.y().into();
     let r_multiplier = if (y.low & 1 != 0) ^ y_parity {
