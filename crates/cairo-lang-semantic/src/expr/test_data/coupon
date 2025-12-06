@@ -25,8 +25,6 @@ extern fn extern_func() nopanic;
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0.
  --> lib.cairo:2:10
@@ -216,8 +214,6 @@ error: The __coupon__ argument cannot have modifiers.
 
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
-
-//! > module_code
 
 //! > function_code
 fn foo(x: foo::Coupon) {

@@ -118,8 +118,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `array` does not support this bracket type.
  --> lib.cairo:2:20
@@ -198,8 +196,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `write` does not support this bracket type.
@@ -390,8 +386,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `writeln` does not support this bracket type.
  --> lib.cairo:6:13
@@ -558,8 +552,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:12
@@ -660,8 +652,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
@@ -764,8 +754,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Missing tokens. Expected an argument list wrapped in either parentheses, brackets, or braces.
  --> lib.cairo:32:13
@@ -864,8 +852,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Plugin diagnostic: Macro `panic` does not support this bracket type.
  --> lib.cairo:5:11
@@ -927,8 +913,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Inline macro `foo` not found.
  --> lib.cairo:2:14
@@ -950,8 +934,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -1600,8 +1582,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: `$` is not supported in this context.

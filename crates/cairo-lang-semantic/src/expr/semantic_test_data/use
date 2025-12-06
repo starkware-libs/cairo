@@ -121,7 +121,7 @@ use X::R as RR;
 //! > function_body
 
 //! > expr_code
-{ 
+{
     RR { a: 3 };
     use X::R;
     R { a: 4 }
@@ -201,7 +201,7 @@ use X::R as RR;
 //! > function_body
 
 //! > expr_code
-{ 
+{
     RR::<u8> { a: 3 };
     use X::R;
     R::<u8> { a: 4 }
@@ -282,7 +282,7 @@ use X::R as RR;
 //! > function_body
 
 //! > expr_code
-{ 
+{
     RR::A(2);
     use X::R;
     R::B(3)
@@ -351,7 +351,7 @@ use X::R as RR;
 //! > function_body
 
 //! > expr_code
-{ 
+{
     RR::<u8>::A(2);
     use X::R;
     R::<u16>::B(3)
@@ -418,7 +418,7 @@ use X::{R as RR, new_r};
 //! > function_body
 
 //! > expr_code
-{ 
+{
     let _y: RR = new_r();
     use X::R;
     let _x: R = new_r();
@@ -488,7 +488,7 @@ use X::{R as RR, new_r};
 //! > function_body
 
 //! > expr_code
-{ 
+{
     let y: RR::<u8> = new_r();
     use X::R;
     let x: R::<u16> = new_r();
@@ -572,7 +572,7 @@ mod R {
 //! > function_body
 
 //! > expr_code
-{ 
+{
     use X::R;
     R::C;
     R::B(3)
@@ -639,7 +639,7 @@ const R: u8 = 3;
 //! > function_body
 
 //! > expr_code
-{ 
+{
     use X::R;
     let _y = R;
     R::B(3)
@@ -709,7 +709,7 @@ use X::R;
 //! > function_body
 
 //! > expr_code
-{ 
+{
     const R: u8 = 3;
     let _y = R;
     R::B(3)
@@ -779,7 +779,7 @@ use generic_type::E as EE;
 //! > function_body
 
 //! > expr_code
-{ 
+{
     use generic_type::E;
     match EE::B(3) {
         EE::A(_) => {},
@@ -1465,8 +1465,6 @@ EnumVariantCtor(
 
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: true)
-
-//! > module_code
 
 //! > function_body
 

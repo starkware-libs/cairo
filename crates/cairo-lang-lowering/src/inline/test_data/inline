@@ -11,8 +11,6 @@ fn foo(n: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > before
@@ -310,8 +308,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1116,8 +1112,6 @@ foo
 fn foo(n: felt252) -> felt252 {
     foo(n)
 }
-
-//! > module_code
 
 //! > semantic_diagnostics
 

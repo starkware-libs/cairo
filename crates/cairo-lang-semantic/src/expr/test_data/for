@@ -16,8 +16,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Can only break with a value inside a `loop`.
  --> lib.cairo:5:9
@@ -72,8 +70,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Redefinition of variable name "_a" in pattern.

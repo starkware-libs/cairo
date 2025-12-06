@@ -14,8 +14,6 @@ fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -83,8 +81,6 @@ fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -155,8 +151,6 @@ fn foo(v: Option<u16>) -> Option<u16> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -235,8 +229,6 @@ fn foo(v: Option<(u16,)>) -> Option<(u16,)> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -394,8 +386,6 @@ fn foo(v: Option<(u16, ())>) -> Option<(u16, ())> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -780,8 +770,6 @@ fn foo(a: (felt252,)) -> (felt252,) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

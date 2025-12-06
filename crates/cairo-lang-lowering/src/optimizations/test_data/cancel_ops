@@ -15,8 +15,6 @@ fn foo(a: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -55,8 +53,6 @@ fn foo(a: ((felt252,),)) -> ((felt252,),) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -98,8 +94,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -320,8 +314,6 @@ fn foo(a: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -361,8 +353,6 @@ fn foo(a: u32) -> u32 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -523,8 +513,6 @@ fn foo(a: (u32,), b: felt252) -> u32 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

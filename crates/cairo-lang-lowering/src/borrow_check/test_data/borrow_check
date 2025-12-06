@@ -242,8 +242,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -390,8 +388,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1244,8 +1240,6 @@ mod non_existent;
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 error[E0005]: Module file not found. Expected path: non_existent.cairo

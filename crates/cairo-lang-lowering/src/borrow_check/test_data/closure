@@ -19,8 +19,6 @@ fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:6:17
@@ -95,8 +93,6 @@ fn foo(mut a: Array<u32>) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
@@ -281,8 +277,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -320,8 +314,6 @@ fn foo() -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -368,8 +360,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:9
@@ -403,8 +393,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 error: Capture of mutable variables in a closure is not supported

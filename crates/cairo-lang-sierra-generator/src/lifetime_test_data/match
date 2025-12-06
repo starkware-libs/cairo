@@ -15,8 +15,6 @@ fn foo(x: felt252, y: felt252) -> felt252 {
     }
 }
 
-//! > module_code
-
 //! > lowering_format
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
@@ -70,8 +68,6 @@ fn foo(x: felt252, y: felt252) -> felt252 {
     y
 }
 
-//! > module_code
-
 //! > lowering_format
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
@@ -122,8 +118,6 @@ fn foo(x: felt252, y: felt252) {
         y + 3
     };
 }
-
-//! > module_code
 
 //! > lowering_format
 Parameters: v0: core::felt252, v1: core::felt252
@@ -187,8 +181,6 @@ fn foo(x: felt252, y: felt252) {
         }
     };
 }
-
-//! > module_code
 
 //! > lowering_format
 Parameters: v0: core::felt252, v1: core::felt252

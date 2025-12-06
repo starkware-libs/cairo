@@ -13,8 +13,6 @@ fn foo(a: Felt252Dict<felt252>) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -625,8 +623,6 @@ fn foo(a: Array<felt252>) -> u32 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

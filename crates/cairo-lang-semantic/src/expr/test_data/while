@@ -15,8 +15,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Can only break with a value inside a `loop`.
  --> lib.cairo:4:9
@@ -42,8 +40,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unsupported feature.
  --> lib.cairo:2:11
@@ -67,8 +63,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`

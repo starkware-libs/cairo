@@ -3,8 +3,6 @@
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: false)
 
-//! > module_code
-
 //! > function_body
 const X: u8 = 2;
 const Y: u8 = X;
@@ -100,8 +98,6 @@ Constant(
 
 //! > test_runner_name
 test_expr_semantics(expect_diagnostics: true)
-
-//! > module_code
 
 //! > function_body
 const X: u8 = 4;

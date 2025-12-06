@@ -9,8 +9,6 @@ fn foo(x: (felt252, felt252)) {}
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -183,8 +181,6 @@ fn foo(s: [felt252; 3]) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
  --> lib.cairo:2:9
@@ -206,8 +202,6 @@ fn foo(s: (felt252, felt252, felt252)) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array.
  --> lib.cairo:2:9
@@ -228,8 +222,6 @@ fn foo(s: [felt252; 3]) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
@@ -254,8 +246,6 @@ fn foo(s: [felt252; 3]) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: If blocks have incompatible types: "()" and "(core::array::Array::<(?3, ?4, ?5)>,)"
@@ -286,8 +276,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Redefinition of variable name "_a" in pattern.
  --> lib.cairo:2:14
@@ -314,8 +302,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Redefinition of variable name "_a" in pattern.

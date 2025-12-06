@@ -11,8 +11,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -30,8 +28,6 @@ fn foo() -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -54,8 +50,6 @@ fn foo(x: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -70,8 +64,6 @@ fn foo() -> felt252 {}
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "core::felt252", found: "()".
