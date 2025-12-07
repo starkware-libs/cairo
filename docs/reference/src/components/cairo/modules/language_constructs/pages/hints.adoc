@@ -1,6 +1,8 @@
 = Hints
 
-Hints are implementation-side directives emitted by the compiler and executed by the Cairo runner. Hint encoding is backward-compatible; new variants are added with new indices and existing variants retain their meaning.
+Hints are implementation-side directives emitted by the compiler and executed by the Cairo
+runner. Hint encoding is backward-compatible; new variants are added with new indices and
+existing variants retain their meaning.
 
 == Categories
 
@@ -8,34 +10,43 @@ Hints are implementation-side directives emitted by the compiler and executed by
 - Starknet hints: `Hint::Starknet(StarknetHint)`
 - External hints: `Hint::External(ExternalHint)`
 
-`CoreHintBase` is either `Core(CoreHint)` (active hints) or `Deprecated(DeprecatedHint)` (kept only for backward compatibility of previously deployed code).
+`CoreHintBase` is either `Core(CoreHint)` (active hints) or `Deprecated(DeprecatedHint)`
+(kept only for backward compatibility of previously deployed code).
 
 == Semantics
 
-Each hint has a deterministic Pythonic execution produced by the compiler via `PythonicHint::get_pythonic_hint`. The runner evaluates that Pythonic form to realize the hint’s effects (e.g., writes to memory, pointer movement, syscalls).
+Each hint has a deterministic Pythonic execution produced by the compiler via
+`PythonicHint::get_pythonic_hint`. The runner evaluates that Pythonic form to realize the hint’s
+effects (e.g., writes to memory, pointer movement, syscalls).
 
 [NOTE]
 ====
-`StarknetHint::Cheatcode` exists in the type system but its Pythonic form raises `NotImplementedError`.
+`StarknetHint::Cheatcode` exists in the type system but its Pythonic form raises
+`NotImplementedError`.
 ====
 
 == Core hints (summary)
 
 - Arithmetic and big-integer helpers
-  - `TestLessThan`, `TestLessThanOrEqual`, `TestLessThanOrEqualAddress` — write boolean (0/1) results.
+  - `TestLessThan`, `TestLessThanOrEqual`, `TestLessThanOrEqualAddress` — write boolean (0/1)
+    results.
   - `WideMul128` — 128×128 → high/low 128-bit limbs.
   - `DivMod` — quotient and remainder of two integers.
-  - `Uint256DivMod`, `Uint512DivModByUint256` — wide division, return quotient/remainder limbs.
+  - `Uint256DivMod`, `Uint512DivModByUint256` — wide division, return quotient/remainder
+    limbs.
   - `SquareRoot`, `Uint256SquareRoot` — integer square root and remainder details.
   - `LinearSplit` — find x,y s.t. `x*scalar + y = value` with `x <= max_x`.
   - `FieldSqrt` — sqrt in field or in `3*val` to prove non-residue.
   - `U256InvModN` — modular inverse over 256-bit limbs or proof of no inverse.
 
 - Dict and squash helpers (felt252 dict)
-  - `AllocFelt252Dict`, `Felt252DictEntryInit`, `Felt252DictEntryUpdate` — manage dict segments and entries.
-  - `InitSquashData`, `GetCurrentAccessIndex`, `ShouldSkipSquashLoop`, `GetCurrentAccessDelta`, `ShouldContinueSquashLoop`, `GetNextDictKey` — prepare and iterate squash state.
+  - `AllocFelt252Dict`, `Felt252DictEntryInit`, `Felt252DictEntryUpdate` — manage dict segments
+    and entries.
+  - `InitSquashData`, `GetCurrentAccessIndex`, `ShouldSkipSquashLoop`, `GetCurrentAccessDelta`,
+    `ShouldContinueSquashLoop`, `GetNextDictKey` — prepare and iterate squash state.
   - `GetSegmentArenaIndex` — map segment index to arena index.
-  - `AssertLeFindSmallArcs`, `AssertLeIsFirstArcExcluded`, `AssertLeIsSecondArcExcluded` — arc computations used by assert-le flow.
+  - `AssertLeFindSmallArcs`, `AssertLeIsFirstArcExcluded`, `AssertLeIsSecondArcExcluded` — arc
+    computations used by assert-le flow.
 
 - Memory, debug, utilities
   - `AllocSegment` — allocate a new segment.
@@ -58,7 +69,8 @@ Each hint has a deterministic Pythonic execution produced by the compiler via `P
 
 == Deprecated hints
 
-`DeprecatedHint` variants are retained solely for backward compatibility (e.g., legacy dict read/write and assert helpers). New code should not emit them.
+`DeprecatedHint` variants are retained solely for backward compatibility (e.g., legacy dict
+read/write and assert helpers). New code should not emit them.
 
 == Examples
 
@@ -97,5 +109,7 @@ fn main() {
 
 == References
 
-- `crates/cairo-lang-casm/src/hints/mod.rs` — source of all hint enums and Pythonic semantics.
-- `crates/cairo-lang-runner/` — runner that executes the Pythonic form of hints.
+- `crates/cairo-lang-casm/src/hints/mod.rs` — source of hint enums and their pythonic
+  renderings.
+- `crates/cairo-lang-runner/` — Cairo program runner. Hint handling lives under
+  `crates/cairo-lang-runner/src/casm_run/`.
