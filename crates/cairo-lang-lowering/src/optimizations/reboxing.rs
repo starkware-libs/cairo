@@ -8,7 +8,7 @@ use std::rc::Rc;
 use cairo_lang_filesystem::flag::flag_future_sierra;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::types::{TypesSemantic, peel_snapshots};
+use cairo_lang_semantic::types::{TypesSemantic, peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -255,7 +255,7 @@ fn create_struct_boxed_deconstruct_call<'db>(
     old_stmt: &Statement<'db>,
 ) -> Option<Statement<'db>> {
     // TODO(eytan-starkware): Accept a collection of vars to create a box of. A single call to
-    // struct_boxed_deconstruct can be created for multiple vars.       When creating multivars
+    // struct_boxed_deconstruct can be created for multiple vars. When creating multivars
     // we need to put creation at a dominating point.
 
     let boxed_struct_ty = variables[boxed_struct_var].ty;
@@ -277,13 +277,6 @@ fn create_struct_boxed_deconstruct_call<'db>(
     }
     let (n_snapshots, struct_ty) = peel_snapshots(db, *inner_ty);
 
-    // TODO(eytan-starkware): Support snapshots of structs in reboxing optimization.
-    // Currently we give up if the struct is wrapped in snapshots.
-    if n_snapshots > 0 {
-        trace!("Skipping reboxing for snapshotted struct (n_snapshots={})", n_snapshots);
-        return None;
-    }
-
     trace!("Extracted struct or tuple type: {:?}", struct_ty);
 
     // Get the type info to determine number of members
@@ -291,12 +284,18 @@ fn create_struct_boxed_deconstruct_call<'db>(
         TypeLongId::Concrete(ConcreteTypeId::Struct(struct_id)) => {
             let members = db.concrete_struct_members(struct_id).ok()?;
             let num = members.len();
-            let types = members.iter().map(|(_, member)| member.ty).collect();
+            let types = members
+                .iter()
+                .map(|(_, member)| wrap_in_snapshots(db, member.ty, n_snapshots))
+                .collect();
             (num, types)
         }
         TypeLongId::Tuple(inner_types) => {
             let num = inner_types.len();
-            (num, inner_types)
+            (
+                num,
+                inner_types.into_iter().map(|ty| wrap_in_snapshots(db, ty, n_snapshots)).collect(),
+            )
         }
         _ => {
             trace!("Unsupported type for reboxing: {:?}", struct_ty);
