@@ -118,16 +118,15 @@ struct A {
 
 //! > lowering_diagnostics
 
-//! > TODO(eytan-starkware): Rebox on non-copy structs.
-
 //! > sierra_code
 label_test::foo::0:
-unbox<Snapshot<test::A>>([0]) -> ([1])
-store_temp<Snapshot<test::A>>([1]) -> ([1])
-struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3])
-drop<Snapshot<Array<felt252>>>([3]) -> ()
-into_box<Snapshot<Array<felt252>>>([2]) -> ([4])
-return([4])
+dup<Box<Snapshot<test::A>>>([0]) -> ([0], [1])
+unbox<Snapshot<test::A>>([1]) -> ([2])
+drop<Snapshot<test::A>>([2]) -> ()
+struct_boxed_deconstruct<Snapshot<test::A>>([0]) -> ([3], [4])
+drop<Box<Snapshot<Array<felt252>>>>([4]) -> ()
+store_temp<Box<Snapshot<Array<felt252>>>>([3]) -> ([3])
+return([3])
 
 //! > ==========================================================================
 
@@ -155,15 +154,48 @@ struct A {
 
 //! > lowering_diagnostics
 
-//! > TODO(eytan-starkware): We want reboxing to apply to sierra in the future,
+//! > sierra_code
+label_test::foo::0:
+dup<Box<Snapshot<test::A>>>([0]) -> ([0], [1])
+unbox<Snapshot<test::A>>([1]) -> ([2])
+drop<Snapshot<test::A>>([2]) -> ()
+struct_boxed_deconstruct<Snapshot<test::A>>([0]) -> ([3], [4])
+drop<Box<Snapshot<Array<felt252>>>>([4]) -> ()
+store_temp<Box<Snapshot<Array<felt252>>>>([3]) -> ([3])
+return([3])
 
-//! > so we will see struct_boxed_deconstruct.
+//! > ==========================================================================
+
+//! > Test reboxing of a boxed, repeatedly snapshotted struct.
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(box: Box<@@@A>) -> Box<@@@Array<felt252>> {
+    BoxTrait::new(box.unbox().a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct A {
+    a: Array<felt252>,
+    b: Array<felt252>,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
 
 //! > sierra_code
 label_test::foo::0:
-unbox<Snapshot<test::A>>([0]) -> ([1])
-store_temp<Snapshot<test::A>>([1]) -> ([1])
-struct_snapshot_deconstruct<test::A>([1]) -> ([2], [3])
-drop<Snapshot<Array<felt252>>>([3]) -> ()
-into_box<Snapshot<Array<felt252>>>([2]) -> ([4])
-return([4])
+dup<Box<Snapshot<test::A>>>([0]) -> ([0], [1])
+unbox<Snapshot<test::A>>([1]) -> ([2])
+drop<Snapshot<test::A>>([2]) -> ()
+struct_boxed_deconstruct<Snapshot<test::A>>([0]) -> ([3], [4])
+drop<Box<Snapshot<Array<felt252>>>>([4]) -> ()
+store_temp<Box<Snapshot<Array<felt252>>>>([3]) -> ([3])
+return([3])

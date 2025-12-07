@@ -112,9 +112,8 @@ pub fn struct_deconstruct_libfunc_id(
     let is_snapshot = long_id.generic_id == SnapshotType::id();
     let is_box = long_id.generic_id == BoxType::id();
     Ok(if is_snapshot {
-        let concrete_enum_type =
-            extract_matches!(&long_id.generic_args[0], GenericArg::Type).clone();
-        get_libfunc_id_with_generic_arg(db, "struct_snapshot_deconstruct", concrete_enum_type)
+        let concrete_type = extract_matches!(&long_id.generic_args[0], GenericArg::Type).clone();
+        get_libfunc_id_with_generic_arg(db, "struct_snapshot_deconstruct", concrete_type)
     } else if is_box {
         let inner_ty = extract_matches!(&long_id.generic_args[0], GenericArg::Type).clone();
         get_libfunc_id_with_generic_arg(db, "struct_boxed_deconstruct", inner_ty)
