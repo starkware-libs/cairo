@@ -1,0 +1,91 @@
+//! > Documentation
+
+//! > test_runner_name
+documentation_test_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+/// Function with multi-line doc comment.
+///     This line has extra indentation.
+///   This line has less indentation.
+///     Another indented line.
+fn test_function() {}
+
+/// Another function with varying indentation.
+///   First line with some indentation.
+///     Second line with more indentation.
+/// Third line with no extra indentation.
+///   Fourth line with some indentation.
+fn another_function() {}
+
+/// Function demonstrating that minimum indentation is removed uniformly.
+///   All lines have at least 2 spaces.
+///     Some lines have 4 spaces.
+///   But minimum (2 spaces) is removed from all.
+fn indented_function() {}
+
+//! > Item signature #1
+
+//! > Item documentation #1
+
+//! > Item documentation tokens #1
+
+//! > Item signature #2
+fn test_function()
+
+//! > Item documentation #2
+Function with multi-line doc comment.
+This line has extra indentation.
+This line has less indentation.
+Another indented line.
+
+//! > Item documentation tokens #2
+Content("Function with multi-line doc comment.")
+Content("\n")
+Content("This line has extra indentation.")
+Content("\n")
+Content("This line has less indentation.")
+Content("\n")
+Content("Another indented line.")
+
+//! > Item signature #3
+fn another_function()
+
+//! > Item documentation #3
+Another function with varying indentation.
+First line with some indentation.
+Second line with more indentation.
+Third line with no extra indentation.
+Fourth line with some indentation.
+
+//! > Item documentation tokens #3
+Content("Another function with varying indentation.")
+Content("\n")
+Content("First line with some indentation.")
+Content("\n")
+Content("Second line with more indentation.")
+Content("\n")
+Content("Third line with no extra indentation.")
+Content("\n")
+Content("Fourth line with some indentation.")
+
+//! > Item signature #4
+fn indented_function()
+
+//! > Item documentation #4
+Function demonstrating that minimum indentation is removed uniformly.
+All lines have at least 2 spaces.
+Some lines have 4 spaces.
+But minimum (2 spaces) is removed from all.
+
+//! > Item documentation tokens #4
+Content("Function demonstrating that minimum indentation is removed uniformly.")
+Content("\n")
+Content("All lines have at least 2 spaces.")
+Content("\n")
+Content("Some lines have 4 spaces.")
+Content("\n")
+Content("But minimum (2 spaces) is removed from all.")
