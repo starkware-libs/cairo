@@ -17,8 +17,6 @@ fn foo(x: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -78,8 +76,6 @@ fn foo(x: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -141,8 +137,6 @@ fn foo(opt: Option<@felt252>) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -200,8 +194,6 @@ fn foo(mut a: Array<u32>) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

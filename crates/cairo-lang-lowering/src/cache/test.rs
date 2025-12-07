@@ -30,7 +30,7 @@ fn test_cache_check(
 
     let function = &inputs["function_code"];
     let function_name = &inputs["function_name"];
-    let module_code = &inputs["module_code"];
+    let module_code = inputs.get("module_code").map_or("", String::as_str);
     let (test_function, _semantic_diagnostics) =
         setup_test_function_ex(db, function, function_name, module_code, None, None).split();
 
