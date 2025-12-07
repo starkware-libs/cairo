@@ -215,7 +215,7 @@ blk0 (root):
 Statements:
   (v1: @test::Data) <- core::box::unbox::<@test::Data>(v0)
   (v2: @test::NonCopy, v3: @core::felt252) <- struct_destructure(v1)
-  (v4: core::box::Box::<@test::NonCopy>) <- core::box::into_box::<@test::NonCopy>(v2)
+  (v4: core::box::Box::<@test::NonCopy>, v5: core::box::Box::<@core::felt252>) <- struct_destructure(v0)
 End:
   Return(v4)
 
@@ -690,3 +690,68 @@ Statements:
   (v5: (core::box::Box::<core::felt252>, test::NonDrop)) <- struct_construct(v4, v3)
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Test reboxing with snapshot of non-drop struct and member
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+main
+
+//! > module_code
+use core::box::BoxTrait;
+
+#[derive(Copy)]
+struct NonDrop {
+    b: felt252,
+}
+
+#[derive(Copy)]
+struct A {
+    a: felt252,
+    non_drop: NonDrop,
+}
+
+//! > function_code
+fn main(a: @A) -> (Box<@felt252>, @NonDrop) {
+    let boxed = BoxTrait::new(a);
+    let unboxed = boxed.unbox();
+    let member_a = unboxed.a;
+    (BoxTrait::new(member_a), unboxed.non_drop)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > candidates
+v5
+
+//! > before
+Parameters: v0: @test::A
+blk0 (root):
+Statements:
+  (v1: core::box::Box::<@test::A>) <- core::box::into_box::<@test::A>(v0)
+  (v2: @test::A) <- core::box::unbox::<@test::A>(v1)
+  (v3: @core::felt252, v4: @test::NonDrop) <- struct_destructure(v2)
+  (v5: core::box::Box::<@core::felt252>) <- core::box::into_box::<@core::felt252>(v3)
+  (v6: @core::felt252, v7: @test::NonDrop) <- struct_destructure(v2)
+  (v8: (core::box::Box::<@core::felt252>, @test::NonDrop)) <- struct_construct(v5, v7)
+End:
+  Return(v8)
+
+//! > after
+Parameters: v0: @test::A
+blk0 (root):
+Statements:
+  (v1: core::box::Box::<@test::A>) <- core::box::into_box::<@test::A>(v0)
+  (v2: @test::A) <- core::box::unbox::<@test::A>(v1)
+  (v3: @core::felt252, v4: @test::NonDrop) <- struct_destructure(v2)
+  (v5: core::box::Box::<@core::felt252>, v9: core::box::Box::<@test::NonDrop>) <- struct_destructure(v1)
+  (v6: @core::felt252, v7: @test::NonDrop) <- struct_destructure(v2)
+  (v8: (core::box::Box::<@core::felt252>, @test::NonDrop)) <- struct_construct(v5, v7)
+End:
+  Return(v8)
