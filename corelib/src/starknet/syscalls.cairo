@@ -100,6 +100,17 @@ pub extern fn get_execution_info_v2_syscall() -> SyscallResult<
     Box<starknet::info::v2::ExecutionInfo>,
 > implicits(GasBuiltin, System) nopanic;
 
+/// Gets information about the current execution, version 3.
+/// This syscall should not be called directly. Instead, use
+/// `starknet::info::get_execution_info`.
+///
+/// # Returns
+///
+/// * A box containing the current V3 execution information.
+pub extern fn get_execution_info_v3_syscall() -> SyscallResult<
+    Box<starknet::info::v3::ExecutionInfo>,
+> implicits(GasBuiltin, System) nopanic;
+
 /// Calls the requested function in any previously declared class.
 ///
 /// # Arguments
