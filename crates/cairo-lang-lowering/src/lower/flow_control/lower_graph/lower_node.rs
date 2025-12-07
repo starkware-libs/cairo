@@ -160,7 +160,7 @@ fn lower_while_body_expr<'db>(
     mut builder: BlockBuilder<'db>,
 ) -> Maybe<()> {
     let semantic::Expr::Block(expr) = ctx.ctx.function_body.arenas.exprs[node.body].clone() else {
-        unreachable!("WhileLet expression should be a block");
+        unreachable!("WhileBody expression should be a block");
     };
     let block_expr = lower_expr_block(ctx.ctx, &mut builder, &expr).and_then(|_| {
         recursively_call_loop_func(ctx.ctx, &mut builder, node.loop_expr_id, node.loop_stable_ptr)
