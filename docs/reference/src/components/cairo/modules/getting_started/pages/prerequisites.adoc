@@ -35,5 +35,5 @@ You can install the nightly version by running:
 
 [source,bash]
 ----
-rustup install nightly-2025-11-17
+rustup install nightly-2025-12-05
 ----
