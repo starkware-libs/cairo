@@ -6,7 +6,6 @@ use cairo_lang_formatter::{CairoFormatter, FormatOutcome, FormatterConfig, Stdin
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 use colored::Colorize;
-use ignore::WalkState::Continue;
 use ignore::{DirEntry, Error, ParallelVisitor, ParallelVisitorBuilder, WalkState};
 use log::warn;
 
@@ -130,18 +129,18 @@ impl ParallelVisitor for PathFormatter<'_> {
             dir_entry
         } else {
             warn!("Failed to read the file.");
-            return Continue;
+            return WalkState::Continue;
         };
 
         let file_type = if let Some(file_type) = dir_entry.file_type() {
             file_type
         } else {
             warn!("Failed to read filetype.");
-            return Continue;
+            return WalkState::Continue;
         };
 
         if !file_type.is_file() {
-            return Continue;
+            return WalkState::Continue;
         }
 
         let file_path = dir_entry.path();
@@ -159,7 +158,7 @@ impl ParallelVisitor for PathFormatter<'_> {
         if !success {
             self.all_correct.store(false, Ordering::Release);
         }
-        Continue
+        WalkState::Continue
     }
 }
 
