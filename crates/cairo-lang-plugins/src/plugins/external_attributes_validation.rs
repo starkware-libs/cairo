@@ -59,8 +59,8 @@ fn get_diagnostics<'a, Item: QueryAttrs<'a>>(
                     ));
                     return;
                 };
-                let Some([ast::PathSegment::Simple(segment)]) =
-                    path.segments(db).elements(db).collect_array()
+                let Ok(ast::PathSegment::Simple(segment)) =
+                    path.segments(db).elements(db).exactly_one()
                 else {
                     diagnostics.push(PluginDiagnostic::error(
                         path.stable_ptr(db),
