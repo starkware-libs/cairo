@@ -95,7 +95,7 @@ pub enum InvocationError {
     // TODO(lior): Remove this error once not used.
     #[error("This libfunc does not support pre-cost metadata yet.")]
     PreCostMetadataNotSupported,
-    #[error("{output_ty} is not a contained in the circuit {circuit_ty}.")]
+    #[error("{output_ty} is not contained in the circuit {circuit_ty}.")]
     InvalidCircuitOutput { output_ty: ConcreteTypeId, circuit_ty: ConcreteTypeId },
 }
 
