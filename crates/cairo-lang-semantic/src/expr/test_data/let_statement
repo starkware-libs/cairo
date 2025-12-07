@@ -11,8 +11,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed.
  --> lib.cairo:2:13
@@ -49,8 +47,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: `mut` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
  --> lib.cairo:2:13
@@ -77,8 +73,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: `ref` is only allowed for function parameters, not for local variables.
  --> lib.cairo:2:13
@@ -100,8 +94,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.
@@ -129,8 +121,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "()", found: "core::felt252".
  --> lib.cairo:2:18
@@ -156,8 +146,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E0006]: Function not found.

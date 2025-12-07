@@ -6,7 +6,7 @@ use super::PluginTypeInfo;
 use crate::plugins::utils::TypeVariant;
 
 /// Adds derive result for the `Serde` trait.
-pub fn handle_serde(info: &PluginTypeInfo<'_>) -> String {
+pub fn handle_serde(info: &PluginTypeInfo<'_>, member_access_desnaps: bool) -> String {
     const SERDE_TRAIT: &str = "core::serde::Serde";
     const DESTRUCT_TRAIT: &str = "core::traits::Destruct";
     let ty = &info.name;
@@ -44,11 +44,13 @@ pub fn handle_serde(info: &PluginTypeInfo<'_>) -> String {
                 .members_info
                 .iter()
                 .map(|member| {
-                    format!(
-                        "{imp}::serialize(self.{member}, ref output)",
-                        member = member.name,
-                        imp = member.impl_name(SERDE_TRAIT),
-                    )
+                    let imp = member.impl_name(SERDE_TRAIT);
+                    let member = &member.name;
+                    if member_access_desnaps {
+                        format!("{imp}::serialize(@self.{member}, ref output)")
+                    } else {
+                        format!("{imp}::serialize(self.{member}, ref output)")
+                    }
                 })
                 .join(";\n"),
         },

@@ -54,7 +54,7 @@ fn generate_trait_for_impl<'db>(
         return PluginResult::default();
     };
     let trait_ast = impl_ast.trait_path(db);
-    let Some([trait_ast_segment]) = trait_ast.segments(db).elements(db).collect_array() else {
+    let Ok(trait_ast_segment) = trait_ast.segments(db).elements(db).exactly_one() else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic::error(
@@ -127,8 +127,8 @@ fn generate_trait_for_impl<'db>(
                         let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.expr(db) else {
                             return false;
                         };
-                        let Some([ast::PathSegment::Simple(trait_generic_arg)]) =
-                            trait_generic_arg.segments(db).elements(db).collect_array()
+                        let Ok(ast::PathSegment::Simple(trait_generic_arg)) =
+                            trait_generic_arg.segments(db).elements(db).exactly_one()
                         else {
                             return false;
                         };

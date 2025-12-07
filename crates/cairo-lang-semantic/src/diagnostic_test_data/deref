@@ -154,8 +154,6 @@ for mut inner_s in span_of_spans {
     inner_s.pop_front();
 }
 
-//! > module_code
-
 //! > function_body
 let span_of_spans = array![array![1_u32].span()].span();
 

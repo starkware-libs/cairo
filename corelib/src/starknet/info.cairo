@@ -261,3 +261,65 @@ pub mod v2 {
         pub max_price_per_unit: u128,
     }
 }
+
+
+/// The extended version of the `get_execution_info` syscall result.
+pub mod v3 {
+    use starknet::contract_address::ContractAddress;
+    use super::BlockInfo;
+    pub use super::v2::ResourceBounds;
+
+    /// The same as `ExecutionInfo`, but with the `TxInfo` field replaced with `v3::TxInfo`.
+    #[derive(Copy, Drop, Debug)]
+    pub struct ExecutionInfo {
+        pub block_info: Box<BlockInfo>,
+        pub tx_info: Box<TxInfo>,
+        pub caller_address: ContractAddress,
+        pub contract_address: ContractAddress,
+        pub entry_point_selector: felt252,
+    }
+
+    /// Extended information about the current transaction.
+    #[derive(Copy, Drop, Debug, Serde)]
+    pub struct TxInfo {
+        /// The version of the transaction. It is fixed (currently, 1) in the OS, and should be
+        /// signed by the account contract.
+        /// This field allows invalidating old transactions, whenever the meaning of the other
+        /// transaction fields is changed (in the OS).
+        pub version: felt252,
+        /// The account contract from which this transaction originates.
+        pub account_contract_address: ContractAddress,
+        /// The `max_fee` field of the transaction.
+        pub max_fee: u128,
+        /// The signature of the transaction.
+        pub signature: Span<felt252>,
+        /// The hash of the transaction.
+        pub transaction_hash: felt252,
+        /// The identifier of the chain.
+        /// This field can be used to prevent replay of testnet transactions on mainnet.
+        pub chain_id: felt252,
+        /// The transaction's nonce.
+        pub nonce: felt252,
+        /// A span of `ResourceBounds` structs used for V3 transactions.
+        pub resource_bounds: Span<ResourceBounds>,
+        /// The tip of the transaction.
+        pub tip: u128,
+        /// If specified, the paymaster should pay for the execution of the transaction.
+        /// The data includes the address of the paymaster sponsoring the transaction, followed by
+        /// extra data to send to the paymaster.
+        /// Used for V3 transactions.
+        pub paymaster_data: Span<felt252>,
+        /// The data availability mode for the nonce.
+        /// Used for V3 transactions.
+        pub nonce_data_availability_mode: u32,
+        /// The data availability mode for the account balance from which fee will be taken.
+        /// Used for V3 transactions.
+        pub fee_data_availability_mode: u32,
+        /// If nonempty, will contain the required data for deploying and initializing an account
+        /// contract: its class hash, address salt and constructor calldata.
+        /// Used for V3 transactions.
+        pub account_deployment_data: Span<felt252>,
+        /// The proof facts of the transaction. Used for client side proving.
+        pub proof_facts: Span<felt252>,
+    }
+}

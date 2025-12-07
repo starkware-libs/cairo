@@ -5,7 +5,6 @@
 //! keys to Ethereum addresses.
 
 use core::keccak::keccak_u256s_be_inputs;
-use core::option::OptionTrait;
 #[allow(unused_imports)]
 use starknet::secp256_trait::{
     Secp256PointTrait, Secp256Trait, Signature, is_signature_entry_valid, is_signature_s_valid,
@@ -97,7 +96,9 @@ pub fn is_eth_signature_valid(
         return Err('Signature out of range');
     }
 
-    let public_key_point = recover_public_key::<Secp256k1Point>(:msg_hash, :signature).unwrap();
+    let Some(public_key_point) = recover_public_key::<Secp256k1Point>(:msg_hash, :signature) else {
+        return Err('Public key recovery failed');
+    };
     let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
     if eth_address != calculated_eth_address {
         return Err('Invalid signature');

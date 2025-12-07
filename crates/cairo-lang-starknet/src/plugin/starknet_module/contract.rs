@@ -640,7 +640,7 @@ fn handle_embed_impl_alias<'db>(
 
 /// Handles a `component!` inline macro. Assumes that the macro name is `COMPONENT_INLINE_MACRO`.
 /// Verifies that the macro pattern is:
-/// component!(name: <component_name>, storage: <storage_name>, event: <event_name>);
+/// component!(path: <component_path>, storage: <storage_name>, event: <event_name>);
 /// If the macro pattern is as expected, generates the code for impl of HasComponent in the
 /// contract.
 pub fn handle_component_inline_macro<'db>(
@@ -712,8 +712,8 @@ fn invalid_macro_diagnostic<'db>(
     PluginDiagnostic::error(
         component_macro_ast.stable_ptr(db),
         format!(
-            "Invalid component macro, expected `{COMPONENT_INLINE_MACRO}!(name: \
-             \"<component_name>\", storage: \"<storage_name>\", event: \"<event_name>\");`"
+            "Invalid component macro, expected `{COMPONENT_INLINE_MACRO}!(path: <component_path>, \
+             storage: <storage_name>, event: <event_name>);`"
         ),
     )
 }

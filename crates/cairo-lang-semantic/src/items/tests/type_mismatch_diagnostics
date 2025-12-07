@@ -11,8 +11,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?1)".
  --> lib.cairo:2:22
@@ -34,8 +32,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
@@ -63,8 +59,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Type `core::integer::u32` cannot be dereferenced
  --> lib.cairo:2:22
@@ -86,8 +80,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "[core::felt252; 2]", found: "[core::integer::u16; 2]".
  --> lib.cairo:2:27
@@ -108,8 +100,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
@@ -184,8 +174,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::option::Option::<core::felt252>", found: "core::option::Option::<core::integer::u16>".
  --> lib.cairo:2:30
@@ -242,8 +230,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::box::Box::<core::integer::u32>", found: "core::box::Box::<@core::integer::u32>".
  --> lib.cairo:2:23
@@ -275,8 +261,6 @@ fn foo(mut param: u32) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Cannot assign to a variable with a taken pointer

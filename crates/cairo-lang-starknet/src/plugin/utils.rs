@@ -20,10 +20,10 @@ pub trait ParamEx<'db> {
 }
 impl<'db> ParamEx<'db> for ast::Param<'db> {
     fn is_ref_param(&self, db: &dyn Database) -> bool {
-        let param_modifiers = self.modifiers(db).elements(db).collect_array();
+        let param_modifiers = self.modifiers(db).elements(db).exactly_one();
         // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
         // semantic level, we could just ask if it's a reference.
-        matches!(param_modifiers, Some([Modifier::Ref(_)]))
+        matches!(param_modifiers, Ok(Modifier::Ref(_)))
     }
 
     fn try_extract_snapshot(&self, db: &'db dyn Database) -> Option<ast::Expr<'db>> {
@@ -59,8 +59,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
     fn is_identifier(&self, db: &dyn Database, identifier: &str) -> bool {
         let segments = self.segments(db);
         let type_path_elements = segments.elements(db);
-        let Some([ast::PathSegment::Simple(arg_segment)]) = type_path_elements.collect_array()
-        else {
+        let Ok(ast::PathSegment::Simple(arg_segment)) = type_path_elements.exactly_one() else {
             return false;
         };
 
@@ -70,8 +69,8 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
     fn is_name_with_arg(&self, db: &dyn Database, name: &str, generic_arg: &str) -> bool {
         let segments = self.segments(db);
         let type_path_elements = segments.elements(db);
-        let Some([ast::PathSegment::WithGenericArgs(path_segment_with_generics)]) =
-            type_path_elements.collect_array()
+        let Ok(ast::PathSegment::WithGenericArgs(path_segment_with_generics)) =
+            type_path_elements.exactly_one()
         else {
             return false;
         };
@@ -81,7 +80,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
         }
         let generic_args = path_segment_with_generics.generic_args(db).generic_args(db);
         let args = generic_args.elements(db);
-        let Some([ast::GenericArg::Unnamed(arg_expr)]) = args.collect_array() else {
+        let Ok(ast::GenericArg::Unnamed(arg_expr)) = args.exactly_one() else {
             return false;
         };
         let ast::GenericArgValue::Expr(arg_expr) = arg_expr.value(db) else {

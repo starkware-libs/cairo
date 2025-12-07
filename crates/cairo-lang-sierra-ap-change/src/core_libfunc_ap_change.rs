@@ -57,7 +57,7 @@ pub trait InvocationApChangeInfoProvider {
 }
 
 /// Returns the ap change for a core libfunc.
-/// Values with unknown values will return as None.
+/// Unknown ap changes are represented as `ApChange::Unknown`.
 pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,

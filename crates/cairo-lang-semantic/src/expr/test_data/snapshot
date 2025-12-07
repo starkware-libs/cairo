@@ -36,8 +36,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "@?1".
 It is possible that the type inference failed because the types differ in the number of snapshots.
@@ -62,8 +60,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "@core::felt252", found: "core::felt252".
  --> lib.cairo:2:24
@@ -74,3 +70,35 @@ error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt2
  --> lib.cairo:3:23
     let _y: felt252 = @6_felt252;
                       ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test struct snapshot auto member access desnap.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > crate_settings
+edition = "2025_12"
+
+//! > function_code
+fn foo(a: @A) {
+    let _: @Array<felt252> = @a.a;
+    let _: @Array<felt252> = @(@a).a;
+    let _: @@Array<felt252> = @@(@a).a;
+    let _: felt252 = a.b;
+    let _: @felt252 = @a.b;
+    let _: @felt252 = @(@a).b;
+    let _: @@felt252 = @@(@a).b;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array<felt252>,
+    b: felt252,
+}
+
+//! > expected_diagnostics

@@ -247,7 +247,7 @@ fn solve_candidate<'db>(
     let Ok(candidate_concrete_trait) = candidate.concrete_trait(db) else {
         return Err(super::ErrorSet);
     };
-    // If the candidate is fully concrete, or its a generic which is var free, there is nothing
+    // If the candidate is fully concrete, or it's a generic which is var free, there is nothing
     // to substitute. A generic param may not be var free, if it contains impl types.
     let candidate_final = matches!(candidate, UninferredImpl::GenericParam(_))
         && candidate_concrete_trait.is_var_free(db)

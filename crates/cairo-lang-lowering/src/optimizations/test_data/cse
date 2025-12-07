@@ -11,8 +11,6 @@ fn foo(x: u32, y: u32) -> ((u32, u32), (u32, u32)) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -53,8 +51,6 @@ fn foo(x: u32) -> (Option<u32>, Option<u32>) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -93,8 +89,6 @@ fn foo(x: u32) -> (@u32, @u32) {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -132,8 +126,6 @@ fn foo(x: @u32) -> (u32, u32) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -174,8 +166,6 @@ fn foo(tuple: (u32, u32)) -> (u32, u32, u32, u32) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -222,8 +212,6 @@ fn foo(x: u32, y: u32) -> u32 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -281,8 +269,6 @@ fn foo(x: u32, y: u32, z: u32) -> ((u32, u32), (u32, u32)) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

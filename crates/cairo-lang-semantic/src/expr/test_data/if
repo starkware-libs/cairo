@@ -16,8 +16,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Condition has type "core::felt252", expected bool.
  --> lib.cairo:3:8
@@ -50,8 +48,6 @@ fn foo() -> bool {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Condition has type "core::integer::u64", expected bool.
@@ -115,8 +111,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> lib.cairo:3:24
@@ -142,8 +136,6 @@ fn foo() -> bool {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
@@ -201,8 +193,6 @@ fn foo(a: Option<Option<Option<felt252>>>) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error[E0006]: Identifier not found.

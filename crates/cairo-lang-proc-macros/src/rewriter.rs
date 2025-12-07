@@ -208,7 +208,7 @@ fn emit_expr_for_ty(
 }
 
 /// Returns the identifier of the semantic crate. This is needed, since inside the semantic
-/// crate, it needs to be referred to as `crate` and no `semantic`.
+/// crate, it needs to be referred to as `crate` and not `cairo_lang_semantic`.
 fn semantic_crate() -> syn::Ident {
     let crate_name = std::env::var("CARGO_PKG_NAME").unwrap();
     let res = match crate_name.as_str() {

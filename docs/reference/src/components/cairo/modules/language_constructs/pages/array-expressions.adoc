@@ -28,7 +28,7 @@ Only one form is used at a time. Mixing both (e.g., `[a, b; 3]`) is not valid.
 - In the repeat form, the array length is given by `size` and the array is initialized by
   repeating the single element expression.
 - The element expression in the repeat form is evaluated according to the language’s
-  evaluation rules; refer to xref:pages/expressions.adoc[Expressions] for general evaluation
+  evaluation rules; refer to xref:expressions.adoc[Expressions] for general evaluation
   order. Do not rely on side effects repeating unless guaranteed by the semantics of the
   expression and compiler.
 - Empty arrays (`[]`) require type context to determine the element type. Where no such context
@@ -64,8 +64,8 @@ Invalid examples (illustrative):
 
 == Related
 
-- xref:pages/expressions.adoc[Expressions]
-- xref:pages/array-types.adoc[Array types] (🚧)
-- xref:pages/slice-types.adoc[Slice types] (🚧)
-- xref:pages/tuple-expressions.adoc[Tuple expressions]
+- xref:expressions.adoc[Expressions]
+- xref:array-types.adoc[Array types] (🚧)
+- xref:slice-types.adoc[Slice types] (🚧)
+- xref:tuple-expressions.adoc[Tuple expressions]
 

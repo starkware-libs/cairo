@@ -16,8 +16,6 @@ fn foo(a: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -81,8 +79,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -160,8 +156,6 @@ fn foo(a: felt252, x: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -202,8 +196,6 @@ fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -252,8 +244,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -286,8 +276,6 @@ fn foo(v: u8) {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -441,8 +429,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 error: Type mismatch: `core::felt252` and `core::integer::u8`.
  --> lib.cairo:4:9
@@ -468,8 +454,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -526,8 +510,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -806,8 +788,6 @@ fn foo(a: (felt252, felt252)) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -872,8 +852,6 @@ fn foo(a: Option<Option<felt252>>) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -946,8 +924,6 @@ fn foo(a: bool) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1617,8 +1593,6 @@ fn foo() -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -1654,8 +1628,6 @@ fn foo(v: u32) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -2355,8 +2327,6 @@ fn foo(a: Option<felt252>) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -2405,8 +2375,6 @@ fn foo(a: felt252) -> felt252 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
  --> lib.cairo:3:9
@@ -2440,8 +2408,6 @@ fn foo(a: felt252) -> felt252 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 

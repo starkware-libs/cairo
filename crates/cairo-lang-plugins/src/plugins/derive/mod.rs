@@ -93,6 +93,7 @@ fn generate_derive_code_for_type<'db>(
                 .push(PluginDiagnostic::error(attr.args_stable_ptr, "Expected args.".into()));
             continue;
         }
+        let member_access_desnaps = metadata.edition.member_access_desnaps();
 
         for arg in attr.args {
             let AttributeArg {
@@ -109,14 +110,14 @@ fn generate_derive_code_for_type<'db>(
             let derived_text = derived.long(db).as_str();
             if let Some(mut code) = match derived_text {
                 "Copy" | "Drop" => Some(get_empty_impl(derived_text, &info)),
-                "Clone" => Some(clone::handle_clone(&info)),
-                "Debug" => Some(debug::handle_debug(&info)),
+                "Clone" => Some(clone::handle_clone(&info, member_access_desnaps)),
+                "Debug" => Some(debug::handle_debug(&info, member_access_desnaps)),
                 "Default" => default::handle_default(db, &info, &derived_path, &mut diagnostics),
                 "Destruct" => Some(destruct::handle_destruct(&info)),
                 "Hash" => Some(hash::handle_hash(&info)),
                 "PanicDestruct" => Some(panic_destruct::handle_panic_destruct(&info)),
-                "PartialEq" => Some(partial_eq::handle_partial_eq(&info)),
-                "Serde" => Some(serde::handle_serde(&info)),
+                "PartialEq" => Some(partial_eq::handle_partial_eq(&info, member_access_desnaps)),
+                "Serde" => Some(serde::handle_serde(&info, member_access_desnaps)),
                 _ => {
                     if !metadata.declared_derives.contains(&derived) {
                         diagnostics.push(PluginDiagnostic::error(

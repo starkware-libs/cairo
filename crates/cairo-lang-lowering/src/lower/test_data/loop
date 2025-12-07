@@ -18,8 +18,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -172,8 +170,6 @@ fn foo() -> bool {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -495,8 +491,6 @@ fn foo() -> bool {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -689,8 +683,6 @@ fn foo() {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > semantic_diagnostics
 
@@ -1611,8 +1603,6 @@ fn foo() -> u32 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > semantic_diagnostics
@@ -1891,8 +1881,6 @@ fn foo(a: u32) -> u32 {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > semantic_diagnostics
@@ -2045,8 +2033,6 @@ fn foo(mut a: Array<u32>) -> u32 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
@@ -2382,8 +2368,6 @@ fn foo(mut a: Array<u32>) -> u32 {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 
