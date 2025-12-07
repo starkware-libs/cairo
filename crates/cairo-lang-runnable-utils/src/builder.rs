@@ -256,7 +256,7 @@ pub struct EntryCodeConfig {
     /// Additionally, the output builtin will be injected to be the supplied array input,
     /// and to be the result of the output.
     ///
-    /// Currently, if exists in params, the segment arena will also be finalized in execution mode.
+    /// Currently, if exists in the params, the segment arena will also be finalized in execution mode.
     pub testing: bool,
     /// Whether to allow unsound operations in the program.
     /// Currently relevant for supporting emulated builtins.
