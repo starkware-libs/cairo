@@ -159,10 +159,7 @@ pub fn handle_entry_point<'db, 'a>(
 
     let params = declaration.signature(db).parameters(db);
     let function_name = RewriteNode::from_ast_trimmed(&name_node);
-    let wrapper_function_name = RewriteNode::interpolate_patched(
-        &format!("{WRAPPER_PREFIX}{}", wrapper_identifier),
-        &[("function_name".into(), function_name.clone())].into(),
-    );
+    let wrapper_function_name = RewriteNode::Text(format!("{WRAPPER_PREFIX}{wrapper_identifier}"));
     match generate_entry_point_wrapper(
         db,
         item_function,
