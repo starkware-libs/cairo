@@ -719,7 +719,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                         LogicalOperator::AndAnd => false_variant(self.db),
                         LogicalOperator::OrOr => true_variant(self.db),
                     };
-                    if *v == early_return_variant { lhs } else { self.evaluate(expr.lhs) }
+                    if *v == early_return_variant { lhs } else { self.evaluate(expr.rhs) }
                 } else {
                     to_missing(skip_diagnostic())
                 }
