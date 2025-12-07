@@ -1,4 +1,4 @@
-//! Basic runner for running a Sierra program on the vm.
+//! Basic runner for running a Sierra program on the VM.
 use std::collections::HashMap;
 
 use cairo_lang_casm::hints::Hint;
@@ -320,7 +320,7 @@ impl SierraCasmRunner {
     /// Prepares context for running a function in the context of a given Starknet state.
     ///
     /// The returned hint processor instance is set up for interpreting and executing the hints
-    /// provided during the Cairo program's execution. Can be customised by wrapping into a custom
+    /// provided during the Cairo program's execution. Can be customized by wrapping into a custom
     /// hint processor implementation and passing that to the `run_function` method.
     pub fn prepare_starknet_context(
         &self,
@@ -350,7 +350,7 @@ impl SierraCasmRunner {
         ))
     }
 
-    /// Groups the args by parameters, and additionally add `gas` as the first if required.
+    /// Groups the args by parameters, and additionally adds `gas` as the first if required.
     fn prepare_args(
         &self,
         func: &Function,
@@ -462,7 +462,7 @@ impl SierraCasmRunner {
         (results_data, gas_counter)
     }
 
-    /// Finds first function ending with `name_suffix`.
+    /// Finds the first function ending with `name_suffix`.
     pub fn find_function(&self, name_suffix: &str) -> Result<&Function, RunnerError> {
         Ok(self.builder.find_function(name_suffix)?)
     }
