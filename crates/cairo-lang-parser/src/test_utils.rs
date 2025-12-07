@@ -90,7 +90,7 @@ impl MockTokenStream {
 impl Display for MockTokenStream {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for token in &self.tokens {
-            write!(f, "{}", token.content.clone())?;
+            write!(f, "{}", token.content)?;
         }
         Ok(())
     }
