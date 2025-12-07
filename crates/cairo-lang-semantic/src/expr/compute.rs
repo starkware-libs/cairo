@@ -2135,7 +2135,7 @@ fn compute_expr_while_semantic<'db>(
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
-    let Some([condition_syntax]) = &syntax.conditions(db).elements(db).collect_array() else {
+    let Ok(condition_syntax) = &syntax.conditions(db).elements(db).exactly_one() else {
         return Err(ctx.diagnostics.report(syntax.conditions(db).stable_ptr(db), Unsupported));
     };
 
@@ -3652,7 +3652,7 @@ fn method_call_expr<'db>(
     // TODO(spapini): Look also in uses.
     let db = ctx.db;
     let path = expr.path(db);
-    let Some([segment]) = path.segments(db).elements(db).collect_array() else {
+    let Ok(segment) = path.segments(db).elements(db).exactly_one() else {
         return Err(ctx.diagnostics.report(expr.stable_ptr(ctx.db), InvalidMemberExpression));
     };
     let func_name = segment.identifier(db);

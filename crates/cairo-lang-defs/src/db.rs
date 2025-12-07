@@ -1248,8 +1248,8 @@ fn collect_extra_allowed_attributes<'db>(
         }
         for arg in args {
             if let Some(ast::Expr::Path(path)) = try_extract_unnamed_arg(db, &arg.arg)
-                && let Some([ast::PathSegment::Simple(segment)]) =
-                    path.segments(db).elements(db).collect_array()
+                && let Ok(ast::PathSegment::Simple(segment)) =
+                    path.segments(db).elements(db).exactly_one()
             {
                 extra_allowed_attributes.insert(segment.ident(db).text(db));
                 continue;
@@ -1323,7 +1323,7 @@ fn extract_path_arg<'db>(
     match args {
         ast::OptionArgListParenthesized::Empty(_) => None,
         ast::OptionArgListParenthesized::ArgListParenthesized(args) => {
-            let [arg] = args.arguments(db).elements(db).collect_array()?;
+            let arg = args.arguments(db).elements(db).exactly_one().ok()?;
             if let ast::Expr::String(path) = try_extract_unnamed_arg(db, &arg)? {
                 Some(path)
             } else {

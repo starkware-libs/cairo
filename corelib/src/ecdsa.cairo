@@ -26,7 +26,7 @@ use crate::zeroable::IsZeroResult;
 ///
 /// Note: the verification algorithm implemented by this function slightly deviates from the
 /// standard ECDSA.
-/// While this does not allow to create valid signatures if one does not possess the private key,
+/// While this does not allow creating valid signatures if one does not possess the private key,
 /// it means that the signature algorithm used should be modified accordingly.
 /// This function validates that `s` and `r` are not 0 or equal to the curve order,
 /// but does not check that `r, s < stark_curve::ORDER`, which should be checked by the caller.
@@ -184,7 +184,7 @@ pub fn recover_public_key(
     let mut state = EcStateTrait::init();
     let ord = ORD;
     state.add_mul(ord - z_div_r, gen_point);
-    // Checking if the actual parity of the point's y is different than the requested, and if so,
+    // Checking if the actual parity of the point's y is different from the requested, and if so,
     // flipping the multiplier instead of negating the point to match the requested parity.
     let y: u256 = r_point.y().into();
     let r_multiplier = if (y.low & 1 != 0) ^ y_parity {

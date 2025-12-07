@@ -361,8 +361,6 @@ fn foo() -> () {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 warning: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:15
@@ -406,8 +404,6 @@ fn foo() -> () {
 
 //! > function_name
 foo
-
-//! > module_code
 
 //! > expected_diagnostics
 error: Multiple definitions of constant "A".
@@ -488,8 +484,6 @@ fn foo(param: u8) -> () {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: This expression is not supported as constant.
  --> lib.cairo:2:19
@@ -565,8 +559,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -596,5 +588,38 @@ const V_AS_I16: () = assert(V.try_into() == Some(-1_i16));
 const V_AS_I32: () = assert(V.try_into() == Some(-1_i32));
 const V_AS_I64: () = assert(V.try_into() == Some(-1_i64));
 const V_AS_I128: () = assert(V.try_into() == Some(-1_i128));
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Const logical operators: short-circuit and truth table
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const fn assert(cond: bool) {
+    if !cond {
+        core::panic_with_felt252('failed assertion')
+    }
+}
+
+const fn boom() -> bool {
+    core::panic_with_felt252('boom')
+}
+
+const AND_TF: () = assert(!(true && false));
+const OR_FT: () = assert(false || true);
+
+const AND_SHORT_CIRCUIT: () = assert(!(false && boom()));
+const OR_SHORT_CIRCUIT: () = assert(true || boom());
+
 
 //! > expected_diagnostics

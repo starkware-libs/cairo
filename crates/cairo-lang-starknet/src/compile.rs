@@ -96,9 +96,7 @@ pub fn compile_contract_in_prepared_db<'db>(
         );
     };
 
-    let [class] =
-        compile_prepared_db(db, &[contract], compiler_config)?.into_iter().collect_array().unwrap();
-    Ok(class)
+    Ok(compile_prepared_db(db, &[contract], compiler_config)?.into_iter().exactly_one()?)
 }
 
 /// Runs Starknet contracts compiler.

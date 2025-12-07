@@ -56,8 +56,8 @@ pub fn handle_trait<'db>(
     let Some(single_generic_param) = (match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => None,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) => {
-            if let Some([ast::GenericParam::Type(param)]) =
-                generic_params.generic_params(db).elements(db).collect_array()
+            if let Ok(ast::GenericParam::Type(param)) =
+                generic_params.generic_params(db).elements(db).exactly_one()
             {
                 Some(param.name(db).text(db))
             } else {

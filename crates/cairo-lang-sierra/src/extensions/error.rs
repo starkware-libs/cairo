@@ -15,7 +15,7 @@ pub enum SpecializationError {
     WrongNumberOfGenericArgs,
     #[error("Provided generic argument is unsupported")]
     UnsupportedGenericArg,
-    #[error("index is out of a relevant range")]
+    #[error("index is out of the relevant range")]
     IndexOutOfRange {
         index: BigInt,
         /// Range is [0, range_size - 1]

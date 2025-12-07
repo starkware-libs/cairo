@@ -26,7 +26,7 @@ The rebinding in Cairo0 acts more like an assignment in other languages.
 Two syntaxes: "let", and "assign".
 
 - _Let_ - `let <ident> [: <type>]? = <expr>`. Defines a variable, and shadows a previous definition
-  if exists in the scope.
+  if it exists in the scope.
 - _Assign_ - `<ident> = <expr>`. Does not change the definition of `<ident>`. Inner and outer scopes
   still see the previous definition, but with a new value.
 

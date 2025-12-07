@@ -77,10 +77,10 @@ fn get_dep_component_generate_code_helper<'db>(
         .unwrap()
         .modifiers(db)
         .elements(db)
-        .collect_array();
+        .exactly_one();
 
         // Verify the first element has only a `ref` modifier.
-        if !matches!(contract_arg_modifiers, Some([ast::Modifier::Ref(_)])) {
+        if !matches!(contract_arg_modifiers, Ok(ast::Modifier::Ref(_))) {
             let diagnostics = vec![PluginDiagnostic::error_with_inner_span(
                 db,
                 syntax.stable_ptr(db),

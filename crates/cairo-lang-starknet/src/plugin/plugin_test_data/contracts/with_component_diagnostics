@@ -1563,17 +1563,17 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
+error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:20:5
     component![path: super::test_component, storage: test_component_storage, event: ABC];
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
+error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:22:5
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
+error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:24:5-26:6
       component!(
  _____^
@@ -1581,7 +1581,7 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 |     );
 |______^
 
-error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<component_name>", storage: "<storage_name>", event: "<event_name>");`
+error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:28:5
     component!(path: super::test_component, storage: test_component_storage);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

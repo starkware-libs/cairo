@@ -1,6 +1,105 @@
 = Error propagation operator
 
-This section is a work in progress.
+The error propagation operator `?` provides concise error handling by automatically propagating
+`Result<T, E>` and `Option<T>` errors up the call stack.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+- `expr?` → unwraps success value or returns early with error
+
+== Semantics
+
+The `?` operator works with types that support early return on error:
+
+=== With `Result<T, E>`
+
+`expr?` is equivalent to:
+[source,cairo]
+----
+match expr {
+    Ok(val) => val,
+    Err(err) => { return Err(err); },
+}
+----
+
+=== With `Option<T>`
+
+`expr?` is equivalent to:
+[source,cairo]
+----
+match expr {
+    Some(val) => val,
+    None => { return None; },
+}
+----
+
+The `?` operator can only be used in functions that return `Result<T, E>` or `Option<T>`.
+Mixing types (using `?` on `Result` in a function returning `Option` or vice versa) is a
+type error.
+
+== Precedence and associativity
+
+The error propagation operator has high precedence (level 1 in
+`crates/cairo-lang-parser/src/operators.rs`), binding:
+
+- Tighter than all binary operators
+- Looser than member access `.`
+- Same level as indexing `[]`
+
+This means `foo.bar()?` is parsed as `(foo.bar())?`, not `foo.(bar()?)`.
+
+== Examples
+
+=== Basic error propagation with Result
+
+[source,cairo]
+----
+fn divide(a: u32, b: u32) -> Result<u32, ByteArray> {
+    if b == 0 {
+        return Result::Err("division by zero");
+    }
+    Result::Ok(a / b)
+}
+
+fn compute() -> Result<u32, ByteArray> {
+    let x = divide(10, 2)?;  // Returns 5
+    let y = divide(x, 0)?;   // Propagates the error, function returns early
+    Result::Ok(y)            // This line is never reached
+}
+----
+
+=== Chaining operations with Option
+
+[source,cairo]
+----
+fn get_first_char(s: @ByteArray) -> Option<u8> {
+    s.at(0)
+}
+
+fn process() -> Option<u8> {
+    let s: ByteArray = "hello";
+    let first = get_first_char(@s)?;  // Returns 'h' (104)
+    Option::Some(first)
+}
+
+fn process_empty() -> Option<u8> {
+    let s: ByteArray = "";
+    let first = get_first_char(@s)?;  // Returns None, function exits early
+    Option::Some(first)               // Never reached
+}
+----
+
+== Notes
+
+- The `?` operator cannot convert between `Result` and `Option` automatically
+- Error types must match: if one operation returns `Result<T, E1>` and another returns
+  `Result<T, E2>`, they must have the same error type `E1 == E2`
+- The `?` operator works through the type system and has no special trait; it's built into the
+  compiler
+
+== References (source)
+
+- Syntax tree: `crates/cairo-lang-syntax-codegen/src/cairo_spec.rs` (`ExprErrorPropagate`)
+- Operator precedence: `crates/cairo-lang-parser/src/operators.rs` (line 18)
+- Lexer token: `crates/cairo-lang-parser/src/lexer.rs` (`TerminalQuestionMark`)
+- Error types: `corelib/src/result.cairo` (`Result`), `corelib/src/option.cairo` (`Option`)

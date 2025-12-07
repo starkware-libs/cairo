@@ -11,8 +11,6 @@ fn foo() {
 //! > function_name
 foo
 
-//! > module_code
-
 //! > expected_diagnostics
 error: A numeric literal of type core::pedersen::Pedersen cannot be created.
  --> lib.cairo:2:14

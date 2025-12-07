@@ -134,6 +134,14 @@ fn test_verify_eth_signature_overflowing_signature_s() {
 }
 
 #[test]
+#[should_panic(expected: 'Public key recovery failed')]
+fn test_verify_eth_signature_invalid_signature() {
+    let (msg_hash, mut signature, _, _, eth_address) = get_message_and_signature(y_parity: true);
+    signature.r = 5; // invalid r (no point on curve with x=5)
+    verify_eth_signature(:msg_hash, :signature, :eth_address);
+}
+
+#[test]
 #[available_gas(100000000)]
 fn test_verify_signature() {
     let (msg_hash, signature, public_key_x, public_key_y, _) = get_message_and_signature(false);

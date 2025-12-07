@@ -31,7 +31,7 @@ impl MyImpl<A> for MyTrait<A, felt252> {
 }
 ```
 This item introduces an implementation for this trait.
-Needs to implement exactly every associated type and function in the trait.
+It needs to implement exactly every associated type and function in the trait.
 
 ### Impl associated type and function
 ```
