@@ -130,7 +130,7 @@ fn read_circuit_value(vm: &mut VirtualMachine, addr: Relocatable) -> Option<BigU
     Some(res)
 }
 
-/// Writes a circuit value from the memory.
+/// Writes a circuit value to the memory.
 fn write_circuit_value(vm: &mut VirtualMachine, addr: Relocatable, mut value: BigUint) {
     for i in 0..VALUE_SIZE {
         let (new_value, rem) = value.div_rem(&BigUint::from(1_u32).shl(96));
