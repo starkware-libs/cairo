@@ -7,7 +7,7 @@ There are two groups of operators that work with `bool`:
 - Logical operators: `&&`, `\|\|` (short-circuiting)
 - Bitwise operators on `bool`: `&`, `\|`, `^` (no short-circuit)
 
-See xref:pages/operator-precedence.adoc[Operator precedence] for their relative precedence.
+See xref:operator-precedence.adoc[Operator precedence] for their relative precedence.
 
 == Logical operators (`&&`, `\|\|`)
 
@@ -64,7 +64,7 @@ Implementation reference (core library traits for `bool`): `BitAnd`, `BitOr`, `B
 == Negation
 
 Boolean negation is written with `!` and returns a `bool`. See
-xref:pages/negation-operators.adoc[Negation operators].
+xref:negation-operators.adoc[Negation operators].
 
 == Typing rules
 
@@ -74,6 +74,6 @@ xref:pages/negation-operators.adoc[Negation operators].
 
 == Related topics
 
-- xref:pages/boolean-types.adoc[Boolean types]
-- xref:pages/operator-precedence.adoc[Operator precedence]
+- xref:boolean-types.adoc[Boolean types]
+- xref:operator-precedence.adoc[Operator precedence]
 - xref:language_semantics:constant-evaluation.adoc[Constant evaluation]
