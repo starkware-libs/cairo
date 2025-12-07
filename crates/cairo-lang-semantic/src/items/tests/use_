@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 use u32 as myU32;
 fn foo(a: myU32) -> u32 {
     a
@@ -23,7 +23,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = @1.into();
     bar(x, @1);
@@ -52,7 +52,7 @@ use NonExisting;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -70,7 +70,7 @@ use Array;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -88,7 +88,7 @@ use core;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -112,7 +112,7 @@ error: Cycle detected while resolving 'use' items.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -136,7 +136,7 @@ use b::c as again;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -164,7 +164,7 @@ use a::b::self;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -189,7 +189,7 @@ test_function_diagnostics(expect_diagnostics: false)
 //! > crate_settings
 edition = "2024_07"
 
-//! > function
+//! > function_code
 fn foo() {
     C::test();
 }
@@ -220,7 +220,7 @@ edition = "2024_07"
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     C::test();
 }
@@ -252,7 +252,7 @@ test_function_diagnostics(expect_diagnostics: true)
 //! > crate_settings
 edition = "2024_07"
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name

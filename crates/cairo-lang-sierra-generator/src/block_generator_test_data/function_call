@@ -3,7 +3,7 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo(mut z: MyStruct) -> () {
     let x = bar(1, 2, ref z);
     bar(x, felt252_add(x, x), ref z);
@@ -61,7 +61,7 @@ return()
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     let x = 7;
     bar(x, 7);
@@ -118,7 +118,7 @@ End:
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     felt252_add(3, 6)
 }

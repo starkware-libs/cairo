@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics
 
-//! > function
+//! > function_code
 fn foo(a: @A) {
     bar(a.a, a.b);
 }
@@ -27,7 +27,7 @@ fn bar(a: @Array::<felt252>, b: @felt252) {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x: @felt252 = 5;
     let _y: felt252 = @6;
@@ -53,7 +53,7 @@ Consider adding or removing snapshots.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x: @felt252 = 5_felt252;
     let _y: felt252 = @6_felt252;
@@ -74,3 +74,35 @@ error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt2
  --> lib.cairo:3:23
     let _y: felt252 = @6_felt252;
                       ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test struct snapshot auto member access desnap.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > crate_settings
+edition = "2025_12"
+
+//! > function_code
+fn foo(a: @A) {
+    let _: @Array<felt252> = @a.a;
+    let _: @Array<felt252> = @(@a).a;
+    let _: @@Array<felt252> = @@(@a).a;
+    let _: felt252 = a.b;
+    let _: @felt252 = @a.b;
+    let _: @felt252 = @(@a).b;
+    let _: @@felt252 = @@(@a).b;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array<felt252>,
+    b: felt252,
+}
+
+//! > expected_diagnostics

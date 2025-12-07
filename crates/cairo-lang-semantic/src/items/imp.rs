@@ -499,7 +499,7 @@ fn impl_def_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = impl_def_id.module_id(db);
+    let module_id = impl_def_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?;
@@ -536,7 +536,7 @@ fn impl_def_substitution<'db>(
 /// Implementation of [ImplSemantic::impl_def_trait].
 #[salsa::tracked]
 fn impl_def_trait<'db>(db: &'db dyn Database, impl_def_id: ImplDefId<'db>) -> Maybe<TraitId<'db>> {
-    let module_id = impl_def_id.module_id(db);
+    let module_id = impl_def_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?;
@@ -565,7 +565,7 @@ fn impl_def_shallow_trait_generic_args_helper<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
-    let module_id = impl_def_id.module_id(db);
+    let module_id = impl_def_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?;
@@ -598,7 +598,7 @@ fn impl_def_shallow_trait_generic_args_helper<'db>(
         .trait_generic_params_ids(trait_id)?
         .iter()
         .map(|param_syntax| {
-            GenericParamLongId(trait_id.module_id(db), param_syntax.stable_ptr(db)).intern(db)
+            GenericParamLongId(trait_id.parent_module(db), param_syntax.stable_ptr(db)).intern(db)
         })
         .collect::<Vec<_>>();
 
@@ -651,7 +651,7 @@ fn impl_alias_trait_generic_args_helper<'db>(
     db: &'db dyn Database,
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
-    let module_id = impl_alias_id.module_id(db);
+    let module_id = impl_alias_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
@@ -689,8 +689,11 @@ fn impl_alias_trait_generic_args_helper<'db>(
                     .generic_params(db)
                     .elements(db)
                     .map(|param_syntax| {
-                        GenericParamLongId(impl_def_id.module_id(db), param_syntax.stable_ptr(db))
-                            .intern(db)
+                        GenericParamLongId(
+                            impl_def_id.parent_module(db),
+                            param_syntax.stable_ptr(db),
+                        )
+                        .intern(db)
                     })
                     .collect::<Vec<_>>(),
             )
@@ -708,8 +711,11 @@ fn impl_alias_trait_generic_args_helper<'db>(
                     .generic_params(db)
                     .elements(db)
                     .map(|param_syntax| {
-                        GenericParamLongId(impl_alias.module_id(db), param_syntax.stable_ptr(db))
-                            .intern(db)
+                        GenericParamLongId(
+                            impl_alias.parent_module(db),
+                            param_syntax.stable_ptr(db),
+                        )
+                        .intern(db)
                     })
                     .collect::<Vec<_>>(),
             )
@@ -924,7 +930,7 @@ impl<'db> ImplDefinitionData<'db> {
         self.item_id_by_name.get(&item_name).cloned()
     }
 }
-/// Stores metadata for a impl item, including its ID and feature kind.
+/// Stores metadata for an impl item, including its ID and feature kind.
 #[derive(Clone, Debug, PartialEq, Eq, salsa::Update)]
 pub struct ImplItemInfo<'db> {
     /// The unique identifier of the impl item.
@@ -1203,7 +1209,7 @@ fn get_impl_based_on_single_impl_type<'db>(
     }
     let ty = db.impl_type_def_resolved_type(*impl_item_type_id).unwrap();
 
-    let module_id = impl_def_id.module_id(db);
+    let module_id = impl_def_id.parent_module(db);
     let generic_params = db.impl_def_generic_params(impl_def_id).unwrap();
     let generic_params_ids =
         generic_params.iter().map(|generic_param| generic_param.id()).collect();
@@ -1405,7 +1411,7 @@ fn impl_definition_data<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ImplDefinitionData<'db>> {
-    let module_id = impl_def_id.module_id(db);
+    let module_id = impl_def_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
 
     let generic_params =
@@ -2492,7 +2498,7 @@ fn impl_type_def_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_type_def_id: ImplTypeDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = impl_type_def_id.module_id(db);
+    let module_id = impl_type_def_id.parent_module(db);
     let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Type(impl_type_def_id));
 
@@ -2921,7 +2927,7 @@ fn impl_impl_def_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_impl_def_id: ImplImplDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = impl_impl_def_id.module_id(db);
+    let module_id = impl_impl_def_id.parent_module(db);
     let impl_impl_def_ast = db.impl_impl_by_id(impl_impl_def_id)?;
     let lookup_item_id = LookupItemId::ImplItem(ImplItemId::Impl(impl_impl_def_id));
 
@@ -3219,7 +3225,7 @@ fn impl_function_generic_params_data<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = impl_function_id.module_id(db);
+    let module_id = impl_function_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let impl_def_id = impl_function_id.impl_def_id(db);
     let data = impl_definition_data(db, impl_def_id).maybe_as_ref()?;
@@ -3783,7 +3789,7 @@ fn uninferred_impl_trait_dependency<'db>(
         let mut diagnostics = SemanticDiagnostics::default();
         let (mut resolver, module_id, generic_params) = match impl_id {
             UninferredImpl::Def(impl_def_id) => {
-                let module_id = impl_def_id.module_id(db);
+                let module_id = impl_def_id.parent_module(db);
 
                 let impl_ast = db.module_impl_by_id(impl_def_id)?;
                 let inference_id = InferenceId::ImplDefTrait(impl_def_id);
@@ -3793,7 +3799,7 @@ fn uninferred_impl_trait_dependency<'db>(
                 (resolver, module_id, impl_ast.generic_params(db))
             }
             UninferredImpl::ImplAlias(impl_alias_id) => {
-                let module_id = impl_alias_id.module_id(db);
+                let module_id = impl_alias_id.parent_module(db);
 
                 let impl_ast = db.module_impl_alias_by_id(impl_alias_id)?;
                 let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
@@ -3873,7 +3879,7 @@ fn module_global_impls<'db>(
                             global_impls_insert_generic_impls(
                                 db,
                                 &impl_ast.generic_params(db),
-                                impl_def_id.module_id(db),
+                                impl_def_id.parent_module(db),
                                 &mut module_impls.globals_by_trait,
                             );
                         }
@@ -3892,7 +3898,7 @@ fn module_global_impls<'db>(
                             global_impls_insert_generic_impls(
                                 db,
                                 &declaration.generic_params(db),
-                                free_function_id.module_id(db),
+                                free_function_id.parent_module(db),
                                 &mut module_impls.globals_by_trait,
                             );
                         }

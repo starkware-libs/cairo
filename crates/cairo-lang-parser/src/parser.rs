@@ -86,7 +86,7 @@ impl<'a> Parser<'a, '_> {
 /// The possible results of a try_parse_* function failing to parse.
 #[derive(PartialEq, Debug)]
 pub enum TryParseFailure {
-    /// The parsing failed, and no token was consumed, the current token is the token which caused
+    /// The parsing failed and no token was consumed. The current token is the one which caused
     /// the failure and thus should be skipped by the caller.
     SkipToken,
     /// The parsing failed, some tokens were consumed, and the current token is yet to be
@@ -95,20 +95,20 @@ pub enum TryParseFailure {
     /// determines the failure should be consumed.
     DoNothing,
 }
-/// The result of a try_parse_* functions.
+/// The result of a try_parse_* function.
 pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 
 // ====================================== Naming of items ======================================
 // To avoid confusion, there is a naming convention for the language items.
 // An item is called <item_scope>Item<item_kind>, where item_scope is in {Module, Trait, Impl}, and
 // item_kind is in {Const, Enum, ExternFunction, ExternType, Function, Impl, InlineMacro, Module,
-// Struct, Trait, Type, TypeAlias, Use} (note not all combinations are supported).
+// Struct, Trait, Type, TypeAlias, Use} (note that not all combinations are supported).
 // For example, ModuleItemFunction is a function item in a module, TraitItemConst is a const item in
 // a trait.
 
 // ================================ Naming of parsing functions ================================
-// try_parse_<something>: returns a TryParseResult. A `Ok` with green ID with a kind
-// that represents 'something' or a `Err` if 'something' can't be parsed.
+// try_parse_<something>: returns a TryParseResult. An `Ok` with a green ID with a kind
+// that represents 'something' or an `Err` if 'something' can't be parsed.
 // If the error kind is Failure, the current token is not consumed, otherwise (Success or
 // error of kind FailureAndSkipped) it is (taken or skipped). Used when something may or may not be
 // there and we can act differently according to each case.
@@ -123,7 +123,7 @@ pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 //
 // expect_<something>: similar to parse_<something>, but assumes the current token is as expected.
 // Therefore, it always returns a GreenId of a node with a kind that represents 'something' and
-// never a missing kind.
+// never returns a missing kind.
 // Should only be called after checking the current token.
 
 const MAX_PRECEDENCE: usize = 1000;
@@ -412,7 +412,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                                 post_visibility_offset,
                             );
                         }
-                        // TODO(Dean): This produce a slightly worse diagnostic than before.
+                        // TODO(Dean): This produces a slightly worse diagnostic than before.
                         self.skip_taken_node_with_offset(
                             path,
                             ParserDiagnosticKind::SkippedElement {
@@ -2029,7 +2029,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         }
     }
 
-    /// Parses a function call's argument, which contains possibly modifiers, and a argument clause.
+    /// Parses a function call's argument, which contains possibly modifiers, and an argument
+    /// clause.
     fn try_parse_function_argument(&mut self) -> TryParseResult<ArgGreen<'a>> {
         let modifiers_list = self.parse_modifier_list();
         let arg_clause = self.try_parse_argument_clause();

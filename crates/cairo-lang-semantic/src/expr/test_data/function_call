@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(d: bool) {
     // Valid names (one wrong type).
     bar(0, 1, 2, :d, e: 0);
@@ -70,7 +70,7 @@ error: Wrong number of arguments. Expected 5, found: 6
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252) {
     let b = 1;
     let mut c = 2;
@@ -136,7 +136,7 @@ error: Argument to immutable parameter cannot have modifiers.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(d: MyStruct) {
     bar(0);
     d + 0;
@@ -189,7 +189,7 @@ error: Trait has no implementation in context: core::traits::Add::<test::MyStruc
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> () {
     4_u8
 }
@@ -212,7 +212,7 @@ fn foo() -> () {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> u8 {}
 
 //! > function_name
@@ -233,7 +233,7 @@ fn foo() -> u8 {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> () {}
 
 //! > function_name
@@ -259,7 +259,7 @@ error: Unexpected return type. Expected: "core::integer::u8", found: "core::inte
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> () {}
 
 //! > function_name
@@ -289,7 +289,7 @@ error: Unexpected return type. Expected: "core::integer::u8", found: "core::inte
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> () {
     || -> u8 {
         1_u16

@@ -42,12 +42,8 @@ use crate::plugin::{InlineMacroExprPlugin, MacroPlugin};
 
 // A trait for an id for a language element.
 pub trait LanguageElementId<'db> {
-    fn module_id(&self, db: &'db dyn Database) -> ModuleId<'db>;
+    fn parent_module(&self, db: &'db dyn Database) -> ModuleId<'db>;
     fn untyped_stable_ptr(&self, db: &'db dyn Database) -> SyntaxStablePtrId<'db>;
-
-    fn parent_module(&self, db: &'db dyn Database) -> ModuleId<'db> {
-        self.module_id(db)
-    }
 
     fn stable_location(&self, db: &'db dyn Database) -> StableLocation<'db>;
 
@@ -155,7 +151,7 @@ macro_rules! define_language_element_id_basic {
             }
         }
         impl<'db> LanguageElementId<'db> for $short_id<'db> {
-            fn module_id(&self, db: &'db dyn Database) -> ModuleId<'db> {
+            fn parent_module(&self, db: &'db dyn Database) -> ModuleId<'db> {
                 self.long(db).0
             }
             fn untyped_stable_ptr(&self, db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
@@ -218,10 +214,10 @@ macro_rules! define_language_element_id_as_enum {
             }
         }
         impl<'db> LanguageElementId<'db> for $enum_name<'db> {
-            fn module_id(&self, db: &'db dyn Database) -> ModuleId<'db> {
+            fn parent_module(&self, db: &'db dyn Database) -> ModuleId<'db> {
                 match self {
                     $(
-                        $enum_name::$variant(id) => id.module_id(db),
+                        $enum_name::$variant(id) => id.parent_module(db),
                     )*
                 }
             }
@@ -911,7 +907,7 @@ define_language_element_id_as_enum! {
 }
 define_language_element_id_as_enum! {
     #[toplevel]
-    /// The ID of a impl item with generic parameters.
+    /// The ID of an impl item with generic parameters.
     pub enum GenericImplItemId<'db> {
         Type(ImplTypeDefId<'db>),
     }

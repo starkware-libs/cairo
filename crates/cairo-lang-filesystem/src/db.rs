@@ -147,6 +147,8 @@ pub enum Edition {
     V2023_11,
     #[serde(rename = "2024_07")]
     V2024_07,
+    #[serde(rename = "2025_12")]
+    V2025_12,
 }
 impl Edition {
     /// Returns the latest stable edition.
@@ -154,7 +156,7 @@ impl Edition {
     /// This Cairo edition is recommended for use in new projects and, in case of existing projects,
     /// to migrate to when possible.
     pub const fn latest() -> Self {
-        Self::V2024_07
+        Self::V2025_12
     }
 
     /// The name of the prelude submodule of `core::prelude` for this compatibility version.
@@ -164,7 +166,7 @@ impl Edition {
             match self {
                 Self::V2023_01 => "v2023_01",
                 Self::V2023_10 | Self::V2023_11 => "v2023_10",
-                Self::V2024_07 => "v2024_07",
+                Self::V2024_07 | Self::V2025_12 => "v2024_07",
             },
         )
     }
@@ -173,7 +175,15 @@ impl Edition {
     pub fn ignore_visibility(&self) -> bool {
         match self {
             Self::V2023_01 | Self::V2023_10 => true,
-            Self::V2023_11 | Self::V2024_07 => false,
+            Self::V2023_11 | Self::V2024_07 | Self::V2025_12 => false,
+        }
+    }
+
+    /// Whether to member access have the original type of the member.
+    pub fn member_access_desnaps(&self) -> bool {
+        match self {
+            Self::V2023_01 | Self::V2023_10 | Self::V2023_11 | Self::V2024_07 => false,
+            Self::V2025_12 => true,
         }
     }
 }
@@ -404,7 +414,7 @@ pub fn init_dev_corelib(db: &mut dyn salsa::Database, core_lib_dir: PathBuf) {
         root: Directory::Real(core_lib_dir),
         settings: CrateSettings {
             name: None,
-            edition: Edition::V2024_07,
+            edition: Edition::V2025_12,
             version: Version::parse(CORELIB_VERSION).ok(),
             cfg_set: Default::default(),
             dependencies: Default::default(),

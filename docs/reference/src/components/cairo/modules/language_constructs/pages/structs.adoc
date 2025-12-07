@@ -56,7 +56,7 @@ let mut tree = Tree {
 };
 ----
 
-All members must be specified in the instantiation, but their order does not matter. If a member should be initialized with a variable with the same name of the member, instead of `name: name` you can simply specify `name`. For example:
+All members must be specified in the instantiation, but their order does not matter. If a member should be initialized with a variable with the same name as the member, instead of `name: name` you can simply specify `name`. For example:
 
 [source,cairo]
 ----

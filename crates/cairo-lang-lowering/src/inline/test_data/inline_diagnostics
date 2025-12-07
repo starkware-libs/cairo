@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 #[inline(always)]
 fn foo(ref a: felt252, b: felt252) -> felt252 {
     foo(ref a, b);
@@ -42,7 +42,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 fn foo(n: felt252) -> felt252 {
     bar(n)
 }

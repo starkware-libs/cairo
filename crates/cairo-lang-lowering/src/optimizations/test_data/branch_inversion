@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_branch_inversion
 
-//! > function
+//! > function_code
 fn foo(a: bool, x: felt252) -> felt252 {
     if !a {
         1

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
     match v {
         Some(x) => { return Some(x); },
@@ -70,7 +70,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: (), v: Option<u16>) -> Option<u16> {
     match v {
         Some(x) => {
@@ -145,7 +145,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(v: Option<u16>) -> Option<u16> {
     match v {
         Some(x) => Some(x),
@@ -222,7 +222,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(v: Option<(u16,)>) -> Option<(u16,)> {
     match v {
         Some(tuple) => {
@@ -294,7 +294,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: MyStruct, v: Option<u16>) -> Option<u16> {
     match v {
         Some(x) => {
@@ -381,7 +381,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(v: Option<(u16, ())>) -> Option<(u16, ())> {
     match v {
         Some(v) => {
@@ -464,7 +464,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: u16, v: MyEnum) -> MyEnum {
     match v {
         MyEnum::MyVariant(val) => {
@@ -524,7 +524,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252, b: MyEnum) -> MyEnum {
     match b {
         MyEnum::A(x) => MyEnum::A(x),
@@ -603,7 +603,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252, b: MyEnum) -> felt252 {
     // TODO: find a better solution for the following workaround.
     // Need to produce the return value before the match to allow the optimization.
@@ -687,7 +687,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: felt252, b: (felt252,)) -> FeltWrap {
     // create goto, since the return optimization works on block boundaries.
     let (value,) = match a {
@@ -772,7 +772,7 @@ End:
 //! > test_runner_name
 test_return_optimizer
 
-//! > function
+//! > function_code
 fn foo(a: (felt252,)) -> (felt252,) {
     let (v,) = a;
     (v,)

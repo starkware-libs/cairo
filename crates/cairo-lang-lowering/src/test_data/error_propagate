@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: Result<Result<u128, felt252>, felt252>) -> Result<felt252, felt252> {
     a??;
     Result::<felt252, felt252>::Ok(1)

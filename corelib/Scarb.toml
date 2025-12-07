@@ -1,7 +1,7 @@
 [package]
 name = "core"
 version = "2.14.0"
-edition = "2024_07"
+edition = "2025_12"
 experimental-features = ["associated_item_constraints", "coupons", "negative_impls"]
 
 # NOTE: This is non-public, unstable Scarb's field, which instructs resolver that this package does not

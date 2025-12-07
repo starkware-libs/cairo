@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: bool, b: bool) -> bool {
     (a && extern_get_bool()) || get_bool()
 }

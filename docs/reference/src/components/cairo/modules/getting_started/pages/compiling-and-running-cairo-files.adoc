@@ -6,7 +6,7 @@ Compile Cairo to Sierra:
 cargo run --bin cairo-compile -- --single-file /path/to/input.cairo /path/to/output.sierra --replace-ids
 ----
 
-Compile Sierra to casm (Cairo assembly):
+Compile Sierra to CASM (Cairo assembly):
 [source,bash]
 ----
 cargo run --bin sierra-compile -- /path/to/input.sierra /path/to/output.casm

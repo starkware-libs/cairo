@@ -685,7 +685,7 @@ impl CircuitOutputsImpl<
 /// been verified.
 extern type CircuitFailureGuarantee;
 
-/// A type that contain that is used to guarantee that a u384 is less than another u384.
+/// A type that is used to guarantee that a u384 is less than another u384.
 extern type U96LimbsLtGuarantee<const LIMB_COUNT: usize>;
 
 /// Helper trait for finding the value of a const minus 1.
@@ -921,8 +921,8 @@ impl U384TryIntoU256 of TryInto<u384, u256> {
 
 impl U384Serde of Serde<u384> {
     fn serialize(self: @u384, ref output: Array<felt252>) {
-        output.append(conversions::two_u96_into_felt252(*self.limb0, *self.limb1));
-        output.append(conversions::two_u96_into_felt252(*self.limb2, *self.limb3));
+        output.append(conversions::two_u96_into_felt252(self.limb0, self.limb1));
+        output.append(conversions::two_u96_into_felt252(self.limb2, self.limb3));
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<u384> {

@@ -2,7 +2,7 @@
 
 When contributing to this repository, please first discuss the change you wish to make via issue,
 email, or any other method with the owners of this repository before making a change.
-Please note we have a [code of conduct](CODE_OF_CONDUCT.md), please follow it in all your
+Please note that we have a [code of conduct](CODE_OF_CONDUCT.md); please follow it in all your
 interactions with the project.
 
 ## Development environment setup
@@ -21,10 +21,10 @@ To set up a development environment, please follow these steps:
    marketplace.
 
 The `rustfmt` configuration used by cairo requires a nightly version of Rust.
-You can install the nightly version by running.
+You can install the nightly version by running:
 
 ```sh
-rustup install nightly-2025-11-17
+rustup install nightly-2025-12-05
 ```
 
 ## Running Tests
@@ -49,11 +49,11 @@ the `test.cairo` file within the `tests` directory, use the following command:
 cargo run --bin cairo-test -- --single-file tests/test.cairo
 ```
 
-Three projects within the Compiler repository being tested with cairo test:
+Three projects within the Compiler repository are tested with cairo-test:
 
-1. The Cairo core library: Run by running `cargo run --bin cairo-test -- corelib`.
-2. Bug samples: Run by running `cargo run --bin cairo-test -- tests/bug_samples --starknet`.
-3. Starknet features: Run by running: `cargo run --bin cairo-test -- crates/cairo-lang-starknet/cairo_level_tests --starknet`.
+1. The Cairo core library: Run `cargo run --bin cairo-test -- corelib`.
+2. Bug samples: Run `cargo run --bin cairo-test -- tests/bug_samples --starknet`.
+3. Starknet features: Run `cargo run --bin cairo-test -- crates/cairo-lang-starknet/cairo_level_tests --starknet`.
 
 ### Running Rust Tests
 

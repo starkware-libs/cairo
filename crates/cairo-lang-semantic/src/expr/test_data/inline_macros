@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -109,7 +109,7 @@ const out_of_range: u8 = consteval_int!(120 + 160);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x = array!(0);
     let _x = array![0_felt252, 1_u8];
@@ -138,7 +138,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "core::intege
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut f: core::fmt::Formatter = Default::default();
     let ba: ByteArray = "hello";
@@ -329,7 +329,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut f: core::fmt::Formatter = Default::default();
     let ba: ByteArray = "hello";
@@ -520,7 +520,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let ba: ByteArray = "hello";
 
@@ -623,7 +623,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let ba: ByteArray = "hello";
 
@@ -726,7 +726,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let ba: ByteArray = "hello";
 
@@ -756,7 +756,7 @@ fn foo() {
 
     // Unused arguments.
     println!("{2}{0}", ba, 2, 1);
-    
+
     // Missing parens.
     println!;
 }
@@ -829,7 +829,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let ba: ByteArray = "hello";
 
@@ -919,7 +919,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x = foo!(0);
 }
@@ -942,7 +942,7 @@ error: Inline macro `foo` not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     // This comment should not appear in the macro name
     array![0_felt252];
@@ -962,7 +962,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     add_one!(xyz);
 }
@@ -986,7 +986,7 @@ macro add_one {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = 1;
     let y = 1;
@@ -1014,7 +1014,7 @@ macro assert_eq {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     add_one!(x z);
 }
@@ -1042,7 +1042,7 @@ error: No matching rule found in inline macro `add_one`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     a_macro!(x);
 }
@@ -1070,7 +1070,7 @@ error: Expected path after modifier.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     test_macro!(x);
 }
@@ -1098,7 +1098,7 @@ error: Undefined macro placeholder: 'undefined'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     add_nums!(1_u8, 2_u16);
 }
@@ -1126,7 +1126,7 @@ error: Unexpected argument type. Expected: "core::integer::u8", found: "core::in
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let z = 1;
     bas_use_z_from_callsite!();
@@ -1158,7 +1158,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let z = 1;
     wrap_bas_use_z_from_callsite!();
@@ -1197,7 +1197,7 @@ error[E0006]: Identifier not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     call_bar!();
 }
@@ -1227,7 +1227,7 @@ error[E0006]: Function not found.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     test_macro!();
 }
@@ -1255,7 +1255,7 @@ error: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     test_macro!(1 2);
 }
@@ -1283,7 +1283,7 @@ error: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     test_macro!();
 }
@@ -1311,7 +1311,7 @@ error: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     test_macro!();
 }
@@ -1335,7 +1335,7 @@ macro test_macro {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     test_macro!();
 }
@@ -1363,7 +1363,7 @@ error: Parser error in macro-expanded code: Missing tokens. Expected an expressi
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     test_macro!();
 }
@@ -1408,7 +1408,7 @@ error: No matching rule found in inline macro `test_macro`.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1430,7 +1430,7 @@ unknown_item_macro!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1452,7 +1452,7 @@ foo!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     statement_list_returning_macro!();
 }
@@ -1476,7 +1476,7 @@ macro statement_list_returning_macro {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x = statement_list_returning_macro!();
 }
@@ -1510,7 +1510,7 @@ error: Parser error in macro-expanded code: Skipped tokens. Expected: end of exp
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     only_statements!()
 }
@@ -1538,7 +1538,7 @@ error: Missing semicolon
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     assert_eq3!(1 + 2);
 }
@@ -1562,7 +1562,7 @@ macro assert_eq3 {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     empty_path!();
 }
@@ -1591,7 +1591,7 @@ error: Expected path after modifier.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     $path();
     $defsite::some::path();
@@ -1626,7 +1626,7 @@ error: `$` is not supported in this context.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     super_path!();
 }
@@ -1654,7 +1654,7 @@ error: `super` used in macro call top level.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     use_module_path!()
 }
@@ -1686,7 +1686,7 @@ mod a {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     use_self_path!()
 }
@@ -1719,7 +1719,7 @@ mod a {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> u8 {
     use_self_path!()
 }
@@ -1746,7 +1746,7 @@ const C: u8 = 1;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     // Test macro-generated function.
     fn_item();
@@ -1793,7 +1793,7 @@ define_items!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let _num = item_level();
 }
@@ -1832,7 +1832,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function
+//! > function_code
 fn foo() {
     bar();
 }
@@ -1872,7 +1872,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -1916,7 +1916,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function
+//! > function_code
 fn foo() {
     bar();
 }
@@ -1953,7 +1953,7 @@ associated_item_constraints = false
 coupons = false
 user_defined_inline_macros = true
 
-//! > function
+//! > function_code
 fn foo() {
     bar();
 }
@@ -1985,7 +1985,7 @@ import_a_star!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar();
 }
@@ -2017,7 +2017,7 @@ import!(a::bar);
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     a::bar();
 }
@@ -2046,7 +2046,7 @@ mod a {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     BarTrait::<a::Bar>::bar();
 }
@@ -2079,7 +2079,7 @@ trait BarTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     BarTrait::<a::Bar>::bar();
 }
@@ -2114,7 +2114,7 @@ trait BarTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     BarTrait::<a::Bar>::bar();
 }
@@ -2154,7 +2154,7 @@ trait BarTrait<T> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2182,7 +2182,7 @@ define_bar!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2216,7 +2216,7 @@ define_bar_twice!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2246,7 +2246,7 @@ fn bar() {}
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2275,7 +2275,7 @@ define_bar!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {}
 
 //! > function_name
@@ -2311,7 +2311,7 @@ outer_macro!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     bar();
 }
@@ -2338,7 +2338,7 @@ define_bar!();
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     bar();
 }

@@ -77,7 +77,7 @@ fn module_type_alias_generic_params_data<'db>(
     db: &'db dyn Database,
     module_type_alias_id: ModuleTypeAliasId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = module_type_alias_id.module_id(db);
+    let module_id = module_type_alias_id.parent_module(db);
     let type_alias_ast = db.module_type_alias_by_id(module_type_alias_id)?;
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 

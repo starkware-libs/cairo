@@ -2135,7 +2135,7 @@ fn compute_expr_while_semantic<'db>(
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
 
-    let Some([condition_syntax]) = &syntax.conditions(db).elements(db).collect_array() else {
+    let Ok(condition_syntax) = &syntax.conditions(db).elements(db).exactly_one() else {
         return Err(ctx.diagnostics.report(syntax.conditions(db).stable_ptr(db), Unsupported));
     };
 
@@ -2835,7 +2835,7 @@ fn maybe_compute_pattern_semantic<'db>(
             if let Ok(ResolvedGenericItem::Variant(_)) = item_result {
                 // If the path resolves to a variant, it might still be a generic param, so we
                 // resolve it as a concrete path.
-                // Resolveing as concrete path first might create vars which will not be inferred so
+                // Resolving as concrete path first might create vars which will not be inferred so
                 // we use the generic path first.
                 let item = ctx.resolver.resolve_concrete_path_ex(
                     &mut Default::default(),
@@ -3652,7 +3652,7 @@ fn method_call_expr<'db>(
     // TODO(spapini): Look also in uses.
     let db = ctx.db;
     let path = expr.path(db);
-    let Some([segment]) = path.segments(db).elements(db).collect_array() else {
+    let Ok(segment) = path.segments(db).elements(db).exactly_one() else {
         return Err(ctx.diagnostics.report(expr.stable_ptr(ctx.db), InvalidMemberExpression));
     };
     let func_name = segment.identifier(db);
@@ -3831,7 +3831,7 @@ fn member_access_expr<'db>(
             } else {
                 wrap_in_snapshots(ctx.db, member.ty, n_snapshots)
             };
-            Ok(Expr::MemberAccess(ExprMemberAccess {
+            let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
                 concrete_struct_id: derefed_expr_concrete_struct_id,
                 member: member.id,
@@ -3839,7 +3839,18 @@ fn member_access_expr<'db>(
                 member_path,
                 n_snapshots,
                 stable_ptr,
-            }))
+            });
+            // Adding desnaps after the member accesses.
+            let desnaps =
+                if ctx.resolver.settings.edition.member_access_desnaps() { n_snapshots } else { 0 };
+            for _ in 0..desnaps {
+                let TypeLongId::Snapshot(ty) = final_expr.ty().long(db) else {
+                    unreachable!("Expected snapshot type");
+                };
+                let inner = ctx.arenas.exprs.alloc(final_expr);
+                final_expr = Expr::Desnap(ExprDesnap { inner, ty: *ty, stable_ptr });
+            }
+            Ok(final_expr)
         }
 
         TypeLongId::Snapshot(_) => {
@@ -4669,7 +4680,7 @@ pub fn compute_and_append_statement_semantic<'db>(
             )));
             Ok(())
         }
-        // Dianogstics reported on syntax level already.
+        // Diagnostics reported on syntax level already.
         ast::Statement::Missing(_) => return Err(skip_diagnostic()),
     };
     ctx.restore_features(feature_restore);

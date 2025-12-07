@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> usize {
     MyImpl1::foo()
 }
@@ -31,7 +31,7 @@ impl MyImpl1 = MyImpl;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> usize {
     MyTrait::foo()
 }
@@ -63,7 +63,7 @@ impl MyImplAlias = other_mod::other_other_mod::MyImpl;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: Option<Box<usize>>) -> usize {
     MyTrait::foo(x)
 }
@@ -95,7 +95,7 @@ impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Box<T>>;
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(x: Option<Box<usize>>) -> usize {
     MyTrait::foo(x)
 }

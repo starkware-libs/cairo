@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(s: Point) {
     bar(&s.x);
     baz(&s.y);
@@ -19,12 +19,6 @@ struct Point {
 }
 extern fn bar(x: &u32) nopanic;
 extern fn baz(y: &u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -51,7 +45,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let x = 3;
     bar(&x, &&x, &&&x);
@@ -62,12 +56,6 @@ foo
 
 //! > module_code
 extern fn bar(x: &u32, y: &&u32, z: &&&u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -94,7 +82,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut x = 1;
     bar(&x);
@@ -106,12 +94,6 @@ foo
 
 //! > module_code
 extern fn bar(x: &u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -134,7 +116,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: @u32) {
     bar(&x)
 }
@@ -144,12 +126,6 @@ foo
 
 //! > module_code
 extern fn bar(x: &@u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 
@@ -172,7 +148,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(opt: Option<u32>) {
     match opt {
         Option::Some(x) => bar(&x),
@@ -185,12 +161,6 @@ foo
 
 //! > module_code
 extern fn bar(x: &u32) nopanic;
-
-//! > crate_settings
-edition = "2024_07"
-
-[experimental_features]
-repr_ptrs = true
 
 //! > semantic_diagnostics
 

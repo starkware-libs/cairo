@@ -53,7 +53,7 @@ fn priv_use_semantic_data<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
-    let module_id = use_id.module_id(db);
+    let module_id = use_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let module_item_id = ModuleItemId::Use(use_id);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(module_item_id));
@@ -180,7 +180,7 @@ fn priv_use_semantic_data_cycle<'db>(
     db: &'db dyn Database,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
-    let module_id = use_id.module_id(db);
+    let module_id = use_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let use_ast = db.module_use_by_id(use_id)?;
     let err = Err(diagnostics.report(use_ast.stable_ptr(db), UseCycle));
@@ -260,7 +260,7 @@ fn priv_global_use_semantic_data<'db>(
     db: &'db dyn Database,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
-    let module_id = global_use_id.module_id(db);
+    let module_id = global_use_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);

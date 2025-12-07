@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> ByteArray {
     let x = "hello";
     x
@@ -36,7 +36,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> ByteArray {
     "This is a string of length 31!!"
 }
@@ -70,7 +70,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> ByteArray {
     "This is a string longer than 31 characters."
 }
@@ -104,7 +104,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> ByteArray {
     "This is a very very long string. It is longer than 62 characters!"
 }
@@ -140,7 +140,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> ByteArray {
     let y = "";
     y
@@ -173,7 +173,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> ByteArray {
     let x = "hello";
     x + " world"

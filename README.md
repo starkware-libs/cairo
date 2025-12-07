@@ -15,6 +15,7 @@
 
 [![GitHub Workflow Status](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml/badge.svg)](https://github.com/starkware-libs/cairo/actions/workflows/ci.yml)
 [![Project license](https://img.shields.io/github/license/starkware-libs/cairo.svg?style=flat-square)](LICENSE)
+[![Releases](https://img.shields.io/github/v/release/starkware-libs/cairo)](https://github.com/starkware-libs/cairo/releases)
 [![Pull Requests welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg?style=flat-square)](https://github.com/starkware-libs/cairo/blob/main/docs/CONTRIBUTING.md)
 
 </div>
@@ -104,11 +105,11 @@ You can track the exact progress [here](./docs/FEATURE_PARITY.md).
 ## Support
 
 - We encourage developers to ask and answer questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/cairo-lang).
-- Contact options listed on [this GitHub profile](https://github.com/starkware-libs)
+- Contact options are listed on [this GitHub profile](https://github.com/starkware-libs)
 
 ## Project assistance
 
-If you want to say **thank you** or/and support active development of Cairo:
+If you want to say **thank you** and/or support active development of Cairo:
 
 - Add a [GitHub Star](https://github.com/starkware-libs/cairo) to the project.
 - Tweet about your Cairo work.
@@ -135,6 +136,6 @@ _For more information and to report security issues, please refer to our [securi
 
 ## License
 
-This project is licensed under the **Apache 2.0**.
+This project is licensed under the **Apache 2.0** license.
 
 See [LICENSE](LICENSE) for more information.

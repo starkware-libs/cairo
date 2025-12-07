@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_dedup_blocks
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<u32>) {
     a.pop_front().unwrap();
     a.pop_front().unwrap();
@@ -107,7 +107,7 @@ End:
 //! > test_runner_name
 test_dedup_blocks
 
-//! > function
+//! > function_code
 fn foo(mut a: Array<felt252>) -> felt252 {
     if let Some(val) = a.pop_front() {
         return val + 5;
@@ -232,7 +232,7 @@ End:
 //! > test_runner_name
 test_dedup_blocks
 
-//! > function
+//! > function_code
 fn foo(t: MyEnum) -> felt252 {
     let mut w = 8;
     let v = match t {

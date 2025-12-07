@@ -111,7 +111,7 @@ fn priv_macro_declaration_data<'db>(
 ) -> Maybe<MacroDeclarationData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
 
-    let module_id = macro_declaration_id.module_id(db);
+    let module_id = macro_declaration_id.parent_module(db);
     let macro_declaration_syntax = db.module_macro_declaration_by_id(macro_declaration_id)?;
     if !are_user_defined_inline_macros_enabled(db, module_id) {
         diagnostics.report(

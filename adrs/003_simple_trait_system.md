@@ -7,7 +7,7 @@ Accepted ?
 
 ## Context
 This suggestion introduces a basic `trait` and `impl` system.
-* It is flexible enough to allow anything that can be expressed in rust's trait system, excluding
+* It is flexible enough to allow anything that can be expressed in Rust's trait system, excluding
   dynamics.
 * It is simple, without edge cases, and hopefully easy on the compiler work.
 
@@ -31,7 +31,7 @@ impl MyImpl<A> for MyTrait<A, felt252> {
 }
 ```
 This item introduces an implementation for this trait.
-Needs to implement exactly every associated type and function in the trait.
+It needs to implement exactly every associated type and function in the trait.
 
 ### Impl associated type and function
 ```
@@ -50,7 +50,7 @@ fn foo<A, impl VarImpl: MyTrait<A, felt252>>() {
 Impls have a GenericArg, and can be passed as a GenericValue.
 
 ### Inference
-At first, no inference would be supported. This will result in a more verbose and explicit code, but
+At first, no inference would be supported. This will result in more verbose and explicit code, but
 less ergonomic. These can be added in a later phase.
 
 ### Usage

@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(x: felt252) {
     bar(@x)
 }
@@ -34,7 +34,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(orig: @A) -> @A {
     bar(orig.a, orig.b);
     let A { a, b } = orig;
@@ -74,7 +74,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(orig: @A) -> @A {
     match orig {
         A::A(a) => bar0(a),
@@ -141,7 +141,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(value: @felt252) -> felt252 {
     *value
 }
@@ -170,7 +170,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo(value: @Array::<felt252>) -> Array<felt252> {
     *value
 }
@@ -199,7 +199,7 @@ note: Trait has no implementation in context: core::traits::Copy::<core::array::
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(a: A) -> usize {
     bar(@a.b);
     a.b
@@ -235,7 +235,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> usize {
     let mut array: Array<u32> = array![14];
     let mut i = 0;
@@ -310,7 +310,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> @u8 {
     let mut a = A { b: 8 };
     loop {
@@ -351,7 +351,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let a = A { b: 7 };
     loop {
@@ -391,7 +391,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> @A {
     let mut a = A { m: 7 };
     let _z = @a;
@@ -429,7 +429,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> @u8 {
     let mut a = A { m: Member { m: 7 } };
     let _z = @a.m.m;
@@ -463,3 +463,47 @@ Statements:
   (v1: core::integer::u8, v2: @core::integer::u8) <- snapshot(v0)
 End:
   Return(v2)
+
+//! > ==========================================================================
+
+//! > Test struct snapshot auto member access desnap.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2025_12"
+
+//! > function_code
+fn foo(
+    a: @A,
+) -> (@Array<felt252>, @Array<felt252>, @@Array<felt252>, felt252, @felt252, @felt252, @@felt252) {
+    (@a.a, @(@a).a, @@(@a).a, a.b, @a.b, @(@a).b, @@(@a).b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: Array<felt252>,
+    b: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: @test::A
+blk0 (root):
+Statements:
+  (v1: @test::A, v2: @@test::A) <- snapshot(v0)
+  (v3: @@core::array::Array::<core::felt252>, v4: @@core::felt252) <- struct_destructure(v2)
+  (v5: @core::array::Array::<core::felt252>, v6: @core::felt252) <- struct_destructure(v0)
+  (v7: @core::array::Array::<core::felt252>) <- desnap(v3)
+  (v8: core::felt252) <- desnap(v6)
+  (v9: @core::felt252) <- desnap(v4)
+  (v10: (@core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>, @@core::array::Array::<core::felt252>, core::felt252, @core::felt252, @core::felt252, @@core::felt252)) <- struct_construct(v5, v7, v3, v8, v6, v9, v4)
+End:
+  Return(v10)

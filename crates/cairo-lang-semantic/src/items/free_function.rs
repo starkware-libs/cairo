@@ -37,7 +37,7 @@ fn free_function_generic_params_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = free_function_id.module_id(db);
+    let module_id = free_function_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     let declaration = free_function_syntax.declaration(db);

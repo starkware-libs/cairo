@@ -65,7 +65,7 @@ impl<'db> LookupItemEx<'db> for LookupItemId<'db> {
             }
             LookupItemId::ModuleItem(item) => {
                 // Top level does not have an outer context, create an empty resolver data.
-                let module_id = item.module_id(db);
+                let module_id = item.parent_module(db);
                 let resolver_data = Arc::new(ResolverData::new(module_id, InferenceId::NoContext));
                 Ok(resolver_data)
             }
@@ -144,7 +144,7 @@ impl<'db> HasResolverData<'db> for ExternTypeId<'db> {
         let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
             ModuleItemId::ExternType(*self),
         ));
-        Ok(Arc::new(ResolverData::new(self.module_id(db), inference_id)))
+        Ok(Arc::new(ResolverData::new(self.parent_module(db), inference_id)))
     }
 }
 

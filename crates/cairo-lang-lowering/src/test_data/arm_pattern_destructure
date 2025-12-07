@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(e: MyEnum) {
     match e {
         MyEnum::a((_x, (_y, _z))) => {},
@@ -99,7 +99,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252) {
     match bar(ref a) {
         MyEnum::a((_x, (_y, _z))) => {},
@@ -196,7 +196,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let y = bar();
     match y {
@@ -294,7 +294,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(mut z: felt252) {
     match bar(ref z) {
         MyEnum::a((_x, (_y, _z))) => {},
@@ -391,7 +391,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(mut z: felt252) {
     let y = bar(ref z);
     match y {

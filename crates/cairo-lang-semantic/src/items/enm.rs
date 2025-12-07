@@ -75,7 +75,7 @@ fn enum_generic_params_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = enum_id.module_id(db);
+    let module_id = enum_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     let enum_ast = db.module_enum_by_id(enum_id)?;
 
@@ -150,7 +150,7 @@ fn enum_definition_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDefinitionData<'db>> {
-    let module_id = enum_id.module_id(db);
+    let module_id = enum_id.parent_module(db);
     let crate_id = module_id.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path

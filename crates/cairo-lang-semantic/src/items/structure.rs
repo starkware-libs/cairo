@@ -77,7 +77,7 @@ fn struct_generic_params_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let module_id = struct_id.module_id(db);
+    let module_id = struct_id.parent_module(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -127,7 +127,7 @@ fn struct_definition_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<StructDefinitionData<'db>> {
-    let module_id = struct_id.module_id(db);
+    let module_id = struct_id.parent_module(db);
     let crate_id = module_id.owning_crate(db);
     let mut diagnostics = SemanticDiagnostics::default();
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path

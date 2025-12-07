@@ -4,6 +4,7 @@ use cairo_lang_defs::ids::{
     TraitId, UseId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
+use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast;
@@ -17,6 +18,7 @@ use super::feature_kind::FeatureKind;
 use super::us::SemanticUseEx;
 use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
+use crate::corelib::{core_submodule, get_submodule};
 use crate::db::{SemanticGroup, get_resolver_data_options};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
@@ -369,7 +371,6 @@ pub trait ModuleSemantic<'db>: Database {
     fn module_item_by_name(
         &'db self,
         module_id: ModuleId<'db>,
-
         name: SmolStrId<'db>,
     ) -> Maybe<Option<ModuleItemId<'db>>> {
         module_item_by_name_tracked(self.as_dyn_database(), module_id, name)
@@ -401,6 +402,13 @@ pub trait ModuleSemantic<'db>: Database {
         module_id: ModuleId<'db>,
     ) -> &'db OrderedHashMap<TraitId<'db>, LookupItemId<'db>> {
         module_usable_trait_ids(self.as_dyn_database(), (), module_id)
+    }
+    /// Finds the prelude submodule of the core module according to the crate settings.
+    fn get_prelude_submodule(&'db self, settings: &CrateSettings) -> Option<ModuleId<'db>> {
+        let db = self.as_dyn_database();
+        let prelude_submodule_name = settings.edition.prelude_submodule_name(db);
+        let core_prelude_submodule = core_submodule(db, SmolStrId::from(db, "prelude"));
+        get_submodule(db, core_prelude_submodule, prelude_submodule_name)
     }
 }
 

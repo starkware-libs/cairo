@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(n: felt252) -> felt252 {
     -n
 }
@@ -51,7 +51,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(val: Option<felt252>) -> felt252 {
     bar(val, 2)
 }
@@ -120,7 +120,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(n: felt252) -> felt252 {
     bar(n, n)
 }
@@ -171,7 +171,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(a: felt252, b: felt252) -> felt252 {
     bar(a + b, b)
 }
@@ -241,7 +241,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     first(a)
 }
@@ -302,7 +302,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo() {
     let mut arr = array![];
     arr.append(5)
@@ -368,7 +368,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     if a == 2 {
         bar(a)
@@ -513,7 +513,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     bar(a) + bar2(a)
 }
@@ -591,7 +591,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     bar(a) + bar2(a)
 }
@@ -651,7 +651,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     bar(0)
 }
@@ -720,7 +720,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(n: felt252) -> felt252 {
     identity(n)
 }
@@ -776,7 +776,7 @@ End:
 //! > test_runner_name
 test_function_inlining
 
-//! > function
+//! > function_code
 fn foo(a: u128, b: u128) -> u128 {
     bar1(a, b)
 }
@@ -914,7 +914,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 fn foo(n: felt252) -> felt252 {
     bar(n)
 }
@@ -991,7 +991,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 #[inline]
 fn foo(n: felt252) -> felt252 {
     bar(n)
@@ -1111,7 +1111,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 #[inline]
 fn foo(n: felt252) -> felt252 {
     foo(n)
@@ -1223,7 +1223,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 #[inline]
 fn foo(n: felt252) -> felt252 {
     bar(n)
@@ -1313,7 +1313,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 #[inline]
 fn foo(n: felt252) -> felt252 {
     bar(n)
@@ -1418,7 +1418,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 #[inline]
 fn foo(n: felt252) -> felt252 {
     bar(n)
@@ -1513,7 +1513,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 #[inline]
 fn foo(n: felt252) -> felt252 {
     bar(n)
@@ -1638,7 +1638,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 fn foo(n: felt252) -> felt252 {
     bar(n) + bar(n)
 }
@@ -1711,7 +1711,7 @@ test_function_inlining
 //! > function_name
 foo
 
-//! > function
+//! > function_code
 fn foo(n: felt252) {
     bar(n);
 }

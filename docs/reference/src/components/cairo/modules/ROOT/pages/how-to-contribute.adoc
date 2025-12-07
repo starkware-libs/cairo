@@ -52,7 +52,7 @@ See below for a full list of content and what is currently missing:
 
 ## Project assistance
 
-If you want to say **thank you** or/and support active development of Cairo:
+If you want to say **thank you** and/or support active development of Cairo:
 
 - Add a https://github.com/starkware-libs/cairo[GitHub Star] to the project.
 - Tweet about your Cairo work.

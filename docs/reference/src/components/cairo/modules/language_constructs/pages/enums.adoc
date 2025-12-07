@@ -64,7 +64,7 @@ let blue_hatchback = Car::Hatchback((Color::blue(()), 5));
 
 To inspect an enum variable, it can be matched using the `match` keyword.
 A match expression must have an arm for each variant of the enum, that specifies the logic that
-should happen in the case the enum variable holds that variant.
+should happen when the enum variable holds that variant.
 For example:
 
 [source,cairo]

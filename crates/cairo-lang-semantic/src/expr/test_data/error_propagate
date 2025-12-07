@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     with_err()?;
     Option::<felt252>::None
@@ -26,7 +26,7 @@ fn with_err() -> Option<felt252> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     with_err()?;
     1
@@ -53,7 +53,7 @@ error: `?` can only be used in a function with `Option` or `Result` return type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> Result<felt252, u128> {
     with_err()?;
     Result::<felt252, u128>::Ok(with_err2()?)
@@ -80,7 +80,7 @@ fn with_err2() -> Result<felt252, u128> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     with_err()?;
     1
@@ -107,7 +107,7 @@ error: `?` can only be used in a function with `Option` or `Result` return type.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> Result<felt252, u128> {
     with_other_err()?;
     Result::<felt252, felt252>::Ok((0))
@@ -139,7 +139,7 @@ fn foo() -> Result<felt252, u128> {
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     6_u32?;
     None

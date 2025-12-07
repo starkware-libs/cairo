@@ -26,13 +26,7 @@ fn test_function_usage(
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
     let db = &mut SemanticDatabaseForTesting::default();
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-    )
-    .split();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
 
     let file_id =
         test_function.function_id.name_identifier(db).stable_ptr(db).untyped().file_id(db);

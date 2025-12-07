@@ -64,7 +64,7 @@ fn test_partial_parser_tree_inner(
     }
 }
 
-/// Tests the full parser tree of a given Cairo code.
+/// Tests the full parser tree of the given Cairo code.
 pub fn test_full_parser_tree(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,

@@ -53,7 +53,7 @@ pub struct MockTokenStream {
     pub tokens: Vec<MockToken>,
 }
 
-/// Represent a token inside the [MockTokenStream]
+/// Represents a token inside the [MockTokenStream]
 #[derive(Debug, Default, Clone)]
 pub struct MockToken {
     /// Just a text of a given [MockToken]

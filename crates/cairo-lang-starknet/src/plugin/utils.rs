@@ -22,17 +22,17 @@ pub trait ParamEx<'db> {
 }
 impl<'db> ParamEx<'db> for ast::Param<'db> {
     fn is_ref_param(&self, db: &dyn Database) -> bool {
-        let param_modifiers = self.modifiers(db).elements(db).collect_array();
+        let param_modifiers = self.modifiers(db).elements(db).exactly_one();
         // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
         // semantic level, we could just ask if it's a reference.
-        matches!(param_modifiers, Some([Modifier::Ref(_)]))
+        matches!(param_modifiers, Ok(Modifier::Ref(_)))
     }
 
     fn is_mut_param(&self, db: &dyn Database) -> bool {
-        let param_modifiers = self.modifiers(db).elements(db).collect_array();
+        let param_modifiers = self.modifiers(db).elements(db).exactly_one();
         // TODO(yuval): This works only if "mut" is the only modifier. If the expansion was at the
         // semantic level, we could just ask if it's a reference.
-        matches!(param_modifiers, Some([Modifier::Mut(_)]))
+        matches!(param_modifiers, Ok(Modifier::Mut(_)))
     }
 
     fn try_extract_snapshot(&self, db: &'db dyn Database) -> Option<ast::Expr<'db>> {
@@ -68,8 +68,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
     fn is_identifier(&self, db: &dyn Database, identifier: &str) -> bool {
         let segments = self.segments(db);
         let type_path_elements = segments.elements(db);
-        let Some([ast::PathSegment::Simple(arg_segment)]) = type_path_elements.collect_array()
-        else {
+        let Ok(ast::PathSegment::Simple(arg_segment)) = type_path_elements.exactly_one() else {
             return false;
         };
 
@@ -79,8 +78,8 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
     fn is_name_with_arg(&self, db: &dyn Database, name: &str, generic_arg: &str) -> bool {
         let segments = self.segments(db);
         let type_path_elements = segments.elements(db);
-        let Some([ast::PathSegment::WithGenericArgs(path_segment_with_generics)]) =
-            type_path_elements.collect_array()
+        let Ok(ast::PathSegment::WithGenericArgs(path_segment_with_generics)) =
+            type_path_elements.exactly_one()
         else {
             return false;
         };
@@ -90,7 +89,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
         }
         let generic_args = path_segment_with_generics.generic_args(db).generic_args(db);
         let args = generic_args.elements(db);
-        let Some([ast::GenericArg::Unnamed(arg_expr)]) = args.collect_array() else {
+        let Ok(ast::GenericArg::Unnamed(arg_expr)) = args.exactly_one() else {
             return false;
         };
         let ast::GenericArgValue::Expr(arg_expr) = arg_expr.value(db) else {
@@ -153,34 +152,32 @@ pub fn maybe_strip_underscore(s: &str) -> &str {
 
 // === Attributes utilities ===
 
-/// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
-/// validates that the attribute is v0.
-pub fn has_v0_attribute<'db>(
+/// Finds the attributes with the name `attr_name`. If exists also validates that the attribute is
+/// v0.
+pub fn find_v0_attribute<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     object: &impl QueryAttrs<'db>,
     attr_name: &'db str,
-) -> bool {
-    has_v0_attribute_ex(db, diagnostics, object, attr_name, || None)
+) -> Option<Attribute<'db>> {
+    find_v0_attribute_ex(db, diagnostics, object, attr_name, || None)
 }
 
-/// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
-/// validates that the attribute is v0, and adds a warning if supplied `deprecated` returns a value.
-pub fn has_v0_attribute_ex<'db>(
+/// Finds the attributes with the name `attr_name`. If exists also validates that the attribute is
+/// v0, and adds a warning if supplied `deprecated` returns a value.
+pub fn find_v0_attribute_ex<'db>(
     db: &'db dyn Database,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
     object: &impl QueryAttrs<'db>,
     attr_name: &'db str,
     deprecated: impl FnOnce() -> Option<String>,
-) -> bool {
-    let Some(attr) = object.find_attr(db, attr_name) else {
-        return false;
-    };
+) -> Option<Attribute<'db>> {
+    let attr = object.find_attr(db, attr_name)?;
     validate_v0(db, diagnostics, &attr, attr_name);
     if let Some(deprecated) = deprecated() {
         diagnostics.push(PluginDiagnostic::warning(attr.stable_ptr(db), deprecated));
     }
-    true
+    Some(attr)
 }
 
 /// Assuming the attribute is `name`, validates it's in the form "#[name(v0)]".

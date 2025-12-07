@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let b = (a,);
     let c = (b,);
@@ -46,7 +46,7 @@ End:
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let (b,) = match a {
         0 => (0,),
@@ -121,12 +121,12 @@ End:
 
 //! > ==========================================================================
 
-//! > Test use in one arm 
+//! > Test use in one arm
 
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let arr = array![10, 11, 12];
 
@@ -266,7 +266,7 @@ End:
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let tuple = match a {
         0 => (1, (2, 3)),
@@ -369,7 +369,7 @@ End:
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> (felt252, felt252) {
     let b = (a, a);
     let tuple = match a {
@@ -453,7 +453,7 @@ End:
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252) {
     let b = (a, a);
     match a {
@@ -541,7 +541,7 @@ End:
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252) -> felt252 {
     let b = (a, a);
     let c = if a == 0 {
@@ -844,7 +844,7 @@ End:
 //! > test_runner_name
 test_split_structs
 
-//! > function
+//! > function_code
 fn foo(a: felt252, e: ThreeCases) -> (felt252, NonDupStruct) {
     let b = (a, NonDupStruct { a });
     match e {

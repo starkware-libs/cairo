@@ -47,13 +47,7 @@ fn block_generator_test(
     db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
     // Parse code and create semantic model.
-    let (test_function, semantic_diagnostics) = setup_test_function(
-        db,
-        inputs["function"].as_str(),
-        inputs["function_name"].as_str(),
-        inputs["module_code"].as_str(),
-    )
-    .split();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
 
     // Lower code.
     let function_id =

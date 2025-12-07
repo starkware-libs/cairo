@@ -49,7 +49,7 @@ pub fn reformat_rust_code(text: String) -> String {
 }
 pub fn reformat_rust_code_inner(text: String) -> String {
     let sh = Shell::new().unwrap();
-    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2025-11-17");
+    let cmd = sh.cmd("rustfmt").env("RUSTUP_TOOLCHAIN", "nightly-2025-12-05");
     let cmd_with_args = cmd.arg("--config-path").arg(project_root().join("rustfmt.toml"));
     let mut stdout = cmd_with_args.stdin(text).read().unwrap();
     if !stdout.ends_with('\n') {
@@ -66,7 +66,7 @@ fn generate_kinds_code() -> rust::Tokens {
         use serde::{Deserialize, Serialize};
     };
 
-    // SyntaxKind.
+    // Definition of SyntaxKind.
     let kinds = name_tokens(&spec, |k| !matches!(k, NodeKind::Enum { .. }));
     let token_kinds = name_tokens(&spec, |k| matches!(k, NodeKind::Token { .. }));
     let keyword_token_kinds =

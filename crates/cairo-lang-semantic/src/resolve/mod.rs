@@ -32,7 +32,7 @@ use salsa::Database;
 use syntax::node::TypedStablePtr;
 use syntax::node::helpers::QueryAttrs;
 
-use crate::corelib::{CorelibSemantic, core_submodule, get_submodule};
+use crate::corelib::CorelibSemantic;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{
@@ -856,16 +856,12 @@ impl<'db> Resolver<'db> {
     /// Returns the crate's `prelude` submodule.
     fn prelude_submodule_ex(&self, info: &MacroResolutionInfo<'db>) -> ModuleId<'db> {
         let active_settings = self.active_settings(info);
-        let prelude_submodule_name = active_settings.edition.prelude_submodule_name(self.db);
-        let core_prelude_submodule = core_submodule(self.db, SmolStrId::from(self.db, "prelude"));
-        get_submodule(self.db, core_prelude_submodule, prelude_submodule_name).unwrap_or_else(
-            || {
-                panic!(
-                    "expected prelude submodule `{}` not found in `core::prelude`.",
-                    prelude_submodule_name.long(self.db)
-                )
-            },
-        )
+        self.db.get_prelude_submodule(active_settings).unwrap_or_else(|| {
+            panic!(
+                "expected prelude submodule `{}` not found in `core::prelude`.",
+                active_settings.edition.prelude_submodule_name(self.db).long(self.db)
+            )
+        })
     }
 
     /// Specializes a trait.

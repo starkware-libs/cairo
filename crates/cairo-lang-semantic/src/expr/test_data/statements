@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut x = 3
     x = 2;
@@ -27,7 +27,7 @@ error: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     let mut _x = 3
 }
@@ -50,7 +50,7 @@ error: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     if true {
         return 1
@@ -76,7 +76,7 @@ error: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     return 1
 }
@@ -99,7 +99,7 @@ error: Missing token ';'.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     bar()
     bar();
@@ -124,7 +124,7 @@ error: Missing semicolon
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> felt252 {
     2
 }
@@ -143,7 +143,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     // `if` without ';' in the end
     if true {}
@@ -173,7 +173,7 @@ foo
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: true)
 
-//! > function
+//! > function_code
 fn foo() {
     #[unknown_attr1]
     #[unknown_attr2]
@@ -204,7 +204,7 @@ error: Unknown statement attribute.
 //! > test_runner_name
 test_function_diagnostics(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() {
     let _x = {
         #[feature("testing")]

@@ -3,7 +3,7 @@
 //! > test_runner_name
 block_generator_test
 
-//! > function
+//! > function_code
 fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<felt252>) {
     match input.pop_front() {
         Some(value) => {

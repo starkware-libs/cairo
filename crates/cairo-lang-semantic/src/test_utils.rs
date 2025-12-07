@@ -177,8 +177,30 @@ pub struct TestFunction<'a> {
 }
 
 /// Returns the semantic model of a given function.
-/// function_name - name of the function.
-/// module_code - extra setup code in the module context.
+/// `inputs["function_code"]` - code of the function.
+/// `inputs["function_name"]` - name of the function.
+/// `inputs["module_code"]` - optional extra setup code in the module context.
+/// `inputs["crate_settings"]` - optional extra settings for the crate.
+pub fn setup_test_function<'a>(
+    db: &'a dyn Database,
+    inputs: &'a OrderedHashMap<String, String>,
+) -> WithStringDiagnostics<TestFunction<'a>> {
+    setup_test_function_ex(
+        db,
+        &inputs["function_code"],
+        &inputs["function_name"],
+        inputs.get("module_code").map_or("", String::as_str),
+        inputs.get("crate_settings").map(String::as_str),
+        None,
+    )
+}
+
+/// Returns the semantic model of a given function.
+/// `function_code` - code of the function.
+/// `function_name` - name of the function.
+/// `module_code` - extra setup code in the module context.
+/// `crate_settings` - optional extra settings for the crate.
+/// `cache_crate` - optional cache for the crate.
 pub fn setup_test_function_ex<'a>(
     db: &'a dyn Database,
     function_code: &str,
@@ -215,16 +237,6 @@ pub fn setup_test_function_ex<'a>(
         },
         diagnostics,
     }
-}
-
-/// See [setup_test_function_ex].
-pub fn setup_test_function<'a>(
-    db: &'a dyn Database,
-    function_code: &str,
-    function_name: &'a str,
-    module_code: &str,
-) -> WithStringDiagnostics<TestFunction<'a>> {
-    setup_test_function_ex(db, function_code, function_name, module_code, None, None)
 }
 
 /// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
@@ -318,15 +330,7 @@ pub fn test_function_diagnostics(
 ) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
 
-    let diagnostics = setup_test_function_ex(
-        db,
-        &inputs["function"],
-        &inputs["function_name"],
-        &inputs["module_code"],
-        inputs.get("crate_settings").map(String::as_str),
-        None,
-    )
-    .get_diagnostics();
+    let diagnostics = setup_test_function(db, inputs).get_diagnostics();
     let error = verify_diagnostics_expectation(args, &diagnostics);
 
     TestRunnerResult {

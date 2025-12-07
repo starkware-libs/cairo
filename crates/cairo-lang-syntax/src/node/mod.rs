@@ -350,7 +350,7 @@ impl<'a> SyntaxNode<'a> {
         self.offset(db).add_width(green_node.width(db)).sub_width(trailing)
     }
 
-    /// Lookups a syntax node using an offset.
+    /// Looks up a syntax node using an offset.
     pub fn lookup_offset(&self, db: &'a dyn Database, offset: TextOffset) -> SyntaxNode<'a> {
         for child in self.get_children(db).iter() {
             if child.offset(db).add_width(child.width(db)) > offset {
@@ -360,7 +360,7 @@ impl<'a> SyntaxNode<'a> {
         *self
     }
 
-    /// Lookups a syntax node using a position.
+    /// Looks up a syntax node using a position.
     pub fn lookup_position(&self, db: &'a dyn Database, position: TextPosition) -> SyntaxNode<'a> {
         match position.offset_in_file(db, self.stable_ptr(db).file_id(db)) {
             Some(offset) => self.lookup_offset(db, offset),

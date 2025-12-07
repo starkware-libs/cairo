@@ -3,7 +3,7 @@
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo(ref a: felt252) -> felt252 {
     let b = true;
     if true {
@@ -44,7 +44,7 @@ End:
 //! > test_runner_name
 test_function_lowering(expect_diagnostics: false)
 
-//! > function
+//! > function_code
 fn foo() -> Option<felt252> {
     let x = None;
     let _ = x.is_some();

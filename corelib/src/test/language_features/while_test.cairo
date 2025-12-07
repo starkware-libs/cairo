@@ -40,7 +40,7 @@ struct NonCopy {
 }
 
 fn assert_x_eq(a: @NonCopy, x: felt252) {
-    assert_eq!(a.x, @x);
+    assert_eq!(a.x, x);
 }
 
 #[test]

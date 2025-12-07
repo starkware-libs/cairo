@@ -27,7 +27,7 @@ match enum_val {
 MyEnum::Variant0(value0)
 ```
 
-This is a deviation from the rust syntax
+This is a deviation from the Rust syntax
 ```
 enum MyEnum {
     Variant0,
@@ -46,9 +46,9 @@ Advantages of the suggestion:
   refer to `Type0`, it's a real type.
 
 Disadvantages:
-* Straying away from rust.
+* Straying away from Rust.
 * Unfamiliar syntax for most users.
-* Tuple types need an extra parentheses. On `Variant0: (A, B)`, construction is using
+* Tuple types need an extra parenthesis. On `Variant0: (A, B)`, construction is using
   `Variant0((a, b))`.
 
 ## Open questions

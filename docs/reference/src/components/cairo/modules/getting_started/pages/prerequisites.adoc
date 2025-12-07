@@ -4,7 +4,7 @@
 ## Install dependencies
 
 - Install link:https://www.rust-lang.org/tools/install[Rust]
-- Setup Rust:
+- Set up Rust:
 [source,bash]
 ----
 rustup override set stable && rustup update
@@ -27,14 +27,13 @@ cd cairo && cargo test
 
 To set up a development environment, please follow these steps:
 
-1 . Download and install link:https://code.visualstudio.com/[VSCode].
+. Download and install link:https://code.visualstudio.com/[VSCode].
+. Follow the instructions in link:https://marketplace.visualstudio.com/items?itemName=starkware.cairo1[vscode-cairo].
 
-2 . Follow the instructions in link:https://marketplace.visualstudio.com/items?itemName=starkware.cairo1[vscode-cairo].
-
-The `rustfmt` configuration used by cairo requires a nightly version of Rust.
-You can install the nightly version by running.
+The `rustfmt` configuration used by Cairo requires a nightly version of Rust.
+You can install the nightly version by running:
 
 [source,bash]
 ----
-rustup install nightly-2025-11-17
+rustup install nightly-2025-12-05
 ----
