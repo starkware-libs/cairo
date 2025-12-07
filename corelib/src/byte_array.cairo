@@ -399,7 +399,7 @@ impl InternalImpl of InternalTrait {
         pending_word: felt252,
         pending_word_len: Bytes31Index,
     ) {
-        let Some(curr_pending_word_len) = helpers::index_is_zero(self.pending_word_len) else {
+        let Some(curr_pending_word_len) = helpers::index_non_zero(self.pending_word_len) else {
             self.data.append_span(data);
             self.pending_word = pending_word;
             self.pending_word_len = pending_word_len;
@@ -426,7 +426,7 @@ impl InternalImpl of InternalTrait {
             },
         }
         // Add the pending word of `other`.
-        if let Some(pending_word_len) = helpers::index_is_zero(pending_word_len) {
+        if let Some(pending_word_len) = helpers::index_non_zero(pending_word_len) {
             self.append_word_ex(pending_word, upcast(pending_word_len));
         }
     }
@@ -801,7 +801,7 @@ pub impl ByteSpanImpl of ByteSpanTrait {
         };
 
         let mut ba = Default::default();
-        if let Some(nz_start_offset) = helpers::index_is_zero(self.first_char_start_offset) {
+        if let Some(nz_start_offset) = helpers::index_non_zero(self.first_char_start_offset) {
             let n_bytes_to_append = helpers::complement_to_31(nz_start_offset);
             let first_word_no_offset = split_bytes31_nz((*first_word).into(), n_bytes_to_append)
                 .low;
@@ -878,7 +878,7 @@ impl ByteSpanGetRange of crate::ops::Get<ByteSpan, crate::ops::Range<usize>> {
             split_bytes31(self.remainder_word, offset).high
         } else {
             let word = self.data.get(end_word)?;
-            if let Some(end_offset) = helpers::index_is_zero(end_offset) {
+            if let Some(end_offset) = helpers::index_non_zero(end_offset) {
                 split_bytes31_nz((**word).into(), helpers::complement_to_31(end_offset)).high
             } else {
                 0
@@ -1054,7 +1054,7 @@ impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
 /// If these assumptions are not met, it can corrupt the `bytes31`. Thus, this should be a
 /// private function. We could add masking/assertions but it would be more expensive.
 fn split_bytes31(value: felt252, split_index: Bytes31Index) -> U256Split {
-    let Some(split_index) = helpers::index_is_zero(split_index) else {
+    let Some(split_index) = helpers::index_non_zero(split_index) else {
         return U256Split { high: value, low: 0 };
     };
     split_bytes31_nz(value, split_index)
@@ -1091,7 +1091,7 @@ struct ShortString {
 impl ShortStringImpl of ShortStringTrait {
     /// Removes and returns the first byte from the string if it exists.
     fn pop_first(ref self: ShortString) -> Option<u8> {
-        let len = helpers::length_is_zero(self.len)?;
+        let len = helpers::length_non_zero(self.len)?;
         let byte_position = helpers::nz_length_minus_one(len);
 
         // Strings are indexed by lsb, so the first char is at position (byte_count - 1).
@@ -1245,8 +1245,8 @@ mod helpers {
         type Target = BoundedInt<1, 31>;
     }
 
-    /// Returns the length if it is not zero, or `None` if it is zero.
-    pub fn length_is_zero(length: BoundedInt<0, 31>) -> Option<BoundedInt<1, 31>> {
+    /// Returns the length if it is not zero, or `None` if it is.
+    pub fn length_non_zero(length: BoundedInt<0, 31>) -> Option<BoundedInt<1, 31>> {
         match bounded_int::trim_min(length) {
             crate::internal::OptionRev::Some(trimmed) => Some(trimmed),
             crate::internal::OptionRev::None => None,
@@ -1307,9 +1307,9 @@ mod helpers {
         type Target = BoundedInt<1, 30>;
     }
 
-    /// Returns the index if it is zero, or `None` if it is not.
+    /// Returns the index if it is not zero, or `None` if it is.
     #[inline(always)]
-    pub fn index_is_zero(index: Bytes31Index) -> Option<BoundedInt<1, 30>> {
+    pub fn index_non_zero(index: Bytes31Index) -> Option<BoundedInt<1, 30>> {
         match bounded_int::trim_min::<_, TrimMinBytes31Index>(index) {
             crate::internal::OptionRev::Some(index) => Some(index),
             crate::internal::OptionRev::None => None,
