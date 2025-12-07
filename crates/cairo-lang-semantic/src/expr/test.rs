@@ -296,7 +296,7 @@ fn test_function_body() {
     assert_eq!(param.name(db).long(db), "a");
 }
 
-/// Returns the semantic model of a the given function code, assuming the function is named "foo".
+/// Returns the semantic model of the given function code, assuming the function is named "foo".
 fn setup_db_for_foo<'db>(db: &'db dyn Database, foo_code: &str) -> TestFunction<'db> {
     setup_test_function_ex(db, foo_code, "foo", "", None, None).unwrap()
 }
