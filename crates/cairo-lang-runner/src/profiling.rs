@@ -379,7 +379,7 @@ pub struct ProfilingInfoProcessorParams {
     /// functions in the traces).
     pub process_by_cairo_stack_trace: bool,
     /// Process the profiling info by Sierra statement in the scope of a particular
-    /// call stack (recursion collapsed) and output in a format compatible with Flamegraph.
+    /// call stack (recursion collapsed) and output in a format compatible with FlameGraph.
     pub process_by_scoped_statement: bool,
 }
 impl Default for ProfilingInfoProcessorParams {
@@ -731,7 +731,7 @@ fn is_cairo_trace(db: &dyn Database, sierra_program: &Program, sierra_trace: &[u
 /// Converts a Sierra statement index to the index of the function that contains it (the index in
 /// the list in the Sierra program).
 ///
-/// Assumes that the given `statement_idx` is valid (that is within range of the given
+/// Assumes that the given `statement_idx` is valid (that it is within range of the given
 /// `sierra_program`) and that the given `sierra_program` is valid, specifically that the first
 /// function's entry point is 0.
 pub fn user_function_idx_by_sierra_statement_idx(
