@@ -41,10 +41,14 @@ use crate::ids::{
 use crate::specialization::SpecializationArg;
 use crate::utils::InliningStrategy;
 use crate::{
-    Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchEnumInfo,
-    MatchExternInfo, MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap,
-    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableArena, VariableId,
+    Block, BlockEnd, BlockEnd, BlockId, BlockId, DependencyType, Lowered, Lowered, LoweringStage,
+    MatchArm, MatchArm, MatchEnumInfo, MatchEnumInfo, MatchExternInfo, MatchExternInfo, MatchInfo,
+    MatchInfo, Statement, Statement, StatementCall, StatementCall, StatementConst, StatementConst,
+    StatementDesnap, StatementDesnap, StatementEnumConstruct, StatementEnumConstruct,
+    StatementIntoBox, StatementSnapshot, StatementSnapshot, StatementStructConstruct,
+    StatementStructConstruct, StatementStructDestructure, StatementStructDestructure, VarRemapping,
+    VarRemapping, VarUsage, VarUsage, Variable, Variable, VariableArena, VariableArena, VariableId,
+    VariableId,
 };
 
 /// Keeps track of equivalent values that variables might be replaced with.
@@ -307,6 +311,25 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     VarInfo::Enum { variant: *variant, payload: VarInfo::Var(*input).into() }
                 };
                 self.var_info.insert(*output, value);
+            }
+            Statement::IntoBox(StatementIntoBox { input, output }) => {
+                let var_info = self.var_info.get(&input.var_id);
+                let const_value = match var_info {
+                    Some(VarInfo::Const(val)) => Some(*val),
+                    Some(VarInfo::Snapshot(info)) => {
+                        try_extract_matches!(info.as_ref(), VarInfo::Const).copied()
+                    }
+                    _ => None,
+                };
+                let var_info =
+                    var_info.cloned().or_else(|| var_info_if_copy(self.variables, *input));
+                if let Some(var_info) = var_info {
+                    self.var_info.insert(*output, VarInfo::Box(var_info.into()));
+                }
+
+                if let Some(const_value) = const_value {
+                    *stmt = Statement::Const(StatementConst::new_boxed(const_value, *output));
+                }
             }
         }
     }
@@ -601,19 +624,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     self.storage_base_address_const.concretize(db, vec![arg]).lowered(db);
             }
             None
-        } else if id == self.into_box {
-            let input = stmt.inputs[0];
-            let var_info = self.var_info.get(&input.var_id);
-            let const_value = match var_info {
-                Some(VarInfo::Const(val)) => Some(*val),
-                Some(VarInfo::Snapshot(info)) => {
-                    try_extract_matches!(info.as_ref(), VarInfo::Const).copied()
-                }
-                _ => None,
-            };
-            let var_info = var_info.cloned().or_else(|| var_info_if_copy(self.variables, input))?;
-            self.var_info.insert(stmt.outputs[0], VarInfo::Box(var_info.into()));
-            Some(Statement::Const(StatementConst::new_boxed(const_value?, stmt.outputs[0])))
         } else if id == self.unbox {
             if let VarInfo::Box(inner) = self.var_info.get(&stmt.inputs[0].var_id)? {
                 let inner = inner.as_ref().clone();
@@ -1438,8 +1448,6 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     felt_mul: ExternFunctionId<'db>,
     /// The `felt252_div` libfunc.
     felt_div: ExternFunctionId<'db>,
-    /// The `into_box` libfunc.
-    into_box: ExternFunctionId<'db>,
     /// The `unbox` libfunc.
     unbox: ExternFunctionId<'db>,
     /// The `box_forward_snapshot` libfunc.
@@ -1598,7 +1606,6 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             felt_add: core.extern_function_id("felt252_add"),
             felt_mul: core.extern_function_id("felt252_mul"),
             felt_div: core.extern_function_id("felt252_div"),
-            into_box: box_module.extern_function_id("into_box"),
             unbox: box_module.extern_function_id("unbox"),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),
             eq_fns,
