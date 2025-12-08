@@ -10,7 +10,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::ids::{SmolStrId, Tracked, UnstableSalsaId};
-use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
@@ -43,7 +43,7 @@ use crate::{
 };
 
 /// A generic function of an impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
 pub struct ImplGenericFunctionId<'db> {
     // TODO(spapini): Consider making these private and enforcing invariants in the ctor.
     /// The impl the function is in.
@@ -78,7 +78,7 @@ impl<'db> DebugWithDb<'db> for ImplGenericFunctionId<'db> {
 }
 
 /// The ID of a generic function that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize, salsa::Update)]
 pub enum GenericFunctionId<'db> {
     /// A generic free function.
     Free(FreeFunctionId<'db>),
@@ -268,7 +268,7 @@ impl<'db> DebugWithDb<'db> for GenericFunctionId<'db> {
 /// Function instance.
 /// For example: `ImplA::foo<A, B>`, or `bar<A>`.
 // TODO(spapini): Make it an enum and add a function pointer variant.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct FunctionLongId<'db> {
     pub function: ConcreteFunction<'db>,
 }
@@ -339,14 +339,14 @@ impl<'db> FunctionLongId<'db> {
 }
 
 /// A generic function of a concrete impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ImplGenericFunctionWithBodyId<'db> {
     pub concrete_impl_id: ConcreteImplId<'db>,
     pub function_body: ImplFunctionBodyId<'db>,
 }
 
 /// The body of an impl function implementation.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub enum ImplFunctionBodyId<'db> {
     /// A function that was implemented in the impl.
     Impl(ImplFunctionId<'db>),
@@ -376,7 +376,7 @@ impl<'db> ImplFunctionBodyId<'db> {
 }
 
 /// The ID of a generic function with body that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub enum GenericFunctionWithBodyId<'db> {
     Free(FreeFunctionId<'db>),
     Impl(ImplGenericFunctionWithBodyId<'db>),
@@ -458,7 +458,7 @@ impl<'db> GenericFunctionWithBodyId<'db> {
 }
 
 /// A long Id of a concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ConcreteFunctionWithBody<'db> {
     pub generic_function: GenericFunctionWithBodyId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -684,7 +684,7 @@ impl<'db> UnstableSalsaId for ConcreteFunctionWithBodyId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
 pub struct ConcreteFunction<'db> {
     pub generic_function: GenericFunctionId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
