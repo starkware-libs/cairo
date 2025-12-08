@@ -29,8 +29,8 @@ their effects (for example, memory writes, pointer movement, and syscalls).
 == Core hints (summary)
 
 - Arithmetic and big-integer helpers
-  - `TestLessThan`, `TestLessThanOrEqual`, `TestLessThanOrEqualAddress` — write boolean (0/1)
-    results.
+  - `TestLessThan`, `TestLessThanOrEqual`,
+    `TestLessThanOrEqualAddress` — write boolean (0/1) results.
   - `WideMul128` — 128×128 → high/low 128-bit limbs.
   - `DivMod` — quotient and remainder of two integers.
   - `Uint256DivMod`, `Uint512DivModByUint256` — wide division, return quotient/remainder
@@ -46,14 +46,14 @@ their effects (for example, memory writes, pointer movement, and syscalls).
   - `InitSquashData`, `GetCurrentAccessIndex`, `ShouldSkipSquashLoop`, `GetCurrentAccessDelta`,
     `ShouldContinueSquashLoop`, `GetNextDictKey` — prepare and iterate squash state.
   - `GetSegmentArenaIndex` — map segment index to arena index.
-  - `AssertLeFindSmallArcs`, `AssertLeIsFirstArcExcluded`, `AssertLeIsSecondArcExcluded` — arc
-    computations used by assert-le flow.
+  - `AssertLeFindSmallArcs`, `AssertLeIsFirstArcExcluded`,
+    `AssertLeIsSecondArcExcluded` — arc computations used by assert-le flow.
 
 - Memory, debug, utilities
   - `AllocSegment` — allocate a new segment.
   - `AllocConstantSize` — return address with a fixed-size reserved range.
   - `DebugPrint` — print hex values in a memory range.
-  - `RandomEcPoint` — sample a random EC point (for testing).
+  - `RandomEcPoint` — sample a random EC point.
   - `EvalCircuit` — fill memory for modulo builtins via `ModBuiltinRunner`.
 
 == Starknet hints
@@ -64,7 +64,8 @@ their effects (for example, memory writes, pointer movement, and syscalls).
 == External hints
 
 - `AddRelocationRule { src, dst }` — add a memory relocation rule.
-- `WriteRunParam { index, dst }` — write a runner argument into memory starting at `dst`.
+- `WriteRunParam { index, dst }` — write a runner argument into memory
+  starting at `dst`.
 - `AddMarker { start, end }` — debugging marker for arrays/ranges.
 - `AddTrace { flag }` — add a trace call with a flag (debugging aid).
 
@@ -72,36 +73,7 @@ their effects (for example, memory writes, pointer movement, and syscalls).
 
 `DeprecatedHint` variants are retained solely for backward compatibility (e.g., legacy dict
 read/write and assert helpers). New code should not emit them.
-
-== Examples
-
-=== Allocating a segment
-[source,cairo]
-----
-// Effect (pythonic): memory[dst] = segments.add()
-fn main() {
-    // Emitted by compiler around certain constructs; shown here as an effect.
-}
-----
-
-=== Integer division and remainder
-[source,cairo]
-----
-// Effect (pythonic): (memory[q], memory[r]) = divmod(lhs, rhs)
-fn main() {
-    // The hint writes quotient and remainder into designated cells.
-}
-----
-
-=== Starknet system call
-[source,cairo]
-----
-// Effect (pythonic): syscall_handler.syscall(syscall_ptr=system)
-fn main() {
-    // The hint uses the system pointer to perform a syscall.
-}
-----
-
+ 
 == Feature flags
 
 - `serde` — enable serialization for hint enums.
