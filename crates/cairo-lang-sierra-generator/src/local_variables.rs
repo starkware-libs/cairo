@@ -395,6 +395,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 self.aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
+            lowering::Statement::IntoBox(_) => BranchInfo { known_ap_change: true },
         };
         Ok(branch_info)
     }
