@@ -267,7 +267,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         }
         // In the case of partial params, we check if one of its ancestors is a local variable, or
         // will be used after the revoke, and thus will be used as a local variable. If that
-        // is the case, then 'var' can not be revoked.
+        // is the case, then 'var' cannot be revoked.
         while let Some(parent) = self.partial_param_parents.get(peeled) {
             peeled = self.peel_aliases(parent);
             if self.non_ap_based.contains(peeled) || peeled_used_after_revoke.contains(peeled) {
