@@ -98,7 +98,7 @@ pub trait SemanticGroup: Database {
         module_semantic_diagnostics_tracked(self.as_dyn_database(), (), module_id)
     }
 
-    /// Aggregates file level semantic diagnostics.
+    /// Aggregates file-level semantic diagnostics.
     fn file_semantic_diagnostics<'db>(
         &'db self,
         file_id: FileId<'db>,

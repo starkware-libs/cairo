@@ -186,7 +186,7 @@ fn test_format_for_panic() {
     ];
     assert_eq!(format_for_panic(felts.into_iter()), "Panicked with \"Hello\\0world\".");
 
-    // Valid string with a non printable character.
+    // Valid string with a non-printable character.
     let felts = vec![
         Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
         // No full word.

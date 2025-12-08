@@ -199,7 +199,7 @@ fn test_as_cairo_short_string() {
     assert_eq!(as_cairo_short_string(&Felt252::from(0x6100)), Some("a".to_string()));
     assert_eq!(as_cairo_short_string(&Felt252::from(0x61000000)), Some("a".to_string()));
 
-    // With a non printable character.
+    // With a non-printable character.
     assert_eq!(as_cairo_short_string(&Felt252::from(0x610162)), None);
 }
 
@@ -226,7 +226,7 @@ fn test_as_cairo_short_string_ex() {
     assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x6100), 2), Some(r"a\0".to_string()));
     assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610062), 3), Some(r"a\0b".to_string()));
 
-    // With a non printable character.
+    // With a non-printable character.
     assert_eq!(as_cairo_short_string_ex(&Felt252::from(0x610162), 3), Some(r"a\x01b".to_string()));
 
     // More data than expected.
@@ -406,7 +406,7 @@ fn test_format_for_debug() {
     // Valid string with Null.
     let felts = vec![
         Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
-        // No full word.
+        // No full words.
         Felt252::from(0),
         // pending word: 'Hello\0world'
         Felt252::from_hex_unchecked("48656c6c6f00776f726c64"),
@@ -418,7 +418,7 @@ fn test_format_for_debug() {
     // Valid string with a non printable character.
     let felts = vec![
         Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
-        // No full word.
+        // No full words.
         Felt252::from(0),
         // pending word: 'Hello\x11world'
         Felt252::from_hex_unchecked("48656c6c6f11776f726c64"),
@@ -430,7 +430,7 @@ fn test_format_for_debug() {
     // Valid string with a newline.
     let felts = vec![
         Felt252::from_hex_unchecked(BYTE_ARRAY_MAGIC),
-        // No full word.
+        // No full words.
         Felt252::from(0),
         // pending word: 'Hello\nworld'
         Felt252::from_hex_unchecked("48656c6c6f0a776f726c64"),
