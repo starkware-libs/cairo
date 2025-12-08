@@ -1,6 +1,88 @@
 = Hints
 
-This section is a work in progress.
+Hints are implementation-side directives emitted by the compiler and executed by the Cairo
+runner. Hint encoding is backward-compatible; new variants are added with new indices and
+existing variants retain their meaning.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Categories
+
+- Core hints: `Hint::Core(CoreHintBase)`
+- Starknet hints: `Hint::Starknet(StarknetHint)`
+- External hints: `Hint::External(ExternalHint)`
+
+`CoreHintBase` is either `Core(CoreHint)` (active hints) or `Deprecated(DeprecatedHint)`
+(kept only for backward compatibility of previously deployed code).
+
+== Semantics
+
+The compiler emits a "pythonic" string via `PythonicHint::get_pythonic_hint` for backward
+compatibility with the legacy Python VM.
+Modern execution does not run Python: the Rust runner interprets hints natively to apply
+their effects (for example, memory writes, pointer movement, and syscalls).
+
+[NOTE]
+====
+`StarknetHint::Cheatcode` exists in the type system but its Pythonic form raises
+`NotImplementedError`.
+====
+
+== Core hints (summary)
+
+- Arithmetic and big-integer helpers
+  - `TestLessThan`, `TestLessThanOrEqual`,
+    `TestLessThanOrEqualAddress` — write boolean (0/1) results.
+  - `WideMul128` — 128×128 → high/low 128-bit limbs.
+  - `DivMod` — quotient and remainder of two integers.
+  - `Uint256DivMod`, `Uint512DivModByUint256` — wide division, return quotient/remainder
+    limbs.
+  - `SquareRoot`, `Uint256SquareRoot` — integer square root and remainder details.
+  - `LinearSplit` — find x,y s.t. `x*scalar + y = value` with `x <= max_x`.
+  - `FieldSqrt` — sqrt in field or in `3*val` to prove non-residue.
+  - `U256InvModN` — modular inverse over 256-bit limbs or proof of no inverse.
+
+- Dict and squash helpers (felt252 dict)
+  - `AllocFelt252Dict`, `Felt252DictEntryInit`, `Felt252DictEntryUpdate` — manage dict segments
+    and entries.
+  - `InitSquashData`, `GetCurrentAccessIndex`, `ShouldSkipSquashLoop`, `GetCurrentAccessDelta`,
+    `ShouldContinueSquashLoop`, `GetNextDictKey` — prepare and iterate squash state.
+  - `GetSegmentArenaIndex` — map segment index to arena index.
+  - `AssertLeFindSmallArcs`, `AssertLeIsFirstArcExcluded`,
+    `AssertLeIsSecondArcExcluded` — arc computations used by assert-le flow.
+
+- Memory, debug, utilities
+  - `AllocSegment` — allocate a new segment.
+  - `AllocConstantSize` — return address with a fixed-size reserved range.
+  - `DebugPrint` — print hex values in a memory range.
+  - `RandomEcPoint` — sample a random EC point.
+  - `EvalCircuit` — fill memory for modulo builtins via `ModBuiltinRunner`.
+
+== Starknet hints
+
+- `SystemCall { system }` — perform a system call using the system pointer.
+- `Cheatcode { .. }` — present in type system; pythonic rendering raises `NotImplementedError`.
+
+== External hints
+
+- `AddRelocationRule { src, dst }` — add a memory relocation rule.
+- `WriteRunParam { index, dst }` — write a runner argument into memory
+  starting at `dst`.
+- `AddMarker { start, end }` — debugging marker for arrays/ranges.
+- `AddTrace { flag }` — add a trace call with a flag (debugging aid).
+
+== Deprecated hints
+
+`DeprecatedHint` variants are retained solely for backward compatibility (e.g., legacy dict
+read/write and assert helpers). New code should not emit them.
+ 
+== Feature flags
+
+- `serde` — enable serialization for hint enums.
+- `schemars` — derive JSON schema.
+- `parity-scale-codec` — provide SCALE codec indices for stable encoding.
+
+== References
+
+- `crates/cairo-lang-casm/src/hints/mod.rs` — source of hint enums and their pythonic
+  renderings.
+- `crates/cairo-lang-runner/` — Cairo program runner. Hint handling lives under
+  `crates/cairo-lang-runner/src/casm_run/`.
