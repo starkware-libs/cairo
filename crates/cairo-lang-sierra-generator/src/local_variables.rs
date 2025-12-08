@@ -25,8 +25,8 @@ use crate::ap_tracking::{ApTrackingConfiguration, get_ap_tracking_configuration}
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
-    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, into_box_libfunc_id,
+    match_enum_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Information returned by [analyze_ap_changes].
@@ -395,6 +395,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 self.aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
+            lowering::Statement::IntoBox(_) => BranchInfo { known_ap_change: true },
         };
         Ok(branch_info)
     }

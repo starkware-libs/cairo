@@ -23,9 +23,9 @@ use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
     drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id,
     enum_from_bounded_int_libfunc_id, enum_init_libfunc_id, get_concrete_libfunc_id,
-    get_libfunc_signature, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
-    rename_libfunc_id, return_statement, simple_basic_statement, snapshot_take_libfunc_id,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    get_libfunc_signature, into_box_libfunc_id, jump_libfunc_id, jump_statement,
+    match_enum_libfunc_id, rename_libfunc_id, return_statement, simple_basic_statement,
+    snapshot_take_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::Block].
@@ -298,6 +298,9 @@ pub fn generate_statement_code<'db>(
         lowering::Statement::Desnap(statement) => {
             generate_statement_desnap(context, statement, statement_location)
         }
+        lowering::Statement::IntoBox(statement) => {
+            generate_statement_into_box(context, statement, statement_location)
+        }
     }
 }
 
@@ -544,6 +547,25 @@ fn generate_statement_struct_construct_code<'db>(
             context.get_variable_sierra_type(statement.output)?,
         ),
         &inputs,
+        &[context.get_sierra_variable(statement.output)],
+    );
+    context.push_statement(stmt);
+    Ok(())
+}
+
+/// Generates Sierra code for [lowering::StatementIntoBox].
+fn generate_statement_into_box<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementIntoBox<'db>,
+    statement_location: &StatementLocation,
+) -> Maybe<()> {
+    let input = maybe_add_dup_statement(context, statement_location, 0, &statement.input)?;
+    let stmt = simple_basic_statement(
+        into_box_libfunc_id(
+            context.get_db(),
+            context.get_variable_sierra_type(statement.input.var_id)?,
+        ),
+        &[input],
         &[context.get_sierra_variable(statement.output)],
     );
     context.push_statement(stmt);
