@@ -49,7 +49,7 @@
 ### Prerequisites
 
 - Install [Rust](https://www.rust-lang.org/tools/install)
-- Setup Rust:
+- Set up Rust:
 ```bash
 rustup override set stable && rustup update
 ```
