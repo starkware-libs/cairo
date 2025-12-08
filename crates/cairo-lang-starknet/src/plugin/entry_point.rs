@@ -201,7 +201,7 @@ pub fn handle_entry_point<'db, 'a>(
                     "\n    pub use super::$wrapper_function_name$ as $function_name$;",
                     &[
                         ("wrapper_function_name".into(), wrapper_function_name),
-                        ("function_name".into(), function_name),
+                        ("function_name".into(), function_name.mapped(db, &trigger_attribute)),
                     ]
                     .into(),
                 )
