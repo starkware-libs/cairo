@@ -3,6 +3,7 @@
 
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
+use cairo_lang_semantic::corelib::core_box_ty;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_utils::{Intern, extract_matches};
 use itertools::chain;
@@ -15,7 +16,7 @@ use crate::objects::{
     Statement, StatementCall, StatementConst, StatementStructConstruct, StatementStructDestructure,
     VarUsage,
 };
-use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
+use crate::{StatementDesnap, StatementEnumConstruct, StatementIntoBox, StatementSnapshot};
 
 #[derive(Clone, Default)]
 pub struct StatementsBuilder<'db> {
@@ -253,6 +254,25 @@ impl<'db> StructConstruct<'db> {
             inputs: self.inputs,
             output,
         }));
+        VarUsage { var_id: output, location: self.location }
+    }
+}
+
+/// Generator for [StatementIntoBox].
+pub struct IntoBox<'db> {
+    pub input: VarUsage<'db>,
+    pub location: LocationId<'db>,
+}
+impl<'db> IntoBox<'db> {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'db, '_>,
+        builder: &mut StatementsBuilder<'db>,
+    ) -> VarUsage<'db> {
+        let input_ty = ctx.variables[self.input.var_id].ty;
+        let output_ty = core_box_ty(ctx.db, input_ty);
+        let output = ctx.new_var(VarRequest { ty: output_ty, location: self.location });
+        builder.push_statement(Statement::IntoBox(StatementIntoBox { input: self.input, output }));
         VarUsage { var_id: output, location: self.location }
     }
 }

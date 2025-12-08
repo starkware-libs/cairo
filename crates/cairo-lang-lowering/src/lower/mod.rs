@@ -8,6 +8,7 @@ use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
     try_get_ty_by_name, unwrap_error_propagation_type, validate_literal,
 };
+use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::functions::{
@@ -1351,7 +1352,7 @@ fn perform_function_call<'db>(
         function_call_info;
 
     // If the function is not extern, simply call it.
-    if function.try_get_extern_function_id(ctx.db).is_none() {
+    let Some(extern_function_id) = function.try_get_extern_function_id(ctx.db) else {
         let call_result = generators::Call {
             function: function.lowered(ctx.db),
             inputs,
@@ -1390,6 +1391,16 @@ fn perform_function_call<'db>(
 
     // Extern function.
     assert!(coupon_input.is_none(), "Extern functions cannot have a __coupon__ argument.");
+
+    // Handle into_box specially - emit IntoBox instead of a call.
+    let into_box_fn = ModuleHelper::core(ctx.db).submodule("box").extern_function_id("into_box");
+    if extern_function_id == into_box_fn {
+        assert!(extra_ret_tys.is_empty(), "into_box should not have extra return types");
+        let input = inputs.into_iter().exactly_one().expect("into_box expects exactly one input");
+        let res = generators::IntoBox { input, location }.add(ctx, &mut builder.statements);
+        return Ok((vec![], LoweredExpr::AtVariable(res)));
+    }
+
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
     let call_result = generators::Call {
         function: function.lowered(ctx.db),

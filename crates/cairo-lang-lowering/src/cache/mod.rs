@@ -54,8 +54,8 @@ use crate::objects::{
 };
 use crate::{
     Block, BlockEnd, Location, Lowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
-    StatementDesnap, StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
-    VarRemapping, VarUsage, Variable,
+    StatementDesnap, StatementEnumConstruct, StatementIntoBox, StatementSnapshot,
+    StatementStructConstruct, VarRemapping, VarUsage, Variable,
 };
 
 type LookupCache = (CacheLookups, Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>);
@@ -909,6 +909,9 @@ enum StatementCached {
     // Enums.
     EnumConstruct(StatementEnumConstructCached),
 
+    // Boxing.
+    IntoBox(StatementIntoBoxCached),
+
     Snapshot(StatementSnapshotCached),
     Desnap(StatementDesnapCached),
 }
@@ -933,6 +936,9 @@ impl StatementCached {
             Statement::Desnap(stmt) => {
                 StatementCached::Desnap(StatementDesnapCached::new(stmt, ctx))
             }
+            Statement::IntoBox(stmt) => {
+                StatementCached::IntoBox(StatementIntoBoxCached::new(stmt, ctx))
+            }
         }
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> Statement<'db> {
@@ -946,6 +952,7 @@ impl StatementCached {
             StatementCached::EnumConstruct(stmt) => Statement::EnumConstruct(stmt.embed(ctx)),
             StatementCached::Snapshot(stmt) => Statement::Snapshot(stmt.embed(ctx)),
             StatementCached::Desnap(stmt) => Statement::Desnap(stmt.embed(ctx)),
+            StatementCached::IntoBox(stmt) => Statement::IntoBox(stmt.embed(ctx)),
         }
     }
 }
@@ -1240,6 +1247,23 @@ impl StatementDesnapCached {
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> StatementDesnap<'db> {
         StatementDesnap {
+            input: self.input.embed(ctx),
+            output: ctx.lowered_variables_id[self.output],
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct StatementIntoBoxCached {
+    input: VarUsageCached,
+    output: usize,
+}
+impl StatementIntoBoxCached {
+    fn new<'db>(stmt: StatementIntoBox<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
+        Self { input: VarUsageCached::new(stmt.input, ctx), output: stmt.output.index() }
+    }
+    fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> StatementIntoBox<'db> {
+        StatementIntoBox {
             input: self.input.embed(ctx),
             output: ctx.lowered_variables_id[self.output],
         }
