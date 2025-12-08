@@ -11,7 +11,7 @@ We can use this command to run Cairo level tests.
 ```
 #[test]
 fn test_assert_true() {
-    // Asserts that true
+    // Asserts that it's true
     assert(true, 'assert(true)');
 }
 
