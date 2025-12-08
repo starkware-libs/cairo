@@ -264,7 +264,7 @@ fn find_all_tests<'db>(
                 else {
                     return None;
                 };
-                Some((*func_id, try_extract_test_config(db, attrs).ok()??))
+                Some((*func_id, try_extract_test_config(db, attrs).ok().flatten()?))
             }));
         }
     }
