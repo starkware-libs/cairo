@@ -326,7 +326,7 @@ pub type BranchTarget = GenBranchTarget<StatementIdx>;
 impl Program {
     /// Checks if this Sierra program needs a gas counter set up in order to be executed.
     ///
-    /// This is determined by checking if the program uses any of gas-related libfuncs.
+    /// This is determined by checking if the program uses any gas-related libfuncs.
     pub fn requires_gas_counter(&self) -> bool {
         self.libfunc_declarations.iter().any(|decl| {
             matches!(
