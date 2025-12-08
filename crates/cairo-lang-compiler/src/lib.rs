@@ -47,12 +47,16 @@ pub struct CompilerConfig<'a> {
     pub replace_ids: bool,
 
     /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
-    /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
+    /// [Annotations] in [DebugInfo].
     pub add_statements_functions: bool,
 
     /// Adds a mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
-    /// [cairo_lang_sierra::debug_info::Annotations] in [cairo_lang_sierra::debug_info::DebugInfo].
+    /// [Annotations] in [DebugInfo].
     pub add_statements_code_locations: bool,
+
+    /// Adds a mapping used by [cairo-debugger](https://github.com/software-mansion-labs/cairo-debugger) to
+    /// [Annotations] in [DebugInfo] in the compiled tests.
+    pub add_functions_debug_info: bool,
 }
 
 /// Compiles a Cairo project at the given path.
@@ -345,6 +349,12 @@ pub fn compile_prepared_db_program_artifact_for_functions<'db>(
                 .extract_statements_source_code_locations(db),
         ))
     };
+
+    if compiler_config.add_functions_debug_info {
+        annotations.extend(Annotations::from(
+            sierra_program_with_debug.debug_info.functions_info.extract_serializable_debug_info(db),
+        ))
+    }
 
     let debug_info = DebugInfo {
         type_names: Default::default(),
