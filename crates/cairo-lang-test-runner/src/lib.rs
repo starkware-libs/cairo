@@ -75,6 +75,7 @@ impl<'db> TestRunner<'db> {
                 contract_declarations: None,
                 contract_crate_ids: None,
                 executable_crate_ids: None,
+                add_functions_debug_info: false,
             },
         )?;
         Ok(Self { compiler, config, custom_hint_processor_factory: None })
