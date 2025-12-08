@@ -45,7 +45,7 @@ pub fn create_virtual_file<'a>(
     .intern(db)
 }
 
-/// Mocked struct which implements [crate::types::TokenStream]
+/// Mocked struct which implements [cairo_lang_primitive_token::ToPrimitiveTokenStream]
 /// Its main purpose is being used for testing the [crate::parser::Parser::parse_token_stream]
 #[derive(Debug, Clone)]
 pub struct MockTokenStream {
