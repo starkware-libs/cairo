@@ -158,13 +158,22 @@ pub fn handle_entry_point<'db, 'a>(
     }
 
     let params = declaration.signature(db).parameters(db);
-    let function_name = RewriteNode::from_ast_trimmed(&name_node);
-    let wrapper_function_name = RewriteNode::Text(format!("{WRAPPER_PREFIX}{wrapper_identifier}"));
+    for (param_idx, param) in params.elements(db).enumerate() {
+        // This assumes `mut` can only appear alone.
+        if param.is_mut_param(db) {
+            original_parameters
+                .modify_child(db, param_idx * 2)
+                .modify_child(db, ast::Param::INDEX_MODIFIERS)
+                .set_str("".to_string());
+        }
+    }
+
+    let wrapper_function_name = &format!("{WRAPPER_PREFIX}{wrapper_identifier}");
     match generate_entry_point_wrapper(
         db,
         item_function,
         wrapped_function_path,
-        wrapper_function_name.clone(),
+        RewriteNode::text(wrapper_function_name),
         generic_params,
         unsafe_new_contract_state_prefix,
     ) {
@@ -180,14 +189,12 @@ pub fn handle_entry_point<'db, 'a>(
                 }
                 EntryPointKind::External => &mut data.external_functions,
             };
+            let function_name = name_node.text(db).long(db);
             generated.push(
-                RewriteNode::interpolate_patched(
-                    "\n    pub use super::$wrapper_function_name$ as $function_name$;",
-                    &[
-                        ("wrapper_function_name".into(), wrapper_function_name),
-                        ("function_name".into(), function_name),
-                    ]
-                    .into(),
+                RewriteNode::text(
+                    &format!(
+                        "\n    pub use super::{wrapper_function_name} as {function_name};",
+                    )
                 )
                 .mapped(db, &trigger_attribute),
             );
