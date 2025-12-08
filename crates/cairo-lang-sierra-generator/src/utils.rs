@@ -441,7 +441,7 @@ pub fn dummy_call_libfunc_id(
 
     let mut gargs = vec![];
 
-    gargs.push(GenericArg::UserFunc(function_id.clone()));
+    gargs.push(GenericArg::UserFunc(function_id));
 
     gargs.push(GenericArg::Value(
         match ap_change {
