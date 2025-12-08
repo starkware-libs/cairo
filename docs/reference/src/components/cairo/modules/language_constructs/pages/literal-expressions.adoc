@@ -62,7 +62,7 @@ Cairo syntax considers `-1` as an application of the xref:negation-operators.ado
 
 == Short string literals
 
-A short string is an ascii-string whose length is limited by the type that holds it.
+A short string is an ASCII string whose length is limited by the type that holds it.
 The default type is a `felt252` which limits the length of the string to 31 characters.
 A short string literal may be followed by an underscore character (`_`)
 and then a __literal suffix__ just like a numerical literal.
