@@ -17,7 +17,7 @@ impl Contract {
         serde_json::to_string_pretty(&self).unwrap()
     }
 
-    /// Validates the ABI entry points counts match the expected counts.
+    /// Validates the ABI entry point counts match the expected counts.
     pub fn sanity_check(
         &self,
         expected_external_count: usize,
