@@ -115,7 +115,7 @@ struct RunArgs {
     print_outputs: bool,
 
     /// When using dynamic layout, its parameters must be specified through a layout params file.
-    #[arg(long, default_value = "plain", value_enum, conflicts_with = "build_only")]
+    #[arg(long, default_value = "all_cairo_stwo", value_enum, conflicts_with = "build_only")]
     layout: LayoutName,
     /// Required when using with dynamic layout.
     /// Ignored otherwise.
