@@ -1,6 +1,6 @@
 /// A mapping optimized for very small maps.
 ///
-/// Wrapping the `vector_map::VecMap` structure.
+/// Wraps the `vector_map::VecMap` structure.
 #[derive(Clone, Debug)]
 pub struct SmallOrderedMap<Key, Value>(vector_map::VecMap<Key, Value>);
 impl<Key: Eq, Value> SmallOrderedMap<Key, Value> {
