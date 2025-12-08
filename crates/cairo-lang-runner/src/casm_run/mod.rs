@@ -2462,7 +2462,7 @@ impl FormattedItem {
 }
 
 /// Formats a string or a short string / `felt252`. Returns the formatted string and a boolean
-/// indicating whether it's a string. If it can't format the item, returns None.
+/// indicating whether it's a string. If item cannot be formatted, returns None.
 pub fn format_next_item<T>(values: &mut T) -> Option<FormattedItem>
 where
     T: Iterator<Item = Felt252> + Clone,
