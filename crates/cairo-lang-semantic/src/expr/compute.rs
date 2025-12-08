@@ -3826,11 +3826,12 @@ fn member_access_expr<'db>(
                 }
                 _ => unreachable!(),
             };
-            let ty = if !deref_functions.is_empty() {
-                member.ty
+            let n_snapshots = if deref_functions.is_empty() {
+                n_snapshots
             } else {
-                wrap_in_snapshots(ctx.db, member.ty, n_snapshots)
+                peel_snapshots_ex(db, derefed_expr.ty().long(db).clone()).0
             };
+            let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
             let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
                 concrete_struct_id: derefed_expr_concrete_struct_id,

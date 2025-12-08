@@ -202,3 +202,26 @@ error: Type `test::S1` cannot be dereferenced
  --> lib.cairo:13:14
     let _ = (*a);
              ^
+
+//! > ==========================================================================
+
+//! > Final deref return values should decide the number of snapshots.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo(a: Box<@A>) -> @usize {
+    a.b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: usize,
+    b: usize,
+}
+
+//! > expected_diagnostics
