@@ -11,8 +11,8 @@ use crate::ids::FileId;
 #[path = "span_test.rs"]
 mod test;
 
-/// Byte length of an utf8 string.
-// This wrapper type is used to avoid confusion with non-utf8 sizes.
+/// Byte length of a UTF-8 string.
+// This wrapper type is used to avoid confusion with non-UTF-8 sizes.
 #[derive(
     Copy,
     Clone,
@@ -80,7 +80,7 @@ impl Sum for TextWidth {
     }
 }
 
-/// Byte offset inside a utf8 string.
+/// Byte offset inside a UTF-8 string.
 #[derive(
     Copy,
     Clone,
@@ -260,7 +260,7 @@ pub struct FileSummary {
     pub last_offset: TextOffset,
 }
 impl FileSummary {
-    /// Gets the number of lines
+    /// Gets the number of lines.
     pub fn line_count(&self) -> usize {
         self.line_offsets.len()
     }

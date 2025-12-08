@@ -941,7 +941,7 @@ impl<'db> GenericItemId<'db> {
                         // `parent1.parent()` is safe.
                         let parent0_ptr = SyntaxStablePtrId(parent0);
                         match parent1.parent(db).map(|p| p.kind(db)) {
-                            // SyntaxFile is root level (file level)
+                            // SyntaxFile is root level (file-level)
                             Some(SyntaxKind::SyntaxFile) | Some(SyntaxKind::ModuleBody) => {
                                 GenericItemId::ModuleItem(GenericModuleItemId::FreeFunc(
                                     FreeFunctionLongId(

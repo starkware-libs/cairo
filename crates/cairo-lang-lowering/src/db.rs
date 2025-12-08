@@ -155,7 +155,7 @@ pub trait LoweringGroup: Database {
         module_lowering_diagnostics(self.as_dyn_database(), (), module_id)
     }
 
-    /// Aggregates file level lowering diagnostics.
+    /// Aggregates file-level lowering diagnostics.
     fn file_lowering_diagnostics<'db>(
         &'db self,
         file_id: FileId<'db>,

@@ -78,9 +78,9 @@ fn test_prints() {
     x.append(@suffix);
     print_byte_array_as_string(@x);
 
-    // Valid string with a non printable character.
+    // Valid string with a non-printable character.
     let mut x: ByteArray = "Hello";
-    x.append_byte(0x11); // Non printable character.
+    x.append_byte(0x11); // Non-printable character.
     let suffix: ByteArray = "world";
     x.append(@suffix);
     print_byte_array_as_string(@x);

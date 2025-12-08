@@ -269,7 +269,7 @@ impl<'db> TestCompiler<'db> {
 /// # Arguments
 /// * `compiled` - Compiled test cases with metadata.
 /// * `include_ignored` - Include ignored tests as well.
-/// * `ignored` - Run ignored tests only.l
+/// * `ignored` - Run ignored tests only
 /// * `filter` - Include only tests containing the filter string.
 /// # Returns
 /// * (`TestCompilation`, `usize`) - The filtered test cases and the number of filtered out cases.
@@ -303,13 +303,13 @@ pub fn filter_test_cases<'db>(
     (tests, filtered_out)
 }
 
-/// The status of a ran test.
+/// The status of a test run.
 enum TestStatus {
     Success,
     Fail(RunResultValue),
 }
 
-/// The result of a ran test.
+/// The result of a test run.
 struct TestResult {
     /// The status of the run.
     status: TestStatus,
@@ -321,7 +321,7 @@ struct TestResult {
     profiling_info: Option<ProfilingInfo>,
 }
 
-/// Summary data of the ran tests.
+/// Summary data of the tests run.
 pub struct TestsSummary {
     passed: Vec<String>,
     failed: Vec<String>,
@@ -329,7 +329,7 @@ pub struct TestsSummary {
     failed_run_results: Vec<Result<RunResultValue>>,
 }
 
-/// Runs the tests and process the results for a summary.
+/// Runs the tests and processes the results for a summary.
 pub fn run_tests(
     opt_db: Option<&dyn Database>,
     compiled: TestCompilation<'_>,

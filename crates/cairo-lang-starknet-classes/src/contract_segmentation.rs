@@ -154,7 +154,7 @@ impl FunctionInfo {
         Ok(())
     }
 
-    /// Visits a statement inside the function and update the [FunctionInfo] accordingly.
+    /// Visits a statement inside the function and updates the [FunctionInfo] accordingly.
     fn visit_statement(
         &mut self,
         idx: usize,
