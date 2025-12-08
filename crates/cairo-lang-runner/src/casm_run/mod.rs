@@ -89,7 +89,7 @@ pub struct CairoHintProcessor<'a> {
     pub runner: Option<&'a SierraCasmRunner>,
     /// The user arguments for the run.
     ///
-    /// We have a vector of the arguments per parameter, as a parameter type may be composed of
+    /// We have a vector of arguments per parameter, as a parameter type may be composed of
     /// several user args.
     pub user_args: Vec<Vec<Arg>>,
     /// A mapping from a string that represents a hint to the hint object.
@@ -101,7 +101,7 @@ pub struct CairoHintProcessor<'a> {
     /// Resources used during syscalls - does not include resources used during the current VM run.
     /// At the end of the run - adding both would result in the actual expected resource usage.
     pub syscalls_used_resources: StarknetExecutionResources,
-    /// Avoid allocating memory segments so finalization of segment arena may not occur.
+    /// Avoid allocating memory segments so finalization of the segment arena may not occur.
     pub no_temporary_segments: bool,
     /// A set of markers created by the run.
     pub markers: Vec<Vec<Felt252>>,
@@ -1809,7 +1809,7 @@ pub fn random_ec_point<R: rand::RngCore>(
     // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
     // residue.
     let (random_x, random_y) = loop {
-        // Randomizing 31 bytes to make sure is in range.
+        // Randomizing 31 bytes to make sure it is in range.
         // TODO(orizi): Use `Felt252` random implementation when exists.
         let x_bytes: [u8; 31] = rng.random();
         let random_x = Felt252::from_bytes_be_slice(&x_bytes);
@@ -2458,7 +2458,7 @@ impl FormattedItem {
 }
 
 /// Formats a string or a short string / `felt252`. Returns the formatted string and a boolean
-/// indicating whether it's a string. If can't format the item, returns None.
+/// indicating whether it's a string. If item cannot be formatted, returns None.
 pub fn format_next_item<T>(values: &mut T) -> Option<FormattedItem>
 where
     T: Iterator<Item = Felt252> + Clone,
