@@ -724,13 +724,11 @@ pub fn remove_component_inline_macro<'db>(
     db: &'db dyn Database,
     component_macro_ast: &ast::ItemInlineMacro<'db>,
 ) -> PluginResult<'db> {
-    if let Some((_module_ast, module_kind, _)) =
-        grand_grand_parent_starknet_module(component_macro_ast.as_syntax_node(), db)
-        && module_kind == StarknetModuleKind::Contract
-    {
-        return PluginResult { code: None, diagnostics: vec![], remove_original_item: true };
-    }
-    PluginResult { code: None, diagnostics: vec![], remove_original_item: false }
+    let remove_original_item = matches!(
+        grand_grand_parent_starknet_module(component_macro_ast.as_syntax_node(), db),
+        Some((_, StarknetModuleKind::Contract, _)),
+    );
+    PluginResult { code: None, diagnostics: vec![], remove_original_item }
 }
 
 /// Checks whether the first generic argument in the path segment is `CONTRACT_STATE_NAME`.
@@ -738,19 +736,16 @@ fn is_first_generic_arg_contract_state<'db>(
     db: &'db dyn Database,
     final_path_segment: &ast::PathSegment<'db>,
 ) -> bool {
-    let Some(generic_args) = final_path_segment.generic_args(db) else {
-        return false;
-    };
-    let Some(ast::GenericArg::Unnamed(first_generic_arg)) = generic_args.first() else {
-        return false;
-    };
-    let ast::GenericArgValue::Expr(first_generic_arg) = first_generic_arg.value(db) else {
-        return false;
-    };
-    let ast::Expr::Path(first_generic_arg) = first_generic_arg.expr(db) else {
-        return false;
-    };
-    first_generic_arg.identifier(db).long(db) == CONTRACT_STATE_NAME
+    if let Some(generic_args) = final_path_segment.generic_args(db)
+        && let Some(ast::GenericArg::Unnamed(first_generic_arg)) = generic_args.first()
+        && let ast::GenericArgValue::Expr(first_generic_arg) = first_generic_arg.value(db)
+        && let ast::Expr::Path(first_generic_arg) = first_generic_arg.expr(db)
+        && first_generic_arg.identifier(db).long(db) == CONTRACT_STATE_NAME
+    {
+        true
+    } else {
+        false
+    }
 }
 
 /// Verifies that a given Arg is named with given name and that the value is a path (simple if

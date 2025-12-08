@@ -102,19 +102,12 @@ fn get_embeddable_as_attr_value<'db>(
     db: &'db dyn Database,
     attr: &ast::Attribute<'db>,
 ) -> Option<ast::Expr<'db>> {
-    let ast::OptionArgListParenthesized::ArgListParenthesized(attribute_args) = attr.arguments(db)
-    else {
-        return None;
-    };
-
+    let attribute_args = try_extract_matches!(
+        attr.arguments(db),
+        ast::OptionArgListParenthesized::ArgListParenthesized
+    )?;
     let arg = attribute_args.arguments(db).elements(db).exactly_one().ok()?;
-    let AttributeArgVariant::Unnamed(attr_arg_value) =
-        AttributeArg::from_ast(arg.clone(), db).variant
-    else {
-        return None;
-    };
-
-    Some(attr_arg_value)
+    try_extract_matches!(AttributeArg::from_ast(arg, db).variant, AttributeArgVariant::Unnamed)
 }
 
 /// Validates the generic parameters of the impl marked with `embeddable_as` attribute and returns
