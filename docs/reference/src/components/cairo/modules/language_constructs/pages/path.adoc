@@ -42,10 +42,10 @@ Examples:
 fn foo<A, B>(a: A, b: B) { ... }
 
 fn main() {
-    foo::<bool, bool>(false, 3_u2); // OK
-    foo::<bool, _>(false, 3_u2);    // OK, B is inferred to be u32
-    foo::<bool>(false, 3_u2);       // OK, B is inferred to be u32
-    foo(false, 3_u2);               // OK, A, B are inferred as bool and u32 respectively
+    foo::<bool, bool>(false, 3_u32); // OK
+    foo::<bool, _>(false, 3_u32);    // OK, B is inferred to be u32
+    foo::<bool>(false, 3_u32);       // OK, B is inferred to be u32
+    foo(false, 3_u32);               // OK, A, B are inferred as bool and u32 respectively
 }
 ----
 
