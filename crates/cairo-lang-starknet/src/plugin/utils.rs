@@ -57,37 +57,28 @@ pub trait AstPathExtract {
 }
 impl<'db> AstPathExtract for ast::ExprPath<'db> {
     fn is_identifier(&self, db: &dyn Database, identifier: &str) -> bool {
-        let segments = self.segments(db);
-        let type_path_elements = segments.elements(db);
-        let Ok(ast::PathSegment::Simple(arg_segment)) = type_path_elements.exactly_one() else {
-            return false;
-        };
-
-        arg_segment.identifier(db).long(db) == identifier
+        if let Ok(ast::PathSegment::Simple(arg)) = self.segments(db).elements(db).exactly_one()
+            && arg.identifier(db).long(db) == identifier
+        {
+            true
+        } else {
+            false
+        }
     }
 
     fn is_name_with_arg(&self, db: &dyn Database, name: &str, generic_arg: &str) -> bool {
-        let segments = self.segments(db);
-        let type_path_elements = segments.elements(db);
-        let Ok(ast::PathSegment::WithGenericArgs(path_segment_with_generics)) =
-            type_path_elements.exactly_one()
-        else {
-            return false;
-        };
-
-        if path_segment_with_generics.identifier(db).long(db) != name {
-            return false;
+        if let Ok(ast::PathSegment::WithGenericArgs(path)) =
+            self.segments(db).elements(db).exactly_one()
+            && path.identifier(db).long(db) == name
+            && let Ok(ast::GenericArg::Unnamed(arg)) =
+                path.generic_args(db).generic_args(db).elements(db).exactly_one()
+            && let ast::GenericArgValue::Expr(arg) = arg.value(db)
+            && arg.expr(db).is_identifier(db, generic_arg)
+        {
+            true
+        } else {
+            false
         }
-        let generic_args = path_segment_with_generics.generic_args(db).generic_args(db);
-        let args = generic_args.elements(db);
-        let Ok(ast::GenericArg::Unnamed(arg_expr)) = args.exactly_one() else {
-            return false;
-        };
-        let ast::GenericArgValue::Expr(arg_expr) = arg_expr.value(db) else {
-            return false;
-        };
-
-        arg_expr.expr(db).is_identifier(db, generic_arg)
     }
 }
 impl<'db> AstPathExtract for ast::Expr<'db> {
