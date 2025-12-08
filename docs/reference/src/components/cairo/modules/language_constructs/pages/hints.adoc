@@ -15,9 +15,10 @@ existing variants retain their meaning.
 
 == Semantics
 
-Each hint has a deterministic Pythonic execution produced by the compiler via
-`PythonicHint::get_pythonic_hint`. The runner evaluates that Pythonic form to realize the hint’s
-effects (e.g., writes to memory, pointer movement, syscalls).
+The compiler emits a "pythonic" string via `PythonicHint::get_pythonic_hint` for backward
+compatibility with the legacy Python VM.
+Modern execution does not run Python: the Rust runner interprets hints natively to apply
+their effects (for example, memory writes, pointer movement, and syscalls).
 
 [NOTE]
 ====
