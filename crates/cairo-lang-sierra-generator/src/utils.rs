@@ -118,6 +118,14 @@ pub fn struct_deconstruct_libfunc_id(
     })
 }
 
+/// Returns the [ConcreteLibfuncId] associated with `into_box`.
+pub fn into_box_libfunc_id(
+    db: &dyn Database,
+    ty: cairo_lang_sierra::ids::ConcreteTypeId,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    get_libfunc_id_with_generic_arg(db, "into_box", ty)
+}
+
 pub fn enum_init_libfunc_id(
     db: &dyn Database,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,

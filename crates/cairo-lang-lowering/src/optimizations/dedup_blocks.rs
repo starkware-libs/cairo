@@ -12,7 +12,7 @@ use crate::ids::FunctionId;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     Block, BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementConst, StatementDesnap,
-    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
+    StatementEnumConstruct, StatementIntoBox, StatementSnapshot, StatementStructConstruct,
     StatementStructDestructure, VarRemapping, VarUsage, VariableArena, VariableId,
 };
 
@@ -59,7 +59,10 @@ enum CanonicStatement<'db> {
         input: CanonicVar,
         output: CanonicVar,
     },
-
+    IntoBox {
+        input: CanonicVar,
+        output: CanonicVar,
+    },
     Snapshot {
         input: CanonicVar,
         outputs: [CanonicVar; 2],
@@ -163,6 +166,12 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
                 input: self.handle_input(input),
                 output: self.handle_output(output),
             },
+            Statement::IntoBox(StatementIntoBox { input, output }) => {
+                CanonicStatement::IntoBox {
+                    input: self.handle_input(input),
+                    output: self.handle_output(output),
+                }
+            }
         }
     }
 }
