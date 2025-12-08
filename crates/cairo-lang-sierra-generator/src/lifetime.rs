@@ -237,8 +237,7 @@ impl<'db> Analyzer<'db, '_> for VariableLifetimeContext<'_> {
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
-            .map(|(arm, demand)| {
-                let mut demand = demand.clone();
+            .map(|(arm, mut demand)| {
                 self.introduce(
                     &mut demand,
                     &arm.var_ids,
