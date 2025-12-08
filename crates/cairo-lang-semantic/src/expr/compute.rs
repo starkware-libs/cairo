@@ -4814,7 +4814,7 @@ fn match_method_to_traits<'db>(
         .filter_map(|(trait_id, path)| {
             let mut data = InferenceData::new(InferenceId::NoContext);
             let mut inference = data.inference(db);
-            let trait_function = db.trait_function_by_name(*trait_id, method_name).ok()??;
+            let trait_function = db.trait_function_by_name(*trait_id, method_name).ok().flatten()?;
             let (concrete_trait_id, _) = inference.infer_concrete_trait_by_self_without_errors(
                 trait_function,
                 ty,
