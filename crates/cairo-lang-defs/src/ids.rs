@@ -1183,12 +1183,6 @@ define_language_element_id_as_enum! {
 }
 
 impl<'db> StatementItemId<'db> {
-    pub fn name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
-        match self {
-            StatementItemId::Constant(id) => id.name(db),
-            StatementItemId::Use(id) => id.name(db),
-        }
-    }
     pub fn name_stable_ptr(&self, db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
         match self {
             StatementItemId::Constant(id) => {
@@ -1215,14 +1209,6 @@ define_language_element_id_as_enum! {
     }
 }
 impl<'db> TraitItemId<'db> {
-    pub fn name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
-        match self {
-            TraitItemId::Function(id) => id.name(db),
-            TraitItemId::Type(id) => id.name(db),
-            TraitItemId::Constant(id) => id.name(db),
-            TraitItemId::Impl(id) => id.name(db),
-        }
-    }
     pub fn trait_id(&self, db: &'db dyn Database) -> TraitId<'db> {
         match self {
             TraitItemId::Function(id) => id.trait_id(db),
@@ -1244,14 +1230,6 @@ define_language_element_id_as_enum! {
     }
 }
 impl<'db> ImplItemId<'db> {
-    pub fn name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
-        match self {
-            ImplItemId::Function(id) => id.name(db),
-            ImplItemId::Type(id) => id.name(db),
-            ImplItemId::Constant(id) => id.name(db),
-            ImplItemId::Impl(id) => id.name(db),
-        }
-    }
     pub fn impl_def_id(&self, db: &'db dyn Database) -> ImplDefId<'db> {
         match self {
             ImplItemId::Function(id) => id.impl_def_id(db),
