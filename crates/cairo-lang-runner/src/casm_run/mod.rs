@@ -1386,12 +1386,10 @@ impl CairoHintProcessor<'_> {
                         let Some(ret_pc) = ptr_at_offset(1) else {
                             break;
                         };
-                        println!("ret_pc: {ret_pc}");
                         // Get fp traceback.
                         let Some(ret_fp) = ptr_at_offset(2) else {
                             break;
                         };
-                        println!("ret_fp: {ret_fp}");
                         if ret_fp == fp {
                             break;
                         }
@@ -1399,9 +1397,7 @@ impl CairoHintProcessor<'_> {
 
                         let call_instruction = |offset: usize| -> Option<Relocatable> {
                             let ptr = (ret_pc - offset).ok()?;
-                            println!("ptr: {ptr}");
                             let inst = vm.get_integer(ptr).ok()?;
-                            println!("inst: {inst}");
                             let inst_short = inst.to_u64()?;
                             (inst_short & 0x7000_0000_0000_0000 == 0x1000_0000_0000_0000)
                                 .then_some(ptr)
