@@ -18,7 +18,9 @@ use itertools::{Itertools, chain};
 use salsa::Database;
 
 use crate::db::{SierraGenGroup, sierra_concrete_long_id};
-use crate::debug_info::{FunctionDebugInfo, SierraProgramDebugInfo, StatementsLocations};
+use crate::debug_info::{
+    AllFunctionsDebugInfo, FunctionDebugInfo, SierraProgramDebugInfo, StatementsLocations,
+};
 use crate::extra_sierra_info::type_has_const_size;
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -289,7 +291,7 @@ pub fn get_sierra_program_for_functions<'db>(
         program,
         debug_info: SierraProgramDebugInfo {
             statements_locations: StatementsLocations::from_locations_vec(db, statements_locations),
-            functions_info,
+            functions_info: AllFunctionsDebugInfo::new(functions_info),
         },
     })
 }
