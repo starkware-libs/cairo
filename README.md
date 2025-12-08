@@ -42,7 +42,7 @@
 
 ## About
 
-Cairo is the first Turing-complete language for creating provable programs for general computation.
+**[Cairo](https://cairo-lang.org/)** is the first Turing-complete language for creating provable programs for general computation.
 
 ## Getting Started
 
