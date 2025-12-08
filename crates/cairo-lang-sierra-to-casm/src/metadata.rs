@@ -79,8 +79,8 @@ pub fn calc_metadata_ap_change_only(
 
 /// Calculates the metadata for a Sierra program.
 ///
-/// `no_eq_solver` uses a linear-time algorithm for calculating the gas, instead of solving
-/// equations.
+/// When `config.linear_gas_solver` is true, uses a linear-time algorithm for calculating the gas,
+/// instead of solving equations.
 pub fn calc_metadata(
     program: &Program,
     program_info: &ProgramRegistryInfo,
