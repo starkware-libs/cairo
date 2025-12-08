@@ -26,7 +26,7 @@ let x = 5_u32;
 
 Variables are immutable unless declared otherwise.
 A variable can be declared as mutable using the `mut` keyword.
-A mutable variable can be link:assignment-statement.adoc[assigned] a different value after the initialization.
+A mutable variable can be link:assignment-statement.adoc[assigned] a different value after initialization.
 
 For example:
 [source]
