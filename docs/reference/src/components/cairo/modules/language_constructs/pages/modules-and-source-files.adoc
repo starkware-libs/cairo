@@ -6,7 +6,7 @@ management of code and better code reusability.
 A module is a named container for
 xref:items.adoc[items] such as structs, enums, functions, constants, and traits.
 
-A crate is a single compilation unit. It has a root directory, and a root module defined at the file
+A crate is a single compilation unit. It has a root directory, and a root module defined in the file
 `lib.cairo` under this directory.
 
 == Defining a module
