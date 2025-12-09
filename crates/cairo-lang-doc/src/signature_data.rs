@@ -106,14 +106,8 @@ fn get_module_item_info<'db>(
 ) -> Result<ModuleItemInfo<'db>, SignatureError> {
     let parent_module = module_item_id.parent_module(db);
     let item_name = module_item_id.name(db);
-    if let Some(module_item_info) = db
-        .module_item_info_by_name(parent_module, item_name)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?
-    {
-        Ok(module_item_info)
-    } else {
-        Err(SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))
-    }
+    db.module_item_info_by_name(parent_module, item_name)?
+        .ok_or(SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))
 }
 
 /// Retrieves data for enum signature formatting. Returns [`SignatureError`] if any relevant data
@@ -125,15 +119,11 @@ fn get_enum_signature_data<'db>(
     let module_item_id = ModuleItemId::Enum(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
-    let enum_variants = db
-        .enum_variants(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db)))?;
+    let enum_variants = db.enum_variants(item_id)?;
 
     let mut variants = Vec::new();
     for (name, variant_id) in enum_variants.iter() {
-        let variant_semantic = db.variant_semantic(item_id, *variant_id).map_err(|_| {
-            SignatureError::FailedRetrievingSemanticData(module_item_id.full_path(db))
-        })?;
+        let variant_semantic = db.variant_semantic(item_id, *variant_id)?;
         variants.push((*name, variant_semantic.ty));
     }
     Ok(DocumentableItemSignatureData {
@@ -161,20 +151,15 @@ fn get_struct_signature_data<'db>(
     let module_item_id = ModuleItemId::Struct(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
-    let struct_attributes = db
-        .struct_attributes(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let struct_attributes = db.struct_attributes(item_id)?;
 
     let members = db
-        .struct_members(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
+        .struct_members(item_id)?
         .iter()
         .map(|(name, member)| (*name, member.ty, member.visibility))
         .collect();
 
-    let generic_params = db
-        .struct_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.struct_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Struct(item_id))),
@@ -201,11 +186,7 @@ fn get_member_signature_data<'db>(
     let name = item_id.name(db);
     let struct_id = item_id.struct_id(db);
 
-    if let Some(member) = db
-        .struct_members(struct_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
-        .get(&name)
-    {
+    if let Some(member) = db.struct_members(struct_id)?.get(&name) {
         Ok(DocumentableItemSignatureData {
             item_id: Member(item_id),
             name,
@@ -234,17 +215,9 @@ fn get_free_function_signature_data<'db>(
     let module_item_id = ModuleItemId::FreeFunction(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
-    let generic_params = db
-        .free_function_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let signature = db
-        .free_function_signature(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let resolver_data = db
-        .free_function_declaration_resolver_data(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.free_function_generic_params(item_id)?;
+    let signature = db.free_function_signature(item_id)?;
+    let resolver_data = db.free_function_declaration_resolver_data(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
@@ -270,24 +243,14 @@ fn get_trait_function_signature_data<'db>(
     db: &'db dyn Database,
     item_id: TraitFunctionId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
-    let signature = db
-        .trait_function_signature(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let generic_params = db
-        .trait_function_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let resolver_data = db
-        .trait_function_resolver_data(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let signature = db.trait_function_signature(item_id)?;
+    let generic_params = db.trait_function_generic_params(item_id)?;
+    let resolver_data = db.trait_function_resolver_data(item_id)?;
 
     // trait function resolver data contains both: its own and the traits generic params,
     // to get a signature relevant subset, the trait ones need to be filtered out
     let trait_id = item_id.trait_id(db);
-    let trait_resolver_data = trait_id
-        .resolver_data(db)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let trait_resolver_data = trait_id.resolver_data(db)?;
     let trait_params_set: HashSet<_> = trait_resolver_data.generic_params.iter().collect();
 
     let function_generic_params: Vec<GenericParamId<'_>> = resolver_data
@@ -319,13 +282,9 @@ fn get_impl_function_signature_data<'db>(
     db: &'db dyn Database,
     item_id: ImplFunctionId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
-    let signature = db
-        .impl_function_signature(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let signature = db.impl_function_signature(item_id)?;
 
-    let generic_params = db
-        .impl_function_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.impl_function_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Function(item_id))),
@@ -352,9 +311,7 @@ fn get_constant_signature_data<'db>(
     let module_item_id = ModuleItemId::Constant(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
-    let constant = db
-        .constant_semantic_data(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let constant = db.constant_semantic_data(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Constant(
@@ -380,11 +337,7 @@ fn get_impl_constant_signature_data<'db>(
     db: &'db dyn Database,
     item_id: ImplConstantDefId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
-    let return_type = db
-        .impl_constant_def_value(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
-        .ty(db)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let return_type = db.impl_constant_def_value(item_id)?.ty(db)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Constant(item_id))),
@@ -411,9 +364,7 @@ fn get_trait_signature_data<'db>(
     let module_item_id = ModuleItemId::Trait(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
-    let generic_params = db
-        .trait_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.trait_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Trait(item_id))),
@@ -437,13 +388,8 @@ fn get_trait_const_signature_data<'db>(
     db: &'db dyn Database,
     item_id: TraitConstantId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
-    let attributes = db
-        .trait_constant_attributes(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let return_type = db
-        .trait_constant_type(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let attributes = db.trait_constant_attributes(item_id)?;
+    let return_type = db.trait_constant_type(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Constant(item_id))),
@@ -469,15 +415,8 @@ fn get_impl_def_signature_data<'db>(
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::Impl(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
-
-    let resolver_data = db
-        .impl_def_resolver_data(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let intern = db
-        .impl_def_concrete_trait(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?
-        .long(db);
+    let resolver_data = db.impl_def_resolver_data(item_id)?;
+    let intern = db.impl_def_concrete_trait(item_id)?.long(db);
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(item_id))),
@@ -531,13 +470,8 @@ fn get_module_type_alias_full_signature<'db>(
     let module_item_id = ModuleItemId::TypeAlias(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
 
-    let generic_params = db
-        .module_type_alias_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let resolved_type = db
-        .module_type_alias_resolved_type(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.module_type_alias_generic_params(item_id)?;
+    let resolved_type = db.module_type_alias_resolved_type(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
@@ -563,9 +497,7 @@ fn get_trait_type_full_signature<'db>(
     db: &'db dyn Database,
     item_id: TraitTypeId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
-    let generic_params = db
-        .trait_type_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.trait_type_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::TraitItem(TraitItemId::Type(item_id))),
@@ -589,13 +521,8 @@ fn get_impl_type_def_full_signature<'db>(
     db: &'db dyn Database,
     item_id: ImplTypeDefId<'db>,
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
-    let resolved_type = db
-        .impl_type_def_resolved_type(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let generic_params = db
-        .impl_type_def_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let resolved_type = db.impl_type_def_resolved_type(item_id)?;
+    let generic_params = db.impl_type_def_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Type(item_id))),
@@ -621,10 +548,7 @@ fn get_extern_type_full_signature<'db>(
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ExternType(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
-
-    let generic_params = db
-        .extern_type_declaration_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.extern_type_declaration_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternType(
@@ -652,14 +576,8 @@ fn get_extern_function_full_signature<'db>(
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ExternFunction(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
-
-    let generic_params = db
-        .extern_function_declaration_generic_params(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
-
-    let signature = db
-        .extern_function_signature(item_id)
-        .map_err(|_| SignatureError::FailedRetrievingSemanticData(item_id.full_path(db)))?;
+    let generic_params = db.extern_function_declaration_generic_params(item_id)?;
+    let signature = db.extern_function_signature(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ExternFunction(
