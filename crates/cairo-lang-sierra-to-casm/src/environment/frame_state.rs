@@ -22,9 +22,9 @@ pub enum FrameState {
     /// Before any locals were allocated (`alloc_local` wasn't called).
     BeforeAllocation,
     /// `finalize_locals` wasn't called yet.
-    /// `allocated` is the number of stack slot that were already allocated for local variables.
-    /// `locals_start_ap_offset` is the ap change between the first `alloc_local` and the beginning
-    /// of the function. It is used to validate that there were no ap changes between the
+    /// `allocated` is the number of stack slots that were already allocated for local variables.
+    /// `locals_start_ap_offset` is the AP change between the first `alloc_local` and the beginning
+    /// of the function. It is used to validate that there were no AP changes between the
     /// allocations and the call to `handle_finalize_locals`.
     Allocating { allocated: usize, locals_start_ap_offset: usize },
     /// finalize_locals was called and the frame has been finalized.
