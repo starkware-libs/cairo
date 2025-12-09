@@ -141,7 +141,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
                 self.db.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
                     ConcreteTypeLongId {
                         generic_id: UninitializedType::ID,
-                        generic_args: vec![GenericArg::Type(inner_type.clone())],
+                        generic_args: vec![GenericArg::Type(inner_type)],
                     }
                     .into(),
                 ))
