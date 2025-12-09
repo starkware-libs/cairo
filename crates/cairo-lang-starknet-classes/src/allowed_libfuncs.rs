@@ -41,8 +41,8 @@ pub enum ListSelector {
 }
 
 impl ListSelector {
-    /// Gets the cli arguments of both the list name and list file and return a selector, or None if
-    /// both were supplied.
+    /// Gets the CLI arguments of both the list name and list file and returns a
+    /// selector, or None if both were supplied.
     pub fn new(list_name: Option<String>, list_file: Option<String>) -> Option<Self> {
         match (list_name, list_file) {
             // Both options supplied, can't decide.
