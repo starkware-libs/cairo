@@ -3818,7 +3818,7 @@ fn member_access_expr<'db>(
                 derefed_expr =
                     ExprAndId { expr: cur_expr.clone(), id: ctx.arenas.exprs.alloc(cur_expr) };
             }
-            let (_, long_ty) =
+            let (n_snapshots, long_ty) =
                 finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), rhs_syntax.stable_ptr(db))?;
             let derefed_expr_concrete_struct_id = match long_ty {
                 TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
@@ -3826,11 +3826,7 @@ fn member_access_expr<'db>(
                 }
                 _ => unreachable!(),
             };
-            let ty = if !deref_functions.is_empty() {
-                member.ty
-            } else {
-                wrap_in_snapshots(ctx.db, member.ty, n_snapshots)
-            };
+            let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
             let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
                 concrete_struct_id: derefed_expr_concrete_struct_id,
