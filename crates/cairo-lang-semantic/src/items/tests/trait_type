@@ -2957,7 +2957,7 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2189]: associated type `ty` not found for `test::MyTrait`
+error[E2189]: associated type `ty` not found for `MyTrait`
  --> lib.cairo:6:25
 fn bar<impl I1: MyTrait[ty: u32]>() -> u32 {
                         ^^^^^^^
@@ -2985,7 +2985,7 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error[E2190]: the value of the associated type `ty` in trait `test::MyTrait` is already specified
+error[E2190]: the value of the associated type `ty` in trait `MyTrait` is already specified
  --> lib.cairo:5:17
 fn bar<impl I1: MyTrait[ty: u32, ty: felt252]>() -> u32 {
                 ^^^^^^^

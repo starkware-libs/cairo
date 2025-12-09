@@ -15264,7 +15264,7 @@ error[E0007]: Type "core::starknet::storage::storage_base::StorageBase::<test::u
             self.u256_pair.a.read()
                            ^
 
-error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::starknet::storage::map::StorageMapReadAccess::read and core::starknet::storage::StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: StorageMapReadAccess::read and StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:59:30
             self.u256_pair.a.read()
                              ^^^^

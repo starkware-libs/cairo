@@ -87,12 +87,12 @@ foo
 struct MyStruct {}
 
 //! > expected_diagnostics
-error[E2058]: Struct "test::MyStruct" has no member "a"
+error[E2058]: Struct "MyStruct" has no member "a"
  --> lib.cairo:3:20
     let MyStruct { a, b } = s;
                    ^
 
-error[E2058]: Struct "test::MyStruct" has no member "b"
+error[E2058]: Struct "MyStruct" has no member "b"
  --> lib.cairo:3:23
     let MyStruct { a, b } = s;
                       ^
@@ -119,12 +119,12 @@ struct MyStruct {
 }
 
 //! > expected_diagnostics
-error[E2050]: Redefinition of member "a" on struct "test::MyStruct".
+error[E2050]: Redefinition of member "a" on struct "MyStruct".
  --> lib.cairo:6:32
     let MyStruct { a: _, b: _, a: _, b: _ } = s;
                                ^
 
-error[E2050]: Redefinition of member "b" on struct "test::MyStruct".
+error[E2050]: Redefinition of member "b" on struct "MyStruct".
  --> lib.cairo:6:38
     let MyStruct { a: _, b: _, a: _, b: _ } = s;
                                      ^
@@ -151,12 +151,12 @@ struct MyStruct {
 }
 
 //! > expected_diagnostics
-error[E2058]: Struct "test::MyStruct" has no member "c"
+error[E2058]: Struct "MyStruct" has no member "c"
  --> lib.cairo:6:26
     let MyStruct { a: _, c: _, a: _ } = s;
                          ^
 
-error[E2050]: Redefinition of member "a" on struct "test::MyStruct".
+error[E2050]: Redefinition of member "a" on struct "MyStruct".
  --> lib.cairo:6:32
     let MyStruct { a: _, c: _, a: _ } = s;
                                ^
