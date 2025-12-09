@@ -43,7 +43,7 @@ fn emit_struct_debug(
     let (pat, prints) = emit_fields_debug(db, name.to_string(), &structure.fields);
 
     // a) impl-side generics  = original + 'a + T
-    let impl_generics = create_impl_generics(name, generics);
+    let impl_generics = create_impl_generics(generics);
     let (impl_g, _, where_g) = impl_generics.split_for_impl();
 
     // b) type-side generics = *original only*
@@ -84,7 +84,7 @@ fn emit_enum_debug(
         };
     }
 
-    let impl_generics = create_impl_generics(name, generics);
+    let impl_generics = create_impl_generics(generics);
     let (impl_g, _, where_g) = impl_generics.split_for_impl();
 
     let (_, ty_g, _) = generics.split_for_impl();
@@ -186,7 +186,7 @@ fn debug_crate() -> syn::Ident {
 ///
 /// The impl generics are the original generics plus a lifetime 'db.
 /// The lifetime 'db is added to the impl generics if it is not already present.
-fn create_impl_generics(_name: &syn::Ident, generics: &Generics) -> Generics {
+fn create_impl_generics(generics: &Generics) -> Generics {
     let mut impl_generics = generics.clone();
 
     let has_db_lifetime = impl_generics.params.iter().any(|p| {
