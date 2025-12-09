@@ -439,6 +439,19 @@ impl<'db> SmolStrId<'db> {
     pub fn to_string(&self, db: &dyn Database) -> String {
         self.long(db).to_string()
     }
+
+    /// Joins a slice of SmolStrId into a String using the given separator.
+    /// Each SmolStrId is converted to String via to_string(db).
+    pub fn join(db: &'db dyn Database, segments: &[Self], separator: &str) -> String {
+        let mut result = String::new();
+        for (i, s) in segments.iter().enumerate() {
+            if i > 0 {
+                result.push_str(separator);
+            }
+            result.push_str(&s.to_string(db));
+        }
+        result
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]

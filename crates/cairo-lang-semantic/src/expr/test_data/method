@@ -88,7 +88,7 @@ error[E0002]: Method `is_foo` not found on type `core::option::Option::<?0>`. Di
     x.is_foo();
       ^^^^^^
 
-error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: test::MyTrait::is_bar and test::AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: MyTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:40:7
     y.is_bar();
       ^^^^^^

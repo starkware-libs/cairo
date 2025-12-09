@@ -1336,12 +1336,12 @@ impl OuterU32 of Outer<u32> {
 }
 
 //! > expected_diagnostics
-error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::traits::Into::into and test::Outer::into. Consider adding type annotations or explicitly refer to the impl function.
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: Into::into and Outer::into. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:16:18
         (self, u.into())
                  ^^^^
 
-error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::traits::Into::into and test::Outer::into. Consider adding type annotations or explicitly refer to the impl function.
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: Into::into and Outer::into. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:27:14
         self.into()
              ^^^^

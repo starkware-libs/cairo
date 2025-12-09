@@ -2586,7 +2586,7 @@ fn compute_method_function_call_data<'db>(
         SmolStrId<'db>,
         TraitInferenceErrors<'db>,
     ) -> Option<SemanticDiagnosticKind<'db>>,
-    multiple_trait_diagnostic: fn(
+    multiple_trait_diagnostic: impl Fn(
         TypeId<'db>,
         TraitFunctionId<'db>,
         TraitFunctionId<'db>,
