@@ -229,8 +229,6 @@ test_reboxing_analysis
 //! > function_name
 rebox_whole
 
-//! > TODO(eytan-starkware): Add support for whole var reboxing
-
 //! > module_code
 struct Simple {
     value: felt252,
@@ -262,9 +260,8 @@ Parameters: v0: core::box::Box::<test::Simple>
 blk0 (root):
 Statements:
   (v1: test::Simple) <- core::box::unbox::<test::Simple>(v0)
-  (v2: core::box::Box::<test::Simple>) <- core::box::into_box::<test::Simple>(v1)
 End:
-  Return(v2)
+  Return(v0)
 
 //! > ==========================================================================
 
@@ -751,3 +748,104 @@ Statements:
   (v7: (core::box::Box::<@core::felt252>, @test::NonDrop)) <- struct_construct(v4, v6)
 End:
   Return(v7)
+
+//! > ==========================================================================
+
+//! > Test mixed reboxing types in different blocks
+
+//! > test_runner_name
+test_reboxing_analysis
+
+//! > function_name
+mixed_reboxing
+
+//! > TODO(eytan-starkware): When removing demand for Copy, check no double
+//! >     into_box remain
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct Point {
+    x: felt252,
+    y: felt252,
+}
+
+//! > function_code
+fn mixed_reboxing(p: Box<Point>, flag: bool) -> Box<felt252> {
+    if flag {
+        let unboxed = p.unbox();
+        BoxTrait::new(unboxed.x)
+    } else {
+        let unboxed = p.unbox();
+        let boxed = BoxTrait::new(unboxed);
+        let unboxed2 = boxed.unbox();
+        BoxTrait::new(unboxed2.y)
+    }
+}
+
+//! > candidates
+v5, v9, v14
+
+//! > before
+Parameters: v0: core::box::Box::<test::Point>, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v5: core::box::Box::<test::Point>) <- core::box::into_box::<test::Point>(v4)
+  (v6: test::Point) <- core::box::unbox::<test::Point>(v5)
+  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
+  (v9: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v12: core::felt252, v13: core::felt252) <- struct_destructure(v11)
+  (v14: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v12)
+End:
+  Goto(blk3, {v14 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters: v0: core::box::Box::<test::Point>, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v6: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
+  (v15: core::box::Box::<core::felt252>, v9: core::box::Box::<core::felt252>) <- struct_destructure(v0)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: test::Point) <- core::box::unbox::<test::Point>(v0)
+  (v12: core::felt252, v13: core::felt252) <- struct_destructure(v11)
+  (v14: core::box::Box::<core::felt252>, v16: core::box::Box::<core::felt252>) <- struct_destructure(v0)
+End:
+  Goto(blk3, {v14 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)

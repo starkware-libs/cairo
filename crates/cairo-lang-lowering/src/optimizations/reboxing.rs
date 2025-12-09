@@ -14,7 +14,9 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::Itertools;
 use salsa::Database;
 
+use super::var_renamer::VarRenamer;
 use crate::borrow_check::analysis::StatementLocation;
+use crate::utils::RebuilderEx;
 use crate::{
     BlockEnd, Lowered, Statement, StatementStructDestructure, VarUsage, Variable, VariableArena,
     VariableId,
@@ -170,8 +172,32 @@ pub fn apply_reboxing_candidates<'db>(
 
     trace!("Applying {} reboxing optimization(s).", candidates.len());
 
+    let mut renamer = VarRenamer::default();
+    let mut stmts_to_remove = Vec::new();
+
     for candidate in candidates {
-        apply_reboxing_candidate(db, lowered, candidate);
+        match &candidate.source {
+            ReboxingValue::Revoked => {}
+            ReboxingValue::Unboxed(id) => {
+                renamer.renamed_vars.insert(candidate.reboxed_var, *id);
+                stmts_to_remove.push(candidate.into_box_location);
+            }
+            ReboxingValue::MemberOfUnboxed { source, member } => {
+                replace_into_box_call(db, lowered, candidate, source, *member);
+            }
+        }
+    }
+
+    // We sort the candidates such that removal of statements can be done in reverse order.
+    // Statements are expected to be in order due to analysis being forward, but we do not require
+    // the ordered assumption.
+    stmts_to_remove.sort_by_key(|(block_id, stmt_idx)| (block_id.0, *stmt_idx));
+    for (block_id, stmt_idx) in stmts_to_remove.into_iter().rev() {
+        lowered.blocks[block_id].statements.remove(stmt_idx);
+    }
+
+    for block in lowered.blocks.iter_mut() {
+        *block = renamer.rebuild_block(block);
     }
 }
 
@@ -190,11 +216,13 @@ pub fn apply_reboxing<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
     }
 }
 
-/// Applies a single reboxing optimization for the given candidate.
-fn apply_reboxing_candidate<'db>(
+/// Replaces the call to `into_box` with a call to `struct_boxed_deconstruct`.
+fn replace_into_box_call<'db>(
     db: &'db dyn Database,
     lowered: &mut Lowered<'db>,
     candidate: &ReboxCandidate,
+    source: &Rc<ReboxingValue>,
+    member: usize,
 ) {
     trace!(
         "Applying optimization: candidate={:?}, reboxed={}",
@@ -202,13 +230,6 @@ fn apply_reboxing_candidate<'db>(
         candidate.reboxed_var.index()
     );
 
-    // TODO(eytan-starkware): Handle snapshot of box (e.g., @Box<T>).
-    // Only support MemberOfUnboxed where source is Unboxed for now.
-    let ReboxingValue::MemberOfUnboxed { source, member } = &candidate.source else {
-        // If source is not member of unboxed, we are reboxing original value which is not supported
-        // yet.
-        return;
-    };
     let ReboxingValue::Unboxed(source_var) = **source else {
         // When source of the value is not `Unboxes`, it is a nested MemberOfUnboxed, which is not
         // supported yet.
@@ -220,7 +241,7 @@ fn apply_reboxing_candidate<'db>(
         db,
         &mut lowered.variables,
         source_var,
-        *member,
+        member,
         candidate.reboxed_var,
         &lowered.blocks[into_box_block].statements[into_box_stmt_idx],
     ) {
