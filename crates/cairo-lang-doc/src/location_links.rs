@@ -23,6 +23,13 @@ pub struct LocationLink<'db> {
     pub item_id: DocumentableItemId<'db>,
 }
 
+impl<'db> LocationLink<'db> {
+    /// Creates a new instance of `LocationLink` moving `start` and `end` by given `offset`.
+    pub fn new(start: usize, end: usize, item_id: DocumentableItemId<'db>, offset: usize) -> Self {
+        Self { start: (start + offset), end: (end + offset), item_id }
+    }
+}
+
 /// Collects all [`cairo_lang_syntax::node::green::GreenNode`]s for a [`SyntaxNode`],
 /// returns a vector of their [`SyntaxKind`] and text.
 fn collect_green_nodes<'db>(
@@ -102,10 +109,10 @@ fn get_offsets(
 }
 
 /// Adjusts [`LocationLink`]s based on differences created in signature syntax formatting.
-fn move_location_links<'db>(
-    mut location_links: Vec<LocationLink<'db>>,
+pub fn move_location_links(
+    mut location_links: Vec<LocationLink<'_>>,
     offset_vector: Vec<(usize, i32)>,
-) -> Vec<LocationLink<'db>> {
+) -> Vec<LocationLink<'_>> {
     for link in &mut location_links {
         let mut new_start = link.start as i32;
         let mut new_end = link.end as i32;
