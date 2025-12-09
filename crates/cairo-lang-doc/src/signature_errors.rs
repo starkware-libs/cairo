@@ -4,7 +4,7 @@ use std::fmt;
 pub enum SignatureError {
     FailedRetrievingSemanticData(String),
     FailedWritingSignature(String),
-    FailedWritingType(String),
+    FailedWritingSignatureFormatter(String),
 }
 
 impl fmt::Display for SignatureError {
@@ -16,11 +16,21 @@ impl fmt::Display for SignatureError {
             SignatureError::FailedWritingSignature(full_path) => {
                 write!(f, "Failed writing signature for {full_path:?}.")
             }
-            SignatureError::FailedWritingType(full_path) => {
-                write!(f, "Failed writing a type for {full_path:?}.")
+            SignatureError::FailedWritingSignatureFormatter(e) => {
+                write!(f, "Failed writing signature formatter. {e:?}")
             }
         }
     }
 }
 
-impl std::error::Error for SignatureError {}
+impl From<fmt::Error> for SignatureError {
+    fn from(e: fmt::Error) -> Self {
+        SignatureError::FailedWritingSignatureFormatter(e.to_string())
+    }
+}
+
+impl From<SignatureError> for fmt::Error {
+    fn from(_: SignatureError) -> Self {
+        fmt::Error
+    }
+}
