@@ -3052,7 +3052,7 @@ fn implicit_impl_impl_semantic_data<'db>(
     let impl_lookup_context = resolver.impl_lookup_context();
     let resolved_impl = concrete_trait_impl_concrete_trait.and_then(|concrete_trait_id| {
         let imp = resolver.inference().new_impl_var(concrete_trait_id, None, impl_lookup_context);
-        resolver.inference().finalize_without_reporting().map_err(|(err_set, _)| {
+        resolver.inference().finalize_without_reporting().map_err(|err_set| {
             diagnostics.report(
                 impl_def_id.stable_ptr(db).untyped(),
                 ImplicitImplNotInferred { trait_impl_id, concrete_trait_id },
