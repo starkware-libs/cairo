@@ -43,12 +43,12 @@ error[E2086]: Invalid path.
     let _a: A = A::a::a(());
                       ^
 
-error[E2060]: Enum "test::A" has no variant "c"
+error[E2060]: Enum "A" has no variant "c"
  --> lib.cairo:16:20
     let _a: A = A::c();
                    ^
 
-error[E2060]: Enum "test::A" has no variant "d"
+error[E2060]: Enum "A" has no variant "d"
  --> lib.cairo:17:20
     let _a: A = A::d;
                    ^

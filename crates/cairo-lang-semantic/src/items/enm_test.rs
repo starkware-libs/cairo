@@ -34,12 +34,12 @@ fn test_enum() {
     assert_eq!(
         diagnostics,
         indoc! {r#"
-        error[E2051]: Redefinition of variant "a" on enum "test::A".
+        error[E2051]: Redefinition of variant "a" on enum "A".
          --> lib.cairo:5:5
             a: (),
             ^^^^^
 
-        error[E2051]: Redefinition of variant "a" on enum "test::A".
+        error[E2051]: Redefinition of variant "a" on enum "A".
          --> lib.cairo:6:5
             a: ()
             ^^^^^

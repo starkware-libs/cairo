@@ -35,6 +35,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::{Intern, OptionFrom, define_short_id, require};
+use itertools::Itertools;
 use salsa::Database;
 
 use crate::db::ModuleData;
@@ -70,7 +71,7 @@ pub trait TopLevelLanguageElementId<'db>: NamedLanguageElementId<'db> {
     }
 
     fn full_path(&self, db: &'db dyn Database) -> String {
-        self.path_segments(db).iter().map(|s| s.long(db).as_str()).collect::<Vec<_>>().join("::")
+        self.path_segments(db).iter().map(|s| s.long(db)).join(".")
     }
 }
 
@@ -325,7 +326,7 @@ impl<'db> ModuleId<'db> {
     }
 
     pub fn full_path(&self, db: &'db dyn Database) -> String {
-        self.path_segments(db).iter().map(|s| s.long(db).as_str()).collect::<Vec<_>>().join("::")
+        self.path_segments(db).iter().map(|s| s.long(db)).join(".")
     }
     pub fn name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         match self {
@@ -506,6 +507,236 @@ pub enum ImportableId<'db> {
     ExternType(ExternTypeId<'db>),
     ExternFunction(ExternFunctionId<'db>),
     MacroDeclaration(MacroDeclarationId<'db>),
+}
+
+impl<'db> ImportableId<'db> {
+    /// Returns the parent module of the importable item, if it exists.
+    pub fn parent_module(&self, db: &'db dyn Database) -> Option<ModuleId<'db>> {
+        Some(match self {
+            ImportableId::Constant(id) => id.parent_module(db),
+            ImportableId::Submodule(id) => id.parent_module(db),
+            ImportableId::Crate(_) => return None,
+            ImportableId::FreeFunction(id) => id.parent_module(db),
+            ImportableId::Struct(id) => id.parent_module(db),
+            ImportableId::Enum(id) => id.parent_module(db),
+            ImportableId::Variant(id) => id.parent_module(db),
+            ImportableId::TypeAlias(id) => id.parent_module(db),
+            ImportableId::ImplAlias(id) => id.parent_module(db),
+            ImportableId::Trait(id) => id.parent_module(db),
+            ImportableId::Impl(id) => id.parent_module(db),
+            ImportableId::ExternType(id) => id.parent_module(db),
+            ImportableId::ExternFunction(id) => id.parent_module(db),
+            ImportableId::MacroDeclaration(id) => id.parent_module(db),
+        })
+    }
+
+    /// Returns the name of the importable item.
+    pub fn name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
+        match self {
+            ImportableId::Constant(id) => id.name(db),
+            ImportableId::Submodule(id) => id.name(db),
+            ImportableId::FreeFunction(id) => id.name(db),
+            ImportableId::Struct(id) => id.name(db),
+            ImportableId::Enum(id) => id.name(db),
+            ImportableId::TypeAlias(id) => id.name(db),
+            ImportableId::ImplAlias(id) => id.name(db),
+            ImportableId::Trait(id) => id.name(db),
+            ImportableId::Impl(id) => id.name(db),
+            ImportableId::ExternType(id) => id.name(db),
+            ImportableId::ExternFunction(id) => id.name(db),
+            ImportableId::MacroDeclaration(id) => id.name(db),
+            ImportableId::Crate(crate_id) => crate_id.long(db).name(),
+            ImportableId::Variant(variant_id) => variant_id.name(db),
+        }
+    }
+}
+
+impl<'db> From<ConstantId<'db>> for ImportableId<'db> {
+    fn from(id: ConstantId<'db>) -> Self {
+        ImportableId::Constant(id)
+    }
+}
+
+impl<'db> From<SubmoduleId<'db>> for ImportableId<'db> {
+    fn from(id: SubmoduleId<'db>) -> Self {
+        ImportableId::Submodule(id)
+    }
+}
+
+impl<'db> From<CrateId<'db>> for ImportableId<'db> {
+    fn from(id: CrateId<'db>) -> Self {
+        ImportableId::Crate(id)
+    }
+}
+
+impl<'db> From<FreeFunctionId<'db>> for ImportableId<'db> {
+    fn from(id: FreeFunctionId<'db>) -> Self {
+        ImportableId::FreeFunction(id)
+    }
+}
+
+impl<'db> From<StructId<'db>> for ImportableId<'db> {
+    fn from(id: StructId<'db>) -> Self {
+        ImportableId::Struct(id)
+    }
+}
+
+impl<'db> From<EnumId<'db>> for ImportableId<'db> {
+    fn from(id: EnumId<'db>) -> Self {
+        ImportableId::Enum(id)
+    }
+}
+
+impl<'db> From<VariantId<'db>> for ImportableId<'db> {
+    fn from(id: VariantId<'db>) -> Self {
+        ImportableId::Variant(id)
+    }
+}
+
+impl<'db> From<ModuleTypeAliasId<'db>> for ImportableId<'db> {
+    fn from(id: ModuleTypeAliasId<'db>) -> Self {
+        ImportableId::TypeAlias(id)
+    }
+}
+
+impl<'db> From<ImplAliasId<'db>> for ImportableId<'db> {
+    fn from(id: ImplAliasId<'db>) -> Self {
+        ImportableId::ImplAlias(id)
+    }
+}
+
+impl<'db> From<TraitId<'db>> for ImportableId<'db> {
+    fn from(id: TraitId<'db>) -> Self {
+        ImportableId::Trait(id)
+    }
+}
+
+impl<'db> From<ImplDefId<'db>> for ImportableId<'db> {
+    fn from(id: ImplDefId<'db>) -> Self {
+        ImportableId::Impl(id)
+    }
+}
+
+impl<'db> From<ExternTypeId<'db>> for ImportableId<'db> {
+    fn from(id: ExternTypeId<'db>) -> Self {
+        ImportableId::ExternType(id)
+    }
+}
+
+impl<'db> From<ExternFunctionId<'db>> for ImportableId<'db> {
+    fn from(id: ExternFunctionId<'db>) -> Self {
+        ImportableId::ExternFunction(id)
+    }
+}
+
+impl<'db> From<MacroDeclarationId<'db>> for ImportableId<'db> {
+    fn from(id: MacroDeclarationId<'db>) -> Self {
+        ImportableId::MacroDeclaration(id)
+    }
+}
+
+impl<'db> From<&ConstantId<'db>> for ImportableId<'db> {
+    fn from(id: &ConstantId<'db>) -> Self {
+        ImportableId::Constant(*id)
+    }
+}
+
+impl<'db> From<&SubmoduleId<'db>> for ImportableId<'db> {
+    fn from(id: &SubmoduleId<'db>) -> Self {
+        ImportableId::Submodule(*id)
+    }
+}
+
+impl<'db> From<&CrateId<'db>> for ImportableId<'db> {
+    fn from(id: &CrateId<'db>) -> Self {
+        ImportableId::Crate(*id)
+    }
+}
+
+impl<'db> From<&FreeFunctionId<'db>> for ImportableId<'db> {
+    fn from(id: &FreeFunctionId<'db>) -> Self {
+        ImportableId::FreeFunction(*id)
+    }
+}
+
+impl<'db> From<&StructId<'db>> for ImportableId<'db> {
+    fn from(id: &StructId<'db>) -> Self {
+        ImportableId::Struct(*id)
+    }
+}
+
+impl<'db> From<&EnumId<'db>> for ImportableId<'db> {
+    fn from(id: &EnumId<'db>) -> Self {
+        ImportableId::Enum(*id)
+    }
+}
+
+impl<'db> From<&VariantId<'db>> for ImportableId<'db> {
+    fn from(id: &VariantId<'db>) -> Self {
+        ImportableId::Variant(*id)
+    }
+}
+
+impl<'db> From<&ModuleTypeAliasId<'db>> for ImportableId<'db> {
+    fn from(id: &ModuleTypeAliasId<'db>) -> Self {
+        ImportableId::TypeAlias(*id)
+    }
+}
+
+impl<'db> From<&ImplAliasId<'db>> for ImportableId<'db> {
+    fn from(id: &ImplAliasId<'db>) -> Self {
+        ImportableId::ImplAlias(*id)
+    }
+}
+
+impl<'db> From<&TraitId<'db>> for ImportableId<'db> {
+    fn from(id: &TraitId<'db>) -> Self {
+        ImportableId::Trait(*id)
+    }
+}
+
+impl<'db> From<&ImplDefId<'db>> for ImportableId<'db> {
+    fn from(id: &ImplDefId<'db>) -> Self {
+        ImportableId::Impl(*id)
+    }
+}
+
+impl<'db> From<&ExternTypeId<'db>> for ImportableId<'db> {
+    fn from(id: &ExternTypeId<'db>) -> Self {
+        ImportableId::ExternType(*id)
+    }
+}
+
+impl<'db> From<&ExternFunctionId<'db>> for ImportableId<'db> {
+    fn from(id: &ExternFunctionId<'db>) -> Self {
+        ImportableId::ExternFunction(*id)
+    }
+}
+
+impl<'db> From<&MacroDeclarationId<'db>> for ImportableId<'db> {
+    fn from(id: &MacroDeclarationId<'db>) -> Self {
+        ImportableId::MacroDeclaration(*id)
+    }
+}
+
+impl<'db> From<ModuleItemId<'db>> for Option<ImportableId<'db>> {
+    fn from(module_item_id: ModuleItemId<'db>) -> Self {
+        match module_item_id {
+            ModuleItemId::Constant(id) => Some(ImportableId::Constant(id)),
+            ModuleItemId::Submodule(id) => Some(ImportableId::Submodule(id)),
+            ModuleItemId::FreeFunction(id) => Some(ImportableId::FreeFunction(id)),
+            ModuleItemId::Struct(id) => Some(ImportableId::Struct(id)),
+            ModuleItemId::Enum(id) => Some(ImportableId::Enum(id)),
+            ModuleItemId::TypeAlias(id) => Some(ImportableId::TypeAlias(id)),
+            ModuleItemId::ImplAlias(id) => Some(ImportableId::ImplAlias(id)),
+            ModuleItemId::Trait(id) => Some(ImportableId::Trait(id)),
+            ModuleItemId::Impl(id) => Some(ImportableId::Impl(id)),
+            ModuleItemId::ExternType(id) => Some(ImportableId::ExternType(id)),
+            ModuleItemId::ExternFunction(id) => Some(ImportableId::ExternFunction(id)),
+            ModuleItemId::MacroDeclaration(id) => Some(ImportableId::MacroDeclaration(id)),
+            ModuleItemId::Use(_) => None,
+        }
+    }
 }
 
 define_top_level_language_element_id!(SubmoduleId, SubmoduleLongId, ast::ItemModule<'db>);

@@ -46,7 +46,7 @@ error[E2103]: Unexpected type for enum pattern. "core::felt252" is not an enum.
     let MyEnum::A(x): felt252 = 7 else {
         ^^^^^^^^^^^^
 
-error[E2109]: Wrong enum in pattern. Expected: "test::MyEnum". Got: "test::MyEnum2".
+error[E2109]: Wrong enum in pattern. Expected: "MyEnum". Got: "MyEnum2".
  --> lib.cairo:17:9
     let MyEnum2::A(x): MyEnum = MyEnum::A(7) else {
         ^^^^^^^^^^^^^
