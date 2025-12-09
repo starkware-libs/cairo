@@ -174,7 +174,7 @@ impl<'db> SyntaxNode<'db> {
         }
     }
 
-    /// Returns the stable pointer of the `n`th parent of this stable pointer.
+    /// Returns the `n`th parent of this syntax node.
     /// n = 0: returns itself.
     /// n = 1: return the parent.
     /// n = 2: return the grand parent.
