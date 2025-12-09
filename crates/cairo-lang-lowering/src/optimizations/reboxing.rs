@@ -12,6 +12,7 @@ use cairo_lang_semantic::types::{TypesSemantic, peel_snapshots, wrap_in_snapshot
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::Itertools;
 use salsa::Database;
 
 use crate::borrow_check::analysis::StatementLocation;
@@ -183,7 +184,10 @@ pub fn apply_reboxing_candidates<'db>(
 
     trace!("Applying {} reboxing optimization(s).", candidates.len());
 
-    for candidate in candidates {
+    // We sort the candidates such that removal of statements can be done in reverse order.
+    for candidate in
+        candidates.iter().sorted_by_key(|candidate| candidate.into_box_location.1).rev()
+    {
         apply_reboxing_candidate(db, lowered, candidate);
     }
 }
@@ -215,13 +219,29 @@ fn apply_reboxing_candidate<'db>(
         candidate.reboxed_var.index()
     );
 
-    // TODO(eytan-starkware): Handle snapshot of box (e.g., @Box<T>).
-    // Only support MemberOfUnboxed where source is Unboxed for now.
-    let ReboxingValue::MemberOfUnboxed { source, member } = &candidate.source else {
-        // If source is not member of unboxed, we are reboxing original value which is not supported
-        // yet.
-        return;
+    match &candidate.source {
+        ReboxingValue::Revoked => (),
+        ReboxingValue::Unboxed(id) => {
+            replace_variable_usages(lowered, candidate.reboxed_var, *id);
+            // Remove the statement that unboxes the struct.
+            lowered.blocks[candidate.into_box_location.0]
+                .statements
+                .remove(candidate.into_box_location.1);
+        }
+        ReboxingValue::MemberOfUnboxed { source, member } => {
+            replace_into_box_call(db, lowered, candidate, source, *member)
+        }
     };
+}
+
+/// Replaces the call to `into_box` with a call to `struct_boxed_deconstruct`.
+fn replace_into_box_call<'db>(
+    db: &'db dyn Database,
+    lowered: &mut Lowered<'db>,
+    candidate: &ReboxCandidate,
+    source: &Rc<ReboxingValue>,
+    member: usize,
+) {
     let ReboxingValue::Unboxed(source_var) = **source else {
         // When source of the value is not `Unboxes`, it is a nested MemberOfUnboxed, which is not
         // supported yet.
@@ -232,7 +252,7 @@ fn apply_reboxing_candidate<'db>(
         db,
         &mut lowered.variables,
         source_var,
-        *member,
+        member,
         candidate.reboxed_var,
         &lowered.blocks[candidate.into_box_location.0].statements[candidate.into_box_location.1],
     ) {
@@ -241,6 +261,59 @@ fn apply_reboxing_candidate<'db>(
         lowered.blocks[into_box_block].statements[into_box_stmt_idx] = new_stmt;
 
         trace!("Successfully applied reboxing optimization.");
+    }
+}
+
+/// Replaces all usages of old_var with new_var throughout the lowered function.
+fn replace_variable_usages(lowered: &mut Lowered<'_>, old_var: VariableId, new_var: VariableId) {
+    if old_var == new_var {
+        return;
+    }
+
+    for block in lowered.blocks.iter_mut() {
+        for stmt in &mut block.statements {
+            for input in stmt.inputs_mut() {
+                if input.var_id == old_var {
+                    input.var_id = new_var;
+                }
+            }
+        }
+
+        match &mut block.end {
+            BlockEnd::Return(var_usages, _) => {
+                for return_var in var_usages.iter_mut() {
+                    if return_var.var_id == old_var {
+                        return_var.var_id = new_var;
+                    }
+                }
+            }
+            BlockEnd::Goto(_, remapping) => {
+                // Collect all changes needed
+                let mut changes = Vec::new();
+                for (dst, src_usage) in remapping.iter() {
+                    if *dst == old_var {
+                        changes.push((*dst, Some(new_var), *src_usage));
+                    } else if src_usage.var_id == old_var {
+                        let mut new_usage = *src_usage;
+                        new_usage.var_id = new_var;
+                        changes.push((*dst, None, new_usage));
+                    }
+                }
+
+                // Apply changes
+                for (old_key, new_key_opt, new_usage) in changes {
+                    if let Some(new_key) = new_key_opt {
+                        // Key needs to change
+                        remapping.swap_remove(&old_key);
+                        remapping.insert(new_key, new_usage);
+                    } else {
+                        // Only value needs to change
+                        remapping.insert(old_key, new_usage);
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 }
 

@@ -97,10 +97,10 @@ blk0 (root):
 Statements:
   (v1: test::Point) <- core::box::unbox::<test::Point>(v0)
   (v2: core::integer::u32, v3: core::integer::u32, v4: core::integer::u32) <- struct_destructure(v1)
-  (v5: core::box::Box::<core::integer::u32>, v12: core::box::Box::<core::integer::u32>, v13: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
+  (v5: core::box::Box::<core::integer::u32>, v14: core::box::Box::<core::integer::u32>, v15: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
   (v6: test::Point) <- core::box::unbox::<test::Point>(v0)
   (v7: core::integer::u32, v8: core::integer::u32, v9: core::integer::u32) <- struct_destructure(v6)
-  (v14: core::box::Box::<core::integer::u32>, v15: core::box::Box::<core::integer::u32>, v10: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
+  (v12: core::box::Box::<core::integer::u32>, v13: core::box::Box::<core::integer::u32>, v10: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
   (v11: (core::box::Box::<core::integer::u32>, core::box::Box::<core::integer::u32>)) <- struct_construct(v5, v10)
 End:
   Return(v11)
@@ -229,8 +229,6 @@ test_reboxing_analysis
 //! > function_name
 rebox_whole
 
-//! > TODO(eytan-starkware): Add support for whole var reboxing
-
 //! > module_code
 struct Simple {
     value: felt252,
@@ -262,9 +260,8 @@ Parameters: v0: core::box::Box::<test::Simple>
 blk0 (root):
 Statements:
   (v1: test::Simple) <- core::box::unbox::<test::Simple>(v0)
-  (v2: core::box::Box::<test::Simple>) <- core::box::into_box::<test::Simple>(v1)
 End:
-  Return(v2)
+  Return(v0)
 
 //! > ==========================================================================
 
