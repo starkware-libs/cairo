@@ -64,7 +64,7 @@ Arguments can also be specified explicitly by the parameter name.
 For example `inc_3(x: 7)`.
 This is called a "named argument" and it verifies that the name of the parameter is correct,
 to prevent mistakes.
-For example, a call to `inc_3(y: 7)` would not compile
+For example, a call to `inc_3(y: 7)` would not compile.
 - If you use a variable as an argument and its name is the same as the parameter name, a
 shorthand for writing `inc_3(x: x)` is to simply write `inc_3(:x)`.
 This lets you write the name only once, but still verifies it.
