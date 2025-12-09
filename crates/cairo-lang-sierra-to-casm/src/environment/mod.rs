@@ -23,7 +23,7 @@ pub enum EnvironmentError {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ApTrackingBase {
-    /// The base is a statement that enabled ap tracking.
+    /// The base is a statement that enabled AP tracking.
     Statement(StatementIdx),
     /// The base is the beginning of the function.
     FunctionStart,
@@ -33,9 +33,9 @@ pub enum ApTrackingBase {
 pub enum ApTracking {
     Disabled,
     Enabled {
-        /// The ap change between `base` and the current statement.
+        /// The AP change between `base` and the current statement.
         ap_change: usize,
-        /// The statement that enabled the ap tracking.
+        /// The statement that enabled the AP tracking.
         base: ApTrackingBase,
     },
 }
@@ -43,7 +43,7 @@ pub enum ApTracking {
 /// Part of the program annotations that libfuncs may access as part of their run.
 #[derive(Clone, Debug)]
 pub struct Environment {
-    /// The ap tracking information of the current statement.
+    /// The AP tracking information of the current statement.
     pub ap_tracking: ApTracking,
     /// The size of the continuous known stack.
     pub stack_size: usize,
