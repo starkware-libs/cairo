@@ -13,4 +13,6 @@ If there are any vulnerabilities in **Cairo**, don't hesitate to _report them_.
 
    Please **do not disclose the vulnerability publicly** until a fix has been released!
 
-4. Once we have either a) published a fix, or b) declined to address the vulnerability for whatever reason, you are free to publicly disclose it.
+4. Once we have either:
+  * published a fix, or
+  * declined to address the vulnerability for whatever reason, you are free to publicly disclose it.
