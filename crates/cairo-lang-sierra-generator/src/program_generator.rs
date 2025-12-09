@@ -52,7 +52,10 @@ fn collect_and_generate_libfunc_declarations<'db>(
             pre_sierra::Statement::Sierra(program::GenStatement::Return(_))
             | pre_sierra::Statement::Label(_) => None,
             pre_sierra::Statement::PushValues(_) => {
-                panic!("Unexpected pre_sierra::Statement::PushValues in collect_used_libfuncs().")
+                panic!(
+                    "Unexpected pre_sierra::Statement::PushValues in \
+                     collect_and_generate_libfunc_declarations()."
+                )
             }
         })
         .collect()
