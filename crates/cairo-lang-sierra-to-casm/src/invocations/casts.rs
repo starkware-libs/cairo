@@ -44,7 +44,7 @@ pub fn build_downcast(
     // The casm code below assumes both types are at most 128 bits.
     assert!(
         libfunc.from_range.is_small_range() && libfunc.to_range.is_small_range(),
-        "Downcasting is not supported for types of size > 128 bit."
+        "Downcasting is not supported for types of size > 128 bits."
     );
 
     casm_build_extend!(casm_builder, let orig_range_check = range_check;);
