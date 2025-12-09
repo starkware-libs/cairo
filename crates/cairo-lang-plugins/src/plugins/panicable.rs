@@ -155,7 +155,7 @@ fn extract_success_ty_and_variants<'a>(
             .ty(db);
     let ret_ty_path = try_extract_matches!(ret_ty_expr, ast::Expr::Path)?;
 
-    // Currently only wrapping functions returning an Option<T>.
+    // Currently wrapping functions returning an Option<T> or Result<T, E>.
     let Ok(ast::PathSegment::WithGenericArgs(segment)) =
         ret_ty_path.segments(db).elements(db).exactly_one()
     else {
