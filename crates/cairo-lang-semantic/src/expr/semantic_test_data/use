@@ -614,7 +614,7 @@ Block(
 )
 
 //! > expected_diagnostics
-error[E2060]: Enum "test::X::R" has no variant "C"
+error[E2060]: Enum "X::R" has no variant "C"
  --> lib.cairo:14:8
     R::C;
        ^

@@ -28,6 +28,7 @@ use crate::corelib::LiteralError;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
 use crate::items::trt::ConcreteTraitTypeId;
+use crate::path::ContextualizePath;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use crate::types::peel_snapshots;
 use crate::{ConcreteTraitId, semantic};
@@ -452,8 +453,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     "Ambiguous method call. More than one applicable trait function with a \
                      suitable self type was found: {} and {}. Consider adding type annotations or \
                      explicitly refer to the impl function.",
-                    trait_function_id0.full_path(db),
-                    trait_function_id1.full_path(db)
+                    trait_function_id0
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| trait_function_id0.full_path(db)),
+                    trait_function_id1
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| trait_function_id1.full_path(db))
                 )
             }
             SemanticDiagnosticKind::VariableNotFound(name) => {
@@ -469,14 +474,18 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 format!(
                     r#"Redefinition of member "{}" on struct "{}"."#,
                     member_name.long(db),
-                    struct_id.full_path(db)
+                    struct_id
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| struct_id.full_path(db))
                 )
             }
             SemanticDiagnosticKind::EnumVariantRedefinition { enum_id, variant_name } => {
                 format!(
                     r#"Redefinition of variant "{}" on enum "{}"."#,
                     variant_name.long(db),
-                    enum_id.full_path(db)
+                    enum_id
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| enum_id.full_path(db))
                 )
             }
             SemanticDiagnosticKind::InfiniteSizeType(ty) => {
@@ -492,7 +501,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     function_title_id
                         .map(|function_title_id| format!(
                             r#" in function "{}"."#,
-                            function_title_id.full_path(db)
+                            function_title_id
+                                .contextualized_path(db, self.context_module)
+                                .unwrap_or_else(|_| function_title_id.full_path(db))
                         ))
                         .unwrap_or(".".into()),
                 )
@@ -518,7 +529,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::NoSuchStructMember { struct_id, member_name } => {
                 format!(
                     r#"Struct "{}" has no member "{}""#,
-                    struct_id.full_path(db),
+                    struct_id
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| struct_id.full_path(db)),
                     member_name.long(db)
                 )
             }
@@ -531,7 +544,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::NoSuchVariant { enum_id, variant_name } => {
                 format!(
                     r#"Enum "{}" has no variant "{}""#,
-                    enum_id.full_path(db),
+                    enum_id
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| enum_id.full_path(db)),
                     variant_name.long(db)
                 )
             }
@@ -742,8 +757,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
                 format!(
                     r#"Wrong enum in pattern. Expected: "{}". Got: "{}"."#,
-                    expected_enum.full_path(db),
-                    actual_enum.full_path(db)
+                    expected_enum
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| expected_enum.full_path(db)),
+                    actual_enum
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| actual_enum.full_path(db))
                 )
             }
             SemanticDiagnosticKind::RedundantModifier { current_modifier, previous_modifier } => {
@@ -1137,16 +1156,21 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 format!(
                     "associated type `{}` not found for `{}`",
                     identifier.long(db),
-                    concrete_trait_id.full_path(db)
+                    concrete_trait_id
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| concrete_trait_id.full_path(db))
                 )
             }
             SemanticDiagnosticKind::DuplicateTypeConstraint {
                 concrete_trait_type_id: trait_type_id,
             } => {
+                let concrete_trait = trait_type_id.concrete_trait(db);
                 format!(
                     "the value of the associated type `{}` in trait `{}` is already specified",
                     trait_type_id.trait_type(db).name(db).long(db),
-                    trait_type_id.concrete_trait(db).full_path(db)
+                    concrete_trait
+                        .contextualized_path(db, self.context_module)
+                        .unwrap_or_else(|_| concrete_trait.full_path(db))
                 )
             }
             SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => {

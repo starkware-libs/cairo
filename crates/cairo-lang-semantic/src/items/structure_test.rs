@@ -35,12 +35,12 @@ fn test_struct() {
     assert_eq!(
         diagnostics,
         indoc! {r#"
-        error[E2050]: Redefinition of member "a" on struct "test::A".
+        error[E2050]: Redefinition of member "a" on struct "A".
          --> lib.cairo:6:5
             a: (),
             ^^^^^
 
-        error[E2050]: Redefinition of member "a" on struct "test::A".
+        error[E2050]: Redefinition of member "a" on struct "A".
          --> lib.cairo:7:5
             a: ()
             ^^^^^

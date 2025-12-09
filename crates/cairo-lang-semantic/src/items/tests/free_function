@@ -10,7 +10,7 @@ fn foo(a: bool, a: felt252) {}
 foo
 
 //! > expected_diagnostics
-error[E2054]: Redefinition of parameter name "a" in function "test::foo".
+error[E2054]: Redefinition of parameter name "a" in function "foo".
  --> lib.cairo:1:17
 fn foo(a: bool, a: felt252) {}
                 ^^^^^^^^^^
