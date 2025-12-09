@@ -71,12 +71,12 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
+error: Wrong enum in pattern. Expected: "bool". Got: "A".
  --> lib.cairo:7:9
         A::a(_) => 0,
         ^^^^^^^
 
-error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
+error: Wrong enum in pattern. Expected: "bool". Got: "A".
  --> lib.cairo:8:9
         A::b(_) => 1,
         ^^^^^^^
@@ -141,12 +141,12 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
+error: Wrong enum in pattern. Expected: "A". Got: "bool".
  --> lib.cairo:7:9
         true => 2,
         ^^^^
 
-error: Wrong enum in pattern. Expected: "test::A". Got: "core::bool".
+error: Wrong enum in pattern. Expected: "A". Got: "bool".
  --> lib.cairo:8:9
         false => 3,
         ^^^^^
@@ -513,7 +513,7 @@ fn foo(x: Result<Option<u8>, felt252>) {
 foo
 
 //! > expected_diagnostics
-error: Wrong enum in pattern. Expected: "core::option::Option". Got: "core::result::Result".
+error: Wrong enum in pattern. Expected: "Option". Got: "Result".
  --> lib.cairo:3:12
         Ok(Ok(x)) | Err(x) => x,
            ^^^^^

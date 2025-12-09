@@ -27,6 +27,7 @@ use crate::corelib::LiteralError;
 use crate::expr::inference::InferenceError;
 use crate::items::feature_kind::FeatureMarkerDiagnostic;
 use crate::items::trt::ConcreteTraitTypeId;
+use crate::path::ContextualizePath;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use crate::types::peel_snapshots;
 use crate::{ConcreteTraitId, semantic};
@@ -389,13 +390,21 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     actual_kind
                 )
             }
-            SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
+            SemanticDiagnosticKind::AmbiguousTrait {
+                context_module,
+                trait_function_id0,
+                trait_function_id1,
+            } => {
                 format!(
                     "Ambiguous method call. More than one applicable trait function with a \
                      suitable self type was found: {} and {}. Consider adding type annotations or \
                      explicitly refer to the impl function.",
-                    trait_function_id0.full_path(db),
-                    trait_function_id1.full_path(db)
+                    trait_function_id0
+                        .contextualized_path(db, *context_module)
+                        .unwrap_or_else(|_| trait_function_id0.full_path(db)),
+                    trait_function_id1
+                        .contextualized_path(db, *context_module)
+                        .unwrap_or_else(|_| trait_function_id1.full_path(db))
                 )
             }
             SemanticDiagnosticKind::VariableNotFound(name) => {
@@ -681,11 +690,15 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                      Got: {actual}.",
                 )
             }
-            SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
+            SemanticDiagnosticKind::WrongEnum { context_module, expected_enum, actual_enum } => {
                 format!(
                     r#"Wrong enum in pattern. Expected: "{}". Got: "{}"."#,
-                    expected_enum.full_path(db),
-                    actual_enum.full_path(db)
+                    expected_enum
+                        .contextualized_path(db, *context_module)
+                        .unwrap_or_else(|_| expected_enum.full_path(db)),
+                    actual_enum
+                        .contextualized_path(db, *context_module)
+                        .unwrap_or_else(|_| actual_enum.full_path(db))
                 )
             }
             SemanticDiagnosticKind::RedundantModifier { current_modifier, previous_modifier } => {
@@ -1302,6 +1315,7 @@ pub enum SemanticDiagnosticKind<'db> {
         actual_ty: semantic::TypeId<'db>,
     },
     AmbiguousTrait {
+        context_module: ModuleId<'db>,
         trait_function_id0: TraitFunctionId<'db>,
         trait_function_id1: TraitFunctionId<'db>,
     },
@@ -1423,6 +1437,7 @@ pub enum SemanticDiagnosticKind<'db> {
         actual: usize,
     },
     WrongEnum {
+        context_module: ModuleId<'db>,
         expected_enum: EnumId<'db>,
         actual_enum: EnumId<'db>,
     },

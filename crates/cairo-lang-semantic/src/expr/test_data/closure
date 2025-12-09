@@ -527,7 +527,7 @@ error[E0006]: Function not found.
     let _f: u32 = bar(a).unwrap();
                   ^^^
 
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::option::OptionTrait::unwrap and core::result::ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::unwrap and ResultTrait::unwrap. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:10:26
     let _f: u32 = bar(a).unwrap();
                          ^^^^^^
@@ -779,7 +779,7 @@ trait MyTrait<F, +core::ops::Fn<F, (Array::<i32>,)>> {
 impl MyImpl<F, impl Func: core::ops::Fn<F, (Array::<i32>,)>> of MyTrait<F, Func>;
 
 //! > expected_diagnostics
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::array::ArrayTrait::len and core::array::SpanTrait::len. Consider adding type annotations or explicitly refer to the impl function.
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: ArrayTrait::len and SpanTrait::len. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:9:13
         arr.len();
             ^^^
