@@ -72,7 +72,7 @@ Additional options can be controlled via environment variables:
   names.
 - `CAIRO_SKIP_FORMAT_TESTS`: By default, test sections containing Cairo code are formatted before
   execution,
-  and the test will fail if the formatting is incorrect or be fixed if
+  and the test will fail if the formatting is incorrect, or it will be fixed if
   `CAIRO_FIX_TESTS` is set to 1.
   Setting this variable to 1 skips this formatting step.
 
