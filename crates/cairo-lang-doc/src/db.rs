@@ -20,7 +20,7 @@ pub trait DocGroup: Database {
         get_item_documentation(self.as_dyn_database(), (), item_id)
     }
 
-    /// Gets the documentation of a certain as a vector of continuous tokens.
+    /// Gets the documentation of an item as a vector of continuous tokens.
     fn get_item_documentation_as_tokens<'db>(
         &'db self,
         item_id: DocumentableItemId<'db>,
@@ -34,7 +34,7 @@ pub trait DocGroup: Database {
     }
 
     /// Gets the signature of an item and a list of [`LocationLink`]s to enable mapping
-    /// signature slices on documentable items.
+    /// signature slices to documentable items.
     fn get_item_signature_with_links<'db>(
         &'db self,
         item_id: DocumentableItemId<'db>,
@@ -124,7 +124,7 @@ fn get_crate_root_module_documentation<'db>(
     extract_item_module_level_documentation_from_file(db, module_id)
 }
 
-/// Gets the "//!" inner comment of the item (if only item supports inner comments).
+/// Gets the "//!" inner comment of the item (only if the item supports inner comments).
 fn extract_item_inner_documentation<'db>(
     db: &'db dyn Database,
     item_id: DocumentableItemId<'db>,
@@ -147,7 +147,7 @@ fn extract_item_inner_documentation<'db>(
     }
 }
 
-/// Only gets the doc comments above the item.
+/// Gets only the doc comments above the item.
 fn extract_item_outer_documentation<'db>(
     db: &'db dyn Database,
     item_id: DocumentableItemId<'db>,
@@ -166,7 +166,7 @@ fn extract_item_outer_documentation<'db>(
     )
 }
 
-/// Gets the module level comments of the item.
+/// Gets the module-level comments of the item.
 fn extract_item_module_level_documentation<'db>(
     db: &'db dyn Database,
     item_id: DocumentableItemId<'db>,
@@ -185,7 +185,7 @@ fn extract_item_module_level_documentation<'db>(
     }
 }
 
-/// Only gets the comments inside the item.
+/// Gets only the comments inside the item.
 fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> String {
     raw_text
         .lines()
@@ -195,7 +195,7 @@ fn extract_item_inner_documentation_from_raw_text(raw_text: String) -> String {
         .join("\n")
 }
 
-/// Gets the module level comments of certain file.
+/// Gets the module-level comments of a file.
 fn extract_item_module_level_documentation_from_file<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
@@ -211,7 +211,7 @@ fn extract_item_module_level_documentation_from_file<'db>(
     )
 }
 
-/// This function does 3 things to the line of comment:
+/// This function does 3 things to a comment line:
 /// 1. Removes indentation
 /// 2. If it starts with one of the passed prefixes, removes the given prefixes (including the space
 ///    after the prefix).
@@ -236,7 +236,7 @@ fn extract_comment_from_code_line(line: &str, comment_markers: &[&'static str]) 
     None
 }
 
-/// Check whether the code line is a comment line.
+/// Checks whether the code line is a comment line.
 fn is_comment_line(line: &str) -> bool {
     line.trim_start().starts_with("//")
 }
