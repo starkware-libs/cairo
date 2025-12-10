@@ -16,7 +16,7 @@ use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 use crate::references::ReferenceExpression;
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
 
-/// Handles revoke/enable/disable ap-tracking instructions.
+/// Handles revoke/enable/disable AP-tracking instructions.
 pub fn build_update_ap_tracking(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
