@@ -105,13 +105,13 @@ You can track the exact progress [here](./docs/FEATURE_PARITY.md).
 ## Support
 
 - We encourage developers to ask and answer questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/cairo-lang).
-- Contact options are listed on [this GitHub profile](https://github.com/starkware-libs)
+- Contact options are listed on [this GitHub profile](https://github.com/starkware-libs).
 
 ## Project assistance
 
 If you want to say **thank you** and/or support active development of Cairo:
 
-- Add a [GitHub Star](https://github.com/starkware-libs/cairo) to the project.
+- Add a [GitHub Stars](https://github.com/starkware-libs/cairo) to the project.
 - Tweet about your Cairo work.
 - Write interesting articles about the project on [Dev.to](https://dev.to/), [Medium](https://medium.com/) or your personal blog.
 
