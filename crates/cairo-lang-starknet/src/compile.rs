@@ -35,7 +35,7 @@ use crate::starknet_plugin_suite;
 #[path = "compile_test.rs"]
 mod test;
 
-/// Compile the contract given by path.
+/// Compile the contract given by the path.
 /// Errors if there is ambiguity.
 pub fn compile_path(
     path: &Path,
@@ -60,7 +60,7 @@ pub fn compile_path(
 
 /// Runs Starknet contract compiler on the specified contract.
 /// If no contract was specified, verify that there is only one.
-/// Otherwise, return an error.
+/// Otherwise, returns an error.
 pub fn compile_contract_in_prepared_db<'db>(
     db: &'db dyn Database,
     contract_path: Option<&str>,
@@ -99,7 +99,7 @@ pub fn compile_contract_in_prepared_db<'db>(
     Ok(compile_prepared_db(db, &[contract], compiler_config)?.into_iter().exactly_one()?)
 }
 
-/// Runs Starknet contracts compiler.
+/// Runs Starknet contract compiler.
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
@@ -121,11 +121,11 @@ pub fn compile_prepared_db<'db>(
     })
 }
 
-/// Compile declared Starknet contract.
+/// Compile the declared Starknet contract.
 ///
 /// The `contract` value **must** come from `db`, for example as a result of calling
-/// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by caller
-/// of this function.
+/// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked
+/// by the caller of this function.
 fn compile_contract_with_prepared_and_checked_db<'db>(
     db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
@@ -236,7 +236,7 @@ fn get_entry_points<'db>(
     Ok(entry_points)
 }
 
-/// Compile Starknet crate (or specific contract in the crate).
+/// Compile a Starknet crate (or specific contract in the crate).
 pub fn starknet_compile(
     crate_path: PathBuf,
     contract_path: Option<String>,
