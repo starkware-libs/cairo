@@ -167,6 +167,12 @@ fn compile_contract_with_prepared_and_checked_db<'db>(
         annotations.extend(Annotations::from(statements_functions))
     };
 
+    if compiler_config.add_functions_debug_info {
+        annotations.extend(Annotations::from(
+            debug_info.functions_info.extract_serializable_debug_info(db),
+        ))
+    }
+
     let abi_builder: Option<AbiBuilder<'db>> =
         AbiBuilder::from_submodule(db, contract.submodule_id, Default::default()).ok();
     let finalized_abi =

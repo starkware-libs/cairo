@@ -65,13 +65,17 @@ pub struct TestsCompilationConfig<'db> {
     /// If not defined, test crates will be searched.
     pub executable_crate_ids: Option<Vec<CrateId<'db>>>,
 
-    /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler) to
-    /// [Annotations] in [DebugInfo] in the compiled tests.
+    /// Adds a mapping used by [cairo-profiler](https://github.com/software-mansion/cairo-profiler)
+    /// to [Annotations] in [DebugInfo] in the compiled tests.
     pub add_statements_functions: bool,
 
-    /// Adds a mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage) to
-    /// [Annotations] in [DebugInfo] in the compiled tests.
+    /// Adds a mapping used by [cairo-coverage](https://github.com/software-mansion/cairo-coverage)
+    /// to [Annotations] in [DebugInfo] in the compiled tests.
     pub add_statements_code_locations: bool,
+
+    /// Adds a mapping used by [cairo-debugger](https://github.com/software-mansion-labs/cairo-debugger)
+    /// to [Annotations] in [DebugInfo] in the compiled tests.
+    pub add_functions_debug_info: bool,
 }
 
 /// Runs Cairo compiler.
@@ -169,6 +173,12 @@ pub fn compile_test_prepared_db<'db>(
     if tests_compilation_config.add_statements_code_locations {
         annotations.extend(Annotations::from(
             debug_info.statements_locations.extract_statements_source_code_locations(db),
+        ))
+    }
+
+    if tests_compilation_config.add_functions_debug_info {
+        annotations.extend(Annotations::from(
+            debug_info.functions_info.extract_serializable_debug_info(db),
         ))
     }
 
