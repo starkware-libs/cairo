@@ -35,7 +35,7 @@ pub fn token_tree_as_wrapped_arg_list<'a>(
         );
     };
     let diagnostics = diagnostics.build();
-    if !diagnostics.get_all().is_empty() {
+    if !diagnostics.is_empty() {
         return None;
     }
     Some(wrapped_arg_list_green)
