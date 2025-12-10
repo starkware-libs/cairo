@@ -84,7 +84,7 @@ impl<T> OptionHelper for Option<T> {
 /// assert_eq!(x, 6);
 /// ```
 pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut T, f: F) -> R {
-    // TODO(spapini): Consider replacing take with something the leaves the memory dangling, instead
+    // TODO(spapini): Consider replacing take with something that leaves the memory dangling, instead
     // of filling with default().
     let (res, boxed) = f(Box::new(core::mem::take(ptr)));
     *ptr = *boxed;
@@ -139,7 +139,7 @@ macro_rules! define_short_id {
             }
         }
 
-        // 4. DebugWithDb identical to old macro.
+        // 4. DebugWithDb is identical to the old macro.
         impl<'db> cairo_lang_debug::DebugWithDb<'db> for $short_id<'db> {
             type Db = dyn salsa::Database;
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
