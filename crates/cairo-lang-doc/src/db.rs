@@ -219,13 +219,14 @@ fn extract_item_module_level_documentation_from_file<'db>(
     Some(dedent_comment_block(&comment_lines))
 }
 
-/// Extracts the content from a comment line (without the marker and leading indentation).
+/// Extracts the content from a comment line (without the marker, but preserving indentation
+/// after the marker).
 /// Returns None if the line is not a doc comment or starts with a slash after the marker.
 fn extract_comment_line_content<'a>(
     line: &'a str,
     comment_markers: &[&'static str],
 ) -> Option<&'a str> {
-    // Remove indentation.
+    // Remove indentation before the comment marker.
     let dedent = line.trim_start();
     // Check if this is a doc comment.
     for comment_marker in comment_markers {
@@ -234,6 +235,7 @@ fn extract_comment_line_content<'a>(
             if content.starts_with('/') {
                 return None;
             }
+            // Return the content after the marker, preserving any spaces after the marker.
             return Some(content);
         }
     }
