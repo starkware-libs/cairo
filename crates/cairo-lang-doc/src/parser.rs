@@ -83,6 +83,13 @@ impl<'db> DocumentationCommentParser<'db> {
         item_id: DocumentableItemId<'db>,
         documentation_comment: String,
     ) -> Vec<DocumentationCommentToken<'db>> {
+        // Build a map of line indices to their leading indentation (number of spaces)
+        // before markdown parsing removes them.
+        let line_indents: Vec<usize> = documentation_comment
+            .lines()
+            .map(|line| line.len() - line.trim_start().len())
+            .collect();
+
         let mut tokens = Vec::new();
         let mut current_link: Option<CommentLinkToken<'db>> = None;
         let mut is_indented_code_block = false;
@@ -139,7 +146,88 @@ impl<'db> DocumentationCommentParser<'db> {
                             if is_indented_code_block {
                                 format!("    {text}")
                             } else {
-                                text.to_string()
+                                // Process text line by line to restore indentation
+                                let text_str = text.as_ref();
+                                let lines: Vec<&str> = text_str.split_inclusive('\n').collect();
+
+                                let mut result = String::new();
+                                for (line_idx, line) in lines.iter().enumerate() {
+                                    let trimmed_line = line.trim();
+
+                                    // Check if this is the start of a new line in the original text
+                                    let is_new_line = line_idx == 0
+                                        && (tokens.is_empty()
+                                            || tokens
+                                                .last()
+                                                .and_then(|last| {
+                                                    if let DocumentationCommentToken::Content(
+                                                        content,
+                                                    ) = last
+                                                    {
+                                                        Some(content.ends_with('\n'))
+                                                    } else {
+                                                        None
+                                                    }
+                                                })
+                                                .unwrap_or(true));
+
+                                    // For each non-empty line, try to find matching line in
+                                    // original text
+                                    if !trimmed_line.is_empty() && (is_new_line || line_idx > 0) {
+                                        // Find the line in original text that matches this content
+                                        // Try exact match first, then partial match
+                                        let mut found_line_num = None;
+                                        for (i, orig_line) in
+                                            documentation_comment.lines().enumerate()
+                                        {
+                                            let trimmed_orig = orig_line.trim();
+                                            // Exact match (most reliable)
+                                            if trimmed_orig == trimmed_line {
+                                                found_line_num = Some(i);
+                                                break;
+                                            }
+                                        }
+
+                                        // If no exact match, try partial match
+                                        if found_line_num.is_none() {
+                                            for (i, orig_line) in
+                                                documentation_comment.lines().enumerate()
+                                            {
+                                                let trimmed_orig = orig_line.trim();
+                                                // Check if one is a prefix of the other (for cases
+                                                // where markdown splits text)
+                                                if (trimmed_line.len() >= 5
+                                                    && trimmed_orig.starts_with(
+                                                        &trimmed_line[..trimmed_line
+                                                            .len()
+                                                            .min(trimmed_orig.len())],
+                                                    ))
+                                                    || (trimmed_orig.len() >= 5
+                                                        && trimmed_line.starts_with(
+                                                            &trimmed_orig[..trimmed_orig
+                                                                .len()
+                                                                .min(trimmed_line.len())],
+                                                        ))
+                                                {
+                                                    found_line_num = Some(i);
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if let Some(line_num) = found_line_num
+                                            && line_num < line_indents.len()
+                                        {
+                                            let indent = line_indents[line_num];
+                                            if indent > 0 {
+                                                result.push_str(&" ".repeat(indent));
+                                            }
+                                        }
+                                    }
+                                    result.push_str(line);
+                                }
+
+                                if result.is_empty() { text.to_string() } else { result }
                             }
                         };
                         tokens.push(DocumentationCommentToken::Content(text));

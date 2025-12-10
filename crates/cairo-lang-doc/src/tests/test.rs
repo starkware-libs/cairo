@@ -30,6 +30,7 @@ cairo_lang_test_utils::test_file_test!(
     tables_formatting: "tables_formatting.txt",
     rules_formatting: "rules_formatting.txt",
     font_formatting: "font_formatting.txt",
+    indentation: "indentation.txt",
   },
   documentation_test_runner
 );
