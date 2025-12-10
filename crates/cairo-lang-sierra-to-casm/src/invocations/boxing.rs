@@ -25,7 +25,7 @@ pub fn build(
     }
 }
 
-/// Handles instruction for creating a box.
+/// Handles instructions for creating a box.
 fn build_into_box(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -57,7 +57,7 @@ fn build_into_box(
     ))
 }
 
-/// Handles instruction for wrapping a local object of type T into a box.
+/// Handles instructions for wrapping a local object of type T into a box.
 fn build_local_into_box(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -85,7 +85,7 @@ fn build_local_into_box(
     ))
 }
 
-/// Handles instruction for unboxing a box.
+/// Handles instructions for unboxing a box.
 fn build_unbox(
     ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
