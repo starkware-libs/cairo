@@ -1,4 +1,4 @@
-# Cairo 0 Features Parity
+# Cairo 0 Feature Parity
 
  On this page we track the missing features to reach feature parity with the old compiler version. We've divided them into Cairo, Starknet and specific system calls in Starknet OS.
 
