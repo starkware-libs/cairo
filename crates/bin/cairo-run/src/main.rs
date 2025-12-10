@@ -76,7 +76,6 @@ fn main() -> anyhow::Result<()> {
         .get_sierra_program(main_crate_ids.clone())
         .to_option()
         .context("Compilation failed without any diagnostics.")?
-        .clone();
     let replacer = DebugReplacer { db };
     if args.available_gas.is_none() && sierra_program.requires_gas_counter() {
         anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
