@@ -107,7 +107,9 @@ impl CfgSet {
         Self(self.0.union(&other.0).cloned().collect())
     }
 
-    /// An iterator visiting all elements in insertion order.
+    /// An iterator visiting all elements in ascending sorted order.
+    ///
+    /// Elements are returned in order according to the `Ord` implementation of `Cfg`.
     pub fn iter(&self) -> impl Iterator<Item = &Cfg> {
         self.0.iter()
     }
