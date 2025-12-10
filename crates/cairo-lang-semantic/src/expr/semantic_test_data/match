@@ -319,7 +319,7 @@ Match(
                                                     x,
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::x),
+                                                    id: MemberId(test::P::x),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -331,7 +331,7 @@ Match(
                                                     },
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::y),
+                                                    id: MemberId(test::P::y),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -341,7 +341,7 @@ Match(
                                                     t,
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::z),
+                                                    id: MemberId(test::P::z),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -703,7 +703,7 @@ Match(
                                                     x,
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::x),
+                                                    id: MemberId(test::P::x),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -715,7 +715,7 @@ Match(
                                                     },
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::y),
+                                                    id: MemberId(test::P::y),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -725,7 +725,7 @@ Match(
                                                     t,
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::z),
+                                                    id: MemberId(test::P::z),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -901,7 +901,7 @@ Match(
                                                     x,
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::x),
+                                                    id: MemberId(test::P::x),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -913,7 +913,7 @@ Match(
                                                     },
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::y),
+                                                    id: MemberId(test::P::y),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },
@@ -925,7 +925,7 @@ Match(
                                                     },
                                                 ),
                                                 Member {
-                                                    id: MemberId(test::z),
+                                                    id: MemberId(test::P::z),
                                                     ty: core::integer::u8,
                                                     visibility: Private,
                                                 },

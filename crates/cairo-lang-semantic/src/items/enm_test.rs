@@ -69,8 +69,8 @@ fn test_enum() {
     assert_eq!(
         actual,
         indoc! {"
-            a: VariantId(test::a), ty: (),
-            b: VariantId(test::b), ty: (core::felt252, core::felt252),
-            c: VariantId(test::c), ty: ()"}
+            a: VariantId(test::A::a), ty: (),
+            b: VariantId(test::A::b), ty: (core::felt252, core::felt252),
+            c: VariantId(test::A::c), ty: ()"}
     );
 }

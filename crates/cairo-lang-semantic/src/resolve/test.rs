@@ -102,12 +102,13 @@ fn test_resolve_path_super() {
     let members = db.struct_members(struct_id).unwrap();
     assert_eq!(
         format!("{:?}", members[&SmolStrId::from(db, "a")].debug(db)),
-        "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1, visibility: \
-         Private }"
+        "Member { id: MemberId(test::inner2::InnerStruct2::a), ty: test::inner1::InnerStruct1, \
+         visibility: Private }"
     );
     assert_eq!(
         format!("{:?}", members[&SmolStrId::from(db, "b")].debug(db)),
-        "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct, visibility: Private }"
+        "Member { id: MemberId(test::inner2::InnerStruct2::b), ty: test::OuterStruct, visibility: \
+         Private }"
     );
 }
 

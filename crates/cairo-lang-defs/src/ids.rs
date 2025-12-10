@@ -62,8 +62,15 @@ pub trait NamedLanguageElementId<'db>: LanguageElementId<'db> {
     fn name_identifier(&'db self, db: &'db dyn Database) -> ast::TerminalIdentifier<'db>;
 }
 pub trait TopLevelLanguageElementId<'db>: NamedLanguageElementId<'db> {
+    /// Returns the path segments from the crate root to this item.
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.parent_module(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
+    }
+
     fn full_path(&self, db: &'db dyn Database) -> String {
-        format!("{}::{}", self.parent_module(db).full_path(db), self.name(db).long(db))
+        self.path_segments(db).iter().map(|s| s.long(db).as_str()).collect::<Vec<_>>().join("::")
     }
 }
 
@@ -98,14 +105,7 @@ macro_rules! define_named_language_element_id {
                 f: &mut std::fmt::Formatter<'_>,
                 db: &'db dyn Database,
             ) -> std::fmt::Result {
-                let $long_id(module_id, _stable_ptr) = self;
-                write!(
-                    f,
-                    "{}({}::{})",
-                    stringify!($short_id),
-                    module_id.full_path(db),
-                    self.name(db).long(db)
-                )
+                write!(f, "{}({})", stringify!($short_id), self.clone().intern(db).full_path(db))
             }
         }
         impl<'db> NamedLanguageElementLongId<'db> for $long_id<'db> {
@@ -277,7 +277,15 @@ macro_rules! toplevel_enum {
                 }
             }
         }
-        impl<'db> TopLevelLanguageElementId<'db> for $enum_name<'db> {}
+        impl<'db> TopLevelLanguageElementId<'db> for $enum_name<'db> {
+            fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.path_segments(db),
+                    )*
+                }
+            }
+        }
     }
 }
 
@@ -299,16 +307,25 @@ pub enum ModuleId<'db> {
     },
 }
 impl<'db> ModuleId<'db> {
-    pub fn full_path(&self, db: &dyn Database) -> String {
+    /// Returns the path segments from the crate root to this module.
+    pub fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
         match self {
-            ModuleId::CrateRoot(id) => id.long(db).name().to_string(db),
+            ModuleId::CrateRoot(id) => vec![id.long(db).name()],
             ModuleId::Submodule(id) => {
-                format!("{}::{}", id.parent_module(db).full_path(db), id.name(db).long(db))
+                let mut segments = id.parent_module(db).path_segments(db);
+                segments.push(id.name(db));
+                segments
             }
             ModuleId::MacroCall { id, .. } => {
-                format!("{}::{}", id.parent_module(db).full_path(db), self.name(db).long(db))
+                let mut segments = id.parent_module(db).path_segments(db);
+                segments.push(self.name(db));
+                segments
             }
         }
+    }
+
+    pub fn full_path(&self, db: &'db dyn Database) -> String {
+        self.path_segments(db).iter().map(|s| s.long(db).as_str()).collect::<Vec<_>>().join("::")
     }
     pub fn name(&self, db: &'db dyn Database) -> SmolStrId<'db> {
         match self {
@@ -547,8 +564,10 @@ impl<'db> ImplTypeDefId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for ImplTypeDefId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.impl_def_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
@@ -564,8 +583,10 @@ impl<'db> ImplConstantDefId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for ImplConstantDefId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.impl_def_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
@@ -581,8 +602,10 @@ impl<'db> ImplImplDefId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for ImplImplDefId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.impl_def_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
@@ -603,8 +626,10 @@ impl<'db> UnstableSalsaId for ImplFunctionId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for ImplFunctionId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_def_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.impl_def_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
@@ -652,8 +677,10 @@ impl<'db> TraitTypeId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for TraitTypeId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.trait_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 impl<'db> UnstableSalsaId for TraitTypeId<'db> {
@@ -677,8 +704,10 @@ impl<'db> TraitConstantId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for TraitConstantId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.trait_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
@@ -693,8 +722,10 @@ impl<'db> TraitImplId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for TraitImplId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.trait_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 impl<'db> UnstableSalsaId for TraitImplId<'db> {
@@ -718,8 +749,10 @@ impl<'db> TraitFunctionId<'db> {
     }
 }
 impl<'db> TopLevelLanguageElementId<'db> for TraitFunctionId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.trait_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.trait_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
@@ -734,8 +767,10 @@ impl<'db> MemberId<'db> {
 }
 
 impl<'db> TopLevelLanguageElementId<'db> for MemberId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.struct_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.struct_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
@@ -750,8 +785,10 @@ impl<'db> VariantId<'db> {
 }
 
 impl<'db> TopLevelLanguageElementId<'db> for VariantId<'db> {
-    fn full_path(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.enum_id(db).full_path(db), self.name(db).long(db))
+    fn path_segments(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>> {
+        let mut segments = self.enum_id(db).path_segments(db);
+        segments.push(self.name(db));
+        segments
     }
 }
 
