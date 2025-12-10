@@ -15,8 +15,8 @@ static COUNT_SHARED_ALLOCATIONS: LazyLock<bool> = LazyLock::new(|| {
 /// Arc's and references are not included in the sum by default.
 /// Set CAIRO_HEAPSIZE_COUNT_SHARED=1 to include shared allocations (may double-count).
 pub trait HeapSize {
-    /// Returns the size of the, heap-allocated, owned data in bytes.
-    /// It does not include the size of the object itself (stack size), not references.
+    /// Returns the size of the heap-allocated, owned data in bytes.
+    /// It does not include the size of the object itself (stack size), nor references.
     fn heap_size(&self) -> usize;
 }
 
