@@ -74,7 +74,7 @@ fn build_init_circuit_data(
         // Skip the constant `1`.
         const input_start_offset = VALUE_SIZE;
         let input_start = rc96 + input_start_offset;
-        // This size of all the inputs including the input 1.
+        // The size of all the inputs including the input 1.
         const input_end_offset = (1 + n_inputs) * VALUE_SIZE;
         let input_end = rc96 + input_end_offset;
         const rc96_usage = rc96_usage;
@@ -142,7 +142,7 @@ fn build_get_descriptor(
         // The relocation will point the `call` to the `ret;` instruction that precedes the
         // add and mul tables.
         call rel 0;
-        // The relocation table will add const offset to the `1` below, making it point to the
+        // The relocation table will add a const offset to the `1` below, making it point to the
         // add and mul tables (the `1` is to skip the `ret` instruction).
         [ap] = [ap - 1] + 1, ap++;
         [ap] = (add_offsets.len()), ap++;
