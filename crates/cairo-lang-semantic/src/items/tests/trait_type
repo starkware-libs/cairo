@@ -3185,6 +3185,6 @@ struct S<impl M: MyTrait> {
 
 //! > expected_diagnostics
 error: `test::M::InputType` type mismatch: `core::felt252` and `core::integer::u32`.
- --> lib.cairo:12:13
-fn foo() -> S<M> {
-            ^^^^
+ --> lib.cairo:13:5
+    S { x: 3_felt252 }
+    ^
