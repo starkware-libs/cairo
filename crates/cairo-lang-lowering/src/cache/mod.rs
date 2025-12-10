@@ -159,14 +159,14 @@ pub fn generate_crate_cache<'db>(
         .iter()
         .filter_map(|id| {
             db.function_body(*id).ok()?;
-            let multi = match lower_semantic_function(db, *id).map(Arc::new) {
+            let multi = match lower_semantic_function(db, *id) {
                 Ok(multi) => multi,
                 Err(err) => return Some(Err(err)),
             };
 
             Some(Ok((
                 DefsFunctionWithBodyIdCached::new(*id, &mut ctx.semantic_ctx),
-                MultiLoweringCached::new((*multi).clone(), &mut ctx),
+                MultiLoweringCached::new(multi, &mut ctx),
             )))
         })
         .collect::<Maybe<Vec<_>>>()?;
