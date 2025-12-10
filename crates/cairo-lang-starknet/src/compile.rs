@@ -124,8 +124,8 @@ pub fn compile_prepared_db<'db>(
 /// Compile the declared Starknet contract.
 ///
 /// The `contract` value **must** come from `db`, for example as a result of calling
-/// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by the caller
-/// of this function.
+/// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked
+/// by the caller of this function.
 fn compile_contract_with_prepared_and_checked_db<'db>(
     db: &'db dyn Database,
     contract: &ContractDeclaration<'db>,
