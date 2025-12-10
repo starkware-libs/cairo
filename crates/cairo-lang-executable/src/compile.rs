@@ -190,15 +190,42 @@ pub fn originating_function_path<'db>(
     format!("{wrapper_path_to_module}{wrapped_name}")
 }
 
-/// Runs compiler for an executable function.
+/// Builds a `RootDatabase` configured for compiling `#[executable]` targets.
+///
+/// Configuration:
+/// - Skips auto withdraw gas and sets `cfg(gas = "disabled")`.
+/// - Detects corelib.
+/// - Registers the executable plugin suite.
+/// - Applies `unsafe_panic` if requested.
+///
+/// Returns a ready-to-use database for subsequent compilation steps.
+pub fn prepare_db(config: &ExecutableConfig) -> Result<RootDatabase> {
+    let mut builder = RootDatabase::builder();
+    builder
+        .skip_auto_withdraw_gas()
+        .with_cfg(CfgSet::from_iter([Cfg::kv("gas", "disabled")]))
+        .detect_corelib()
+        .with_default_plugin_suite(executable_plugin_suite());
+    if config.unsafe_panic {
+        builder.with_unsafe_panic();
+    }
+
+    builder.build()
+}
+
+/// Runs the compiler for a single executable function.
+///
+/// Diagnostics are expected to be ensured by the caller (see
+/// `compile_executable_in_prepared_db()` which calls `ensure_diagnostics`).
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
-/// * `executable` - [`ConcreteFunctionWithBodyId`]s to compile.
-/// * `diagnostics_reporter` - The diagnostics reporter.
-/// * `config` - If true, the compilation will not fail if the program is not sound.
+/// * `executable` - The `ConcreteFunctionWithBodyId` to compile.
+/// * `config` - Executable compilation options (e.g., whether to allow syscalls/unsoundness).
+///
 /// # Returns
-/// * `Ok(Vec<String>)` - The result artifact of the compilation.
+/// * `Ok(CompileExecutableResult<'db>)` - The compiled function, runnable builder, and Sierra debug
+///   info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_executable_function_in_prepared_db<'db>(
     db: &'db dyn Database,
