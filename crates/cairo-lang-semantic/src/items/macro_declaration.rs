@@ -323,8 +323,7 @@ fn is_macro_rule_match_ex<'db>(
                         continue;
                     }
                     PlaceholderKind::Expr => {
-                        let mut cloned_iter = input_iter.clone();
-                        let peek_token = cloned_iter.peek()?;
+                        let peek_token = input_iter.peek().cloned()?;
                         let file_id = peek_token.as_syntax_node().stable_ptr(db).file_id(db);
                         let expr_node =
                             as_expr_macro_token_tree(input_iter.clone().cloned(), file_id, db)?;
@@ -458,7 +457,7 @@ fn is_macro_rule_match_ex<'db>(
 }
 
 fn validate_repetition_operator_constraints(ctx: &MatcherContext<'_>) -> bool {
-    for (rep_id, count) in ctx.repetition_match_counts.clone() {
+    for (&rep_id, &count) in ctx.repetition_match_counts.iter() {
         match ctx.repetition_operators.get(&rep_id) {
             Some(ast::MacroRepetitionOperator::ZeroOrOne(_)) if count > 1 => return false,
             Some(ast::MacroRepetitionOperator::OneOrMore(_)) if count < 1 => return false,
