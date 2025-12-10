@@ -35,7 +35,6 @@ pub fn get_location_marks(
 
 /// Given a single line diagnostic location, returns a string with the location marks.
 fn get_single_line_location_marks(db: &dyn Database, location: &SpanInFile<'_>) -> String {
-    // TODO(ilya, 10/10/2023): Handle locations which spread over a few lines.
     let content = db.file_content(location.file_id).expect("File missing from DB.");
     let summary = db.file_summary(location.file_id).expect("File missing from DB.");
     let span = &location.span;
