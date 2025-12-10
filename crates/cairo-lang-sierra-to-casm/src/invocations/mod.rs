@@ -115,7 +115,7 @@ pub enum ApTrackingChange {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BranchChanges {
     /// New references defined at a given branch.
-    /// should correspond to BranchInfo.results.
+    /// Should correspond to BranchInfo.results.
     pub refs: Vec<OutputReferenceValue>,
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
