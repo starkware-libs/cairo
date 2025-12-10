@@ -40,7 +40,7 @@ The syntax for a reference argument is xref:lvalue.adoc[`ref lvalue`]. The type 
 match the type of the reference parameter.
 The behavior of passing a reference argument is similar to the
 xref:assignment-statement.adoc[assignment].
-`lvalue` is passed to the function and then reassigned to when the function returns.
+`lvalue` is passed to the function and then reassigned when the function returns.
 Example: `increment(ref a.b)`.
 
 [source,rust]
