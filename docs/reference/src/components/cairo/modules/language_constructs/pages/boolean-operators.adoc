@@ -2,7 +2,7 @@
 
 Boolean operators combine or negate boolean (`bool`) values.
 
-There are two groups of operators that work with `bool`:
+Two groups of operators work with `bool`:
 
 - Logical operators: `&&`, `\|\|` (short-circuiting)
 - Bitwise operators on `bool`: `&`, `\|`, `^` (no short-circuit)
