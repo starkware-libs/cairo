@@ -77,8 +77,10 @@ pub struct CompileExecutableResult<'db> {
     pub debug_info: SierraProgramDebugInfo<'db>,
 }
 
-/// Compile the function given by path.
-/// Errors if there is ambiguity.
+/// Prepares a `RootDatabase` configured for compiling `#[executable]` functions.
+///
+/// This only builds the database; use `setup_project` and the compilation helpers
+/// on top of it to actually compile code.
 pub fn prepare_db(config: &ExecutableConfig) -> Result<RootDatabase> {
     let mut builder = RootDatabase::builder();
     builder
@@ -190,15 +192,17 @@ pub fn originating_function_path<'db>(
     format!("{wrapper_path_to_module}{wrapped_name}")
 }
 
-/// Runs compiler for an executable function.
+/// Runs the executable compiler on the specified function in a prepared database.
+///
+/// Diagnostics are expected to have been checked by the caller (for example via
+/// [`compile_executable_in_prepared_db`]).
 ///
 /// # Arguments
 /// * `db` - Preloaded compilation database.
-/// * `executable` - [`ConcreteFunctionWithBodyId`]s to compile.
-/// * `diagnostics_reporter` - The diagnostics reporter.
-/// * `config` - If true, the compilation will not fail if the program is not sound.
+/// * `executable` - The [`ConcreteFunctionWithBodyId`] to compile.
+/// * `config` - Configuration for executables (e.g. syscall allowance and panic behavior).
 /// # Returns
-/// * `Ok(Vec<String>)` - The result artifact of the compilation.
+/// * `Ok(CompileExecutableResult<'db>)` - The compiled CASM program and associated metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_executable_function_in_prepared_db<'db>(
     db: &'db dyn Database,
