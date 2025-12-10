@@ -765,7 +765,10 @@ pub fn extract_fixed_size_array_size<'db>(
                 get_usize_ty(db),
                 false,
             );
-            if matches!(const_value.long(db), ConstValue::Int(_, _) | ConstValue::Generic(_)) {
+            if matches!(
+                const_value.long(db),
+                ConstValue::Int(_, _) | ConstValue::Generic(_) | ConstValue::ImplConstant(_)
+            ) {
                 Ok(Some(const_value))
             } else {
                 Err(diagnostics.report(syntax.stable_ptr(db), FixedSizeArrayNonNumericSize))
