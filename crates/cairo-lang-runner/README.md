@@ -29,6 +29,14 @@ fn fib(a: u128, b: u128, n: u128) -> u128 {
 }
 ```
 
+# Command-Line Options
+
+- `--single-file` - Treat the path as a single file instead of a project directory.
+- `--available-gas <amount>` - Set the amount of gas available for execution.
+- `--print-full-memory` - Print the full memory state after execution.
+- `--allow-warnings` - Allow the compilation to succeed even with warnings.
+- `--run-profiler` - Run the profiler and display profiling information.
+
 # Additional Information
 
 - When compiling with --available-gas, if there are cycles in the code, calls to
