@@ -32,11 +32,12 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v1: core::felt252) <- 1
-  (v2: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v2: core::felt252) <- 1
+  (v3: ()) <- test::bar(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
 
 //! > semantic_diagnostics
 
@@ -78,11 +79,12 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v1: core::box::Box::<core::felt252>) <- 2.into_box()
-  (v2: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v2: core::box::Box::<core::felt252>) <- 2.into_box()
+  (v3: ()) <- test::bar(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
 
 //! > semantic_diagnostics
 
@@ -125,11 +127,12 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: ()) <- test::bar(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
 
 //! > semantic_diagnostics
 
@@ -176,17 +179,18 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v7: core::felt252) <- 1
-  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v7)
-  (v5: core::felt252) <- 2
-  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
-  (v3: core::felt252) <- 3
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
-  (v8: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: core::felt252) <- 1
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v8)
+  (v6: core::felt252) <- 2
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v5, v6)
+  (v4: core::felt252) <- 3
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
+  (v9: ()) <- test::bar(v0, v2)
 End:
-  Return(v8)
+  Return(v9)
 
 //! > semantic_diagnostics
 
@@ -229,11 +233,12 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: ()) <- test::bar(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
 
 //! > semantic_diagnostics
 
@@ -278,19 +283,20 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v6: core::felt252
+Parameters: v7: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v5: core::array::Array::<core::felt252>, v3: @core::array::Array::<core::felt252>) <- snapshot(v4)
-  (v2: core::array::Span::<core::felt252>) <- struct_construct(v3)
-  (v7: core::felt252) <- 0
-  (v8: core::box::Box::<core::felt252>) <- 1.into_box()
-  (v9: core::array::Array::<core::felt252>, v10: ()) <- test::bar(v0, v1, v2, v6, v7, v8)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v6: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v5)
+  (v3: core::array::Span::<core::felt252>) <- struct_construct(v4)
+  (v8: core::felt252) <- 0
+  (v9: core::box::Box::<core::felt252>) <- 1.into_box()
+  (v10: core::array::Array::<core::felt252>, v11: ()) <- test::bar(v0, v2, v3, v7, v8, v9)
 End:
-  Return(v9, v10)
+  Return(v10, v11)
 
 //! > semantic_diagnostics
 
@@ -339,17 +345,18 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v3: core::felt252, v5: core::felt252, v6: core::felt252
+Parameters: v4: core::felt252, v6: core::felt252, v7: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v2: core::felt252) <- 1
-  (v4: core::felt252) <- 3
-  (v7: core::felt252) <- 6
-  (v1: test::S6) <- struct_construct(v2, v3, v4, v5, v6, v7)
-  (v8: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: core::felt252) <- 1
+  (v5: core::felt252) <- 3
+  (v8: core::felt252) <- 6
+  (v2: test::S6) <- struct_construct(v3, v4, v5, v6, v7, v8)
+  (v9: ()) <- test::bar(v0, v2)
 End:
-  Return(v8)
+  Return(v9)
 
 //! > semantic_diagnostics
 
@@ -405,13 +412,14 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v1: test::SA1
+Parameters: v2: test::SA1
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v2: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: ()) <- test::bar(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
 
 //! > semantic_diagnostics
 
@@ -465,13 +473,14 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v1: test::SA1
+Parameters: v2: test::SA1
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v2: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: ()) <- test::bar(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
 
 //! > semantic_diagnostics
 
@@ -538,13 +547,14 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v1: test::SB
+Parameters: v2: test::SB
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v2: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: ()) <- test::bar(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
 
 //! > semantic_diagnostics
 
@@ -589,15 +599,16 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v2: core::felt252
+Parameters: v3: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v3: core::felt252) <- 5
-  (v1: test::S) <- struct_construct(v2, v3)
-  (v4: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v4: core::felt252) <- 5
+  (v2: test::S) <- struct_construct(v3, v4)
+  (v5: ()) <- test::bar(v0, v2)
 End:
-  Return(v4)
+  Return(v5)
 
 //! > semantic_diagnostics
 
@@ -660,23 +671,24 @@ End:
   Return(v12)
 
 //! > specialized_lowering
-Parameters: v9: core::felt252, v12: core::felt252, v11: core::felt252
+Parameters: v10: core::felt252, v13: core::felt252, v12: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v4: core::array::Array::<test::Outer>) <- core::array::array_new::<test::Outer>()
-  (v8: core::felt252) <- 1
-  (v6: test::Inner) <- struct_construct(v8, v9)
-  (v7: core::felt252) <- 3
-  (v5: test::Outer) <- struct_construct(v6, v7)
-  (v2: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v4, v5)
-  (v13: core::felt252) <- 5
-  (v10: test::Inner) <- struct_construct(v12, v13)
-  (v3: test::Outer) <- struct_construct(v10, v11)
-  (v1: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v2, v3)
-  (v14: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v5: core::array::Array::<test::Outer>) <- core::array::array_new::<test::Outer>()
+  (v9: core::felt252) <- 1
+  (v7: test::Inner) <- struct_construct(v9, v10)
+  (v8: core::felt252) <- 3
+  (v6: test::Outer) <- struct_construct(v7, v8)
+  (v3: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v5, v6)
+  (v14: core::felt252) <- 5
+  (v11: test::Inner) <- struct_construct(v13, v14)
+  (v4: test::Outer) <- struct_construct(v11, v12)
+  (v2: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v3, v4)
+  (v15: ()) <- test::bar(v0, v2)
 End:
-  Return(v14)
+  Return(v15)
 
 //! > semantic_diagnostics
 
@@ -725,14 +737,15 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v2: core::felt252
+Parameters: v3: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v1: test::E) <- E::A(v2)
-  (v3: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v2: test::E) <- E::A(v3)
+  (v4: ()) <- test::bar(v0, v2)
 End:
-  Return(v3)
+  Return(v4)
 
 //! > ==========================================================================
 
@@ -783,16 +796,17 @@ End:
   Return()
 
 //! > specialized_lowering
-Parameters: v4: core::felt252
+Parameters: v5: core::felt252
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v3: core::felt252) <- 1
-  (v2: test::S) <- struct_construct(v3, v4)
-  (v1: test::E) <- E::A(v2)
-  (v5: ()) <- test::bar(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v4: core::felt252) <- 1
+  (v3: test::S) <- struct_construct(v4, v5)
+  (v2: test::E) <- E::A(v3)
+  (v6: ()) <- test::bar(v0, v2)
 End:
-  Return(v5)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -860,8 +874,9 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- bool::False({})
-  (v1: core::felt252) <- 100000
-  (v2: core::felt252) <- test::bar1(v0, v1)
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v2: core::felt252) <- 100000
+  (v3: core::felt252) <- test::bar1(v0, v2)
 End:
-  Return(v2)
+  Return(v3)
