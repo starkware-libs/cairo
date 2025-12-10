@@ -132,7 +132,7 @@ fn main() {
 - The sign of the remainder matches the dividend: `7 % 3 == 1`, `-7 % 3 == -1`
 - For unsigned types, all arithmetic operations may panic on overflow
 - The unary negation operator `-` is separate and documented in
-  xref:pages/negation-operators.adoc[Negation operators]
+  xref:negation-operators.adoc[Negation operators]
 
 == Assignment operators
 
