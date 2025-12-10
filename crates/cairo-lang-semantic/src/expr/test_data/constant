@@ -621,5 +621,4 @@ const OR_FT: () = assert(false || true);
 const AND_SHORT_CIRCUIT: () = assert(!(false && boom()));
 const OR_SHORT_CIRCUIT: () = assert(true || boom());
 
-
 //! > expected_diagnostics
