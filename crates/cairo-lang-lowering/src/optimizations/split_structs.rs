@@ -2,8 +2,6 @@
 #[path = "split_structs_test.rs"]
 mod test;
 
-use std::vec;
-
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
