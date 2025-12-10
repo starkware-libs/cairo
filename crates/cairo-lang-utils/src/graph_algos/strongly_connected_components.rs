@@ -33,7 +33,7 @@ struct SccAlgoContext<Node: GraphNode> {
     next_index: u32,
     /// The stack of the nodes in the DFS.
     stack: Vec<Node::NodeId>,
-    /// All visited nodes. If a graph node is not in the map, it wasn't yet visited.
+    /// All visited nodes. If a graph node is not in the map, it hasn't yet been visited.
     known_nodes: UnorderedHashMap<Node::NodeId, SccAlgoNode<Node>>,
     /// The ID of the node we want to find the SCC of.
     target_node_id: Node::NodeId,
@@ -116,7 +116,7 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
         other_node.on_stack = false;
         scc.push(other_node_id.clone());
 
-        // Stop once the popped node is the current node which is the root on the SCC.
+        // Stop once the popped node is the current node which is the root of the SCC.
         if other_node_id == current_node_id {
             break;
         }
