@@ -89,7 +89,7 @@ impl Display for CellRef {
     }
 }
 
-/// Returns an AP DerefOperand with the given offset.
+/// Returns a CellRef referencing AP with the given offset.
 pub fn ap_cell_ref(offset: i16) -> CellRef {
     CellRef { register: Register::AP, offset }
 }
