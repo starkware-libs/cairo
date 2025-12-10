@@ -35,8 +35,8 @@ pub struct CommentLinkToken<'db> {
     pub resolved_item: Option<DocumentableItemId<'db>>,
 }
 
-/// Generic type for a comment token. It's either a plain content or a link.
-/// Notice that the Content type of token can store much more than just one word.
+/// Generic type for a comment token. It's either plain content or a link.
+/// Notice that the Content token type can store much more than just one word.
 #[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
 pub enum DocumentationCommentToken<'db> {
     /// Token with plain documentation content.
@@ -57,9 +57,9 @@ impl DocumentationCommentToken<'_> {
 
 /// Helper struct for formatting possibly nested Markdown lists.
 struct DocCommentListItem {
-    /// Order list item separator
+    /// Ordered list item separator
     delimiter: Option<u64>,
-    /// Flag for a list with order elements
+    /// Flag for an ordered list
     is_ordered_list: bool,
 }
 
@@ -73,10 +73,10 @@ impl<'db> DocumentationCommentParser<'db> {
         Self { db }
     }
 
-    /// Parses documentation comment content into vector of [DocumentationCommentToken]s, keeping
+    /// Parses documentation comment content into a vector of [DocumentationCommentToken]s, keeping
     /// the order in which they were present in the content.
     ///
-    /// We look for 3 types of patterns when it comes to link (ignore the backslash):
+    /// We look for 3 link patterns (ignore the backslash):
     /// "\[label\](path)", "\[path\]" or "\[`path`\]".
     pub fn parse_documentation_comment(
         &self,
@@ -484,7 +484,7 @@ impl<'db> DebugWithDb<'db> for CommentLinkToken<'db> {
     }
 }
 
-/// Maps `HeadingLevel` to correct markdown marker.
+/// Maps `HeadingLevel` to the correct markdown marker.
 fn heading_level_to_markdown(heading_level: HeadingLevel) -> String {
     let heading_char: String = String::from("#");
     match heading_level {
@@ -497,7 +497,7 @@ fn heading_level_to_markdown(heading_level: HeadingLevel) -> String {
     }
 }
 
-/// Maps [`Alignment`] to correct markdown markers.
+/// Maps [`Alignment`] to the correct markdown markers.
 fn get_alignment_markers(alignment: &Alignment) -> (String, String) {
     let (left, right) = match alignment {
         Alignment::None => ("", ""),
