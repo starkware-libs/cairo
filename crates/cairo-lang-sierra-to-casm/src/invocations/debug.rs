@@ -5,7 +5,7 @@ use cairo_lang_sierra::extensions::debug::DebugConcreteLibfunc;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
 
-/// Builds Casm instructions for Nullable operations.
+/// Builds CASM instructions for debug operations.
 pub fn build(
     libfunc: &DebugConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
