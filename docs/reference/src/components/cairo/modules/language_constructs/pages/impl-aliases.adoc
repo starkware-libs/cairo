@@ -1,6 +1,188 @@
 = Impl aliases
 
-This section is a work in progress.
+Impl aliases provide alternative names for existing impls.
+They do not introduce new impls; instead, they refer to an existing implementation,
+possibly with concrete generic arguments.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+Impl aliases are useful for:
+
+- Providing shorter or more descriptive names for complex impls.
+- Re-exporting impls from other modules.
+- Fixing some generic arguments of an impl while keeping others generic.
+
+See also xref:aliases.adoc[Type and impl aliases],
+xref:traits.adoc[Traits and impls] and xref:generics.adoc[Generics].
+
+== Syntax
+
+An impl alias has the following form:
+
+[source,cairo]
+----
+impl ImplAliasName<GenericParams> = path::to::Impl<GenericArgs>;
+----
+
+Where:
+
+- `ImplAliasName` is the new name of the impl.
+- `GenericParams` are the generic parameters introduced by the alias (optional).
+- `path::to::Impl` is a path to an existing impl or impl alias.
+- `GenericArgs` are the concrete generic arguments passed to that impl (optional).
+
+The path on the right-hand side must resolve to an impl (or another impl alias).
+If it does not, the compiler reports an error.
+
+== Basic example
+
+The following example defines a trait and an impl, and then introduces an impl alias
+to give this implementation a shorter name:
+
+[source,cairo]
+----
+trait Pow<T> {
+    fn pow(base: T, exp: u32) -> T;
+}
+
+impl AnyAlgebraPow<T, impl AlgImpl: Algebra<T>> of Pow<T> {
+    fn pow(base: T, exp: u32) -> T {
+        // Implementation details.
+        base
+    }
+}
+
+// Impl alias for Pow of felt252.
+impl FeltPow = AnyAlgebraPow<felt252, FeltAlgebra>;
+
+fn main() {
+    // Call through the trait name.
+    let x = Pow::pow(5, 3);
+
+    // Call through the impl alias name.
+    let y = FeltPow::pow(5, 3);
+}
+----
+
+Here `FeltPow` is just another name for the concrete impl
+`AnyAlgebraPow<felt252, FeltAlgebra>`. No new impl is created.
+
+== Generic impl aliases
+
+Impl aliases can themselves be generic.
+This allows fixing some of the generic arguments of an existing impl
+while leaving others as parameters of the alias.
+
+[source,cairo]
+----
+trait MyTrait<T> {
+    fn foo(x: T) -> usize;
+}
+
+mod inner {
+    impl MyImpl<T> of MyTrait<Option<T>> {
+        fn foo(x: Option<T>) -> usize {
+            0_usize
+        }
+    }
+}
+
+// Fix the outer type to `Box<T>` but keep `T` generic.
+impl MyImplAlias<T> = inner::MyImpl<Box<T>>;
+
+fn use_alias(x: Box<usize>) -> usize {
+    MyTrait::foo(x)
+}
+----
+
+In this example, `MyImplAlias<T>` is an alias for a family of impls
+`inner::MyImpl<Box<T>>`. The generic parameter `T` of the alias is
+substituted into the generic parameter of the underlying impl.
+
+== Chaining impl aliases
+
+An impl alias can refer to another impl alias.
+The compiler resolves such chains transitively until it reaches the
+underlying concrete impl.
+
+[source,cairo]
+----
+trait Trait1<T> {
+    fn func1(value: T);
+}
+
+trait Trait2<T> {
+    fn func2(value: T);
+}
+
+mod impls {
+    impl Impl1<T, +Drop<T>> of super::Trait1<T> {
+        fn func1(value: T) {}
+    }
+
+    // Public alias for a concrete impl of Trait1<felt252>.
+    pub impl ImplAlias1 = Impl1<felt252>;
+
+    impl Impl2<T, +Drop<T>> of super::Trait2<T> {
+        fn func2(value: T) {}
+    }
+
+    // Public alias for a concrete impl of Trait2<felt252>.
+    pub impl ImplAlias2 = Impl2<felt252>;
+}
+
+use impls::ImplAlias1;
+
+// A second-level alias that refers to an impl alias from another module.
+impl Impl2Alias = impls::ImplAlias2;
+----
+
+Both `ImplAlias1` and `Impl2Alias` are names for existing impls.
+They can be used wherever an impl name is expected, for example
+in generic parameters or when calling trait methods.
+
+== Using impl aliases
+
+Impl aliases can be used anywhere a named impl can be used:
+
+- When calling trait methods through an impl name.
+- As impl generic arguments in generic functions, structs, enums, and so on.
+
+For example:
+
+[source,cairo]
+----
+trait Display<T> {
+    fn display(x: T) -> Array<u8>;
+}
+
+impl DisplayFelt of Display<felt252> {
+    fn display(x: felt252) -> Array<u8> {
+        // ...
+        ArrayTrait::new()
+    }
+}
+
+// Provide a shorter name for the concrete impl.
+impl FeltDisplay = DisplayFelt;
+
+fn print_value<T, impl D: Display<T>>(value: T) {
+    let bytes = D::display(value);
+    // ...
+}
+
+fn main() {
+    // Use the impl alias as a concrete impl argument.
+    print_value::<felt252, FeltDisplay>(5);
+}
+----
+
+== Errors and limitations
+
+When working with impl aliases, the compiler enforces several rules:
+
+- The right-hand side of an impl alias must resolve to an impl or another impl alias.
+  If it resolves to anything else, a compilation error is reported.
+- Cyclic impl aliases (where aliases form a cycle through their right-hand sides)
+  are rejected by the compiler.
+
+Apart from these restrictions, impl aliases behave like their underlying impls
+in name resolution and generic argument handling.
