@@ -3,7 +3,7 @@ use crate::program::StatementIdx;
 /// The status of a node during the topological ordering finding algorithm.
 #[derive(Clone, Debug)]
 enum TopologicalOrderStatus {
-    /// The computation for that statement did not start.
+    /// The computation for that statement has not started.
     NotStarted,
     /// The computation is in progress.
     InProgress,
