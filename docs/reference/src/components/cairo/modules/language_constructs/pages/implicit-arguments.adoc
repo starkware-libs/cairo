@@ -1,7 +1,53 @@
-= Implicit arguments
-// TODO(spapini): Fill with content.
+= Implicit Arguments
 
-This section is a work in progress.
+Implicit arguments are one of the most useful and unique features of the Cairo language. They allow developers to write clean, type-safe, and highly reusable code without manually passing the same values over and over again.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+NOTE: This feature exists only in Cairo (Sierra/Casm). There is no direct equivalent in Rust or Solidity.
+
+## Why do we need implicit arguments?
+
+In Starknet contracts the same values are required in almost every call:
+- `caller_address`, `contract_address`, `block_timestamp`
+- component references (storage, events, ERC20 logic, etc.)
+- phantom types used for dispatch
+- various syscall results
+
+Without implicit arguments you would have to pass them explicitly to every function — the code would become extremely verbose and noisy.
+
+## Syntax
+
+### Declaring a function with implicit arguments
+```cairo
+use starknet::ContractAddress;
+
+#[starknet::interface]
+trait IMyContract<T> {
+    fn foo(ref self: T, x: felt252, @syscaller: ContractAddress);
+}
+
+#[starknet::contract]
+mod my_contract {
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+
+    #[storage]
+    struct Storage {}
+
+    // Implicit arguments are marked with the @ symbol
+    fn internal_func(
+        ref self: ContractState,
+        normal_arg: u128,
+        @caller: ContractAddress,     // implicit
+        @timestamp: u64               // implicit
+    ) -> u128 {
+        assert(caller == get_caller_address(), 'wrong caller');
+        normal_arg + timestamp.into()
+    }
+
+    #[external(v0)]
+    fn public_func(ref self: ContractState, x: u128) -> u128 {
+        let caller = get_caller_address();
+        let ts = get_block_timestamp();
+        // Pass them as implicit using {}
+        self.internal_func(x, @caller, @ts)
+    }
+}
