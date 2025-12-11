@@ -655,14 +655,14 @@ impl<'a> ProfilingInfoProcessor<'a> {
         require(params.process_by_cairo_function)?;
 
         let mut cairo_functions = UnorderedHashMap::<_, _>::default();
-        let unknown_function_identifier = "unknown".to_string();
         for (statement_idx, weight) in sierra_statement_weights {
             // TODO(Gil): Fill all the `Unknown functions` in the Cairo functions profiling.
             let function_identifier = self
                 .statements_functions
                 .get(statement_idx)
-                .unwrap_or(&unknown_function_identifier)
-                .clone();
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string());
+
             *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
         }
 
