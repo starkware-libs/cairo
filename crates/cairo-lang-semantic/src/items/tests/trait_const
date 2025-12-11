@@ -765,3 +765,57 @@ use core::num::traits::Bounded;
 pub const MAX_U64: u64 = Bounded::<u64>::MAX;
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using trait constants as fixed-sized-array size in interface.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait AsBinary<T> {
+    const SIZE: usize;
+    fn as_binary(self: T) -> [bool; Self::SIZE];
+}
+impl AsBinaryU8 of AsBinary<u8> {
+    const SIZE: usize = 8;
+    fn as_binary(self: u8) -> [bool; Self::SIZE] {
+        [false; Self::SIZE]
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > using trait constants as fixed-sized-array size in generic code.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Repeated<T> {
+    const SIZE: usize;
+    fn repeated(self: T) -> [T; Self::SIZE];
+}
+impl CopyRepeated<T, +Copy<T>> of Repeated<T> {
+    const SIZE: usize = 8;
+    fn repeated(self: T) -> [T; Self::SIZE] {
+        [self; Self::SIZE]
+    }
+}
+
+//! > expected_diagnostics
