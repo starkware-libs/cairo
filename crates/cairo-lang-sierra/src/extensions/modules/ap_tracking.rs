@@ -12,9 +12,9 @@ define_libfunc_hierarchy! {
     }, ApTrackingConcreteLibfunc
 }
 
-/// Revoke the ap tracking.
+/// Revoke the AP tracking.
 /// This libfunc changes `ap_tracking` state to unknown,
-/// allowing a path with known ap tracking to converge with a path with unknown ap tracking.
+/// allowing a path with known ap tracking to converge with a path with unknown AP tracking.
 #[derive(Default)]
 pub struct RevokeApTrackingLibfunc {}
 impl NoGenericArgsGenericLibfunc for RevokeApTrackingLibfunc {
@@ -28,9 +28,9 @@ impl NoGenericArgsGenericLibfunc for RevokeApTrackingLibfunc {
     }
 }
 
-/// Enable ap tracking.
-/// This Libfunc is used to enable ap tracking to allow branches that may diverge and merge after
-/// this point to have an aligned ap.
+/// Enable AP tracking.
+/// This Libfunc is used to enable AP tracking to allow branches that may diverge and merge after
+/// this point to have an aligned AP.
 #[derive(Default)]
 pub struct EnableApTrackingLibfunc {}
 impl NoGenericArgsGenericLibfunc for EnableApTrackingLibfunc {
@@ -48,7 +48,7 @@ impl NoGenericArgsGenericLibfunc for EnableApTrackingLibfunc {
     }
 }
 
-/// Disable ap tracking.
+/// Disable AP tracking.
 /// This Libfunc is used to disable ap tracking to allow merging branches that some have unknown ap
 /// change, without actually revoking the local stack.
 #[derive(Default)]
