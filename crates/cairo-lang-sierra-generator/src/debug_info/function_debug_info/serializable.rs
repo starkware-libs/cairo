@@ -14,7 +14,8 @@ pub struct SerializableAllFunctionsDebugInfo(
 
 impl From<SerializableAllFunctionsDebugInfo> for Annotations {
     fn from(value: SerializableAllFunctionsDebugInfo) -> Self {
-        let mapping = serde_json::to_value(value.0).unwrap();
+        let vec: Vec<_> = value.0.into_iter().map(|(id, debug_info)| (id.id, debug_info)).collect();
+        let mapping = serde_json::to_value(vec).unwrap();
         OrderedHashMap::from([(
             "github.com/software-mansion-labs/cairo-debugger".to_string(),
             serde_json::Value::from_iter([("functions_info", mapping)]),
