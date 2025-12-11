@@ -52,7 +52,7 @@ pub struct DebugInfo {
 /// It is not required for namespace URLs to exist, but it is preferable nonetheless.
 ///
 /// A single tool might want to use multiple namespaces, for example to group together annotations
-/// coming from different subcomponents of the tool. In such case, namespaces should use path-like
+/// coming from different subcomponents of the tool. In such a case, namespaces should use path-like
 /// notation (e.g. `example.com/sub-namespace`).
 ///
 /// For future-proofing, it might be a good idea to version namespaces, e.g. `example.com/v1`.
@@ -141,7 +141,7 @@ impl DebugInfo {
         }
     }
 
-    /// Replaces the debug name of an id if exists in the matching map.
+    /// Replaces the debug name of an id if it exists in the matching map.
     fn try_replace_type_id(&self, id: &mut ConcreteTypeId) {
         if let Some(name) = self.type_names.get(id).cloned() {
             let _ = id.debug_name.insert(name);
