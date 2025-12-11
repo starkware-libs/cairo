@@ -3,7 +3,9 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::flag_local_into_box_optimization;
 use cairo_lang_lowering::BlockId;
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
@@ -24,8 +26,9 @@ use crate::utils::{
     drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id,
     enum_from_bounded_int_libfunc_id, enum_init_libfunc_id, get_concrete_libfunc_id,
     get_libfunc_signature, into_box_libfunc_id, jump_libfunc_id, jump_statement,
-    match_enum_libfunc_id, rename_libfunc_id, return_statement, simple_basic_statement,
-    snapshot_take_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    local_into_box_libfunc_id, match_enum_libfunc_id, rename_libfunc_id, return_statement,
+    simple_basic_statement, snapshot_take_libfunc_id, struct_construct_libfunc_id,
+    struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::Block].
@@ -560,11 +563,20 @@ fn generate_statement_into_box<'db>(
     statement_location: &StatementLocation,
 ) -> Maybe<()> {
     let input = maybe_add_dup_statement(context, statement_location, 0, &statement.input)?;
+    let ty = context.get_variable_sierra_type(statement.input.var_id)?;
+    let db = context.get_db();
+    let semantic_ty = context.get_lowered_variable(statement.input.var_id).ty;
+    // When size < 3, into_box is cheaper.
+    let use_local_into_box = flag_local_into_box_optimization(db)
+        && context.is_non_ap_based(statement.input.var_id)
+        && db.type_size(semantic_ty) >= 3;
+    let libfunc_id = if use_local_into_box {
+        local_into_box_libfunc_id(db, ty)
+    } else {
+        into_box_libfunc_id(db, ty)
+    };
     let stmt = simple_basic_statement(
-        into_box_libfunc_id(
-            context.get_db(),
-            context.get_variable_sierra_type(statement.input.var_id)?,
-        ),
+        libfunc_id,
         &[input],
         &[context.get_sierra_variable(statement.output)],
     );

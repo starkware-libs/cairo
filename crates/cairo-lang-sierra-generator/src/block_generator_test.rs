@@ -79,6 +79,7 @@ fn block_generator_test(
         function_id,
         &lifetime,
         crate::ap_tracking::ApTrackingConfiguration::default(),
+        Default::default(),
     );
 
     let mut expected_sierra_code = String::default();
