@@ -34,16 +34,7 @@ use salsa::Database;
 
 use crate::documentable_item::DocumentableItemId;
 use crate::location_links::{LocationLink, format_signature};
-use crate::signature_data::{
-    DocumentableItemSignatureData, get_constant_signature_data, get_enum_signature_data,
-    get_extern_function_full_signature, get_extern_type_full_signature,
-    get_free_function_signature_data, get_impl_alias_signature_data,
-    get_impl_constant_signature_data, get_impl_def_signature_data,
-    get_impl_function_signature_data, get_impl_type_def_full_signature, get_member_signature_data,
-    get_module_type_alias_full_signature, get_struct_signature_data,
-    get_trait_const_signature_data, get_trait_function_signature_data, get_trait_signature_data,
-    get_trait_type_full_signature,
-};
+use crate::signature_data::{DocumentableItemSignatureData, SignatureDataRetriever};
 use crate::signature_errors::SignatureError;
 
 /// Used for indenting children items of complex data type signature, e.g., struct members.
@@ -242,7 +233,7 @@ impl<'db> HirDisplay<'db> for VariantId<'db> {
 
 impl<'db> HirDisplay<'db> for EnumId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let enum_full_signature = get_enum_signature_data(f.db, *self)?;
+        let enum_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write!(
             f,
             "{}enum {} {{",
@@ -284,7 +275,7 @@ impl<'db> HirDisplay<'db> for EnumId<'db> {
 
 impl<'db> HirDisplay<'db> for MemberId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let member_full_signature = get_member_signature_data(f.db, *self)?;
+        let member_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         if let Some(return_type) = member_full_signature.return_type {
             if return_type.is_unit(f.db) {
                 write!(
@@ -314,7 +305,7 @@ impl<'db> HirDisplay<'db> for MemberId<'db> {
 
 impl<'db> HirDisplay<'db> for StructId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let struct_full_signature = get_struct_signature_data(f.db, *self)?;
+        let struct_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         if let Some(attributes) = struct_full_signature.attributes {
             write_struct_attributes_syntax(attributes, f).map_err(|_| {
                 SignatureError::FailedWritingSignature(struct_full_signature.full_path.clone())
@@ -367,7 +358,7 @@ impl<'db> HirDisplay<'db> for StructId<'db> {
 
 impl<'db> HirDisplay<'db> for FreeFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let free_function_full_signature = get_free_function_signature_data(f.db, *self)?;
+        let free_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write_function_signature(f, free_function_full_signature, "".to_string())
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
@@ -377,7 +368,7 @@ impl<'db> HirDisplay<'db> for FreeFunctionId<'db> {
 
 impl<'db> HirDisplay<'db> for ConstantId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let constant_full_signature = get_constant_signature_data(f.db, *self)?;
+        let constant_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write!(
             f,
             "{}const {}: ",
@@ -441,7 +432,7 @@ impl<'db> HirDisplay<'db> for ConstantId<'db> {
 
 impl<'db> HirDisplay<'db> for ImplConstantDefId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let constant_full_signature = get_impl_constant_signature_data(f.db, *self)?;
+        let constant_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         if let Some(return_type) = constant_full_signature.return_type {
             f.write_type(
                 Some(&format!("const {}: ", constant_full_signature.name.long(f.db))),
@@ -463,7 +454,7 @@ impl<'db> HirDisplay<'db> for ImplConstantDefId<'db> {
 
 impl<'db> HirDisplay<'db> for TraitFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let trait_function_full_signature = get_trait_function_signature_data(f.db, *self)?;
+        let trait_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write_function_signature(f, trait_function_full_signature, "".to_string())
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
@@ -473,7 +464,7 @@ impl<'db> HirDisplay<'db> for TraitFunctionId<'db> {
 
 impl<'db> HirDisplay<'db> for ImplFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let impl_function_full_signature = get_impl_function_signature_data(f.db, *self)?;
+        let impl_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write_function_signature(f, impl_function_full_signature, "".to_string())
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
@@ -483,7 +474,7 @@ impl<'db> HirDisplay<'db> for ImplFunctionId<'db> {
 
 impl<'db> HirDisplay<'db> for TraitId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let trait_full_signature = get_trait_signature_data(f.db, *self)?;
+        let trait_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write!(
             f,
             "{}trait {}",
@@ -505,7 +496,7 @@ impl<'db> HirDisplay<'db> for TraitId<'db> {
 
 impl<'db> HirDisplay<'db> for TraitConstantId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let trait_const_full_signature = get_trait_const_signature_data(f.db, *self)?;
+        let trait_const_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         if let Some(return_type) = trait_const_full_signature.return_type {
             write!(
                 f,
@@ -526,7 +517,7 @@ impl<'db> HirDisplay<'db> for TraitConstantId<'db> {
 
 impl<'db> HirDisplay<'db> for ImplDefId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let impl_def_full_signature = get_impl_def_signature_data(f.db, *self)?;
+        let impl_def_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         let trait_id = f.db.impl_def_trait(*self).map_err(|_| {
             SignatureError::FailedRetrievingSemanticData(impl_def_full_signature.full_path.clone())
         })?;
@@ -560,7 +551,7 @@ impl<'db> HirDisplay<'db> for ImplDefId<'db> {
 
 impl<'db> HirDisplay<'db> for ImplAliasId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let impl_alias_full_signature = get_impl_alias_signature_data(f.db, *self)?;
+        let impl_alias_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write!(
             f,
             "{}impl {} = ",
@@ -580,7 +571,7 @@ impl<'db> HirDisplay<'db> for ImplAliasId<'db> {
 
 impl<'db> HirDisplay<'db> for ModuleTypeAliasId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let module_type_alias_full_signature = get_module_type_alias_full_signature(f.db, *self)?;
+        let module_type_alias_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write_type_signature(f, module_type_alias_full_signature, false)
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
@@ -590,7 +581,7 @@ impl<'db> HirDisplay<'db> for ModuleTypeAliasId<'db> {
 
 impl<'db> HirDisplay<'db> for TraitTypeId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let trait_type_full_signature = get_trait_type_full_signature(f.db, *self)?;
+        let trait_type_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write_type_signature(f, trait_type_full_signature, false)
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
@@ -600,7 +591,7 @@ impl<'db> HirDisplay<'db> for TraitTypeId<'db> {
 
 impl<'db> HirDisplay<'db> for ImplTypeDefId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let impl_type_def_full_signature = get_impl_type_def_full_signature(f.db, *self)?;
+        let impl_type_def_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write_type_signature(f, impl_type_def_full_signature, false)
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
@@ -610,7 +601,7 @@ impl<'db> HirDisplay<'db> for ImplTypeDefId<'db> {
 
 impl<'db> HirDisplay<'db> for ExternTypeId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let extern_type_full_signature = get_extern_type_full_signature(f.db, *self)?;
+        let extern_type_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         write_type_signature(f, extern_type_full_signature, true)
             .map_err(|_| SignatureError::FailedWritingSignature(self.full_path(f.db)))?;
         f.format();
@@ -620,7 +611,7 @@ impl<'db> HirDisplay<'db> for ExternTypeId<'db> {
 
 impl<'db> HirDisplay<'db> for ExternFunctionId<'db> {
     fn hir_fmt(&self, f: &mut HirFormatter<'db>) -> Result<(), SignatureError> {
-        let extern_function_full_signature = get_extern_function_full_signature(f.db, *self)?;
+        let extern_function_full_signature = Self::retrieve_signature_data(f.db, *self)?;
         let signature = match f.db.extern_function_signature(*self) {
             Ok(signature) => signature,
             _ => {
