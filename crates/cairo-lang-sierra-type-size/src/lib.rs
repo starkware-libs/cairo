@@ -35,7 +35,7 @@ impl ProgramRegistryInfo {
     }
 }
 
-/// Returns a mapping for the sizes of all types for the given program.
+/// Returns a mapping of the sizes of all types in the given program.
 pub fn get_type_size_map(
     program: &Program,
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
