@@ -942,3 +942,49 @@ return([2]);
 
 test::bar@F0() -> (felt252);
 test::foo@F1() -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > ReprPointer (&T) with large struct triggers local_into_box optimization.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+#[derive(Drop, Copy)]
+struct LargeStruct {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+}
+
+fn foo(s: LargeStruct) -> &LargeStruct {
+    &s
+}
+
+//! > casm
+call rel 5;
+[ap + 0] = [ap + -2] + -5, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::LargeStruct = Struct<ut@test::LargeStruct, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::LargeStruct> = Box<test::LargeStruct> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc snapshot_take<test::LargeStruct> = snapshot_take<test::LargeStruct>;
+libfunc drop<test::LargeStruct> = drop<test::LargeStruct>;
+libfunc local_into_box<test::LargeStruct> = local_into_box<test::LargeStruct>;
+libfunc store_temp<Box<test::LargeStruct>> = store_temp<Box<test::LargeStruct>>;
+
+F0:
+snapshot_take<test::LargeStruct>([0]) -> ([1], [2]);
+drop<test::LargeStruct>([1]) -> ();
+local_into_box<test::LargeStruct>([2]) -> ([3]);
+store_temp<Box<test::LargeStruct>>([3]) -> ([3]);
+return([3]);
+
+test::foo@F0([0]: test::LargeStruct) -> (Box<test::LargeStruct>);

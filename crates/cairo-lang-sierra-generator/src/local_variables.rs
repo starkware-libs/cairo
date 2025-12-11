@@ -31,12 +31,14 @@ use crate::utils::{
 
 /// Information returned by [analyze_ap_changes].
 pub struct AnalyzeApChangesResult {
-    /// True if the function has a known_ap_change
+    /// True if the function has a known_ap_change.
     pub known_ap_change: bool,
     /// The variables that should be stored in locals as they are revoked during the function.
     pub local_variables: OrderedHashSet<VariableId>,
     /// Information about where ap tracking should be enabled and disabled.
     pub ap_tracking_configuration: ApTrackingConfiguration,
+    /// Variables that are known to be non-AP-based (expanded to include all aliases).
+    pub non_ap_based_variables: UnorderedHashSet<VariableId>,
 }
 
 /// Does ap change related analysis for a given function.
@@ -98,6 +100,14 @@ pub fn analyze_ap_changes<'db>(
         }
     }
 
+    // Expand non_ap_based to include all aliases.
+    let non_ap_based_variables: UnorderedHashSet<_> = lowered_function
+        .variables
+        .iter()
+        .map(|(id, _)| id)
+        .filter(|v| ctx.non_ap_based.contains(ctx.peel_aliases(v)))
+        .collect();
+
     Ok(AnalyzeApChangesResult {
         known_ap_change: root_info.known_ap_change,
         local_variables: locals,
@@ -106,6 +116,7 @@ pub fn analyze_ap_changes<'db>(
             root_info.known_ap_change,
             need_ap_alignment,
         ),
+        non_ap_based_variables,
     })
 }
 
