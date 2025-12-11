@@ -11,7 +11,7 @@ use thiserror::Error;
 /// NestedIntList is either a list of NestedIntList or an integer.
 /// E.g., `[0, [1, 2], [3, [4]]]`.
 ///
-/// Used to represents the lengths of the segments in a contract, which are in a form of a tree.
+/// Used to represent the lengths of the segments in a contract, which are in the form of a tree.
 ///
 /// For example, the contract may be segmented by functions, where each function is segmented by
 /// its branches. It is also possible to have the inner segmentation only for some of the functions,
@@ -62,7 +62,7 @@ fn find_functions_segments(program: &Program) -> Result<Vec<usize>, Segmentation
     require(matches!(function_statement_ids.first(), Some(0)))
         .ok_or(SegmentationError::NoFunctionStartAtZero)?;
 
-    // Sanity check: go over the statements and check that there are no jump outside of functions.
+    // Sanity check: go over the statements and check that there are no jumps outside of functions.
     let mut current_function = FunctionInfo::new(0);
     let mut next_function_idx = 1;
 
