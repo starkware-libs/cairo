@@ -47,6 +47,35 @@ use crate::{
     StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableArena, VariableId,
 };
 
+/// Converts a const value to a specialization arg.
+/// For struct and enum const values, recursively converts to SpecializationArg::Struct/Enum.
+fn const_to_specialization_arg<'db>(
+    db: &'db dyn Database,
+    value: ConstValueId<'db>,
+    boxed: bool,
+) -> SpecializationArg<'db> {
+    match value.long(db) {
+        ConstValue::Struct(members, ty) => {
+            // Only convert to SpecializationArg::Struct if the type is actually a concrete struct,
+            // not a closure or fixed size array.
+            if matches!(ty.long(db), TypeLongId::Concrete(ConcreteTypeId::Struct(_))) {
+                let args = members
+                    .iter()
+                    .map(|member| const_to_specialization_arg(db, *member, false))
+                    .collect();
+                SpecializationArg::Struct(args)
+            } else {
+                SpecializationArg::Const { value, boxed }
+            }
+        }
+        ConstValue::Enum(variant, payload) => SpecializationArg::Enum {
+            variant: *variant,
+            payload: Box::new(const_to_specialization_arg(db, *payload, false)),
+        },
+        _ => SpecializationArg::Const { value, boxed },
+    }
+}
+
 /// Keeps track of equivalent values that variables might be replaced with.
 /// Note: We don't keep track of types as we assume the usage is always correct.
 #[derive(Debug, Clone)]
@@ -1310,7 +1339,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         }
 
         match var_info {
-            VarInfo::Const(value) => Some(SpecializationArg::Const { value, boxed: false }),
+            VarInfo::Const(value) => Some(const_to_specialization_arg(self.db, value, false)),
             VarInfo::Box(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)
                 .map(|value| SpecializationArg::Const { value: *value, boxed: true }),
             VarInfo::Snapshot(info) => {

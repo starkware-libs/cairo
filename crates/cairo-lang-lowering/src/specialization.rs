@@ -7,6 +7,7 @@ use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::types::{TypeSizeInformation, TypesSemantic};
 use cairo_lang_semantic::{ConcreteTypeId, ConcreteVariant, GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_utils::extract_matches;
 use itertools::{Itertools, chain, zip_eq};
@@ -129,8 +130,23 @@ pub fn specialized_function_lowered<'db>(
             match state {
                 SpecializationArgBuildingState::Initial(c) => match c {
                     SpecializationArg::Const { value, boxed } => {
-                        statements
-                            .push(Statement::Const(StatementConst::new(*value, var_id, *boxed)));
+                        if db.type_size_info(variables[var_id].ty)?
+                            == TypeSizeInformation::ZeroSized
+                        {
+                            assert!(
+                                !boxed,
+                                "Zero sized specialization arguments should only be part of \
+                                 consts and therefore cannot be boxed"
+                            );
+                            statements.push(Statement::StructConstruct(StatementStructConstruct {
+                                inputs: vec![],
+                                output: var_id,
+                            }));
+                        } else {
+                            statements.push(Statement::Const(StatementConst::new(
+                                *value, var_id, *boxed,
+                            )));
+                        }
                     }
                     SpecializationArg::Snapshot(inner) => {
                         let snap_ty = variables.variables[var_id].ty;
