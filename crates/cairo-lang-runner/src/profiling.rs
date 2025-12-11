@@ -660,8 +660,9 @@ impl<'a> ProfilingInfoProcessor<'a> {
             let function_identifier = self
                 .statements_functions
                 .get(statement_idx)
-                .unwrap_or(&"unknown".to_string())
-                .clone();
+                .cloned()
+                .unwrap_or_else(|| "unknown".to_string());
+
             *(cairo_functions.entry(function_identifier).or_insert(0)) += weight;
         }
 
