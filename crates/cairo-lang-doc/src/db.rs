@@ -223,7 +223,7 @@ fn extract_comment_from_code_line(line: &str, comment_markers: &[&'static str]) 
     for comment_marker in comment_markers {
         if let Some(content) = dedent.strip_prefix(*comment_marker) {
             // TODO(mkaput): The way how removing this indentation is performed is probably
-            //   wrong. The code should probably learn how many spaces are used at the first
+            //   wrong. The code should probably learn how many spaces are used in the first
             //   line of comments block, and then remove the same amount of spaces in the
             //   block, instead of assuming just one space.
             // Remove inner indentation if one exists.
