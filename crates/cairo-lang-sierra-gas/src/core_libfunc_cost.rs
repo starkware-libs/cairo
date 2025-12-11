@@ -14,7 +14,7 @@ pub use crate::core_libfunc_cost_base::{
 use crate::gas_info::GasInfo;
 pub use crate::starknet_libfunc_cost_base::SYSTEM_CALL_COST;
 
-/// Cost operations for getting `Option<i64>` costs values.
+/// Cost operations for getting `CostTokenMap<i64>` costs values.
 struct Ops<'a> {
     gas_info: &'a GasInfo,
     idx: StatementIdx,
