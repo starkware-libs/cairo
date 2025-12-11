@@ -33,6 +33,7 @@ use salsa::Database;
 
 use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
+    SierraFunctionId, SierraVarId,
 };
 use crate::debug_info::{SourceCodeSpan, SourceFileFullPath, maybe_code_location};
 
@@ -56,7 +57,7 @@ impl<'db> AllFunctionsDebugInfo<'db> {
                 .iter()
                 .filter_map(|(function_id, function_debug_info)| {
                     Some((
-                        function_id.clone(),
+                        SierraFunctionId(function_id.id),
                         function_debug_info.extract_serializable_debug_info(db)?,
                     ))
                 })
@@ -97,7 +98,7 @@ impl<'db> FunctionDebugInfo<'db> {
         db: &'db dyn Database,
         function_file_path: &SourceFileFullPath,
         function_code_span: &SourceCodeSpan,
-    ) -> HashMap<VarId, (CairoVariableName, SourceCodeSpan)> {
+    ) -> HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)> {
         self.variables_locations
             .iter()
             .filter_map(|(sierra_var, code_location)| {
@@ -151,7 +152,7 @@ impl<'db> FunctionDebugInfo<'db> {
                     .take(db.file_content(user_location.file_id).unwrap())
                     .to_string();
 
-                Some((sierra_var.clone(), (var_name, span)))
+                Some((SierraVarId(sierra_var.id), (var_name, span)))
             })
             .collect()
     }
