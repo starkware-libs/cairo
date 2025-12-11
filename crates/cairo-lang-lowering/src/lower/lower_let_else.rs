@@ -79,7 +79,7 @@ pub fn lower_let_else<'db>(
     Ok(())
 }
 
-/// Similar to [super::lower_tail_expr] expect that the result is a tuple of the given variables.
+/// Similar to [super::lower_tail_expr] except that the result is a tuple of the given variables.
 ///
 /// Used in the lowering of the success arm's body in let-else.
 pub fn lower_success_arm_body<'db>(
