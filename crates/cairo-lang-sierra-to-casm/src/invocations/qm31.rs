@@ -57,7 +57,7 @@ pub fn build_qm31_op(
 }
 
 /// Each `m31` in the `felt252` representation of a `qm31` is in a `36` bit part of the word,
-/// containing a 5 extra 0 bits.
+/// padded by 5 zero bits.
 const PART_SIZE: usize = 36;
 /// The maximal possible value of a `m31` part of the `qm31` representation as a `felt252`.
 const PART_UPPER_BOUND: u128 = 1 << PART_SIZE;
