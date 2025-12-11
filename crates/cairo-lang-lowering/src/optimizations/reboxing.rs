@@ -7,10 +7,11 @@ use std::rc::Rc;
 use cairo_lang_filesystem::flag::flag_future_sierra;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::types::{TypesSemantic, peel_snapshots};
+use cairo_lang_semantic::types::{TypesSemantic, peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use itertools::Itertools;
 use salsa::Database;
 
 use crate::borrow_check::analysis::StatementLocation;
@@ -257,22 +258,17 @@ fn create_struct_boxed_deconstruct_call<'db>(
     }
     let (n_snapshots, struct_ty) = peel_snapshots(db, *inner_ty);
 
-    // TODO(eytan-starkware): Support snapshots of structs in reboxing optimization.
-    // Currently we give up if the struct is wrapped in snapshots.
-    if n_snapshots > 0 {
-        trace!("Skipping reboxing for snapshotted struct (n_snapshots={})", n_snapshots);
-        return None;
-    }
-
-    // Extract member types from struct or tuple
+    trace!("Extracted struct or tuple type: {:?}", struct_ty);
     let member_types = match struct_ty {
         TypeLongId::Concrete(ConcreteTypeId::Struct(struct_id)) => db
             .concrete_struct_members(struct_id)
             .ok()?
             .iter()
-            .map(|(_, member)| member.ty)
-            .collect::<Vec<_>>(),
-        TypeLongId::Tuple(inner_types) => inner_types,
+            .map(|(_, member)| wrap_in_snapshots(db, member.ty, n_snapshots))
+            .collect_vec(),
+        TypeLongId::Tuple(inner_types) => {
+            inner_types.into_iter().map(|ty| wrap_in_snapshots(db, ty, n_snapshots)).collect()
+        }
         _ => {
             trace!("Unsupported type for reboxing: {:?}", struct_ty);
             return None;
