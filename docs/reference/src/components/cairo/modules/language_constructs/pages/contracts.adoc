@@ -109,7 +109,7 @@ other functions in the same contract. They are not entry points. For example:
 
 == Events
 
-Contract events trigger events on Starknet. They can be triggered by the contract.
+Contracts can emit events on Starknet.
 
 They are defined using the `#[event]` attribute on an empty function.
 For example:
