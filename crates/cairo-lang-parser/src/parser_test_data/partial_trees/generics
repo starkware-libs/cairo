@@ -22,12 +22,11 @@ GenericArgs
     │   └── item #0 (kind: GenericArgNamed)
     │       ├── name (kind: TokenIdentifier): 'S'
     │       ├── colon (kind: TokenColon): ':'
-    │       └── value (kind: GenericArgValueExpr)
-    │           └── expr (kind: ExprPath)
-    │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │               └── segments (kind: ExprPathInner)
-    │                   └── item #0 (kind: PathSegmentSimple)
-    │                       └── ident (kind: TokenIdentifier): 'usize'
+    │       └── value (kind: ExprPath)
+    │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           └── segments (kind: ExprPathInner)
+    │               └── item #0 (kind: PathSegmentSimple)
+    │                   └── ident (kind: TokenIdentifier): 'usize'
     └── rangle (kind: TokenGT): '>'
 
 //! > ==========================================================================
@@ -60,6 +59,5 @@ error: Missing tokens. Expected a type expression.
     │   └── item #0 (kind: GenericArgNamed)
     │       ├── name (kind: TokenIdentifier): 'S'
     │       ├── colon (kind: TokenColon): ':'
-    │       └── value (kind: GenericArgValueExpr)
-    │           └── expr: Missing []
+    │       └── value: Missing []
     └── rangle (kind: TokenGT): '>'

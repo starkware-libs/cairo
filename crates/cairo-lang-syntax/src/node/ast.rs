@@ -301,6 +301,7 @@ pub enum Expr<'db> {
     Indexed(ExprIndexed<'db>),
     InlineMacro(ExprInlineMacro<'db>),
     FixedSizeArray(ExprFixedSizeArray<'db>),
+    Underscore(TerminalUnderscore<'db>),
     Missing(ExprMissing<'db>),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
@@ -439,6 +440,11 @@ impl<'db> From<ExprFixedSizeArrayPtr<'db>> for ExprPtr<'db> {
         Self(value.0)
     }
 }
+impl<'db> From<TerminalUnderscorePtr<'db>> for ExprPtr<'db> {
+    fn from(value: TerminalUnderscorePtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
 impl<'db> From<ExprMissingPtr<'db>> for ExprPtr<'db> {
     fn from(value: ExprMissingPtr<'db>) -> Self {
         Self(value.0)
@@ -564,6 +570,11 @@ impl<'db> From<ExprFixedSizeArrayGreen<'db>> for ExprGreen<'db> {
         Self(value.0)
     }
 }
+impl<'db> From<TerminalUnderscoreGreen<'db>> for ExprGreen<'db> {
+    fn from(value: TerminalUnderscoreGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
 impl<'db> From<ExprMissingGreen<'db>> for ExprGreen<'db> {
     fn from(value: ExprMissingGreen<'db>) -> Self {
         Self(value.0)
@@ -625,6 +636,9 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             SyntaxKind::ExprFixedSizeArray => {
                 Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalUnderscore => {
+                Expr::Underscore(TerminalUnderscore::from_syntax_node(db, node))
+            }
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -680,6 +694,9 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             SyntaxKind::ExprFixedSizeArray => {
                 Some(Expr::FixedSizeArray(ExprFixedSizeArray::from_syntax_node(db, node)))
             }
+            SyntaxKind::TerminalUnderscore => {
+                Some(Expr::Underscore(TerminalUnderscore::from_syntax_node(db, node)))
+            }
             SyntaxKind::ExprMissing => Some(Expr::Missing(ExprMissing::from_syntax_node(db, node))),
             _ => None,
         }
@@ -710,6 +727,7 @@ impl<'db> TypedSyntaxNode<'db> for Expr<'db> {
             Expr::Indexed(x) => x.as_syntax_node(),
             Expr::InlineMacro(x) => x.as_syntax_node(),
             Expr::FixedSizeArray(x) => x.as_syntax_node(),
+            Expr::Underscore(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -746,6 +764,7 @@ impl<'db> Expr<'db> {
                 | SyntaxKind::ExprIndexed
                 | SyntaxKind::ExprInlineMacro
                 | SyntaxKind::ExprFixedSizeArray
+                | SyntaxKind::TerminalUnderscore
                 | SyntaxKind::ExprMissing
         )
     }
@@ -18734,7 +18753,7 @@ impl<'db> GenericArgNamed<'db> {
         db: &'db dyn Database,
         name: TerminalIdentifierGreen<'db>,
         colon: TerminalColonGreen<'db>,
-        value: GenericArgValueGreen<'db>,
+        value: ExprGreen<'db>,
     ) -> GenericArgNamedGreen<'db> {
         let children = [name.0, colon.0, value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
@@ -18754,8 +18773,8 @@ impl<'db> GenericArgNamed<'db> {
     pub fn colon(&self, db: &'db dyn Database) -> TerminalColon<'db> {
         TerminalColon::from_syntax_node(db, self.node.get_children(db)[1])
     }
-    pub fn value(&self, db: &'db dyn Database) -> GenericArgValue<'db> {
-        GenericArgValue::from_syntax_node(db, self.node.get_children(db)[2])
+    pub fn value(&self, db: &'db dyn Database) -> Expr<'db> {
+        Expr::from_syntax_node(db, self.node.get_children(db)[2])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
@@ -18789,7 +18808,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgNamed<'db> {
                     children: [
                         TerminalIdentifier::missing(db).0,
                         TerminalColon::missing(db).0,
-                        GenericArgValue::missing(db).0,
+                        Expr::missing(db).0,
                     ]
                     .into(),
                     width: TextWidth::default(),
@@ -18830,10 +18849,7 @@ pub struct GenericArgUnnamed<'db> {
 }
 impl<'db> GenericArgUnnamed<'db> {
     pub const INDEX_VALUE: usize = 0;
-    pub fn new_green(
-        db: &'db dyn Database,
-        value: GenericArgValueGreen<'db>,
-    ) -> GenericArgUnnamedGreen<'db> {
+    pub fn new_green(db: &'db dyn Database, value: ExprGreen<'db>) -> GenericArgUnnamedGreen<'db> {
         let children = [value.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         GenericArgUnnamedGreen(
@@ -18846,8 +18862,8 @@ impl<'db> GenericArgUnnamed<'db> {
     }
 }
 impl<'db> GenericArgUnnamed<'db> {
-    pub fn value(&self, db: &'db dyn Database) -> GenericArgValue<'db> {
-        GenericArgValue::from_syntax_node(db, self.node.get_children(db)[0])
+    pub fn value(&self, db: &'db dyn Database) -> Expr<'db> {
+        Expr::from_syntax_node(db, self.node.get_children(db)[0])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
@@ -18878,7 +18894,7 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgUnnamed<'db> {
             GreenNode {
                 kind: SyntaxKind::GenericArgUnnamed,
                 details: GreenNodeDetails::Node {
-                    children: [GenericArgValue::missing(db).0].into(),
+                    children: [Expr::missing(db).0].into(),
                     width: TextWidth::default(),
                 },
             }
@@ -18909,182 +18925,6 @@ impl<'db> TypedSyntaxNode<'db> for GenericArgUnnamed<'db> {
     }
     fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
         GenericArgUnnamedPtr(self.node.stable_ptr(db))
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub enum GenericArgValue<'db> {
-    Expr(GenericArgValueExpr<'db>),
-    Underscore(TerminalUnderscore<'db>),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct GenericArgValuePtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> TypedStablePtr<'db> for GenericArgValuePtr<'db> {
-    type SyntaxNode = GenericArgValue<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> Self::SyntaxNode {
-        GenericArgValue::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<GenericArgValuePtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: GenericArgValuePtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-impl<'db> From<GenericArgValueExprPtr<'db>> for GenericArgValuePtr<'db> {
-    fn from(value: GenericArgValueExprPtr<'db>) -> Self {
-        Self(value.0)
-    }
-}
-impl<'db> From<TerminalUnderscorePtr<'db>> for GenericArgValuePtr<'db> {
-    fn from(value: TerminalUnderscorePtr<'db>) -> Self {
-        Self(value.0)
-    }
-}
-impl<'db> From<GenericArgValueExprGreen<'db>> for GenericArgValueGreen<'db> {
-    fn from(value: GenericArgValueExprGreen<'db>) -> Self {
-        Self(value.0)
-    }
-}
-impl<'db> From<TerminalUnderscoreGreen<'db>> for GenericArgValueGreen<'db> {
-    fn from(value: TerminalUnderscoreGreen<'db>) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct GenericArgValueGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for GenericArgValue<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = None;
-    type StablePtr = GenericArgValuePtr<'db>;
-    type Green = GenericArgValueGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        panic!("No missing variant.");
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::GenericArgValueExpr => {
-                GenericArgValue::Expr(GenericArgValueExpr::from_syntax_node(db, node))
-            }
-            SyntaxKind::TerminalUnderscore => {
-                GenericArgValue::Underscore(TerminalUnderscore::from_syntax_node(db, node))
-            }
-            _ => {
-                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericArgValue")
-            }
-        }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::GenericArgValueExpr => {
-                Some(GenericArgValue::Expr(GenericArgValueExpr::from_syntax_node(db, node)))
-            }
-            SyntaxKind::TerminalUnderscore => {
-                Some(GenericArgValue::Underscore(TerminalUnderscore::from_syntax_node(db, node)))
-            }
-            _ => None,
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        match self {
-            GenericArgValue::Expr(x) => x.as_syntax_node(),
-            GenericArgValue::Underscore(x) => x.as_syntax_node(),
-        }
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        GenericArgValuePtr(self.as_syntax_node().stable_ptr(db))
-    }
-}
-impl<'db> GenericArgValue<'db> {
-    /// Checks if a kind of a variant of [GenericArgValue].
-    pub fn is_variant(kind: SyntaxKind) -> bool {
-        matches!(kind, SyntaxKind::GenericArgValueExpr | SyntaxKind::TerminalUnderscore)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
-pub struct GenericArgValueExpr<'db> {
-    node: SyntaxNode<'db>,
-}
-impl<'db> GenericArgValueExpr<'db> {
-    pub const INDEX_EXPR: usize = 0;
-    pub fn new_green(db: &'db dyn Database, expr: ExprGreen<'db>) -> GenericArgValueExprGreen<'db> {
-        let children = [expr.0];
-        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
-        GenericArgValueExprGreen(
-            GreenNode {
-                kind: SyntaxKind::GenericArgValueExpr,
-                details: GreenNodeDetails::Node { children: children.into(), width },
-            }
-            .intern(db),
-        )
-    }
-}
-impl<'db> GenericArgValueExpr<'db> {
-    pub fn expr(&self, db: &'db dyn Database) -> Expr<'db> {
-        Expr::from_syntax_node(db, self.node.get_children(db)[0])
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
-pub struct GenericArgValueExprPtr<'db>(pub SyntaxStablePtrId<'db>);
-impl<'db> GenericArgValueExprPtr<'db> {}
-impl<'db> TypedStablePtr<'db> for GenericArgValueExprPtr<'db> {
-    type SyntaxNode = GenericArgValueExpr<'db>;
-    fn untyped(self) -> SyntaxStablePtrId<'db> {
-        self.0
-    }
-    fn lookup(&self, db: &'db dyn Database) -> GenericArgValueExpr<'db> {
-        GenericArgValueExpr::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl<'db> From<GenericArgValueExprPtr<'db>> for SyntaxStablePtrId<'db> {
-    fn from(ptr: GenericArgValueExprPtr<'db>) -> Self {
-        ptr.untyped()
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
-pub struct GenericArgValueExprGreen<'db>(pub GreenId<'db>);
-impl<'db> TypedSyntaxNode<'db> for GenericArgValueExpr<'db> {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgValueExpr);
-    type StablePtr = GenericArgValueExprPtr<'db>;
-    type Green = GenericArgValueExprGreen<'db>;
-    fn missing(db: &'db dyn Database) -> Self::Green {
-        GenericArgValueExprGreen(
-            GreenNode {
-                kind: SyntaxKind::GenericArgValueExpr,
-                details: GreenNodeDetails::Node {
-                    children: [Expr::missing(db).0].into(),
-                    width: TextWidth::default(),
-                },
-            }
-            .intern(db),
-        )
-    }
-    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::GenericArgValueExpr,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::GenericArgValueExpr
-        );
-        Self { node }
-    }
-    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
-        let kind = node.kind(db);
-        if kind == SyntaxKind::GenericArgValueExpr {
-            Some(Self::from_syntax_node(db, node))
-        } else {
-            None
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode<'db> {
-        self.node
-    }
-    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
-        GenericArgValueExprPtr(self.node.stable_ptr(db))
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]

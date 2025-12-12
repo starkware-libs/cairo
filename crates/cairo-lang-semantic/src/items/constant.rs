@@ -337,8 +337,16 @@ pub fn constant_semantic_data_helper<'db>(
     };
     resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
-    let constant_type =
-        resolve_type(db, &mut diagnostics, &mut resolver, &constant_ast.type_clause(db).ty(db));
+    let ty_syntax = constant_ast.type_clause(db).ty(db);
+    let constant_type = resolve_type(db, &mut diagnostics, &mut resolver, &ty_syntax);
+    // The type of a constant must not rely on its value, to create better stability for the
+    // constant signature.
+    if !constant_type.is_var_free(db) {
+        diagnostics.report(
+            ty_syntax.stable_ptr(db).untyped(),
+            SemanticDiagnosticKind::ConstTypeNotVarFree,
+        );
+    }
 
     let mut ctx = ComputationContext::new_global(db, &mut diagnostics, &mut resolver);
 
