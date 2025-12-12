@@ -2,7 +2,7 @@
 
 An `lvalue` is a syntax element that represents a target that can be assigned values.
 The syntax of an `lvalue` is a member-path: A sequence of identifiers separated by dots.
-Example: 'a', `foo.bar.baz`.
+Example: `a`, `foo.bar.baz`.
 
 The first identifier must be a mutable xref:let-statement.adoc[local variable]
 (defined with the `mut` keyword).

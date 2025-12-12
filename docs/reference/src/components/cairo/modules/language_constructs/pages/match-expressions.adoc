@@ -58,4 +58,4 @@ match felt_var {
 ----
 
 Where `felt_var` is a xref:felt252-type.adoc[felt252] and the match patterns are the
-xref:literal-expressions.adoc[literal] '0' and wildcard '_' (which matches any value).
+xref:literal-expressions.adoc[literal] `0` and wildcard `_` (which matches any value).
