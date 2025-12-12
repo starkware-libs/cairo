@@ -10,14 +10,14 @@ Here is a simple usage example for a dictionary:
 
 [source,rust]
 ----
-let mut dict = Felt252DictTrait::new();
-    dict.insert(10, 110);
-    dict.insert(11, 111);
-    let val10 = dict[10]; // 110
-    let val11 = dict[11]; // 111
-    let val12 = dict[12]; // 0
-    dict.insert(10, 120);
-    let val10 = dict[10]; // 120
+let mut dict: Felt252Dict<u128> = Default::default();
+dict.insert(10, 110);
+dict.insert(11, 111);
+let val10 = dict[10]; // 110
+let val11 = dict[11]; // 111
+let val12 = dict[12]; // 0
+dict.insert(10, 120);
+let val10 = dict[10]; // 120
 ----
 
 == Dictionary Entry
@@ -26,19 +26,19 @@ Reading from a dictionary creates a copy of the value and thus requires the valu
 the Copy trait. However, dictionaries also support a special type of read access, using the
 dictionary `entry` method, which is useful for in-place updates of the dictionary.
 
-To create an entry, call `entry(key)`, which returns the current value of the given key and a
-`Felt252DictEntry` object. The `Felt252DictEntry` object is a temporary owner of the dictionary
-and can only be destructed by calling `finalize(new_value)` on it. This ensures that the
-dictionary is not used while it is being modified.
+To create an entry, call `entry(key)`, which returns a `Felt252DictEntry` object and the current
+value of the given key. The `Felt252DictEntry` object is a temporary owner of the dictionary
+and can only be destructed by calling `finalize(new_value)` on it, which returns ownership of
+the dictionary. This ensures that the dictionary is not used while it is being modified.
 
 [source,rust]
 ----
-    let mut dict = Felt252DictTrait::new();
-    dict.insert(10, 110);
-    let (val10, entry) = dict.entry(10);
-    let new_val = do_some_calculation(val10);
-    entry.finalize(new_val);
-    let val10 = dict[10]; // new_val
+let mut dict: Felt252Dict<u128> = Default::default();
+dict.insert(10, 110);
+let (entry, val10) = dict.entry(10);
+let new_val = do_some_calculation(val10);
+dict = entry.finalize(new_val);
+let val10 = dict[10]; // new_val
 ----
 
 == Dictionary Destruction
@@ -50,8 +50,8 @@ information, see the xref:linear-types.adoc#Destructors[Destructors] section.
 
 [source,rust]
 ----
-    #[derive(Destruct)]
-    struct MyStruct {
-        dict: Felt252Dict,
-    }
+#[derive(Destruct)]
+struct MyStruct {
+    dict: Felt252Dict<felt252>,
+}
 ----
