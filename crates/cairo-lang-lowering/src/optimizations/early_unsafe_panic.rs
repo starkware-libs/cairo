@@ -62,7 +62,8 @@ pub struct UnsafePanicContext<'db> {
     /// The list of blocks where we can insert unsafe_panic.
     fixes: Vec<(StatementLocation, LocationId<'db>)>,
 
-    /// libfuncs with side effects that we need to ignore.
+    /// libfuncs with side effects that must be prevented from executing when return is
+    /// unreachable.
     libfuncs_with_sideffect: HashSet<ExternFunctionId<'db>>,
 }
 
