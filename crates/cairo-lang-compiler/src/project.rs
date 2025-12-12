@@ -30,6 +30,7 @@ pub fn setup_single_file_project(
     db: &mut dyn Database,
     path: &Path,
 ) -> Result<CrateInput, ProjectError> {
+    let path_str = path.to_string_lossy().into_owned();
     match path.extension().and_then(OsStr::to_str) {
         Some("cairo") => (),
         _ => {
@@ -37,9 +38,9 @@ pub fn setup_single_file_project(
         }
     }
     if !path.exists() {
-        return Err(ProjectError::NoSuchFile { path: path.to_string_lossy().to_string() });
+        return Err(ProjectError::NoSuchFile { path: path_str.clone() });
     }
-    let bad_path_err = || ProjectError::BadPath { path: path.to_string_lossy().to_string() };
+    let bad_path_err = || ProjectError::BadPath { path: path_str.clone() };
     let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
     let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
     let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
