@@ -168,7 +168,6 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         SyntaxKind::OptionAliasClauseEmpty => 0..0,
         SyntaxKind::GenericArgNamed => 0..0,
         SyntaxKind::GenericArgUnnamed => 0..0,
-        SyntaxKind::GenericArgValueExpr => 0..0,
         SyntaxKind::GenericArgs => 0..0,
         SyntaxKind::GenericArgList => 0..0,
         SyntaxKind::AssociatedItemConstraint => 0..0,

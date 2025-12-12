@@ -772,6 +772,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 };
                 format!("{feature_name_str} is not supported outside of functions.")
             }
+            SemanticDiagnosticKind::ConstTypeNotVarFree => {
+                "Constant type must not depend on its value.".into()
+            }
             SemanticDiagnosticKind::UnsupportedConstant => {
                 "This expression is not supported as constant.".into()
             }
@@ -1450,6 +1453,7 @@ pub enum SemanticDiagnosticKind<'db> {
         found: SmolStrId<'db>,
     },
     UnsupportedOutsideOfFunction(UnsupportedOutsideOfFunctionFeatureName),
+    ConstTypeNotVarFree,
     UnsupportedConstant,
     FailedConstantCalculation,
     ConstantCalculationDepthExceeded,

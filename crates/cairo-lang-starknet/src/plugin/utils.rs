@@ -72,8 +72,7 @@ impl<'db> AstPathExtract for ast::ExprPath<'db> {
             && path.identifier(db).long(db) == name
             && let Ok(ast::GenericArg::Unnamed(arg)) =
                 path.generic_args(db).generic_args(db).elements(db).exactly_one()
-            && let ast::GenericArgValue::Expr(arg) = arg.value(db)
-            && arg.expr(db).is_identifier(db, generic_arg)
+            && arg.value(db).is_identifier(db, generic_arg)
         {
             true
         } else {
