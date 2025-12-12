@@ -1,5 +1,51 @@
 = Items
-// TODO(spapini): Fill with content.
+An _item_ is a top-level declaration in a Cairo program.
+Items define the structure of your code by declaring modules, functions, types, constants, and other language constructs.
+
+== Item types
+
+Cairo supports the following types of items:
+
+=== Module items
+
+* xref:module.adoc[Modules] — Organize code into namespaces using the `mod` keyword
+* xref:use.adoc[Use declarations] — Import items from other modules into the current scope
+
+=== Function items
+
+* xref:functions.adoc[Functions] — Define executable code units using the `fn` keyword
+
+=== Type definition items
+
+* xref:structs.adoc[Structs] — Define custom data structures with named fields
+* xref:enums.adoc[Enums] — Define types that can be one of several variants
+* xref:type-aliases.adoc[Type aliases] — Create alternate names for existing types using the `type` keyword
+
+=== Trait and implementation items
+
+* xref:traits.adoc[Traits] — Define shared behavior and implement it using `trait` and `impl`
+
+=== Value items
+
+* xref:constant-items.adoc[Constants] — Define compile-time constant values using the `const` keyword
+
+== Visibility
+
+Items can have different visibility levels:
+
+* **Public items** — Declared with `pub`, accessible from other modules
+* **Private items** — Default visibility, only accessible within the defining module
+
+[source,cairo]
+----
+pub fn public_function() {
+    // Can be called from other modules
+}
+
+fn private_function() {
+    // Only accessible within this module
+}
+----
 
 == Order of definitions
 The order of item definition does not matter. For example, an item definition can appear after its
