@@ -282,3 +282,20 @@ pub struct StructWithByteArray {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test fixed size array, support wildcard.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    let _x: [_; 3] = [1_u8, 2_u8, 3_u8];
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
