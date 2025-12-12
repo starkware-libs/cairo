@@ -291,8 +291,6 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("WrappedArgListMissing"))
     // ---Patterns ---
-    // TODO(spapini): Support "Or" patterns (e.g. 1 | 2).
-    // TODO(spapini): Support tuple patterns (e.g. (x, _)).
     .add_enum(EnumBuilder::new("Pattern")
         .node_with_explicit_kind("Underscore", "TerminalUnderscore")
         .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
