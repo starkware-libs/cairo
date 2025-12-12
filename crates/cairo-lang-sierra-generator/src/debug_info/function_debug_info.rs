@@ -29,7 +29,8 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use salsa::Database;
+use itertools::Itertools;
+use salsa::{Database, par_map};
 
 use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
@@ -52,17 +53,14 @@ impl<'db> AllFunctionsDebugInfo<'db> {
         &self,
         db: &'db dyn Database,
     ) -> SerializableAllFunctionsDebugInfo {
-        SerializableAllFunctionsDebugInfo(
-            self.0
-                .iter()
-                .filter_map(|(function_id, function_debug_info)| {
-                    Some((
-                        SierraFunctionId(function_id.id),
-                        function_debug_info.extract_serializable_debug_info(db)?,
-                    ))
-                })
-                .collect(),
-        )
+        let val: Vec<Option<(SierraFunctionId, SerializableFunctionDebugInfo)>> =
+            par_map(db, self.0.iter().collect_vec(), |db, (function_id, function_debug_info)| {
+                Some((
+                    SierraFunctionId(function_id.id),
+                    function_debug_info.extract_serializable_debug_info(db)?,
+                ))
+            });
+        SerializableAllFunctionsDebugInfo(val.into_iter().flatten().collect())
     }
 }
 
