@@ -17,10 +17,10 @@ There are two kinds of paths: generic and concrete.
 
 == Generic paths
 A generic path is composed of segments which are identifiers, e.g. `x::y::z`. It refers to an item.
-Generic paths are used at:
+Generic paths are used in:
 
 * Use statements.
-* Enum variant pattern.
+* Enum variant patterns.
 
 == Concrete paths
 Concrete paths are composed of concrete segments, which are identifiers that may be followed by a
@@ -49,7 +49,7 @@ fn main() {
 }
 ----
 
-Concrete paths are used at:
+Concrete paths are used in:
 
 * xref:expressions.adoc[Expressions]
 +
