@@ -1,0 +1,152 @@
+= Bitwise operators
+
+Bitwise operations in Cairo are provided by the binary operators `&`, `|`, `^` and the unary
+operator `~`. All of them are trait-driven by the corresponding traits in `core::traits`.
+
+== Syntax
+
+- `lhs & rhs` → `T` (bitwise AND)
+- `lhs | rhs` → `T` (bitwise OR)
+- `lhs ^ rhs` → `T` (bitwise XOR)
+- `~operand` → `T` (bitwise NOT)
+
+== Semantics
+
+The semantics of bitwise operators are trait-driven via `core::traits`:
+
+- `&` calls `BitAnd::bitand(T, T) -> T`
+- `|` calls `BitOr::bitor(T, T) -> T`
+- `^` calls `BitXor::bitxor(T, T) -> T`
+- `~` calls `BitNot::bitnot(T) -> T`
+
+These traits are not derivable; implement them manually for user-defined types.
+
+If no suitable trait implementation is available for the operand type, the operation is a
+type error (trait resolution fails).
+
+== Precedence and associativity
+
+Bitwise operators have different precedence levels defined in
+`crates/cairo-lang-parser/src/operators.rs`:
+
+- `&` has precedence level 4
+- `^` has precedence level 5
+- `|` has precedence level 6
+- `~` (unary) has precedence level 2
+
+Binary bitwise operators bind:
+
+- Tighter than comparison `<`, `==` and logical `&&`, `||`
+- Looser than arithmetic `+`, `-`, `*`, `/`, `%`
+
+The unary `~` operator binds very tightly, at the same level as other unary operators.
+
+Within the same precedence level, operations are left-associative.
+
+== Examples
+
+=== Primitives
+
+[source,cairo]
+----
+fn main() {
+    // Binary operations
+    assert!(0b1010_u8 & 0b1100_u8 == 0b1000_u8);  // AND
+    assert!(0b1010_u8 | 0b1100_u8 == 0b1110_u8);  // OR
+    assert!(0b1010_u8 ^ 0b1100_u8 == 0b0110_u8);  // XOR
+
+    // Unary operation
+    assert!(~0b00001111_u8 == 0b11110000_u8);     // NOT
+}
+----
+
+=== Bitwise operations on bool
+
+The bitwise operators also work on `bool` types, but unlike logical `&&` and `||`, they do not
+short-circuit:
+
+[source,cairo]
+----
+fn main() {
+    assert!((true & false) == false);
+    assert!((true | false) == true);
+    assert!((true ^ false) == true);
+    assert!((true ^ true) == false);
+}
+----
+
+See xref:pages/boolean-operators.adoc[Boolean operators] for more details on the difference
+between bitwise and logical operators on `bool`.
+
+=== Manual implementation for a custom type
+
+[source,cairo]
+----
+use core::traits::{BitAnd, BitOr, BitXor, BitNot};
+
+#[derive(Copy, Drop, PartialEq)]
+struct Flags {
+    bits: u8,
+}
+
+impl FlagsBitAnd of BitAnd<Flags> {
+    fn bitand(lhs: Flags, rhs: Flags) -> Flags {
+        Flags { bits: lhs.bits & rhs.bits }
+    }
+}
+
+impl FlagsBitOr of BitOr<Flags> {
+    fn bitor(lhs: Flags, rhs: Flags) -> Flags {
+        Flags { bits: lhs.bits | rhs.bits }
+    }
+}
+
+impl FlagsBitXor of BitXor<Flags> {
+    fn bitxor(lhs: Flags, rhs: Flags) -> Flags {
+        Flags { bits: lhs.bits ^ rhs.bits }
+    }
+}
+
+impl FlagsBitNot of BitNot<Flags> {
+    fn bitnot(a: Flags) -> Flags {
+        Flags { bits: ~a.bits }
+    }
+}
+
+fn main() {
+    let f1 = Flags { bits: 0b1010 };
+    let f2 = Flags { bits: 0b1100 };
+
+    assert!((f1 & f2) == Flags { bits: 0b1000 });
+    assert!((f1 | f2) == Flags { bits: 0b1110 });
+    assert!((f1 ^ f2) == Flags { bits: 0b0110 });
+    assert!(~f1 == Flags { bits: 0b11110101 });
+}
+----
+
+=== Generics requiring bitwise traits
+
+[source,cairo]
+----
+fn mask<T, +BitAnd<T>, +Drop<T>, +Copy<T>>(value: T, mask: T) -> T {
+    value & mask
+}
+
+fn main() {
+    let masked = mask(0b11110000_u8, 0b00001111_u8);
+    assert!(masked == 0);
+}
+----
+
+== Notes
+
+- Bitwise operations work on the binary representation of values
+- For unsigned integer types, the result has the same bit width as the operands
+- The `&` and `|` operators on `bool` perform bitwise operations without short-circuiting,
+  unlike the logical `&&` and `||` operators
+- Bitwise NOT (`~`) flips all bits in the binary representation
+
+== References (source)
+
+- Operator precedence: `crates/cairo-lang-parser/src/operators.rs` (lines 9, 23-25)
+- Traits: `corelib/src/traits.cairo` (`BitAnd`, `BitOr`, `BitXor`, `BitNot`)
