@@ -17,12 +17,12 @@ pub struct Expr<Var: Clone + Debug + Eq + Hash> {
     pub var_to_coef: OrderedHashMap<Var, i64>,
 }
 impl<Var: Clone + Debug + Eq + Hash> Expr<Var> {
-    /// Creates a cost expression based on const value only.
+    /// Creates a const expression based on const value only.
     pub fn from_const(const_term: i32) -> Self {
         Self { const_term, var_to_coef: Default::default() }
     }
 
-    /// Creates a cost expression based on variable only.
+    /// Creates a const expression based on variable only.
     pub fn from_var(var: Var) -> Self {
         Self { const_term: 0, var_to_coef: [(var, 1)].into_iter().collect() }
     }
