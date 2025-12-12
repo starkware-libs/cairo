@@ -69,4 +69,4 @@ For example, a call to `inc_3(y: 7)` would not compile.
 shorthand for writing `inc_3(x: x)` is to simply write `inc_3(:x)`.
 This lets you write the name only once, but still verifies it.
 Here too, `inc_3(:y)` (assuming there is a variable `y` in the scope) would not compile.
-With a reference argument, you can write `mut_inc_3(ref x:y)`, or `mut_inc_3(ref :x)`.
+With a reference argument, the shorthand for `mut_inc_3(ref x: x)` is `mut_inc_3(ref :x)`.
