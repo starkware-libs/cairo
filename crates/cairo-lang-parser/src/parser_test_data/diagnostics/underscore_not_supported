@@ -310,3 +310,37 @@ error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:20
 fn foo() implicits(_) {}
                    ^
+
+//! > ==========================================================================
+
+//! > Expression - underscore not supported.
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn foo() {
+    let _a = 5 + _;
+    other(_);
+}
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:17
+    let _a = 5 + _;
+                ^
+
+error: Missing token ';'.
+ --> dummy_file.cairo:2:17
+    let _a = 5 + _;
+                ^
+
+error: Skipped tokens. Expected: statement.
+ --> dummy_file.cairo:2:18
+    let _a = 5 + _;
+                 ^^
+
+error: Skipped tokens. Expected: argument.
+ --> dummy_file.cairo:3:11
+    other(_);
+          ^
