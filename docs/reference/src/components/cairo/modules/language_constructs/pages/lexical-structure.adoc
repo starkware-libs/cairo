@@ -1,9 +1,71 @@
 = Lexical structure
 
-This section is a work in progress.
+The lexical structure of Cairo defines how source code is broken down into fundamental elements called _tokens_.
+This page provides an overview of Cairo's lexical elements and their syntax rules.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Tokens
 
+Cairo source code is analyzed as a sequence of tokens.
+A token is the smallest meaningful unit in a Cairo program.
+Tokens are categorized into several types:
 
-// TODO(spapini): Fill this with content.
+* xref:keywords.adoc[Keywords] — Reserved words with special meaning
+* xref:identifiers.adoc[Identifiers] — Names for variables, functions, types, and other items
+* xref:literal-expressions.adoc[Literals] — Fixed values like numbers, booleans, and short strings
+* xref:punctuation.adoc[Punctuation] — Symbols used for syntax structure
+* xref:comments.adoc[Comments] — Documentation and code annotations
+
+== Keywords
+
+Cairo has several categories of xref:keywords.adoc[keywords]:
+
+* **Strict keywords** — Can only be used in their correct contexts (e.g., `fn`, `let`, `if`, `match`)
+* **Reserved keywords** — Reserved for future use (e.g., `for`, `self`, `super`)
+* **Contextual keywords** — Have special meaning only in certain contexts
+
+Keywords cannot be used as identifiers.
+See the xref:keywords.adoc[keywords page] for a complete list.
+
+== Identifiers
+
+xref:identifiers.adoc[Identifiers] are sequences of alphanumeric characters and underscores used to name language constructs such as variables, functions, types, and modules.
+
+Key rules:
+* Must start with a letter or underscore
+* Cannot be a keyword
+* Cairo is case-sensitive
+* A single underscore `_` is not an identifier (used to discard values)
+
+== Literals
+
+xref:literal-expressions.adoc[Literal expressions] directly represent values in source code:
+
+* **Boolean literals**: `true` and `false`
+* **Numeric literals**: Decimal (`1234`), hexadecimal (`0x4D2`), and binary (`0b10011010010`)
+* **Short string literals**: ASCII strings stored as numeric values (e.g., `'hello'`)
+
+Numeric and short string literals can include type suffixes (e.g., `1234_u32`, `'a'_u8`).
+
+== Punctuation
+
+Cairo uses various xref:punctuation.adoc[punctuation symbols] for syntax structure:
+
+* `;` — Statement terminator
+* `:` — Type annotations
+* `::` — Path separator
+* `.` — Member access
+* `->` — Function return type
+* `@` — Snapshot operator
+* And many more
+
+See the xref:punctuation.adoc[punctuation page] for a complete reference.
+
+== Comments
+
+Cairo supports xref:comments.adoc[line comments] using the `//` syntax:
+
+[source,rust]
+----
+// This is a line comment
+let x = 42;  // Comment after code
+----
