@@ -77,7 +77,7 @@ For example:
 [source,cairo]
 ----
 let Tree { height, number_of_leaves } = tree;
-let higher_tree = Tree { height: height + 1, number_of_leaves }
+let higher_tree = Tree { height: height + 1, number_of_leaves };
 ----
 
 You can use different patterns (for example change the order and names of the new variables)
