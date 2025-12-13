@@ -229,7 +229,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 0
-  (v1: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v0)
+  (v1: core::box::Box::<core::felt252>) <- into_box(v0)
 End:
   Return(v1)
 
@@ -271,7 +271,7 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- 1
   (v1: test::A) <- struct_construct(v0)
-  (v2: core::box::Box::<test::A>) <- core::box::into_box::<test::A>(v1)
+  (v2: core::box::Box::<test::A>) <- into_box(v1)
 End:
   Return(v2)
 
@@ -310,7 +310,7 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- 2
   (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
-  (v2: core::box::Box::<core::option::Option::<core::felt252>>) <- core::box::into_box::<core::option::Option::<core::felt252>>(v1)
+  (v2: core::box::Box::<core::option::Option::<core::felt252>>) <- into_box(v1)
 End:
   Return(v2)
 
@@ -348,7 +348,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 2
-  (v1: core::box::Box::<core::felt252>) <- core::box::into_box::<core::felt252>(v0)
+  (v1: core::box::Box::<core::felt252>) <- into_box(v0)
   (v2: core::felt252) <- core::box::unbox::<core::felt252>(v1)
 End:
   Return(v2)
@@ -3795,14 +3795,14 @@ End:
 
 blk1:
 Statements:
-  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>(v1)
+  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- into_box(v1)
   (v4: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Ok(v3)
 End:
   Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>(v2)
+  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- into_box(v2)
   (v7: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Err(v6)
 End:
   Goto(blk3, {v7 -> v5})
@@ -3830,7 +3830,7 @@ End:
 
 blk2:
 Statements:
-  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>(v2)
+  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- into_box(v2)
   (v7: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Err(v6)
 End:
   Goto(blk3, {v7 -> v5})
@@ -3880,14 +3880,14 @@ End:
 
 blk1:
 Statements:
-  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>(v1)
+  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- into_box(v1)
   (v4: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Ok(v3)
 End:
   Goto(blk3, {v4 -> v5})
 
 blk2:
 Statements:
-  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>(v2)
+  (v6: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>) <- into_box(v2)
   (v7: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Err(v6)
 End:
   Goto(blk3, {v7 -> v5})
@@ -3908,7 +3908,7 @@ End:
 
 blk1:
 Statements:
-  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- core::box::into_box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>(v1)
+  (v3: core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>) <- into_box(v1)
   (v4: core::result::Result::<core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<-128, -1>>>, core::box::Box::<core::zeroable::NonZero::<core::internal::bounded_int::BoundedInt::<0, 127>>>>) <- Result::Ok(v3)
 End:
   Goto(blk3, {v4 -> v5})

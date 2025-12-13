@@ -4,8 +4,8 @@ use crate::ids::LocationId;
 use crate::{
     Block, BlockEnd, BlockId, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VarUsage, VariableId,
+    StatementIntoBox, StatementSnapshot, StatementStructConstruct, StatementStructDestructure,
+    VarRemapping, VarUsage, VariableId,
 };
 
 /// Options for the `inlining-strategy` arguments.
@@ -85,6 +85,10 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
                 self.map_var_id(stmt.snapshot()),
             )),
             Statement::Desnap(stmt) => Statement::Desnap(StatementDesnap {
+                input: self.map_var_usage(stmt.input),
+                output: self.map_var_id(stmt.output),
+            }),
+            Statement::IntoBox(stmt) => Statement::IntoBox(StatementIntoBox {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),

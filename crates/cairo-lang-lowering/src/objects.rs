@@ -294,6 +294,9 @@ pub enum Statement<'db> {
 
     Snapshot(StatementSnapshot<'db>),
     Desnap(StatementDesnap<'db>),
+
+    // Boxing.
+    IntoBox(StatementIntoBox<'db>),
 }
 impl<'db> Statement<'db> {
     pub fn inputs(&self) -> &[VarUsage<'db>] {
@@ -305,6 +308,7 @@ impl<'db> Statement<'db> {
             Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.input),
             Statement::Snapshot(stmt) => std::slice::from_ref(&stmt.input),
             Statement::Desnap(stmt) => std::slice::from_ref(&stmt.input),
+            Statement::IntoBox(stmt) => std::slice::from_ref(&stmt.input),
         }
     }
 
@@ -317,6 +321,7 @@ impl<'db> Statement<'db> {
             Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.input),
             Statement::Snapshot(stmt) => std::slice::from_mut(&mut stmt.input),
             Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.input),
+            Statement::IntoBox(stmt) => std::slice::from_mut(&mut stmt.input),
         }
     }
 
@@ -329,6 +334,7 @@ impl<'db> Statement<'db> {
             Statement::EnumConstruct(stmt) => std::slice::from_ref(&stmt.output),
             Statement::Snapshot(stmt) => stmt.outputs.as_slice(),
             Statement::Desnap(stmt) => std::slice::from_ref(&stmt.output),
+            Statement::IntoBox(stmt) => std::slice::from_ref(&stmt.output),
         }
     }
 
@@ -341,6 +347,7 @@ impl<'db> Statement<'db> {
             Statement::EnumConstruct(stmt) => std::slice::from_mut(&mut stmt.output),
             Statement::Snapshot(stmt) => stmt.outputs.as_mut_slice(),
             Statement::Desnap(stmt) => std::slice::from_mut(&mut stmt.output),
+            Statement::IntoBox(stmt) => std::slice::from_mut(&mut stmt.output),
         }
     }
     pub fn location(&self) -> Option<LocationId<'db>> {
@@ -353,6 +360,7 @@ impl<'db> Statement<'db> {
             Statement::EnumConstruct(stmt) => Some(stmt.input.location),
             Statement::Snapshot(stmt) => Some(stmt.input.location),
             Statement::Desnap(stmt) => Some(stmt.input.location),
+            Statement::IntoBox(stmt) => Some(stmt.input.location),
         }
     }
     pub fn location_mut(&mut self) -> Option<&mut LocationId<'db>> {
@@ -364,6 +372,7 @@ impl<'db> Statement<'db> {
             Statement::EnumConstruct(stmt) => Some(&mut stmt.input.location),
             Statement::Snapshot(stmt) => Some(&mut stmt.input.location),
             Statement::Desnap(stmt) => Some(&mut stmt.input.location),
+            Statement::IntoBox(stmt) => Some(&mut stmt.input.location),
         }
     }
 }
@@ -467,6 +476,15 @@ impl<'db> StatementSnapshot<'db> {
 pub struct StatementDesnap<'db> {
     pub input: VarUsage<'db>,
     /// The variable to bind the value to.
+    pub output: VariableId,
+}
+
+/// A statement that constructs a box from a value.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatementIntoBox<'db> {
+    /// The value to box.
+    pub input: VarUsage<'db>,
+    /// The variable to bind the boxed value to.
     pub output: VariableId,
 }
 
