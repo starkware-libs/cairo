@@ -74,7 +74,7 @@ impl<Key, Value: Sub<Output = Value>, T: MergeCollection<Key, Value>> SubCollect
     }
 }
 
-impl<Key: Hash + Eq, Value: HasZero + Clone + Eq, BH: BuildHasher> MergeCollection<Key, Value>
+impl<Key: Hash + Eq, Value: HasZero + Eq, BH: BuildHasher> MergeCollection<Key, Value>
     for OrderedHashMap<Key, Value, BH>
 {
     fn merge_collection(
@@ -85,11 +85,15 @@ impl<Key: Hash + Eq, Value: HasZero + Clone + Eq, BH: BuildHasher> MergeCollecti
         for (key, other_val) in other {
             match self.entry(key) {
                 ordered_hash_map::Entry::Occupied(mut e) => {
-                    let new_val = action(e.get().clone(), other_val);
+                    let new_val = {
+                        let value = e.get_mut();
+                        let old_value = core::mem::replace(value, Value::zero());
+                        action(old_value, other_val)
+                    };
                     if new_val == Value::zero() {
                         e.swap_remove();
                     } else {
-                        e.insert(new_val);
+                        *e.get_mut() = new_val;
                     }
                 }
                 ordered_hash_map::Entry::Vacant(e) => {
@@ -105,7 +109,7 @@ impl<Key: Hash + Eq, Value: HasZero + Clone + Eq, BH: BuildHasher> MergeCollecti
 }
 
 #[cfg(feature = "std")]
-impl<Key: Eq, Value: HasZero + Clone + Eq> MergeCollection<Key, Value>
+impl<Key: Eq, Value: HasZero + Eq> MergeCollection<Key, Value>
     for SmallOrderedMap<Key, Value>
 {
     fn merge_collection(
@@ -116,11 +120,15 @@ impl<Key: Eq, Value: HasZero + Clone + Eq> MergeCollection<Key, Value>
         for (key, other_val) in other {
             match self.entry(key) {
                 small_ordered_map::Entry::Occupied(mut e) => {
-                    let new_val = action(e.get().clone(), other_val);
+                    let new_val = {
+                        let value = e.get_mut();
+                        let old_value = core::mem::replace(value, Value::zero());
+                        action(old_value, other_val)
+                    };
                     if new_val == Value::zero() {
                         e.remove();
                     } else {
-                        e.insert(new_val);
+                        *e.get_mut() = new_val;
                     }
                 }
                 small_ordered_map::Entry::Vacant(e) => {
