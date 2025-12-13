@@ -40,7 +40,7 @@ The concrete values that substitute the generic parameters are called generic ar
 In the above example, `u32` and `u128` are generic arguments.
 In the last statement, `u32` is a generic argument to create the concrete type `Box::<u32>`
 (a `Box` that holds `u32`) and `Box::<u32>` is then used as a generic argument to create another
-concrete type: `Box::<Box::<u32>>` ((a `Box` that holds a `Box` that holds `u32`)).
+concrete type: `Box::<Box::<u32>>` (a `Box` that holds a `Box` that holds `u32`)).
 
 == Types of Generic Parameters
 
