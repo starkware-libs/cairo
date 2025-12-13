@@ -1828,7 +1828,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 resolved_items.mark_concrete(db, segment, ResolvedConcreteItem::Module(module_id));
             })
         {
-            return Ok(ResolvedConcreteItem::Module(base_module?));
+            return base_module.map(ResolvedConcreteItem::Module);
         }
 
         let db = self.resolver.db;
@@ -1970,7 +1970,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
                 resolved_items.mark_generic(db, segment, ResolvedGenericItem::Module(module_id));
             })
         {
-            return Ok(ResolvedGenericItem::Module(base_module?));
+            return base_module.map(ResolvedGenericItem::Module);
         }
         let db = self.resolver.db;
         Ok(match self.segments.peek().unwrap() {
