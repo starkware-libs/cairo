@@ -745,16 +745,11 @@ impl<'a> IsDependentType<'a> for ast::ExprPath<'a> {
                     return false;
                 };
                 with_generics.generic_args(db).generic_args(db).elements(db).any(|arg| {
-                    let generic_arg_value = match arg {
+                    match arg {
                         ast::GenericArg::Named(named) => named.value(db),
                         ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
-                    };
-                    match generic_arg_value {
-                        ast::GenericArgValue::Expr(arg_expr) => {
-                            arg_expr.expr(db).is_dependent_type(db, identifiers)
-                        }
-                        ast::GenericArgValue::Underscore(_) => false,
                     }
+                    .is_dependent_type(db, identifiers)
                 })
             })
         }
@@ -802,7 +797,8 @@ impl<'a> IsDependentType<'a> for ast::Expr<'a> {
             | ast::Expr::FieldInitShorthand(_)
             | ast::Expr::Indexed(_)
             | ast::Expr::InlineMacro(_)
-            | ast::Expr::Missing(_) => false,
+            | ast::Expr::Missing(_)
+            | ast::Expr::Underscore(_) => false,
         }
     }
 }

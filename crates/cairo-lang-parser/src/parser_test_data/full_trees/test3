@@ -41,12 +41,11 @@ false
     │   │   │       │                   ├── langle (kind: TokenLT): '<'
     │   │   │       │                   ├── generic_args (kind: GenericArgList)
     │   │   │       │                   │   └── item #0 (kind: GenericArgUnnamed)
-    │   │   │       │                   │       └── value (kind: GenericArgValueExpr)
-    │   │   │       │                   │           └── expr (kind: ExprPath)
-    │   │   │       │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │   │       │                   │               └── segments (kind: ExprPathInner)
-    │   │   │       │                   │                   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │                   │                       └── ident (kind: TokenIdentifier): 'felt252'
+    │   │   │       │                   │       └── value (kind: ExprPath)
+    │   │   │       │                   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │                   │           └── segments (kind: ExprPathInner)
+    │   │   │       │                   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │                   │                   └── ident (kind: TokenIdentifier): 'felt252'
     │   │   │       │                   └── rangle (kind: TokenGT): '>'
     │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
@@ -137,12 +136,11 @@ false
     │   │   │       │                   ├── langle (kind: TokenLT): '<'
     │   │   │       │                   ├── generic_args (kind: GenericArgList)
     │   │   │       │                   │   └── item #0 (kind: GenericArgUnnamed)
-    │   │   │       │                   │       └── value (kind: GenericArgValueExpr)
-    │   │   │       │                   │           └── expr (kind: ExprPath)
-    │   │   │       │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │   │       │                   │               └── segments (kind: ExprPathInner)
-    │   │   │       │                   │                   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │                   │                       └── ident (kind: TokenIdentifier): 'felt252'
+    │   │   │       │                   │       └── value (kind: ExprPath)
+    │   │   │       │                   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │                   │           └── segments (kind: ExprPathInner)
+    │   │   │       │                   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │                   │                   └── ident (kind: TokenIdentifier): 'felt252'
     │   │   │       │                   └── rangle (kind: TokenGT): '>'
     │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
@@ -331,12 +329,11 @@ false
     │       │       │       │   │               ├── langle (kind: TokenLT): '<'
     │       │       │       │   │               ├── generic_args (kind: GenericArgList)
     │       │       │       │   │               │   └── item #0 (kind: GenericArgUnnamed)
-    │       │       │       │   │               │       └── value (kind: GenericArgValueExpr)
-    │       │       │       │   │               │           └── expr (kind: ExprPath)
-    │       │       │       │   │               │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │       │       │       │   │               │               └── segments (kind: ExprPathInner)
-    │       │       │       │   │               │                   └── item #0 (kind: PathSegmentSimple)
-    │       │       │       │   │               │                       └── ident (kind: TokenIdentifier): 'felt252'
+    │       │       │       │   │               │       └── value (kind: ExprPath)
+    │       │       │       │   │               │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │       │   │               │           └── segments (kind: ExprPathInner)
+    │       │       │       │   │               │               └── item #0 (kind: PathSegmentSimple)
+    │       │       │       │   │               │                   └── ident (kind: TokenIdentifier): 'felt252'
     │       │       │       │   │               └── rangle (kind: TokenGT): '>'
     │       │       │       │   ├── separator #0 (kind: TokenComma): ','
     │       │       │       │   └── item #1 (kind: ExprPath)
@@ -349,12 +346,11 @@ false
     │       │       │       │                   ├── langle (kind: TokenLT): '<'
     │       │       │       │                   ├── generic_args (kind: GenericArgList)
     │       │       │       │                   │   └── item #0 (kind: GenericArgUnnamed)
-    │       │       │       │                   │       └── value (kind: GenericArgValueExpr)
-    │       │       │       │                   │           └── expr (kind: ExprPath)
-    │       │       │       │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │       │       │       │                   │               └── segments (kind: ExprPathInner)
-    │       │       │       │                   │                   └── item #0 (kind: PathSegmentSimple)
-    │       │       │       │                   │                       └── ident (kind: TokenIdentifier): 'felt252'
+    │       │       │       │                   │       └── value (kind: ExprPath)
+    │       │       │       │                   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │       │                   │           └── segments (kind: ExprPathInner)
+    │       │       │       │                   │               └── item #0 (kind: PathSegmentSimple)
+    │       │       │       │                   │                   └── ident (kind: TokenIdentifier): 'felt252'
     │       │       │       │                   └── rangle (kind: TokenGT): '>'
     │       │       │       └── rparen (kind: TokenRParen): ')'
     │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
@@ -562,15 +558,14 @@ false
     │   │   │       │                   │   └── trailing_trivia (kind: Trivia) []
     │   │   │       │                   ├── generic_args (kind: GenericArgList)
     │   │   │       │                   │   └── item #0 (kind: GenericArgUnnamed)
-    │   │   │       │                   │       └── value (kind: GenericArgValueExpr)
-    │   │   │       │                   │           └── expr (kind: ExprPath)
-    │   │   │       │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │   │       │                   │               └── segments (kind: ExprPathInner)
-    │   │   │       │                   │                   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │                   │                       └── ident (kind: TerminalIdentifier)
-    │   │   │       │                   │                           ├── leading_trivia (kind: Trivia) []
-    │   │   │       │                   │                           ├── token (kind: TokenIdentifier): 'felt252'
-    │   │   │       │                   │                           └── trailing_trivia (kind: Trivia) []
+    │   │   │       │                   │       └── value (kind: ExprPath)
+    │   │   │       │                   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │                   │           └── segments (kind: ExprPathInner)
+    │   │   │       │                   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │                   │                   └── ident (kind: TerminalIdentifier)
+    │   │   │       │                   │                       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │                   │                       ├── token (kind: TokenIdentifier): 'felt252'
+    │   │   │       │                   │                       └── trailing_trivia (kind: Trivia) []
     │   │   │       │                   └── rangle (kind: TerminalGT)
     │   │   │       │                       ├── leading_trivia (kind: Trivia) []
     │   │   │       │                       ├── token (kind: TokenGT): '>'
@@ -766,15 +761,14 @@ false
     │   │   │       │                   │   └── trailing_trivia (kind: Trivia) []
     │   │   │       │                   ├── generic_args (kind: GenericArgList)
     │   │   │       │                   │   └── item #0 (kind: GenericArgUnnamed)
-    │   │   │       │                   │       └── value (kind: GenericArgValueExpr)
-    │   │   │       │                   │           └── expr (kind: ExprPath)
-    │   │   │       │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │   │   │       │                   │               └── segments (kind: ExprPathInner)
-    │   │   │       │                   │                   └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │                   │                       └── ident (kind: TerminalIdentifier)
-    │   │   │       │                   │                           ├── leading_trivia (kind: Trivia) []
-    │   │   │       │                   │                           ├── token (kind: TokenIdentifier): 'felt252'
-    │   │   │       │                   │                           └── trailing_trivia (kind: Trivia) []
+    │   │   │       │                   │       └── value (kind: ExprPath)
+    │   │   │       │                   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │   │   │       │                   │           └── segments (kind: ExprPathInner)
+    │   │   │       │                   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │                   │                   └── ident (kind: TerminalIdentifier)
+    │   │   │       │                   │                       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │                   │                       ├── token (kind: TokenIdentifier): 'felt252'
+    │   │   │       │                   │                       └── trailing_trivia (kind: Trivia) []
     │   │   │       │                   └── rangle (kind: TerminalGT)
     │   │   │       │                       ├── leading_trivia (kind: Trivia) []
     │   │   │       │                       ├── token (kind: TokenGT): '>'
@@ -1183,15 +1177,14 @@ false
     │       │       │       │   │               │   └── trailing_trivia (kind: Trivia) []
     │       │       │       │   │               ├── generic_args (kind: GenericArgList)
     │       │       │       │   │               │   └── item #0 (kind: GenericArgUnnamed)
-    │       │       │       │   │               │       └── value (kind: GenericArgValueExpr)
-    │       │       │       │   │               │           └── expr (kind: ExprPath)
-    │       │       │       │   │               │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │       │       │       │   │               │               └── segments (kind: ExprPathInner)
-    │       │       │       │   │               │                   └── item #0 (kind: PathSegmentSimple)
-    │       │       │       │   │               │                       └── ident (kind: TerminalIdentifier)
-    │       │       │       │   │               │                           ├── leading_trivia (kind: Trivia) []
-    │       │       │       │   │               │                           ├── token (kind: TokenIdentifier): 'felt252'
-    │       │       │       │   │               │                           └── trailing_trivia (kind: Trivia) []
+    │       │       │       │   │               │       └── value (kind: ExprPath)
+    │       │       │       │   │               │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │       │   │               │           └── segments (kind: ExprPathInner)
+    │       │       │       │   │               │               └── item #0 (kind: PathSegmentSimple)
+    │       │       │       │   │               │                   └── ident (kind: TerminalIdentifier)
+    │       │       │       │   │               │                       ├── leading_trivia (kind: Trivia) []
+    │       │       │       │   │               │                       ├── token (kind: TokenIdentifier): 'felt252'
+    │       │       │       │   │               │                       └── trailing_trivia (kind: Trivia) []
     │       │       │       │   │               └── rangle (kind: TerminalGT)
     │       │       │       │   │                   ├── leading_trivia (kind: Trivia) []
     │       │       │       │   │                   ├── token (kind: TokenGT): '>'
@@ -1217,15 +1210,14 @@ false
     │       │       │       │                   │   └── trailing_trivia (kind: Trivia) []
     │       │       │       │                   ├── generic_args (kind: GenericArgList)
     │       │       │       │                   │   └── item #0 (kind: GenericArgUnnamed)
-    │       │       │       │                   │       └── value (kind: GenericArgValueExpr)
-    │       │       │       │                   │           └── expr (kind: ExprPath)
-    │       │       │       │                   │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │       │       │       │                   │               └── segments (kind: ExprPathInner)
-    │       │       │       │                   │                   └── item #0 (kind: PathSegmentSimple)
-    │       │       │       │                   │                       └── ident (kind: TerminalIdentifier)
-    │       │       │       │                   │                           ├── leading_trivia (kind: Trivia) []
-    │       │       │       │                   │                           ├── token (kind: TokenIdentifier): 'felt252'
-    │       │       │       │                   │                           └── trailing_trivia (kind: Trivia) []
+    │       │       │       │                   │       └── value (kind: ExprPath)
+    │       │       │       │                   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │       │       │       │                   │           └── segments (kind: ExprPathInner)
+    │       │       │       │                   │               └── item #0 (kind: PathSegmentSimple)
+    │       │       │       │                   │                   └── ident (kind: TerminalIdentifier)
+    │       │       │       │                   │                       ├── leading_trivia (kind: Trivia) []
+    │       │       │       │                   │                       ├── token (kind: TokenIdentifier): 'felt252'
+    │       │       │       │                   │                       └── trailing_trivia (kind: Trivia) []
     │       │       │       │                   └── rangle (kind: TerminalGT)
     │       │       │       │                       ├── leading_trivia (kind: Trivia) []
     │       │       │       │                       ├── token (kind: TokenGT): '>'

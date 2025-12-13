@@ -22,7 +22,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId, Tracked, Unsta
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{
-    GenericArgValue, OptionTypeClause, OptionWrappedGenericParamList, UnaryOperator,
+    OptionTypeClause, OptionWrappedGenericParamList, UnaryOperator,
 };
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -620,15 +620,12 @@ fn impl_def_shallow_trait_generic_args_helper<'db>(
             Ok(generic_params
                 .iter()
                 .filter_map(|generic_param| {
-                    let value = arg_syntax_per_param.get(generic_param)?;
-                    let GenericArgValue::Expr(expr) = value else {
-                        return None;
-                    };
+                    let expr = arg_syntax_per_param.get(generic_param)?;
                     let arg_ty = maybe_resolve_shallow_generic_arg_type(
                         db,
                         &mut diagnostics,
                         &mut resolver,
-                        &expr.expr(db),
+                        expr,
                     )?;
                     Some((*generic_param, arg_ty))
                 })
@@ -746,15 +743,12 @@ fn impl_alias_trait_generic_args_helper<'db>(
                         return Some((*trait_param, arg.clone()));
                     };
 
-                    arg_syntax_per_param.get(arg).and_then(|syntax| {
-                        let GenericArgValue::Expr(expr) = syntax else {
-                            return None;
-                        };
+                    arg_syntax_per_param.get(arg).and_then(|expr| {
                         let arg_ty = maybe_resolve_shallow_generic_arg_type(
                             db,
                             &mut diagnostics,
                             &mut resolver,
-                            &expr.expr(db),
+                            expr,
                         )?;
                         Some((*trait_param, arg_ty))
                     })
@@ -4007,13 +4001,9 @@ fn is_global_impl_generic_param<'db>(
     let generic_args = trait_segment.generic_args(db);
 
     for arg in generic_args.generic_args(db).elements(db) {
-        let value = match arg {
+        let mut expr = match arg {
             ast::GenericArg::Unnamed(arg) => arg.value(db),
             ast::GenericArg::Named(arg) => arg.value(db),
-        };
-        let mut expr = match value {
-            GenericArgValue::Expr(generic_arg_value_expr) => generic_arg_value_expr.expr(db),
-            GenericArgValue::Underscore(_) => continue,
         };
 
         while let ast::Expr::Unary(unary_expr) = &expr {

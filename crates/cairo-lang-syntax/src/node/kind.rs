@@ -151,7 +151,6 @@ pub enum SyntaxKind {
     OptionAliasClauseEmpty,
     GenericArgNamed,
     GenericArgUnnamed,
-    GenericArgValueExpr,
     GenericArgs,
     GenericArgList,
     AssociatedItemConstraint,

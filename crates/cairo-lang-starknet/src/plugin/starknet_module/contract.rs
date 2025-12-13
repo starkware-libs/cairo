@@ -738,8 +738,7 @@ fn is_first_generic_arg_contract_state<'db>(
 ) -> bool {
     if let Some(generic_args) = final_path_segment.generic_args(db)
         && let Some(ast::GenericArg::Unnamed(first_generic_arg)) = generic_args.first()
-        && let ast::GenericArgValue::Expr(first_generic_arg) = first_generic_arg.value(db)
-        && let ast::Expr::Path(first_generic_arg) = first_generic_arg.expr(db)
+        && let ast::Expr::Path(first_generic_arg) = first_generic_arg.value(db)
         && first_generic_arg.identifier(db).long(db) == CONTRACT_STATE_NAME
     {
         true

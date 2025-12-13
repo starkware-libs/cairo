@@ -552,6 +552,9 @@ fn maybe_resolve_type<'db>(
     mut ctx: ResolutionContext<'db, '_>,
 ) -> Maybe<TypeId<'db>> {
     Ok(match ty_syntax {
+        ast::Expr::Underscore(underscore) => {
+            resolver.inference().new_type_var(Some(underscore.stable_ptr(db).untyped()))
+        }
         ast::Expr::Path(path) => {
             match resolver.resolve_concrete_path_ex(
                 diagnostics,

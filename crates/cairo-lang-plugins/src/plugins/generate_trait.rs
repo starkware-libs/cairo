@@ -119,12 +119,7 @@ fn generate_trait_for_impl<'db>(
                         let ast::GenericArg::Unnamed(trait_generic_arg) = trait_generic_arg else {
                             return false;
                         };
-                        let ast::GenericArgValue::Expr(trait_generic_arg) =
-                            trait_generic_arg.value(db)
-                        else {
-                            return false;
-                        };
-                        let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.expr(db) else {
+                        let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.value(db) else {
                             return false;
                         };
                         let Ok(ast::PathSegment::Simple(trait_generic_arg)) =

@@ -1033,14 +1033,7 @@ impl<'db> Resolver<'db> {
                 &generic_param,
                 arg_syntax_per_param
                     .get(&generic_param.id())
-                    .and_then(|arg_syntax| {
-                        if let ast::GenericArgValue::Expr(expr) = arg_syntax {
-                            Some(expr.expr(self.db))
-                        } else {
-                            None
-                        }
-                    })
-                    .as_ref(),
+                    .filter(|expr| !matches!(expr, ast::Expr::Underscore(_))),
                 stable_ptr,
                 diagnostics,
             )?;
@@ -1057,10 +1050,10 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics<'db>,
         generic_params: &[GenericParamId<'db>],
         generic_args_syntax: &[ast::GenericArg<'db>],
-    ) -> Maybe<UnorderedHashMap<GenericParamId<'db>, ast::GenericArgValue<'db>>> {
+    ) -> Maybe<UnorderedHashMap<GenericParamId<'db>, ast::Expr<'db>>> {
         let db = self.db;
         let mut arg_syntax_per_param =
-            UnorderedHashMap::<GenericParamId<'_>, ast::GenericArgValue<'_>>::default();
+            UnorderedHashMap::<GenericParamId<'_>, ast::Expr<'_>>::default();
         let mut last_named_arg_index = None;
         let generic_param_by_name = generic_params
             .iter()

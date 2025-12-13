@@ -1704,6 +1704,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     fn try_parse_type_expr(&mut self) -> TryParseResult<ExprGreen<'a>> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
+            SyntaxKind::TerminalUnderscore => Ok(self.take::<TerminalUnderscore<'_>>().into()),
             SyntaxKind::TerminalAt => {
                 let op = self.take::<TerminalAt<'_>>().into();
                 let expr = self.parse_type_expr();
@@ -3214,10 +3215,6 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// such an expression can't be parsed.
     fn try_parse_generic_arg(&mut self) -> TryParseResult<GenericArgGreen<'a>> {
         let expr = match self.peek().kind {
-            SyntaxKind::TerminalUnderscore => {
-                let underscore = self.take::<TerminalUnderscore<'_>>().into();
-                return Ok(GenericArgUnnamed::new_green(self.db, underscore).into());
-            }
             SyntaxKind::TerminalLiteralNumber => self.take_terminal_literal_number().into(),
             SyntaxKind::TerminalMinus => {
                 let op = self.take::<TerminalMinus<'_>>().into();
@@ -3237,19 +3234,10 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             && let Some(argname) = self.try_extract_identifier(expr)
         {
             let colon = self.take::<TerminalColon<'_>>();
-            let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
-                self.take::<TerminalUnderscore<'_>>().into()
-            } else {
-                let expr = self.parse_type_expr();
-                GenericArgValueExpr::new_green(self.db, expr).into()
-            };
+            let expr = self.parse_type_expr();
             return Ok(GenericArgNamed::new_green(self.db, argname, colon, expr).into());
         }
-        Ok(GenericArgUnnamed::new_green(
-            self.db,
-            GenericArgValueExpr::new_green(self.db, expr).into(),
-        )
-        .into())
+        Ok(GenericArgUnnamed::new_green(self.db, expr).into())
     }
 
     /// Assumes the current token is LT.

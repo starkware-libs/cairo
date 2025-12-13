@@ -1021,7 +1021,8 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
                 matches!(
                     path_node.grandparent_kind(db),
                     Some(
-                        SyntaxKind::GenericArgValueExpr
+                        SyntaxKind::GenericArgNamed
+                            | SyntaxKind::GenericArgUnnamed
                             | SyntaxKind::GenericParamImplAnonymous
                             | SyntaxKind::GenericParamImplNamed
                             | SyntaxKind::ItemImpl
@@ -1075,7 +1076,7 @@ fn is_statement_list_break_point_optional(db: &dyn Database, node: &SyntaxNode<'
     // statement, with no single line comments.
     matches!(
         node.grandparent_kind(db),
-        Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgValueExpr)
+        Some(SyntaxKind::MatchArm | SyntaxKind::GenericArgNamed | SyntaxKind::GenericArgUnnamed)
     ) && node.get_children(db).len() == 1
         && node.descendants(db).all(|d| {
             d.kind(db) != SyntaxKind::Trivia

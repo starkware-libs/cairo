@@ -197,6 +197,34 @@ const DEFAULT_VAR: bool = 1;
 
 //! > ==========================================================================
 
+//! > Const of unknown types.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+const FULLY_UNKNOWN: _ = 1_u8;
+const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
+
+//! > expected_diagnostics
+error: Constant type must not depend on its value.
+ --> lib.cairo:1:22
+const FULLY_UNKNOWN: _ = 1_u8;
+                     ^
+
+error: Constant type must not depend on its value.
+ --> lib.cairo:2:33
+const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
+                                ^^^^^^
+
+//! > ==========================================================================
+
 //! > Const of negative values out of range.
 
 //! > test_runner_name
