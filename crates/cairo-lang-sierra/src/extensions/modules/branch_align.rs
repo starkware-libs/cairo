@@ -5,7 +5,7 @@ use crate::extensions::{NoGenericArgsGenericLibfunc, SpecializationError};
 
 /// Libfunc for aligning branches.
 /// Used to equalize environment changes across merging paths.
-/// This may include gas usages and ap changes.
+/// This may include gas usage and AP changes.
 #[derive(Default)]
 pub struct BranchAlignLibfunc {}
 impl NoGenericArgsGenericLibfunc for BranchAlignLibfunc {
