@@ -18,7 +18,7 @@ enum TopologicalOrderStatus {
 /// `roots` - the roots of the graph.
 /// `node_count` - the number of nodes in the graph.
 /// `get_children` - a function that returns the children of a node.
-/// `out_of_bounds_err` - a function that returns an error for a node is out of bounds.
+/// `out_of_bounds_err` - a function that returns an error for a node that is out of bounds.
 /// `cycle_err` - a function that returns an error for a node that is part of a cycle.
 /// Note: Will only work properly if the nodes are in the range [0, node_count).
 pub fn reverse_topological_ordering<
