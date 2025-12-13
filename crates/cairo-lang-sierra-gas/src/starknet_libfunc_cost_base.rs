@@ -42,7 +42,8 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarknetConcreteLibfunc) -> Vec<Cons
         StarknetConcreteLibfunc::EmitEvent(_) => syscall_cost(4),
         StarknetConcreteLibfunc::GetBlockHash(_) => syscall_cost(1),
         StarknetConcreteLibfunc::GetExecutionInfo(_)
-        | StarknetConcreteLibfunc::GetExecutionInfoV2(_) => syscall_cost(0),
+        | StarknetConcreteLibfunc::GetExecutionInfoV2(_)
+        | StarknetConcreteLibfunc::GetExecutionInfoV3(_) => syscall_cost(0),
         StarknetConcreteLibfunc::Deploy(_) => syscall_cost(5),
         StarknetConcreteLibfunc::Keccak(_) => syscall_cost(2),
         StarknetConcreteLibfunc::Sha256ProcessBlock(_) => syscall_cost(2),

@@ -340,6 +340,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarknetConcreteLibfunc::GetBlockHash(_)
             | StarknetConcreteLibfunc::GetExecutionInfo(_)
             | StarknetConcreteLibfunc::GetExecutionInfoV2(_)
+            | StarknetConcreteLibfunc::GetExecutionInfoV3(_)
             | StarknetConcreteLibfunc::Deploy(_)
             | StarknetConcreteLibfunc::Keccak(_)
             | StarknetConcreteLibfunc::Sha256ProcessBlock(_)

@@ -111,6 +111,32 @@ fn get_execution_info_v2_type(
     )
 }
 
+/// Helper for v3::ExecutionInfo type.
+fn get_execution_info_v3_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+    let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string(
+                "core::starknet::info::v3::ExecutionInfo",
+            )),
+            // block_info
+            GenericArg::Type(box_ty(context, get_block_info_type(context)?)?),
+            // tx_info
+            GenericArg::Type(box_ty(context, get_tx_info_v3_type(context)?)?),
+            // caller_address
+            GenericArg::Type(contract_address_ty.clone()),
+            // contract_address
+            GenericArg::Type(contract_address_ty),
+            // entry_point_selector
+            GenericArg::Type(felt252_ty),
+        ],
+    )
+}
+
 /// Helper for BlockInfo type.
 fn get_block_info_type(
     context: &dyn SignatureSpecializationContext,
@@ -234,6 +260,51 @@ fn get_tx_info_v2_type(
     )
 }
 
+/// Helper for v3::TxInfo type.
+fn get_tx_info_v3_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+    let felt252_span_ty = felt252_span_ty(context)?;
+    let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+    let u32_ty = context.get_concrete_type(Uint32Type::id(), &[])?;
+    let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::v3::TxInfo")),
+            // version
+            GenericArg::Type(felt252_ty.clone()),
+            // account_contract_address
+            GenericArg::Type(contract_address_ty),
+            // max_fee
+            GenericArg::Type(u128_ty.clone()),
+            // signature
+            GenericArg::Type(felt252_span_ty.clone()),
+            // transaction_hash
+            GenericArg::Type(felt252_ty.clone()),
+            // chain_id
+            GenericArg::Type(felt252_ty.clone()),
+            // nonce
+            GenericArg::Type(felt252_ty),
+            // resource_bounds
+            GenericArg::Type(resource_bounds_span_ty(context)?),
+            // tip
+            GenericArg::Type(u128_ty),
+            // paymaster_data
+            GenericArg::Type(felt252_span_ty.clone()),
+            // nonce_data_availability_mode
+            GenericArg::Type(u32_ty.clone()),
+            // fee_data_availability_mode
+            GenericArg::Type(u32_ty),
+            // account_deployment_data
+            GenericArg::Type(felt252_span_ty.clone()),
+            // proof_facts
+            GenericArg::Type(felt252_span_ty),
+        ],
+    )
+}
+
 #[derive(Default)]
 pub struct GetExecutionInfoTrait {}
 impl GetterTraitsEx for GetExecutionInfoTrait {
@@ -255,5 +326,17 @@ impl GetterTraitsEx for GetExecutionInfoV2Trait {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<ConcreteTypeId, SpecializationError> {
         box_ty(context, get_execution_info_v2_type(context)?)
+    }
+}
+
+#[derive(Default)]
+pub struct GetExecutionInfoV3Trait {}
+impl GetterTraitsEx for GetExecutionInfoV3Trait {
+    const STR_ID: &'static str = "get_execution_info_v3_syscall";
+
+    fn info_type_id(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        box_ty(context, get_execution_info_v3_type(context)?)
     }
 }
