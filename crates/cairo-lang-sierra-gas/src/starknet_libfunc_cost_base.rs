@@ -1,5 +1,3 @@
-use std::vec;
-
 use cairo_lang_sierra::extensions::starknet::StarknetConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::{
     Secp256ConcreteLibfunc, Secp256OpConcreteLibfunc,
