@@ -148,7 +148,7 @@ pub fn get_concrete_long_type_id<'db>(
             } else {
                 ConcreteTypeLongId {
                     generic_id: "Snapshot".into(),
-                    generic_args: vec![SierraGenericArg::Type(inner_ty.clone())],
+                    generic_args: vec![SierraGenericArg::Type(inner_ty)],
                 }
                 .into()
             }
