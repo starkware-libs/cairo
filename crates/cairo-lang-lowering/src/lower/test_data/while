@@ -138,6 +138,32 @@ Statements:
 End:
   Return(v5, v6, v19)
 
+
+Final lowering of specialized call "test::foo[51-95]{5, }":
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v7: core::felt252) <- 4
+  (v8: core::RangeCheck, v9: core::gas::GasBuiltin, v10: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[51-95](v2, v6, v7)
+End:
+  Return(v8, v9, v10)
+
+blk2:
+Statements:
+  (v11: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v12: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v11)
+End:
+  Return(v4, v5, v12)
+
 //! > ==========================================================================
 
 //! > Test while-let.
@@ -436,3 +462,58 @@ Statements:
   (v20: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v19)
 End:
   Return(v5, v6, v20)
+
+
+Final lowering of specialized call "test::foo[41-100]{0, }":
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v2, v3) => blk1,
+    Option::None(v4, v5) => blk6,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252) <- 0
+End:
+  Match(match test::a() {
+    MyEnum::A(v7) => blk2,
+    MyEnum::B => blk3,
+    MyEnum::C => blk4,
+  })
+
+blk2:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+  (v9: core::RangeCheck, v10: core::gas::GasBuiltin, v11: core::panics::PanicResult::<(core::felt252, ())>) <- test::foo[41-100](v2, v8, v7)
+End:
+  Return(v9, v10, v11)
+
+blk3:
+Statements:
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+End:
+  Goto(blk5, {v12 -> v13})
+
+blk4:
+Statements:
+  (v14: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
+End:
+  Goto(blk5, {v14 -> v13})
+
+blk5:
+Statements:
+  (v15: ()) <- struct_construct()
+  (v16: (core::felt252, ())) <- struct_construct(v6, v15)
+  (v17: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Ok(v16)
+End:
+  Return(v2, v13, v17)
+
+blk6:
+Statements:
+  (v18: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v19: core::panics::PanicResult::<(core::felt252, ())>) <- PanicResult::Err(v18)
+End:
+  Return(v4, v5, v19)

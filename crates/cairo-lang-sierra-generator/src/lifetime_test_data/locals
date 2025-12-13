@@ -7,6 +7,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
+#[inline(never)]
 fn foo(x: felt252) -> felt252 {
     if x == 0 {
         x
