@@ -2339,3 +2339,24 @@ error[E0006]: Function not found.
  --> lib.cairo:8:5
     bar();
     ^^^
+
+//! > ==========================================================================
+
+//! > Test not finding plugin macro if not added a prefix path.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    not::a::path::format!("");
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Inline macro `not::a::path::format` not found.
+ --> lib.cairo:2:5
+    not::a::path::format!("");
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
