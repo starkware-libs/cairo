@@ -109,14 +109,33 @@ other functions in the same contract. They are not entry points. For example:
 
 == Events
 
-Contract events trigger events on Starknet. They can be triggered by the contract.
+Events allow contracts to emit structured data to the blockchain that can be monitored by off-chain applications.
 
-They are defined using the `#[event]` attribute on an empty function.
+Events are defined by creating an `enum` named `Event` annotated with `#[event]`.
+Each variant represents a different event type and must be a struct deriving `starknet::Event`.
+
 For example:
-[source]
+[source,rust]
 ----
+    #[derive(Drop, starknet::Event)]
+    pub struct MyEvent {
+        pub value: u128,
+    }
+
     #[event]
-    fn event_example(event_data: felt252) {}
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {
+        MyEvent: MyEvent,
+    }
+----
+
+Events are emitted using `self.emit()`:
+[source,rust]
+----
+    #[external(v0)]
+    fn trigger_event(ref self: ContractState, value: u128) {
+        self.emit(Event::MyEvent(MyEvent { value }));
+    }
 ----
 
 == ABI
