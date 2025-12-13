@@ -1,9 +1,85 @@
 = Assignment statement
 
-// TODO(spapini): Assignment is an expression.
-
 An _assignment statement_ moves a value into the specified target.
 
 An assignment statement consists of a xref:lvalue.adoc[lvalue] followed by an
 equals sign (=) and an expression.
 After the assignment, the value of the `lvalue` is changed to the value of the expression.
+
+== Syntax
+
+[source,cairo]
+----
+lvalue = expression;
+----
+
+For example:
+
+[source,cairo]
+----
+let mut x = 5;
+x = 10;  // Assigns 10 to x
+
+let mut arr = array![1, 2, 3];
+arr = array![4, 5, 6];  // Assigns a new array to arr
+----
+
+== Assignment as an expression
+
+In Cairo, assignment is an expression, not just a statement.
+When used as an expression, an assignment evaluates to the unit type `()`.
+
+This means assignments can be used in contexts where expressions are expected, such as in loops:
+
+[source,cairo]
+----
+let mut i = 0;
+let limit = 10;
+while i < limit {
+    i = i + 1;  // Assignment returns (), but the side effect updates i
+}
+----
+
+Or in block expressions, where the assignment provides a side effect:
+
+[source,cairo]
+----
+let mut x = 5;
+// The block's value comes from the final expression (x), not from the assignment
+let y = {
+    x = 10;  // This assignment returns (), but modifies x
+    x        // This is the block's return value
+};
+// y is 10, x is also 10
+----
+
+Note that `x = 10` is an expression that returns `()`, while `x` (the final expression) provides the value `10` that gets assigned to `y`.
+
+== Assignment cannot be chained
+
+Because assignments evaluate to `()`, they cannot be chained like in some other languages:
+
+[source,cairo]
+----
+let mut x = 0_u32;
+let mut y = 0_u32;
+x = y = 5;  // Error: cannot assign () to x
+----
+
+This fails because:
+
+1. `y = 5` executes first (assignment is right-associative)
+2. `y` becomes `5`, and the expression `y = 5` returns `()`
+3. Then `x = ()` attempts to execute
+4. Type error: cannot assign `()` to a variable of type `u32`
+
+To assign the same value to multiple variables, assign separately:
+
+[source,cairo]
+----
+let mut x = 0;
+let mut y = 0;
+let value = 5;
+x = value;
+y = value;
+----
