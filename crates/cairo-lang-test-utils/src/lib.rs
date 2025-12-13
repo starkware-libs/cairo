@@ -102,8 +102,8 @@ enum ExpectDiagnostics {
     None,
 }
 
-/// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
-/// Ignores case.
+/// Parses the `expect_diagnostics` test argument into `ExpectDiagnostics`.
+/// Accepts "true", "false" or "warnings_only" (case-insensitive). Panics if invalid.
 fn expect_diagnostics_input(input: &str) -> ExpectDiagnostics {
     let input = input.to_lowercase();
     match input.as_str() {
