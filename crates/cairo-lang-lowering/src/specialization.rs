@@ -26,11 +26,22 @@ use crate::{
 // A const argument for a specialized function.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub enum SpecializationArg<'db> {
-    Const { value: ConstValueId<'db>, boxed: bool },
+    Const {
+        value: ConstValueId<'db>,
+        boxed: bool,
+    },
     Snapshot(Box<SpecializationArg<'db>>),
     Array(TypeId<'db>, Vec<SpecializationArg<'db>>),
     Struct(Vec<SpecializationArg<'db>>),
-    Enum { variant: ConcreteVariant<'db>, payload: Box<SpecializationArg<'db>> },
+    Tuple(Vec<SpecializationArg<'db>>),
+    FixedSizeArray {
+        type_id: TypeId<'db>,
+        values: Vec<SpecializationArg<'db>>,
+    },
+    Enum {
+        variant: ConcreteVariant<'db>,
+        payload: Box<SpecializationArg<'db>>,
+    },
     NotSpecialized,
 }
 
@@ -74,6 +85,28 @@ impl<'a> DebugWithDb<'a> for SpecializationArg<'a> {
                 }
                 write!(f, "]")
             }
+            SpecializationArg::Tuple(args) => {
+                write!(f, "(")?;
+                let mut inner = args.iter().peekable();
+                while let Some(value) = inner.next() {
+                    value.fmt(f, db)?;
+                    if inner.peek().is_some() {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, ")")
+            }
+            SpecializationArg::FixedSizeArray { values, .. } => {
+                write!(f, "[")?;
+                let mut inner = values.iter().peekable();
+                while let Some(value) = inner.next() {
+                    value.fmt(f, db)?;
+                    if inner.peek().is_some() {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, "]")
+            }
             SpecializationArg::Enum { variant, payload } => {
                 write!(f, "{:?}(", variant.debug(db))?;
                 payload.fmt(f, db)?;
@@ -90,6 +123,8 @@ enum SpecializationArgBuildingState<'db, 'a> {
     Initial(&'a SpecializationArg<'db>),
     TakeSnapshot(VariableId),
     BuildStruct(Vec<VariableId>),
+    BuildTuple(Vec<VariableId>),
+    BuildFixedSizeArray(Vec<VariableId>),
     PushBackArray { in_array: VariableId, value: VariableId },
     BuildEnum { variant: ConcreteVariant<'db>, payload: VariableId },
 }
@@ -214,6 +249,43 @@ pub fn specialized_function_lowered<'db>(
                             stack.push((*var_id, SpecializationArgBuildingState::Initial(arg)));
                         }
                     }
+                    SpecializationArg::Tuple(args) => {
+                        let var = &variables[var_id];
+                        let TypeLongId::Tuple(element_types) = var.ty.long(db) else {
+                            unreachable!("Expected a tuple type");
+                        };
+
+                        let location = var.location;
+                        let var_ids = element_types
+                            .iter()
+                            .map(|ty| variables.new_var(VarRequest { ty: *ty, location }))
+                            .collect_vec();
+
+                        stack.push((
+                            var_id,
+                            SpecializationArgBuildingState::BuildTuple(var_ids.clone()),
+                        ));
+
+                        for (var_id, arg) in zip_eq(var_ids.iter().rev(), args.iter().rev()) {
+                            stack.push((*var_id, SpecializationArgBuildingState::Initial(arg)));
+                        }
+                    }
+                    SpecializationArg::FixedSizeArray { type_id, values, .. } => {
+                        let location = variables[var_id].location;
+                        let var_ids = values
+                            .iter()
+                            .map(|_| variables.new_var(VarRequest { ty: *type_id, location }))
+                            .collect_vec();
+
+                        stack.push((
+                            var_id,
+                            SpecializationArgBuildingState::BuildFixedSizeArray(var_ids.clone()),
+                        ));
+
+                        for (var_id, arg) in zip_eq(var_ids.iter().rev(), values.iter().rev()) {
+                            stack.push((*var_id, SpecializationArgBuildingState::Initial(arg)));
+                        }
+                    }
                     SpecializationArg::Enum { variant, payload } => {
                         let location = variables[var_id].location;
                         let payload_var =
@@ -260,7 +332,9 @@ pub fn specialized_function_lowered<'db>(
                         is_specialization_base_call: false,
                     }));
                 }
-                SpecializationArgBuildingState::BuildStruct(ids) => {
+                SpecializationArgBuildingState::BuildStruct(ids)
+                | SpecializationArgBuildingState::BuildTuple(ids)
+                | SpecializationArgBuildingState::BuildFixedSizeArray(ids) => {
                     statements.push(Statement::StructConstruct(StatementStructConstruct {
                         inputs: ids
                             .iter()

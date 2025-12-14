@@ -507,6 +507,25 @@ impl<'db> SpecializedFunction<'db> {
                         stack.push((lowered_param, arg));
                     }
                 }
+                SpecializationArg::Tuple(specialization_args) => {
+                    let TypeLongId::Tuple(element_types) = param.ty.long(db) else {
+                        unreachable!("Expected a tuple type");
+                    };
+                    for (elem_ty, arg) in
+                        zip_eq(element_types.iter().rev(), specialization_args.iter().rev())
+                    {
+                        let lowered_param =
+                            LoweredParam { ty: *elem_ty, stable_ptr: param.stable_ptr };
+                        stack.push((lowered_param, arg));
+                    }
+                }
+                SpecializationArg::FixedSizeArray { type_id, values, .. } => {
+                    for arg in values.iter().rev() {
+                        let lowered_param =
+                            LoweredParam { ty: *type_id, stable_ptr: param.stable_ptr };
+                        stack.push((lowered_param, arg));
+                    }
+                }
                 SpecializationArg::NotSpecialized => {
                     params.push(param.clone());
                 }

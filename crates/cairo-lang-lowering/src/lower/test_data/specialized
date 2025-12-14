@@ -24,7 +24,7 @@ extern fn bar_ext(x: felt252) nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  () <- test::bar{bool::False({}), 1, }()
+  () <- test::bar{bool::False(()), 1, }()
 End:
   Return()
 
@@ -71,7 +71,7 @@ extern fn bar_ext(x: Box<felt252>) nopanic;
 Parameters:
 blk0 (root):
 Statements:
-  () <- test::bar{bool::False({}), 2.into_box(), }()
+  () <- test::bar{bool::False(()), 2.into_box(), }()
 End:
   Return()
 
@@ -119,7 +119,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  () <- test::bar{bool::False({}), array![], }()
+  () <- test::bar{bool::False(()), array![], }()
 End:
   Return()
 
@@ -171,7 +171,7 @@ Statements:
   (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
   (v5: core::felt252) <- 3
   (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v5)
-  (v7: core::panics::PanicResult::<((),)>) <- test::bar{bool::False({}), array![1, 2, 3], }()
+  (v7: core::panics::PanicResult::<((),)>) <- test::bar{bool::False(()), array![1, 2, 3], }()
 End:
   Return(v7)
 
@@ -225,7 +225,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  () <- test::bar{bool::False({}), array![], }()
+  () <- test::bar{bool::False(()), array![], }()
 End:
   Return()
 
@@ -278,7 +278,7 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v2: core::array::Array::<core::felt252>) <- test::bar{bool::False({}), array![], { @array![] }, NotSpecialized, 0, 1.into_box(), }(v0)
+  (v2: core::array::Array::<core::felt252>) <- test::bar{bool::False(()), array![], { @array![] }, NotSpecialized, 0, 1.into_box(), }(v0)
 End:
   Return()
 
@@ -340,7 +340,7 @@ extern fn bar_ext(s: S6) nopanic;
 Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252
 blk0 (root):
 Statements:
-  () <- test::bar{bool::False({}), { 1, NotSpecialized, 3, NotSpecialized, NotSpecialized, 6 }, }(v0, v2, v1)
+  () <- test::bar{bool::False(()), { 1, NotSpecialized, 3, NotSpecialized, NotSpecialized, 6 }, }(v0, v2, v1)
 End:
   Return()
 
@@ -407,7 +407,7 @@ Statements:
   (v7: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v5, v6)
   (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v9: test::SA1) <- struct_construct(v7, v0, v8)
-  () <- test::bar{bool::False({}), NotSpecialized, }(v9)
+  () <- test::bar{bool::False(()), NotSpecialized, }(v9)
 End:
   Return()
 
@@ -468,7 +468,7 @@ Statements:
   (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v4)
   (v6: core::felt252) <- 7
   (v7: test::SA1) <- struct_construct(v0, v6, v5)
-  () <- test::bar{bool::False({}), NotSpecialized, }(v7)
+  () <- test::bar{bool::False(()), NotSpecialized, }(v7)
 End:
   Return()
 
@@ -542,7 +542,7 @@ Statements:
   () <- test::not_consume(v2)
   (v3: core::felt252) <- 5
   (v4: test::SB) <- struct_construct(v0, v3, v2)
-  () <- test::bar{bool::False({}), NotSpecialized, }(v4)
+  () <- test::bar{bool::False(()), NotSpecialized, }(v4)
 End:
   Return()
 
@@ -594,7 +594,7 @@ extern fn bar_ext(s: S) nopanic;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  () <- test::bar{bool::False({}), { NotSpecialized, 5 }, }(v0)
+  () <- test::bar{bool::False(()), { NotSpecialized, 5 }, }(v0)
 End:
   Return()
 
@@ -666,7 +666,7 @@ Statements:
   (v9: test::Inner) <- struct_construct(v1, v8)
   (v10: test::Outer) <- struct_construct(v9, v1)
   (v11: core::array::Array::<test::Outer>) <- core::array::array_append::<test::Outer>(v7, v10)
-  (v12: core::panics::PanicResult::<((),)>) <- test::bar{bool::False({}), array![{ { 1, NotSpecialized }, 3 }, { { NotSpecialized, 5 }, NotSpecialized }], }(v0, v1, v1)
+  (v12: core::panics::PanicResult::<((),)>) <- test::bar{bool::False(()), array![{ { 1, NotSpecialized }, 3 }, { { NotSpecialized, 5 }, NotSpecialized }], }(v0, v1, v1)
 End:
   Return(v12)
 
@@ -732,7 +732,7 @@ extern fn bar_ext(e: E) nopanic;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  () <- test::bar{bool::False({}), E::A(NotSpecialized), }(v0)
+  () <- test::bar{bool::False(()), E::A(NotSpecialized), }(v0)
 End:
   Return()
 
@@ -791,7 +791,7 @@ extern fn bar_ext(e: E) nopanic;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  () <- test::bar{bool::False({}), E::A({ 1, NotSpecialized }), }(v0)
+  () <- test::bar{bool::False(()), E::A({ 1, NotSpecialized }), }(v0)
 End:
   Return()
 
@@ -848,7 +848,7 @@ fn bar2(keep: bool, a: felt252) -> felt252 {
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252,)>) <- test::bar1{bool::False({}), 100000, }(v0, v1)
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(core::felt252,)>) <- test::bar1{bool::False(()), 100000, }(v0, v1)
 End:
   Match(match_enum(v5) {
     PanicResult::Ok(v6) => blk1,
@@ -880,3 +880,314 @@ Statements:
   (v3: core::felt252) <- test::bar1(v0, v2)
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test tuple with const values.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function_code
+fn foo() {
+    bar(false, (1, 2, 3))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, t: (felt252, felt252, felt252)) {
+    if keep {
+        bar_ext(t);
+    }
+}
+
+extern fn bar_ext(t: (felt252, felt252, felt252)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters:
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False(()), (1, 2, 3), }()
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- 2
+  (v5: core::felt252) <- 3
+  (v2: (core::felt252, core::felt252, core::felt252)) <- struct_construct(v3, v4, v5)
+  (v6: ()) <- test::bar(v0, v2)
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Test tuple with partial specialization.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function_code
+fn foo(b: felt252) {
+    bar(false, (1, b, 3))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, t: (felt252, felt252, felt252)) {
+    if keep {
+        bar_ext(t);
+    }
+}
+
+extern fn bar_ext(t: (felt252, felt252, felt252)) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False(()), (1, NotSpecialized, 3), }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v4: core::felt252
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: core::felt252) <- 1
+  (v5: core::felt252) <- 3
+  (v2: (core::felt252, core::felt252, core::felt252)) <- struct_construct(v3, v4, v5)
+  (v6: ()) <- test::bar(v0, v2)
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Test fixed size array with const values.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function_code
+fn foo() {
+    bar(false, [1, 2, 3])
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, arr: [felt252; 3]) {
+    if keep {
+        bar_ext(arr);
+    }
+}
+
+extern fn bar_ext(arr: [felt252; 3]) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters:
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False(()), [1, 2, 3], }()
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: core::felt252) <- 1
+  (v4: core::felt252) <- 2
+  (v5: core::felt252) <- 3
+  (v2: [core::felt252; 3]) <- struct_construct(v3, v4, v5)
+  (v6: ()) <- test::bar(v0, v2)
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Test fixed size array with partial specialization.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function_code
+fn foo(b: felt252) {
+    bar(false, [1, b, 3])
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(keep: bool, arr: [felt252; 3]) {
+    if keep {
+        bar_ext(arr);
+    }
+}
+
+extern fn bar_ext(arr: [felt252; 3]) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False(()), [1, NotSpecialized, 3], }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v4: core::felt252
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v3: core::felt252) <- 1
+  (v5: core::felt252) <- 3
+  (v2: [core::felt252; 3]) <- struct_construct(v3, v4, v5)
+  (v6: ()) <- test::bar(v0, v2)
+End:
+  Return(v6)
+
+//! > ==========================================================================
+
+//! > Test nested tuple inside struct.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function_code
+fn foo(x: felt252) {
+    bar(false, S { t: (1, x), a: 3 })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct S {
+    t: (felt252, felt252),
+    a: felt252,
+}
+
+fn bar(keep: bool, s: S) {
+    if keep {
+        bar_ext(s);
+    }
+}
+
+extern fn bar_ext(s: S) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False(()), { (1, NotSpecialized), 3 }, }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v6: core::felt252
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v5: core::felt252) <- 1
+  (v3: (core::felt252, core::felt252)) <- struct_construct(v5, v6)
+  (v4: core::felt252) <- 3
+  (v2: test::S) <- struct_construct(v3, v4)
+  (v7: ()) <- test::bar(v0, v2)
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Test fixed size array inside struct.
+
+//! > test_runner_name
+test_specialized_function
+
+//! > function_code
+fn foo(x: felt252) {
+    bar(false, S { arr: [1, x, 3], a: 4 })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct S {
+    arr: [felt252; 3],
+    a: felt252,
+}
+
+fn bar(keep: bool, s: S) {
+    if keep {
+        bar_ext(s);
+    }
+}
+
+extern fn bar_ext(s: S) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > caller_lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar{bool::False(()), { [1, NotSpecialized, 3], 4 }, }(v0)
+End:
+  Return()
+
+//! > specialized_lowering
+Parameters: v6: core::felt252
+blk0 (root):
+Statements:
+  (v1: ()) <- struct_construct()
+  (v0: core::bool) <- bool::False(v1)
+  (v5: core::felt252) <- 1
+  (v7: core::felt252) <- 3
+  (v3: [core::felt252; 3]) <- struct_construct(v5, v6, v7)
+  (v4: core::felt252) <- 4
+  (v2: test::S) <- struct_construct(v3, v4)
+  (v8: ()) <- test::bar(v0, v2)
+End:
+  Return(v8)

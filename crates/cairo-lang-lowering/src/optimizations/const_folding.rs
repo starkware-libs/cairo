@@ -48,7 +48,8 @@ use crate::{
 };
 
 /// Converts a const value to a specialization arg.
-/// For struct and enum const values, recursively converts to SpecializationArg::Struct/Enum.
+/// For struct, tuple, fixed-size array and enum const values, recursively converts to the
+/// corresponding SpecializationArg variant.
 fn const_to_specialization_arg<'db>(
     db: &'db dyn Database,
     value: ConstValueId<'db>,
@@ -56,16 +57,19 @@ fn const_to_specialization_arg<'db>(
 ) -> SpecializationArg<'db> {
     match value.long(db) {
         ConstValue::Struct(members, ty) => {
-            // Only convert to SpecializationArg::Struct if the type is actually a concrete struct,
-            // not a closure or fixed size array.
-            if matches!(ty.long(db), TypeLongId::Concrete(ConcreteTypeId::Struct(_))) {
-                let args = members
-                    .iter()
-                    .map(|member| const_to_specialization_arg(db, *member, false))
-                    .collect();
-                SpecializationArg::Struct(args)
-            } else {
-                SpecializationArg::Const { value, boxed }
+            let args = members
+                .iter()
+                .map(|member| const_to_specialization_arg(db, *member, false))
+                .collect();
+            match ty.long(db) {
+                TypeLongId::Concrete(ConcreteTypeId::Struct(_)) => SpecializationArg::Struct(args),
+                TypeLongId::Tuple(_) => SpecializationArg::Tuple(args),
+                TypeLongId::FixedSizeArray { type_id, .. } => SpecializationArg::FixedSizeArray {
+                    type_id: *type_id,
+                    values: args,
+                },
+                // For closures and other types, fall back to Const.
+                _ => SpecializationArg::Const { value, boxed },
             }
         }
         ConstValue::Enum(variant, payload) => SpecializationArg::Enum {
@@ -798,7 +802,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                             stack.push(value);
                         }
                     }
-                    SpecializationArg::Struct(specialization_args) => {
+                    SpecializationArg::Struct(specialization_args)
+                    | SpecializationArg::Tuple(specialization_args) 
+                    | SpecializationArg::FixedSizeArray { values:specialization_args, .. } => {
                         for arg in specialization_args.iter_mut().rev() {
                             stack.push(arg);
                         }
@@ -1439,34 +1445,76 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 Some(SpecializationArg::Array(*inner_ty, args))
             }
             VarInfo::Struct(infos) => {
-                let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
-                    ty.long(self.db)
-                else {
-                    // TODO(ilya): Support closures and fixed size arrays.
-                    return None;
-                };
-
-                let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
-                let coerces = match coerce {
-                    Some(coerce) => {
-                        let SpecializationArg::Struct(specialization_args) = coerce else {
-                            unreachable!("Expected a struct specialization argument");
+                // Get element types and coerces based on the type.
+                #[allow(clippy::type_complexity)]
+                let (element_types, coerces, make_result): (
+                    Vec<TypeId<'db>>,
+                    Vec<Option<&SpecializationArg<'db>>>,
+                    Box<dyn FnOnce(Vec<SpecializationArg<'db>>) -> SpecializationArg<'db>>,
+                ) = match ty.long(self.db) {
+                    TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
+                        let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
+                        let element_types: Vec<_> =
+                            members.values().map(|member| member.ty).collect();
+                        let coerces = match coerce {
+                            Some(SpecializationArg::Struct(specialization_args)) => {
+                                assert_eq!(specialization_args.len(), infos.len());
+                                specialization_args.iter().map(Some).collect()
+                            }
+                            Some(_) => unreachable!("Expected a struct specialization argument"),
+                            None => vec![None; infos.len()],
                         };
-                        assert_eq!(specialization_args.len(), infos.len());
-
-                        specialization_args.iter().map(Some).collect()
+                        (element_types, coerces, Box::new(SpecializationArg::Struct))
                     }
-                    None => vec![None; infos.len()],
+                    TypeLongId::Tuple(element_types) => {
+                        let element_types: Vec<_> = element_types.clone();
+                        let coerces = match coerce {
+                            Some(SpecializationArg::Tuple(specialization_args)) => {
+                                assert_eq!(specialization_args.len(), infos.len());
+                                specialization_args.iter().map(Some).collect()
+                            }
+                            Some(_) => unreachable!("Expected a tuple specialization argument"),
+                            None => vec![None; infos.len()],
+                        };
+                        (element_types, coerces, Box::new(SpecializationArg::Tuple))
+                    }
+                    TypeLongId::FixedSizeArray { type_id, .. } => {
+                        let element_types: Vec<_> = vec![*type_id; infos.len()];
+                        let (coerces, coerce_type_id) = match coerce {
+                            Some(SpecializationArg::FixedSizeArray {
+                                type_id,
+                                values: specialization_args,
+                            }) => {
+                                assert_eq!(specialization_args.len(), infos.len());
+                                (specialization_args.iter().map(Some).collect(), *type_id,)
+                            }
+                            Some(_) => {
+                                unreachable!("Expected a fixed size array specialization argument")
+                            }
+                            None => (vec![None; infos.len()], *type_id),
+                        };
+                        (
+                            element_types,
+                            coerces,
+                            Box::new(move |values| SpecializationArg::FixedSizeArray {
+                                type_id: coerce_type_id,
+                                values,
+                            }),
+                        )
+                    }
+                    // For closures and other types, don't specialize.
+                    _ => return None,
                 };
+
                 let mut struct_args = Vec::new();
                 // Accumulate into locals first; only extend unknown_vars if we end up specializing.
                 let mut vars = vec![];
-                for ((member, opt_var_info), coerce) in
-                    zip_eq(zip_eq(members.values(), infos), coerces)
+                for ((elem_ty, opt_var_info), coerce) in
+                    zip_eq(zip_eq(element_types, infos), coerces)
                 {
                     let var_info = opt_var_info?;
                     let arg =
-                        self.try_get_specialization_arg(var_info, member.ty, &mut vars, coerce)?;
+                        self.try_get_specialization_arg(var_info, elem_ty, &mut vars, coerce)?;
                     struct_args.push(arg);
                 }
                 if !struct_args.is_empty()
@@ -1477,7 +1525,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     return None;
                 }
                 unknown_vars.extend(vars);
-                Some(SpecializationArg::Struct(struct_args))
+                Some(make_result(struct_args))
             }
             VarInfo::Enum { variant, payload } => {
                 let coerce = match coerce {
