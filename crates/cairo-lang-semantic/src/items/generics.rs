@@ -12,9 +12,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::node::ast::{
-    AssociatedItemConstraints, GenericArgValue, OptionAssociatedItemConstraints,
-};
+use cairo_lang_syntax::node::ast::{AssociatedItemConstraints, OptionAssociatedItemConstraints};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -392,15 +390,12 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
             Ok(generic_params
                 .iter()
                 .filter_map(|generic_param| {
-                    let value = arg_syntax_per_param.get(generic_param)?;
-                    let GenericArgValue::Expr(expr) = value else {
-                        return None;
-                    };
+                    let expr = arg_syntax_per_param.get(generic_param)?;
                     let x = maybe_resolve_shallow_generic_arg_type(
                         db,
                         &mut diagnostics,
                         &mut resolver,
-                        &expr.expr(db),
+                        expr,
                     )?;
                     Some((*generic_param, x))
                 })
