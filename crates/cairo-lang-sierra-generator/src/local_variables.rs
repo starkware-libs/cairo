@@ -396,6 +396,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::IntoBox(_) => BranchInfo { known_ap_change: true },
+            lowering::Statement::Unbox(_) => BranchInfo { known_ap_change: true },
         };
         Ok(branch_info)
     }

@@ -26,6 +26,7 @@ use crate::utils::{
     get_libfunc_signature, into_box_libfunc_id, jump_libfunc_id, jump_statement,
     match_enum_libfunc_id, rename_libfunc_id, return_statement, simple_basic_statement,
     snapshot_take_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    unbox_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::Block].
@@ -301,6 +302,9 @@ pub fn generate_statement_code<'db>(
         lowering::Statement::IntoBox(statement) => {
             generate_statement_into_box(context, statement, statement_location)
         }
+        lowering::Statement::Unbox(statement) => {
+            generate_statement_unbox(context, statement, statement_location)
+        }
     }
 }
 
@@ -565,6 +569,22 @@ fn generate_statement_into_box<'db>(
             context.get_db(),
             context.get_variable_sierra_type(statement.input.var_id)?,
         ),
+        &[input],
+        &[context.get_sierra_variable(statement.output)],
+    );
+    context.push_statement(stmt);
+    Ok(())
+}
+
+/// Generates Sierra code for [lowering::StatementUnbox].
+fn generate_statement_unbox<'db>(
+    context: &mut ExprGeneratorContext<'db, '_>,
+    statement: &lowering::StatementUnbox<'db>,
+    statement_location: &StatementLocation,
+) -> Maybe<()> {
+    let input = maybe_add_dup_statement(context, statement_location, 0, &statement.input)?;
+    let stmt = simple_basic_statement(
+        unbox_libfunc_id(context.get_db(), context.get_variable_sierra_type(statement.output)?),
         &[input],
         &[context.get_sierra_variable(statement.output)],
     );

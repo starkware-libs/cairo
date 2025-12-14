@@ -16,7 +16,9 @@ use crate::objects::{
     Statement, StatementCall, StatementConst, StatementStructConstruct, StatementStructDestructure,
     VarUsage,
 };
-use crate::{StatementDesnap, StatementEnumConstruct, StatementIntoBox, StatementSnapshot};
+use crate::{
+    StatementDesnap, StatementEnumConstruct, StatementIntoBox, StatementSnapshot, StatementUnbox,
+};
 
 #[derive(Clone, Default)]
 pub struct StatementsBuilder<'db> {
@@ -273,6 +275,29 @@ impl<'db> IntoBox<'db> {
         let output_ty = core_box_ty(ctx.db, input_ty);
         let output = ctx.new_var(VarRequest { ty: output_ty, location: self.location });
         builder.push_statement(Statement::IntoBox(StatementIntoBox { input: self.input, output }));
+        VarUsage { var_id: output, location: self.location }
+    }
+}
+
+/// Generator for [StatementUnbox].
+pub struct Unbox<'db> {
+    pub input: VarUsage<'db>,
+    pub location: LocationId<'db>,
+}
+impl<'db> Unbox<'db> {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'db, '_>,
+        builder: &mut StatementsBuilder<'db>,
+    ) -> VarUsage<'db> {
+        let box_ty = extract_matches!(
+            ctx.variables[self.input.var_id].ty.long(ctx.db),
+            semantic::TypeLongId::Concrete
+        );
+        let output_ty =
+            extract_matches!(box_ty.generic_args(ctx.db)[0], semantic::GenericArgumentId::Type);
+        let output = ctx.new_var(VarRequest { ty: output_ty, location: self.location });
+        builder.push_statement(Statement::Unbox(StatementUnbox { input: self.input, output }));
         VarUsage { var_id: output, location: self.location }
     }
 }

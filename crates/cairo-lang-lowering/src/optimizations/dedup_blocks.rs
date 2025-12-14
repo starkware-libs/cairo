@@ -13,7 +13,7 @@ use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
     Block, BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementConst, StatementDesnap,
     StatementEnumConstruct, StatementIntoBox, StatementSnapshot, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, VariableArena, VariableId,
+    StatementStructDestructure, StatementUnbox, VarRemapping, VarUsage, VariableArena, VariableId,
 };
 
 /// A canonic representation of a block (used to find duplicated blocks).
@@ -60,6 +60,10 @@ enum CanonicStatement<'db> {
         output: CanonicVar,
     },
     IntoBox {
+        input: CanonicVar,
+        output: CanonicVar,
+    },
+    Unbox {
         input: CanonicVar,
         output: CanonicVar,
     },
@@ -166,12 +170,14 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
                 input: self.handle_input(input),
                 output: self.handle_output(output),
             },
-            Statement::IntoBox(StatementIntoBox { input, output }) => {
-                CanonicStatement::IntoBox {
-                    input: self.handle_input(input),
-                    output: self.handle_output(output),
-                }
-            }
+            Statement::IntoBox(StatementIntoBox { input, output }) => CanonicStatement::IntoBox {
+                input: self.handle_input(input),
+                output: self.handle_output(output),
+            },
+            Statement::Unbox(StatementUnbox { input, output }) => CanonicStatement::Unbox {
+                input: self.handle_input(input),
+                output: self.handle_output(output),
+            },
         }
     }
 }
