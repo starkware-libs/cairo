@@ -6,7 +6,7 @@ use salsa::Database;
 
 use crate::objects::{
     MatchExternInfo, Statement, StatementCall, StatementConst, StatementIntoBox,
-    StatementStructDestructure, VariableId,
+    StatementStructDestructure, StatementUnbox, VariableId,
 };
 use crate::{
     Block, BlockEnd, Lowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo, StatementDesnap,
@@ -189,6 +189,7 @@ impl<'db> DebugWithDb<'db> for Statement<'db> {
             Statement::Snapshot(stmt) => stmt.fmt(f, ctx),
             Statement::Desnap(stmt) => stmt.fmt(f, ctx),
             Statement::IntoBox(stmt) => stmt.fmt(f, ctx),
+            Statement::Unbox(stmt) => stmt.fmt(f, ctx),
         }
     }
 }
@@ -372,6 +373,16 @@ impl<'db> DebugWithDb<'db> for StatementIntoBox<'db> {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &Self::Db) -> std::fmt::Result {
         write!(f, "into_box(")?;
+        self.input.fmt(f, ctx)?;
+        write!(f, ")")
+    }
+}
+
+impl<'db> DebugWithDb<'db> for StatementUnbox<'db> {
+    type Db = LoweredFormatter<'db>;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &Self::Db) -> std::fmt::Result {
+        write!(f, "unbox(")?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")
     }

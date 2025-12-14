@@ -108,7 +108,7 @@ fn default_moveable_functions() -> Vec<String> {
         ["bool_not_impl"],
         ["felt252_add", "felt252_sub", "felt252_mul", "felt252_div"],
         ["array::array_new", "array::array_append"],
-        ["box::unbox", "box::box_forward_snapshot", "box::into_box"],
+        ["box::box_forward_snapshot"],
     )
     .map(|s| s.to_string())
     .collect();
