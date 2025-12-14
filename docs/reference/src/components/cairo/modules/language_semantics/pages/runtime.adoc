@@ -1,6 +1,197 @@
 = Runtime
 
-This section is a work in progress.
+== Overview
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+This page describes the runtime execution model of Cairo programs as implemented in this
+repository. It explains how compiled programs are run on the Cairo VM, how gas and execution
+resources are tracked, and how Starknet-specific system calls interact with the simulated
+environment.
+
+At a high level:
+
+- The Cairo compiler lowers source programs to Sierra and then to CASM (Cairo assembly).
+- The runtime builds a `Program` from CASM and executes it on a `VirtualMachine` from `cairo_vm`.
+- A runner (`SierraCasmRunner`) coordinates program preparation, argument and gas handling,
+  execution, and result collection.
+- For Starknet contracts, a simulated `StarknetState` models storage, block/transaction context and
+  messages.
+
+This document focuses on language-level semantics and observable behavior rather than on the full
+instruction set or proof system.
+
+== Execution flow
+
+=== From Sierra to VM execution
+
+The runtime entry point for executing a Sierra function is `SierraCasmRunner` in
+`crates/cairo-lang-runner/src/lib.rs`:
+
+- `SierraCasmRunner::new` constructs a runner from a Sierra `Program` and optional metadata
+  configuration (including gas cost data).
+- `SierraCasmRunner::run_function` runs a chosen Sierra function on the Cairo VM with a custom
+  hint processor and explicit `available_gas`.
+- `SierraCasmRunner::run_function_with_starknet_context` is a convenience helper that prepares a
+  Starknet execution context and then runs the function.
+
+Internally, the runner:
+
+- Assembles CASM bytecode and builtin list for the target function.
+- Builds a `Program` for `cairo_vm` together with a hints dictionary.
+- Initializes a `CairoRunner` on top of `VirtualMachine`.
+- Invokes the VM to run until the function completes, then relocates memory and trace.
+
+The primary observable output is a `RunResult` (or `RunResultStarknet` for Starknet-aware runs):
+
+- Remaining gas counter (if gas builtin is used).
+- Relocated memory after execution.
+- Return value or panic data, encoded as `RunResultValue`.
+- Execution resources used during the run.
+
+=== Function arguments and returns
+
+The runtime expects arguments in a logical form (`Arg`), which is converted into the VM-level
+layout according to the function signature:
+
+- `Arg::Value` represents a single felt252 value.
+- `Arg::Array` represents a Cairo array and maps to a pair of pointers (start, end) in memory.
+- `SierraCasmRunner::prepare_args` groups and sizes arguments according to concrete parameter
+  types and their VM representation.
+
+Return values are extracted from relocated memory using the function's return types:
+
+- `SierraCasmRunner::get_results_data` reads the tail of the stack for each return type and
+  separates implicit values such as the gas builtin from user-visible results.
+- `SierraCasmRunner::handle_main_return_value` interprets panic wrappers (e.g. `PanicResult`) and
+  decides whether the run is considered `Success` or `Panic`, returning the corresponding data.
+
+== Relation to the VM and memory model
+
+Execution ultimately happens inside `cairo_vm::vm::vm_core::VirtualMachine` using relocatable
+memory and segments. The following concepts are shared with the memory model:
+
+- Memory is divided into segments; pointers are `(segment, offset)` pairs.
+- `AP` (allocation pointer) and `FP` (frame pointer) drive stack and frame layout.
+- The runner creates and manages segments for program data, builtins, and temporary buffers.
+
+Helpers in `crates/cairo-lang-runner/src/casm_run/mod.rs` support this execution-time memory model:
+
+- `MemBuffer` provides a convenient interface to read and write contiguous ranges of values in a
+  segment, allocate new segments, and encode arrays as `(start, end)` pointer pairs.
+- Functions such as `cell_ref_to_relocatable`, `get_val`, and `extract_relocatable` bridge between
+  CASM operands and VM memory.
+
+For a deeper discussion of the memory model itself, including immutability at the language level
+and how data structures map to VM memory, see xref:memory-model.adoc[Memory model].
+
+== Gas and execution resources
+
+The runtime tracks gas and other execution resources for each run.
+
+=== Function-level gas
+
+Gas-related information is derived from metadata computed during compilation:
+
+- `SierraCasmRunner::requires_gas_builtin` determines whether a function uses the gas builtin.
+- `SierraCasmRunner::initial_required_gas` computes the gas required to run the function from the
+  metadata (per-token costs).
+- `SierraCasmRunner::get_initial_available_gas` adjusts the user-provided `available_gas` by
+  subtracting the required gas, or returns an error if the call cannot be made with the requested
+  gas.
+
+The helper `token_gas_cost` defines the approximated cost per `CostTokenType` used in gas
+equations.
+
+=== Execution resources
+
+During execution, the runner and VM track detailed resources:
+
+- `ExecutionResources` (from `cairo_vm`) counts VM steps and builtin usage for a single run.
+- `StarknetExecutionResources` extends this with a per-syscall map counting how many times each
+  syscall was invoked.
+
+The final `RunResult` (or `RunResultStarknet`) exposes these resource counters so that tooling can
+reason about gas and performance.
+
+== Syscalls and Starknet environment
+
+When running Starknet contracts, the runtime simulates a subset of the Starknet OS behavior via
+hints and a local state object.
+
+=== Simulated execution state
+
+`crates/cairo-lang-runner/src/casm_run/mod.rs` defines several helper structs:
+
+- `StarknetState` models:
+  * Per-contract storage (a mapping from contract address to key–value storage).
+  * Deployed contracts and their class hashes.
+  * Per-contract logs (events) and L2→L1 messages.
+  * Current execution info (block and transaction context).
+- `ExecutionInfo`, `BlockInfo`, `TxInfo` and `ResourceBounds` mirror the corresponding Cairo-level
+  structs and are used to populate execution info syscalls.
+
+The runtime provides methods on `StarknetState` for temporarily changing the caller/contract
+context (e.g. `open_caller_context` / `close_caller_context`) to support nested calls.
+
+=== Hint processor and syscalls
+
+`CairoHintProcessor` implements `HintProcessorLogic` and is responsible for executing hints
+generated by the compiler:
+
+- `execute_hint` dispatches between core hints, external hints and Starknet hints.
+- For `StarknetHint::SystemCall`, it delegates to `CairoHintProcessor::execute_syscall`.
+
+`execute_syscall` interprets a system call buffer in VM memory:
+
+- Reads the syscall selector and gas counter from the buffer.
+- Invokes the appropriate handler (e.g. storage read/write, contract calls, events, messages,
+  cryptographic operations).
+- Deducts gas using a per-syscall cost table (`gas_costs` module) and fails the syscall if there is
+  not enough gas.
+- Writes the updated gas counter and either success data or a revert reason back into the buffer.
+
+The runtime records syscall usage in `StarknetExecutionResources::syscalls` by incrementing a
+counter for each selector.
+
+== Errors, panics and termination
+
+Execution can terminate in several ways:
+
+- **Successful completion** — the function returns normally and `RunResultValue::Success` carries
+  the user-visible return data.
+- **Panic** — functions that return a panic wrapper type (such as `PanicResult`) may panic; the
+  runtime decodes the wrapper and exposes the carried error data as `RunResultValue::Panic`.
+- **Gas-related failure** — attempts to call a function without sufficient gas result in a
+  `RunnerError::NotEnoughGasToCall`; syscalls that run out of gas return a revert reason.
+- **VM-level errors** — errors originating from `cairo_vm` (e.g. invalid memory access) are
+  surfaced as `CairoRunError` wrapped in `RunnerError`.
+
+The distinction between successful runs and panics is part of the runtime contract and can be
+relied upon by tooling and higher-level frameworks.
+
+== Implementation reference
+
+Key implementation files related to the runtime described on this page include:
+
+- `crates/cairo-lang-runner/src/lib.rs`
+  * `RunResult`, `RunResultStarknet`, `RunResultValue`.
+  * `SierraCasmRunner` (construction, argument handling, execution and result extraction).
+  * Gas helpers (`token_gas_cost`, `initial_required_gas`, `get_initial_available_gas`).
+- `crates/cairo-lang-runner/src/casm_run/mod.rs`
+  * `CairoHintProcessor` and its `HintProcessorLogic` implementation.
+  * `StarknetState` and related execution context structs.
+  * Syscall dispatch and per-syscall gas accounting.
+  * Memory helpers (`MemBuffer`, `segment_with_data`, pointer utilities).
+- `cairo_vm` crate
+  * `VirtualMachine`, `CairoRunner`, `ExecutionResources` and related VM internals.
+
+== Out of scope / notes
+
+This page intentionally does not provide a complete formal specification of:
+
+- The Cairo VM instruction set and all low-level execution details.
+- The exact gas rules enforced by the Starknet protocol and block builder.
+- The prover and proof system used to verify Cairo execution traces.
+
+Those aspects are defined by external components (such as the `cairo_vm` crate, Starknet OS and
+blockifier) and may evolve independently. This document instead captures how the Cairo language
+tooling in this repository interfaces with the runtime and exposes it to users and tooling.
