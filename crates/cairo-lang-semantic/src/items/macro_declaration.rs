@@ -532,9 +532,9 @@ fn expand_macro_rule_ex(
         }
         SyntaxKind::MacroRepetition => {
             let repetition = ast::MacroRepetition::from_syntax_node(db, node);
-            let elements = repetition.elements(db).elements_vec(db);
-            let repetition_params = get_repetition_params(db, elements.iter().cloned());
-            let first_param = repetition_params.first().ok_or_else(skip_diagnostic)?;
+            let elements = repetition.elements(db);
+            let first_param = find_first_repetition_param(db, elements.elements(db))
+                .ok_or_else(skip_diagnostic)?;
             let placeholder_name = first_param.name(db).text(db);
             let rep_id = *matcher_ctx
                 .placeholder_to_rep_id
@@ -544,7 +544,7 @@ fn expand_macro_rule_ex(
                 matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
             for i in 0..repetition_len {
                 matcher_ctx.repetition_indices.insert(rep_id, i);
-                for element in &elements {
+                for element in elements.elements(db) {
                     expand_macro_rule_ex(
                         db,
                         element.as_syntax_node(),
@@ -586,38 +586,30 @@ fn expand_macro_rule_ex(
     Ok(())
 }
 
-/// Gets a Vec of MacroElement, and returns a vec of the params within it.
-fn get_repetition_params<'db>(
+/// Returns the first param within the given macro elements.
+fn find_first_repetition_param<'db>(
     db: &'db dyn Database,
     elements: impl IntoIterator<Item = MacroElement<'db>>,
-) -> Vec<MacroParam<'db>> {
-    let mut params = vec![];
-    repetition_params_extend(db, elements, &mut params);
-    params
-}
-
-/// Recursively extends the provided params vector with all params within the given macro elements.
-fn repetition_params_extend<'db>(
-    db: &'db dyn Database,
-    elements: impl IntoIterator<Item = MacroElement<'db>>,
-    params: &mut Vec<MacroParam<'db>>,
-) {
+) -> Option<MacroParam<'db>> {
     for element in elements {
         match element {
-            ast::MacroElement::Param(param) => {
-                params.push(param);
-            }
+            ast::MacroElement::Param(param) => return Some(param),
             ast::MacroElement::Subtree(subtree) => {
                 let inner_elements = get_macro_elements(db, subtree.subtree(db)).elements(db);
-                repetition_params_extend(db, inner_elements, params);
+                if let Some(param) = find_first_repetition_param(db, inner_elements) {
+                    return Some(param);
+                }
             }
             ast::MacroElement::Repetition(repetition) => {
                 let inner_elements = repetition.elements(db).elements(db);
-                repetition_params_extend(db, inner_elements, params);
+                if let Some(param) = find_first_repetition_param(db, inner_elements) {
+                    return Some(param);
+                }
             }
             ast::MacroElement::Token(_) => {}
         }
     }
+    None
 }
 
 /// Implementation of [MacroDeclarationSemantic::macro_declaration_diagnostics].

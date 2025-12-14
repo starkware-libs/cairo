@@ -776,8 +776,7 @@ fn expand_inline_macro<'db>(
 
         let macro_defsite_resolver_data =
             ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
-        let inference_id = ctx.resolver.inference().inference_id;
-        let callsite_resolver = ctx.resolver.data.clone_with_inference_id(ctx.db, inference_id);
+        let callsite_module_id = ctx.resolver.data.module_id;
         let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
         let info = MacroExpansionInfo {
             mappings: expanded_code.code_mappings,
@@ -786,7 +785,7 @@ fn expand_inline_macro<'db>(
         };
         ctx.resolver.macro_call_data = Some(Arc::new(ResolverMacroData {
             defsite_module_id: macro_defsite_resolver_data.module_id,
-            callsite_module_id: callsite_resolver.module_id,
+            callsite_module_id,
             expansion_mappings: info.mappings.clone(),
             parent_macro_call_data,
         }));
