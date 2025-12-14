@@ -14,5 +14,5 @@ Examples:
 | ()                            | ()
 | (1_u32,)                      | (u32,)
 | (1_u32, Some(3_u8))           | (u32, Option<u8>)
-| (True, False, 'abc')          | (bool, bool, felt252)
+| (true, false, 'abc')          | (bool, bool, felt252)
 |===
