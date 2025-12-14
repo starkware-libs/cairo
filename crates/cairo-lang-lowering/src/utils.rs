@@ -5,7 +5,7 @@ use crate::{
     Block, BlockEnd, BlockId, MatchArm, MatchEnumInfo, MatchEnumValue, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementConst, StatementDesnap, StatementEnumConstruct,
     StatementIntoBox, StatementSnapshot, StatementStructConstruct, StatementStructDestructure,
-    VarRemapping, VarUsage, VariableId,
+    StatementUnbox, VarRemapping, VarUsage, VariableId,
 };
 
 /// Options for the `inlining-strategy` arguments.
@@ -89,6 +89,10 @@ pub trait RebuilderEx<'db>: Rebuilder<'db> {
                 output: self.map_var_id(stmt.output),
             }),
             Statement::IntoBox(stmt) => Statement::IntoBox(StatementIntoBox {
+                input: self.map_var_usage(stmt.input),
+                output: self.map_var_id(stmt.output),
+            }),
+            Statement::Unbox(stmt) => Statement::Unbox(StatementUnbox {
                 input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),

@@ -135,7 +135,7 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252) <- core::box::unbox::<core::felt252>(v2)
+  (v4: core::felt252) <- unbox(v2)
   (v5: core::felt252) <- 5
   (v6: core::felt252) <- core::felt252_add(v4, v5)
 End:
@@ -151,7 +151,7 @@ End:
 
 blk3:
 Statements:
-  (v11: core::felt252) <- core::box::unbox::<core::felt252>(v9)
+  (v11: core::felt252) <- unbox(v9)
   (v12: core::felt252) <- 5
   (v13: core::felt252) <- core::felt252_add(v11, v12)
 End:
@@ -175,7 +175,7 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252) <- core::box::unbox::<core::felt252>(v2)
+  (v4: core::felt252) <- unbox(v2)
   (v5: core::felt252) <- 5
   (v6: core::felt252) <- core::felt252_add(v4, v5)
 End:
@@ -191,7 +191,7 @@ End:
 
 blk3:
 Statements:
-  (v11: core::felt252) <- core::box::unbox::<core::felt252>(v9)
+  (v11: core::felt252) <- unbox(v9)
   (v12: core::felt252) <- 5
   (v13: core::felt252) <- core::felt252_add(v11, v12)
 End:
@@ -205,7 +205,7 @@ End:
 
 blk5:
 Statements:
-  (v17: core::felt252) <- core::box::unbox::<core::felt252>(v16)
+  (v17: core::felt252) <- unbox(v16)
   (v18: core::felt252) <- 5
   (v19: core::felt252) <- core::felt252_add(v17, v18)
 End:

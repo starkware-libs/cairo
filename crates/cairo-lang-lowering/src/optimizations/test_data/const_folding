@@ -349,7 +349,7 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- 2
   (v1: core::box::Box::<core::felt252>) <- into_box(v0)
-  (v2: core::felt252) <- core::box::unbox::<core::felt252>(v1)
+  (v2: core::felt252) <- unbox(v1)
 End:
   Return(v2)
 
@@ -5785,7 +5785,7 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252) <- core::box::unbox::<core::felt252>(v2)
+  (v4: core::felt252) <- unbox(v2)
   (v5: core::option::Option::<core::felt252>) <- Option::Some(v4)
 End:
   Goto(blk3, {v5 -> v6})
@@ -5812,7 +5812,7 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252) <- core::box::unbox::<core::felt252>(v2)
+  (v4: core::felt252) <- unbox(v2)
   (v5: core::option::Option::<core::felt252>) <- Option::Some(v4)
 End:
   Goto(blk3, {v5 -> v6})
@@ -5864,7 +5864,7 @@ End:
 
 blk1:
 Statements:
-  (v6: core::felt252) <- core::box::unbox::<core::felt252>(v4)
+  (v6: core::felt252) <- unbox(v4)
   (v7: core::option::Option::<core::felt252>) <- Option::Some(v6)
 End:
   Goto(blk3, {v7 -> v8})
@@ -5947,7 +5947,7 @@ End:
 
 blk1:
 Statements:
-  (v6: @core::felt252) <- core::box::unbox::<@core::felt252>(v4)
+  (v6: @core::felt252) <- unbox(v4)
   (v7: core::option::Option::<@core::felt252>) <- Option::Some(v6)
 End:
   Goto(blk3, {v7 -> v8})
@@ -5975,7 +5975,7 @@ End:
 
 blk1:
 Statements:
-  (v6: @core::felt252) <- core::box::unbox::<@core::felt252>(v4)
+  (v6: @core::felt252) <- unbox(v4)
   (v7: core::option::Option::<@core::felt252>) <- Option::Some(v6)
 End:
   Goto(blk3, {v7 -> v8})
@@ -6026,7 +6026,7 @@ End:
 
 blk1:
 Statements:
-  (v6: @core::felt252) <- core::box::unbox::<@core::felt252>(v4)
+  (v6: @core::felt252) <- unbox(v4)
   (v7: core::option::Option::<@core::felt252>) <- Option::Some(v6)
 End:
   Goto(blk3, {v7 -> v8})
@@ -6054,7 +6054,7 @@ End:
 
 blk1:
 Statements:
-  (v6: @core::felt252) <- core::box::unbox::<@core::felt252>(v4)
+  (v6: @core::felt252) <- unbox(v4)
   (v7: core::option::Option::<@core::felt252>) <- Option::Some(v6)
 End:
   Goto(blk3, {v7 -> v8})
