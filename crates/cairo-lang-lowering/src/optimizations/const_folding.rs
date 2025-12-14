@@ -170,7 +170,7 @@ pub struct ConstFoldingContext<'db, 'mt> {
     libfunc_info: &'db ConstFoldingLibfuncInfo<'db>,
     /// The specialization base of the caller function (or the caller if the function is not
     /// specialized).
-    caller_base: ConcreteFunctionWithBodyId<'db>,
+    caller_function: ConcreteFunctionWithBodyId<'db>,
     /// Reachability of blocks from the function start.
     /// If the block is not in this map, it means that it is unreachable (or that it was already
     /// visited and its reachability won't be checked again).
@@ -185,17 +185,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         function_id: ConcreteFunctionWithBodyId<'db>,
         variables: &'mt mut VariableArena<'db>,
     ) -> Self {
-        let caller_base = match function_id.long(db) {
-            ConcreteFunctionWithBodyLongId::Specialized(specialized_func) => specialized_func.base,
-            _ => function_id,
-        };
-
         Self {
             db,
             var_info: UnorderedHashMap::default(),
             variables,
             libfunc_info: priv_const_folding_info(db),
-            caller_base,
+            caller_function: function_id,
             reachability: UnorderedHashMap::from_iter([(BlockId::root(), Reachability::Any)]),
             additional_stmts: vec![],
         }
@@ -704,21 +699,37 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
 
-        let Ok(Some(mut base)) = call_stmt.function.body(self.db) else {
+        let Ok(Some(mut called_function)) = call_stmt.function.body(self.db) else {
             return None;
         };
 
-        if self.db.priv_never_inline(base).ok()? {
+        let extract_base = |function: ConcreteFunctionWithBodyId<'db>| match function.long(self.db)
+        {
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.base,
+            _ => function,
+        };
+        let called_base = extract_base(called_function);
+        let caller_base = extract_base(self.caller_function);
+
+        if self.db.priv_never_inline(called_base).ok()? {
             return None;
         }
 
-        // Avoid specializing with a function that is in the same SCC as the caller.
-        if base == self.caller_base {
+        // Do not specialize the call that should be inlined.
+        if call_stmt.is_specialization_base_call {
             return None;
         }
 
-        let scc = self.db.lowered_scc(base, DependencyType::Call, LoweringStage::Monomorphized);
-        if scc.len() > 1 && scc.contains(&self.caller_base) {
+        // Do not specialize a recursive call that was already specialized.
+        if called_base == caller_base && called_function != called_base {
+            return None;
+        }
+
+        // Avoid specializing with a function that is in the same SCC as the caller (and is not the
+        // same function).
+        let scc =
+            self.db.lowered_scc(called_base, DependencyType::Call, LoweringStage::Monomorphized);
+        if scc.len() > 1 && scc.contains(&caller_base) {
             return None;
         }
 
@@ -726,15 +737,27 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             // No const inputs
             return None;
         }
+
+        // If we are specializing a recursive call, use only subset of the caller.
+        let self_specializition = if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
+            self.caller_function.long(self.db)
+            && caller_base == called_base
+        {
+            specialized.args.iter().map(Some).collect()
+        } else {
+            vec![None; call_stmt.inputs.len()]
+        };
+
         let mut specialization_args = vec![];
         let mut new_args = vec![];
-        for arg in &call_stmt.inputs {
+        for (arg, coerce) in zip_eq(&call_stmt.inputs, &self_specializition) {
             if let Some(var_info) = self.var_info.get(&arg.var_id)
                 && self.variables[arg.var_id].info.droppable.is_ok()
                 && let Some(specialization_arg) = self.try_get_specialization_arg(
                     var_info.clone(),
                     self.variables[arg.var_id].ty,
                     &mut new_args,
+                    *coerce,
                 )
             {
                 specialization_args.push(specialization_arg);
@@ -750,11 +773,11 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         }
         if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
-            base.long(self.db)
+            called_function.long(self.db)
         {
             // Canonicalize the specialization rather than adding a specialization of a specialized
             // function.
-            base = specialized_function.base;
+            called_function = specialized_function.base;
             let mut new_args_iter = specialization_args.into_iter();
             let mut old_args = specialized_function.args.to_vec();
             let mut stack = vec![];
@@ -787,11 +810,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             specialization_args = old_args;
         }
-        let specialized = SpecializedFunction { base, args: specialization_args.into() };
+        let specialized =
+            SpecializedFunction { base: called_function, args: specialization_args.into() };
         let specialized_func_id =
             ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 
-        if self.db.priv_should_specialize(specialized_func_id) == Ok(false) {
+        if caller_base != called_base
+            && self.db.priv_should_specialize(specialized_func_id) == Ok(false)
+        {
             return None;
         }
 
@@ -1327,11 +1353,15 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
     /// Given a var_info and its type, return the corresponding specialization argument, if it
     /// exists.
+    ///
+    /// The `coerce` argument is used to constrain the specialization argument of recursive calls to
+    /// the value that is used by the caller.
     fn try_get_specialization_arg(
         &self,
         var_info: VarInfo<'db>,
         ty: TypeId<'db>,
         unknown_vars: &mut Vec<VarUsage<'db>>,
+        coerce: Option<&SpecializationArg<'db>>,
     ) -> Option<SpecializationArg<'db>> {
         if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
             // Skip zero-sized constants as they are not supported in sierra-gen.
@@ -1339,9 +1369,21 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         }
 
         match var_info {
-            VarInfo::Const(value) => Some(const_to_specialization_arg(self.db, value, false)),
-            VarInfo::Box(info) => try_extract_matches!(info.as_ref(), VarInfo::Const)
-                .map(|value| SpecializationArg::Const { value: *value, boxed: true }),
+            VarInfo::Const(value) => {
+                let res = const_to_specialization_arg(self.db, value, false);
+                let Some(coerce) = coerce else {
+                    return Some(res);
+                };
+                if *coerce == res { Some(res) } else { None }
+            }
+            VarInfo::Box(info) => {
+                let res = try_extract_matches!(info.as_ref(), VarInfo::Const)
+                    .map(|value| SpecializationArg::Const { value: *value, boxed: true });
+                let Some(coerce) = coerce else {
+                    return res;
+                };
+                if Some(coerce.clone()) == res { res } else { None }
+            }
             VarInfo::Snapshot(info) => {
                 let desnap_ty = *extract_matches!(ty.long(self.db), TypeLongId::Snapshot);
                 // Use a local accumulator to avoid mutating unknown_vars if we return None.
@@ -1350,6 +1392,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     info.as_ref().clone(),
                     desnap_ty,
                     &mut local_unknown_vars,
+                    coerce.map(|coerce| {
+                        extract_matches!(coerce, SpecializationArg::Snapshot).as_ref()
+                    }),
                 )?;
                 unknown_vars.extend(local_unknown_vars);
                 Some(SpecializationArg::Snapshot(Box::new(inner)))
@@ -1362,12 +1407,27 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 else {
                     unreachable!("Expected a single type generic argument");
                 };
+                let coerces = match coerce {
+                    Some(coerce) => {
+                        let SpecializationArg::Array(ty, specialization_args) = coerce else {
+                            unreachable!("Expected an array specialization argument");
+                        };
+                        assert_eq!(ty, inner_ty);
+                        if specialization_args.len() != infos.len() {
+                            return None;
+                        }
+
+                        specialization_args.iter().map(Some).collect()
+                    }
+                    None => vec![None; infos.len()],
+                };
                 // Accumulate into locals first; only extend unknown_vars if we end up specializing.
                 let mut vars = vec![];
                 let mut args = vec![];
-                for info in infos {
+                for (info, coerce) in zip_eq(infos, coerces) {
                     let info = info?;
-                    let arg = self.try_get_specialization_arg(info, *inner_ty, &mut vars)?;
+                    let arg =
+                        self.try_get_specialization_arg(info, *inner_ty, &mut vars, coerce)?;
                     args.push(arg);
                 }
                 if !args.is_empty()
@@ -1387,12 +1447,26 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 };
 
                 let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
+                let coerces = match coerce {
+                    Some(coerce) => {
+                        let SpecializationArg::Struct(specialization_args) = coerce else {
+                            unreachable!("Expected a struct specialization argument");
+                        };
+                        assert_eq!(specialization_args.len(), infos.len());
+
+                        specialization_args.iter().map(Some).collect()
+                    }
+                    None => vec![None; infos.len()],
+                };
                 let mut struct_args = Vec::new();
                 // Accumulate into locals first; only extend unknown_vars if we end up specializing.
                 let mut vars = vec![];
-                for (member, opt_var_info) in zip_eq(members.values(), infos) {
+                for ((member, opt_var_info), coerce) in
+                    zip_eq(zip_eq(members.values(), infos), coerces)
+                {
                     let var_info = opt_var_info?;
-                    let arg = self.try_get_specialization_arg(var_info, member.ty, &mut vars)?;
+                    let arg =
+                        self.try_get_specialization_arg(var_info, member.ty, &mut vars, coerce)?;
                     struct_args.push(arg);
                 }
                 if !struct_args.is_empty()
@@ -1406,11 +1480,25 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 Some(SpecializationArg::Struct(struct_args))
             }
             VarInfo::Enum { variant, payload } => {
+                let coerce = match coerce {
+                    Some(coerce) => {
+                        let SpecializationArg::Enum { variant: coercion_variant, payload } = coerce
+                        else {
+                            unreachable!("Expected an enum specialization argument");
+                        };
+                        if *coercion_variant != variant {
+                            return None;
+                        }
+                        Some(payload.as_ref())
+                    }
+                    None => None,
+                };
                 let mut local_unknown_vars = vec![];
                 let payload_arg = self.try_get_specialization_arg(
                     payload.as_ref().clone(),
                     variant.ty,
                     &mut local_unknown_vars,
+                    coerce,
                 )?;
 
                 unknown_vars.extend(local_unknown_vars);
@@ -1431,7 +1519,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
         // Skipping const-folding for `panic_with_const_felt252` - to avoid replacing a call to
         // `panic_with_felt252` with `panic_with_const_felt252` and causing accidental recursion.
-        if self.caller_base.base_semantic_function(db).generic_function(db)
+        if self.caller_function.base_semantic_function(db).generic_function(db)
             == GenericFunctionWithBodyId::Free(self.libfunc_info.panic_with_const_felt252)
         {
             return true;
