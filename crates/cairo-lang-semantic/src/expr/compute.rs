@@ -730,7 +730,7 @@ fn expand_inline_macro<'db>(
     syntax: &ast::ExprInlineMacro<'db>,
 ) -> Maybe<InlineMacroExpansion<'db>> {
     let db = ctx.db;
-    let macro_name = syntax.path(db).identifier(ctx.db);
+    let macro_path = syntax.path(db);
     let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(db).any(|node| {
@@ -753,7 +753,7 @@ fn expand_inline_macro<'db>(
     // if the macro was found as a plugin.
     let user_defined_macro = ctx.resolver.resolve_generic_path(
         &mut Default::default(),
-        &syntax.path(db),
+        &macro_path,
         NotFoundItemType::Macro,
         ResolutionContext::Statement(&mut ctx.environment),
     );
@@ -762,9 +762,10 @@ fn expand_inline_macro<'db>(
         let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
             is_macro_rule_match(ctx.db, rule, &syntax.arguments(db)).map(|res| (rule, res))
         }) else {
-            return Err(ctx
-                .diagnostics
-                .report(syntax.stable_ptr(ctx.db), InlineMacroNoMatchingRule(macro_name)));
+            return Err(ctx.diagnostics.report(
+                syntax.stable_ptr(ctx.db),
+                InlineMacroNoMatchingRule(macro_path.identifier(db)),
+            ));
         };
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
@@ -788,11 +789,12 @@ fn expand_inline_macro<'db>(
         }));
         Ok(InlineMacroExpansion {
             content: expanded_code.text,
-            name: macro_name.to_string(db),
+            name: macro_path.identifier(db).to_string(db),
             info,
         })
-    } else if let Some(macro_plugin_id) =
-        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string(db)).cloned()
+    } else if let Some(macro_plugin_id) = ctx
+        .resolver
+        .resolve_plugin_macro(&macro_path, ResolutionContext::Statement(&mut ctx.environment))
     {
         let macro_plugin = macro_plugin_id.long(ctx.db);
         let result = macro_plugin.generate_code(
@@ -820,7 +822,10 @@ fn expand_inline_macro<'db>(
         }
         let Some(code) = result.code else {
             return Err(diag_added.unwrap_or_else(|| {
-                ctx.diagnostics.report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name))
+                ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    InlineMacroNotFound(macro_path.identifier(db)),
+                )
             }));
         };
         Ok(InlineMacroExpansion {
