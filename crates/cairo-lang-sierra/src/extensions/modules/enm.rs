@@ -219,7 +219,7 @@ impl SignatureBasedConcreteLibfunc for EnumFromBoundedIntConcreteLibfunc {
 }
 
 /// Libfunc for creating an enum from a `BoundedInt` type.
-/// Will only work where there are the same number of empty variants as in the range of the
+/// Will only work where there is the same number of empty variants as in the range of the
 /// `BoundedInt` type, and the range starts from 0.
 #[derive(Default)]
 pub struct EnumFromBoundedIntLibfunc {}
