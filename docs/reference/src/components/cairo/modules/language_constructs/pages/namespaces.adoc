@@ -1,129 +1,93 @@
 = Namespaces
 
-Namespaces in Cairo provide a way to group related items (functions, constants, structs, 
-impls, and sub-namespaces) to organize code and avoid name conflicts. They are similar 
-to modules in other languages but with specific Cairo semantics.
+Cairo does not have a dedicated `namespace` keyword or
+construct like in some other languages (e.g., C++ or Rust).
 
-Namespaces help structure large contracts or libraries without relying on separate files.
+Instead, the language uses **modules** to achieve the same
+goals: grouping related items (functions, constants,
+structs, enums, traits, impls) and avoiding name conflicts
+through hierarchical organization.
 
-== Declaration
+The module system effectively provides namespace-like
+behavior via paths (e.g., `math::add::sum`).
 
-A namespace is declared using the `namespace` keyword followed by an identifier and a 
-block:
+== How Modules Work as Namespaces
 
+Cairo has a file-based module system:
+
+- Each `.cairo` file in `src/` (except `lib.cairo`) becomes
+  a module named after the filename.
+- Use `mod` to declare modules.
+- Use `use` to import items into scope.
+- Paths create hierarchical "namespaces".
+
+Example project structure:
+----
+src/
+  lib.cairo
+  math.cairo
+  math/
+    add.cairo
+    sub.cairo
+----
+
+Declaration in `lib.cairo`:
 [source,cairo]
 ----
-namespace MyUtils {
-    const MAX_VALUE: felt252 = 1000;
+mod math;
 
-    fn add(a: felt252, b: felt252) -> felt252 {
-        a + b
-    }
+fn example() {
+    math::add::sum(1, 2);
 }
 ----
 
-Items inside the namespace are private by default unless marked with attributes (e.g., 
-`#[external]` for visibility in contracts).
+In `math.cairo`:
+[source,cairo]
+----
+mod add;
+mod sub;
 
-== Using Items from a Namespace
+pub use add::sum;  // Re-export for convenience
+----
+Access: `math::add::sum(...)` or `math::sum(...)`
 
-To access items, use the `use` statement or fully qualified paths.
-
-- With `use`:
-  [source,cairo]
-  ----
-  use MyUtils::add;
-  use MyUtils::MAX_VALUE;
-
-  fn example() -> felt252 {
-      add(MAX_VALUE, 10)
-  }
-  ----
-
-- Fully qualified:
-  [source,cairo]
-  ----
-  fn example() -> felt252 {
-      MyUtils::add(MyUtils::MAX_VALUE, 10)
-  }
-  ----
-
-== Nested Namespaces
-
-Namespaces can be nested for deeper organization:
+== Declaring and Using Modules
 
 [source,cairo]
 ----
-namespace Math {
-    namespace Algebra {
-        fn square(x: felt252) -> felt252 {
-            x * x
-        }
+mod utils {
+    pub fn helper() -> felt252 {
+        42
     }
+}
 
-    namespace Geometry {
-        const PI: felt252 = 314159; // approximation
-    }
+use utils::helper;
+
+fn main() {
+    let x = helper();
 }
 ----
 
-Access nested items:
+- Inline modules: defined directly with `mod name { ... }`
+- File modules: preferred for larger projects
+- Visibility: `pub` for external access
+- Paths: `super::`, `self::`, `crate::` for navigation
+
+== Importing with `use`
+
 [source,cairo]
 ----
-use Math::Algebra::square;
-use Math::Geometry::PI;
+use crypto::hash::sha256;
+use std::array::ArrayTrait as Arr;
+
+use my_module::{item1, item2};
+use my_module::*;  // Glob import (use carefully)
 ----
 
-== Namespaces vs Structs and Impl Blocks
+This hierarchical module structure fully replaces the need
+for a separate `namespace` keyword while providing clean,
+scalable code organization.
 
-- Namespaces group free-standing items.
-- Structs + impl blocks group methods associated with a type.
-- You can have impls inside namespaces if needed.
-
-Example combining:
-[source,cairo]
-----
-namespace Crypto {
-    struct Hash {}
-
-    impl HashImpl of HashTrait {
-        fn compute(data: felt252) -> felt252 {
-            // implementation
-        }
-    }
-}
-----
-
-== Scoping and Visibility
-
-- Items in a namespace are visible only inside it or via `use`.
-- No public/private keywords yet — visibility controlled by attributes like `#[external]`.
-- Namespaces do not create new memory scopes; they are purely for naming.
-
-== Common Patterns
-
-- **Organizing utilities**:
-  [source,cairo]
-  ----
-  namespace Utils {
-      fn assert_positive(x: felt252) {
-          assert x > 0, 'Must be positive');
-      }
-  }
-  ----
-
-- **Grouping related constants and functions** for a library.
-
-- **Avoiding name clashes** in large projects:
-  Use separate namespaces for different domains (e.g., Token, Governance).
-
-== Limitations
-
-- No conditional compilation inside namespaces yet.
-- Cannot define traits directly in namespaces (use top-level or impls).
-- Namespaces are resolved at compile time — no dynamic lookup.
-
-== See Also
-
-- Modules and file structure — for multi-file organization.
-- Use statements — for importing and path aliases.
+For detailed module documentation, see the
+https://book.cairo-lang.org/ch09-00-modules.html[Cairo Book
+chapter on modules].
