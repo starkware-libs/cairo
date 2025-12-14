@@ -88,6 +88,5 @@ This module structure fully replaces a separate
 `namespace` keyword.
 
 For details, see the Cairo Book chapter
-"Managing Cairo Projects with Packages, Crates and Modules":
-https://book.cairo-lang.org/ch07-00-managing-cairo-projects-with-packages-crates-and-modules.html
+https://book.cairo-lang.org/ch07-00-managing-cairo-projects-with-packages-crates-and-modules.html[Managing Cairo Projects with Packages, Crates and Modules]
 (and subsequent sections like ch07-02).
