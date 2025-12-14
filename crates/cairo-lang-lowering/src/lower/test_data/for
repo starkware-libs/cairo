@@ -314,7 +314,7 @@ Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::box::Box:
 blk0 (root):
 Statements:
   (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v4: core::array::Span::<core::felt252>) <- core::box::unbox::<core::array::Span::<core::felt252>>(v2)
+  (v4: core::array::Span::<core::felt252>) <- unbox(v2)
   (v5: core::array::SpanIter::<core::felt252>) <- struct_construct(v4)
   (v6: core::RangeCheck, v7: core::gas::GasBuiltin, v8: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- test::foo[78-125](v0, v1, v5, v3)
 End:
@@ -394,7 +394,7 @@ End:
 blk2:
 Statements:
   (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v14: @core::felt252) <- core::box::unbox::<@core::felt252>(v11)
+  (v14: @core::felt252) <- unbox(v11)
   (v15: core::felt252) <- desnap(v14)
   (v16: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v15)
   (v17: core::array::Span::<core::felt252>) <- struct_construct(v10)

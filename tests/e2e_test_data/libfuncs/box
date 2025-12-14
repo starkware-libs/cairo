@@ -193,12 +193,10 @@ test::foo: SmallOrderedMap({})
 type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 
-libfunc unbox<Unit> = unbox<Unit>;
-libfunc drop<Unit> = drop<Unit>;
+libfunc drop<Box<Unit>> = drop<Box<Unit>>;
 
 F0:
-unbox<Unit>([0]) -> ([1]);
-drop<Unit>([1]) -> ();
+drop<Box<Unit>>([0]) -> ();
 return();
 
 test::foo@F0([0]: Box<Unit>) -> ();
