@@ -102,5 +102,5 @@ This separation allows for efficient handling of large or recursive data structu
 
 == See also
 
-* xref:linear-types.adoc[Linear types] — Understanding move semantics and Copy/Drop traits
+* xref:linear-types.adoc[Linear types system] — Understanding move semantics and Copy/Drop traits
 * Implementation: `crates/cairo-lang-corelib/src/box.cairo`
