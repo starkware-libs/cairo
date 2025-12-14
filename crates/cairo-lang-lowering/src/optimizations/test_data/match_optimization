@@ -1269,7 +1269,7 @@ End:
 
 blk1:
 Statements:
-  (v5: core::felt252) <- core::box::unbox::<core::felt252>(v3)
+  (v5: core::felt252) <- unbox(v3)
   (v6: core::option::Option::<core::felt252>) <- Option::Some(v5)
 End:
   Goto(blk3, {v2 -> v7, v6 -> v8})
@@ -1323,7 +1323,7 @@ End:
 
 blk9:
 Statements:
-  (v20: core::felt252) <- core::box::unbox::<core::felt252>(v18)
+  (v20: core::felt252) <- unbox(v18)
   (v21: core::option::Option::<core::felt252>) <- Option::Some(v20)
 End:
   Goto(blk11, {v17 -> v15, v21 -> v16})
@@ -1353,7 +1353,7 @@ End:
 
 blk13:
 Statements:
-  (v29: core::felt252) <- core::box::unbox::<core::felt252>(v27)
+  (v29: core::felt252) <- unbox(v27)
   (v30: core::option::Option::<core::felt252>) <- Option::Some(v29)
 End:
   Goto(blk15, {v26 -> v31, v30 -> v32})
@@ -1407,7 +1407,7 @@ End:
 
 blk21:
 Statements:
-  (v44: core::felt252) <- core::box::unbox::<core::felt252>(v42)
+  (v44: core::felt252) <- unbox(v42)
   (v45: core::option::Option::<core::felt252>) <- Option::Some(v44)
 End:
   Goto(blk23, {v41 -> v39, v45 -> v40})
@@ -1458,7 +1458,7 @@ End:
 
 blk1:
 Statements:
-  (v5: core::felt252) <- core::box::unbox::<core::felt252>(v3)
+  (v5: core::felt252) <- unbox(v3)
   (v6: core::option::Option::<core::felt252>) <- Option::Some(v5)
 End:
   Goto(blk3, {v2 -> v7, v6 -> v8})
@@ -1511,7 +1511,7 @@ End:
 
 blk9:
 Statements:
-  (v20: core::felt252) <- core::box::unbox::<core::felt252>(v18)
+  (v20: core::felt252) <- unbox(v18)
 End:
   Goto(blk12, {v20 -> v24, v17 -> v60})
 
@@ -1539,7 +1539,7 @@ End:
 
 blk13:
 Statements:
-  (v29: core::felt252) <- core::box::unbox::<core::felt252>(v27)
+  (v29: core::felt252) <- unbox(v27)
   (v30: core::option::Option::<core::felt252>) <- Option::Some(v29)
 End:
   Goto(blk15, {v26 -> v31, v30 -> v32})
@@ -1592,7 +1592,7 @@ End:
 
 blk21:
 Statements:
-  (v44: core::felt252) <- core::box::unbox::<core::felt252>(v42)
+  (v44: core::felt252) <- unbox(v42)
 End:
   Goto(blk24, {v44 -> v48, v41 -> v56})
 
@@ -1715,7 +1715,7 @@ End:
 
 blk4:
 Statements:
-  (v13: @core::felt252) <- core::box::unbox::<@core::felt252>(v11)
+  (v13: @core::felt252) <- unbox(v11)
   (v14: core::option::Option::<@core::felt252>) <- Option::Some(v13)
 End:
   Return(v10, v14)
@@ -1762,7 +1762,7 @@ End:
 
 blk4:
 Statements:
-  (v13: @core::felt252) <- core::box::unbox::<@core::felt252>(v11)
+  (v13: @core::felt252) <- unbox(v11)
   (v14: core::option::Option::<@core::felt252>) <- Option::Some(v13)
 End:
   Return(v23, v14)

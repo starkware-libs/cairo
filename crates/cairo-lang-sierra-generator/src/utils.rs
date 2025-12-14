@@ -130,6 +130,14 @@ pub fn into_box_libfunc_id(
     get_libfunc_id_with_generic_arg(db, "into_box", ty)
 }
 
+/// Returns the [ConcreteLibfuncId] associated with `unbox`.
+pub fn unbox_libfunc_id(
+    db: &dyn Database,
+    ty: cairo_lang_sierra::ids::ConcreteTypeId,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    get_libfunc_id_with_generic_arg(db, "unbox", ty)
+}
+
 pub fn enum_init_libfunc_id(
     db: &dyn Database,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,

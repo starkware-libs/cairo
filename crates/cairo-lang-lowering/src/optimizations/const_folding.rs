@@ -44,7 +44,8 @@ use crate::{
     Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchEnumInfo,
     MatchExternInfo, MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap,
     StatementEnumConstruct, StatementIntoBox, StatementSnapshot, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableArena, VariableId,
+    StatementStructDestructure, StatementUnbox, VarRemapping, VarUsage, Variable, VariableArena,
+    VariableId,
 };
 
 /// Converts a const value to a specialization arg.
@@ -357,6 +358,16 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     *stmt = Statement::Const(StatementConst::new_boxed(const_value, *output));
                 }
             }
+            Statement::Unbox(StatementUnbox { input, output }) => {
+                if let Some(VarInfo::Box(inner)) = self.var_info.get(&input.var_id) {
+                    let inner = inner.as_ref().clone();
+                    if let VarInfo::Const(inner) =
+                        self.var_info.entry(*output).insert_entry(inner).get()
+                    {
+                        *stmt = Statement::Const(StatementConst::new_flat(*inner, *output));
+                    }
+                }
+            }
         }
     }
 
@@ -648,19 +659,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let arg = GenericArgumentId::Constant(ConstValue::Int(val.clone(), *ty).intern(db));
                 stmt.function =
                     self.storage_base_address_const.concretize(db, vec![arg]).lowered(db);
-            }
-            None
-        } else if id == self.unbox {
-            if let VarInfo::Box(inner) = self.var_info.get(&stmt.inputs[0].var_id)? {
-                let inner = inner.as_ref().clone();
-                if let VarInfo::Const(inner) =
-                    self.var_info.entry(stmt.outputs[0]).insert_entry(inner).get()
-                {
-                    return Some(Statement::Const(StatementConst::new_flat(
-                        *inner,
-                        stmt.outputs[0],
-                    )));
-                }
             }
             None
         } else if self.upcast_fns.contains(&id) {
@@ -1564,8 +1562,6 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     felt_mul: ExternFunctionId<'db>,
     /// The `felt252_div` libfunc.
     felt_div: ExternFunctionId<'db>,
-    /// The `unbox` libfunc.
-    unbox: ExternFunctionId<'db>,
     /// The `box_forward_snapshot` libfunc.
     box_forward_snapshot: GenericFunctionId<'db>,
     /// The set of functions that check if numbers are equal.
@@ -1722,7 +1718,6 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             felt_add: core.extern_function_id("felt252_add"),
             felt_mul: core.extern_function_id("felt252_mul"),
             felt_div: core.extern_function_id("felt252_div"),
-            unbox: box_module.extern_function_id("unbox"),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),
             eq_fns,
             uadd_fns,
