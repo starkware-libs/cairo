@@ -2277,7 +2277,7 @@ End:
 
 blk2:
 Statements:
-  (v10: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v8)
+  (v10: core::integer::u32) <- unbox(v8)
   (v11: core::integer::u32) <- 1
 End:
   Match(match core::integer::u32_eq(v10, v11) {
@@ -2612,7 +2612,7 @@ End:
 
 blk2:
 Statements:
-  (v10: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v8)
+  (v10: core::integer::u32) <- unbox(v8)
   (v11: core::integer::u32) <- 1
 End:
   Match(match core::integer::u32_eq(v10, v11) {

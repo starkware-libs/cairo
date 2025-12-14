@@ -204,21 +204,19 @@ foo
 //! > sierra_code
 array_pop_front<u32>([0]) { fallthrough([1], [2]) label_test::foo::0([3]) }
 branch_align() -> ()
-unbox<u32>([2]) -> ([4])
-drop<u32>([4]) -> ()
-array_pop_front<u32>([1]) { fallthrough([5], [6]) label_test::foo::2([7]) }
+drop<Box<u32>>([2]) -> ()
+array_pop_front<u32>([1]) { fallthrough([4], [5]) label_test::foo::2([6]) }
 branch_align() -> ()
-drop<Array<u32>>([5]) -> ()
-unbox<u32>([6]) -> ([8])
-drop<u32>([8]) -> ()
-struct_construct<Unit>() -> ([9])
-struct_construct<Tuple<Unit>>([9]) -> ([10])
-enum_init<core::panics::PanicResult::<((),)>, 0>([10]) -> ([11])
-PushValues([11]: core::panics::PanicResult::<((),)>) -> ([11])
-return([11])
+drop<Array<u32>>([4]) -> ()
+drop<Box<u32>>([5]) -> ()
+struct_construct<Unit>() -> ([7])
+struct_construct<Tuple<Unit>>([7]) -> ([8])
+enum_init<core::panics::PanicResult::<((),)>, 0>([8]) -> ([9])
+PushValues([9]: core::panics::PanicResult::<((),)>) -> ([9])
+return([9])
 label_test::foo::2:
 branch_align() -> ()
-drop<Array<u32>>([7]) -> ()
+drop<Array<u32>>([6]) -> ()
 PushValues() -> ()
 jump() { label_test::foo::4() }
 label_test::foo::3:
@@ -228,10 +226,10 @@ drop<Array<u32>>([3]) -> ()
 PushValues() -> ()
 label_test::foo::4:
 PushValues() -> ()
-function_call<user@core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>>() -> ([12])
-enum_init<core::panics::PanicResult::<((),)>, 1>([12]) -> ([13])
-PushValues([13]: core::panics::PanicResult::<((),)>) -> ([13])
-return([13])
+function_call<user@core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>>() -> ([10])
+enum_init<core::panics::PanicResult::<((),)>, 1>([10]) -> ([11])
+PushValues([11]: core::panics::PanicResult::<((),)>) -> ([11])
+return([11])
 label_test::foo::1:
 
 //! > lowering_flat
@@ -246,21 +244,19 @@ End:
 
 blk1:
 Statements:
-  (v4: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v2)
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v1) {
-    Option::Some(v5, v6) => blk2,
-    Option::None(v7) => blk3,
+    Option::Some(v4, v5) => blk2,
+    Option::None(v6) => blk3,
   })
 
 blk2:
 Statements:
-  (v8: core::integer::u32) <- core::box::unbox::<core::integer::u32>(v6)
-  (v9: ()) <- struct_construct()
-  (v10: ((),)) <- struct_construct(v9)
-  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v10)
+  (v7: ()) <- struct_construct()
+  (v8: ((),)) <- struct_construct(v7)
+  (v9: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v8)
 End:
-  Return(v11)
+  Return(v9)
 
 blk3:
 Statements:
@@ -274,7 +270,7 @@ End:
 
 blk5:
 Statements:
-  (v12: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v13: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v12)
+  (v10: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Return(v13)
+  Return(v11)
