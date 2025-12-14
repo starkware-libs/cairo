@@ -55,7 +55,7 @@ use crate::objects::{
 use crate::{
     Block, BlockEnd, Location, Lowered, MatchArm, MatchEnumInfo, MatchEnumValue, MatchInfo,
     StatementDesnap, StatementEnumConstruct, StatementIntoBox, StatementSnapshot,
-    StatementStructConstruct, VarRemapping, VarUsage, Variable,
+    StatementStructConstruct, StatementUnbox, VarRemapping, VarUsage, Variable,
 };
 
 type LookupCache = (CacheLookups, Vec<(DefsFunctionWithBodyIdCached, MultiLoweringCached)>);
@@ -911,6 +911,7 @@ enum StatementCached {
 
     // Boxing.
     IntoBox(StatementIntoBoxCached),
+    Unbox(StatementUnboxCached),
 
     Snapshot(StatementSnapshotCached),
     Desnap(StatementDesnapCached),
@@ -939,6 +940,7 @@ impl StatementCached {
             Statement::IntoBox(stmt) => {
                 StatementCached::IntoBox(StatementIntoBoxCached::new(stmt, ctx))
             }
+            Statement::Unbox(stmt) => StatementCached::Unbox(StatementUnboxCached::new(stmt, ctx)),
         }
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> Statement<'db> {
@@ -953,6 +955,7 @@ impl StatementCached {
             StatementCached::Snapshot(stmt) => Statement::Snapshot(stmt.embed(ctx)),
             StatementCached::Desnap(stmt) => Statement::Desnap(stmt.embed(ctx)),
             StatementCached::IntoBox(stmt) => Statement::IntoBox(stmt.embed(ctx)),
+            StatementCached::Unbox(stmt) => Statement::Unbox(stmt.embed(ctx)),
         }
     }
 }
@@ -1264,6 +1267,23 @@ impl StatementIntoBoxCached {
     }
     fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> StatementIntoBox<'db> {
         StatementIntoBox {
+            input: self.input.embed(ctx),
+            output: ctx.lowered_variables_id[self.output],
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct StatementUnboxCached {
+    input: VarUsageCached,
+    output: usize,
+}
+impl StatementUnboxCached {
+    fn new<'db>(stmt: StatementUnbox<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
+        Self { input: VarUsageCached::new(stmt.input, ctx), output: stmt.output.index() }
+    }
+    fn embed<'db>(self, ctx: &mut CacheLoadingContext<'db>) -> StatementUnbox<'db> {
+        StatementUnbox {
             input: self.input.embed(ctx),
             output: ctx.lowered_variables_id[self.output],
         }
