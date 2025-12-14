@@ -14,9 +14,9 @@ use crate::program::GenericArg;
 
 /// Trait for implementing a library function that returns a const of a given type.
 pub trait ConstGenLibfunc: Default {
-    /// The library function id.
+    /// The library function ID.
     const STR_ID: &'static str;
-    /// The id of the generic type to implement the library functions for.
+    /// The ID of the generic type to implement the library function for.
     const GENERIC_TYPE_ID: GenericTypeId;
     /// The bound on the value of the type.
     fn bound() -> BigInt;
