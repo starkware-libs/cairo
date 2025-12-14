@@ -1,6 +1,92 @@
 = Namespaces
 
-This section is a work in progress.
+Cairo does not have a dedicated `namespace` keyword or
+construct like in some other languages (e.g., C++ or Rust).
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+Instead, the language uses **modules** to achieve the same
+goals: grouping related items (functions, constants,
+structs, enums, traits, impls) and avoiding name conflicts
+through hierarchical organization.
+
+The module system effectively provides namespace-like
+behavior via paths (e.g., `math::add::sum`).
+
+== How Modules Work as Namespaces
+
+Cairo has a file-based module system:
+
+- Each `.cairo` file in `src/` (except `lib.cairo`) becomes
+  a module named after the filename.
+- Use `mod` to declare modules.
+- Use `use` to import items into scope.
+- Paths create hierarchical "namespaces".
+
+Example project structure:
+----
+src/
+  lib.cairo
+  math.cairo
+  math/
+    add.cairo
+    sub.cairo
+----
+
+Declaration in `lib.cairo`:
+[source,cairo]
+----
+mod math;
+
+fn example() {
+    math::add::sum(1, 2);
+}
+----
+
+In `math.cairo`:
+[source,cairo]
+----
+mod add;
+mod sub;
+
+pub use add::sum;  // Re-export for convenience
+----
+Access: `math::add::sum(...)` or `math::sum(...)`
+
+== Declaring and Using Modules
+
+[source,cairo]
+----
+mod utils {
+    pub fn helper() -> felt252 {
+        42
+    }
+}
+
+use utils::helper;
+
+fn main() {
+    let x = helper();
+}
+----
+
+- Inline modules: defined directly with `mod name { ... }`
+- File modules: preferred for larger projects
+- Visibility: `pub` for external access
+- Paths: `super::`, `self::`, `crate::` for navigation
+
+== Importing with `use`
+
+[source,cairo]
+----
+use crypto::hash::sha256;
+use std::array::ArrayTrait as Arr;
+
+use my_module::{item1, item2};
+use my_module::*;  // Glob (use carefully)
+----
+
+This module structure fully replaces a separate
+`namespace` keyword.
+
+For details, see the Cairo Book chapter
+https://book.cairo-lang.org/ch07-00-managing-cairo-projects-with-packages-crates-and-modules.html[Managing Cairo Projects with Packages, Crates and Modules]
+(and subsequent sections like ch07-02).
