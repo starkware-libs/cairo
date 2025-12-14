@@ -4,6 +4,6 @@ A path expression is a standalone xref:path.adoc[concrete path].
 It resolves to one of these items:
 
 * A local variable. In this case the path is a single identifier.
-* An xref:constant-items.adoc[constant item].
+* A xref:constant-items.adoc[constant item].
 * A generic const parameter. In this case the path is a single identifier.
   These are still unsupported.
