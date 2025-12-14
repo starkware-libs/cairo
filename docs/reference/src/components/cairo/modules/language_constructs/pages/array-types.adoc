@@ -1,6 +1,11 @@
 = Array Types
 
-Arrays in Cairo are dynamic collections of elements of the same type, stored contiguously in memory. Due to Cairo's immutable memory model, arrays are **growable only at the end** (via `.append()`) and **shrinkable only from the front** (via `.pop_front()`). Direct modification of existing elements (e.g., `arr[5] = value`) is not allowed — this is a key difference from languages like Rust or Python.
+Arrays in Cairo are dynamic collections of elements of the same type,
+stored contiguously in memory. Due to Cairo's immutable memory model,
+arrays are growable only at the end (via `.append()`) and shrinkable
+only from the front (via `.pop_front()`). Direct modification of
+existing elements (e.g., `arr[5] = value`) is not allowed — this is a
+key difference from languages like Rust or Python.
 
 == Declaration and Initialization
 
@@ -11,7 +16,8 @@ An array is declared using the generic type `Array<T>`:
 let mut arr: Array<felt252> = ArrayTrait::new();
 ----
 
-The `mut` keyword is required if you plan to modify the array (append or pop).
+The `mut` keyword is required if you plan to modify the array (append
+or pop).
 
 You can also initialize with literal values using the `array![]` macro:
 
@@ -23,45 +29,49 @@ let arr = array![1, 2, 3, 4]; // Implicitly Array<felt252>
 == Common Operations
 
 - **Append** — adds an element to the end:
-  [source,cairo]
-  ----
-  arr.append(5); // arr now: [1, 2, 3, 4, 5]
-  ----
+[source,cairo]
+----
+arr.append(5); // arr now: [1, 2, 3, 4, 5]
+----
 
-- **Pop front** — removes and returns the first element (returns `Option<T>`):
-  [source,cairo]
-  ----
-  let first = arr.pop_front().unwrap(); // first = 1, arr now: [2, 3, 4, 5]
-  ----
+- **Pop front** — removes and returns the first element
+  (returns `Option<T>`):
+[source,cairo]
+----
+let first = arr.pop_front().unwrap(); // first = 1, arr now: [2, 3, 4, 5]
+----
 
 - **Length**:
-  [source,cairo]
-  ----
-  let len = arr.len(); // usize
-  ----
+[source,cairo]
+----
+let len = arr.len(); // usize
+----
 
 == Accessing Elements
 
-Direct indexing (`arr[index]`) is **not supported** for mutation. Instead, use safe methods:
+Direct indexing (`arr[index]`) is not supported for mutation.
+Instead, use safe methods:
 
-- **`.at(index)`** — returns a **snapshot** (`@T`) — immutable reference to the element (panics if out of bounds):
-  [source,cairo]
-  ----
-  let value = *arr.at(2); // Dereference the snapshot to get T
-  ----
+- **`.at(index)`** — returns a snapshot (`@T`) — immutable reference
+  to the element (panics if out of bounds):
+[source,cairo]
+----
+let value = *arr.at(2); // Dereference the snapshot to get T
+----
 
 - **`.get(index)`** — returns `Option<Box<@T>>` (safe, no panic):
-  [source,cairo]
-  ----
-  match arr.get(2) {
-      Option::Some(x) => { let value = *x.unbox(); },
-      Option::None => { /* out of bounds */ }
-  }
-  ----
+[source,cairo]
+----
+match arr.get(2) {
+    Option::Some(x) => { let value = *x.unbox(); },
+    Option::None => { /* out of bounds */ }
+}
+----
 
 == Working with Span (Recommended for Iteration)
 
-To safely iterate or access multiple elements without repeated bounds checks, convert the array to a `Span<T>`:
+To safely iterate or access multiple elements without repeated bounds
+checks, convert the array to a `Span<T>`:
 
 [source,cairo]
 ----
@@ -72,7 +82,8 @@ for i in 0..span.len() {
 }
 ----
 
-`Span<T>` is a read-only view and is the preferred way to read from arrays.
+`Span<T>` is a read-only view and is the preferred way to read from
+arrays.
 
 == Limitations and Why Certain Patterns Are Forbidden
 
@@ -82,32 +93,33 @@ Due to memory immutability:
 - No insertion/removal in the middle (would require shifting memory cells).
 - No resizing except append/pop_front.
 
-Attempting to modify an element directly will result in a compilation error.
+Attempting to modify an element directly will result in a compilation
+error.
 
 == Common Patterns
 
 - **Building an array in a loop**:
-  [source,cairo]
-  ----
-  let mut result = ArrayTrait::new();
-  loop {
-      if condition { break; }
-      result.append(computed_value);
-  };
-  ----
+[source,cairo]
+----
+let mut result = ArrayTrait::new();
+loop {
+    if condition { break; }
+    result.append(computed_value);
+};
+----
 
 - **Draining an array (processing while consuming)**:
-  [source,cairo]
-  ----
-  let mut arr = array![1, 2, 3];
-  while let Option::Some(value) = arr.pop_front() {
-      // process value
-  };
-  // arr is now empty
-  ----
+[source,cairo]
+----
+let mut arr = array![1, 2, 3];
+while let Option::Some(value) = arr.pop_front() {
+    // process value
+};
+// arr is now empty
+----
 
 == See Also
 
-- link:../traits/array-trait.adoc[ArrayTrait] — full list of methods.
-- link:../snapshots.adoc[Snapshots] — explanation of `@T` and dereferencing.
-- link:../span.adoc[Span] — immutable array views.
+- `ArrayTrait` — full list of methods.
+- Snapshots (`@T`) — immutable references and dereferencing.
+- `Span<T>` — read-only view over array data.
