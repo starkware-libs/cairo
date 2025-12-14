@@ -271,18 +271,14 @@ fn test_count_exprs_rec() {
     assert_eq!(count_exprs_rec![10, 20, 30, 40, 50], 5);
 }
 
-macro my_array {
-    [$x:expr] => {
-        {
-            let mut arr = $defsite::array![];
-            arr.append($x);
-            arr
-        }
+macro rev_array {
+    [] => {
+        $defsite::ArrayTrait::new()
     };
 
-    [$first:expr, $($rest:expr),*] => {
+    [$first:expr $(, $rest:expr)*] => {
         {
-            let mut arr = $defsite::my_array![$($rest), *];
+            let mut arr = $defsite::rev_array![$($rest), *];
             arr.append($first);
             arr
         }
@@ -291,7 +287,7 @@ macro my_array {
 
 #[test]
 fn test_array_macro() {
-    let result = my_array![1, 2, 3];
+    let result = rev_array![1, 2, 3];
     let mut expected = array![3, 2, 1];
     assert_eq!(result, expected);
 }
