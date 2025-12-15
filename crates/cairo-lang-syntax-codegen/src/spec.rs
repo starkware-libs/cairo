@@ -1,4 +1,4 @@
-// Representation of the AST specifications.
+// Representation of the AST specification.
 #[derive(Clone)]
 pub struct Node {
     pub name: String,
@@ -36,7 +36,7 @@ pub struct Variant {
     pub kind: String,
 }
 
-// Helpers to build AST specifications.
+// Helpers to build AST specification.
 
 /// Builds a spec for a struct node.
 pub struct StructBuilder {
