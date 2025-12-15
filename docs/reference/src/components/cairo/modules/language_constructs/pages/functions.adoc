@@ -185,6 +185,8 @@ fn add_one(x: u32) -> u32 {
 
 Inline behavior:
 
+* `#[inline(always)]` — Always inline this function
+* `#[inline(never)]` — Never inline this function
 * `#[inline]` — Attempt to inline - but compiler may decide to not do so.
 * No annotation - Let the compiler decide based on optimization heuristics.
 
