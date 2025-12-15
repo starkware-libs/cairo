@@ -1,16 +1,17 @@
 = Box type
 
-`Box<T>` is a smart pointer type that allows for storing values on the heap (in Cairo VM's boxed segment) rather than on the stack.
-It provides a fixed-size pointer to data of arbitrary size.
+`Box<T>` is a pointer type that provides an indirection layer for values.
+It allows working with values through a fixed-size pointer
+rather than the value itself.
 
 == Overview
 
-A `Box<T>` wraps a value of type `T` and stores it in the boxed segment of Cairo VM memory, leaving only a pointer in the execution segment.
+A `Box<T>` wraps a value of type `T` and provides a pointer to it.
 This enables:
 
-* **Storing large values efficiently** — Moving a `Box` is cheap because only the pointer is moved, not the entire value
-* **Enabling recursive types** — Types that would otherwise have infinite size can use `Box` to break the recursion
-* **Fixed-size representation** — Values of arbitrary size can be represented with a fixed-size pointer
+* **Efficient movement** — Moving a `Box` moves only the pointer
+* **Recursive types** — Types that would otherwise have infinite size
+* **Fixed-size representation** — Any value represented by a single pointer
 
 == Creating and using Box
 
@@ -32,7 +33,7 @@ let value = boxed.unbox();  // value is 42
 
 == Recursive data structures
 
-`Box` is essential for creating recursive types like linked lists or trees:
+`Box` is essential for creating recursive types like trees or linked lists:
 
 [source,cairo]
 ----
@@ -50,11 +51,12 @@ let node = BinaryTree::Node((
 ));
 ----
 
-Without `Box`, the `BinaryTree` type would have infinite size, as each `Node` would contain two full `BinaryTree` values.
+Without `Box`, the `BinaryTree` type would have infinite size,
+as each `Node` would directly contain two full `BinaryTree` values.
 
 == Moving large structures
 
-When working with large data structures, `Box` provides efficient movement:
+When working with large data structures, `Box` enables efficient movement:
 
 [source,cairo]
 ----
@@ -66,14 +68,16 @@ some_function(boxed_array);
 
 == Copy and Drop semantics
 
-`Box<T>` implements `Copy` if `T` implements `Copy`, and `Drop` if `T` implements `Drop`:
+`Box<T>` implements `Copy` if `T` implements `Copy`,
+and `Drop` if `T` implements `Drop`:
 
-* `Box<T>` is copyable when `T` is copyable — copying the box copies the pointer, not the value
-* `Box<T>` is droppable when `T` is droppable — dropping the box drops the wrapped value
+* `Box<T>` is copyable when `T` is copyable — copying the pointer
+* `Box<T>` is droppable when `T` is droppable — dropping the value
 
 == Snapshot conversion
 
-Use `.as_snapshot()` to convert a snapshot of a `Box` into a `Box` of a snapshot:
+Convert a snapshot of a `Box` into a `Box` of a snapshot
+using `.as_snapshot()`:
 
 [source,cairo]
 ----
@@ -95,12 +99,7 @@ let boxed_value: Box<u32> = BoxTrait::new(42);
 let value: u32 = boxed_value.deref();  // Extracts the value
 ----
 
-== Memory model
-
-In Cairo's memory model, `Box<T>` stores the value in the _boxed segment_ of memory, which is separate from the execution segment where regular values are stored.
-This separation allows for efficient handling of large or recursive data structures.
-
 == See also
 
-* xref:linear-types.adoc[Linear types system] — Understanding move semantics and Copy/Drop traits
+* xref:pages/linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
 * Implementation: `crates/cairo-lang-corelib/src/box.cairo`
