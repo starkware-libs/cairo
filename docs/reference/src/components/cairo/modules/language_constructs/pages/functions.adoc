@@ -104,7 +104,119 @@ tail expression `x + N` whose value is the return value of the function.
 
 See xref:function-calls.adoc[Function calls].
 
-// TODO(yuval): mention methods/self?
-// TODO(yuval): mention panics/implicits? (it's part of the signature).
-// TODO(yuval): mention inline.
-// TODO(yuval): mention local compilability.
+== Methods and self
+
+Cairo supports _methods_, which are functions associated with a type.
+Methods are defined inside an `impl` block for a trait or type.
+
+The first parameter of a method is often `self`, which represents the instance the method is called on.
+The `self` parameter can take several forms:
+
+* `self: T` — Takes ownership of the instance
+* `ref self: T` — Takes a mutable reference, allowing the method to modify the instance
+* `self: @T` — Takes a snapshot (immutable reference) of the instance
+
+[source,cairo]
+----
+#[derive(Drop)]
+struct Counter {
+    value: u32,
+}
+
+trait CounterTrait {
+    fn increment(ref self: Counter);
+    fn get_value(self: @Counter) -> u32;
+}
+
+impl CounterImpl of CounterTrait {
+    fn increment(ref self: Counter) {
+        self.value += 1;
+    }
+
+    fn get_value(self: @Counter) -> u32 {
+        *self.value
+    }
+}
+----
+
+Methods can be called using the dot notation:
+
+[source,cairo]
+----
+let mut counter = Counter { value: 0 };
+counter.increment();  // Calls increment with ref self
+let value = counter.get_value();  // Calls get_value with snapshot
+----
+
+== Function attributes
+
+=== Implicits and nopanic
+
+Functions can declare xref:implicit-arguments.adoc[implicit parameters] using the `implicits` keyword.
+These are system resources that are passed automatically by the compiler.
+
+The `nopanic` attribute indicates that a function cannot panic (abort execution).
+This is useful for external functions and safety guarantees.
+
+[source,cairo]
+----
+extern fn array_get<T>(
+    arr: @Array<T>, index: usize,
+) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
+----
+
+In this example:
+
+* `implicits(RangeCheck)` — The function requires the `RangeCheck` implicit for bounds checking
+* `nopanic` — The function is guaranteed not to panic
+
+=== Inline
+
+The `#[inline]` attribute suggests to the compiler that a function should be inlined at its call sites.
+Inlining can improve performance by eliminating function call overhead, but may increase code size.
+
+[source,cairo]
+----
+#[inline(always)]
+fn add_one(x: u32) -> u32 {
+    x + 1
+}
+----
+
+Common inline attributes:
+
+* `#[inline(always)]` — Always inline this function
+* `#[inline(never)]` — Never inline this function
+* `#[inline]` — Let the compiler decide based on optimization heuristics
+
+== Local compilability
+
+Cairo functions are _locally compilable_, meaning each function can be compiled independently without analyzing its callers or callees.
+This is achieved through explicit type annotations and the type system.
+
+Key aspects of local compilability:
+
+* **Explicit parameter types** — All parameter types must be explicitly declared
+* **Explicit return types** — Return types are declared or inferred from the function body alone
+* **No global type inference** — Type inference is limited to function bodies
+* **Independent compilation** — Functions can be type-checked and compiled in any order
+
+This design enables:
+
+* Faster compilation times
+* Better error messages with clear locations
+* Easier parallel compilation
+* More predictable behavior
+
+[source,cairo]
+----
+// Good: locally compilable
+fn double(x: u32) -> u32 {
+    x * 2  // Return type is explicit
+}
+
+// Good: return type can be omitted if it's unit type
+fn print_number(x: u32) {
+    // Returns ()
+}
+----
