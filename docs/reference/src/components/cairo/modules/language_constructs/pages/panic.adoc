@@ -1,6 +1,6 @@
 = Panic
 
-Code in _Cairo1.0_ may _panic_ - which means it may fail with an unrecoverable error - meaning
+Code in _Cairo 1.0_ may _panic_ - which means it may fail with an unrecoverable error - meaning
 it is impossible to catch and handle.
 When the program panics, using the xref:linear-types.adoc[linear type system] all living variables
 on the stack would be `Dropped` or otherwise destructed, which makes sure the run remains provable
