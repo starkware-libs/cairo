@@ -488,7 +488,7 @@ impl<'a> SyntaxNode<'a> {
     /// Gets all the leaves of the SyntaxTree, where the self node is the root of a tree.
     pub fn tokens(&self, db: &'a dyn Database) -> impl Iterator<Item = Self> + 'a {
         self.preorder(db).filter_map(|event| match event {
-            WalkEvent::Enter(node) if node.green_node(db).kind.is_terminal() => Some(node),
+            WalkEvent::Enter(node) if node.kind(db).is_terminal() => Some(node),
             _ => None,
         })
     }

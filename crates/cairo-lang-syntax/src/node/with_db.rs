@@ -58,7 +58,7 @@ impl<'a> Iterator for SyntaxNodeWithDbIterator<'a> {
             // This represents a single step of the depth-first traversal of a syntax tree.
             // If the node is a terminal, it creates and saves token representation of it.
             // Otherwise, it pushes all children of the node onto the iteration stack.
-            if node.green_node(self.db).kind.is_terminal() {
+            if node.kind(self.db).is_terminal() {
                 token_from_syntax_node(node, self.db, &mut self.buffer);
             } else {
                 self.iter_stack.extend(node.get_children(self.db).iter().rev());
