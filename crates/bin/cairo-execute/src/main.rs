@@ -23,6 +23,7 @@ use cairo_lang_sierra_generator::debug_info::SierraProgramDebugInfo;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
+use cairo_vm::types::builtin_name::BuiltinName;
 use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
@@ -205,9 +206,30 @@ fn main() -> anyhow::Result<()> {
             if args.build.ignore_warnings {
                 diagnostics_reporter = diagnostics_reporter.ignore_all_warnings();
             }
+
+            let builtin_list =
+                if args.run.standalone && args.run.layout == LayoutName::all_cairo_stwo {
+                    Some(vec![
+                        BuiltinName::output,
+                        BuiltinName::pedersen,
+                        BuiltinName::range_check,
+                        BuiltinName::ecdsa,
+                        BuiltinName::bitwise,
+                        BuiltinName::ec_op,
+                        BuiltinName::keccak,
+                        BuiltinName::poseidon,
+                        BuiltinName::range_check96,
+                        BuiltinName::add_mod,
+                        BuiltinName::mul_mod,
+                    ])
+                } else {
+                    None
+                };
+
             let config = ExecutableConfig {
                 allow_syscalls: args.build.allow_syscalls,
                 unsafe_panic: args.build.unsafe_panic,
+                builtin_list,
             };
 
             let mut db = prepare_db(&config)?;

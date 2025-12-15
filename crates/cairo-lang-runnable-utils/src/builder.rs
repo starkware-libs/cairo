@@ -273,8 +273,8 @@ impl EntryCodeConfig {
     }
 
     /// Returns a configuration for execution purposes.
-    pub fn executable(allow_unsound: bool) -> Self {
-        Self { testing: false, allow_unsound, builtin_list: None }
+    pub fn executable(allow_unsound: bool, builtin_list: Option<Vec<BuiltinName>>) -> Self {
+        Self { testing: false, allow_unsound, builtin_list }
     }
 }
 
@@ -327,7 +327,11 @@ pub fn create_entry_code_from_params(
     helper.process_output(return_types);
 
     if helper.has_post_calculation_loop {
-        helper.validate_segment_arena();
+        if let Some(segment_arena) =
+            helper.output_builtin_vars.swap_remove(&BuiltinName::segment_arena)
+        {
+            helper.validate_segment_arena(segment_arena);
+        }
         helper.update_builtins_as_locals();
     }
 
@@ -410,7 +414,8 @@ impl EntryCodeHelper {
     /// Processes the function parameters in preparation for the function call.
     fn process_params(&mut self, param_types: &[(GenericTypeId, i16)]) {
         self.got_segment_arena = param_types.iter().any(|(ty, _)| ty == &SegmentArenaType::ID);
-        self.has_post_calculation_loop = self.got_segment_arena && !self.config.testing;
+        self.has_post_calculation_loop =
+            (self.got_segment_arena || self.config.builtin_list.is_some()) && !self.config.testing;
 
         if self.has_post_calculation_loop {
             for name in self.input_builtin_vars.keys() {
@@ -557,7 +562,11 @@ impl EntryCodeHelper {
             self.output_builtin_vars.insert(BuiltinName::output, ptr_end);
         }
         assert_eq!(unprocessed_return_size, 0);
-        assert_eq!(self.input_builtin_vars.len(), self.output_builtin_vars.len());
+
+        for (name, var) in self.input_builtin_vars.iter() {
+            self.output_builtin_vars.entry(name.clone()).or_insert(var.clone());
+        }
+
         if self.has_post_calculation_loop {
             // Storing local data on FP - as we have a loop now.
             for (cell, local_expr) in zip_eq(
@@ -571,9 +580,7 @@ impl EntryCodeHelper {
     }
 
     /// Handles `SegmentArena` validation.
-    fn validate_segment_arena(&mut self) {
-        let segment_arena =
-            self.output_builtin_vars.swap_remove(&BuiltinName::segment_arena).unwrap();
+    fn validate_segment_arena(&mut self, segment_arena: Var) {
         casm_build_extend! {self.ctx,
             tempvar n_segments = segment_arena[-2];
             tempvar n_finalized = segment_arena[-1];

@@ -46,6 +46,9 @@ ret;
 // footer
 ret;
 
+//! > standalone_mode
+false
+
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -131,6 +134,9 @@ ap += 1;
 ret;
 // footer
 ret;
+
+//! > standalone_mode
+false
 
 //! > expected_diagnostics
 
@@ -345,6 +351,9 @@ ret;
 // footer
 ret;
 
+//! > standalone_mode
+false
+
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -374,6 +383,9 @@ ret;
 ret;
 // footer
 ret;
+
+//! > standalone_mode
+false
 
 //! > expected_diagnostics
 
@@ -433,6 +445,9 @@ ap += 1;
 ret;
 // footer
 ret;
+
+//! > standalone_mode
+false
 
 //! > expected_diagnostics
 
@@ -765,6 +780,9 @@ ret;
 // footer
 ret;
 
+//! > standalone_mode
+false
+
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -783,6 +801,9 @@ fn use_system() {
 //! > result
 The function is using libfunc `keccak_syscall`. Syscalls are not supported in `#[executable]`.
 
+//! > standalone_mode
+false
+
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -800,5 +821,85 @@ fn use_system() {
 
 //! > result
 The function is using libfunc `sha256_process_block_syscall`. Syscalls are not supported in `#[executable]`.
+
+//! > standalone_mode
+false
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Basic executable standalone_mode.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[executable]
+fn main() {}
+
+//! > result
+// builtins: output, pedersen, range_check, ecdsa, bitwise, ec_op, keccak, poseidon, range_check96, add_mod, mul_mod
+// header
+ap += 11;
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -13], ap++;
+[ap + 2] = [fp + -13], ap++;
+ap += 2;
+call rel 28;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
+[fp + 0] = [ap + -2];
+[fp + 1] = [fp + -3];
+[fp + 2] = [fp + -4];
+[fp + 3] = [fp + -5];
+[fp + 4] = [fp + -6];
+[fp + 5] = [fp + -7];
+[fp + 6] = [fp + -8];
+[fp + 7] = [fp + -9];
+[fp + 8] = [fp + -10];
+[fp + 9] = [fp + -11];
+[fp + 10] = [fp + -12];
+[ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + 10], ap++;
+[ap + 0] = [fp + 9], ap++;
+[ap + 0] = [fp + 8], ap++;
+[ap + 0] = [fp + 7], ap++;
+[ap + 0] = [fp + 6], ap++;
+[ap + 0] = [fp + 5], ap++;
+[ap + 0] = [fp + 4], ap++;
+[ap + 0] = [fp + 3], ap++;
+[ap + 0] = [fp + 2], ap++;
+[ap + 0] = [fp + 1], ap++;
+ret;
+// sierra based code
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 9;
+call rel 14;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -3], ap++;
+ret;
+ap += 8;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 3;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+// footer
+ret;
+
+//! > standalone_mode
+true
 
 //! > expected_diagnostics
