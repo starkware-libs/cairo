@@ -1,0 +1,105 @@
+= Box type
+
+`Box<T>` is a pointer type that provides an indirection layer for values.
+It allows working with values through a fixed-size pointer
+rather than the value itself.
+
+== Overview
+
+A `Box<T>` wraps a value of type `T` and provides a pointer to it.
+This enables:
+
+* **Efficient movement** — Moving a `Box` moves only the pointer
+* **Recursive types** — Types that would otherwise have infinite size
+* **Fixed-size representation** — Any value represented by a single pointer
+
+== Creating and using Box
+
+Use `BoxTrait::new()` to create a boxed value:
+
+[source,cairo]
+----
+let x = 42_u32;
+let boxed_x: Box<u32> = BoxTrait::new(x);
+----
+
+Use `.unbox()` to extract the value:
+
+[source,cairo]
+----
+let boxed = BoxTrait::new(42);
+let value = boxed.unbox();  // value is 42
+----
+
+== Recursive data structures
+
+`Box` is essential for creating recursive types like trees or linked lists:
+
+[source,cairo]
+----
+#[derive(Copy, Drop, Debug)]
+enum BinaryTree {
+    Leaf: u32,
+    Node: (u32, Box<BinaryTree>, Box<BinaryTree>)
+}
+
+let leaf = BinaryTree::Leaf(1);
+let node = BinaryTree::Node((
+    2,
+    BoxTrait::new(leaf),
+    BoxTrait::new(leaf)
+));
+----
+
+Without `Box`, the `BinaryTree` type would have infinite size,
+as each `Node` would directly contain two full `BinaryTree` values.
+
+== Moving large structures
+
+When working with large data structures, `Box` enables efficient movement:
+
+[source,cairo]
+----
+let large_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let boxed_array = BoxTrait::new(large_array);
+// Only the pointer is moved, not the entire fixed-size array
+some_function(boxed_array);
+----
+
+== Copy and Drop semantics
+
+`Box<T>` implements `Copy` if `T` implements `Copy`,
+and `Drop` if `T` implements `Drop`:
+
+* `Box<T>` is copyable when `T` is copyable — copying the pointer
+* `Box<T>` is droppable when `T` is droppable — dropping the value
+
+== Snapshot conversion
+
+Convert a snapshot of a `Box` into a `Box` of a snapshot
+using `.as_snapshot()`:
+
+[source,cairo]
+----
+let boxed_value = BoxTrait::new([1, 2, 3]);
+let snap_boxed = @boxed_value;         // @Box<[u32; 3]>
+let boxed_snap = snap_boxed.as_snapshot();  // Box<@[u32; 3]>
+let value_snap = boxed_snap.unbox();   // @[u32; 3]
+----
+
+This is useful when working with non-copyable types.
+
+== Dereferencing
+
+`Box<T>` implements the `Deref` trait, allowing automatic dereferencing:
+
+[source,cairo]
+----
+let boxed_value: Box<u32> = BoxTrait::new(42);
+let value: u32 = boxed_value.deref();  // Extracts the value
+----
+
+== See also
+
+* xref:pages/linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
+* Implementation: `crates/cairo-lang-corelib/src/box.cairo`
