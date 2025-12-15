@@ -60,9 +60,9 @@ When working with large data structures, `Box` enables efficient movement:
 
 [source,cairo]
 ----
-let large_array = array![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let large_array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 let boxed_array = BoxTrait::new(large_array);
-// Only the pointer is moved, not the entire array
+// Only the pointer is moved, not the entire fixed-size array
 some_function(boxed_array);
 ----
 
@@ -81,13 +81,13 @@ using `.as_snapshot()`:
 
 [source,cairo]
 ----
-let boxed_array = BoxTrait::new(array![1, 2, 3]);
-let snap_boxed = @boxed_array;         // @Box<Array<u32>>
-let boxed_snap = snap_boxed.as_snapshot();  // Box<@Array<u32>>
-let array_snap = boxed_snap.unbox();   // @Array<u32>
+let boxed_value = BoxTrait::new([1, 2, 3]);
+let snap_boxed = @boxed_value;         // @Box<[u32; 3]>
+let boxed_snap = snap_boxed.as_snapshot();  // Box<@[u32; 3]>
+let value_snap = boxed_snap.unbox();   // @[u32; 3]
 ----
 
-This is useful when working with non-copyable types like `Array`.
+This is useful when working with non-copyable types.
 
 == Dereferencing
 
