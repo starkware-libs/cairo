@@ -155,7 +155,7 @@ impl<'db> RewriteNode<'db> {
         code: &str,
         patches: &UnorderedHashMap<String, RewriteNode<'db>>,
     ) -> RewriteNode<'db> {
-        let mut chars = code.chars().peekable();
+        let mut chars = code.chars();
         let mut pending_text = String::new();
         let mut children = Vec::new();
         while let Some(c) = chars.next() {
