@@ -536,10 +536,12 @@ fn expand_macro_rule_ex(
             let first_param = find_first_repetition_param(db, elements.elements(db))
                 .ok_or_else(skip_diagnostic)?;
             let placeholder_name = first_param.name(db).text(db);
-            let rep_id = *matcher_ctx
-                .placeholder_to_rep_id
-                .get(&placeholder_name)
-                .ok_or_else(skip_diagnostic)?;
+            // If the placeholder isn't mapped to any repetition, it means it doesn't belong to any
+            // consumed repetition.
+            let Some(rep_id) = matcher_ctx.placeholder_to_rep_id.get(&placeholder_name).copied()
+            else {
+                return Ok(());
+            };
             let repetition_len =
                 matcher_ctx.captures.get(&placeholder_name).map(|v| v.len()).unwrap_or(0);
             for i in 0..repetition_len {
