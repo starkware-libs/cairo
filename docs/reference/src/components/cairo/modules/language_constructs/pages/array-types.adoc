@@ -70,8 +70,8 @@ match arr.get(2) {
 
 == Working with Span (Recommended for Iteration)
 
-To safely iterate or access multiple elements without repeated bounds
-checks, convert the array to a `Span<T>`:
+To safely iterate or access multiple elements, convert the array to a
+`Span<T>`:
 
 [source,cairo]
 ----
@@ -82,8 +82,20 @@ for i in 0..span.len() {
 }
 ----
 
-`Span<T>` is a read-only view and is the preferred way to read from
-arrays.
+More idiomatically, you can iterate directly over the span:
+
+[source,cairo]
+----
+let arr = array![1, 2, 3];
+for value in arr.span() {
+    // value: @felt252
+    // process value without consuming `arr`
+}
+----
+
+`Span<T>` is a read-only view on top of the underlying array data, and
+modifying the span (for example via `pop_front()`) does not modify the
+original array.
 
 == Limitations and Why Certain Patterns Are Forbidden
 
@@ -106,6 +118,24 @@ loop {
     if condition { break; }
     result.append(computed_value);
 };
+
+- **Checking if an array is empty**:
+[source,cairo]
+----
+let arr = ArrayTrait::new();
+if arr.is_empty() {
+    // handle empty case
+}
+----
+
+- **Iterating over elements without consuming the array**:
+[source,cairo]
+----
+let arr = array![1, 2, 3];
+for value in arr.span() {
+    // value: @felt252
+    // arr is not consumed and can still be used here
+}
 ----
 
 - **Draining an array (processing while consuming)**:
