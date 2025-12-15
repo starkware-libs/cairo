@@ -353,7 +353,7 @@ impl Felt252Serde for Program {
             }
             .serialize(output)?;
         }
-        // Libfunc declaration.
+        // Libfunc declarations.
         self.libfunc_declarations.len().serialize(output)?;
         for (i, e) in self.libfunc_declarations.iter().enumerate() {
             require(i as u64 == e.id.id)
@@ -362,7 +362,7 @@ impl Felt252Serde for Program {
         }
         // Statements.
         Felt252Serde::serialize(&self.statements, output)?;
-        // Function declaration.
+        // Function declarations.
         self.funcs.len().serialize(output)?;
         for (i, f) in self.funcs.iter().enumerate() {
             require(i as u64 == f.id.id)
