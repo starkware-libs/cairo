@@ -17,7 +17,7 @@ use good_lp::{Expression, Solution, SolverModel, default_solver, variable, varia
 /// # Returns
 /// * `Some(OrderedHashMap<Var, i64>)` - The solutions to the equations.
 /// * `None` - The equations are unsolvable.
-pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
+pub fn try_solve_equations<Var: Clone + Debug + Eq + Hash>(
     mut equations: Vec<Expr<Var>>,
     minimization_vars: Vec<Vec<Var>>,
 ) -> Option<OrderedHashMap<Var, i64>> {
@@ -65,7 +65,7 @@ pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
 /// # Returns
 /// * `Some(OrderedHashMap<Var, i64>)` - The solutions to the equations.
 /// * `None` - The equations are unsolvable.
-fn try_solve_equations_iteration<Var: Clone + Debug + PartialEq + Eq + Hash>(
+fn try_solve_equations_iteration<Var: Clone + Debug + Eq + Hash>(
     equations: &[Expr<Var>],
     target_vars: &[Var],
 ) -> Option<OrderedHashMap<Var, i64>> {
