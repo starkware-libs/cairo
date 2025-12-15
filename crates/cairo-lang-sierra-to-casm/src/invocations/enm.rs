@@ -360,5 +360,5 @@ fn get_enum_size(
     program_info: &ProgramInfo<'_>,
     concrete_enum_type: &ConcreteTypeId,
 ) -> Option<i16> {
-    Some(program_info.type_sizes.get(concrete_enum_type)?.copied())
+    Some(program_info.type_sizes.get(concrete_enum_type).copied())
 }
