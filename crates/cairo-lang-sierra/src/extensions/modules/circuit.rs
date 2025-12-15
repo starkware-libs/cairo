@@ -145,7 +145,7 @@ fn validate_gate_generic_args(
     validate_args_are_circuit_components(context, args.iter())
 }
 
-/// Represents the action of adding two fields elements in the circuits builtin.
+/// Represents the action of adding two field elements in the circuits builtin.
 #[derive(Default)]
 pub struct AddModGate {}
 impl NamedType for AddModGate {
@@ -179,7 +179,7 @@ impl NamedType for SubModGate {
     }
 }
 
-/// Represents the action of multiplying two fields elements in the circuits builtin.
+/// Represents the action of multiplying two field elements in the circuits builtin.
 #[derive(Default)]
 pub struct MulModGate {}
 impl NamedType for MulModGate {
@@ -279,7 +279,7 @@ impl NamedType for CircuitData {
     }
 }
 
-/// A type representing a circuit instance where the outputs is filled.
+/// A type representing a circuit instance where the outputs are filled.
 #[derive(Default)]
 pub struct CircuitOutputs {}
 impl NamedType for CircuitOutputs {

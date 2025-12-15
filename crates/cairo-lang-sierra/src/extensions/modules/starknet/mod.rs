@@ -1,4 +1,5 @@
 use crate::extensions::lib_func::SignatureSpecializationContext;
+use crate::extensions::starknet::getter::GetExecutionInfoV3Trait;
 use crate::extensions::{NamedType, SpecializationError};
 use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
@@ -85,6 +86,7 @@ define_libfunc_hierarchy! {
          GetBlockHash(GetBlockHashLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
          GetExecutionInfoV2(GetterLibfunc<GetExecutionInfoV2Trait>),
+         GetExecutionInfoV3(GetterLibfunc<GetExecutionInfoV3Trait>),
          Deploy(DeployLibfunc),
          Keccak(KeccakLibfunc),
          Sha256ProcessBlock(Sha256ProcessBlockLibfunc),

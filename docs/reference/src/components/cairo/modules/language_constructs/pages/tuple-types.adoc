@@ -16,5 +16,5 @@ Examples:
 (felt252, u16, Option<u8>)
 ---
 
-Values of this type are constructed using a xref:tuple-expressions.adoc[tuple expressions].
+Values of this type are constructed using xref:tuple-expressions.adoc[tuple expressions].
 Tuples can be deconstructed using xref:patterns.adoc[patterns].

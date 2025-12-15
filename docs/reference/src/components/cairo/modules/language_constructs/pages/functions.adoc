@@ -70,7 +70,7 @@ it also affects its value in the caller function. For example:
         y = x + 1;
     }
 ----
-`x` is a mutable parameter and `y` is a reference parameter. See below an example of calling it.
+`x` is a mutable parameter and `y` is a reference parameter. See an example of calling it below.
 
 === Return type
 

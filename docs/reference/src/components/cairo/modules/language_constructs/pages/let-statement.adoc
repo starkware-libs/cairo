@@ -8,7 +8,60 @@ Variables are _always_ initialized to some value.
 When no type annotation is given, the compiler infers the type, or signals an error if
 insufficient type information is available for definite inference.
 
-// TODO(spapini): Add an explanation about shadowing.
+== Variable scope and shadowing
+
 Any variable introduced by this declaration is visible from the point of declaration
 until the end of the enclosing block scope, except when it is shadowed by another variable
 declaration.
+
+=== Shadowing
+
+Cairo allows you to declare a new variable with the same name as a previous variable.
+This is called _shadowing_, and the new variable shadows the previous variable.
+
+[source,cairo]
+----
+let x = 5;
+let x = x + 1;  // Shadows the previous x
+let x = x * 2;  // Shadows again
+----
+
+Shadowing is different from marking a variable as mutable.
+When we shadow a variable, we create a new variable with the same name:
+
+* The shadowed variable in the outer scope is **not modified**
+* We can change the type of the value when shadowing
+* Shadowing works in nested scopes
+
+Example with nested scopes:
+
+[source,cairo]
+----
+let x = 5;
+{
+    let x = 8;  // Shadows x only within this block
+    // x is 8 here
+}
+// x is still 5 here
+----
+
+In contrast, when you assign to a mutable variable, you modify the same variable:
+
+[source,cairo]
+----
+let mut x = 5;
+{
+    x = 8;  // Modifies the same x
+}
+// x is 8 here (was modified)
+----
+
+Shadowing can also change the type:
+
+[source,cairo]
+----
+let x = 'hello';        // x is a short string (felt252)
+let x: u32 = 42_u32;   // x is now u32
+----
+
+See xref:variables.adoc#shadowing[Shadowing in Variables] for more details.

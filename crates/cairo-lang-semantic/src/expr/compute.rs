@@ -721,6 +721,9 @@ pub fn maybe_compute_expr_semantic<'db>(
         ast::Expr::FixedSizeArray(expr) => compute_expr_fixed_size_array_semantic(ctx, expr),
         ast::Expr::For(expr) => compute_expr_for_semantic(ctx, expr),
         ast::Expr::Closure(expr) => compute_expr_closure_semantic(ctx, expr, None),
+        ast::Expr::Underscore(expr) => {
+            Err(ctx.diagnostics.report(expr.stable_ptr(db), SemanticDiagnosticKind::Unsupported))
+        }
     }
 }
 
@@ -730,7 +733,7 @@ fn expand_inline_macro<'db>(
     syntax: &ast::ExprInlineMacro<'db>,
 ) -> Maybe<InlineMacroExpansion<'db>> {
     let db = ctx.db;
-    let macro_name = syntax.path(db).identifier(ctx.db);
+    let macro_path = syntax.path(db);
     let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
     if syntax.as_syntax_node().descendants(db).any(|node| {
@@ -753,7 +756,7 @@ fn expand_inline_macro<'db>(
     // if the macro was found as a plugin.
     let user_defined_macro = ctx.resolver.resolve_generic_path(
         &mut Default::default(),
-        &syntax.path(db),
+        &macro_path,
         NotFoundItemType::Macro,
         ResolutionContext::Statement(&mut ctx.environment),
     );
@@ -762,9 +765,10 @@ fn expand_inline_macro<'db>(
         let Some((rule, (captures, placeholder_to_rep_id))) = macro_rules.iter().find_map(|rule| {
             is_macro_rule_match(ctx.db, rule, &syntax.arguments(db)).map(|res| (rule, res))
         }) else {
-            return Err(ctx
-                .diagnostics
-                .report(syntax.stable_ptr(ctx.db), InlineMacroNoMatchingRule(macro_name)));
+            return Err(ctx.diagnostics.report(
+                syntax.stable_ptr(ctx.db),
+                InlineMacroNoMatchingRule(macro_path.identifier(db)),
+            ));
         };
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
@@ -772,8 +776,7 @@ fn expand_inline_macro<'db>(
 
         let macro_defsite_resolver_data =
             ctx.db.macro_declaration_resolver_data(macro_declaration_id)?;
-        let inference_id = ctx.resolver.inference().inference_id;
-        let callsite_resolver = ctx.resolver.data.clone_with_inference_id(ctx.db, inference_id);
+        let callsite_module_id = ctx.resolver.data.module_id;
         let parent_macro_call_data = ctx.resolver.macro_call_data.clone();
         let info = MacroExpansionInfo {
             mappings: expanded_code.code_mappings,
@@ -782,17 +785,18 @@ fn expand_inline_macro<'db>(
         };
         ctx.resolver.macro_call_data = Some(Arc::new(ResolverMacroData {
             defsite_module_id: macro_defsite_resolver_data.module_id,
-            callsite_module_id: callsite_resolver.module_id,
+            callsite_module_id,
             expansion_mappings: info.mappings.clone(),
             parent_macro_call_data,
         }));
         Ok(InlineMacroExpansion {
             content: expanded_code.text,
-            name: macro_name.to_string(db),
+            name: macro_path.identifier(db).to_string(db),
             info,
         })
-    } else if let Some(macro_plugin_id) =
-        ctx.db.crate_inline_macro_plugins(crate_id).get(&macro_name.to_string(db)).cloned()
+    } else if let Some(macro_plugin_id) = ctx
+        .resolver
+        .resolve_plugin_macro(&macro_path, ResolutionContext::Statement(&mut ctx.environment))
     {
         let macro_plugin = macro_plugin_id.long(ctx.db);
         let result = macro_plugin.generate_code(
@@ -820,7 +824,10 @@ fn expand_inline_macro<'db>(
         }
         let Some(code) = result.code else {
             return Err(diag_added.unwrap_or_else(|| {
-                ctx.diagnostics.report(syntax.stable_ptr(ctx.db), InlineMacroNotFound(macro_name))
+                ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    InlineMacroNotFound(macro_path.identifier(db)),
+                )
             }));
         };
         Ok(InlineMacroExpansion {

@@ -212,6 +212,7 @@ struct TxInfo {
     nonce_data_availability_mode: Felt252,
     fee_data_availability_mode: Felt252,
     account_deployment_data: Vec<Felt252>,
+    proof_facts: Vec<Felt252>,
 }
 
 /// Copy of the Cairo `ResourceBounds` struct.
@@ -935,6 +936,9 @@ impl CairoHintProcessor<'_> {
         let account_deployment_data_start = res_segment.ptr;
         res_segment.write_data(tx_info.account_deployment_data.iter().cloned())?;
         let account_deployment_data_end = res_segment.ptr;
+        let proof_facts_start = res_segment.ptr;
+        res_segment.write_data(tx_info.proof_facts.iter().cloned())?;
+        let proof_facts_end = res_segment.ptr;
         let tx_info_ptr = res_segment.ptr;
         res_segment.write(tx_info.version)?;
         res_segment.write(tx_info.account_contract_address)?;
@@ -953,6 +957,8 @@ impl CairoHintProcessor<'_> {
         res_segment.write(tx_info.fee_data_availability_mode)?;
         res_segment.write(account_deployment_data_start)?;
         res_segment.write(account_deployment_data_end)?;
+        res_segment.write(proof_facts_start)?;
+        res_segment.write(proof_facts_end)?;
         let block_info_ptr = res_segment.ptr;
         res_segment.write(block_info.block_number)?;
         res_segment.write(block_info.block_timestamp)?;

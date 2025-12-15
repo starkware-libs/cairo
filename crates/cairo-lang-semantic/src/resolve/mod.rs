@@ -5,8 +5,9 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleId,
-    ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId, UseId, VariantId,
+    GenericKind, GenericParamId, GenericTypeId, ImplDefId, InlineMacroExprPluginId,
+    LanguageElementId, ModuleId, ModuleItemId, TopLevelLanguageElementId, TraitId, TraitItemId,
+    UseId, VariantId,
 };
 use cairo_lang_diagnostics::{Maybe, skip_diagnostic};
 use cairo_lang_filesystem::db::{
@@ -560,6 +561,25 @@ impl<'db> Resolver<'db> {
         self.resolve_generic_path_inner(diagnostics, path, item_type, false, ctx)
     }
 
+    /// Resolves a plugin macro, given a path.
+    /// Guaranteed to result in at most one diagnostic.
+    pub fn resolve_plugin_macro(
+        &mut self,
+        path: &ast::ExprPath<'db>,
+        ctx: ResolutionContext<'db, '_>,
+    ) -> Option<InlineMacroExprPluginId<'db>> {
+        let mut diagnostics = SemanticDiagnostics::default();
+        let resolution =
+            Resolution::new(self, &mut diagnostics, path, NotFoundItemType::Macro, ctx).ok()?;
+        let macro_name = resolution.segments.exactly_one().ok()?;
+        let macro_info = resolution.macro_info;
+        let crate_id = self.active_owning_crate_id(&macro_info);
+        let db = self.db;
+        db.crate_inline_macro_plugins(crate_id)
+            .get(macro_name.identifier(db).long(db).as_str())
+            .cloned()
+    }
+
     /// Resolves a generic item from a `use` statement path.
     ///
     /// Useful for resolving paths from `use` items and statements.
@@ -1033,14 +1053,7 @@ impl<'db> Resolver<'db> {
                 &generic_param,
                 arg_syntax_per_param
                     .get(&generic_param.id())
-                    .and_then(|arg_syntax| {
-                        if let ast::GenericArgValue::Expr(expr) = arg_syntax {
-                            Some(expr.expr(self.db))
-                        } else {
-                            None
-                        }
-                    })
-                    .as_ref(),
+                    .filter(|expr| !matches!(expr, ast::Expr::Underscore(_))),
                 stable_ptr,
                 diagnostics,
             )?;
@@ -1057,10 +1070,10 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics<'db>,
         generic_params: &[GenericParamId<'db>],
         generic_args_syntax: &[ast::GenericArg<'db>],
-    ) -> Maybe<UnorderedHashMap<GenericParamId<'db>, ast::GenericArgValue<'db>>> {
+    ) -> Maybe<UnorderedHashMap<GenericParamId<'db>, ast::Expr<'db>>> {
         let db = self.db;
         let mut arg_syntax_per_param =
-            UnorderedHashMap::<GenericParamId<'_>, ast::GenericArgValue<'_>>::default();
+            UnorderedHashMap::<GenericParamId<'_>, ast::Expr<'_>>::default();
         let mut last_named_arg_index = None;
         let generic_param_by_name = generic_params
             .iter()

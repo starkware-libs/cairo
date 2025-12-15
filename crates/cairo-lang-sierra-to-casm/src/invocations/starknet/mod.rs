@@ -60,7 +60,8 @@ pub fn build(
             build_syscalls(builder, "GetBlockHash", [1], [1])
         }
         StarknetConcreteLibfunc::GetExecutionInfo(_)
-        | StarknetConcreteLibfunc::GetExecutionInfoV2(_) => {
+        | StarknetConcreteLibfunc::GetExecutionInfoV2(_)
+        | StarknetConcreteLibfunc::GetExecutionInfoV3(_) => {
             build_syscalls(builder, "GetExecutionInfo", [], [1])
         }
         StarknetConcreteLibfunc::Deploy(_) => {
