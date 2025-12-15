@@ -101,8 +101,9 @@ impl<'a> PluginTypeInfo<'a> {
             }
             ast::ModuleItem::Enum(enum_ast) => {
                 let generics = GenericParamsInfo::new(db, enum_ast.generic_params(db));
-                let members_info =
-                    extract_variants(db, enum_ast.variants(db), &generics.param_names);
+                let interned =
+                    generics.param_names.iter().map(|s| SmolStrId::from(db, *s)).collect_vec();
+                let members_info = extract_variants(db, enum_ast.variants(db), &interned);
                 Some(Self {
                     name: enum_ast.name(db).text(db).long(db).as_str(),
                     attributes: enum_ast.attributes(db),
@@ -185,7 +186,7 @@ fn extract_members<'a>(
 fn extract_variants<'a>(
     db: &'a dyn Database,
     variants: ast::VariantList<'a>,
-    generics: &[&str],
+    generics: &[SmolStrId<'a>],
 ) -> Vec<MemberInfo<'a>> {
     variants
         .elements(db)
@@ -200,10 +201,7 @@ fn extract_variants<'a>(
             attributes: variant.attributes(db),
             is_generics_dependent: match variant.type_clause(db) {
                 ast::OptionTypeClause::Empty(_) => false,
-                ast::OptionTypeClause::TypeClause(t) => {
-                    let interned = generics.iter().map(|s| SmolStrId::from(db, *s)).collect_vec();
-                    t.ty(db).is_dependent_type(db, &interned)
-                }
+                ast::OptionTypeClause::TypeClause(t) => t.ty(db).is_dependent_type(db, generics),
             },
         })
         .collect()
