@@ -67,8 +67,8 @@ fn build_enum_init(
         .program_info
         .type_sizes
         .get(&builder.libfunc.param_signatures()[0].ty)
-        .ok_or(InvocationError::UnknownTypeData)?
-        .to_owned();
+        .copied()
+        .ok_or(InvocationError::UnknownTypeData)?;
     if init_arg_cells.len() != variant_size as usize {
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
@@ -360,5 +360,5 @@ fn get_enum_size(
     program_info: &ProgramInfo<'_>,
     concrete_enum_type: &ConcreteTypeId,
 ) -> Option<i16> {
-    Some(program_info.type_sizes.get(concrete_enum_type)?.to_owned())
+    Some(program_info.type_sizes.get(concrete_enum_type)?.copied())
 }
