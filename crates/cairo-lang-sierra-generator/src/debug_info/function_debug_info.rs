@@ -53,14 +53,21 @@ impl<'db> AllFunctionsDebugInfo<'db> {
         &self,
         db: &'db dyn Database,
     ) -> SerializableAllFunctionsDebugInfo {
-        let val: Vec<Option<(SierraFunctionId, SerializableFunctionDebugInfo)>> =
-            par_map(db, self.0.iter().collect_vec(), |db, (function_id, function_debug_info)| {
-                Some((
-                    SierraFunctionId(function_id.id),
-                    function_debug_info.extract_serializable_debug_info(db)?,
-                ))
-            });
-        SerializableAllFunctionsDebugInfo(val.into_iter().flatten().collect())
+        SerializableAllFunctionsDebugInfo(
+            par_map::<_, _, _, _, Vec<Option<(SierraFunctionId, SerializableFunctionDebugInfo)>>>(
+                db,
+                self.0.iter().collect_vec(),
+                |db, (function_id, function_debug_info)| {
+                    Some((
+                        SierraFunctionId(function_id.id),
+                        function_debug_info.extract_serializable_debug_info(db)?,
+                    ))
+                },
+            )
+            .into_iter()
+            .flatten()
+            .collect(),
+        )
     }
 }
 
