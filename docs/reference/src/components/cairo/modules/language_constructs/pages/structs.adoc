@@ -120,7 +120,7 @@ tree.height = 1;
 tree.number_of_leaves = 100;
 ----
 
-While this code has the same logical effect, but guarantees to copy the struct's memory only once:
+While this code has the same logical effect, it guarantees to copy the struct's memory only once:
 
 [source,cairo]
 ----
