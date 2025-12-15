@@ -87,9 +87,8 @@ impl<Key: Hash + Eq, Value: HasZero + Eq, BH: BuildHasher> MergeCollection<Key, 
                 ordered_hash_map::Entry::Occupied(mut e) => {
                     let new_val = {
                         let value = e.get_mut();
-                        let old_value = core::mem::replace(value, Value::zero());
-                        action(old_value, other_val)
-                    };
+                    let old_value = core::mem::replace(e.get_mut(), Value::zero());
+                    let new_val = action(old_value, other_val);
                     if new_val == Value::zero() {
                         e.swap_remove();
                     } else {
@@ -122,9 +121,8 @@ impl<Key: Eq, Value: HasZero + Eq> MergeCollection<Key, Value>
                 small_ordered_map::Entry::Occupied(mut e) => {
                     let new_val = {
                         let value = e.get_mut();
-                        let old_value = core::mem::replace(value, Value::zero());
-                        action(old_value, other_val)
-                    };
+                    let old_value = core::mem::replace(e.get_mut(), Value::zero());
+                    let new_val = action(old_value, other_val);
                     if new_val == Value::zero() {
                         e.remove();
                     } else {
