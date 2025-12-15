@@ -169,7 +169,7 @@ impl<'db, 'a> CanonicBlockBuilder<'db, 'a> {
 
 impl<'db> CanonicBlock<'db> {
     /// Tries to create a canonic block from a flat block.
-    /// Return the canonic representation of the block and the external inputs used in the block.
+    /// Returns the canonic representation of the block and the external inputs used in the block.
     /// Blocks that do not end in return do not have a canonic representation.
     fn try_from_block(
         variable: &VariableArena<'db>,

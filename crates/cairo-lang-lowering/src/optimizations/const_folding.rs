@@ -1322,7 +1322,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const).copied()
     }
 
-    /// Return the const value as an int if it exists and is an integer.
+    /// Returns the const value as an int if it exists and is an integer.
     fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
         match self.as_const(var_id)?.long(self.db) {
             ConstValue::Int(value, _) => Some(value),
