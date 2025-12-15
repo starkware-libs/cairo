@@ -1,6 +1,145 @@
 = Enum types
 
-This section is a work in progress.
+Enum types in Cairo build on the basic `enum` construct described in xref:enums.adoc[Enums].
+This section focuses on more advanced usages, in particular generic enums and
+commonly used enum patterns from the core library.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Generic enums
+
+Enums can be generic over one or more type parameters. This allows defining a
+family of related enum types that work with different payload types while
+sharing the same structure and behavior.
+
+A generic enum is defined by adding type parameters in angle brackets after
+the enum name:
+
+[source,cairo]
+----
+    enum Option<T> {
+        Some: T,
+        None: (),
+    }
+----
+
+In this example, `Option<T>` is an enum that can represent either the
+presence of a value of type `T` (`Some`) or the absence of a value (`None`).
+
+To use a generic enum, you instantiate it with concrete type arguments:
+
+[source,cairo]
+----
+use option::Option;
+
+fn from_u32(x: u32) -> Option<u32> {
+    if x == 0 {
+        Option::None(())
+    } else {
+        Option::Some(x)
+    }
+}
+----
+
+Here, `Option<u32>` is a concrete enum type with the same variants `Some`
+and `None`, but the payload of `Some` is specifically a `u32`.
+
+Generic enums can have multiple type parameters as well:
+
+[source,cairo]
+----
+    enum Pair<T, U> {
+        Both: (T, U),
+    }
+----
+
+== Matching on generic enums
+
+Pattern matching on generic enums works the same way as for non-generic
+enums. The type parameters are part of the enum type, but do not change the
+`match` syntax.
+
+[source,cairo]
+----
+use option::Option;
+
+fn unwrap_or_default(x: Option<u32>, default: u32) -> u32 {
+    match x {
+        Option::Some(value) => value,
+        Option::None(()) => default,
+    }
+}
+----
+
+Each arm matches on a variant of the enum and can bind the payload value to
+a local variable, just like with non-generic enums. For more details on
+match expressions, see xref:match-expressions.adoc[Match expressions].
+
+== Common enum types
+
+The core library defines several commonly used generic enums that follow
+standard patterns.
+
+=== Option
+
+The `Option<T>` enum represents an optional value: it can either contain a
+value of type `T` or no value at all.
+
+[source,cairo]
+----
+    enum Option<T> {
+        Some: T,
+        None: (),
+    }
+----
+
+A typical usage is to return `Option<T>` from functions that may fail to
+produce a value without providing an error reason:
+
+[source,cairo]
+----
+use option::Option;
+
+fn find_positive(x: i32) -> Option<i32> {
+    if x > 0 {
+        Option::Some(x)
+    } else {
+        Option::None(())
+    }
+}
+----
+
+=== Result
+
+Another common pattern is an enum that distinguishes between success and
+failure, carrying either a result value or an error value. This is often
+expressed by a generic enum similar to the following shape:
+
+[source,cairo]
+----
+    enum Result<T, E> {
+        Ok: T,
+        Err: E,
+    }
+----
+
+Such an enum can be used to return a value together with information about
+whether an operation succeeded:
+
+[source,cairo]
+----
+use result::Result;
+
+fn divide(x: u32, y: u32) -> Result<u32, ()> {
+    if y == 0 {
+        Result::Err(())
+    } else {
+        Result::Ok(x / y)
+    }
+}
+----
+
+== Summary
+
+Enum types in Cairo support generics, which makes them a powerful tool for
+building reusable abstractions such as optional values and result types.
+They are defined and used in the same way as non-generic enums, with type
+arguments specifying the payload types of the variants.
