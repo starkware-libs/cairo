@@ -48,7 +48,8 @@ use crate::{
 };
 
 /// Converts a const value to a specialization arg.
-/// For struct and enum const values, recursively converts to SpecializationArg::Struct/Enum.
+/// For struct, tuple, fixed-size array and enum const values, recursively converts to the
+/// corresponding SpecializationArg variant.
 fn const_to_specialization_arg<'db>(
     db: &'db dyn Database,
     value: ConstValueId<'db>,
@@ -56,9 +57,14 @@ fn const_to_specialization_arg<'db>(
 ) -> SpecializationArg<'db> {
     match value.long(db) {
         ConstValue::Struct(members, ty) => {
-            // Only convert to SpecializationArg::Struct if the type is actually a concrete struct,
-            // not a closure or fixed size array.
-            if matches!(ty.long(db), TypeLongId::Concrete(ConcreteTypeId::Struct(_))) {
+            // Only convert to SpecializationArg::Struct for struct, tuple, or fixed-size array.
+            // For closures and other types, fall back to Const.
+            if matches!(
+                ty.long(db),
+                TypeLongId::Concrete(ConcreteTypeId::Struct(_))
+                    | TypeLongId::Tuple(_)
+                    | TypeLongId::FixedSizeArray { .. }
+            ) {
                 let args = members
                     .iter()
                     .map(|member| const_to_specialization_arg(db, *member, false))
@@ -793,14 +799,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     SpecializationArg::Enum { payload, .. } => {
                         stack.push(payload.as_mut());
                     }
-                    SpecializationArg::Array(_, values) => {
+                    SpecializationArg::Array(_, values) | SpecializationArg::Struct(values) => {
                         for value in values.iter_mut().rev() {
                             stack.push(value);
-                        }
-                    }
-                    SpecializationArg::Struct(specialization_args) => {
-                        for arg in specialization_args.iter_mut().rev() {
-                            stack.push(arg);
                         }
                     }
                     SpecializationArg::NotSpecialized => {
@@ -1439,34 +1440,36 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 Some(SpecializationArg::Array(*inner_ty, args))
             }
             VarInfo::Struct(infos) => {
-                let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
-                    ty.long(self.db)
-                else {
-                    // TODO(ilya): Support closures and fixed size arrays.
-                    return None;
+                // Get element types based on the type.
+                let element_types: Vec<TypeId<'db>> = match ty.long(self.db) {
+                    TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
+                        let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
+                        members.values().map(|member| member.ty).collect()
+                    }
+                    TypeLongId::Tuple(element_types) => element_types.clone(),
+                    TypeLongId::FixedSizeArray { type_id, .. } => vec![*type_id; infos.len()],
+                    // For closures and other types, don't specialize.
+                    _ => return None,
                 };
 
-                let members = self.db.concrete_struct_members(*concrete_struct).unwrap();
                 let coerces = match coerce {
-                    Some(coerce) => {
-                        let SpecializationArg::Struct(specialization_args) = coerce else {
-                            unreachable!("Expected a struct specialization argument");
-                        };
+                    Some(SpecializationArg::Struct(specialization_args)) => {
                         assert_eq!(specialization_args.len(), infos.len());
-
                         specialization_args.iter().map(Some).collect()
                     }
+                    Some(_) => unreachable!("Expected a struct specialization argument"),
                     None => vec![None; infos.len()],
                 };
+
                 let mut struct_args = Vec::new();
                 // Accumulate into locals first; only extend unknown_vars if we end up specializing.
                 let mut vars = vec![];
-                for ((member, opt_var_info), coerce) in
-                    zip_eq(zip_eq(members.values(), infos), coerces)
+                for ((elem_ty, opt_var_info), coerce) in
+                    zip_eq(zip_eq(element_types, infos), coerces)
                 {
                     let var_info = opt_var_info?;
                     let arg =
-                        self.try_get_specialization_arg(var_info, member.ty, &mut vars, coerce)?;
+                        self.try_get_specialization_arg(var_info, elem_ty, &mut vars, coerce)?;
                     struct_args.push(arg);
                 }
                 if !struct_args.is_empty()

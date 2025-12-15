@@ -10,7 +10,7 @@ use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{FunctionsSemantic, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use cairo_lang_syntax::node::ast::ExprPtr;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{TypedStablePtr, ast};
@@ -491,19 +491,25 @@ impl<'db> SpecializedFunction<'db> {
                     }
                 }
                 SpecializationArg::Struct(specialization_args) => {
-                    let ty = param.ty;
-                    let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) = ty.long(db)
-                    else {
-                        unreachable!("Expected a concrete struct type");
+                    // Get element types based on the actual type.
+                    let element_types: Vec<TypeId<'db>> = match param.ty.long(db) {
+                        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
+                            let Ok(members) = db.concrete_struct_members(*concrete_struct) else {
+                                continue;
+                            };
+                            members.values().map(|member| member.ty).collect()
+                        }
+                        TypeLongId::Tuple(element_types) => element_types.clone(),
+                        TypeLongId::FixedSizeArray { type_id, .. } => {
+                            vec![*type_id; specialization_args.len()]
+                        }
+                        _ => unreachable!("Expected a struct, tuple, or fixed-size array type"),
                     };
-                    let Ok(inner_param) = db.concrete_struct_members(*concrete_struct) else {
-                        continue;
-                    };
-                    for ((_, inner_param), arg) in
-                        zip_eq(inner_param.iter().rev(), specialization_args.iter().rev())
+                    for (elem_ty, arg) in
+                        zip_eq(element_types.iter().rev(), specialization_args.iter().rev())
                     {
                         let lowered_param =
-                            LoweredParam { ty: inner_param.ty, stable_ptr: param.stable_ptr };
+                            LoweredParam { ty: *elem_ty, stable_ptr: param.stable_ptr };
                         stack.push((lowered_param, arg));
                     }
                 }

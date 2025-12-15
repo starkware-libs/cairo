@@ -26,11 +26,18 @@ use crate::{
 // A const argument for a specialized function.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub enum SpecializationArg<'db> {
-    Const { value: ConstValueId<'db>, boxed: bool },
+    Const {
+        value: ConstValueId<'db>,
+        boxed: bool,
+    },
     Snapshot(Box<SpecializationArg<'db>>),
     Array(TypeId<'db>, Vec<SpecializationArg<'db>>),
+    /// Represents struct, tuple, or fixed-size array.
     Struct(Vec<SpecializationArg<'db>>),
-    Enum { variant: ConcreteVariant<'db>, payload: Box<SpecializationArg<'db>> },
+    Enum {
+        variant: ConcreteVariant<'db>,
+        payload: Box<SpecializationArg<'db>>,
+    },
     NotSpecialized,
 }
 
@@ -190,20 +197,26 @@ pub fn specialized_function_lowered<'db>(
                         }));
                     }
                     SpecializationArg::Struct(args) => {
-                        let var = &variables[var_id];
-                        let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) =
-                            var.ty.long(db)
-                        else {
-                            unreachable!("Expected a concrete struct type");
+                        let var_ty = variables[var_id].ty;
+                        let location = variables[var_id].location;
+
+                        // Get element types based on the actual type.
+                        let mut var_for_ty = |ty| variables.new_var(VarRequest { ty, location });
+                        let var_ids = match var_ty.long(db) {
+                            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
+                                let members = db.concrete_struct_members(*concrete_struct)?;
+                                members.values().map(|member| var_for_ty(member.ty)).collect_vec()
+                            }
+                            TypeLongId::Tuple(element_types) => {
+                                element_types.iter().cloned().map(var_for_ty).collect_vec()
+                            }
+                            TypeLongId::FixedSizeArray { type_id, .. } => {
+                                itertools::repeat_n(*type_id, args.len())
+                                    .map(var_for_ty)
+                                    .collect_vec()
+                            }
+                            _ => unreachable!("Expected a struct, tuple, or fixed-size array type"),
                         };
-
-                        let members = db.concrete_struct_members(*concrete_struct)?;
-
-                        let location = var.location;
-                        let var_ids = members
-                            .values()
-                            .map(|member| variables.new_var(VarRequest { ty: member.ty, location }))
-                            .collect_vec();
 
                         stack.push((
                             var_id,
