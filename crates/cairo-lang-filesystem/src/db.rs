@@ -517,7 +517,7 @@ fn crate_config_helper<'db>(
     }
 }
 
-/// Return a reference to the configuration of a crate.
+/// Returns a reference to the configuration of a crate.
 /// This is a wrapper around the tracked function `crate_config_helper` to return a
 /// reference to a type unsupported by salsa tracked functions.
 fn crate_config<'db>(
@@ -569,7 +569,7 @@ fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<
     })
 }
 
-/// Return a reference to the content of a file as a string.
+/// Returns a reference to the content of a file as a string.
 /// This is a wrapper around the tracked function `file_summary_helper` to return a
 /// reference to a type unsupported by salsa tracked functions.
 fn file_summary<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<&'db FileSummary> {
