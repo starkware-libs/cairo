@@ -57,4 +57,3 @@ When inferring an impl of a trait, the compiler will search for the impl in the 
 When searching for an impl, and multiple results are found for the same concrete trait (e.g.
 `Display<usize>`), the compiler will throw an error. This is to prevent ambiguity in the code. In
 this case, the user must specify the impl name explicitly.
-
