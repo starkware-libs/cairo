@@ -8,18 +8,22 @@ license-file.workspace = true
 description = "Cairo executable plugin."
 
 [dependencies]
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.14.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.14.0" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.14.0" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.14.0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "~2.15.0-rc.0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.15.0-rc.0" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "~2.15.0-rc.0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.15.0-rc.0" }
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
 
 [dev-dependencies]
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.14.0" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.14.0", features = ["testing"] }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "~2.15.0-rc.0" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "~2.15.0-rc.0", features = [
+  "testing",
+] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.15.0-rc.0", features = [
+  "tracing",
+] }
 indoc.workspace = true
 tracing.workspace = true
