@@ -829,7 +829,7 @@ fn is_impl_abi_per_item<'db>(db: &'db dyn Database, imp: ImplDefId<'db>) -> Mayb
     imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_PER_ITEM_ARG)
 }
 
-/// Fetch the event data for the given type. Returns None if the given event type doesn't derive
+/// Fetches the event data for the given type. Returns None if the given event type doesn't derive
 /// `starknet::Event` by using the `derive` attribute.
 fn fetch_event_data<'db>(db: &'db dyn Database, event_type_id: TypeId<'db>) -> Option<EventData> {
     let starknet_module = core_submodule(db, SmolStrId::from(db, "starknet"));
