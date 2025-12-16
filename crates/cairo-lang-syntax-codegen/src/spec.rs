@@ -36,7 +36,7 @@ pub struct Variant {
     pub kind: String,
 }
 
-// Helpers to build AST specification.
+// Helpers to build AST specifications.
 
 /// Builds a spec for a struct node.
 pub struct StructBuilder {
