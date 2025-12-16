@@ -514,7 +514,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
             raw_profiling_info
                 .stack_trace_weights
                 .iter()
-                .sorted_by_key(|&(trace, weight)| (usize::MAX - *weight, trace.clone()))
+                .sorted_by_key(|&(trace, weight)| (usize::MAX - *weight, trace))
                 .map(resolve_names)
                 .collect()
         });
@@ -525,7 +525,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
                 .stack_trace_weights
                 .iter()
                 .filter(|(trace, _)| is_cairo_trace(db, self.sierra_program, trace))
-                .sorted_by_key(|&(trace, weight)| (usize::MAX - *weight, trace.clone()))
+                .sorted_by_key(|&(trace, weight)| (usize::MAX - *weight, trace))
                 .map(resolve_names)
                 .collect()
         });
