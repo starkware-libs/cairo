@@ -176,7 +176,7 @@ fn priv_macro_call_data_tracked<'db>(
 pub const EXPOSE_MACRO_NAME: &str = "expose";
 
 // TODO(eytan-starkware): Return SmolStrId
-/// Get the content and mappings for the `expose!` macro call.
+/// Gets the content and mappings for the `expose!` macro call.
 pub fn expose_content_and_mapping<'db>(
     db: &'db dyn Database,
     args: ast::TokenTreeNode<'db>,

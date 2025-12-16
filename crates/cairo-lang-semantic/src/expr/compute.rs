@@ -1262,7 +1262,7 @@ fn compute_expr_binary_semantic<'db>(
     }
 }
 
-/// Get the function call expression of a binary operation that is defined in the corelib.
+/// Gets the function call expression of a binary operation that is defined in the corelib.
 fn call_core_binary_op<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::ExprBinary<'db>,

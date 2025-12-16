@@ -177,11 +177,11 @@ impl TextSpan {
     pub fn n_chars(self, content: &str) -> usize {
         self.take(content).chars().count()
     }
-    /// Get the span of width 0, located right after this span.
+    /// Gets the span of width 0, located right after this span.
     pub fn after(self) -> Self {
         Self::cursor(self.end)
     }
-    /// Get the span of width 0, located right at the beginning of this span.
+    /// Gets the span of width 0, located right at the beginning of this span.
     pub fn start_only(self) -> Self {
         Self::cursor(self.start)
     }
