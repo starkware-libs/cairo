@@ -192,6 +192,6 @@ Cairo automatically creates a snapshot of the value.
 
 == See also
 
-* xref:linear-types.adoc[Linear type system] — Move semantics and snapshots
-* xref:pages/linear-types.adoc#snapshot[Snapshot section in Linear types]
-* xref:pages/variables.adoc[Variables] — Snapshots and variable bindings
+* xref:linear-types.adoc[Linear types] — Move semantics and snapshots
+* xref:linear-types.adoc#snapshot[Snapshot section in Linear types]
+* xref:variables.adoc[Variables] — Snapshots and variable bindings
