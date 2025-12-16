@@ -1,0 +1,197 @@
+= Snapshot type
+
+The snapshot type, denoted as `@T`, creates an immutable view of a value
+without moving or copying it.
+Snapshots are always copyable and droppable,
+making them essential for Cairo's linear type system.
+
+== Overview
+
+In Cairo's xref:pages/linear-types.adoc[linear type system],
+values are moved by default and cannot be used multiple times
+unless they implement the `Copy` trait.
+Snapshots provide a way to reference a value multiple times
+without requiring it to be copyable.
+
+A snapshot of type `T` is written as `@T`
+and represents an immutable reference to a value of type `T`.
+
+== Creating snapshots
+
+Use the `@` operator to create a snapshot of a value:
+
+[source,cairo]
+----
+let x = 42_u32;
+let snapshot_x = @x;  // Type: @u32
+----
+
+The original value is not moved when creating a snapshot,
+so it can still be used:
+
+[source,cairo]
+----
+#[derive(Drop)]
+struct Data { value: felt252 }
+
+let data = Data { value: 42 };
+let s1 = @data;
+let s2 = @data;  // OK: Can create multiple snapshots
+foo(data);       // OK: Original value still available
+----
+
+== Snapshots and non-copyable types
+
+Snapshots are particularly useful with non-copyable types like `Array`:
+
+[source,cairo]
+----
+let arr = array![1, 2, 3];
+let snap1 = @arr;
+let snap2 = @arr;  // OK: Snapshots are copyable even if Array is not
+// arr is still available here
+----
+
+Without snapshots, you would need to use `.clone()` or pass ownership,
+both of which have different semantics.
+
+== Desnapping
+
+To access the value behind a snapshot, use the desnap operator `*`:
+
+[source,cairo]
+----
+let x = 42_u32;
+let snapshot_x = @x;
+let value = *snapshot_x;  // Desnap: value is 42
+----
+
+Note that desnapping requires the underlying type to be `Copy`.
+For non-copyable types,
+you work with the snapshot directly or use methods that accept snapshots.
+
+== Copy and Drop semantics
+
+Snapshots have special semantics:
+
+* **Always copyable** — `@T` implements `Copy` regardless of whether `T` does
+* **Always droppable** — `@T` implements `Drop` regardless of whether `T` does
+
+This makes snapshots easy to work with and pass around:
+
+[source,cairo]
+----
+let arr = array![1, 2, 3];
+let snap = @arr;
+foo(snap);  // Snapshot is copied, not moved
+foo(snap);  // OK: Can use it again
+----
+
+== Using snapshots in function parameters
+
+Snapshots are commonly used in function signatures
+to accept immutable references:
+
+[source,cairo]
+----
+fn read_array(arr: @Array<u32>) {
+    // Can read from arr but not modify it
+    let len = arr.len();
+}
+
+fn main() {
+    let my_array = array![1, 2, 3];
+    read_array(@my_array);
+    read_array(@my_array);  // Can call multiple times
+    // my_array is still available
+}
+----
+
+== Snapshots vs references
+
+In Cairo, snapshots (`@T`) serve a similar purpose
+to immutable references (`&T`) in other languages like Rust,
+but with a key difference:
+
+* **Immutable references are pointers** — they refer to the data indirectly
+* **Snapshots are the original element** — including its full size and structure
+* Snapshots are always immutable — there is no mutable snapshot
+* Snapshots are always copyable and droppable
+* The `ref` keyword creates mutable references for input/output parameters
+
+[source,cairo]
+----
+fn increment(ref x: u32) {  // Mutable reference
+    x = x + 1;
+}
+
+fn read_value(x: @u32) {    // Immutable snapshot
+    // Can read x but not modify it
+}
+----
+
+== Snapshots of structs and enums
+
+When you create a snapshot of a struct or enum,
+you get a snapshot of the entire structure:
+
+[source,cairo]
+----
+#[derive(Copy, Drop)]
+struct Point {
+    x: u32,
+    y: u32,
+}
+
+let point = Point { x: 10, y: 20 };
+let snap = @point;
+let x_val = snap.x;  // Access field through snapshot
+// Note: Starting from edition 2025_12, fields are automatically desnapped
+----
+
+== Method calls with snapshots
+
+Many methods in Cairo accept `self: @T` to work with snapshots:
+
+[source,cairo]
+----
+let arr = array![1, 2, 3];
+let len = arr.len();     // Takes @Array<u32> implicitly
+// arr is still available
+----
+
+When a method takes `self: @T`,
+Cairo automatically creates a snapshot of the value.
+
+== Common use cases
+
+1. **Passing non-copyable values to functions**:
+   [source,cairo]
+   ----
+   fn process_array(arr: @Array<u32>) {
+       // Read from array without taking ownership
+   }
+   ----
+
+2. **Creating multiple references**:
+   [source,cairo]
+   ----
+   let data = create_large_structure();
+   worker1(@data);
+   worker2(@data);
+   ----
+
+3. **Working with generic functions**:
+   [source,cairo]
+   ----
+   fn print_twice<T, impl TDisplay: Display<T>>(value: @T) {
+       println!("{}", value);
+       println!("{}", value);  // Can use snapshot twice
+   }
+   ----
+
+== See also
+
+* xref:pages/linear-types.adoc[Linear types] — Move semantics and snapshots
+* xref:pages/linear-types.adoc#snapshot[Snapshot section in Linear types]
+* xref:pages/variables.adoc[Variables] — Snapshots and variable bindings
