@@ -34,7 +34,8 @@ See xref:linear-types.adoc[linear types] for more information.
 * `Debug` - Implements the `Debug` trait to allow formatting the type for debugging.
 All members of the type must also be `Debug`.
 * `Default` - Implements the `Default` trait to provide a default value for the type.
-All members of the type must also be `Default`.
+For structs, all members of the type must also be `Default`.
+For enums, only the variant marked with `#[default]` must have all its members implement `Default`.
 * `Destruct` - Implements the destruct method to explicitly destroy the type.
 All members of the type must also be `Destruct`.
 See xref:linear-types.adoc[linear types] for more information.
