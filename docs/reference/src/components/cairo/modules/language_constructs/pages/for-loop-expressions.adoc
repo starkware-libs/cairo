@@ -6,7 +6,7 @@ executing a block of code for each element.
 == Syntax
 
 A for loop expression starts with the xref:keywords.adoc[keyword] `for` followed by a
-xref:patterns.adoc[pattern], the keyword `in`, an expression that evaluates to an iterator,
+xref:patterns.adoc[pattern], the keyword `in`, an expression that implements the `IntoIterator` trait,
 and a xref:block-expression.adoc[block expression] body.
 
 [source,cairo]
@@ -16,7 +16,9 @@ for pattern in iterator_expr {
 }
 ----
 
-The pattern can be a simple identifier or any pattern that can destructure the iterator's elements.
+The `iterator_expr` must be a type that implements the `IntoIterator` trait, which provides the
+`into_iter()` method to convert the value into an iterator. The pattern can be a simple identifier
+or any pattern that can destructure the iterator's elements.
 
 == Semantics
 
@@ -32,12 +34,6 @@ A for loop expression is evaluated by:
 
 The loop body is executed for each element produced by the iterator. The pattern variables are only
 available within the loop body and are rebound for each iteration.
-
-[NOTE]
-====
-For loops require the expression to implement the `IntoIterator` trait, which provides the
-`into_iter()` method to convert the value into an iterator.
-====
 
 == Type
 
