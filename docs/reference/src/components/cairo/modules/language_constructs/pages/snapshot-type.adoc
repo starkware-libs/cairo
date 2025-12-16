@@ -26,15 +26,18 @@ let x = 42_u32;
 let snapshot_x = @x;  // Type: @u32
 ----
 
-The original value `x` is not moved when creating a snapshot,
+The original value is not moved when creating a snapshot,
 so it can still be used:
 
 [source,cairo]
 ----
-let x = 42_u32;
-let s1 = @x;
-let s2 = @x;  // OK: Can create multiple snapshots
-foo(x);       // OK: Original value still available
+#[derive(Drop)]
+struct Data { value: felt252 }
+
+let data = Data { value: 42 };
+let s1 = @data;
+let s2 = @data;  // OK: Can create multiple snapshots
+foo(data);       // OK: Original value still available
 ----
 
 == Snapshots and non-copyable types
@@ -108,8 +111,10 @@ fn main() {
 
 In Cairo, snapshots (`@T`) serve a similar purpose
 to immutable references (`&T`) in other languages like Rust,
-but with some differences:
+but with a key difference:
 
+* **Immutable references are pointers** — they refer to the data indirectly
+* **Snapshots are the original element** — including its full size and structure
 * Snapshots are always immutable — there is no mutable snapshot
 * Snapshots are always copyable and droppable
 * The `ref` keyword creates mutable references for input/output parameters
@@ -140,7 +145,8 @@ struct Point {
 
 let point = Point { x: 10, y: 20 };
 let snap = @point;
-let x_val = *snap.x;  // Access field through snapshot
+let x_val = snap.x;  // Access field through snapshot
+// Note: Starting from edition 2025_12, fields are automatically desnapped
 ----
 
 == Method calls with snapshots
