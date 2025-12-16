@@ -85,7 +85,7 @@ pub struct TestsCompilationConfig<'db> {
 /// * `tests_compilation_config` - The compiler configuration for tests compilation.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Use `CrateLongId::Real(name).intern(db)` in order
 ///   to obtain [`CrateId`] from its name.
-/// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
+/// * `test_crate_ids` - [`CrateId`]s to find test cases in. Must be a subset of `main_crate_ids`.
 /// # Returns
 /// * `Ok(TestCompilation)` - The compiled test cases with metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
