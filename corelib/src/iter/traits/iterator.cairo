@@ -118,7 +118,7 @@ pub trait Iterator<T> {
     /// times until [`None`] is encountered.
     ///
     /// `advance_by(n)` will return `Ok(())` if the iterator successfully advances by
-    /// `n` elements, or a `Err(NonZero<usize>)` with value `k` if [`None`] is encountered,
+    /// `n` elements, or an `Err(NonZero<usize>)` with value `k` if [`None`] is encountered,
     /// where `k` is remaining number of steps that could not be advanced because the iterator ran
     /// out.
     /// If `self` is empty and `n` is non-zero, then this returns `Err(n)`.
@@ -202,11 +202,11 @@ pub trait Iterator<T> {
         }
     }
 
-    /// Takes a closure and creates an iterator which calls that closure on each
+    /// Takes a closure and creates an iterator that calls that closure on each
     /// element.
     ///
     /// `map()` transforms one iterator into another, by means of its argument:
-    /// something that implements [`FnOnce`]. It produces a new iterator which
+    /// something that implements [`FnOnce`]. It produces a new iterator that
     /// calls this closure on each element of the original iterator.
     ///
     /// If you are good at thinking in types, you can think of `map()` like this:
@@ -253,7 +253,7 @@ pub trait Iterator<T> {
         mapped_iterator(self, f)
     }
 
-    /// Creates an iterator which gives the current iteration count as well as
+    /// Creates an iterator that gives the current iteration count as well as
     /// the next value.
     ///
     /// The iterator returned yields pairs `(i, val)`, where `i` is the
@@ -508,7 +508,7 @@ pub trait Iterator<T> {
         }
     }
 
-    /// Creates an iterator which uses a closure to determine if an element
+    /// Creates an iterator that uses a closure to determine if an element
     /// should be yielded. The closure takes each element as a snapshot.
     ///
     /// Given an element the closure must return `true` or `false`. The returned
@@ -554,7 +554,7 @@ pub trait Iterator<T> {
     /// If either iterator returns [`None`], [`next`] from the zipped iterator
     /// will return [`None`].
     /// If the zipped iterator has no more elements to return then each further attempt to advance
-    /// it will first try to advance the first iterator at most one time and if it still yielded an
+    /// it will first try to advance the first iterator at most one time and if it still yields an
     /// item try to advance the second iterator at most one time.
     ///
     /// # Examples
@@ -654,7 +654,7 @@ pub trait Iterator<T> {
         FromIterator::<B, Self::Item>::from_iter::<T, IntoIter, ItemEqual>(self)
     }
 
-    /// Creates an iterator which can use the [`peek`] method to look at the next element of the
+    /// Creates an iterator that can use the [`peek`] method to look at the next element of the
     /// iterator. See its documentation for more information.
     ///
     /// Note that the underlying iterator is still advanced when [`peek`] is called for the first
@@ -712,7 +712,7 @@ pub trait Iterator<T> {
     /// assert_eq!(iter.next(), None);
     /// ```
     ///
-    /// If less than `n` elements are available,
+    /// If fewer than `n` elements are available,
     /// `take` will limit itself to the size of the underlying iterator:
     ///
     /// ```
