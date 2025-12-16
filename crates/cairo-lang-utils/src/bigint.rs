@@ -15,7 +15,7 @@ use num_traits::{Num, Signed};
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 pub struct BigUintAsHex {
-    /// A field element that encodes the signature of the called function.
+    /// The underlying big integer value serialized as a hex string.
     #[cfg_attr(
         feature = "serde",
         serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
@@ -65,7 +65,7 @@ where
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BigIntAsHex {
-    /// A field element that encodes the signature of the called function.
+    /// The underlying signed big integer value serialized as a hex string.
     #[cfg_attr(
         feature = "serde",
         serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")
