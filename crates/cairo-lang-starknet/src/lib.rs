@@ -15,7 +15,7 @@ pub mod contract;
 pub mod inline_macros;
 pub mod plugin;
 
-/// Get the suite of plugins for compilation with Starknet.
+/// Gets the suite of plugins for compilation with Starknet.
 pub fn starknet_plugin_suite() -> PluginSuite {
     let mut suite = PluginSuite::default();
     suite

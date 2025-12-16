@@ -526,11 +526,11 @@ pub struct SpanInFile<'db> {
     pub span: TextSpan,
 }
 impl<'db> SpanInFile<'db> {
-    /// Get the location of right after this diagnostic's location (with width 0).
+    /// Gets the location of right after this diagnostic's location (with width 0).
     pub fn after(&self) -> Self {
         Self { file_id: self.file_id, span: self.span.after() }
     }
-    /// Get the location of the originating user code.
+    /// Gets the location of the originating user code.
     pub fn user_location(&self, db: &'db dyn Database) -> Self {
         get_originating_location(db, *self, None)
     }

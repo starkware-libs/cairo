@@ -43,7 +43,7 @@ impl<'db> AttributeTrait<'db> for Attribute<'db> {
 
 /// Trait for querying attributes of semantic items.
 pub trait SemanticQueryAttrs<'db> {
-    /// Get the list of attributes attached to this node.
+    /// Gets the list of attributes attached to this node.
     ///
     /// Implementation detail, should not be used by this trait users.
     #[doc(hidden)]
@@ -63,7 +63,7 @@ pub trait SemanticQueryAttrs<'db> {
         Ok(self.query_attr(db, attr)?.next())
     }
 
-    /// Check if this node has an attribute whose name (without args) is exactly `attr`.
+    /// Checks if this node has an attribute whose name (without args) is exactly `attr`.
     fn has_attr(&self, db: &'db dyn Database, attr: &str) -> Maybe<bool> {
         Ok(self.find_attr(db, attr)?.is_some())
     }

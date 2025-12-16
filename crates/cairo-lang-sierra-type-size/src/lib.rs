@@ -24,12 +24,12 @@ impl ProgramRegistryInfo {
         Ok(Self { registry, type_sizes })
     }
 
-    /// Get a reference to the program registry.
+    /// Gets a reference to the program registry.
     pub fn registry(&self) -> &ProgramRegistry<CoreType, CoreLibfunc> {
         &self.registry
     }
 
-    /// Get a reference to the type size map.
+    /// Gets a reference to the type size map.
     pub fn type_sizes(&self) -> &TypeSizeMap {
         &self.type_sizes
     }
