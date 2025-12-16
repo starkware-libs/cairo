@@ -64,8 +64,7 @@ pub trait CheckedSub<T> {
     fn checked_sub(self: T, v: T) -> Option<T>;
 }
 
-/// Performs multiplication that returns `None` instead of wrapping around on underflow or
-/// overflow.
+/// Performs multiplication that returns `None` instead of wrapping around on overflow.
 ///
 /// # Examples
 ///
@@ -79,8 +78,8 @@ pub trait CheckedSub<T> {
 /// assert!(result == None); // Overflow
 /// ```
 pub trait CheckedMul<T> {
-    /// Multiplies two numbers, checking for underflow or overflow. If underflow
-    /// or overflow happens, `None` is returned.
+    /// Multiplies two numbers, checking for overflow. If overflow happens,
+    /// `None` is returned.
     fn checked_mul(self: T, v: T) -> Option<T>;
 }
 
