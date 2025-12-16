@@ -2669,7 +2669,7 @@ fn compute_method_function_call_data<'db>(
     Ok((function_id, trait_function_id.trait_id(ctx.db), fixed_expr, first_param.mutability))
 }
 
-/// Return candidates for method functions that match the given arguments.
+/// Returns candidates for method functions that match the given arguments.
 /// Also returns the expression to be used as self for the method call, its type and whether deref
 /// was used.
 #[expect(clippy::too_many_arguments)]

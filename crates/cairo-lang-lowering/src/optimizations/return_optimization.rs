@@ -63,7 +63,7 @@ struct EarlyReturnContext<'db, 'a> {
 }
 
 impl<'db, 'a> EarlyReturnContext<'db, 'a> {
-    /// Return a vector of VarUsage's based on the input `ret_infos`.
+    /// Returns a vector of VarUsage's based on the input `ret_infos`.
     /// Adds `StructConstruct` and `EnumConstruct` statements to the block as needed.
     /// Assumes that early return is possible for the given `ret_infos`.
     fn prepare_early_return_vars(&mut self, ret_infos: &[ValueInfo<'db>]) -> Vec<VarUsage<'db>> {
