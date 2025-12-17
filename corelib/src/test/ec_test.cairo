@@ -1,5 +1,5 @@
 use crate::ec::{EcPoint, EcPointTrait, EcStateTrait, stark_curve};
-use crate::ecdsa;
+use crate::ecdsa::{check_ecdsa_signature, recover_public_key};
 use crate::option::OptionTrait;
 use crate::test::test_utils::assert_eq;
 use crate::traits::TryInto;
@@ -81,34 +81,17 @@ fn test_ecdsa() {
     let public_key = 0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec;
     let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
     let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
-    assert(
-        ecdsa::check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s),
-        'ecdsa returned false',
-    );
-    assert(
-        !ecdsa::check_ecdsa_signature(
-            message_hash: message_hash + 1, :public_key, :signature_r, :signature_s,
-        ),
-        'ecdsa - wrong message',
-    );
-    assert(
-        !ecdsa::check_ecdsa_signature(
-            :message_hash, public_key: public_key + 1, :signature_r, :signature_s,
-        ),
-        'ecdsa - wrong public_key',
-    );
-    assert(
-        !ecdsa::check_ecdsa_signature(
-            :message_hash, :public_key, signature_r: signature_r + 1, :signature_s,
-        ),
-        'ecdsa - wrong r',
-    );
-    assert(
-        !ecdsa::check_ecdsa_signature(
-            :message_hash, :public_key, :signature_r, signature_s: signature_s + 1,
-        ),
-        'ecdsa - wrong s',
-    );
+    assert!(check_ecdsa_signature(:message_hash, :public_key, :signature_r, :signature_s));
+    let other_s = stark_curve::ORDER - signature_s;
+    assert!(check_ecdsa_signature(:message_hash, :public_key, :signature_r, signature_s: other_s));
+    let fail = message_hash + 1;
+    assert!(!check_ecdsa_signature(message_hash: fail, :public_key, :signature_r, :signature_s));
+    let fail = public_key + 1;
+    assert!(!check_ecdsa_signature(:message_hash, public_key: fail, :signature_r, :signature_s));
+    let fail = signature_r + 1;
+    assert!(!check_ecdsa_signature(:message_hash, :public_key, signature_r: fail, :signature_s));
+    let fail = signature_s + 1;
+    assert!(!check_ecdsa_signature(:message_hash, :public_key, :signature_r, signature_s: fail));
 }
 
 #[test]
@@ -117,40 +100,17 @@ fn test_ecdsa_recover_public_key() {
     let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;
     let signature_s = 0x677ae6bba6daf00d2631fab14c8acf24be6579f9d9e98f67aa7f2770e57a1f5;
     assert_eq!(
-        ecdsa::recover_public_key(:message_hash, :signature_r, :signature_s, y_parity: false),
+        recover_public_key(:message_hash, :signature_r, :signature_s, y_parity: false),
         Some(0x7b7454acbe7845da996377f85eb0892044d75ae95d04d3325a391951f35d2ec),
     );
-    assert!(
-        ecdsa::check_ecdsa_signature(
-            :message_hash,
-            public_key: ecdsa::recover_public_key(
-                :message_hash, :signature_r, :signature_s, y_parity: true,
-            )
-                .unwrap(),
-            :signature_r,
-            :signature_s,
-        ),
-    );
-    assert_eq!(
-        ecdsa::recover_public_key(:message_hash, signature_r: 0, :signature_s, y_parity: true),
-        None,
-    );
-    assert_eq!(
-        ecdsa::recover_public_key(
-            :message_hash, signature_r: stark_curve::ORDER, :signature_s, y_parity: true,
-        ),
-        None,
-    );
-    assert_eq!(
-        ecdsa::recover_public_key(:message_hash, :signature_r, signature_s: 0, y_parity: true),
-        None,
-    );
-    assert_eq!(
-        ecdsa::recover_public_key(
-            :message_hash, :signature_r, signature_s: stark_curve::ORDER, y_parity: true,
-        ),
-        None,
-    );
+    let y_parity = true;
+    let pk = recover_public_key(:message_hash, :signature_r, :signature_s, :y_parity).unwrap();
+    assert!(check_ecdsa_signature(:message_hash, public_key: pk, :signature_r, :signature_s));
+    use stark_curve::ORDER as ORD;
+    assert_eq!(recover_public_key(:message_hash, signature_r: 0, :signature_s, :y_parity), None);
+    assert_eq!(recover_public_key(:message_hash, signature_r: ORD, :signature_s, :y_parity), None);
+    assert_eq!(recover_public_key(:message_hash, :signature_r, signature_s: 0, :y_parity), None);
+    assert_eq!(recover_public_key(:message_hash, :signature_r, signature_s: ORD, :y_parity), None);
 }
 
 #[test]
