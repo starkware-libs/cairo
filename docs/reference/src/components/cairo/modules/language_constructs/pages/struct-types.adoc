@@ -17,15 +17,6 @@ Tree
 MyStruct
 ----
 
-Struct types can be generic:
-
-[source,cairo]
-----
-Pair<T, U>
-Container<T>
-Box<T>
-----
-
 == Nominal typing
 
 Cairo uses nominal typing for structs.
@@ -106,7 +97,8 @@ struct ListNode {
 }
 ----
 
-Without `Box`, recursive struct types would have infinite size.
+Without `Box`, recursive struct types would have infinite size
+and cause a compilation diagnostic.
 
 == Type compatibility
 
