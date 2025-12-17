@@ -41,7 +41,7 @@ if condition1 {
 
 == Condition
 
-The condition must be of type `bool`:
+Standard if expressions use a boolean condition:
 
 [source,cairo]
 ----
@@ -51,10 +51,20 @@ if x > 5 {
 }
 ----
 
+Cairo also supports `if let` for pattern matching:
+
+[source,cairo]
+----
+if let Option::Some(value) = maybe_value {
+    // Executes if pattern matches
+    process(value)
+}
+----
+
 == If as an expression
 
-If expressions returns values.
-Both branches must returns the same type:
+If expressions return values.
+Both branches must return the same type:
 
 [source,cairo]
 ----
@@ -81,7 +91,7 @@ let result = if number % 2 == 0 {
 
 == If without else
 
-An if expression without an else branch return the unit type `()`
+An if expression without an else branch returns the unit type `()`
 when the condition is false:
 
 [source,cairo]
@@ -93,7 +103,7 @@ if x > 10 {
 // If condition is false, expression evaluates to ()
 ----
 
-This is only valid when the if branch also return `()`:
+This is only valid when the if branch also returns `()`:
 
 [source,cairo]
 ----
@@ -105,7 +115,7 @@ if x > 10 {
 
 == Type requirements
 
-When using if-else as an expression, both branches must returns the same type:
+When using if-else as an expression, both branches must return the same type:
 
 [source,cairo]
 ----
@@ -126,7 +136,7 @@ let result: u32 = if condition {
 
 == If-else if chains
 
-Multiple condition can be chained:
+Multiple conditions can be chained:
 
 [source,cairo]
 ----
@@ -210,6 +220,6 @@ fn divide(a: u32, b: u32) -> Option<u32> {
 
 == See also
 
-* xref:boolean-types.adoc[Boolean types] — The condition type
-* xref:match-expressions.adoc[Match expressions] — Pattern-based conditionals
-* xref:expressions.adoc[Expressions] — General expression syntax
+* xref:pages/boolean-types.adoc[Boolean types] — The condition type
+* xref:pages/match-expressions.adoc[Match expressions] — Pattern-based conditionals
+* xref:pages/expressions.adoc[Expressions] — General expression syntax
