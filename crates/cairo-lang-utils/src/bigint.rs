@@ -38,7 +38,7 @@ where
         Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
             .map_err(|error| serde::de::Error::custom(format!("{error}"))),
         None => Err(serde::de::Error::custom(format!(
-            "{s} does not start with `0x`, which is missing."
+            "{s} does not start with the required `0x` prefix."
         ))),
     }
 }
