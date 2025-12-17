@@ -7,12 +7,12 @@ license-file.workspace = true
 description = "Cairo parser."
 
 [dependencies]
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.15.0-rc.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.15.0-rc.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "~2.15.0-rc.1" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.15.0-rc.1" }
 cairo-lang-primitive-token.workspace = true
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.15.0-rc.0" }
-cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "~2.15.0-rc.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.15.0-rc.0", features = [
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "~2.15.0-rc.1" }
+cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "~2.15.0-rc.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.15.0-rc.1", features = [
   "tracing",
 ] }
 colored.workspace = true
@@ -24,7 +24,7 @@ unescaper.workspace = true
 
 [dev-dependencies]
 anstream = "0.6.19"
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.15.0-rc.0" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.15.0-rc.1" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 indoc.workspace = true
 pretty_assertions.workspace = true

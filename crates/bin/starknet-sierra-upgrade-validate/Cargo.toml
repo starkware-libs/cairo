@@ -10,8 +10,8 @@ publish = false
 [dependencies]
 anyhow.workspace = true
 async-channel = "2.5.0"
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.15.0-rc.0" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.15.0-rc.0", features = [
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.15.0-rc.1" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.15.0-rc.1", features = [
   "serde",
 ] }
 clap.workspace = true
