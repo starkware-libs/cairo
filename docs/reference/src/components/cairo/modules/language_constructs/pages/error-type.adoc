@@ -1,6 +1,151 @@
-= Error type
+= Error types
 
-This section is a work in progress.
+Error handling in _Cairo_ is built around a small set of core types.
+This section describes the main *error-carrying types* and how they
+relate to each other and to the rest of the language.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+In broad strokes, Cairo distinguishes between:
+
+- *Recoverable* errors – represented by types like `Result<T, E>` and
+  sometimes `Option<T>`.
+- *Unrecoverable* errors – represented by a panic, see
+  xref:panic.adoc[Panic].
+
+== Recoverable errors with `Result`
+
+The primary type used for recoverable errors is
+`core::result::Result<T, E>`.
+
+- `T` is the success type.
+- `E` is the *error type* – any type that describes what went wrong.
+
+A simplified definition looks like:
+[source,cairo]
+----
+enum Result<T, E> {
+    Ok: T,
+    Err: E,
+}
+----
+
+Functions return `Result` whenever errors are expected and the caller
+is supposed to decide how to handle them.
+
+[source,cairo]
+----
+use core::result::Result;
+
+enum ParseError {
+    InvalidVersion: felt252,
+}
+
+fn parse_version(header: felt252) -> Result<felt252, ParseError> {
+    match header {
+        0 => Result::Ok(0),
+        1 => Result::Ok(1),
+        other => Result::Err(ParseError::InvalidVersion(other)),
+    }
+}
+----
+
+The error type `E` is often:
+
+- A simple value (`felt252`, `ByteArray`) with a textual message or
+  error code.
+- An enum describing a small, fixed set of error cases.
+
+For a detailed API overview of `Result`, see
+`corelib/src/result.cairo`.
+
+== Optional values as errors: `Option`
+
+Another common pattern is to use `Option<T>` when the *absence* of a
+value is the only possible failure mode.
+
+[source,cairo]
+----
+use core::option::Option::{self, Some, None};
+
+fn first_even(values: @Array<u32>) -> Option<u32> {
+    let mut i = 0;
+    loop {
+        if i == values.len() {
+            return None;
+        }
+        let value = *values.at(i);
+        if value % 2 == 0 {
+            return Some(value);
+        }
+        i = i + 1;
+    }
+}
+----
+
+When more information about the failure is needed, `Option<T>` can be
+converted into `Result<T, E>` using helpers like `ok_or` and
+`ok_or_else` from `corelib/src/option.cairo`.
+
+== Unrecoverable errors and `Panic`
+
+Unrecoverable errors are represented by a *panic*, see
+xref:panic.adoc[Panic] for details.
+
+The core library defines:
+
+- `core::panics::Panic` – a type representing a panic condition.
+- `core::panics::PanicResult<T>` – a result-like type that can carry
+  either a value or panic data.
+
+These are mostly used by low-level infrastructure and tooling. In
+application-level code, panics are typically triggered indirectly via:
+
+- `panic` / `panic_with_*` functions from `corelib/src/panics.cairo`
+  and `corelib/src/lib.cairo`.
+- Methods like `unwrap` / `expect` on `Result` and `Option`, which
+  convert a recoverable error into a panic when the error occurs.
+
+== Choosing an error type
+
+When designing an API, you typically choose between:
+
+- Returning `Result<T, E>` with a dedicated error type `E`.
+- Returning `Option<T>` when the only failure is "value not found" or
+  "no value".
+- Panicking only as a last resort, for bugs or truly unrecoverable
+  situations.
+
+A few guidelines:
+
+- Use `Result<T, E>` when callers are expected to handle failures.
+- Use a descriptive error type (`enum` or structured data) instead of
+  magic constants whenever the API has multiple distinct error cases.
+- Use `Option<T>` only when there is at most one, well-understood
+  reason for failure.
+- Avoid panicking in library boundaries for expected error conditions;
+  prefer `Result` so the caller can decide.
+
+== Interaction with the `?` operator
+
+The xref:error-propagation-operator.adoc[error propagation operator]
+`?` integrates with error-carrying types:
+
+- On `Result<T, E>`, `expr?` either yields `T` or returns early with
+  `Err(E)`.
+- On `Option<T>`, `expr?` either yields `T` or returns early with
+  `None`.
+
+The enclosing function must return a compatible type (`Result` or
+`Option`), and the error type `E` must match the function's return
+type. See the dedicated page for detailed semantics and examples.
+
+== References (source)
+
+- Error type and methods:
+  - `corelib/src/result.cairo` (`Result<T, E>`)
+  - `corelib/src/option.cairo` (`Option<T>` helpers)
+- Panic infrastructure:
+  - `corelib/src/panics.cairo` (`Panic`, `PanicResult<T>`, `panic`)
+  - `corelib/src/lib.cairo` (`panic_with_felt252`, `assert`, etc.)
+- Language features:
+  - xref:panic.adoc[Panic]
+  - xref:error-propagation-operator.adoc[Error propagation operator]
