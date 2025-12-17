@@ -58,7 +58,8 @@ impl State {
         extract_matches!(self.get_adjusted(var), CellExpression::Deref)
     }
 
-    /// Validates that the state is valid, as it has enough ap change.
+    /// Validates that the state is valid, if it had enough AP change to support the requested
+    /// allocations.
     fn validate_finality(&self) {
         assert!(
             self.ap_change >= self.allocated.into_or_panic(),
