@@ -21,6 +21,10 @@ Struct types can be generic:
 
 [source,cairo]
 ----
+Pair<T, U>
+Container<T>
+Box<T>
+----
 
 == Nominal typing
 
