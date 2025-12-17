@@ -31,9 +31,18 @@ See xref:linear-types.adoc[linear types] for more information.
 * `Drop` - Marks the type as being safe to drop.
 All members of the type must also be `Drop`.
 See xref:linear-types.adoc[linear types] for more information.
+* `Debug` - Implements the `Debug` trait to allow formatting the type for debugging.
+All members of the type must also be `Debug`.
+* `Default` - Implements the `Default` trait to provide a default value for the type.
+For structs, all members of the type must also be `Default`.
+For enums, only the variant marked with `#[default]` must have all its members implement `Default`.
 * `Destruct` - Implements the destruct method to explicitly destroy the type.
 All members of the type must also be `Destruct`.
 See xref:linear-types.adoc[linear types] for more information.
+* `Hash` - Implements the `Hash` trait to compute a hash for the type.
+All members of the type must also be `Hash`.
+* `PanicDestruct` - Implements the `PanicDestruct` trait to allow safely destructing the type during a panic.
+All members of the type must also be `PanicDestruct`.
 * `PartialEq` - Implements the xref:equality-operators.adoc[equality operators] `==` and `!=` for the type.
 All members of the type must also be `PartialEq`.
 * `Serde` - Implements the Serde trait for serialization and deserialization for the type.
