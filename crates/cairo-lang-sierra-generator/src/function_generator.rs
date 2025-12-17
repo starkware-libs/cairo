@@ -65,10 +65,11 @@ fn get_function_ap_change_and_code<'db>(
     analyze_ap_change_result: AnalyzeApChangesResult,
 ) -> Maybe<pre_sierra::Function<'db>> {
     let root_block = lowered_function.blocks.root_block()?;
-    let AnalyzeApChangesResult { known_ap_change, local_variables, ap_tracking_configuration } =
+    let AnalyzeApChangesResult { known_ap_change, variables_info, ap_tracking_configuration } =
         analyze_ap_change_result;
 
     // Get lifetime information.
+    let local_variables = variables_info.local_variables.clone();
     let lifetime = find_variable_lifetime(lowered_function, &local_variables)?;
 
     let mut context = ExprGeneratorContext::new(
@@ -77,6 +78,7 @@ fn get_function_ap_change_and_code<'db>(
         function_id,
         &lifetime,
         ap_tracking_configuration,
+        variables_info,
     );
 
     // If the function starts with `revoke_ap_tracking` then we can avoid
@@ -159,6 +161,7 @@ pub fn priv_get_dummy_function<'db>(
         function_id,
         &lifetime,
         ap_tracking_configuration,
+        Default::default(),
     );
 
     // Generate a label for the function's body.

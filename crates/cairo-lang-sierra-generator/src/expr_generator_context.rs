@@ -14,6 +14,7 @@ use crate::ap_tracking::ApTrackingConfiguration;
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation, VariableLifetimeResult};
+use crate::local_variables::VariablesInfo;
 use crate::pre_sierra;
 
 /// Context for the methods that generate Sierra instructions for an expression.
@@ -26,6 +27,7 @@ pub struct ExprGeneratorContext<'db, 'a> {
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
     variables: OrderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
+    variables_info: VariablesInfo,
     /// Allocated Sierra variables and their locations.
     variable_locations: Vec<(cairo_lang_sierra::ids::VarId, LocationId<'db>)>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId<'db>>,
@@ -48,6 +50,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
         function_id: ConcreteFunctionWithBodyId<'db>,
         lifetime: &'a VariableLifetimeResult,
         ap_tracking_configuration: ApTrackingConfiguration,
+        variables_info: VariablesInfo,
     ) -> Self {
         ExprGeneratorContext {
             db,
@@ -61,6 +64,7 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
             block_labels: OrderedHashMap::default(),
             ap_tracking_enabled: true,
             ap_tracking_configuration,
+            variables_info,
             statements: vec![],
             curr_cairo_location: None,
         }
@@ -187,6 +191,17 @@ impl<'db, 'a> ExprGeneratorContext<'db, 'a> {
     pub fn should_disable_ap_tracking(&self, block_id: &BlockId) -> bool {
         self.ap_tracking_enabled
             && self.ap_tracking_configuration.disable_ap_tracking.contains(block_id)
+    }
+
+    /// Returns true if the variable is at a known fp-relative location (local, parameter, or alias
+    /// of one).
+    pub fn is_fp_relative(&self, var: VariableId) -> bool {
+        self.variables_info.fp_relative_variables.contains(&var)
+    }
+
+    /// Returns the lowered variable for the given variable id.
+    pub fn get_lowered_variable(&self, var_id: VariableId) -> &lowering::Variable<'db> {
+        &self.lowered.variables[var_id]
     }
 
     /// Adds a statement for the expression.

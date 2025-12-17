@@ -3,7 +3,9 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::flag::flag_future_sierra;
 use cairo_lang_lowering as lowering;
+use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_semantic::items::constant::ConstValue;
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
@@ -29,12 +31,15 @@ use crate::utils::{
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
+/// Minimum type size for which `local_into_box` is more efficient than `into_box`.
+pub const MIN_SIZE_FOR_LOCAL_INTO_BOX: usize = 3;
+
 /// Information returned by [analyze_ap_changes].
 pub struct AnalyzeApChangesResult {
-    /// True if the function has a known_ap_change
+    /// True if the function has a known_ap_change.
     pub known_ap_change: bool,
-    /// The variables that should be stored in locals as they are revoked during the function.
-    pub local_variables: OrderedHashSet<VariableId>,
+    /// Information about variables.
+    pub variables_info: VariablesInfo,
     /// Information about where ap tracking should be enabled and disabled.
     pub ap_tracking_configuration: ApTrackingConfiguration,
 }
@@ -49,7 +54,7 @@ pub fn analyze_ap_changes<'db>(
     let ctx = FindLocalsContext {
         db,
         lowered_function,
-        used_after_revoke: Default::default(),
+        local_candidates: Default::default(),
         block_callers: Default::default(),
         non_ap_based: UnorderedHashSet::from_iter(chain!(
             // Parameters are not ap based.
@@ -69,16 +74,16 @@ pub fn analyze_ap_changes<'db>(
     root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
     let mut ctx = analysis.analyzer;
-    let peeled_used_after_revoke: OrderedHashSet<_> =
-        ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
-    // Any used after revoke variable that might be revoked should be a local.
+    let peeled_local_candidates: OrderedHashSet<_> =
+        ctx.local_candidates.iter().map(|var| *ctx.peel_aliases(var)).collect();
+    // Filter candidates to those that actually need local storage.
     let locals: OrderedHashSet<VariableId> = ctx
-        .used_after_revoke
+        .local_candidates
         .iter()
-        .filter(|var| ctx.might_be_revoked(&peeled_used_after_revoke, var))
-        .map(|var| ctx.peel_aliases(var))
-        .cloned()
+        .filter(|var| ctx.needs_local(&peeled_local_candidates, var))
+        .map(|var| *ctx.peel_aliases(var))
         .collect();
+
     let mut need_ap_alignment = OrderedHashSet::default();
     if !root_info.known_ap_change {
         // Add 'locals' to the set a variable that is not ap based.
@@ -91,22 +96,39 @@ pub fn analyze_ap_changes<'db>(
             }
             info.demand.variables_introduced(&mut ctx, &info.introduced_vars, ());
             for var in info.demand.vars.keys() {
-                if ctx.might_be_revoked(&peeled_used_after_revoke, var) {
+                if ctx.needs_local(&peeled_local_candidates, var) {
                     need_ap_alignment.insert(*var);
                 }
             }
         }
     }
 
+    let fp_relative_variables = lowered_function
+        .variables
+        .iter()
+        .map(|(id, _)| id)
+        .filter(|&var| ctx.is_fp_relative(var, &locals))
+        .collect();
+
     Ok(AnalyzeApChangesResult {
         known_ap_change: root_info.known_ap_change,
-        local_variables: locals,
+        variables_info: VariablesInfo { local_variables: locals, fp_relative_variables },
         ap_tracking_configuration: get_ap_tracking_configuration(
             lowered_function,
             root_info.known_ap_change,
             need_ap_alignment,
         ),
     })
+}
+
+/// Information about variable storage and fp-relative status.
+#[derive(Default)]
+pub struct VariablesInfo {
+    /// The variables that should be stored as locals, if they were either revoked during the
+    /// function or large enough to benefit from `local_into_box`.
+    pub local_variables: OrderedHashSet<VariableId>,
+    /// Variables at known fp-relative locations (locals, parameters, or derived from them).
+    pub fp_relative_variables: UnorderedHashSet<VariableId>,
 }
 
 struct CalledBlockInfo {
@@ -119,14 +141,15 @@ struct CalledBlockInfo {
 struct FindLocalsContext<'db, 'a> {
     db: &'db dyn Database,
     lowered_function: &'a Lowered<'db>,
-    used_after_revoke: OrderedHashSet<VariableId>,
+    /// Candidates for local storage (used after revoke or large IntoBox inputs).
+    local_candidates: OrderedHashSet<VariableId>,
     block_callers: OrderedHashMap<BlockId, CalledBlockInfo>,
     /// Variables that are known not to be ap based, excluding constants.
     non_ap_based: UnorderedHashSet<VariableId>,
     /// Variables that are constants, i.e. created from Statement::Literal.
     constants: UnorderedHashSet<VariableId>,
     /// A mapping of variables which are the same in the context of finding locals.
-    /// I.e. if `aliases[var_id]` is local than var_id is also local.
+    /// I.e. if `aliases[var_id]` is local then var_id is also local.
     aliases: UnorderedHashMap<VariableId, VariableId>,
     /// A mapping from partial param variables to the containing variable.
     partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
@@ -248,14 +271,14 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         var
     }
 
-    /// Return true if the variable might be revoked by ap changes.
+    /// Return true if the variable needs to be local.
     /// Checks if the variable is a constant or is contained in a local variable.
     ///
-    /// Note that vars in `peeled_used_after_revoke` are going to be non-ap based once we make the
+    /// Note that vars in `peeled_local_candidates` are going to be non-ap based once we make the
     /// relevant variables local.
-    pub fn might_be_revoked(
-        &self,
-        peeled_used_after_revoke: &OrderedHashSet<VariableId>,
+    pub fn needs_local(
+        &'a self,
+        peeled_local_candidates: &OrderedHashSet<VariableId>,
         var: &VariableId,
     ) -> bool {
         if self.constants.contains(var) {
@@ -266,15 +289,31 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
             return false;
         }
         // In the case of partial params, we check if one of its ancestors is a local variable, or
-        // will be used after the revoke, and thus will be used as a local variable. If that
-        // is the case, then 'var' cannot be revoked.
+        // will become a local variable. If that is the case, then 'var' doesn't need to be local.
         while let Some(parent) = self.partial_param_parents.get(peeled) {
             peeled = self.peel_aliases(parent);
-            if self.non_ap_based.contains(peeled) || peeled_used_after_revoke.contains(peeled) {
+            if self.non_ap_based.contains(peeled) || peeled_local_candidates.contains(peeled) {
                 return false;
             }
         }
         true
+    }
+
+    /// Returns true if the variable is at a known fp-relative location.
+    /// A variable is fp-relative if it's a local, parameter, or reachable via aliases/partial_param
+    /// chains to one.
+    fn is_fp_relative(&self, var: VariableId, locals: &OrderedHashSet<VariableId>) -> bool {
+        let mut current = Some(var);
+        while let Some(v) = current {
+            // Peel aliases.
+            let peeled = *self.peel_aliases(&v);
+            if locals.contains(&peeled) || self.lowered_function.parameters.contains(&peeled) {
+                return true;
+            }
+            // Walk up the partial param parent chain.
+            current = self.partial_param_parents.get(&peeled).copied();
+        }
+        false
     }
 
     fn analyze_call(
@@ -395,7 +434,16 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 self.aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
-            lowering::Statement::IntoBox(_) => BranchInfo { known_ap_change: true },
+            lowering::Statement::IntoBox(statement_into_box) => {
+                if flag_future_sierra(self.db) {
+                    let input_var = statement_into_box.input.var_id;
+                    let ty = self.lowered_function.variables[input_var].ty;
+                    if self.db.type_size(ty) >= MIN_SIZE_FOR_LOCAL_INTO_BOX {
+                        self.local_candidates.insert(input_var);
+                    }
+                }
+                BranchInfo { known_ap_change: true }
+            }
             lowering::Statement::Unbox(_) => BranchInfo { known_ap_change: true },
         };
         Ok(branch_info)
@@ -405,9 +453,9 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         // Revoke if needed.
         if !branch_info.known_ap_change {
             info.known_ap_change = false;
-            // Revoke all demanded variables.
+            // Add all demanded variables as local candidates.
             for var in info.demand.vars.keys() {
-                self.used_after_revoke.insert(*var);
+                self.local_candidates.insert(*var);
             }
         }
     }
