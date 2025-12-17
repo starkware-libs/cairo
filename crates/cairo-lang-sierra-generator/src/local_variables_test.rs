@@ -7,8 +7,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
-use super::AnalyzeApChangesResult;
 use crate::function_generator_test_utils::test_function_generator;
+use crate::local_variables::analyze_ap_changes;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -49,11 +49,13 @@ fn check_find_local_variables(
     let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
-        super::analyze_ap_changes(db, lowered_function).unwrap();
-
-    let local_variables_str =
-        local_variables.iter().map(|var_id| format!("v{:?}", var_id.index())).join(", ");
+    let local_variables_str = analyze_ap_changes(db, lowered_function)
+        .unwrap()
+        .variables_info
+        .local_variables
+        .iter()
+        .map(|var_id| format!("v{:?}", var_id.index()))
+        .join(", ");
 
     TestRunnerResult::success(OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),

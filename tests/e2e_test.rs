@@ -3,6 +3,9 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::lowering_group_input;
 use cairo_lang_lowering::optimizations::config::{OptimizationConfig, Optimizations};
 use cairo_lang_semantic::test_utils::setup_test_module;
@@ -44,6 +47,14 @@ static SHARED_DB_WITH_OPTS: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
     lowering_group_input(&db)
         .set_optimizations(&mut db)
         .to(Some(Optimizations::Enabled(Default::default())));
+    Mutex::new(db)
+});
+static SHARED_DB_FUTURE_SIERRA: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
+    lowering_group_input(&db).set_optimizations(&mut db).to(Some(Optimizations::Enabled(
+        OptimizationConfig::default().with_skip_const_folding(true),
+    )));
+    db.set_flag(FlagLongId("future_sierra".into()), Some(Flag::FutureSierra(true).into()));
     Mutex::new(db)
 });
 
@@ -147,9 +158,10 @@ impl TestFileRunner for SmallE2ETestRunner {
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
-        _args: &OrderedHashMap<String, String>,
+        args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, E2eTestParams::default())
+        let future_sierra = args.get("future_sierra").is_some_and(|v| v == "true");
+        run_e2e_test(inputs, E2eTestParams { future_sierra, ..E2eTestParams::default() })
     }
 }
 
@@ -194,6 +206,7 @@ impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
                 add_withdraw_gas: false,
                 metadata_computation: true,
                 skip_optimization_passes: true,
+                ..Default::default()
             },
         )
     }
@@ -211,12 +224,20 @@ struct E2eTestParams {
 
     /// Argument for `run_e2e_test` that controls whether to skip optimization passes.
     skip_optimization_passes: bool,
+
+    /// Argument for `run_e2e_test` that controls whether to enable the `future_sierra` flag.
+    future_sierra: bool,
 }
 
 /// Implements default for `E2eTestParams`.
 impl Default for E2eTestParams {
     fn default() -> Self {
-        Self { add_withdraw_gas: true, metadata_computation: false, skip_optimization_passes: true }
+        Self {
+            add_withdraw_gas: true,
+            metadata_computation: false,
+            skip_optimization_passes: true,
+            future_sierra: false,
+        }
     }
 }
 
@@ -225,7 +246,9 @@ fn run_e2e_test(
     inputs: &OrderedHashMap<String, String>,
     params: E2eTestParams,
 ) -> TestRunnerResult {
-    let mut locked_db = test_lock(if !params.skip_optimization_passes {
+    let mut locked_db = test_lock(if params.future_sierra {
+        &SHARED_DB_FUTURE_SIERRA
+    } else if !params.skip_optimization_passes {
         &SHARED_DB_WITH_OPTS
     } else if params.add_withdraw_gas {
         &SHARED_DB_WITH_GAS_NO_OPTS

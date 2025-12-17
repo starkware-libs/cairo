@@ -8,7 +8,7 @@ use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
 use super::find_variable_lifetime;
-use crate::local_variables::{AnalyzeApChangesResult, analyze_ap_changes};
+use crate::local_variables::analyze_ap_changes;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -49,8 +49,8 @@ fn check_variable_lifetime(
     let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
-        analyze_ap_changes(db, lowered_function).unwrap();
+    let local_variables =
+        analyze_ap_changes(db, lowered_function).unwrap().variables_info.local_variables;
     let find_variable_lifetime_res = find_variable_lifetime(lowered_function, &local_variables)
         .expect("find_variable_lifetime failed unexpectedly");
     let last_use_str = find_variable_lifetime_res
