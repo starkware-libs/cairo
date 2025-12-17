@@ -33,7 +33,7 @@ use crate::gas::GasBuiltin;
 ///     // Making sure `gas_after` is exact
 ///     core::gas::withdraw_gas().unwrap();
 ///
-///     assert!(gas_after - gas_before < 100_000);
+///     assert!(gas_before - gas_after < 100_000);
 /// }
 /// ```
 pub extern fn get_available_gas() -> u128 implicits(GasBuiltin) nopanic;
@@ -56,7 +56,7 @@ pub extern fn get_available_gas() -> u128 implicits(GasBuiltin) nopanic;
 ///     let gas_before = get_unspent_gas();
 ///     gas_heavy_function();
 ///     let gas_after = get_unspent_gas();
-///     assert!(gas_after - gas_before < 100_000);
+///     assert!(gas_before - gas_after < 100_000);
 /// }
 /// ```
 pub extern fn get_unspent_gas() -> u128 implicits(GasBuiltin) nopanic;
