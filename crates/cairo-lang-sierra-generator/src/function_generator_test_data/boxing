@@ -1,0 +1,297 @@
+//! > Test local_into_box for large struct parameter (size >= 3).
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(a: MyStruct) -> Box<MyStruct> {
+    BoxTrait::new(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+local_into_box<test::MyStruct>([0]) -> ([1])
+store_temp<Box<test::MyStruct>>([1]) -> ([1])
+return([1])
+
+//! > ==========================================================================
+
+//! > Test into_box for small struct parameter (size < 3).
+
+//! > test_runner_name
+test_function_generator
+
+//! > function_code
+fn foo(a: SmallStruct) -> Box<SmallStruct> {
+    BoxTrait::new(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct SmallStruct {
+    x: felt252,
+    y: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+into_box<test::SmallStruct>([0]) -> ([1])
+return([1])
+
+//! > ==========================================================================
+
+//! > Test chained boxing: inner uses local_into_box, outer uses into_box (Box has size 1).
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(a: MyStruct) -> Box<Box<MyStruct>> {
+    BoxTrait::new(BoxTrait::new(a))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+local_into_box<test::MyStruct>([0]) -> ([1])
+store_temp<Box<test::MyStruct>>([1]) -> ([1])
+into_box<Box<test::MyStruct>>([1]) -> ([2])
+return([2])
+
+//! > ==========================================================================
+
+//! > Test local_into_box for ap-based variable that becomes local due to size.
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo() -> Box<MyStruct> {
+    let x = create_struct();
+    BoxTrait::new(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+}
+
+#[inline(never)]
+fn create_struct() -> MyStruct {
+    MyStruct { x: 1, y: 2, z: 3 }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+alloc_local<test::MyStruct>() -> ([1])
+finalize_locals() -> ()
+function_call<user@test::create_struct>() -> ([0])
+store_local<test::MyStruct>([1], [0]) -> ([0])
+local_into_box<test::MyStruct>([0]) -> ([2])
+store_temp<Box<test::MyStruct>>([2]) -> ([2])
+return([2])
+
+//! > ==========================================================================
+
+//! > Test local_into_box for snapshot of parameter (alias is fp-relative).
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(a: MyStruct) -> Box<@MyStruct> {
+    BoxTrait::new(@a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+snapshot_take<test::MyStruct>([0]) -> ([1], [2])
+drop<test::MyStruct>([1]) -> ()
+local_into_box<test::MyStruct>([2]) -> ([3])
+store_temp<Box<test::MyStruct>>([3]) -> ([3])
+return([3])
+
+//! > ==========================================================================
+
+//! > Test const_as_box for inline struct construction with constants.
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo() -> Box<MyStruct> {
+    BoxTrait::new(MyStruct { x: 1, y: 2, z: 3 })
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+    z: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+const_as_box<Const<test::MyStruct, Const<felt252, 1>, Const<felt252, 2>, Const<felt252, 3>>, 0>() -> ([0])
+return([0])
+
+//! > ==========================================================================
+
+//! > Test local_into_box for struct field extracted from parameter (PartialParam).
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(s: Wrapper) -> Box<Inner> {
+    BoxTrait::new(s.inner)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Wrapper {
+    inner: Inner,
+}
+
+struct Inner {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+struct_deconstruct<test::Wrapper>([0]) -> ([1])
+local_into_box<test::Inner>([1]) -> ([2])
+store_temp<Box<test::Inner>>([2]) -> ([2])
+return([2])
+
+//! > ==========================================================================
+
+//! > Test local_into_box for nested struct field (PartialParam chain).
+
+//! > test_runner_name
+test_function_generator(future_sierra:true)
+
+//! > function_code
+fn foo(s: Outer) -> Box<Inner> {
+    BoxTrait::new(s.mid.inner)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Outer {
+    mid: Mid,
+}
+
+struct Mid {
+    inner: Inner,
+}
+
+struct Inner {
+    a: felt252,
+    b: felt252,
+    c: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+struct_deconstruct<test::Outer>([0]) -> ([1])
+struct_deconstruct<test::Mid>([1]) -> ([2])
+local_into_box<test::Inner>([2]) -> ([3])
+store_temp<Box<test::Inner>>([3]) -> ([3])
+return([3])
