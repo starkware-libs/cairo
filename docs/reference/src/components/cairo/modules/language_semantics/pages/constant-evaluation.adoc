@@ -61,6 +61,9 @@ Allowed externs (from `ConstCalcInfo::new`):
   * `core::integer::{u8,u16,u32,u64,u128,i8,i16,i32,i64,i128}_to_felt252`.
   * `core::starknet::class_hash::class_hash_to_felt252`.
   * `core::starknet::contract_address::contract_address_to_felt252`.
+- Felt252 splitting and conversions:
+  * `core::integer::u128s_from_felt252` — splits a `felt252` into up to two `u128` limbs,
+    enabling const upcast to `u256` and downcast to `u128`.
 - Downcast / trimming (returning an `Option`-like enum; some are reversed per configuration):
   * `core::internal::bounded_int::{downcast,bounded_int_trim_min,bounded_int_trim_max}`.
   * `core::integer::{u8,u16,u32,u64,u128,i8,i16,i32,i64,i128}_try_from_felt252`.
