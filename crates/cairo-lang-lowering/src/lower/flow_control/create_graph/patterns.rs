@@ -1,9 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{FlagId, FlagLongId};
+use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::corelib::{CorelibSemantic, validate_literal};
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -701,16 +699,7 @@ pub fn numeric_match_optimization_threshold<'db>(
     // jump table for small_types the number of steps with if-else is 2 * min(n, number_of_arms) + 4
     // and 9~12 for jump table.
     let default_threshold = if is_small_type { 8 } else { 10 };
-    ctx.db
-        .get_flag(FlagId::new(
-            ctx.db,
-            FlagLongId("numeric_match_optimization_min_arms_threshold".into()),
-        ))
-        .map(|flag| match *flag {
-            Flag::NumericMatchOptimizationMinArmsThreshold(threshold) => threshold,
-            _ => panic!("Wrong type flag `{flag:?}`."),
-        })
-        .unwrap_or(default_threshold)
+    ctx.db.flag_numeric_match_optimization_min_arms_threshold().unwrap_or(default_threshold)
 }
 
 /// Returns `true` if the pattern accepts any value (`_` or a variable name).

@@ -5,7 +5,7 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
-use cairo_lang_filesystem::flag::flag_unsafe_panic;
+use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::helper::ModuleHelper;
@@ -423,7 +423,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 .concretize(db, vec![GenericArgumentId::Constant(val)])
                 .lowered(db);
             return None;
-        } else if stmt.function == self.panic_with_byte_array && !flag_unsafe_panic(db) {
+        } else if stmt.function == self.panic_with_byte_array && !db.flag_unsafe_panic() {
             let snap = self.var_info.get(&stmt.inputs[0].var_id)?;
             let bytearray = try_extract_matches!(snap, VarInfo::Snapshot)?;
             let [
