@@ -153,7 +153,7 @@ fn build_felt252_dict_squash(
             tempvar dict_squash_arg_range_check_ptr = dict_destruct_arg_range_check_ptr;
             tempvar dict_squash_arg_dict_accesses_start = info_ptr[0];
             tempvar dict_squash_arg_dict_accesses_end = dict_destruct_arg_dict_end_address;
-            // Compute the length of the accesses segment, and store it in a local variable.
+            // Compute the length of the access segment, and store it in a local variable.
             assert dict_accesses_len = dict_destruct_arg_dict_end_address -
                 dict_squash_arg_dict_accesses_start;
             let (range_check_ptr, squashed_dict_end, squashed_dict_start) = call SquashDict;
@@ -399,7 +399,7 @@ fn build_squash_dict_inner(
 
     casm_build_extend! {casm_builder,
         // Inner tail-recursive function for squash_dict.
-        // Loops over a single key accesses and verify a valid order.
+        // Loops over a single key accesses and verifies a valid order.
         SquashDictInner:
         #{ validate steps == 0; }
         const dict_access_size = DICT_ACCESS_SIZE;
