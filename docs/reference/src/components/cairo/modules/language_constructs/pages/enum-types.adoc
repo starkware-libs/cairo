@@ -70,7 +70,7 @@ pub enum Status {
 ----
 
 For more information about visibility,
-see xref:pages/visibility.adoc[Visibility].
+see xref:visibility.adoc[Visibility].
 
 == Type properties
 
