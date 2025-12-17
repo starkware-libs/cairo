@@ -136,11 +136,16 @@ type. See the dedicated page for detailed semantics and examples.
 == References (source)
 
 Error type and methods:
+
 - `corelib/src/result.cairo` (`Result<T, E>`)
 - `corelib/src/option.cairo` (`Option<T>` helpers)
+
 Panic infrastructure:
+
 - `corelib/src/panics.cairo` (`Panic`, `PanicResult<T>`, `panic`)
 - `corelib/src/lib.cairo` (`panic_with_felt252`, `assert`, etc.)
+
 Language features:
+
 - xref:panic.adoc[Panic]
 - xref:error-propagation-operator.adoc[Error propagation operator]
