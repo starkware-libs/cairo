@@ -220,6 +220,6 @@ fn divide(a: u32, b: u32) -> Option<u32> {
 
 == See also
 
-* xref:pages/boolean-types.adoc[Boolean types] — The condition type
-* xref:pages/match-expressions.adoc[Match expressions] — Pattern-based conditionals
-* xref:pages/expressions.adoc[Expressions] — General expression syntax
+* xref:oolean-types.adoc[Boolean types] — The condition type
+* xref:match-expressions.adoc[Match expressions] — Pattern-based conditionals
+* xref:expressions.adoc[Expressions] — General expression syntax
