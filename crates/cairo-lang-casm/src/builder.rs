@@ -58,7 +58,8 @@ impl State {
         extract_matches!(self.get_adjusted(var), CellExpression::Deref)
     }
 
-    /// Validates that the state is valid, as it had enough ap change.
+    /// Validates that the state is valid, if it had enough AP change to support the requested
+    /// allocations.
     fn validate_finality(&self) {
         assert!(
             self.ap_change >= self.allocated.into_or_panic(),
@@ -69,7 +70,7 @@ impl State {
         );
     }
 
-    /// Intersect the states of branches leading to the same label, validating that the states can
+    /// Intersects the states of branches leading to the same label, validating that the states can
     /// intersect.
     fn intersect(&mut self, other: &Self, read_only: bool) {
         assert_eq!(self.ap_change, other.ap_change, "Merged branches not aligned on AP change.");
@@ -368,7 +369,7 @@ impl CasmBuilder {
         }))
     }
 
-    /// Increments a buffer and allocates and returns variable pointing to its previous value.
+    /// Increments a buffer and allocates and returns a variable pointing to its previous value.
     pub fn get_ref_and_inc(&mut self, buffer: Var) -> Var {
         let (cell, offset) = self.as_cell_ref_plus_const(buffer, 0, false);
         self.main_state.vars.insert(
@@ -382,7 +383,7 @@ impl CasmBuilder {
         self.add_var(CellExpression::DoubleDeref(cell, offset))
     }
 
-    /// Increments a buffer and returning the previous value it pointed to.
+    /// Increments a buffer and returns the previous value it pointed to.
     /// Useful for writing, reading and referencing values.
     /// `buffer` must be a cell reference, or a cell reference with a small added constant.
     fn buffer_get_and_inc(&mut self, buffer: Var) -> (CellRef, i16) {
