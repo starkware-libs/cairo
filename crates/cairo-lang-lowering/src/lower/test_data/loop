@@ -3707,3 +3707,209 @@ Statements:
   (v16: core::panics::PanicResult::<(core::felt252, core::bool)>) <- PanicResult::Err(v15)
 End:
   Return(v5, v6, v16)
+
+//! > ==========================================================================
+
+//! > test coerce non-specialization with recursion
+
+//! > test_runner_name
+test_generated_function
+
+//! > function_code
+fn foo(s: S) -> bool {
+    let x = 5;
+    let mut o = Outer { a: 1, s: s };
+    loop {
+        bar(o);
+
+        o.s = S { a: x };
+        if x == 10 {
+            break true;
+        }
+    }
+}
+extern fn bar(a: Outer) nopanic;
+#[derive(Drop, Copy)]
+struct S {
+    a: felt252,
+}
+
+#[derive(Drop, Copy)]
+struct Outer {
+    a: felt252,
+    s: S,
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters: v0: test::S
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 5
+  (v2: core::felt252) <- 1
+  (v3: test::Outer) <- struct_construct(v2, v0)
+  (v5: test::S, v4: core::bool) <- test::foo[76-191](v3, v1)
+  (v6: core::felt252, v7: test::S) <- struct_destructure(v3)
+End:
+  Return(v4)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::S
+blk0 (root):
+Statements:
+  (v3: core::RangeCheck, v4: core::gas::GasBuiltin, v5: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[76-191]{{ 1, NotSpecialized }, 5, }(v0, v1, v2)
+End:
+  Match(match_enum(v5) {
+    PanicResult::Ok(v6) => blk1,
+    PanicResult::Err(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v9: test::S, v10: core::bool) <- struct_destructure(v6)
+  (v11: (core::bool,)) <- struct_construct(v10)
+  (v12: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Ok(v11)
+End:
+  Return(v3, v8, v12)
+
+blk2:
+Statements:
+  (v13: core::panics::PanicResult::<(core::bool,)>) <- PanicResult::Err(v7)
+End:
+  Return(v3, v4, v13)
+
+
+Generated loop lowering for source location:
+      loop {
+ _____^
+| ...
+|     }
+|_____^
+
+Parameters: v0: test::Outer, v1: core::felt252
+blk0 (root):
+Statements:
+  () <- test::bar(v0)
+  (v2: test::S) <- struct_construct(v1)
+  (v3: core::felt252, v4: test::S) <- struct_destructure(v0)
+  (v5: core::felt252, v6: @core::felt252) <- snapshot(v1)
+  (v7: core::felt252) <- 10
+  (v8: core::felt252, v9: @core::felt252) <- snapshot(v7)
+  (v10: core::bool) <- core::Felt252PartialEq::eq(v6, v9)
+End:
+  Match(match_enum(v10) {
+    bool::False(v12) => blk2,
+    bool::True(v11) => blk1,
+  })
+
+blk1:
+Statements:
+  (v13: ()) <- struct_construct()
+  (v14: core::bool) <- bool::True(v13)
+End:
+  Return(v2, v14)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v15: test::Outer) <- struct_construct(v3, v2)
+  (v17: test::S, v16: core::bool) <- test::foo[76-191](v15, v5)
+  (v18: core::felt252, v19: test::S) <- struct_destructure(v15)
+End:
+  Return(v17, v16)
+
+
+Final lowering:
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::Outer, v3: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v4, v5) => blk1,
+    Option::None(v6, v7) => blk4,
+  })
+
+blk1:
+Statements:
+  () <- test::bar(v2)
+  (v8: core::felt252) <- 10
+  (v9: core::felt252) <- core::felt252_sub(v3, v8)
+  (v10: test::S) <- struct_construct(v3)
+End:
+  Match(match core::felt252_is_zero(v9) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v12: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v13: ()) <- struct_construct()
+  (v14: core::bool) <- bool::True(v13)
+  (v15: (test::S, core::bool)) <- struct_construct(v10, v14)
+  (v16: core::panics::PanicResult::<(test::S, core::bool)>) <- PanicResult::Ok(v15)
+End:
+  Return(v4, v12, v16)
+
+blk3:
+Statements:
+  (v17: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
+  (v18: core::felt252, v19: test::S) <- struct_destructure(v2)
+  (v20: test::Outer) <- struct_construct(v18, v10)
+  (v21: core::RangeCheck, v22: core::gas::GasBuiltin, v23: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[76-191](v4, v17, v20, v3)
+End:
+  Return(v21, v22, v23)
+
+blk4:
+Statements:
+  (v24: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v25: core::panics::PanicResult::<(test::S, core::bool)>) <- PanicResult::Err(v24)
+End:
+  Return(v6, v7, v25)
+
+
+Final lowering of specialized call "test::foo[76-191]{{ 1, NotSpecialized }, 5, }":
+Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: test::S
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v0, v1) {
+    Option::Some(v3, v4) => blk1,
+    Option::None(v5, v6) => blk2,
+  })
+
+blk1:
+Statements:
+  (v7: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
+  (v8: core::felt252) <- 1
+  (v9: test::Outer) <- struct_construct(v8, v2)
+  () <- test::bar(v9)
+  (v10: core::felt252) <- 5
+  (v11: test::S) <- struct_construct(v10)
+  (v12: test::Outer) <- struct_construct(v8, v11)
+  (v13: core::RangeCheck, v14: core::gas::GasBuiltin, v15: core::panics::PanicResult::<(test::S, core::bool)>) <- test::foo[76-191]{NotSpecialized, 5, }(v3, v7, v12)
+End:
+  Return(v13, v14, v15)
+
+blk2:
+Statements:
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v17: core::panics::PanicResult::<(test::S, core::bool)>) <- PanicResult::Err(v16)
+End:
+  Return(v5, v6, v17)
