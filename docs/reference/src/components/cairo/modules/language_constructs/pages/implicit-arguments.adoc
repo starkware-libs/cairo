@@ -78,7 +78,7 @@ The `System` implicit provides access to Starknet's state and operations.
 == Automatic propagation
 
 Implicit argument are automatically propagated through the call stack.
-When a function with implicits calls another function that requires the same implicits,
+When a function with implicits call another functions that requires the same implicit,
 they're passed automaticlly:
 
 [source,cairo]
@@ -96,14 +96,14 @@ fn caller(x: u32) -> u32 implicits(RangeCheck) {
 
 == Empty implicits
 
-Functions can explicitly declare no implicits using `implicits()`:
+Functions can explicitly declare an empty set of implicit using `implicits()`:
 
 [source,cairo]
 ----
 extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
 ----
 
-This indicates the function doesn't require any implicit context.
+This explicitly states that the function use an empty implicit set.
 
 == Implicit requirements
 
@@ -138,10 +138,11 @@ needed for the operation.
 
 == Notes
 
-* Implicits are a low-level feature primarily used in core library code
-* Most application code doesn't need to explicitly manage implicits
+* Implicits are used in Sierra libfuncs, which are defined as `extern` function
+  at the core library code
+* Most applications code doesn't need to explicitly manage implicits
 * The compiler automatically handles implicit threading through the call stack
-* Implicits are part of a function's type signature
+* Implicits are part of a function's type signatures
 
 == See also
 
