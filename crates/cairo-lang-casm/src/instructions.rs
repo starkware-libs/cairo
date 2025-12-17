@@ -143,7 +143,8 @@ impl Display for JnzInstruction {
     }
 }
 
-/// Returns the size of the instruction based on whether the res operand includes an immediate or not.
+/// Returns the size of the instruction based on whether the res operand includes an immediate or
+/// not.
 pub fn op_size_based_on_res_operands(operand: &ResOperand) -> usize {
     match operand {
         ResOperand::Deref(_) => 1,
