@@ -114,6 +114,6 @@ fn less(a: @Pair, b: @Pair) -> bool {
 
 == References (source)
 
-- Parser precedence: `crates/cairo-lang-parser/src/operators.rs`.
-- Trait and behavior: `corelib/src/traits.cairo` (`PartialOrd`).
-- Utilities using comparisons: `corelib/src/cmp.cairo` (`min`, `max`, `minmax`).
+- link:https://github.com/letmehateu/cairo/blob/main/crates/cairo-lang-parser/src/operators.rs[Parser precedence].
+- link:https://github.com/letmehateu/cairo/blob/main/corelib/src/traits.cairo[Trait and behavior] (`PartialOrd`) .
+- link:https://github.com/letmehateu/cairo/blob/main/corelib/src/cmp.cairo[Utilities using comparisons] (`min`, `max`, `minmax`).
