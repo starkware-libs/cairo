@@ -102,4 +102,4 @@ let value: u32 = boxed_value.deref();  // Extracts the value
 == See also
 
 * xref:pages/linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
-* Implementation: `crates/cairo-lang-corelib/src/box.cairo`
+* Implementation: `corelib/src/box.cairo`
