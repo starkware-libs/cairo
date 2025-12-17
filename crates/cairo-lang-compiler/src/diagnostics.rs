@@ -111,7 +111,7 @@ impl<'a> DiagnosticsReporter<'a> {
         }
     }
 
-    /// Sets crates to be checked, instead of all crates in the db.
+    /// Sets crates to be checked, instead of all crates in the DB.
     pub fn with_crates(mut self, crates: &[CrateInput]) -> Self {
         self.crates = Some(crates.to_vec());
         self
@@ -132,13 +132,13 @@ impl<'a> DiagnosticsReporter<'a> {
         self
     }
 
-    /// Ignores warnings in all cargo crates.
+    /// Ignores warnings in all Cargo crates.
     pub fn ignore_all_warnings(mut self) -> Self {
         self.ignore_all_warnings = true;
         self
     }
 
-    /// Returns the crate ids for which the diagnostics will be checked.
+    /// Returns the crate IDs for which the diagnostics will be checked.
     pub(crate) fn crates_of_interest(&self, db: &dyn Database) -> Vec<CrateInput> {
         if let Some(crates) = self.crates.as_ref() {
             crates.clone()
@@ -275,7 +275,7 @@ impl Default for DiagnosticsReporter<'_> {
 /// This is a shortcut for `DiagnosticsReporter::write_to_string(&mut string).check(db)`.
 ///
 /// If `crates_to_check` is `Some`, only diagnostics for these crates will be checked.
-/// If `crates_to_check` is `None`, diagnostics for all crates in the db will be checked.
+/// If `crates_to_check` is `None`, diagnostics for all crates in the DB will be checked.
 pub fn get_diagnostics_as_string(
     db: &dyn Database,
     crates_to_check: Option<Vec<CrateId<'_>>>,
