@@ -1,6 +1,167 @@
 = Error type
 
-This section is a work in progress.
+Cairo uses explicit error handling through the `Result<T, E>` type.
+Custom error types are typically defined as enums
+that represent different failure conditions.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Overview
+
+Cairo does not have exceptions.
+Instead, functions that can fail returns a `Result<T, E>` type,
+where `T` is the success type and `E` is the error type.
+
+== Defining error types
+
+Error types are typically defined as enums
+that enumerate the possible failure modes:
+
+[source,cairo]
+----
+enum MathError {
+    DivisionByZero,
+    Overflow,
+    Underflow,
+}
+----
+
+For errors that carry additional context, use enum variants with data:
+
+[source,cairo]
+----
+enum ParseError {
+    InvalidFormat: ByteArray,
+    UnexpectedChar: (u8, u32),  // char, position
+    OutOfRange: (u32, u32),     // value, max
+}
+----
+
+== Using Result with custom errors
+
+Functions that can fail return `Result<T, E>`
+where `E` is your custom error type:
+
+[source,cairo]
+----
+fn divide(a: u32, b: u32) -> Result<u32, MathError> {
+    if b == 0 {
+        return Result::Err(MathError::DivisionByZero);
+    }
+    Result::Ok(a / b)
+}
+
+fn safe_subtract(a: u32, b: u32) -> Result<u32, MathError> {
+    if b > a {
+        return Result::Err(MathError::Underflow);
+    }
+    Result::Ok(a - b)
+}
+----
+
+== Error propagation
+
+Use the xref:error-propagation-operator.adoc[error propagation operator] (`?`)
+to propagate errors up the call stack:
+
+[source,cairo]
+----
+fn compute(a: u32, b: u32, c: u32) -> Result<u32, MathError> {
+    let x = divide(a, b)?;
+    let y = safe_subtract(x, c)?;
+    Result::Ok(y)
+}
+----
+
+== Pattern matching on errors
+
+Handle errors explicitly using patterns matching:
+
+[source,cairo]
+----
+fn handle_division(a: u32, b: u32) -> u32 {
+    match divide(a, b) {
+        Result::Ok(value) => value,
+        Result::Err(MathError::DivisionByZero) => 0,
+        Result::Err(_) => 0,
+    }
+}
+----
+
+== Common error patterns
+
+=== Simple error messages
+
+For simple errors, use `ByteArray` as the error type:
+
+[source,cairo]
+----
+fn validate_age(age: u32) -> Result<u32, ByteArray> {
+    if age > 150 {
+        return Result::Err("Age is unrealistic");
+    }
+    Result::Ok(age)
+}
+----
+
+=== Combining error types
+
+When a function can produce multiple errors types,
+create a combined error enum:
+
+[source,cairo]
+----
+enum ApplicationError {
+    Math: MathError,
+    Parse: ParseError,
+    Network: ByteArray,
+}
+
+fn process_data(input: ByteArray) -> Result<u32, ApplicationError> {
+    // Function implementation
+    Result::Ok(42)
+}
+----
+
+== Panic vs Result
+
+Use `Result` for recoverable errors that callers should handle.
+Use `panic` for unrecoverable errors:
+
+[source,cairo]
+----
+// Recoverable - use Result
+fn parse_number(s: ByteArray) -> Result<u32, ParseError> {
+    // Implementation
+    Result::Ok(42)
+}
+
+// Unrecoverable - use panic
+fn internal_error() {
+    panic!("Critical internal state corruption");
+}
+----
+
+== Traits for errors types
+
+Error types commonly derive these traits:
+
+[source,cairo]
+----
+#[derive(Drop, Clone, Debug, PartialEq)]
+enum FileError {
+    NotFound,
+    PermissionDenied,
+    AlreadyExists,
+}
+----
+
+* `Drop` — Required for most error handling patterns
+* `Clone` — Allows error values to be duplicated
+* `Debug` — Enables debug printing
+* `PartialEq` — Allows error comparison in tests
+
+== See also
+
+* xref:enum-types.adoc[Enum types] — Defining enum types for errors
+* xref:error-propagation-operator.adoc[Error propagation operator] —
+  Using `?` for error handling
+* xref:match-expressions.adoc[Match expressions] — Pattern matching on errors
