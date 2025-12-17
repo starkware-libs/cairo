@@ -51,9 +51,9 @@ fn estimate_code_size(
             }
 
             panic!(
-                "Internal compiler error when compiling function `{}` to casm: `{err}`. You can \
+                "Internal compiler error when compiling function `{}` to CASM: `{err}`. You can \
                  set the CAIRO_DEBUG_SIERRA_GEN environment if you want to finish the compilation \
-                 and debug the sierra program.",
+                 and debug the Sierra program.",
                 function_id.full_path(db)
             );
         }
