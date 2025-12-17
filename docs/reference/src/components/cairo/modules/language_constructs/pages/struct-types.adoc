@@ -21,10 +21,6 @@ Struct types can be generic:
 
 [source,cairo]
 ----
-Result<T, E>
-Option<T>
-Array<T>
-----
 
 == Nominal typing
 
