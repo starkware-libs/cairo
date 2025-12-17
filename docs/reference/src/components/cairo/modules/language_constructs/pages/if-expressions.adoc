@@ -1,222 +1,147 @@
-= If expressions
+= Implicit arguments
 
-An `if` expression allows conditional execution based on a boolean condition.
-Unlike statements in some languages, `if` in Cairo is an expression
-that returns a value.
+Implicit arguments in Cairo are parameters that are automatically passed
+to functions without being explicitly specified at each call site.
+They provide context for low-level operations like range checking and gas tracking.
+
+== Overview
+
+Implicit arguments are compiler-managed parameters
+that flow through the call stack automatically.
+They're commonly used for:
+
+* Built-in validation (range checking)
+* Resource tracking (gas consumption)
+* System access (Starknet syscalls)
 
 == Syntax
 
-Basic if expression:
+Functions declare implicit arguments using the `implicits()` attribute:
 
 [source,cairo]
 ----
-if condition {
-    // code block
+extern fn my_function(x: u32) -> u32 implicits(RangeCheck) nopanic;
+----
+
+Multiple implicits can be declared:
+
+[source,cairo]
+----
+extern fn syscall_function(
+    data: Span<felt252>
+) -> Result<(), ByteArray> implicits(GasBuiltin, System);
+----
+
+== Common implicit types
+
+=== RangeCheck
+
+Used for operations that require validating numeric ranges:
+
+[source,cairo]
+----
+extern fn array_get<T>(
+    arr: @Array<T>,
+    index: usize,
+) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
+----
+
+The `RangeCheck` implicit ensures that array indices and numeric operations
+stay within valid bounds.
+
+=== GasBuiltin
+
+Used for tracking gas consumption in functions:
+
+[source,cairo]
+----
+extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+----
+
+The `GasBuiltin` implicit tracks computational resources
+to prevent infinite loops and excessive computation.
+
+=== System
+
+Used for Starknet system calls:
+
+[source,cairo]
+----
+fn call_contract(
+    address: ContractAddress,
+    selector: felt252,
+) -> SyscallResult<Span<felt252>> implicits(GasBuiltin, System);
+----
+
+The `System` implicit provides access to Starknet's state and operations.
+
+== Automatic propagation
+
+Implicit arguments are automatically propagated through the call stack.
+When a function with implicits calls another function that requires the same implicits,
+they're passed automatically:
+
+[source,cairo]
+----
+fn helper(x: u32) -> u32 implicits(RangeCheck) {
+    // Uses RangeCheck implicit
+    validated_operation(x)
+}
+
+fn caller(x: u32) -> u32 implicits(RangeCheck) {
+    // RangeCheck is automatically passed to helper
+    helper(x)
 }
 ----
 
-If-else expression:
+== Empty implicits
+
+Functions can explicitly declare no implicits using `implicits()`:
 
 [source,cairo]
 ----
-if condition {
-    // if branch
-} else {
-    // else branch
+extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
+----
+
+This indicates the function doesn't require any implicit context.
+
+== Implicit requirements
+
+A function can only call functions whose implicits are a subset
+of its own implicits.
+If a function needs to call code requiring additional implicits,
+it must declare those implicits itself:
+
+[source,cairo]
+----
+// Valid: caller has RangeCheck
+fn caller(x: u32) implicits(RangeCheck) {
+    callee(x);  // callee also requires RangeCheck
+}
+
+fn callee(x: u32) implicits(RangeCheck) {
+    // Implementation
 }
 ----
 
-If-else if chain:
+== Extern functions
+
+Low-level `extern` functions typically specify their implicit requirements:
 
 [source,cairo]
 ----
-if condition1 {
-    // first branch
-} else if condition2 {
-    // second branch
-} else {
-    // default branch
-}
+extern fn downcast<T, S>(value: T) -> Option<S> implicits(RangeCheck) nopanic;
 ----
 
-== Condition
+These declarations inform the compiler about the implicit context
+needed for the operation.
 
-Standard if expressions use a boolean condition:
+== Notes
 
-[source,cairo]
-----
-let x = 10;
-if x > 5 {
-    // This branch executes
-}
-----
-
-Cairo also supports `if let` for pattern matching:
-
-[source,cairo]
-----
-if let Option::Some(value) = maybe_value {
-    // Executes if pattern matches
-    process(value)
-}
-----
-
-== If as an expression
-
-If expressions return values.
-Both branches must return the same type:
-
-[source,cairo]
-----
-fn abs(x: i32) -> i32 {
-    if x >= 0 {
-        x
-    } else {
-        -x
-    }
-}
-----
-
-The value of an if expression is the value of the executed branch:
-
-[source,cairo]
-----
-let number = 6;
-let result = if number % 2 == 0 {
-    "even"
-} else {
-    "odd"
-};
-----
-
-== If without else
-
-An if expression without an else branch returns the unit type `()`
-when the condition is false:
-
-[source,cairo]
-----
-let x = 5;
-if x > 10 {
-    // Do something
-}
-// If condition is false, expression evaluates to ()
-----
-
-This is only valid when the if branch also returns `()`:
-
-[source,cairo]
-----
-let x = 5;
-if x > 10 {
-    do_something();  // Returns ()
-}
-----
-
-== Type requirements
-
-When using if-else as an expression, both branches must return the same type:
-
-[source,cairo]
-----
-// Valid: both branches return u32
-let result: u32 = if condition {
-    10_u32
-} else {
-    20_u32
-};
-
-// Invalid: type mismatch
-// let result = if condition {
-//     10_u32
-// } else {
-//     "string"  // Error: expected u32, found ByteArray
-// };
-----
-
-== If-else if chains
-
-Multiple conditions can be chained:
-
-[source,cairo]
-----
-fn classify_number(x: i32) -> ByteArray {
-    if x < 0 {
-        "negative"
-    } else if x == 0 {
-        "zero"
-    } else if x < 10 {
-        "single digit"
-    } else {
-        "multi digit"
-    }
-}
-----
-
-== Nested if expressions
-
-If expressions can be nested:
-
-[source,cairo]
-----
-fn sign(x: felt252) -> felt252 {
-    if x == 0 {
-        0
-    } else {
-        if x > 0 {
-            1
-        } else {
-            -1
-        }
-    }
-}
-----
-
-== Examples
-
-=== Simple conditional
-
-[source,cairo]
-----
-fn max(a: u32, b: u32) -> u32 {
-    if a > b {
-        a
-    } else {
-        b
-    }
-}
-----
-
-=== Multiple conditions
-
-[source,cairo]
-----
-fn grade(score: u32) -> ByteArray {
-    if score >= 90 {
-        "A"
-    } else if score >= 80 {
-        "B"
-    } else if score >= 70 {
-        "C"
-    } else if score >= 60 {
-        "D"
-    } else {
-        "F"
-    }
-}
-----
-
-=== With early return
-
-[source,cairo]
-----
-fn divide(a: u32, b: u32) -> Option<u32> {
-    if b == 0 {
-        return Option::None;
-    }
-    Option::Some(a / b)
-}
-----
+* Implicits are a low-level feature primarily used in core library code
+* Most application code doesn't need to explicitly manage implicits
+* The compiler automatically handles implicit threading through the call stack
+* Implicits are part of a function's type signature
 
 == See also
 
