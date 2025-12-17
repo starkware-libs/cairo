@@ -103,7 +103,8 @@ Functions can explicitly declare an empty set of implicit using `implicits()`:
 extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
 ----
 
-This explicitly states that the function use an empty implicit set.
+This add an empty set to the function's implicit requirement,
+but doesn't enforce any implicits.
 
 == Implicit requirements
 
