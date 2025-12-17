@@ -37,7 +37,7 @@ Variants can have:
 [source,cairo]
 ----
 enum Message {
-    Quit: (),                          // Unit variant
+    Quit,                              // Unit variant, implicit
     Move: (u32, u32),                  // Tuple variant
     Write: ByteArray,                  // Single value variant
     ChangeColor: (u8, u8, u8),         // Multiple values
@@ -46,14 +46,14 @@ enum Message {
 
 == Memory layout
 
-An enum type's memory layout consists of:
+At the implementation level, an enum type's memory layout typically consists of:
 
-* **Tag** — Identifies which variant is currently held
-* **Data** — Storage for the variant's associated data
+* **Indicator** — Identifies which variant is currently held
+* **Payload** — The variant's associated data
 
-The enum's total size equals the tag size
-plus the size of the largest variant.
-All variants use the same amount of memory regardless of their actual size.
+The enum's size is generally determined by the largest variant.
+Note that these are implementation details
+and may vary depending on the compiler and optimization settings.
 
 == Variant visibility
 
@@ -75,7 +75,7 @@ see xref:pages/visibility.adoc[Visibility].
 == Type properties
 
 Enum types do not automatically implement any traits.
-The following traits can be derived or manually implemented:
+Common traits that can be derived:
 
 * `Copy` — All variants must be `Copy`
 * `Drop` — All variants must be `Drop`
@@ -91,10 +91,10 @@ Example with derived traits:
 ----
 #[derive(Copy, Drop, Debug)]
 enum Direction {
-    North: (),
-    South: (),
-    East: (),
-    West: (),
+    North,
+    South,
+    East,
+    West,
 }
 ----
 
@@ -125,13 +125,13 @@ Generic parameters can have trait bounds:
 ----
 enum Container<T, +Copy<T>, +Drop<T>> {
     Value: T,
-    Empty: (),
+    Empty,
 }
 ----
 
 == Recursive types
 
-Enum types can be recursive using xref:pages/box-type.adoc[`Box`]:
+Enum types can be recursive using xref:box-type.adoc[Box]:
 
 [source,cairo]
 ----
@@ -142,7 +142,7 @@ enum BinaryTree {
 
 enum List<T> {
     Cons: (T, Box<List<T>>),
-    Nil: (),
+    Nil,
 }
 ----
 
@@ -160,7 +160,7 @@ Enum types are compatible only with:
 ----
 enum Container<T> {
     Value: T,
-    Empty: (),
+    Empty,
 }
 
 let x: Container<u32> = Container::Value(1_u32);
@@ -182,13 +182,13 @@ fn process_option(value: Option<u32>) -> u32 {
 }
 ----
 
-For more information, see xref:pages/match-expressions.adoc[Match expressions]
-and xref:pages/patterns.adoc[Patterns].
+For more information, see xref:match-expressions.adoc[Match expressions]
+and xref:patterns.adoc[Patterns].
 
 == See also
 
-* xref:pages/enums.adoc[Enums] — Defining and using enums
-* xref:pages/match-expressions.adoc[Match expressions] — Pattern matching
-* xref:pages/patterns.adoc[Patterns] — Destructuring enum variants
-* xref:pages/derive-macro.adoc[Derive macro] — Automatically implementing traits
-* xref:pages/box-type.adoc[Box type] — Creating recursive enum types
+* xref:enums.adoc[Enums] — Defining and using enums
+* xref:match-expressions.adoc[Match expressions] — Pattern matching
+* xref:patterns.adoc[Patterns] — Destructuring enum variants
+* xref:derive-macro.adoc[Derive macro] — Automatically implementing traits
+* xref:box-type.adoc[Box type] — Creating recursive enum types
