@@ -5,8 +5,9 @@
 //!
 //! # Range Operator Forms
 //!
-//! There is currently only a single range operator form: `start..end`, representing a range from
-//! `start` (inclusive) to `end` (exclusive).
+//! There are currently two range operator forms:
+//! `start..end`, representing a range from `start` (inclusive) to `end` (exclusive).
+//! `start..=end`, representing a range from `start` (inclusive) to `end` (inclusive).
 
 use core::iter::{IntoIterator, Iterator};
 use core::num::traits::One;
