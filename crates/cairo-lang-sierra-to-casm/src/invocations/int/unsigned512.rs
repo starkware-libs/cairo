@@ -56,7 +56,7 @@ fn build_u512_safe_divmod_by_u256(
         tempvar remainder0;
         tempvar remainder1;
 
-        // Divide in a hint.
+        // Divide into a hint.
         hint Uint512DivModByUint256 {
             dividend0, dividend1, dividend2, dividend3, divisor0, divisor1
         } into {
