@@ -200,11 +200,11 @@ extern fn bounded_int_constrain<T, const BOUNDARY: felt252, impl H: ConstrainHel
     value: T,
 ) -> Result<H::LowT, H::HighT> implicits(RangeCheck) nopanic;
 
-/// A helper trait for trimming a `BoundedInt` instance min value.
+/// A helper trait for trimming a `BoundedInt` instance's min value.
 pub trait TrimMinHelper<T> {
     type Target;
 }
-/// A helper trait for trimming a `BoundedInt` instance max value.
+/// A helper trait for trimming a `BoundedInt` instance's max value.
 pub trait TrimMaxHelper<T> {
     type Target;
 }

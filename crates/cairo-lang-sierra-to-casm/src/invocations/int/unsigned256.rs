@@ -256,7 +256,7 @@ fn build_u256_sqrt(
         tempvar accum1 = accum0 - value_low;
         // The result is in [-2**128, 2*2**128).
         // It should be divisible by 2**64, since all the parts not divisible by 2**64 were added,
-        // and the end result should be 0.
+        // and the result should be 0.
         // Divide by 2**64 and check that we got an integer. This is the carry for the next
         // computation.
         tempvar accum2 = accum1 / u64_limit;
@@ -359,7 +359,7 @@ fn build_u256_inv_mod_n(
         tempvar t_or_k0;
         tempvar t_or_k1;
 
-        // Find the inverse or a proof there isn't one.
+        // Find the inverse or a proof that there isn't one.
         hint U256InvModN {
             b0, b1, n0, n1
         } into {
@@ -504,7 +504,7 @@ fn build_u256_inv_mod_n(
         // No need for Limb 0 validations - since we didn't actually calculate it.
 
         // Validate limb1 for `b` and `n`.
-        // We know that for honest prover (completeness) `limb2` and `limb3` are 0.
+        // We know that for an honest prover (completeness) `limb2` and `limb3` are 0.
         // Therefore, `g1` is 0 or both `s1` and `t1` are 0.
         // We also know that g0*s1, g1*s0, g0*t1 and g1*t0 should be smaller than 2**128.
         // Therefore, the smaller of each pair must be smaller than 2**64.

@@ -7,7 +7,7 @@ involved!
 
 == Documentation contributions needed
 
-See below for a full list of content and what is currently missing:
+See a full list of content and what is currently missing below:
 
 // Language constructs
 === Language Constructs

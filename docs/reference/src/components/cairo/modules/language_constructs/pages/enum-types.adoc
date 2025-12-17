@@ -1,6 +1,194 @@
 = Enum types
 
-This section is a work in progress.
+An enum type is a user-defined type that represents
+a value that can be one of several named variants.
+Each variant can carry associated data of different types.
+Enum types are defined using the `enum` keyword.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Type syntax
+
+An enum type is referenced by its name:
+
+[source,cairo]
+----
+Color
+Status
+Result
+----
+
+Enum types can be generic:
+
+[source,cairo]
+----
+Option<T>
+Result<T, E>
+----
+
+== Variant types
+
+Each variant in an enum has its own associated type.
+Variants can have:
+
+* Unit type `()` — No associated data
+* Primitive types — `u32`, `felt252`, etc.
+* Composite types — Tuples, structs, other enums
+* Generic types — Type parameters from the enum definition
+
+[source,cairo]
+----
+enum Message {
+    Quit,                              // Unit variant, implicit
+    Move: (u32, u32),                  // Tuple variant
+    Write: ByteArray,                  // Single value variant
+    ChangeColor: (u8, u8, u8),         // Multiple values
+}
+----
+
+== Memory layout
+
+At the implementation level, an enum type's memory layout typically consists of:
+
+* **Indicator** — Identifies which variant is currently held
+* **Payload** — The variant's associated data
+
+The enum's size is generally determined by the largest variant.
+Note that these are implementation details
+and may vary depending on the compiler and optimization settings.
+
+== Variant visibility
+
+Enum variants follow the enum's visibility.
+If an enum is `pub`, all its variants are accessible.
+There is no per-variant visibility modifier:
+
+[source,cairo]
+----
+pub enum Status {
+    Pending: u32,    // Public (enum is pub)
+    Done: bool,      // Public (enum is pub)
+}
+----
+
+For more information about visibility,
+see xref:visibility.adoc[Visibility].
+
+== Type properties
+
+Enum types do not automatically implement any traits.
+Common traits that can be derived:
+
+* `Copy` — All variants must be `Copy`
+* `Drop` — All variants must be `Drop`
+* `Clone` — Allows explicit cloning via `.clone()`
+* `Destruct` — Custom cleanup when going out of scope
+* `PartialEq` — Equality comparison
+* `Serde` — Serialization and deserialization
+* `Debug` — Debug formatting
+
+Example with derived traits:
+
+[source,cairo]
+----
+#[derive(Copy, Drop, Debug)]
+enum Direction {
+    North,
+    South,
+    East,
+    West,
+}
+----
+
+== Generic enum types
+
+Enum types can be parameterized with generic type parameters:
+
+[source,cairo]
+----
+enum Option<T> {
+    Some: T,
+    None,
+}
+
+enum Result<T, E> {
+    Ok: T,
+    Err: E,
+}
+
+// Usage:
+let value: Option<u32> = Option::Some(42);
+let result: Result<u32, ByteArray> = Result::Ok(100);
+----
+
+Generic parameters can have trait bounds:
+
+[source,cairo]
+----
+enum Container<T, +Copy<T>, +Drop<T>> {
+    Value: T,
+    Empty,
+}
+----
+
+== Recursive types
+
+Enum types can be recursive using xref:box-type.adoc[Box]:
+
+[source,cairo]
+----
+enum BinaryTree {
+    Leaf: u32,
+    Node: (Box<BinaryTree>, Box<BinaryTree>),
+}
+
+enum List<T> {
+    Cons: (T, Box<List<T>>),
+    Nil,
+}
+----
+
+Without `Box`, recursive enum types would have infinite size
+and cause a compilation diagnostic.
+
+== Type compatibility
+
+Enum types are compatible only with:
+
+* The same enum type with the same name
+* Generic instantiations of the same enum type
+
+[source,cairo]
+----
+enum Container<T> {
+    Value: T,
+    Empty,
+}
+
+let x: Container<u32> = Container::Value(1_u32);
+let y: Container<felt252> = Container::Value(2);
+// x and y have different types: Container<u32> vs Container<felt252>
+----
+
+== Pattern matching
+
+Enum values are typically accessed through pattern matching:
+
+[source,cairo]
+----
+fn process_option(value: Option<u32>) -> u32 {
+    match value {
+        Option::Some(x) => x,
+        Option::None => 0,
+    }
+}
+----
+
+For more information, see xref:match-expressions.adoc[Match expressions]
+and xref:patterns.adoc[Patterns].
+
+== See also
+
+* xref:enums.adoc[Enums] — Defining and using enums
+* xref:match-expressions.adoc[Match expressions] — Pattern matching
+* xref:patterns.adoc[Patterns] — Destructuring enum variants
+* xref:derive-macro.adoc[Derive macro] — Automatically implementing traits
+* xref:box-type.adoc[Box type] — Creating recursive enum types

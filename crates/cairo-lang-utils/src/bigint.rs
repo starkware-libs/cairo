@@ -15,7 +15,7 @@ use num_traits::{Num, Signed};
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 pub struct BigUintAsHex {
-    /// A field element that encodes the signature of the called function.
+    /// The underlying big integer value.
     #[cfg_attr(
         feature = "serde",
         serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
@@ -38,7 +38,7 @@ where
         Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
             .map_err(|error| serde::de::Error::custom(format!("{error}"))),
         None => Err(serde::de::Error::custom(format!(
-            "{s} does not start with `0x`, which is missing."
+            "{s} does not start with the required `0x` prefix."
         ))),
     }
 }
@@ -65,7 +65,7 @@ where
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize), serde(transparent))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BigIntAsHex {
-    /// A field element that encodes the signature of the called function.
+    /// The underlying signed big integer value.
     #[cfg_attr(
         feature = "serde",
         serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")

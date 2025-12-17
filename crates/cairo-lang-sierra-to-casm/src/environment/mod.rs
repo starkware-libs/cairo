@@ -61,7 +61,7 @@ impl Environment {
     }
 }
 
-// Validates that the environments match and returns appropriate error if not.
+// Validates that the environments match and returns an appropriate error if not.
 pub fn validate_environment_equality(
     a: &Environment,
     b: &Environment,

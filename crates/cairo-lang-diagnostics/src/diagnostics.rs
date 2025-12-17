@@ -58,7 +58,7 @@ pub type PluginFileDiagnosticNotes<'a> = OrderedHashMap<FileId<'a>, DiagnosticNo
 
 // Helper trait to get the user location with plugin notes.
 pub trait UserLocationWithPluginNotes<'db> {
-    /// Get the location of the originating user code,
+    /// Gets the location of the originating user code,
     /// along with [`DiagnosticNote`]s for this translation.
     /// The notes are collected from the parent files of the originating location.
     fn user_location_with_plugin_notes(

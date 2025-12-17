@@ -7,7 +7,7 @@ Inference applies to types, impls and generic arguments.
 
 Places where inference is enabled:
 
-* Type inference on link:let-statement.adoc[`let`] statements with missing type clauses.
+* Type inference on xref:let-statement.adoc[`let`] statements with missing type clauses.
 * Impl inference on method calls.
 * Impl inference when calling by trait.
 * Generic argument inference.

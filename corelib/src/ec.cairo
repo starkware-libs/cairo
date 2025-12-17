@@ -204,11 +204,7 @@ pub impl EcStateImpl of EcStateTrait {
     ///
     /// # Returns
     ///
-    /// * `Option<NonZeroEcPoint>` - The resulting point, or None if the result is the zero point
-    ///
-    /// # Panics
-    ///
-    /// Panics if the result is the point at infinity.
+    /// * `Option<NonZeroEcPoint>` - The resulting point, or None if the result is the zero point.
     #[inline]
     fn finalize_nz(self: EcState) -> Option<NonZeroEcPoint> nopanic {
         ec_state_try_finalize_nz(self)
@@ -268,10 +264,6 @@ pub impl EcPointImpl of EcPointTrait {
     ///
     /// Returns `None` if no point with the given x-coordinate exists on the curve.
     ///
-    /// # Panics
-    ///
-    /// Panics if `x` is 0, as this would be the point at infinity.
-    ///
     /// # Examples
     ///
     /// ```
@@ -297,10 +289,6 @@ pub impl EcPointImpl of EcPointTrait {
     /// # Returns
     ///
     /// A tuple containing the (x, y) coordinates of the point.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the point is the point at infinity.
     ///
     /// # Examples
     ///

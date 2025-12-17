@@ -24,7 +24,7 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, extract_matches, require, try_extract_matches};
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
@@ -1323,7 +1323,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const).copied()
     }
 
-    /// Return the const value as an int if it exists and is an integer.
+    /// Returns the const value as an int if it exists and is an integer.
     fn as_int(&self, var_id: VariableId) -> Option<&BigInt> {
         match self.as_const(var_id)?.long(self.db) {
             ConstValue::Int(value, _) => Some(value),
@@ -1364,10 +1364,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         unknown_vars: &mut Vec<VarUsage<'db>>,
         coerce: Option<&SpecializationArg<'db>>,
     ) -> Option<SpecializationArg<'db>> {
-        if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
-            // Skip zero-sized constants as they are not supported in sierra-gen.
-            return None;
-        }
+        // Skip zero-sized constants as they are not supported in sierra-gen.
+        require(self.db.type_size_info(ty).ok()? != TypeSizeInformation::ZeroSized)?;
+        // Skip specialization arguments if they are coerced to not be specialized.
+        require(!matches!(coerce, Some(SpecializationArg::NotSpecialized)))?;
 
         match var_info {
             VarInfo::Const(value) => {

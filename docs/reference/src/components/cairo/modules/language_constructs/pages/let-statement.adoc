@@ -1,12 +1,84 @@
 = Let statement
 
-// TODO(spapini): Explain about mut and patterns.
 A _let statement_ introduces a new set of variables, given by an irrefutable pattern.
 The pattern is followed optionally by a type annotation and then by an initializer expression.
 Variables are _always_ initialized to some value.
 
+== Syntax
+
+[source,cairo]
+----
+let PATTERN: Type = expression;
+let mut PATTERN: Type = expression;
+----
+
 When no type annotation is given, the compiler infers the type, or signals an error if
 insufficient type information is available for definite inference.
+
+== Patterns
+
+The `let` statement uses xref:pages/patterns.adoc[patterns] to bind values to variables.
+Patterns allow you to destructure data and bind their components to variables.
+
+Simple variable binding:
+[source,cairo]
+----
+let x = 5;
+let name = 'Alice';
+----
+
+Tuple destructuring:
+[source,cairo]
+----
+let (a, b, c) = (1, 2, 3);
+----
+
+Struct destructuring:
+[source,cairo]
+----
+let Point { x, y } = point;
+let Point { x: px, y: py } = point;  // Rename fields
+----
+
+Ignoring values with underscore:
+[source,cairo]
+----
+let (x, _, z) = (1, 2, 3);  // Ignore second value
+let Point { x, y: _ } = point;  // Ignore y field
+----
+
+See xref:pages/patterns.adoc[Patterns] for more details.
+
+== Mutability
+
+By default, variables are **immutable** in Cairo.
+To make a variable mutable, use the `mut` keyword:
+
+[source,cairo]
+----
+let x = 5;
+// x = 6;  // Error: cannot assign to immutable variable
+
+let mut y = 5;
+y = 6;  // OK: y is mutable
+----
+
+Mutable variables can be reassigned using xref:pages/assignment-statement.adoc[assignment].
+
+Mutability can be combined with patterns:
+[source,cairo]
+----
+let mut (x, y) = (1, 2);
+x = 10;  // OK
+y = 20;  // OK
+----
+
+[NOTE]
+====
+Mutability in Cairo is local to the variable binding.
+Reassigning a mutable variable does not affect other references to the value.
+See xref:pages/variables.adoc[Variables] for more details.
+====
 
 == Variable scope and shadowing
 

@@ -9,7 +9,7 @@ use crate::ordered_hash_map::{self, OrderedHashMap};
 #[cfg(feature = "std")]
 use crate::small_ordered_map::{self, SmallOrderedMap};
 
-/// A trait for types which have a zero value.
+/// A trait for types that have a zero value.
 ///
 /// Functions may assume the following:
 /// * `x = x + zero() = zero() + x`

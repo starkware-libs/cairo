@@ -5,7 +5,7 @@
 //! resulting Sierra code - there should be a `withdraw_gas` call in every recursive call, or in
 //! other words, in any cycle in the function call graph.
 //! An efficient algorithm to find the minimum feedback-vertex-set in a directed graph is not known,
-//! so here we implement some straight-forward algorithm that guarantees to cover all the cycles in
+//! so here we implement some straightforward algorithm that guarantees to cover all the cycles in
 //! the graph, but doesn't necessarily produce the minimum size of such a set.
 
 use std::collections::VecDeque;
@@ -44,7 +44,7 @@ struct FeedbackSetAlgoContext<Node: ComputeScc> {
     /// well as appear more than once in this queue, so we keep a separate account of visited
     /// nodes.
     pending: VecDeque<SccGraphNode<Node>>,
-    /// The accumulated feedback set so far in the process of the algorithm. In the end of the
+    /// The accumulated feedback set so far in the process of the algorithm. At the end of the
     /// algorithm, this is also the result.
     feedback_set: OrderedHashSet<Node::NodeId>,
     /// Nodes that are currently during the recursion call on them. That is - if one of these is

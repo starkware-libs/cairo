@@ -283,7 +283,7 @@ mod keyword_continue {}
 mod keyword_return {}
 
 /// ### The `break` keyword.
-/// Exits a loop early. Can only be used inside a `loop` expression.
+/// Exits a loop early. Can only be used inside `loop`, `while` or `for` loop blocks.
 ///
 /// ### Example
 /// ```cairo

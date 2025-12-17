@@ -9,7 +9,7 @@ There are several ways to introduce variables in a Cairo program.
 
 == Let statement
 
-Variables can be defined using the link:let-statement.adoc[`let`] keyword with the following syntax:
+Variables can be defined using the xref:let-statement.adoc[`let`] keyword with the following syntax:
 [source]
 ----
 let x: u32 = 5_u32;
@@ -26,7 +26,7 @@ let x = 5_u32;
 
 Variables are immutable unless declared otherwise.
 A variable can be declared as mutable using the `mut` keyword.
-A mutable variable can be link:assignment-statement.adoc[assigned] a different value after initialization.
+A mutable variable can be xref:assignment-statement.adoc[assigned] a different value after initialization.
 
 For example:
 [source]

@@ -1,6 +1,138 @@
 = Struct types
 
-This section is a work in progress.
+A struct type is a user-defined composite type that groups together related values
+under named fields.
+Struct types are defined using the `struct` keyword.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Type syntax
+
+A struct type is referenced by its name:
+
+[source,cairo]
+----
+Point
+Tree
+MyStruct
+----
+
+== Nominal typing
+
+Cairo uses nominal typing for structs.
+This means that two struct types are considered different
+even if they have identical field types:
+
+[source,cairo]
+----
+struct Point { x: u32, y: u32 }
+struct Coordinate { x: u32, y: u32 }
+
+// Point and Coordinate are different types
+// even though they have the same fields
+----
+
+== Memory layout
+
+A struct type's size equals the sum of its field sizes.
+The order of fields in the struct definition determines their memory layout.
+
+== Field visibility
+
+Struct fields are private by default.
+Use the `pub` keyword to make a field accessible from other modules:
+
+[source,cairo]
+----
+pub struct Point {
+    pub x: u32,  // Public field
+    y: u32,      // Private field
+}
+----
+
+For more information about visibility,
+see xref:visibility.adoc[Visibility].
+
+== Type properties
+
+Struct types do not automatically implement any traits.
+The following traits can be derived or manually implemented:
+
+* `Copy` — Allows the struct to be copied
+* `Drop` — Allows the struct to be dropped when going out of scope
+* `Clone` — Allows explicit cloning via `.clone()`
+* `Destruct` — Custom cleanup when going out of scope
+* `PartialEq` — Equality comparison
+* `Serde` — Serialization and deserialization
+* `Debug` — Debug formatting
+
+Example with derived traits:
+
+[source,cairo]
+----
+#[derive(Copy, Drop, Debug)]
+struct Point {
+    x: u32,
+    y: u32,
+}
+----
+
+== Generic struct types
+
+Struct types can be parameterized with generic type parameters:
+
+[source,cairo]
+----
+struct Pair<T, U> {
+    first: T,
+    second: U,
+}
+
+// Usage:
+let pair: Pair<u32, felt252> = Pair { first: 1_u32, second: 2 };
+----
+
+Generic parameters can have trait bounds:
+
+[source,cairo]
+----
+struct Container<T, +Copy<T>, +Drop<T>> {
+    value: T,
+}
+----
+
+== Recursive types
+
+Struct types can be recursive using xref:box-type.adoc[`Box`]:
+
+[source,cairo]
+----
+struct ListNode {
+    value: u32,
+    next: Option<Box<ListNode>>,
+}
+----
+
+Without `Box`, recursive struct types would have infinite size
+and cause a compilation diagnostic.
+
+== Type compatibility
+
+Struct types are compatible only with:
+
+* The same struct type with the same name
+* Generic instantiations of the same struct type
+
+[source,cairo]
+----
+struct Container<T> { value: T }
+
+let x: Container<u32> = Container { value: 1_u32 };
+let y: Container<felt252> = Container { value: 2 };
+// x and y have different types: Container<u32> vs Container<felt252>
+----
+
+== See also
+
+* xref:structs.adoc[Structs] — Defining and using structs
+* xref:patterns.adoc[Patterns] — Destructuring struct values
+* xref:derive-macro.adoc[Derive macro] — Automatically implementing traits
+* xref:box-type.adoc[Box type] — Creating recursive struct types

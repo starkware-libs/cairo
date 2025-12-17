@@ -116,12 +116,12 @@ impl<'db> cairo_lang_debug::DebugWithDb<'db> for SyntaxNode<'db> {
 }
 
 impl<'db> SyntaxNode<'db> {
-    /// Get the offset of this syntax node from the beginning of the file.
+    /// Gets the offset of this syntax node from the beginning of the file.
     pub fn offset(self, db: &'db dyn Database) -> TextOffset {
         self.data.offset(db)
     }
 
-    /// Get the parent syntax node, if any.
+    /// Gets the parent syntax node, if any.
     pub fn parent(self, db: &'db dyn Database) -> Option<SyntaxNode<'db>> {
         match self.data.id(db) {
             SyntaxNodeId::Child { parent, .. } => Some(*parent),
@@ -129,18 +129,18 @@ impl<'db> SyntaxNode<'db> {
         }
     }
 
-    /// Get the grandparent syntax node, if any.
+    /// Gets the grandparent syntax node, if any.
     /// This uses a cached parent when available, avoiding some database lookups.
     pub fn grandparent(self, db: &'db dyn Database) -> Option<SyntaxNode<'db>> {
         self.parent?.parent(db)
     }
 
-    /// Check if this syntax node is the root of the syntax tree.
+    /// Checks if this syntax node is the root of the syntax tree.
     pub fn is_root(self) -> bool {
         self.parent.is_none()
     }
 
-    /// Get the stable pointer for this syntax node.
+    /// Gets the stable pointer for this syntax node.
     pub fn stable_ptr(self, _db: &'db dyn Database) -> SyntaxStablePtrId<'db> {
         SyntaxStablePtrId(self)
     }
@@ -149,7 +149,7 @@ impl<'db> SyntaxNode<'db> {
         self.data.id(db)
     }
 
-    /// Get the key fields of this syntax node. These define the unique identifier of the node.
+    /// Gets the key fields of this syntax node. These define the unique identifier of the node.
     pub fn key_fields(self, db: &'db dyn Database) -> &'db [GreenId<'db>] {
         match self.data.id(db) {
             SyntaxNodeId::Child { key_fields, .. } => key_fields,
@@ -203,7 +203,7 @@ impl<'db> SyntaxNode<'db> {
     }
 }
 
-/// Create a new syntax node.
+/// Creates a new syntax node.
 pub fn new_syntax_node<'db>(
     db: &'db dyn Database,
     green: GreenId<'db>,
@@ -233,12 +233,12 @@ fn new_root_node<'db>(
 
 // Construction methods
 impl<'a> SyntaxNode<'a> {
-    /// Create a new root syntax node.
+    /// Creates a new root syntax node.
     pub fn new_root(db: &'a dyn Database, file_id: FileId<'a>, green: GreenId<'a>) -> Self {
         new_root_node(db, file_id, green, TextOffset::START)
     }
 
-    /// Create a new root syntax node with a custom initial offset.
+    /// Creates a new root syntax node with a custom initial offset.
     pub fn new_root_with_offset(
         db: &'a dyn Database,
         file_id: FileId<'a>,
@@ -250,17 +250,17 @@ impl<'a> SyntaxNode<'a> {
 
     // Basic accessors
 
-    /// Get the width of this syntax node.
+    /// Gets the width of this syntax node.
     pub fn width(&self, db: &dyn Database) -> TextWidth {
         self.green_node(db).width(db)
     }
 
-    /// Get the syntax kind of this node.
+    /// Gets the syntax kind of this node.
     pub fn kind(&self, _db: &dyn Database) -> SyntaxKind {
         self.kind
     }
 
-    /// Get the span of this syntax node.
+    /// Gets the span of this syntax node.
     pub fn span(&self, db: &dyn Database) -> TextSpan {
         TextSpan::new_with_width(self.offset(db), self.width(db))
     }

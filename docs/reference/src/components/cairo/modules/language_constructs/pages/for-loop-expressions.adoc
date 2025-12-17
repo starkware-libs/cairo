@@ -1,6 +1,114 @@
 = For loop expressions
 
-This section is a work in progress.
+A for loop xref:expressions.adoc[expression] is used to iterate over elements from an iterator,
+executing a block of code for each element.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+A for loop expression starts with the xref:keywords.adoc[keyword] `for` followed by a
+xref:patterns.adoc[pattern], the keyword `in`, an expression that implements the `IntoIterator` trait,
+and a xref:block-expression.adoc[block expression] body.
+
+[source,cairo]
+----
+for pattern in iterator_expr {
+    // body
+}
+----
+
+The `iterator_expr` must be a type that implements the `IntoIterator` trait, which provides the
+`into_iter()` method to convert the value into an iterator. The pattern can be a simple identifier
+or any pattern that can destructure the iterator's elements.
+
+== Semantics
+
+A for loop expression is evaluated by:
+
+1. Evaluating the iterator expression
+2. Calling the expression's `.into_iter()` method
+3. Calling the iterator's `next()` method repeatedly
+4. For each element returned:
+   - Matching the element against the pattern
+   - Binding pattern variables
+   - Executing the loop body
+5. Stopping when the iterator returns `None`
+
+The loop body is executed for each element produced by the iterator. The pattern variables are only
+available within the loop body and are rebound for each iteration.
+
+== Type
+
+A for loop expression always evaluates to the xref:unit-type.adoc[unit type] `()`.
+It is primarily used for its side effects rather than its return value.
+
+== Examples
+
+=== Iterating over a range
+
+[source,cairo]
+----
+for i in 0..5_usize {
+    // i takes values 0, 1, 2, 3, 4
+}
+----
+
+=== Iterating over an array (via iterator)
+
+[source,cairo]
+----
+let arr = array![1_u32, 2_u32, 3_u32];
+
+for elem in arr {
+    // Process each element
+    let doubled = elem * 2_u32;
+}
+----
+
+
+=== Pattern matching in for loops
+
+[source,cairo]
+----
+let pairs = array![(1_u32, 2_u32), (3_u32, 4_u32), (5_u32, 6_u32)];
+
+for (x, y) in pairs {
+    // x and y are destructured from each tuple
+    let sum = x + y;
+}
+----
+
+
+== Control flow in loops
+
+For loops can be controlled using:
+
+- `break` - exits the loop immediately
+- `continue` - skips to the next iteration
+
+[source,cairo]
+----
+for i in 0..10_usize {
+    if i == 5_usize {
+        break;  // Exit loop when i is 5
+    }
+    if i % 2_usize == 0_usize {
+        continue;  // Skip even numbers
+    }
+    // Process odd numbers less than 5
+}
+----
+
+== Limitations
+
+Currently, for loops in Cairo work with types that implement the `IntoIterator` trait.
+Common iterator sources include:
+
+- Ranges: `0..10`, `0..=10`
+- Types with `into_iter()` methods (arrays when moved)
+- Custom iterator implementations
+
+== See Also
+
+- xref:block-expression.adoc[Block expressions]
+- xref:patterns.adoc[Patterns]
+- xref:match-expressions.adoc[Match expressions]
