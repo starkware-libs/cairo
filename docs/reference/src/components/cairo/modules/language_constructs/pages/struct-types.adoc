@@ -2,9 +2,7 @@
 
 A struct type is a user-defined composite type that groups together related values
 under named fields.
-Struct types are defined using the `struct` keyword
-and are nominally typed — two struct types with the same fields
-but different names are distinct types.
+Struct types are defined using the `struct` keyword.
 
 == Type syntax
 
@@ -36,6 +34,22 @@ struct Coordinate { x: u32, y: u32 }
 
 A struct type's size equals the sum of its field sizes.
 The order of fields in the struct definition determines their memory layout.
+
+== Field visibility
+
+Struct fields are private by default.
+Use the `pub` keyword to make a field accessible from other modules:
+
+[source,cairo]
+----
+pub struct Point {
+    pub x: u32,  // Public field
+    y: u32,      // Private field
+}
+----
+
+For more information about visibility,
+see xref:visibility.adoc[Visibility].
 
 == Type properties
 
@@ -87,7 +101,7 @@ struct Container<T, +Copy<T>, +Drop<T>> {
 
 == Recursive types
 
-Struct types can be recursive using xref:pages/box-type.adoc[`Box`]:
+Struct types can be recursive using xref:box-type.adoc[`Box`]:
 
 [source,cairo]
 ----
@@ -118,7 +132,7 @@ let y: Container<felt252> = Container { value: 2 };
 
 == See also
 
-* xref:pages/structs.adoc[Structs] — Defining and using structs
-* xref:pages/patterns.adoc[Patterns] — Destructuring struct values
-* xref:pages/derive-macro.adoc[Derive macro] — Automatically implementing traits
-* xref:pages/box-type.adoc[Box type] — Creating recursive struct types
+* xref:structs.adoc[Structs] — Defining and using structs
+* xref:patterns.adoc[Patterns] — Destructuring struct values
+* xref:derive-macro.adoc[Derive macro] — Automatically implementing traits
+* xref:box-type.adoc[Box type] — Creating recursive struct types
