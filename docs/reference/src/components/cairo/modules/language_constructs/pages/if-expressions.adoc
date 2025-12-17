@@ -145,6 +145,6 @@ needed for the operation.
 
 == See also
 
-* xref:oolean-types.adoc[Boolean types] — The condition type
+* xref:boolean-types.adoc[Boolean types] — The condition type
 * xref:match-expressions.adoc[Match expressions] — Pattern-based conditionals
 * xref:expressions.adoc[Expressions] — General expression syntax
