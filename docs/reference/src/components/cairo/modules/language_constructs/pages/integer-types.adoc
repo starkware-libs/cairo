@@ -18,7 +18,8 @@ The `usize` type is an alias to `u32`, and is used for array indexing.
 
 == Integer Creation
 
-All integer types can be created as literals using the appropriate suffix. For `u256`, you can also construct values from other types explicitly.
+All integer types can be created as literals using the appropriate suffix.
+For `u256`, you can also construct values from other types explicitly.
 [source,rust]
 ----
 fn main() {
