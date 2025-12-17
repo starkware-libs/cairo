@@ -71,7 +71,7 @@ pub trait FormatAsByteArray<T> {
     ///
     /// let num: u32 = 42;
     /// let formatted = num.format_as_byte_array(16);
-    /// assert!(formatted, "2a");
+    /// assert!(formatted == "2a");
     /// ```
     fn format_as_byte_array(self: @T, base: NonZero<T>) -> ByteArray;
 }
@@ -180,7 +180,7 @@ fn append_formatted_to_byte_array<T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T,
     }
 }
 
-// Converts a digit (0-9, A-Z) to its ASCII representation in a base > 10.
+/// Converts a digit (0-9, a-z) to its ASCII representation in a base > 10.
 #[inline]
 fn get_big_base_digit_representation(digit_as_u8: u8) -> u8 {
     if digit_as_u8 < 10 {

@@ -38,14 +38,14 @@ impl Display for ApChangeError {
 #[cfg(feature = "std")]
 impl std::error::Error for ApChangeError {}
 
-/// Trait for applying ap changes.
+/// Trait for applying AP changes.
 pub trait ApplyApChange: Sized {
     /// Attempts to apply an AP change; fails only on overflow.
     fn apply_known_ap_change(self, ap_change: usize) -> Option<Self>;
-    /// Can unknown ap change be applied.
+    /// Can unknown AP change be applied.
     fn can_apply_unknown(&self) -> bool;
 
-    /// Attempts to apply ap change.
+    /// Attempts to apply an AP change.
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
         match ap_change {
             ApChange::Unknown if self.can_apply_unknown() => Ok(self),

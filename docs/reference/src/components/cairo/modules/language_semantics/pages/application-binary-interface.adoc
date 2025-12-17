@@ -80,6 +80,21 @@ Event item (struct kind):
 }
 ----
 
+Event item (enum kind):
+[source,json]
+----
+{
+  "type": "event",
+  "name": "MyEvent",
+  "kind": "enum",
+  "variants": [
+    { "name": "Plain",        "type": "MyPlainEvent",        "kind": "nested" },
+    { "name": "FlattenedOk",  "type": "MyOkEvent",           "kind": "flat" },
+    { "name": "FlattenedErr", "type": "MyErrEvent",          "kind": "flat" }
+  ]
+}
+----
+
 Struct and enum items (referenced types):
 [source,json]
 ----
@@ -140,6 +155,8 @@ Event fields specify how data is placed into the event’s `keys` and `data` arr
 - `kind = "key"` — field is serialized into the `keys` array using Serde.
 - `kind = "data"` — field is serialized into the `data` array using Serde.
 - `kind = "nested"` — field is serialized as a nested event.
+- `kind = "flat"` — field is serialized as a flattened event: selectors and payload of the nested
+  enum event are merged into the parent event, and selector uniqueness is enforced.
 
 Serialization of complex types follows Cairo’s Serde rules. Tooling should rely on the ABI shapes
 and Serde derivations for stable encoding.

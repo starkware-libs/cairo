@@ -133,7 +133,7 @@ pub trait SemanticExprLookup<'db>: Database {
 }
 impl<'db, T: Database + ?Sized> SemanticExprLookup<'db> for T {}
 
-/// Get the inline configuration of the given function by parsing its attributes.
+/// Gets the inline configuration of the given function by parsing its attributes.
 pub fn get_inline_config<'db>(
     db: &'db dyn Database,
     diagnostics: &mut SemanticDiagnostics<'db>,

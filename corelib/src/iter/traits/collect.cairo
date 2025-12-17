@@ -3,7 +3,7 @@ use crate::metaprogramming::TypeEqual;
 /// Conversion from an [`Iterator`].
 ///
 /// By implementing `FromIterator` for a type, you define how it will be
-/// created from an iterator. This is common for types which describe a
+/// created from an iterator. This is common for types that describe a
 /// collection of some kind.
 ///
 /// If you want to create a collection from the contents of an iterator, the
@@ -105,7 +105,7 @@ pub trait FromIterator<T, A> {
 /// Conversion into an [`Iterator`].
 ///
 /// By implementing `IntoIterator` for a type, you define how it will be
-/// converted to an iterator. This is common for types which describe a
+/// converted to an iterator. This is common for types that describe a
 /// collection of some kind.
 ///
 /// One benefit of implementing `IntoIterator` is that your type will work

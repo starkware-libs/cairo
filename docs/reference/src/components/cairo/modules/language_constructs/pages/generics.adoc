@@ -1,6 +1,6 @@
 = Generics
 
-Generic programming is a way to define "recipes" for creating concrete link:items.adoc[items].
+Generic programming is a way to define "recipes" for creating concrete xref:items.adoc[items].
 This recipe has parameters called "generic parameters" (in addition to the "normal" parameters).
 For example:
 [source,rust]
@@ -9,7 +9,7 @@ fn foo<T>(x: T) -> T { x }
 ----
 This is a recipe for creating an identity function for any type `T`.
 
-link:items.adoc[Items] such as link:functions.adoc[functions], structs, enums, traits, impls,
+xref:items.adoc[Items] such as xref:functions.adoc[functions], structs, enums, traits, impls,
 extern types and type aliases can be generic.
 
 They are defined using a comma-separated list, enclosed by angle brackets (`<...>`),

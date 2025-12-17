@@ -198,7 +198,7 @@ fn module_item_info_by_name_helper<'db>(
     module_item_info_by_name(db, module_id, name)
 }
 
-/// Get the imported global uses of a module, and their visibility.
+/// Gets the imported global uses of a module, and their visibility.
 pub fn get_module_global_uses<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,

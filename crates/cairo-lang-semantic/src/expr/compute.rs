@@ -1262,7 +1262,7 @@ fn compute_expr_binary_semantic<'db>(
     }
 }
 
-/// Get the function call expression of a binary operation that is defined in the corelib.
+/// Gets the function call expression of a binary operation that is defined in the corelib.
 fn call_core_binary_op<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::ExprBinary<'db>,
@@ -2669,7 +2669,7 @@ fn compute_method_function_call_data<'db>(
     Ok((function_id, trait_function_id.trait_id(ctx.db), fixed_expr, first_param.mutability))
 }
 
-/// Return candidates for method functions that match the given arguments.
+/// Returns candidates for method functions that match the given arguments.
 /// Also returns the expression to be used as self for the method call, its type and whether deref
 /// was used.
 #[expect(clippy::too_many_arguments)]

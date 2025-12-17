@@ -127,7 +127,7 @@ impl<'a> AttributeListStructurize<'a> for ast::AttributeList<'a> {
 }
 
 impl<'a> AttributeArg<'a> {
-    /// Build [`AttributeArg`] from [`ast::Arg`].
+    /// Builds [`AttributeArg`] from [`ast::Arg`].
     pub fn from_ast(arg: ast::Arg<'a>, db: &'a dyn Database) -> AttributeArg<'a> {
         let variant = match arg.arg_clause(db) {
             ast::ArgClause::Unnamed(clause) => AttributeArgVariant::Unnamed(clause.value(db)),
@@ -166,7 +166,7 @@ impl<'a> AttributeArg<'a> {
 }
 
 impl<'a> Modifier<'a> {
-    /// Build [`Modifier`] from [`ast::Modifier`].
+    /// Builds [`Modifier`] from [`ast::Modifier`].
     fn from(modifier: ast::Modifier<'a>, db: &'a dyn Database) -> Modifier<'a> {
         Modifier {
             stable_ptr: modifier.stable_ptr(db),

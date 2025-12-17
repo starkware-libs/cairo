@@ -15,7 +15,7 @@ use indoc::{formatdoc, indoc};
 use salsa::Database;
 
 /// Try to generate a simple panic handling code.
-/// Return `Some(())` if successful and updates the builder if successful.
+/// Returns `Some(())` if successful and updates the builder if successful.
 fn try_handle_simple_panic(
     db: &dyn Database,
     builder: &mut PatchBuilder<'_>,
