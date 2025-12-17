@@ -41,7 +41,7 @@ pub fn compare_contents_or_fix_with_path(path: &Path, content: String) {
 pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
     match m.lock() {
         Ok(guard) => guard,
-        // Allow other test to take the lock if it was poisoned by a thread that panicked.
+        // Allow other tests to take the lock if it was poisoned by a thread that panicked.
         Err(poisoned) => poisoned.into_inner(),
     }
 }
