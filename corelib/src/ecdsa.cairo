@@ -55,10 +55,7 @@ use crate::zeroable::IsZeroResult;
 pub fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252,
 ) -> bool {
-    // Check that s != 0 (mod stark_curve::ORDER).
-    if signature_s == 0
-        || signature_s == ec::stark_curve::ORDER
-        || signature_r == ec::stark_curve::ORDER {
+    if is_equivalent_to_zero(signature_s) || signature_r == ec::stark_curve::ORDER {
         return false;
     }
 
@@ -158,6 +155,10 @@ pub fn check_ecdsa_signature(
 pub fn recover_public_key(
     message_hash: felt252, signature_r: felt252, signature_s: felt252, y_parity: bool,
 ) -> Option<felt252> {
+    if is_equivalent_to_zero(signature_s) {
+        return None;
+    }
+
     let r_point = EcPointTrait::new_nz_from_x(signature_r)?;
     let gen_point = generator_point()?;
 
@@ -194,6 +195,12 @@ pub fn recover_public_key(
     };
     state.add_mul(r_multiplier, r_point);
     Some(state.finalize_nz()?.x())
+}
+
+/// Checks if `value != 0` (mod stark_curve::ORDER).
+fn is_equivalent_to_zero(value: felt252) -> bool {
+    // Note that `2 * ec::stark_curve::ORDER` is larger than the felt252 PRIME.
+    value == 0 || value == ec::stark_curve::ORDER
 }
 
 // TODO(orizi): Remove this function on next Sierra release.
