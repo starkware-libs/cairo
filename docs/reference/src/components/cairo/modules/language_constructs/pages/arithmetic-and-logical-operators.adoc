@@ -141,6 +141,6 @@ Cairo also provides compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
 
 == References (source)
 
-- Operator precedence: `crates/cairo-lang-parser/src/operators.rs` (lines 21-22)
-- Traits: `corelib/src/traits.cairo` (`Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`)
-- Assignment operators: `corelib/src/ops/arith.cairo`
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-parser/src/operators.rs#L21-L22[Operator precedence]
+- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/traits.cairo[Traits] (`Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`)
+- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/ops/arith.cairo[`Assignment operators`]
