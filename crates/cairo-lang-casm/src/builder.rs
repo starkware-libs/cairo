@@ -649,7 +649,7 @@ impl CasmBuilder {
         self.main_state.steps = 0;
     }
 
-    /// Create an assert that would always fail.
+    /// Creates an assert that would always fail.
     pub fn fail(&mut self) {
         let cell = CellRef { offset: -1, register: Register::FP };
         let instruction = self.next_instruction(

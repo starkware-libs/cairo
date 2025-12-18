@@ -54,7 +54,7 @@ pub struct DiagnosticsReporter<'a> {
 }
 
 impl DiagnosticsReporter<'_> {
-    /// Create a reporter which does not print or collect diagnostics at all.
+    /// Creates a reporter which does not print or collect diagnostics at all.
     pub fn ignoring() -> Self {
         Self {
             callback: None,
@@ -66,7 +66,7 @@ impl DiagnosticsReporter<'_> {
         }
     }
 
-    /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
+    /// Creates a reporter which prints all diagnostics to [`std::io::Stderr`].
     pub fn stderr() -> Self {
         Self::callback(|diagnostic| eprint!("{diagnostic}"))
     }
@@ -76,7 +76,7 @@ impl<'a> DiagnosticsReporter<'a> {
     // NOTE(mkaput): If Rust will ever have intersection types, one could write
     //   impl<F> DiagnosticCallback for F where F: FnMut(Severity,String)
     //   and `new` could accept regular functions without need for this separate method.
-    /// Create a reporter which calls `callback` for each diagnostic.
+    /// Creates a reporter which calls `callback` for each diagnostic.
     pub fn callback(callback: impl FnMut(FormattedDiagnosticEntry) + Send + Sync + 'a) -> Self {
         struct Func<F>(F);
 
@@ -92,14 +92,14 @@ impl<'a> DiagnosticsReporter<'a> {
         Self::new(Func(callback))
     }
 
-    /// Create a reporter which appends all diagnostics to provided string.
+    /// Creates a reporter which appends all diagnostics to provided string.
     pub fn write_to_string(string: &'a mut String) -> Self {
         Self::callback(move |diagnostic| {
             write!(string, "{diagnostic}").unwrap();
         })
     }
 
-    /// Create a reporter which calls [`DiagnosticCallback::on_diagnostic`].
+    /// Creates a reporter which calls [`DiagnosticCallback::on_diagnostic`].
     fn new(callback: impl DiagnosticCallback + 'a) -> Self {
         Self {
             callback: Some(Box::new(callback)),

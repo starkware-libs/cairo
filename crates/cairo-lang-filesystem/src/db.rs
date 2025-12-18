@@ -298,12 +298,12 @@ pub trait FilesGroup: Database {
         get_flag(self.as_dyn_database(), id)
     }
 
-    /// Create an input file from an interned file id.
+    /// Creates an input file from an interned file id.
     fn file_input<'db>(&'db self, file_id: FileId<'db>) -> &'db FileInput {
         file_input(self.as_dyn_database(), file_id)
     }
 
-    /// Create an input crate from an interned crate id.
+    /// Creates an input crate from an interned crate id.
     fn crate_input<'db>(&'db self, crt: CrateId<'db>) -> &'db CrateInput {
         crate_input(self.as_dyn_database(), crt)
     }
@@ -731,7 +731,7 @@ pub fn ext_as_virtual<'db>(db: &'db dyn Database, id: salsa::Id) -> &'db Virtual
 
 /// Non-pub queries over the files group.
 trait PrivFilesGroup: Database {
-    /// Create an input crate configuration from a [`CrateConfiguration`].
+    /// Creates an input crate configuration from a [`CrateConfiguration`].
     fn crate_configuration_input<'db>(
         &'db self,
         config: CrateConfiguration<'db>,
