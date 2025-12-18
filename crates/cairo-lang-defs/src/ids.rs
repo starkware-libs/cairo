@@ -851,13 +851,13 @@ impl<'db> GenericParamLongId<'db> {
             ast::GenericParam::Const(_) => false,
             ast::GenericParam::ImplNamed(imp) => {
                 matches!(
-                    imp.type_constrains(db),
+                    imp.type_constraints(db),
                     ast::OptionAssociatedItemConstraints::AssociatedItemConstraints(_)
                 )
             }
             ast::GenericParam::ImplAnonymous(imp) => {
                 matches!(
-                    imp.type_constrains(db),
+                    imp.type_constraints(db),
                     ast::OptionAssociatedItemConstraints::AssociatedItemConstraints(_)
                 )
             }
