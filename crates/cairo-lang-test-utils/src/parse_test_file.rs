@@ -100,20 +100,19 @@ pub fn dump_to_test_file(
 ) -> Result<(), std::io::Error> {
     let mut test_strings = Vec::new();
     for (test_name, test) in tests {
-        let mut tag_strings = vec![TAG_PREFIX.to_string() + &test_name];
+        let mut tag_strings = vec![format!("{TAG_PREFIX}{test_name}")];
         for (tag, content) in test.attributes {
-            tag_strings.push(
-                TAG_PREFIX.to_string()
-                    + &tag
-                    + if content.is_empty() { "" } else { "\n" }
-                    + &content,
-            );
+            tag_strings.push(format!(
+                "{TAG_PREFIX}{tag}{}{}",
+                if content.is_empty() { "" } else { "\n" },
+                content
+            ));
         }
         test_strings.push(tag_strings.join("\n\n"));
     }
     fs::write(
         filename,
-        test_strings.join(&("\n\n".to_string() + TAG_PREFIX + TEST_SEPARATOR + "\n\n")) + "\n",
+        format!("{}\n", test_strings.join(&format!("\n\n{TAG_PREFIX}{TEST_SEPARATOR}\n\n"))),
     )
 }
 
