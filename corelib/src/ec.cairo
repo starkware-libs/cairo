@@ -127,18 +127,7 @@ impl EcPointTryIntoNonZero of TryInto<EcPoint, NonZeroEcPoint> {
 pub extern type EcState;
 
 impl EcStateDrop of Drop<EcState>;
-
-mod internal {
-    impl EcStateCopy of Copy<super::EcState>;
-    pub impl EcStateClone of Clone<super::EcState> {
-        #[inline]
-        fn clone(self: @super::EcState) -> super::EcState {
-            *self
-        }
-    }
-}
-
-impl EcStateClone = internal::EcStateClone;
+impl EcStateCopy of Copy<EcState>;
 
 /// Initializes an EC computation with the zero point.
 extern fn ec_state_init() -> EcState nopanic;
