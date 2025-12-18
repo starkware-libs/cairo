@@ -132,7 +132,7 @@ impl<'a> DiagnosticsReporter<'a> {
         self
     }
 
-    /// Ignores warnings in all Cargo crates.
+    /// Ignores warnings in all Cairo crates.
     pub fn ignore_all_warnings(mut self) -> Self {
         self.ignore_all_warnings = true;
         self
