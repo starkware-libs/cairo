@@ -596,6 +596,7 @@ pub trait BitNot<T> {
     fn bitnot(a: T) -> T;
 }
 
+///[[_partialord]]
 /// Trait for comparing types that form a [partial
 /// order](https://en.wikipedia.org/wiki/Partial_order).
 ///
