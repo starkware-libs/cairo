@@ -323,7 +323,7 @@ pub struct ProcessedProfilingInfo {
 impl Display for ProcessedProfilingInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(sierra_statement_weights) = &self.sierra_statement_weights {
-            writeln!(f, "Weight by sierra statement:")?;
+            writeln!(f, "Weight by Sierra statement:")?;
             for (statement_idx, (weight, gen_statement)) in sierra_statement_weights.iter() {
                 writeln!(f, "  statement {statement_idx}: {weight} ({gen_statement})")?;
             }
