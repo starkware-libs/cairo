@@ -242,7 +242,7 @@ pub fn get_pointer_after_program_code(offset: i32) -> (InstructionsWithRelocatio
         // After calling an empty function, `[ap - 1]` contains the current `pc`.
         // Using the relocations below, the immediate value (`offset`) will be changed so that it
         // will compute a pointer to the second cell after the end of the program, which will
-        // contain the pointer to the built-in cost array.
+        // contain the pointer to the builtin cost array.
         [ap] = [ap - 1] + (offset), ap++;
     };
     let relocations = vec![
