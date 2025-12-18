@@ -43,7 +43,7 @@ fn build_withdraw_gas(
     };
     builder.validate_token_vars_availability()?;
 
-    // Check if we need to fetch the builtin cost table.
+    // Check if we need to fetch the built-in cost table.
     if CostTokenType::iter_precost().any(|token| builder.token_usages(*token) > 0) {
         let (pre_instructions, cost_builtin_ptr) =
             add_cost_builtin_ptr_fetch_code(&mut casm_builder);
@@ -100,7 +100,7 @@ fn build_redeposit_gas(
     let [gas_counter] = builder.try_get_single_cells()?;
     builder.validate_token_vars_availability()?;
     let requested_count = builder.token_usages(CostTokenType::Const);
-    // Check if we need to fetch the builtin cost table.
+    // Check if we need to fetch the built-in cost table.
     if CostTokenType::iter_precost().all(|token| builder.token_usages(*token) == 0) {
         let gas_counter_value =
             gas_counter.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
@@ -292,7 +292,7 @@ fn add_get_total_requested_count_code(
 }
 
 impl CompiledInvocationBuilder<'_> {
-    /// Validates that all the cost token variables are available for statement at `idx`.
+    /// Validates that all the cost token variables are available for the statement at `idx`.
     fn validate_token_vars_availability(&self) -> Result<(), InvocationError> {
         if !matches!(self.environment.gas_wallet, GasWallet::Disabled) {
             for token in CostTokenType::iter_casm_tokens() {
@@ -320,7 +320,7 @@ fn build_get_builtin_costs(
     ))
 }
 
-/// Adds the code for fetching the builtin cost table.
+/// Adds the code for fetching the built-in cost table.
 /// Returns the pre-instructions to be provided to
 /// `CompiledInvocationBuilder::build_from_casm_builder_ex` and the variable representing the
 /// builtin table pointer.
