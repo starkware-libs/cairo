@@ -2,8 +2,6 @@
 
 Cairo is strongly-typed and offers a variety of types to represent different kinds of data.
 In this section, we'll cover the different types available in Cairo.
-
-// TODO(Gil): add links to the different types pages when added.
 == Basic data types
 * xref:boolean-types.adoc[Boolean]
 * Numeric types:
@@ -11,15 +9,18 @@ In this section, we'll cover the different types available in Cairo.
 ** xref:integer-types.adoc[Integers]
 * xref:never-type.adoc[Never type]
 * xref:unit-type.adoc[Unit type]
+* xref:error-type.adoc[Error type]
 
 == Sequence types
 * xref:tuple-types.adoc[Tuple]
-* `Array`
+* xref:array-types.adoc[`Array`]
 * xref:felt252dict-type.adoc[`Felt252Dict`]
+* xref:slice-types.adoc[Slices and `Span`]
+* xref:string-types.adoc[String types]
 
 == Pointer types
-* `Box`
-* `Snapshot`
+* xref:box-type.adoc[`Box`]
+* xref:snapshot-type.adoc[`Snapshot`]
 
 == User-defined types
 * xref:struct-types.adoc[Struct]
