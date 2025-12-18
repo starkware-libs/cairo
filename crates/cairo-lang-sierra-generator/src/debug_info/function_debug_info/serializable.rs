@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::debug_info::{SourceCodeSpan, SourceFileFullPath};
 
-/// The serializable debug info of all sierra functions in the program.
+/// The serializable debug info of all Sierra functions in the program.
 pub struct SerializableAllFunctionsDebugInfo(
     pub(super) HashMap<SierraFunctionId, SerializableFunctionDebugInfo>,
 );
@@ -21,7 +21,7 @@ impl From<SerializableAllFunctionsDebugInfo> for Annotations {
     }
 }
 
-/// The serializable debug info of a sierra function.
+/// The serializable debug info of a Sierra function.
 #[derive(Serialize, Deserialize)]
 pub struct SerializableFunctionDebugInfo {
     /// Path to the user file the function comes from.
@@ -34,7 +34,7 @@ pub struct SerializableFunctionDebugInfo {
     pub sierra_to_cairo_variable: HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)>,
 }
 
-/// An id of a sierra function - equivalent of `id` field of [`cairo_lang_sierra::ids::FunctionId`].
+/// An id of a Sierra function - equivalent of `id` field of [`cairo_lang_sierra::ids::FunctionId`].
 /// Used to make serialization of a hashmap with id as a key possible.
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct SierraFunctionId(pub u64);
