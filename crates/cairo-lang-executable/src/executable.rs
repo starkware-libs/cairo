@@ -22,7 +22,7 @@ pub struct Executable {
 }
 
 impl Executable {
-    /// Create a new executable program from a compiled function.
+    /// Creates a new executable program from a compiled function.
     pub fn new(compiled: CompiledFunction) -> Self {
         let non_returning_header = casm! {
             ap += (compiled.wrapper.builtins.len());
