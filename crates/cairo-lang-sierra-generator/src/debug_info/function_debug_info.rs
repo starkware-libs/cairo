@@ -40,7 +40,7 @@ use crate::debug_info::{SourceCodeSpan, SourceFileFullPath, maybe_code_location}
 
 pub mod serializable;
 
-/// The debug info of all sierra functions in the program.
+/// The debug info of all Sierra functions in the program.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AllFunctionsDebugInfo<'db>(OrderedHashMap<FunctionId, FunctionDebugInfo<'db>>);
 
@@ -65,8 +65,8 @@ impl<'db> AllFunctionsDebugInfo<'db> {
     }
 }
 
-/// The debug info of a sierra function.
-/// Contains a signature location and locations of sierra variables of this function.
+/// The debug info of a Sierra function.
+/// Contains a signature location and locations of Sierra variables of this function.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FunctionDebugInfo<'db> {
     pub signature_location: LocationId<'db>,
@@ -89,8 +89,8 @@ impl<'db> FunctionDebugInfo<'db> {
         })
     }
 
-    /// Extracts mapping from a sierra variable to a cairo variable (its name and definition span).
-    /// The sierra variable value corresponds to the cairo variable value at some point during
+    /// Extracts mapping from a Sierra variable to a cairo variable (its name and definition span).
+    /// The Sierra variable value corresponds to the cairo variable value at some point during
     /// execution of the function code.
     fn extract_variables_mapping(
         &self,
@@ -175,9 +175,9 @@ impl<'db> FunctionDebugInfo<'db> {
     }
 }
 
-/// This function gets a node that a sierra variable was mapped to.
+/// This function gets a node that a Sierra variable was mapped to.
 /// It tries to make an educated guess to find an identifier corresponding to a cairo variable
-/// which value in the given location is represented by the sierra variable.
+/// which value in the given location is represented by the Sierra variable.
 ///
 /// The algorithm is to find an identifier corresponding to a variable which either:
 /// - is assigned a value in the statement the `node` is a part of,

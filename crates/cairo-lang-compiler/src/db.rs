@@ -43,7 +43,7 @@ fn estimate_code_size(
                 return Ok(isize::MAX);
             }
             if std::env::var("CAIRO_DEBUG_SIERRA_GEN").is_ok() {
-                // If we are debugging sierra generation, we want to finish the compilation rather
+                // If we are debugging Sierra generation, we want to finish the compilation rather
                 // than panic.
                 return Ok(isize::MAX);
             }

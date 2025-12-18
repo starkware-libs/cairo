@@ -23,7 +23,7 @@ fn pow2_by_add_loop(n: felt252, x: felt252) -> felt252 {
 pow2_14000
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 22: 42000 (withdraw_gas([0], [1]) { fallthrough([4], [5]) 48([6], [7]) })
   statement 25: 14000 (felt252_is_zero([8]) { fallthrough() 35([9]) })
   statement 42: 13999 (store_temp<RangeCheck>([4]) -> ([4]))
@@ -152,7 +152,7 @@ fn validate_call() {
 validate_call
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 455: 14 (contract_address_try_from_felt252([0], [7]) { fallthrough([8], [9]) 533([10]) })
   statement 473: 10 (array_slice<felt252>([19], [23], [22], [24]) { fallthrough([25], [26]) 509([27]) })
   statement 482: 10 (array_slice<felt252>([31], [35], [20], [32]) { fallthrough([36], [37]) 495([38]) })
@@ -383,7 +383,7 @@ fn validate_call() {
 validate_call
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 419: 7 (contract_address_try_from_felt252([0], [7]) { fallthrough([8], [9]) 497([10]) })
   statement 327: 6 (withdraw_gas([0], [1]) { fallthrough([5], [6]) 370([7], [8]) })
   statement 339: 6 (store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>([14]) -> ([14]))
@@ -564,7 +564,7 @@ fn ecdsa_call() {
 ecdsa_call
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 68: 14 (ec_point_from_x_nz([0], [3]) { fallthrough([18], [19]) 192([20]) })
   statement 71: 14 (ec_point_from_x_nz([18], [21]) { fallthrough([22], [23]) 184([24]) })
   statement 84: 12 (ec_state_try_finalize_nz([31]) { fallthrough([32]) 166() })
@@ -762,7 +762,7 @@ fn erc20_transfer() {
 erc20_transfer
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 743: 14 (storage_read_syscall([1], [2], [9], [7]) { fallthrough([10], [11], [12]) 805([13], [14], [15]) })
   statement 753: 14 (storage_read_syscall([10], [11], [8], [22]) { fallthrough([23], [24], [25]) 778([26], [27], [28]) })
   statement 291: 10 (storage_base_address_from_felt252([0], [28]) -> ([29], [30]))

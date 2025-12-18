@@ -118,7 +118,7 @@ impl ProfilingInfo {
 
             cur_weight += 1;
 
-            // TODO(yuval): Maintain a map of pc to sierra statement index (only for PCs we saw), to
+            // TODO(yuval): Maintain a map of pc to Sierra statement index (only for PCs we saw), to
             // save lookups.
             let sierra_statement_idx = builder.casm_program().sierra_statement_index_by_pc(real_pc);
             let user_function_idx = user_function_idx_by_sierra_statement_idx(
@@ -323,7 +323,7 @@ pub struct ProcessedProfilingInfo {
 impl Display for ProcessedProfilingInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(sierra_statement_weights) = &self.sierra_statement_weights {
-            writeln!(f, "Weight by sierra statement:")?;
+            writeln!(f, "Weight by Sierra statement:")?;
             for (statement_idx, (weight, gen_statement)) in sierra_statement_weights.iter() {
                 writeln!(f, "  statement {statement_idx}: {weight} ({gen_statement})")?;
             }

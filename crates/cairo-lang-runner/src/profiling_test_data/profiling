@@ -10,7 +10,7 @@ test_profiling
 main
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 1: 1 (store_temp<felt252>([0]) -> ([0]))
   statement 2: 1 (return([0]))
 Weight by concrete libfunc:
@@ -44,7 +44,7 @@ test_profiling
 main
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 3: 3 (store_temp<core::panics::PanicResult::<((),)>>([2]) -> ([2]))
   statement 4: 1 (return([2]))
 Weight by concrete libfunc:
@@ -78,7 +78,7 @@ test_profiling
 test_pedersen
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 4: 2 (pedersen([0], [1], [2]) -> ([3], [4]))
   statement 8: 2 (pedersen([3], [4], [5]) -> ([6], [7]))
   statement 12: 2 (pedersen([6], [7], [8]) -> ([9], [10]))
@@ -133,7 +133,7 @@ fn main() {
 main
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 39: 15 (withdraw_gas([0], [1]) { fallthrough([3], [4]) 62([5], [6]) })
   statement 42: 5 (felt252_is_zero([7]) { fallthrough() 52([8]) })
   statement 57: 4 (store_temp<RangeCheck>([3]) -> ([3]))
@@ -226,7 +226,7 @@ fn foo3() {}
 main
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 0: 1 (return())
 Weight by concrete libfunc:
   return: 1
@@ -267,7 +267,7 @@ fn foo3() {}
 main
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 0: 1 (return())
 Weight by concrete libfunc:
   return: 1
@@ -308,7 +308,7 @@ fn foo3() {}
 main
 
 //! > expected_profiling_info
-Weight by sierra statement:
+Weight by Sierra statement:
   statement 0: 1 (return())
 Weight by concrete libfunc:
   return: 1
