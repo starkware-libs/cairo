@@ -115,6 +115,6 @@ Typical errors reported for const items include:
 
 == See also
 
-- xref:language_semantics:constant-evaluation.adoc[Constant evaluation]
+- xref:../../language_semantics/constant-evaluation.adoc[Constant evaluation]
 - link:https://github.com/starkware-libs/cairo/edit/main/crates/cairo-lang-semantic/src/items/constant.rs[crates/cairo-lang-semantic/src/items/constant.rs]
 - link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs]
