@@ -79,7 +79,7 @@ The `System` implicit provides access to Starknet's state and operations.
 
 Implicit argument are automatically propagated through the call stack.
 When a function with implicits call another functions that requires the same implicit,
-they're passed automaticlly:
+they're passed automatically:
 
 [source,cairo]
 ----
