@@ -75,16 +75,23 @@ fn file_syntax<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<Syntax
     file_syntax_data(db, file_id).syntax(db)
 }
 
+/// Parses a file and returns its AST as a root SyntaxFile.
+/// Requires `file_id.kind()` to be `FileKind::Module`.
 fn file_module_syntax<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<SyntaxFile<'db>> {
     assert_eq!(file_id.kind(db), FileKind::Module, "file_id must be a module");
     Ok(SyntaxFile::from_syntax_node(db, file_syntax(db, file_id)?))
 }
 
+/// Parses a file and returns its AST as an expression. Only used for inline macros expanded code.
+/// Requires `file_id.kind()` to be `FileKind::Expr`.
 fn file_expr_syntax<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Maybe<Expr<'db>> {
     assert_eq!(file_id.kind(db), FileKind::Expr, "file_id must be an expr");
     Ok(Expr::from_syntax_node(db, file_syntax(db, file_id)?))
 }
 
+/// Parses a file and returns its AST as a list of statements. Only used for inline macros
+/// expanded code.
+/// Requires `file_id.kind()` to be `FileKind::StatementList`.
 fn file_statement_list_syntax<'db>(
     db: &'db dyn Database,
     file_id: FileId<'db>,
