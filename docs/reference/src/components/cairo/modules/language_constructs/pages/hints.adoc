@@ -82,7 +82,7 @@ read/write and assert helpers). New code should not emit them.
 
 == References
 
-- `crates/cairo-lang-casm/src/hints/mod.rs` — source of hint enums and their pythonic
-  renderings.
-- `crates/cairo-lang-runner/` — Cairo program runner. Hint handling lives under
-  `crates/cairo-lang-runner/src/casm_run/`.
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-casm/src/hints/mod.rs[source of hint enums and their pythonic
+  renderings].
+- link:https://github.com/starkware-libs/cairo/tree/main/crates/cairo-lang-runner[Cairo program runner]. Hint handling lives under
+  link:https://github.com/starkware-libs/cairo/tree/main/crates/cairo-lang-runner/src/casm_run[crates/cairo-lang-runner/src/casm_run].
