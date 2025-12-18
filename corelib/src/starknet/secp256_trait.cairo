@@ -230,15 +230,15 @@ pub fn is_signature_entry_valid<
     value != 0_u256 && value < Secp256Impl::get_curve_size()
 }
 
-/// Checks whether the given `s` is in the range [1, N / 2), where N is the size of the curve.
+/// Checks whether the given `s` is in the range [1, N / 2], where N is the size of the curve.
 ///
-/// For ECDSA signatures to be secure, the `s` component must be in the range [1, N / 2),
+/// For ECDSA signatures to be secure, the `s` component must be in the range [1, N / 2],
 /// where N is the order of the curve.
 /// This function validates that a given value meets this requirement.
 ///
 /// # Returns
 ///
-/// Returns `true` if the value is in the valid range [1, N / 2), `false` otherwise.
+/// Returns `true` if the value is in the valid range [1, N / 2], `false` otherwise.
 ///
 /// # Examples
 ///
