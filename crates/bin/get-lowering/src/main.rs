@@ -60,7 +60,7 @@ fn test_lowering_consistency() {
         "core::poseidon::_poseidon_hash_span_inner".to_string(),
     )
     .unwrap();
-    let _unused = PhasesDisplay { db, function_id }.to_string();
+    PhasesDisplay { db, function_id }.to_string();
 }
 
 /// Prints the lowering of a concrete function:
