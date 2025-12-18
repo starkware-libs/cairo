@@ -782,7 +782,7 @@ impl<'db> Resolver<'db> {
             }
         }
         if module_items_found.len() > 1 {
-            return UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect());
+            return UseStarResult::AmbiguousPath(module_items_found.into_iter().collect());
         }
         match item_info {
             Some(item_info) => UseStarResult::UniquePathFound(item_info),
@@ -797,7 +797,7 @@ impl<'db> Resolver<'db> {
                 }
                 if let Some(item_info) = item_info {
                     if module_items_found.len() > 1 {
-                        UseStarResult::AmbiguousPath(module_items_found.iter().cloned().collect())
+                        UseStarResult::AmbiguousPath(module_items_found.into_iter().collect())
                     } else {
                         UseStarResult::ItemNotVisible(item_info.item_id, other_containing_modules)
                     }
