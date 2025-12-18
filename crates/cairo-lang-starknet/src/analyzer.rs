@@ -74,7 +74,7 @@ fn add_non_starknet_interface_embeddable_diagnostics<'db>(
     }
 }
 
-/// Add diagnostics for ABI generation.
+/// Adds diagnostics for ABI generation.
 fn add_abi_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,

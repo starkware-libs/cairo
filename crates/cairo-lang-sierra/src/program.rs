@@ -101,7 +101,7 @@ impl ProgramArtifact {
         Self { program, debug_info: None }
     }
 
-    /// Add [`DebugInfo`] to the [`ProgramArtifact`], replacing the existing one.
+    /// Adds [`DebugInfo`] to the [`ProgramArtifact`], replacing the existing one.
     pub fn with_debug_info(self, debug_info: DebugInfo) -> Self {
         Self { program: self.program, debug_info: Some(debug_info) }
     }

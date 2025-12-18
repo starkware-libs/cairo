@@ -471,7 +471,7 @@ impl CasmBuilder {
         }
     }
 
-    /// Add a statement to jump to `label`.
+    /// Adds a statement to jump to `label`.
     pub fn jump(&mut self, label: &'static str) {
         let instruction = self.next_instruction(
             InstructionBody::Jump(JumpInstruction {
@@ -487,7 +487,7 @@ impl CasmBuilder {
         self.reachable = false;
     }
 
-    /// Add a statement to jump to `label` if `condition != 0`.
+    /// Adds a statement to jump to `label` if `condition != 0`.
     /// `condition` must be a cell reference.
     pub fn jump_nz(&mut self, condition: Var, label: &'static str) {
         let cell = self.as_cell_ref(condition, true);
@@ -502,7 +502,7 @@ impl CasmBuilder {
         self.set_or_test_label_state(label, self.main_state.clone());
     }
 
-    /// Add a statement performing Blake2s compression.
+    /// Adds a statement performing Blake2s compression.
     ///
     /// `state` must be a cell reference to a pointer to `[u32; 8]` as the hash state.
     /// `byte_count` must be a cell reference to the number of bytes in the message.
