@@ -25,7 +25,7 @@ pub enum ProjectError {
 }
 
 /// Sets up the DB to compile the file at the given path.
-/// Returns the id of the generated crate.
+/// Returns the input identifier of the generated crate.
 pub fn setup_single_file_project(
     db: &mut dyn Database,
     path: &Path,
