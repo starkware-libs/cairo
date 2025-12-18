@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
     ExternFunctionId, LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementLongId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
+use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::{FileId, Tracked};
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplSemantic;
@@ -28,7 +29,6 @@ use crate::cache::load_cached_crate_functions;
 use crate::concretize::concretize_lowered;
 use crate::destructs::add_destructs;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
-use crate::graph_algorithms::feedback_set::flag_add_withdraw_gas;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, GenericOrSpecialized};
 use crate::inline::get_inline_diagnostics;
 use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
@@ -661,7 +661,7 @@ fn function_with_body_lowering_diagnostics<'db>(
         if let Ok(bc) = db.borrow_check(function_id) {
             diagnostics.extend(bc.diagnostics.clone());
         }
-        if flag_add_withdraw_gas(db) && db.in_cycle(function_id, DependencyType::Cost)? {
+        if db.flag_add_withdraw_gas() && db.in_cycle(function_id, DependencyType::Cost)? {
             let location =
                 Location::new(function_id.base_semantic_function(db).stable_location(db));
             if !lowered.signature.panicable {

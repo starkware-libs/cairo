@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use cairo_lang_test_utils::test;
 use cairo_lang_utils::Intern;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
 use crate::db::CrateConfiguration;
-use crate::flag::Flag;
+use crate::flag::{Flag, FlagsGroup};
 use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId, SmolStrId};
 use crate::test_utils::FilesDatabaseForTesting;
 use crate::{override_file_content, set_crate_config};
@@ -39,11 +37,11 @@ fn test_filesystem() {
 fn test_flags() {
     let mut db = FilesDatabaseForTesting::default();
 
-    let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
-    db.set_flag(add_withdraw_gas_flag_id.clone(), Some(Arc::new(Flag::AddWithdrawGas(false))));
+    let add_withdraw_gas_flag_id = FlagLongId(Flag::ADD_WITHDRAW_GAS.into());
+    db.set_flag(add_withdraw_gas_flag_id.clone(), Some(Flag::AddWithdrawGas(false)));
     let id = add_withdraw_gas_flag_id.intern(&db);
 
-    assert_eq!(*db.get_flag(id).unwrap(), Flag::AddWithdrawGas(false));
+    assert_eq!(db.get_flag(id), Some(Flag::AddWithdrawGas(false)));
     assert!(db.get_flag(FlagId::new(&db, FlagLongId("non_existing_flag".into()))).is_none());
 }
 

@@ -5,7 +5,7 @@ mod test;
 use std::collections::HashSet;
 
 use cairo_lang_defs::ids::ExternFunctionId;
-use cairo_lang_filesystem::flag::flag_unsafe_panic;
+use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use itertools::zip_eq;
 use salsa::Database;
@@ -22,7 +22,7 @@ use crate::{
 /// This step might replace a match on an empty enum with a call to unsafe_panic and we rely on the
 /// 'trim_unreachable' optimization to clean that up.
 pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
-    if !flag_unsafe_panic(db) || lowered.blocks.is_empty() {
+    if !db.flag_unsafe_panic() || lowered.blocks.is_empty() {
         return;
     }
 

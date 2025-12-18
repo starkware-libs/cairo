@@ -4,7 +4,7 @@ mod reboxing_test;
 
 use std::rc::Rc;
 
-use cairo_lang_filesystem::flag::flag_future_sierra;
+use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypesSemantic, peel_snapshots, wrap_in_snapshots};
@@ -210,7 +210,7 @@ pub fn apply_reboxing_candidates<'db>(
 ///
 /// And replaces it with a direct struct_boxed_deconstruct libfunc call.
 pub fn apply_reboxing<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
-    if flag_future_sierra(db) {
+    if db.flag_future_sierra() {
         let candidates = find_reboxing_candidates(db, lowered);
         apply_reboxing_candidates(db, lowered, &candidates);
     }
