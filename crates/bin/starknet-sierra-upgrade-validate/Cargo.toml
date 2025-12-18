@@ -14,12 +14,13 @@ cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", vers
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.14.0", features = ["serde"] }
 clap.workspace = true
 indicatif = "0.18.0"
+num-bigint.workspace = true
 reqwest = { version = "0.12", features = ["json"] }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 tokio.workspace = true
 
-# This is not a direct dependency of this package, but it is included here to make sure that the 
+# This is not a direct dependency of this package, but it is included here to make sure that the
 # `vendored` feature is enabled (needed for the compilation to succeed on remote machines).
 openssl = { workspace = true, features = ["vendored"] }
 
