@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::{self as lowering, LoweringStage, ids};
@@ -43,8 +40,8 @@ fn block_generator_test(
 
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
-    let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+    let add_withdraw_gas_flag_id = FlagLongId(Flag::ADD_WITHDRAW_GAS.into());
+    db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(false)));
 
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();

@@ -1,13 +1,12 @@
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use assert_matches::assert_matches;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::{CrateInput, FlagLongId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner, token_gas_cost};
@@ -62,11 +61,8 @@ fn checked_compile_to_sierra(
     auto_add_withdraw_gas: bool,
 ) -> cairo_lang_sierra::program::Program {
     let mut locked_db = db.lock().unwrap();
-    let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
-    locked_db.set_flag(
-        add_withdraw_gas_flag_id,
-        Some(Arc::new(Flag::AddWithdrawGas(auto_add_withdraw_gas))),
-    );
+    let add_withdraw_gas_flag_id = FlagLongId(Flag::ADD_WITHDRAW_GAS.into());
+    locked_db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(auto_add_withdraw_gas)));
     let db = locked_db.snapshot();
     let mut requested_function_ids = vec![];
     for crate_input in crate_inputs {

@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -27,11 +24,8 @@ pub fn test_function_generator(
         // When turning on future_sierra, we might affect other tests using the same db, so an empty
         // db is needed.
         let mut db = SierraGenDatabaseForTesting::new_empty();
-        db.set_flag(
-            FlagLongId("add_withdraw_gas".into()),
-            Some(Arc::new(Flag::AddWithdrawGas(false))),
-        );
-        db.set_flag(FlagLongId("future_sierra".into()), Some(Arc::new(Flag::FutureSierra(true))));
+        db.set_flag(FlagLongId(Flag::ADD_WITHDRAW_GAS.into()), Some(Flag::AddWithdrawGas(false)));
+        db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
         db
     } else {
         SierraGenDatabaseForTesting::without_add_withdraw_gas()

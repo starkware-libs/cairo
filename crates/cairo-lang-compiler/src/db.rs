@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use anyhow::{Result, anyhow, bail};
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{CORELIB_VERSION, FilesGroup, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::{CrateId, FlagLongId};
 use cairo_lang_lowering::db::init_lowering_group;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -200,19 +198,12 @@ impl RootDatabaseBuilder {
             init_dev_corelib(&mut db, path)
         }
 
-        let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
-        db.set_flag(
-            add_withdraw_gas_flag_id,
-            Some(Arc::new(Flag::AddWithdrawGas(self.auto_withdraw_gas))),
-        );
-        let panic_backtrace_flag_id = FlagLongId("panic_backtrace".into());
-        db.set_flag(
-            panic_backtrace_flag_id,
-            Some(Arc::new(Flag::PanicBacktrace(self.panic_backtrace))),
-        );
-
-        let unsafe_panic_flag_id = FlagLongId("unsafe_panic".into());
-        db.set_flag(unsafe_panic_flag_id, Some(Arc::new(Flag::UnsafePanic(self.unsafe_panic))));
+        let add_withdraw_gas_flag_id = FlagLongId(Flag::ADD_WITHDRAW_GAS.into());
+        db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(self.auto_withdraw_gas)));
+        let panic_backtrace_flag_id = FlagLongId(Flag::PANIC_BACKTRACE.into());
+        db.set_flag(panic_backtrace_flag_id, Some(Flag::PanicBacktrace(self.panic_backtrace)));
+        let unsafe_panic_flag_id = FlagLongId(Flag::UNSAFE_PANIC.into());
+        db.set_flag(unsafe_panic_flag_id, Some(Flag::UnsafePanic(self.unsafe_panic)));
 
         if let Some(config) = &self.project_config {
             update_crate_roots_from_project_config(&mut db, config.as_ref());

@@ -2,9 +2,8 @@
 #[path = "gas_redeposit_test.rs"]
 mod test;
 
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::{FlagId, FlagLongId, SmolStrId};
+use cairo_lang_filesystem::flag::FlagsGroup;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::{ConcreteVariant, corelib};
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
@@ -37,10 +36,7 @@ pub fn gas_redeposit<'db>(
     if lowered.blocks.is_empty() {
         return;
     }
-    if let Some(Flag::AddWithdrawGas(add_withdraw_gas)) =
-        db.get_flag(FlagId::new(db, FlagLongId("add_withdraw_gas".into())))
-        && !add_withdraw_gas
-    {
+    if !db.flag_add_withdraw_gas() {
         return;
     }
     let gb_ty = corelib::get_core_ty_by_name(db, SmolStrId::from(db, "GasBuiltin"), vec![]);

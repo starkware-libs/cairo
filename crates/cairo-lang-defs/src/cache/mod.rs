@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::{DiagnosticNote, Severity};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::{
     CodeMapping, CrateId, CrateLongId, FileId, FileKind, FileLongId, SmolStrId, SpanInFile,
     VirtualFile,
@@ -60,11 +60,8 @@ impl CachedCrateMetadata {
             hasher.finish()
         });
         let compiler_version = env!("CARGO_PKG_VERSION").to_string();
-        let global_flags = db
-            .flags()
-            .iter()
-            .map(|(flag_id, flag)| (flag_id.long(db).0.clone(), (**flag).clone()))
-            .collect();
+        let global_flags =
+            db.flags().iter().map(|(flag_id, flag)| (flag_id.long(db).0.clone(), *flag)).collect();
         Self { settings, compiler_version, global_flags }
     }
 }

@@ -67,7 +67,7 @@ impl<'a> Iterator for SyntaxNodeWithDbIterator<'a> {
     }
 }
 
-/// Create a `PrimitiveToken` representation from a `SyntaxNode`.
+/// Creates a `PrimitiveToken` representation from a `SyntaxNode`.
 ///
 /// The `PrimitiveToken` keeps two information - some text content and a span associated with it.
 /// A `SyntaxNode` consists of some token, trivia associated with this token, and a span describing
