@@ -43,7 +43,7 @@ fn build_withdraw_gas(
     };
     builder.validate_token_vars_availability()?;
 
-    // Check if we need to fetch the built-in cost table.
+    // Check if we need to fetch the builtin cost table.
     if CostTokenType::iter_precost().any(|token| builder.token_usages(*token) > 0) {
         let (pre_instructions, cost_builtin_ptr) =
             add_cost_builtin_ptr_fetch_code(&mut casm_builder);
@@ -100,7 +100,7 @@ fn build_redeposit_gas(
     let [gas_counter] = builder.try_get_single_cells()?;
     builder.validate_token_vars_availability()?;
     let requested_count = builder.token_usages(CostTokenType::Const);
-    // Check if we need to fetch the built-in cost table.
+    // Check if we need to fetch the builtin cost table.
     if CostTokenType::iter_precost().all(|token| builder.token_usages(*token) == 0) {
         let gas_counter_value =
             gas_counter.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
@@ -320,7 +320,7 @@ fn build_get_builtin_costs(
     ))
 }
 
-/// Adds the code for fetching the built-in cost table.
+/// Adds the code for fetching the builtin cost table.
 /// Returns the pre-instructions to be provided to
 /// `CompiledInvocationBuilder::build_from_casm_builder_ex` and the variable representing the
 /// builtin table pointer.
