@@ -249,7 +249,7 @@ pub fn get_struct_attributes_syntax<'db>(
         let syntax_node = attribute.stable_ptr.lookup(db).as_syntax_node();
         for child in syntax_node.get_children(db).iter() {
             let to_text = child.get_text_without_all_comment_trivia(db);
-            let cleaned_text = to_text.replace("\n", "");
+            let cleaned_text = to_text.replace("\r\n", "").replace("\n", "");
             buff.push_str(&cleaned_text);
         }
         buff.push('\n');
