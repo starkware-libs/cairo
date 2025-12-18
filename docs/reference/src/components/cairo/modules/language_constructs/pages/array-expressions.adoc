@@ -2,7 +2,7 @@
 
 Array expressions construct array values directly in place.
 They correspond to the `FixedSizeArray` expression in the Cairo syntax (see
-`crates/cairo-lang-syntax-codegen/src/cairo_spec.rs`, variant `ExprFixedSizeArray`).
+link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs], variant `ExprFixedSizeArray`).
 
 == Syntax
 
