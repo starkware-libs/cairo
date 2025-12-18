@@ -115,5 +115,5 @@ fn less(a: @Pair, b: @Pair) -> bool {
 == References (source)
 
 - link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-parser/src/operators.rs[Parser precedence].
-- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/traits.cairo[Trait and behavior] (`PartialOrd`) .
+- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/traits.cairo#L607[Trait and behavior] (`PartialOrd`) .
 - link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/cmp.cairo[Utilities using comparisons] (`min`, `max`, `minmax`).
