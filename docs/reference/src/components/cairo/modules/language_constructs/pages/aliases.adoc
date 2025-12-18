@@ -1,6 +1,6 @@
 = Type and impl aliases
 
-A type alias is a new name for an existing type. It is not a new type. Type aliases are created with
+A type alias is a new name for an existing type. It is not a new type. This means that the alias and the original type are treated as the same type by the compiler and can be used interchangeably. Type aliases are created with
 the type keyword:
 [source,cairo]
 ----
@@ -16,7 +16,7 @@ type BoxOption<T> = Box<Option<T>>;
 ----
 
 An impl alias is similar to a type alias, but for impls.
-An impl alias is a new name for an existing impl. It is not a new impl. Impl aliases are created
+An impl alias is a new name for an existing impl. It is not a new impl. This means that the alias refers to the same implementation and can be used wherever the original impl is expected. Impl aliases are created
 with the impl keyword:
 [source,cairo]
 ----
