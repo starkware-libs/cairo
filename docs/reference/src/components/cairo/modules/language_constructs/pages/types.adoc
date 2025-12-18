@@ -10,6 +10,7 @@ In this section, we'll cover the different types available in Cairo.
 * xref:never-type.adoc[Never type]
 * xref:unit-type.adoc[Unit type]
 * xref:error-type.adoc[Error type]
+* xref:snapshot-type.adoc[`Snapshot`]
 
 == Sequence types
 * xref:tuple-types.adoc[Tuple]
@@ -20,7 +21,7 @@ In this section, we'll cover the different types available in Cairo.
 
 == Pointer types
 * xref:box-type.adoc[`Box`]
-* xref:snapshot-type.adoc[`Snapshot`]
+* `Nullable`
 
 == User-defined types
 * xref:struct-types.adoc[Struct]
