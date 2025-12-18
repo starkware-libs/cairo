@@ -146,7 +146,7 @@ pub trait DefsGroup: Database {
         allowed_statement_attributes(self.as_dyn_database())
     }
 
-    /// Returns the set of `derive` that were declared as by a plugin.
+    /// Returns the set of `derive` that were declared by a plugin.
     /// A derive that is not in this set will be handled as an unknown derive.
     fn declared_derives<'db>(
         &'db self,
@@ -362,7 +362,7 @@ pub trait DefsGroup: Database {
     ) -> &'db OrderedHashSet<ModuleId<'db>> {
         module_ancestors_helper(self.as_dyn_database(), (), module_id)
     }
-    /// Returns the module that the module is perceives as.
+    /// Returns the module that the module is perceived as.
     /// Specifically if this is a macro call, it returns the module that the macro call was called
     /// from, including recursive calls.
     fn module_perceived_module<'db>(&'db self, module_id: ModuleId<'db>) -> ModuleId<'db> {
