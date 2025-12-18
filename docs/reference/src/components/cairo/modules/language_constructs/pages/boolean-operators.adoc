@@ -76,4 +76,4 @@ xref:negation-operators.adoc[Negation operators].
 
 - xref:boolean-types.adoc[Boolean types]
 - xref:operator-precedence.adoc[Operator precedence]
-- xref:language_semantics:constant-evaluation.adoc[Constant evaluation]
+- xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation]
