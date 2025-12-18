@@ -292,7 +292,7 @@ fn add_get_total_requested_count_code(
 }
 
 impl CompiledInvocationBuilder<'_> {
-    /// Validates that all the cost token variables are available for statement at `idx`.
+    /// Validates that all the cost token variables are available for the statement at `idx`.
     fn validate_token_vars_availability(&self) -> Result<(), InvocationError> {
         if !matches!(self.environment.gas_wallet, GasWallet::Disabled) {
             for token in CostTokenType::iter_casm_tokens() {
