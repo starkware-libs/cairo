@@ -93,7 +93,7 @@ pub fn build_jump(
     ))
 }
 
-/// Handles an operations that does no changes to the reference expressions.
+/// Handles an operation that does no changes to the reference expressions.
 pub fn build_identity(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -236,13 +236,13 @@ pub fn validate_under_limit<const K: u8>(
 /// Returns the instructions and the corresponding ap-change.
 pub fn get_pointer_after_program_code(offset: i32) -> (InstructionsWithRelocations, usize) {
     let ctx = casm! {
-        // The relocation table will point the `call` to the end of the program where there will
+        // The relocation table will point the `call` to the end of the program, where there will
         // be a `ret` instruction.
         call rel 0;
         // After calling an empty function, `[ap - 1]` contains the current `pc`.
         // Using the relocations below, the immediate value (`offset`) will be changed so that it
         // will compute a pointer to the second cell after the end of the program, which will
-        // contain the pointer to the builtin cost array.
+        // contain the pointer to the built-in cost array.
         [ap] = [ap - 1] + (offset), ap++;
     };
     let relocations = vec![
@@ -260,7 +260,7 @@ pub fn get_pointer_after_program_code(offset: i32) -> (InstructionsWithRelocatio
     )
 }
 
-/// Builds a libfunc that tries to convert a felt252 to type with values in the range
+/// Builds a libfunc that tries to convert a felt252 to a type with values in the range
 /// `[0, 2**num_bits)`.
 /// Assumption: num_bits > 128.
 pub fn build_unsigned_try_from_felt252(
