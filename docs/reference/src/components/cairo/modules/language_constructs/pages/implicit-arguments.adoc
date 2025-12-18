@@ -1,7 +1,152 @@
 = Implicit arguments
-// TODO(spapini): Fill with content.
 
-This section is a work in progress.
+Implicit arguments in Cairo are parameter that are automatically passed
+to functions without being explicitly specified at each call site.
+They provide context for low-level operation like range checking and gas tracking.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Overview
+
+Implicit argument are compiler-managed parameters
+that flow through the call stack automatically.
+They're commonly used for:
+
+* Built-in validation (range checking)
+* Resource tracking (gas consumption)
+* System access (Starknet syscalls)
+
+== Syntax
+
+Functions declare implicit argument using the `implicits()` attribute:
+
+[source,cairo]
+----
+extern fn my_function(x: u32) -> u32 implicits(RangeCheck) nopanic;
+----
+
+Multiple implicits can be declared:
+
+[source,cairo]
+----
+extern fn syscall_function(
+    data: Span<felt252>
+) -> Result<(), ByteArray> implicits(GasBuiltin, System);
+----
+
+== Common implicit types
+
+=== RangeCheck
+
+Used for operations that require validating numeric range:
+
+[source,cairo]
+----
+extern fn array_get<T>(
+    arr: @Array<T>,
+    index: usize,
+) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
+----
+
+The `RangeCheck` implicit ensures that array indice and numeric operations
+stay within valid bounds.
+
+=== GasBuiltin
+
+Used for tracking gas consumption in functions:
+
+[source,cairo]
+----
+extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+----
+
+The `GasBuiltin` implicit tracks computational resources
+to prevent infinite loop and excessive computation.
+
+=== System
+
+Used for Starknet system calls:
+
+[source,cairo]
+----
+fn call_contract(
+    address: ContractAddress,
+    selector: felt252,
+) -> SyscallResult<Span<felt252>> implicits(GasBuiltin, System);
+----
+
+The `System` implicit provides access to Starknet's state and operations.
+
+== Automatic propagation
+
+Implicit argument are automatically propagated through the call stack.
+When a function with implicits call another functions that requires the same implicit,
+they're passed automatically:
+
+[source,cairo]
+----
+fn helper(x: u32) -> u32 implicits(RangeCheck) {
+    // Uses RangeCheck implicit
+    validated_operation(x)
+}
+
+fn caller(x: u32) -> u32 implicits(RangeCheck) {
+    // RangeCheck is automatically passed to helper
+    helper(x)
+}
+----
+
+== Empty implicits
+
+Functions can explicitly declare an empty set of implicit using `implicits()`:
+
+[source,cairo]
+----
+extern fn bounded_int_is_zero<T>(value: T) -> IsZeroResult<T> implicits() nopanic;
+----
+
+For `extern` functions, this specifies exact implicit requirements.
+For regular functions, this requests an empty set of implicits.
+
+== Implicit requirements
+
+A function can only call function whose implicits are a subset
+of its own implicits.
+If a function needs to call code requiring additional implicits,
+it must declare those implicits itself:
+
+[source,cairo]
+----
+// Valid: caller has RangeCheck
+fn caller(x: u32) implicits(RangeCheck) {
+    callee(x);  // callee also requires RangeCheck
+}
+
+fn callee(x: u32) implicits(RangeCheck) {
+    // Implementation
+}
+----
+
+== Extern functions
+
+Low-level `extern` functions typically specify their implicit requirements:
+
+[source,cairo]
+----
+extern fn downcast<T, S>(value: T) -> Option<S> implicits(RangeCheck) nopanic;
+----
+
+These declarations inform the compiler about the implicit context
+needed for the operation.
+
+== Notes
+
+* Implicits are used in Sierra libfuncs, which are defined as `extern` function
+  at the core library code
+* Most applications code doesn't need to explicitly manage implicits
+* The compiler automatically handles implicit threading through the call stack
+* Implicits are part of a function's type signatures
+
+== See also
+
+* xref:functions.adoc[Functions] — Function declarations
+* xref:nopanic.adoc[Nopanic] — Non-panicking functions
+* xref:extern-functions.adoc[Extern functions] — External function declarations
