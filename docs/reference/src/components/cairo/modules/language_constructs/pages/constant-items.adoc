@@ -6,7 +6,7 @@ Constant items define named compile-time values. They are resolved, type-checked
 during semantic analysis and can be referenced from code like normal names. Their values are
 immutable and do not incur runtime computation.
 
-link:https://github.com/letmehateu/cairo/blob/main/crates/cairo-lang-semantic/src/items/constant.rs[Implementation reference]
+link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/items/constant.rs[Implementation reference]
 
 See also: xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
 
