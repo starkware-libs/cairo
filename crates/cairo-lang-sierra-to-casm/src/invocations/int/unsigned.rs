@@ -103,7 +103,7 @@ pub fn build_sqrt(
 
         // Assert root**2 is in [0, value] by asserting (value - root**2) is in [0, 2**128).
         // Since we know root**2 is in [0, 2**250) (because we asserted root is in [0, 2**125))
-        // and that value is in [0, 2**250) this is enough.
+        // and that value is in [0, 2**128) this is enough.
         assert root_squared = root * root;
         assert value_minus_root_squared = value - root_squared;
         assert value_minus_root_squared = *(range_check++);
