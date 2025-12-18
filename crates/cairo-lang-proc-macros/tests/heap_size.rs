@@ -50,6 +50,5 @@ fn test_heap_size_derive() {
     assert_eq!(test_enum2.heap_size(), 5);
 
     let test_enum3 = TestEnum::Variant3;
-    let size3 = test_enum3.heap_size();
-    assert_eq!(size3, 0);
+    assert_eq!(test_enum3.heap_size(), 0);
 }
