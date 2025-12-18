@@ -332,8 +332,8 @@ fn inner_apply_inlining<'db>(
     Ok(())
 }
 
-/// Rewrites a statement and either appends it to self.statements or adds new statements to
-/// self.statements_rewrite_stack.
+/// Inspects a statement and, when it is an inlinable call, returns the call statement and
+/// the callee function id.
 fn should_inline<'db, 'r>(
     db: &'db dyn Database,
     calling_function_id: ConcreteFunctionWithBodyId<'db>,

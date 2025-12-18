@@ -1,10 +1,10 @@
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{FilesGroup, init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
 use cairo_lang_semantic::corelib::CorelibSemantic;
@@ -39,8 +39,8 @@ pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
 pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| {
         let mut db = SierraGenDatabaseForTesting::new_empty();
-        let add_withdraw_gas_flag_id = FlagLongId("add_withdraw_gas".into());
-        db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+        let add_withdraw_gas_flag_id = FlagLongId(Flag::ADD_WITHDRAW_GAS.into());
+        db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(false)));
         Mutex::new(db)
     });
 impl SierraGenDatabaseForTesting {

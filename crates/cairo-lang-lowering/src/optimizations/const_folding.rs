@@ -5,7 +5,7 @@ mod test;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
-use cairo_lang_filesystem::flag::flag_unsafe_panic;
+use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::helper::ModuleHelper;
@@ -24,7 +24,7 @@ use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, extract_matches, require, try_extract_matches};
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
@@ -429,7 +429,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 .concretize(db, vec![GenericArgumentId::Constant(val)])
                 .lowered(db);
             return None;
-        } else if stmt.function == self.panic_with_byte_array && !flag_unsafe_panic(db) {
+        } else if stmt.function == self.panic_with_byte_array && !db.flag_unsafe_panic() {
             let snap = self.var_info.get(&stmt.inputs[0].var_id)?;
             let bytearray = try_extract_matches!(snap, VarInfo::Snapshot)?;
             let [
@@ -1364,10 +1364,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         unknown_vars: &mut Vec<VarUsage<'db>>,
         coerce: Option<&SpecializationArg<'db>>,
     ) -> Option<SpecializationArg<'db>> {
-        if self.db.type_size_info(ty).ok()? == TypeSizeInformation::ZeroSized {
-            // Skip zero-sized constants as they are not supported in sierra-gen.
-            return None;
-        }
+        // Skip zero-sized constants as they are not supported in sierra-gen.
+        require(self.db.type_size_info(ty).ok()? != TypeSizeInformation::ZeroSized)?;
+        // Skip specialization arguments if they are coerced to not be specialized.
+        require(!matches!(coerce, Some(SpecializationArg::NotSpecialized)))?;
 
         match var_info {
             VarInfo::Const(value) => {

@@ -1,6 +1,248 @@
 = If expressions
 
-This section is a work in progress.
+An `if` expression allows conditional execution based on a boolean condition.
+Unlike statements in some languages, `if` in Cairo is an expression
+that returns a value.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+Basic if expression:
+
+[source,cairo]
+----
+if condition {
+    // code block
+}
+----
+
+If-else expression:
+
+[source,cairo]
+----
+if condition {
+    // if branch
+} else {
+    // else branch
+}
+----
+
+If-else if chain:
+
+[source,cairo]
+----
+if condition1 {
+    // first branch
+} else if condition2 {
+    // second branch
+} else {
+    // default branch
+}
+----
+
+== Condition
+
+Standard if expressions use a boolean condition:
+
+[source,cairo]
+----
+let x = 10;
+if x > 5 {
+    // This branch executes
+}
+----
+
+Cairo also supports `if let` for pattern matching:
+
+[source,cairo]
+----
+if let Option::Some(value) = maybe_value {
+    // Executes if pattern matches
+    process(value)
+}
+----
+
+Pattern matching can be combined with boolean conditions using `&&`:
+
+[source,cairo]
+----
+if let Option::Some(x) = maybe_value && x > 10 {
+    // Executes if pattern matches AND x > 10
+    process_large(x)
+}
+----
+
+Multiple patterns with boolean logic:
+
+[source,cairo]
+----
+if let Result::Ok(value) = result && value != 0 {
+    // Pattern matches and value is non-zero
+    compute(value)
+} else if let Result::Err(error) = result {
+    // Handle error case
+    handle_error(error)
+}
+----
+
+== If as an expression
+
+If expressions return values.
+Both branches must return the same type:
+
+[source,cairo]
+----
+fn abs(x: i32) -> i32 {
+    if x >= 0 {
+        x
+    } else {
+        -x
+    }
+}
+----
+
+The value of an if expression is the value of the executed branch:
+
+[source,cairo]
+----
+let number = 6;
+let result = if number % 2 == 0 {
+    "even"
+} else {
+    "odd"
+};
+----
+
+== If without else
+
+An if expression without an else branch returns the unit type `()`
+when the condition is false:
+
+[source,cairo]
+----
+let x = 5;
+if x > 10 {
+    // Do something
+}
+// If condition is false, expression evaluates to ()
+----
+
+This is only valid when the if branch also returns `()`:
+
+[source,cairo]
+----
+let x = 5;
+if x > 10 {
+    do_something();  // Returns ()
+}
+----
+
+== Type requirements
+
+When using if-else as an expression, both branches must return the same type:
+
+[source,cairo]
+----
+// Valid: both branches return u32
+let result: u32 = if condition {
+    10_u32
+} else {
+    20_u32
+};
+
+// Invalid: type mismatch
+// let result = if condition {
+//     10_u32
+// } else {
+//     "string"  // Error: expected u32, found ByteArray
+// };
+----
+
+== If-else if chains
+
+Multiple conditions can be chained:
+
+[source,cairo]
+----
+fn classify_number(x: i32) -> ByteArray {
+    if x < 0 {
+        "negative"
+    } else if x == 0 {
+        "zero"
+    } else if x < 10 {
+        "single digit"
+    } else {
+        "multi digit"
+    }
+}
+----
+
+== Nested if expressions
+
+If expressions can be nested:
+
+[source,cairo]
+----
+fn sign(x: felt252) -> felt252 {
+    if x == 0 {
+        0
+    } else {
+        if x > 0 {
+            1
+        } else {
+            -1
+        }
+    }
+}
+----
+
+== Examples
+
+=== Simple conditional
+
+[source,cairo]
+----
+fn max(a: u32, b: u32) -> u32 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+----
+
+=== Multiple conditions
+
+[source,cairo]
+----
+fn grade(score: u32) -> ByteArray {
+    if score >= 90 {
+        "A"
+    } else if score >= 80 {
+        "B"
+    } else if score >= 70 {
+        "C"
+    } else if score >= 60 {
+        "D"
+    } else {
+        "F"
+    }
+}
+----
+
+=== With early return
+
+[source,cairo]
+----
+fn divide(a: u32, b: u32) -> Option<u32> {
+    if b == 0 {
+        return Option::None;
+    }
+    Option::Some(a / b)
+}
+----
+
+== See also
+
+* xref:boolean-types.adoc[Boolean types] — The condition type
+* xref:match-expressions.adoc[Match expressions] — Pattern-based conditionals
+* xref:expressions.adoc[Expressions] — General expression syntax

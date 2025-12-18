@@ -2,9 +2,8 @@ use std::collections::VecDeque;
 
 use assert_matches::assert_matches;
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::flag::{Flag, flag_unsafe_panic};
-use cairo_lang_filesystem::ids::{FlagId, FlagLongId, SmolStrId};
+use cairo_lang_filesystem::flag::FlagsGroup;
+use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, core_submodule, get_core_enum_concrete_variant, get_function_id, get_panic_ty,
     never_ty,
@@ -45,10 +44,7 @@ pub fn lower_panics<'db>(
         return Ok(());
     }
 
-    let opt_trace_fn = if matches!(
-        db.get_flag(FlagId::new(db, FlagLongId("panic_backtrace".into()))),
-        Some(flag) if matches!(*flag, Flag::PanicBacktrace(true)),
-    ) {
+    let opt_trace_fn = if db.flag_panic_backtrace() {
         Some(
             ModuleHelper::core(db)
                 .submodule("internal")
@@ -68,7 +64,7 @@ pub fn lower_panics<'db>(
         None
     };
 
-    if flag_unsafe_panic(db) {
+    if db.flag_unsafe_panic() {
         lower_unsafe_panic(db, lowered, opt_trace_fn);
         return Ok(());
     }

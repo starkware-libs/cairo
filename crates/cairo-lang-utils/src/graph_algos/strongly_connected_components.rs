@@ -114,10 +114,11 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
     while let Some(other_node_id) = ctx.stack.pop() {
         let other_node = ctx.known_nodes.get_mut(&other_node_id).unwrap();
         other_node.on_stack = false;
-        scc.push(other_node_id.clone());
+        let is_root = other_node_id == current_node_id;
+        scc.push(other_node_id);
 
         // Stop once the popped node is the current node which is the root of the SCC.
-        if other_node_id == current_node_id {
+        if is_root {
             break;
         }
     }

@@ -14,8 +14,8 @@ use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{
     ArcStr, BlobId, BlobLongId, CodeMapping, CodeOrigin, CrateId, CrateInput, CrateLongId,
-    Directory, DirectoryInput, FileId, FileInput, FileLongId, FlagId, FlagLongId, SmolStrId,
-    SpanInFile, Tracked, VirtualFile,
+    Directory, DirectoryInput, FileId, FileInput, FileLongId, FlagLongId, SmolStrId, SpanInFile,
+    Tracked, VirtualFile,
 };
 use crate::span::{FileSummary, TextOffset, TextSpan, TextWidth};
 
@@ -237,7 +237,7 @@ pub struct FilesGroupInput {
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
     #[returns(ref)]
-    pub flags: Option<OrderedHashMap<FlagLongId, Arc<Flag>>>,
+    pub flags: Option<OrderedHashMap<FlagLongId, Flag>>,
     /// The `#[cfg(...)]` options.
     #[returns(ref)]
     pub cfg_set: Option<CfgSet>,
@@ -260,11 +260,6 @@ pub trait FilesGroup: Database {
     /// Interned version of `file_overrides_input`.
     fn file_overrides<'db>(&'db self) -> &'db OrderedHashMap<FileId<'db>, ArcStr> {
         file_overrides(self.as_dyn_database())
-    }
-
-    /// Interned version of `flags_input`.
-    fn flags<'db>(&'db self) -> &'db OrderedHashMap<FlagId<'db>, Arc<Flag>> {
-        flags(self.as_dyn_database())
     }
 
     /// List of crates in the project.
@@ -293,30 +288,15 @@ pub trait FilesGroup: Database {
     fn blob_content<'db>(&'db self, blob_id: BlobId<'db>) -> Option<&'db [u8]> {
         blob_content(self.as_dyn_database(), blob_id)
     }
-    /// Query to get a compilation flag by its ID.
-    fn get_flag<'db>(&'db self, id: FlagId<'db>) -> Option<&'db Flag> {
-        get_flag(self.as_dyn_database(), id)
-    }
 
-    /// Create an input file from an interned file id.
+    /// Creates an input file from an interned file id.
     fn file_input<'db>(&'db self, file_id: FileId<'db>) -> &'db FileInput {
         file_input(self.as_dyn_database(), file_id)
     }
 
-    /// Create an input crate from an interned crate id.
+    /// Creates an input crate from an interned crate id.
     fn crate_input<'db>(&'db self, crt: CrateId<'db>) -> &'db CrateInput {
         crate_input(self.as_dyn_database(), crt)
-    }
-
-    /// Sets the given flag value. None value removes the flag.
-    fn set_flag(&mut self, flag: FlagLongId, value: Option<Arc<Flag>>) {
-        let db_ref = self.as_dyn_database();
-        let mut flags = files_group_input(db_ref).flags(db_ref).clone().unwrap();
-        match value {
-            Some(value) => flags.insert(flag, value),
-            None => flags.swap_remove(&flag),
-        };
-        files_group_input(db_ref).set_flags(self).to(Some(flags));
     }
 
     /// Merges specified [`CfgSet`] into one already stored in this db.
@@ -374,12 +354,6 @@ pub fn crate_configs<'db>(
             )
         })
         .collect()
-}
-
-#[salsa::tracked(returns(ref))]
-pub fn flags<'db>(db: &'db dyn Database) -> OrderedHashMap<FlagId<'db>, Arc<Flag>> {
-    let inp = files_group_input(db).flags(db).as_ref().expect("flags is not set");
-    inp.iter().map(|(flag_id, flag)| (flag_id.clone().intern(db), flag.clone())).collect()
 }
 
 #[salsa::tracked(returns(ref))]
@@ -576,18 +550,6 @@ fn file_summary<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<&'db Fi
     file_summary_helper(db, file).as_ref()
 }
 
-/// Returns a reference to the flag value.
-#[salsa::tracked(returns(ref))]
-fn get_flag_helper<'db>(db: &'db dyn Database, id: FlagId<'db>) -> Option<Arc<Flag>> {
-    db.flags().get(&id).cloned()
-}
-
-/// Returns a reference to the flag value.
-// TODO(eytan-starkware): Remove helper function and use flags here.
-fn get_flag<'db>(db: &'db dyn Database, id: FlagId<'db>) -> Option<&'db Flag> {
-    db.flags().get(&id).map(|flag| flag.as_ref())
-}
-
 /// Tracked function to return the blob's content.
 #[salsa::tracked(returns(ref))]
 fn blob_content_helper<'db>(db: &'db dyn Database, blob: BlobId<'db>) -> Option<Vec<u8>> {
@@ -731,7 +693,7 @@ pub fn ext_as_virtual<'db>(db: &'db dyn Database, id: salsa::Id) -> &'db Virtual
 
 /// Non-pub queries over the files group.
 trait PrivFilesGroup: Database {
-    /// Create an input crate configuration from a [`CrateConfiguration`].
+    /// Creates an input crate configuration from a [`CrateConfiguration`].
     fn crate_configuration_input<'db>(
         &'db self,
         config: CrateConfiguration<'db>,

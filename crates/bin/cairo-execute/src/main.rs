@@ -432,7 +432,7 @@ impl Writer for FileWriter {
 }
 
 impl FileWriter {
-    /// Create a new instance of `FileWriter` with the given file path.
+    /// Creates a new instance of `FileWriter` with the given file path.
     fn new(capacity: usize, path: &PathBuf) -> anyhow::Result<Self> {
         Ok(Self {
             buf_writer: io::BufWriter::with_capacity(capacity, std::fs::File::create(path)?),
