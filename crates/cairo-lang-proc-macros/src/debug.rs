@@ -133,6 +133,7 @@ fn emit_fields_debug(
                 panic!("Hiding unnamed fields is not implemented.");
             }
         } else {
+            let is_named = field.ident.is_some();
             let field_ident = field
                 .ident
                 .clone()
@@ -141,7 +142,7 @@ fn emit_fields_debug(
             let func_call = quote! {
                 &#crt::debug::helper::HelperDebug::<#ty, #db>::helper_debug(#field_ident, db)
             };
-            if let Some(field_ident) = &field.ident {
+            if is_named {
                 field_prints = quote! {
                     #field_prints
                     .field(stringify!(#field_ident), #func_call)
