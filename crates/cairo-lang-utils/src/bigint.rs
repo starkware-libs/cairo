@@ -79,7 +79,6 @@ pub struct BigIntAsHex {
 fn big_int_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
     use schemars::JsonSchema;
 
-    #[allow(dead_code)]
     #[allow(clippy::enum_variant_names)]
     #[derive(JsonSchema)]
     pub enum Sign {
@@ -88,13 +87,11 @@ fn big_int_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema
         Plus,
     }
 
-    #[allow(dead_code)]
     #[derive(JsonSchema)]
     pub struct BigUint {
         data: Vec<u64>, // BigDigit is u64 or u32.
     }
 
-    #[allow(dead_code)]
     #[derive(JsonSchema)]
     struct BigInt {
         sign: Sign,
