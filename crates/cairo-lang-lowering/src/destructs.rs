@@ -94,7 +94,7 @@ impl<'db> DestructAdder<'db, '_> {
         }
     }
 
-    /// Check if the match arm introduces a `PanicResult::Err` variable and sets the panic state
+    /// Checks if the match arm introduces a `PanicResult::Err` variable and sets the panic state
     /// accordingly.
     fn set_post_match_state(
         &mut self,

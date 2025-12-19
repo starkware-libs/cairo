@@ -184,7 +184,7 @@ fn get_kept_items_nodes<'a, Item: QueryAttrs<'a> + TypedSyntaxNode<'a>>(
     if any_dropped { Some(kept_items_nodes) } else { None }
 }
 
-/// Check if the given item should be dropped from the AST.
+/// Checks if the given item should be dropped from the AST.
 fn should_drop<'a, Item: QueryAttrs<'a>>(
     db: &'a dyn Database,
     cfg_set: &CfgSet,
