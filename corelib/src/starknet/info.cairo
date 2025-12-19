@@ -241,7 +241,7 @@ pub mod v2 {
         /// The data availability mode for the nonce.
         /// Used for V3 transactions.
         pub nonce_data_availability_mode: u32,
-        /// The data availability mode for the account balance from which the fee will be taken.
+        /// The data availability mode for the account balance from which fee will be taken.
         /// Used for V3 transactions.
         pub fee_data_availability_mode: u32,
         /// If nonempty, will contain the required data for deploying and initializing an account
@@ -312,7 +312,7 @@ pub mod v3 {
         /// The data availability mode for the nonce.
         /// Used for V3 transactions.
         pub nonce_data_availability_mode: u32,
-        /// The data availability mode for the account balance from which the fee will be taken.
+        /// The data availability mode for the account balance from which fee will be taken.
         /// Used for V3 transactions.
         pub fee_data_availability_mode: u32,
         /// If nonempty, will contain the required data for deploying and initializing an account
