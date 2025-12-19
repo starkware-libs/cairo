@@ -16,7 +16,7 @@ Implementation reference:
 
 Note: IR-level constant folding is an optimization step and not part of language semantics:
 
-- link:https://github.com/kseniaeremekno/cairo/blob/main/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs].
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs].
 
 == Allowed constructs in const expressions
 
