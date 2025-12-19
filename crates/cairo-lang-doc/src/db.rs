@@ -28,7 +28,7 @@ pub trait DocGroup: Database {
         get_item_documentation_as_tokens(self.as_dyn_database(), (), item_id)
     }
 
-    /// Gets the signature of an item (i.e., item without its body).
+    /// Gets the signature of an item (i.e., the item without its body).
     fn get_item_signature<'db>(&'db self, item_id: DocumentableItemId<'db>) -> Option<String> {
         self.get_item_signature_with_links(item_id).0
     }
