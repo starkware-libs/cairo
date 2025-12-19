@@ -323,7 +323,6 @@ impl<Key: Eq + Hash, Value, BH: BuildHasher> UnorderedHashMap<Key, Value, BH> {
     /// function is used to combine the values.
     pub fn merge<HandleDuplicate>(&mut self, other: &Self, handle_duplicate: HandleDuplicate)
     where
-        BH: Clone,
         HandleDuplicate: Fn(OccupiedEntry<'_, Key, Value>, &Value),
         Key: Clone,
         Value: Clone,
