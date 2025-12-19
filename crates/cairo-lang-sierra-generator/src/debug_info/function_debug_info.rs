@@ -65,8 +65,8 @@ impl<'db> AllFunctionsDebugInfo<'db> {
     }
 }
 
-/// The debug info of a sierra function.
-/// Contains a signature location and locations of sierra variables of this function.
+/// The debug info of a Sierra function.
+/// Contains a signature location and locations of Sierra variables of this function.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FunctionDebugInfo<'db> {
     pub signature_location: LocationId<'db>,
