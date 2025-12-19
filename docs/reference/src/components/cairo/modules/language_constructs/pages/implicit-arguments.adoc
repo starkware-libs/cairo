@@ -46,7 +46,7 @@ extern fn array_get<T>(
 ) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
 ----
 
-The `RangeCheck` implicit ensures that array indice and numeric operations
+The `RangeCheck` implicit ensures that array indices and numeric operations
 stay within valid bounds.
 
 === GasBuiltin
