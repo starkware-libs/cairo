@@ -105,4 +105,4 @@ language semantics.
 == Related sources
 
 - link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/items/constant.rs[crates/cairo-lang-semantic/src/items/constant.rs]
-- `crates/cairo-lang-lowering/src/optimizations/const_folding.rs`
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs]
