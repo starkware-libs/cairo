@@ -4,7 +4,7 @@ use std::fmt;
 ///
 /// Valid error codes must start with capital `E` followed by 4 decimal digits, e.g.: `E0001`.
 ///
-/// Use the [`error_code!`][`crate::error_code!`] macro to construct a well-formed `ErrorCode` in
+/// Use the [`error_code!`][`crate::error_code!`] macro to construct a well-formed `ErrorCode` at
 /// compile-time.
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct ErrorCode(&'static str);
