@@ -95,9 +95,9 @@ See also:
 
 Language semantics and constructs:
 
-- xref:../../language_constructs/pages/lvalue.adoc[docs/reference/src/components/cairo/modules/language_constructs/pages/lvalue.adoc]
-- xref:../../language_constructs/pages/structs.adoc[docs/reference/src/components/cairo/modules/language_constructs/pages/structs.adoc]
-- xref:../../language_constructs/pages/linear-types.adoc[docs/reference/src/components/cairo/modules/language_constructs/pages/linear-types.adoc]
+- xref:../../language_constructs/pages/lvalue.adoc[LValue]
+- xref:../../language_constructs/pages/structs.adoc[Structs]
+- xref:../../language_constructs/pages/linear-types.adoc[Linear Types]
 
 Snapshots, desnap, and types:
 
