@@ -1,4 +1,4 @@
-// The following ids represent all the definitions in the code.
+// The following IDs represent all the definitions in the code.
 // Roughly, this refers to the first appearance of each identifier.
 // Everything that can be returned by "Go to definition" is a definition.
 //
@@ -883,7 +883,7 @@ impl<'db> GenericParamId<'db> {
             kind,
             SyntaxKind::GenericParamImplAnonymous | SyntaxKind::GenericParamNegativeImpl
         ) {
-            // For anonymous impls print the declaration.
+            // For anonymous impls prints the declaration.
             return self.stable_location(db).syntax_node(db).get_text_without_trivia(db);
         }
 
@@ -1133,7 +1133,7 @@ impl<'db> FunctionTitleId<'db> {
 
 define_language_element_id_as_enum! {
     #[toplevel]
-    /// Generic type ids enum.
+    /// Generic type IDs enum.
     pub enum GenericTypeId<'db> {
         Struct(StructId<'db>),
         Enum(EnumId<'db>),
