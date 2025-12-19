@@ -305,7 +305,7 @@ pub trait QueryAttrs<'a> {
         self.query_attr(db, attr).next()
     }
 
-    /// Check if this node has an attribute named exactly `attr`.
+    /// Checks if this node has an attribute named exactly `attr`.
     fn has_attr(&self, db: &'a dyn Database, attr: &'a str) -> bool {
         self.find_attr(db, attr).is_some()
     }
