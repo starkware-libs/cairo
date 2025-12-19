@@ -1,4 +1,4 @@
-//! Diagnostics hold error information from around the compiler, associated with a location to the
+//! Diagnostics hold error information from around the compiler, associated with a location in the
 //! source files.
 
 pub use diagnostics::{
