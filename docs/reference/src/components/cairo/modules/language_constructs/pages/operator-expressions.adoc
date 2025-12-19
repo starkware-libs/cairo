@@ -1,6 +1,198 @@
 = Operator expressions
 
-This section is a work in progress.
+Operator expressions apply built-in or user-defined operations to one or more operand.
+Cairo support both unary operators (acting on a single operand) and binary operators
+(acting on two operands).
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Overview
+
+Operator in Cairo are syntactic sugar for trait method calls. When you write an expression
+like `a + b`, the compiler translate it to a call to the `Add` trait's `add` method.
+This trait-driven design allow user-defined types to overload operators by implementing
+the appropriate traits.
+
+== Categories of operators
+
+=== Arithmetic operators
+
+Perform mathematical operations on numeric types: `+` (addition), `-` (subtraction),
+`*` (multiplication), `/` (division), `%` (remainder).
+
+See xref:arithmetic-and-logical-operators.adoc[Arithmetic operators] for details.
+
+=== Comparison operators
+
+Compare two values and produce a boolean result: `<` (less than), `>` (greater than),
+`\<=` (less than or equal), `>=` (greater than or equal).
+
+See xref:comparison-operators.adoc[Comparison operators] for details.
+
+=== Equality operators
+
+Test whether two values are equals or not equals: `==` (equal), `!=` (not equal).
+
+See xref:equality-operators.adoc[Equality operators] for details.
+
+=== Boolean operators
+
+Combine or negate boolean values using logical operator `&&` (and), `||` (or),
+which short-circuit, or bitwise operator `&`, `|`, `^` on `bool` values,
+which do not short-circuit.
+
+See xref:boolean-operators.adoc[Boolean operators] for details.
+
+=== Bitwise operators
+
+Perform bit-level operations on integer type: `&` (AND), `|` (OR), `^` (XOR),
+`~` (NOT).
+
+See xref:bitwise-operators.adoc[Bitwise operators] for details.
+
+=== Negation operators
+
+Unary operators that negate their operand: `-` (numeric negation), `!` (logical NOT).
+
+See xref:negation-operators.adoc[Negation operators] for details.
+
+=== Error propagation operator
+
+The postfix `?` operator propagate errors in functions that return `Result` types.
+
+See xref:error-propagation-operator.adoc[Error propagation operator] for details.
+
+== Operator precedence and associativity
+
+Operators have different precedence level that determine the order of evaluation
+in complex expressions. For example, multiplication binds tighter than addition,
+so `2 + 3 * 4` evaluates as `2 + (3 * 4)`.
+
+Use parentheses to override the default precedence: `(2 + 3) * 4`.
+
+See xref:operator-precedence.adoc[Operator precedence] for the complete
+precedence table and associativity rules.
+
+== Trait-driven semantics
+
+All operator in Cairo are implemented through traits defined in `core::traits`.
+When you use an operator, the compiler resolve the appropriate trait implementation
+for the operand types:
+
+[source,cairo]
+----
+// This expression:
+let result = a + b;
+
+// Is transformed to:
+let result = Add::add(a, b);
+----
+
+If no suitable trait implementation exists for the operand types, the compiler
+report a type error.
+
+To enable operators for custom type, implement the corresponding traits:
+
+[source,cairo]
+----
+#[derive(Copy, Drop)]
+struct Point {
+    x: u32,
+    y: u32,
+}
+
+impl PointAdd of Add<Point> {
+    fn add(lhs: Point, rhs: Point) -> Point {
+        Point { x: lhs.x + rhs.x, y: lhs.y + rhs.y }
+    }
+}
+
+fn main() {
+    let p1 = Point { x: 1, y: 2 };
+    let p2 = Point { x: 3, y: 4 };
+    let p3 = p1 + p2;  // Now works for Point
+}
+----
+
+== Examples
+
+=== Basic arithmetic
+
+[source,cairo]
+----
+fn main() {
+    let a = 10;
+    let b = 3;
+
+    let sum = a + b;        // 13
+    let diff = a - b;       // 7
+    let product = a * b;    // 30
+    let quotient = a / b;   // 3
+    let remainder = a % b;  // 1
+}
+----
+
+=== Comparison and logical operators
+
+[source,cairo]
+----
+fn is_valid_age(age: u32) -> bool {
+    age >= 18 && age <= 120
+}
+
+fn main() {
+    let age = 25;
+    let height = 180;
+
+    // Comparison operators
+    let is_adult = age > 18;
+
+    // Logical operators combine conditions
+    let is_eligible = age >= 18 && height >= 150;
+
+    let is_valid = is_valid_age(age);
+}
+----
+
+=== Bitwise operations
+
+[source,cairo]
+----
+fn main() {
+    let flags: u8 = 0b1010;
+    let mask: u8 = 0b0011;
+
+    let result = flags & mask;  // 0b0010
+    let combined = flags | mask; // 0b1011
+    let toggled = flags ^ mask;  // 0b1001
+    let inverted = ~flags;       // 0b11110101 (for u8)
+}
+----
+
+=== Operator precedence
+
+[source,cairo]
+----
+fn main() {
+    // Multiplication has higher precedence than addition
+    let result = 2 + 3 * 4;  // 14, not 20
+
+    // Use parentheses to override
+    let result2 = (2 + 3) * 4;  // 20
+
+    // Comparison binds looser than arithmetic
+    let check = 10 + 5 > 12;  // true (evaluates as (10 + 5) > 12)
+
+    // Logical AND binds tighter than OR
+    let logic = true || false && false;  // true (as true || (false && false))
+}
+----
+
+== See also
+
+- xref:operator-precedence.adoc[Operator precedence] - complete precedence table
+- xref:arithmetic-and-logical-operators.adoc[Arithmetic operators]
+- xref:comparison-operators.adoc[Comparison operators]
+- xref:equality-operators.adoc[Equality operators]
+- xref:boolean-operators.adoc[Boolean operators]
+- xref:bitwise-operators.adoc[Bitwise operators]
+- xref:negation-operators.adoc[Negation operators]
+- xref:error-propagation-operator.adoc[Error propagation operator]
