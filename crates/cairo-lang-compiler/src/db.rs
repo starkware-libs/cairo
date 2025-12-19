@@ -182,7 +182,7 @@ impl RootDatabaseBuilder {
 
     pub fn build(&mut self) -> Result<RootDatabase> {
         // NOTE: Order of operations matters here!
-        //   Errors if something is not OK are very subtle, mostly this results in missing
+        //   Errors from incorrect ordering are very subtle, mostly resulting in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
         let mut db =

@@ -481,7 +481,7 @@ fn create_node_for_tuple_inner<'db>(
 
 /// Concatenates the given `item` to the given `path_tail`.
 ///
-///  Adds the member name if the current item is a struct, and adds a comma if necessary.
+/// Adds the member name if the current item is a struct, and adds a comma if necessary.
 ///
 /// `current_member` is `None` for tuples, and `Some` for structs.
 ///

@@ -931,7 +931,7 @@ fn priv_module_data_helper<'db>(
         let item_module_ast = &parent_module_data.submodules(db)[&submodule_id];
         if matches!(item_module_ast.body(db), MaybeModuleBody::Some(_)) {
             // TODO(spapini): Diagnostics in this module that get mapped to parent module
-            // should lie in that modules ModuleData, or somehow collected by its
+            // should lie in that module's ModuleData, or be collected by its
             // diagnostics collector function.
 
             // If this is an inline module, copy its generation file info from the parent
@@ -1175,9 +1175,9 @@ fn module_sub_files<'db>(
     let mut diagnostics_notes = OrderedHashMap::default();
     for item_ast in item_asts.elements(db) {
         let mut remove_original_item = false;
-        // Iterate the plugins by their order. The first one to change something (either
+        // Iterate through the plugins by their order. The first one to change something (either
         // generate new code, remove the original code, or both), breaks the loop. If more
-        // plugins might have act on the item, they can do it on the generated code.
+        // plugins might act on the item, they can do it on the generated code.
         for plugin_id in db.crate_macro_plugins(crate_id).iter() {
             let plugin = plugin_id.long(db);
 
