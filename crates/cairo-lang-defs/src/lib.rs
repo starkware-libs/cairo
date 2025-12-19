@@ -1,5 +1,5 @@
 //! Representation and queries for definitions of module-level Cairo language elements.
-//! For example, resolving identifiers at the module level is done here.
+//! For example, identifier resolution at the module level is handled here.
 
 pub mod cache;
 pub mod db;
