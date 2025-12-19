@@ -386,7 +386,7 @@ fn test_foo_to_bar() {
     );
 }
 
-// Verify that if the first plugin removed the original item, the second item doesn't act on the
+// Verify that if the first plugin removed the original item, the second plugin doesn't act on the
 // original item.
 #[test]
 fn test_first_plugin_removes() {
