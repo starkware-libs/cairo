@@ -36,7 +36,7 @@ extern fn syscall_function(
 
 === RangeCheck
 
-Used for operations that require validating numeric range:
+Used for operations that require validating numeric ranges:
 
 [source,cairo]
 ----
