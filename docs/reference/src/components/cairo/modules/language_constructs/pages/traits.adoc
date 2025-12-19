@@ -37,7 +37,7 @@ an implementation of the `Display<T>` trait:
 [source,rust]
 ----
 fn foo<T, impl TDisplay: Display<T>>(value: T) {
-    let a = TDisplay::display(5_usize);
+    let a = TDisplay::display(value);
     let b = Display::display(value);
 }
 ----
