@@ -26,7 +26,6 @@ impl<T> DerefMut for Deque<T> {
 #[cfg(feature = "salsa")]
 unsafe impl<T: salsa::Update> salsa::Update for Deque<T> {
     unsafe fn maybe_update(old_pointer: *mut Self, new_deque: Self) -> bool {
-        let new_deque = new_deque;
         let old_deque: &mut Self = unsafe { &mut *old_pointer };
 
         // If the lengths are different, just replace the old deque with the new one
