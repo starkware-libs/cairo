@@ -40,7 +40,7 @@ use crate::debug_info::{SourceCodeSpan, SourceFileFullPath, maybe_code_location}
 
 pub mod serializable;
 
-/// The debug info of all sierra functions in the program.
+/// The debug info of all Sierra functions in the program.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AllFunctionsDebugInfo<'db>(OrderedHashMap<FunctionId, FunctionDebugInfo<'db>>);
 
