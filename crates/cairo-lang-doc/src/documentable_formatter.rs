@@ -126,7 +126,7 @@ impl<'db> fmt::Write for HirFormatter<'db> {
 
 /// [`HirFormatter`] implementation.
 impl<'db> HirFormatter<'db> {
-    /// Creates new instance of [`HirFormatter`].
+    /// Creates a new instance of [`HirFormatter`].
     pub fn new(db: &'db dyn Database) -> Self {
         Self { db, buf: String::new(), location_links: Vec::new() }
     }
