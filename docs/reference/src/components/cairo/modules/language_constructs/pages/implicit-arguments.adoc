@@ -1,6 +1,6 @@
 = Implicit arguments
 
-Implicit arguments in Cairo are parameter that are automatically passed
+Implicit arguments in Cairo are parameters that are automatically passed
 to functions without being explicitly specified at each call site.
 They provide context for low-level operation like range checking and gas tracking.
 
