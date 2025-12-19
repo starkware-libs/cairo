@@ -16,7 +16,7 @@ They're commonly used for:
 
 == Syntax
 
-Functions declare implicit argument using the `implicits()` attribute:
+Functions declare implicit arguments using the `implicits()` attribute:
 
 [source,cairo]
 ----
