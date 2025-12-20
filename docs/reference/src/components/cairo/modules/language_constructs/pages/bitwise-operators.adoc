@@ -27,7 +27,7 @@ type error (trait resolution fails).
 == Precedence and associativity
 
 Bitwise operators have different precedence levels defined in
-`crates/cairo-lang-parser/src/operators.rs`:
+link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs]:
 
 - `&` has precedence level 4
 - `^` has precedence level 5
