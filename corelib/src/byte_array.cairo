@@ -77,7 +77,7 @@ const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 #[derive(Drop, Clone, PartialEq)]
 pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
-    /// The first byte of each word in the byte array is the most significant in the word.
+    /// The first byte of each word in the byte array is the most significant byte in the word.
     pub(crate) data: Array<bytes31>,
     /// A `felt252` that actually represents a `bytes31`, with fewer than 31 bytes.
     /// It is represented as a `felt252` to improve performance when building the byte array.
