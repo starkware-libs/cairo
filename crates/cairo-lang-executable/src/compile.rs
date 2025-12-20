@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -210,8 +210,7 @@ pub fn compile_executable_function_in_prepared_db<'db>(
     config: ExecutableConfig,
 ) -> Result<CompileExecutableResult<'db>> {
     let SierraProgramWithDebug { program: sierra_program, debug_info } =
-        get_sierra_program_for_functions(db, vec![executable])
-            .with_context(|| "Compilation failed without any diagnostics.")?;
+        get_sierra_program_for_functions(db, vec![executable])?;
     if !config.allow_syscalls {
         // Finding if any syscall libfuncs are used in the program.
         // If any are found, the compilation will fail, as syscalls are not proved in executables.
