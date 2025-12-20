@@ -48,7 +48,7 @@ pub fn handle_storage_struct<'db, 'a>(
                     member.stable_ptr(db),
                     format!(
                         "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
-                         [some_path::]{STORAGE_STRUCT_NAME}`"
+                         `[some_path::]{STORAGE_STRUCT_NAME}`"
                     ),
                 ));
             }
