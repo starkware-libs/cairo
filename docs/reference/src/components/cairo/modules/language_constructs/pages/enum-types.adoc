@@ -84,6 +84,9 @@ Common traits that can be derived:
 * `PartialEq` — Equality comparison
 * `Serde` — Serialization and deserialization
 * `Debug` — Debug formatting
+* `Default` — Provides a default value for the enum
+* `Hash` — Allows computing a hash value for the enum
+* `PanicDestruct` — Allows safely destructing the enum during a panic
 
 Example with derived traits:
 

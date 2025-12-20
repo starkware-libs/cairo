@@ -94,7 +94,7 @@ impl<'db> DestructAdder<'db, '_> {
         }
     }
 
-    /// Check if the match arm introduces a `PanicResult::Err` variable and sets the panic state
+    /// Checks if the match arm introduces a `PanicResult::Err` variable and sets the panic state
     /// accordingly.
     fn set_post_match_state(
         &mut self,
@@ -142,7 +142,7 @@ impl<'db> DemandReporter<VariableId, PanicState> for DestructAdder<'db, '_> {
         if var.info.droppable.is_ok() {
             return;
         };
-        // If a non droppable variable gets out of scope, add a destruct call for it.
+        // If a non-droppable variable gets out of scope, add a destruct call for it.
         if let Ok(impl_id) = var.info.destruct_impl.clone() {
             self.destructions.push(DestructionEntry::Plain(PlainDestructionEntry {
                 position,
@@ -151,7 +151,7 @@ impl<'db> DemandReporter<VariableId, PanicState> for DestructAdder<'db, '_> {
             }));
             return;
         }
-        // If a non destructible variable gets out of scope, add a panic_destruct call for it.
+        // If a non-destructible variable gets out of scope, add a panic_destruct call for it.
         if let Ok(impl_id) = var.info.panic_destruct_impl.clone()
             && let PanicState::EndsWithPanic(panic_locations) = panic_state
         {

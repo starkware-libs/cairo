@@ -95,14 +95,14 @@ See also:
 
 Language semantics and constructs:
 
-- `docs/reference/src/components/cairo/modules/language_constructs/pages/lvalue.adoc`
-- `docs/reference/src/components/cairo/modules/language_constructs/pages/structs.adoc`
-- `docs/reference/src/components/cairo/modules/language_constructs/pages/linear-types.adoc`
+- xref:../../language_constructs/pages/lvalue.adoc[LValue]
+- xref:../../language_constructs/pages/structs.adoc[Structs]
+- xref:../../language_constructs/pages/linear-types.adoc[Linear Types]
 
 Snapshots, desnap, and types:
 
-- `crates/cairo-lang-semantic/src/expr/compute.rs` (unary Reference/Desnap handling)
-- `crates/cairo-lang-semantic/src/types.rs` (type resolution for `Snapshot(T)` and `*`)
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/expr/compute.rs[unary Reference/Desnap handling]
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/types.rs[type resolution for `Snapshot(T)` and `*`]
 
 Lowering representation:
 

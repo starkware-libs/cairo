@@ -432,7 +432,7 @@ test::foo: SmallOrderedMap({Const: 1510})
 //! > downcast::<BoundedInt<1-PRIME, 0>, BoundedInt<0, 10>> libfunc
 
 //! > Comments
-Validiting the basic shrinking of a destination type.
+Validating the basic shrinking of a destination type.
 
 //! > test_runner_name
 SmallE2ETestRunner

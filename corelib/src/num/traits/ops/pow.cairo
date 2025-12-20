@@ -48,7 +48,7 @@ mod mul_based {
         }
     }
 
-    /// Equivalent of `PowByMul::pow` but assumes `exp` is non zero.
+    /// Equivalent of `PowByMul::pow` but assumes `exp` is non-zero.
     const fn pow_non_zero_exp<T, impl H: ConstPowHelper<T>, +Copy<T>, +Drop<T>>(
         base: T, exp: usize,
     ) -> T {
@@ -80,7 +80,7 @@ mod mul_based {
         }
     }
 
-    // TODO(gil): Use a macro for it instead of copy paste.
+    // TODO(gil): Use a macro for it instead of copy-paste.
     // TODO(orizi): Consider extracting this for other corelib const calculations.
     // Not using a trait for the implementation to allow `fn` to be `const`.
 

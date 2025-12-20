@@ -1,6 +1,6 @@
 = Implicit arguments
 
-Implicit arguments in Cairo are parameter that are automatically passed
+Implicit arguments in Cairo are parameters that are automatically passed
 to functions without being explicitly specified at each call site.
 They provide context for low-level operation like range checking and gas tracking.
 
@@ -16,7 +16,7 @@ They're commonly used for:
 
 == Syntax
 
-Functions declare implicit argument using the `implicits()` attribute:
+Functions declare implicit arguments using the `implicits()` attribute:
 
 [source,cairo]
 ----
@@ -36,7 +36,7 @@ extern fn syscall_function(
 
 === RangeCheck
 
-Used for operations that require validating numeric range:
+Used for operations that require validating numeric ranges:
 
 [source,cairo]
 ----
@@ -46,7 +46,7 @@ extern fn array_get<T>(
 ) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
 ----
 
-The `RangeCheck` implicit ensures that array indice and numeric operations
+The `RangeCheck` implicit ensures that array indices and numeric operations
 stay within valid bounds.
 
 === GasBuiltin
@@ -77,7 +77,7 @@ The `System` implicit provides access to Starknet's state and operations.
 
 == Automatic propagation
 
-Implicit argument are automatically propagated through the call stack.
+Implicit arguments are automatically propagated through the call stack.
 When a function with implicits call another functions that requires the same implicit,
 they're passed automatically:
 

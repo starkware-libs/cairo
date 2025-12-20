@@ -185,8 +185,7 @@ fn analyze_storage_struct<'db>(
 
     for (member_name, member) in members.iter() {
         let member_ast = member.id.stable_ptr(db).lookup(db);
-        let member_type = member.ty.long(db).clone();
-        let concrete_trait_id = concrete_valid_storage_trait(db, TypeId::new(db, member_type));
+        let concrete_trait_id = concrete_valid_storage_trait(db, member.ty);
 
         let member_allows_invalid =
             member_ast.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_INVALID_STORAGE_MEMBERS_ATTR);
