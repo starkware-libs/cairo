@@ -106,8 +106,8 @@ Snapshots, desnap, and types:
 
 Lowering representation:
 
-- `crates/cairo-lang-lowering/src/lower/context.rs` (`LoweredExpr`, snapshots, variable arena)
-- `crates/cairo-lang-lowering/src/objects.rs` (lowered structures, blocks, variables)
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/lower/context.rs[`LoweredExpr`, snapshots, variable arena]
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/objects.rs[lowered structures, blocks, variables]
 
 Execution-time memory model:
 
