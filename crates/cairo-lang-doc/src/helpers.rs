@@ -257,7 +257,7 @@ pub fn get_struct_attributes_syntax<'db>(
     Ok(buff)
 }
 
-/// Returns a relevant [`DocumentableItemId`] for [`TypeId`] if one can be retrieved.
+/// Returns the relevant [`DocumentableItemId`] for [`TypeId`] if one can be retrieved.
 pub fn resolve_type<'db>(
     db: &'db dyn Database,
     type_id: TypeId<'db>,
@@ -343,7 +343,7 @@ pub fn resolve_type<'db>(
     }
 }
 
-/// Returns a relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
+/// Returns the relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
 fn resolve_generic_item<'db>(
     generic_item_id: GenericItemId<'db>,
     db: &'db dyn Database,
