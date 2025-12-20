@@ -38,8 +38,11 @@ impl VersionedProgram {
 pub struct Version<const V: u8>;
 
 #[derive(Debug, Error)]
-#[error("Unsupported Sierra program version")]
-struct VersionError;
+#[error("Unsupported Sierra program version: got {got}, expected {expected}")]
+struct VersionError {
+    got: u8,
+    expected: u8,
+}
 
 impl<const V: u8> Serialize for Version<V> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -56,7 +59,11 @@ impl<'de, const V: u8> Deserialize<'de> for Version<V> {
         D: serde::Deserializer<'de>,
     {
         let value = u8::deserialize(deserializer)?;
-        if value == V { Ok(Version::<V>) } else { Err(serde::de::Error::custom(VersionError)) }
+        if value == V {
+            Ok(Version::<V>)
+        } else {
+            Err(serde::de::Error::custom(VersionError { got: value, expected: V }))
+        }
     }
 }
 
