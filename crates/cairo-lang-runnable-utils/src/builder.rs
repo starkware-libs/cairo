@@ -1,5 +1,3 @@
-use core::panic;
-
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
