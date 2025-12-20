@@ -648,7 +648,7 @@ fn get_u384_type(
 pub type GetCircuitDescriptorLibFunc =
     WrapSignatureAndTypeGenericLibfunc<GetCircuitDescriptorLibFuncWrapped>;
 
-/// A zero-input function that returns a handle to the offsets of a circuit.
+/// Evaluates a circuit instance using the given descriptor, input data and modulus.
 #[derive(Default)]
 pub struct EvalCircuitLibFuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
