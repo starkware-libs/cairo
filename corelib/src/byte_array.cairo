@@ -333,7 +333,7 @@ impl InternalImpl of InternalTrait {
     /// Appends a split word to the end of `self`.
     ///
     /// `value` is the value to add to the byte array, including `high` and `low`.
-    /// `shift_value` is the shift for `self.pending_word`, before the `high` part joins it
+    /// `shift_value` is the shift for `self.pending_word`, before it is joined by the `high` part
     /// of `value`.
     ///
     /// Note: this function doesn't update the new pending length of `self`. It's the caller's
