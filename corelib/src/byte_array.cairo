@@ -77,7 +77,7 @@ const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 #[derive(Drop, Clone, PartialEq)]
 pub struct ByteArray {
     /// An array of full "words" of 31 bytes each.
-    /// The first byte of each word in the byte array is the most significant byte in the word.
+    /// The first byte of each word in the byte array is the most significant in the word.
     pub(crate) data: Array<bytes31>,
     /// A `felt252` that actually represents a `bytes31`, with fewer than 31 bytes.
     /// It is represented as a `felt252` to improve performance when building the byte array.
@@ -123,7 +123,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// 2. len <= BYTES_IN_BYTES31.
     ///
     /// If these assumptions are not met, it can corrupt the `ByteArray`. Thus, this should be a
-    /// private function. We could add masking/assertions but it would be more expensive.
+    /// private function. We could add masking/assertions, but it would be more expensive.
     ///
     /// # Examples
     ///
@@ -333,7 +333,7 @@ impl InternalImpl of InternalTrait {
     /// Appends a split word to the end of `self`.
     ///
     /// `value` is the value to add to the byte array, including `high` and `low`.
-    /// `shift_value` is the shift for `self.pending_word`, before it is joined by the `high` part
+    /// `shift_value` is the shift for `self.pending_word`, before the `high` part joins it
     /// of `value`.
     ///
     /// Note: this function doesn't update the new pending length of `self`. It's the caller's
@@ -980,7 +980,7 @@ pub struct ByteSpanIter {
     data_iter: SpanIter<bytes31>,
     /// The word currently being iterated over.
     current_word: ShortString,
-    /// The last, partial word of the ByteSpan, iterated over after all full words are consumed.
+    /// The last, partial word of the ByteSpan, is iterated over after all full words are consumed.
     remainder: ShortString,
 }
 
@@ -1013,7 +1013,7 @@ impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
     fn into_iter(self: ByteSpan) -> Self::IntoIter {
         let mut data_iter = self.data.into_iter();
 
-        // Get first word in data array if exists, otherwise iterate on the remainder word.
+        // Get first word in data array if it exists, otherwise iterate on the remainder word.
         let Some(first_word) = data_iter.next() else {
             // On an empty data span, the remainder length is greater than or equal to the start
             // offset.
@@ -1052,7 +1052,7 @@ impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
 /// 1. `word` is validly convertible to a `bytes31` which has no more than `len` bytes of data.
 /// 2. `index <= len`.
 /// If these assumptions are not met, it can corrupt the `bytes31`. Thus, this should be a
-/// private function. We could add masking/assertions but it would be more expensive.
+/// private function. We could add masking/assertions, but it would be more expensive.
 fn split_bytes31(value: felt252, split_index: Bytes31Index) -> U256Split {
     let Some(split_index) = helpers::index_non_zero(split_index) else {
         return U256Split { high: value, low: 0 };
