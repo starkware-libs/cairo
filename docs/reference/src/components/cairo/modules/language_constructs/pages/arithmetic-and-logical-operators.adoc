@@ -29,7 +29,7 @@ type error (trait resolution fails).
 == Precedence and associativity
 
 Arithmetic operators have different precedence levels defined in
-`crates/cairo-lang-parser/src/operators.rs`:
+link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs]:
 
 - `*`, `/`, `%` share precedence level 2
 - `+`, `-` share precedence level 3
