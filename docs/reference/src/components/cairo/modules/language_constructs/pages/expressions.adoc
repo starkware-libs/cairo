@@ -1,10 +1,12 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Expressions
  
 Expressions produce values. They are used in variable initializers, function arguments, control
 flow constructs, and other contexts where evaluation yields a result.
  
 This overview mirrors the language syntax as specified in
-`crates/cairo-lang-syntax-codegen/src/cairo_spec.rs` (the `Expr` enum and its variants), and links
+link:{cairo-repo}/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs] (the `Expr` enum and its variants), and links
 to detailed subpages where available.
  
 == Categories of expressions
