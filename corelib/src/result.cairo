@@ -634,8 +634,8 @@ pub impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
         }
     }
 
-    /// Maps a `Result<T, E>` to `U` by applying fallback function `default` to
-    /// a contained [`Err`] value, or function `f` to a contained [`Ok`] value.
+    /// Maps a `Result<T, E>` to `U` by applying the fallback function `default` to
+    /// a contained [`Err`] value, or a function `f` to a contained [`Ok`] value.
     ///
     /// This function can be used to unpack a successful result
     /// while handling an error.
