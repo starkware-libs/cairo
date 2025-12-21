@@ -30,6 +30,7 @@ impl DisplayUsize of Display<usize> {
 }
 
 fn bar<T: impl TDisplay: Display<T>>(value: T) {
+    let a = TDisplay::display(value);
     ...
     // Can be called as a method.
     let c = value.display();
