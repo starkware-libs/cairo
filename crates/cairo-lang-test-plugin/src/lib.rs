@@ -161,7 +161,7 @@ pub fn compile_test_prepared_db<'db>(
         .collect();
 
     let replacer = DebugReplacer { db };
-    let mut sierra_program = sierra_program.clone();
+    let mut sierra_program = sierra_program;
     replacer.enrich_function_names(&mut sierra_program);
 
     let mut annotations = Annotations::default();
