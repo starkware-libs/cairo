@@ -78,7 +78,8 @@ trait-driven and can be overloaded for custom types by implementing the
 appropriate traits from `core::traits`.
 
 Note that some operators like indexing `[]` and compound assignment operator
-(`+=`, `-=`, `*=`, `/=`) are not currently trait-driven.
+(`+=`, `-=`, `*=`, `/=`) are trait-driven but their traits are located
+outside of `core::traits`.
 
 To enable operators for custom type, implement the corresponding traits:
 
