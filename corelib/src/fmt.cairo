@@ -263,7 +263,7 @@ impl TupleDebugHelperFixedSizedArray1<T, +TupleDebugHelper<@T>> of TupleDebugHel
     }
 }
 
-// `Debug` impl for fixed sized arrays of size 2 and above.
+// `Debug` impl for fixed-sized arrays of size 2 and above.
 // Not starting from size 1 since we have a special case for 1.
 impl TupleDebugHelperFixedSizedArrayNext<
     T,
@@ -272,7 +272,7 @@ impl TupleDebugHelperFixedSizedArrayNext<
     +TupleDebugHelper<TS::Head>,
     +TupleDebugHelper<TS::Rest>,
     +Drop<TS::Rest>,
-    // Making sure the size it at least 2.
+    // Making sure the size is at least 2.
     +crate::metaprogramming::TupleSplit<TS::Rest>,
 > of TupleDebugHelper<[@T; N]> {
     fn fmt(value: [@T; N], ref f: Formatter) -> Result<(), Error> {
@@ -280,7 +280,7 @@ impl TupleDebugHelperFixedSizedArrayNext<
     }
 }
 
-/// A helper function for formatting the head and tail of a tuple style struct.
+/// A helper function for formatting the head and tail of a tuple-style struct.
 fn fmt_head_and_rest<
     T,
     impl TS: crate::metaprogramming::TupleSplit<T>,
