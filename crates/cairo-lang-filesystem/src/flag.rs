@@ -57,7 +57,8 @@ fn flag_add_withdraw_gas(db: &dyn Database) -> bool {
     extract_flag_value!(db, ADD_WITHDRAW_GAS, AddWithdrawGas).unwrap_or(true)
 }
 
-/// Returns the value of the `unsafe_panic` flag, or `None` if the flag is not set.
+/// Returns the value of the `numeric_match_optimization_min_arms_threshold` flag, or `None` if the
+/// flag is not set.
 #[salsa::tracked]
 fn flag_numeric_match_optimization_min_arms_threshold(db: &dyn salsa::Database) -> Option<usize> {
     extract_flag_value!(
