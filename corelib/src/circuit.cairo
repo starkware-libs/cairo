@@ -57,20 +57,20 @@
 //! 3. The final circuit is evaluated with specific input values and a modulus
 //!
 //! Operations are performed using a multi-limb representation for large numbers,
-//! with each number represented as four 96-bit limbs allowing for values up to 384 bits.
+//! with each number represented as four 96-bit limbs, allowing for values up to 384 bits.
 //!
 //! # Performance Considerations
 //!
 //! - Circuit evaluation is optimized for large modular arithmetic operations
 //! - The multi-limb representation allows efficient handling of large numbers
-//! - Circuit construction has zero runtime overhead due to type-based approach
+//! - Circuit construction has zero runtime overhead due to a type-based approach
 //!
 //! # Errors
 //!
 //! Circuit evaluation can fail in certain cases:
 //! - When computing multiplicative inverses of non-invertible elements
 //! - When the modulus is 0 or 1
-//! In that case the evaluation will return an Error.
+//! In that case, the evaluation will return an Error.
 
 /// Creates a new circuit element representing addition modulo p of two input circuits.
 ///
@@ -307,10 +307,10 @@ extern fn add_circuit_input<C>(
 
 /// The result of filling an input in the circuit instance's data.
 ///
-/// This enum represents the state of input filling process, indicating whether
-/// all inputs have been provided or more are needed.
+/// This enum represents the state of the input filling process, indicating whether
+/// all inputs have been provided, or more are needed.
 pub enum AddInputResult<C> {
-    /// All inputs have been filled and the circuit data is complete.
+    /// All inputs have been filled, and the circuit data is complete.
     Done: CircuitData<C>,
     /// More inputs are needed to complete the circuit instance's data.
     More: CircuitInputAccumulator<C>,
@@ -367,7 +367,7 @@ pub impl CircuitElementCopy<T> of Copy<CircuitElement<T>>;
 
 /// A marker trait for keeping track of which types are valid circuit elements.
 ///
-/// This trait is implemented for all valid circuit components including inputs and gates.
+/// This trait is implemented for all valid circuit components, including inputs and gates.
 /// It provides type safety when composing circuit elements.
 pub trait CircuitElementTrait<T> {}
 
@@ -537,7 +537,7 @@ pub impl AddInputResultImpl<C> of AddInputResultTrait<C> {
     ///
     /// # Returns
     ///
-    /// The complete circuit data ready for evaluation
+    /// The complete circuit data is ready for evaluation
     ///
     /// # Panics
     ///
@@ -681,7 +681,7 @@ impl CircuitOutputsImpl<
 /// A type that is used to guarantee that the circuit evaluation has failed.
 ///
 /// The guarantee is verified by `circuit_failure_guarantee_verify`, which is the only way to
-/// destruct this type. This way, one can trust that the guarantee holds although it has not yet
+/// destruct this type. This way, one can trust that the guarantee holds, although it has not yet
 /// been verified.
 extern type CircuitFailureGuarantee;
 
