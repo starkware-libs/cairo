@@ -129,7 +129,6 @@ impl TestBuilder {
                 self.current_test_name.as_ref().unwrap_or(&"<unknown>".into())
             );
             attributes.insert(tag.name, tag.content.trim().to_string());
-            self.current_tag = None;
         }
     }
 
@@ -416,11 +415,10 @@ pub fn run_test_file(
 
         // Fix if in fix mode, unrelated to the result.
         if is_fix_mode {
-            let mut new_test = test.clone();
             for (key, value) in result.outputs.iter() {
-                new_test.attributes.insert(key.to_string(), value.trim_end().to_string());
+                test.attributes.insert(key.to_string(), value.trim_end().to_string());
             }
-            new_tests.insert(test_name.to_string(), new_test);
+            new_tests.insert(test_name.to_string(), test);
         }
 
         match result.error {
