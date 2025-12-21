@@ -13,7 +13,7 @@ mod test;
 pub struct Expr<Var: Clone + Debug + Eq + Hash> {
     /// The constant term of the expression.
     pub const_term: i32,
-    /// The coefficient for every variable in the expression.
+    /// The coefficients for every variable in the expression.
     pub var_to_coef: OrderedHashMap<Var, i64>,
 }
 impl<Var: Clone + Debug + Eq + Hash> Expr<Var> {
