@@ -78,7 +78,7 @@ The `System` implicit provides access to Starknet's state and operations.
 == Automatic propagation
 
 Implicit arguments are automatically propagated through the call stack.
-When a function with implicits call another function that requires the same implicits,
+When a function with implicits calls another function that requires the same implicits,
 they're passed automatically:
 
 [source,cairo]
