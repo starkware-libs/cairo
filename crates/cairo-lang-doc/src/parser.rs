@@ -26,9 +26,9 @@ use crate::documentable_item::DocumentableItemId;
 /// Token representing a link to another item inside the documentation.
 #[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
 pub struct CommentLinkToken<'db> {
-    /// A link part that's inside "[]" brackets.
+    /// The link part inside the "[]" brackets.
     pub label: String,
-    /// A link part that's inside "()" brackets, right after the label.
+    /// The link part inside the "()" brackets, right after the label.
     pub path: Option<String>,
     /// Item resolved based on the path provided by user. If resolver cannot resolve the item, we
     /// leave it as None.
