@@ -2032,14 +2032,14 @@ error: Plugin diagnostic: Only #[substorage(v0)] is supported.
         #[substorage]
         ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
+error: Plugin diagnostic: `substorage` attribute is only allowed for members of type `[some_path::]Storage`
  --> lib.cairo:14:9-15:37
           #[substorage(v0)]
  _________^
 |         non_path_type: (usize, usize),
 |_____________________________________^
 
-error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
+error: Plugin diagnostic: `substorage` attribute is only allowed for members of type `[some_path::]Storage`
  --> lib.cairo:16:9-17:28
           #[substorage(v0)]
  _________^
