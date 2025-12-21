@@ -13,6 +13,7 @@ use cairo_lang_starknet_classes::contract_class::{ContractClass, ContractEntryPo
 use cairo_lang_utils::bigint::BigUintAsHex;
 use clap::Parser;
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
+use num_bigint::BigUint;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -115,21 +116,22 @@ struct Report {
 
 /// Validation failure information.
 struct ValidationFailure {
-    class_hash: BigUintAsHex,
+    class_hash: BigUint,
     err: AllowedLibfuncsError,
 }
 
 /// Compilation failure information.
 struct CompilationFailure {
-    class_hash: BigUintAsHex,
+    class_hash: BigUint,
     err: StarknetSierraCompilationError,
 }
 
 /// Compilation mismatch information.
 struct CompilationMismatch {
-    class_hash: BigUintAsHex,
-    old: BigUintAsHex,
-    new: BigUintAsHex,
+    class_hash: BigUint,
+    old: BigUint,
+    new: BigUint,
+    legacy_new: BigUint,
 }
 
 #[tokio::main]
@@ -350,7 +352,7 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
         entry_points_by_type: sierra_class.entry_points_by_type,
         abi: None,
     };
-    let class_hash = sierra_class.class_hash;
+    let class_hash = sierra_class.class_hash.value;
     if let Err(err) = contract_class.validate_version_compatible(config.list_selector.clone()) {
         return RunResult::ValidationFailure(ValidationFailure { class_hash, err });
     };
@@ -364,10 +366,13 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
             return RunResult::CompilationFailure(CompilationFailure { class_hash, err });
         }
     };
-    let old = sierra_class.compiled_class_hash;
-    let new = BigUintAsHex { value: compiled_contract_class.compiled_class_hash().to_biguint() };
-    if old != new {
-        RunResult::CompilationMismatch(CompilationMismatch { class_hash, old, new })
+    let old = sierra_class.compiled_class_hash.value;
+    let new = compiled_contract_class.compiled_class_hash().to_biguint();
+    if old != new
+        && let legacy_new = compiled_contract_class.legacy_compiled_class_hash().to_biguint()
+        && old != legacy_new
+    {
+        RunResult::CompilationMismatch(CompilationMismatch { class_hash, old, new, legacy_new })
     } else {
         RunResult::Success
     }
@@ -411,13 +416,13 @@ fn analyze_report(
     if !validation_failures.is_empty() {
         println!("Validation failures: (Printing first 10 out of {})", validation_failures.len());
         for ValidationFailure { class_hash, err } in validation_failures.iter().take(10) {
-            println!("Validation failure for {:#x}: {err}", class_hash.value);
+            println!("Validation failure for {class_hash:#x}: {err}");
         }
     }
     if !compilation_failures.is_empty() {
         println!("Compilation failures: (Printing first 10 out of {})", compilation_failures.len());
         for CompilationFailure { class_hash, err } in compilation_failures.iter().take(10) {
-            println!("Compilation failure for {:#x}: {err}", class_hash.value);
+            println!("Compilation failure for {class_hash:#x}: {err}");
         }
     }
     if !compilation_mismatch.is_empty() {
@@ -425,10 +430,12 @@ fn analyze_report(
             "Compilation mismatch {} out of {num_of_classes}: (Printing first 10)",
             compilation_mismatch.len()
         );
-        for CompilationMismatch { class_hash, old, new } in compilation_mismatch.iter().take(10) {
+        for CompilationMismatch { class_hash, old, new, legacy_new } in
+            compilation_mismatch.iter().take(10)
+        {
             println!(
-                "Compilation mismatch for {:#x}: old={:#x}, new={:#x}",
-                class_hash.value, old.value, new.value
+                "Compilation mismatch for {class_hash:#x}: old={old:#x}, new={new:#x}, \
+                 legacy_new={legacy_new:#x}"
             );
         }
     }
