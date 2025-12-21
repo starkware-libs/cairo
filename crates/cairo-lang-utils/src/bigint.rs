@@ -79,7 +79,6 @@ pub struct BigIntAsHex {
 fn big_int_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
     use schemars::JsonSchema;
 
-    #[allow(dead_code)]
     #[allow(clippy::enum_variant_names)]
     #[derive(JsonSchema)]
     pub enum Sign {
@@ -88,13 +87,11 @@ fn big_int_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema
         Plus,
     }
 
-    #[allow(dead_code)]
     #[derive(JsonSchema)]
     pub struct BigUint {
         data: Vec<u64>, // BigDigit is u64 or u32.
     }
 
-    #[allow(dead_code)]
     #[derive(JsonSchema)]
     struct BigInt {
         sign: Sign,
@@ -123,6 +120,20 @@ where
 }
 
 #[cfg(feature = "serde")]
+struct BigIntAsHexRef<'a>(&'a BigInt);
+
+#[cfg(feature = "serde")]
+impl<'a> serde::Serialize for BigIntAsHexRef<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serialize_big_int(self.0, serializer)
+    }
+}
+
+
+#[cfg(feature = "serde")]
 pub fn deserialize_big_int<'a, D>(deserializer: D) -> Result<BigInt, D::Error>
 where
     D: serde::de::Deserializer<'a>,
@@ -145,7 +156,7 @@ where
 
     let mut seq = serializer.serialize_seq(Some(nums.len()))?;
     for num in nums {
-        seq.serialize_element(&BigIntAsHex { value: num.clone() })?;
+        seq.serialize_element(&BigIntAsHexRef(num))?;
     }
     seq.end()
 }
