@@ -99,7 +99,7 @@ solved or finalized for consts; unresolved or mismatched types result in diagnos
 
 The semantic rules above define what is valid and how values are computed for consts. Separately,
 the lowering/IR optimizer performs constant folding and related simplifications on lowered code
-(`crates/cairo-lang-lowering/src/optimizations/const_folding.rs`). Those optimizations do not alter
+(link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs]). Those optimizations do not alter
 language semantics.
 
 == Related sources

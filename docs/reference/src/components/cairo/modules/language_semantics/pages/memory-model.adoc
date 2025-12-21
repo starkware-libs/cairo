@@ -101,6 +101,7 @@ Language semantics and constructs:
 
 Snapshots, desnap, and types:
 
+<<<<<<< Updated upstream
 - link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/expr/compute.rs[unary Reference/Desnap handling]
 - link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/types.rs[type resolution for `Snapshot(T)` and `*`]
 
@@ -108,12 +109,21 @@ Lowering representation:
 
 - link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/lower/context.rs[`LoweredExpr`, snapshots, variable arena]
 - link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/objects.rs[lowered structures, blocks, variables]
+=======
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/expr/compute.rs[crates/cairo-lang-semantic/src/expr/compute.rs] (unary Reference/Desnap handling)
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/types.rs[crates/cairo-lang-semantic/src/types.rs] (type resolution for `Snapshot(T)` and `*`)
+
+Lowering representation:
+
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/lower/context.rs[crates/cairo-lang-lowering/src/lower/context.rs] (`LoweredExpr`, snapshots, variable arena)
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/objects.rs[crates/cairo-lang-lowering/src/objects.rs] (lowered structures, blocks, variables)
+>>>>>>> Stashed changes
 
 Execution-time memory model:
 
-- `crates/cairo-lang-casm/src/assembler.rs` (instruction reps, `ApUpdate`, `FpUpdate`)
-- `crates/cairo-lang-runner/src/casm_run/mod.rs` (segments, memory buffers, VM helpers)
-- `crates/cairo-lang-runner/src/lib.rs` (VM initialization, builtin cost segment)
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-casm/src/assembler.rs[crates/cairo-lang-casm/src/assembler.rs] (instruction reps, `ApUpdate`, `FpUpdate`)
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-runner/src/casm_run/mod.rs[crates/cairo-lang-runner/src/casm_run/mod.rs] (segments, memory buffers, VM helpers)
+- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-runner/src/lib.rs[crates/cairo-lang-runner/src/lib.rs] (VM initialization, builtin cost segment)
 
 == Related reading
 
