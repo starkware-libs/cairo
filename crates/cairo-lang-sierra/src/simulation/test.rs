@@ -224,6 +224,10 @@ fn simulate_error(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<CoreValue>,
-) -> LibfuncSimulationError {
-    simulate(id, generic_args, inputs).err().unwrap()
-}
+) -> LibfuncSimulationError  {
+        simulate(id, generic_args, inputs)
+            .expect_err("Expected simulation to fail, but it succeeded")
+    }
+    
+    
+
