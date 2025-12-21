@@ -89,8 +89,8 @@ impl<'db> FunctionDebugInfo<'db> {
         })
     }
 
-    /// Extracts mapping from a sierra variable to a cairo variable (its name and definition span).
-    /// The sierra variable value corresponds to the cairo variable value at some point during
+    /// Extracts mapping from a Sierra variable to a cairo variable (its name and definition span).
+    /// The Sierra variable value corresponds to the cairo variable value at some point during
     /// execution of the function code.
     fn extract_variables_mapping(
         &self,
