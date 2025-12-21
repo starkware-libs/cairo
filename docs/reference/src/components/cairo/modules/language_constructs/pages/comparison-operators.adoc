@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Comparison operators
 
 Comparison in Cairo is provided by the relational operators `<`, `<=`, `>`, `>=`.
@@ -34,7 +36,7 @@ Relational operators share the same precedence level as equality operators (`==`
 - Looser than bitwise `&`, `^`, `|`, arithmetic `+`, `-`, `*`, `/`, `%`, indexing `[]`, and
   member access `.`.
 
-This is defined in `crates/cairo-lang-parser/src/operators.rs`.
+This is defined in link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs].
 
 == Examples
 
@@ -114,6 +116,6 @@ fn less(a: @Pair, b: @Pair) -> bool {
 
 == References (source)
 
-- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-parser/src/operators.rs[Parser precedence].
-- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/traits.cairo[Trait and behavior] (`PartialOrd`) .
-- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/cmp.cairo[Utilities using comparisons] (`min`, `max`, `minmax`).
+- link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[Parser precedence].
+- link:{cairo-repo}/corelib/src/traits.cairo[Trait and behavior] (`PartialOrd`) .
+- link:{cairo-repo}/corelib/src/cmp.cairo[Utilities using comparisons] (`min`, `max`, `minmax`).

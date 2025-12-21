@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Contracts
 
 Starknet contracts can be written in Cairo.
@@ -256,4 +258,4 @@ mod my_second_contract {
 
 - xref:../../getting_started/pages/compiling-starknet-contracts.adoc[Compiling Starknet Contracts] — Learn how to compile contracts to Sierra and CASM
 - xref:../../language_semantics/pages/application-binary-interface.adoc[Application Binary Interface] — Contract ABI format and serialization
-- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-starknet/cairo_level_tests/contracts/hello_starknet.cairo[hello_starknet.cairo] — Complete example contract
+- link:{cairo-repo}/crates/cairo-lang-starknet/cairo_level_tests/contracts/hello_starknet.cairo[hello_starknet.cairo] — Complete example contract

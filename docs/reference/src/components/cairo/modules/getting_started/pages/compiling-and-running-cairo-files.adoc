@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 # Compiling and running Cairo files
 
 Compile Cairo to Sierra:
@@ -18,10 +20,10 @@ Run Cairo code directly:
 cargo run --bin cairo-run -- --single-file /path/to/file.cairo
 ----
 
-For more information, see link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-runner/README.md[here].
+For more information, see link:{cairo-repo}/crates/cairo-lang-runner/README.md[here].
 
 You can also find Cairo
-examples in the link:https://github.com/starkware-libs/cairo/tree/main/examples[examples]
+examples in the link:{cairo-repo}/examples[examples]
 directory within the main Cairo repository.
 
-For running tests specifically, see link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-test-runner/README.md[here].
+For running tests specifically, see link:{cairo-repo}/crates/cairo-lang-test-runner/README.md[here].

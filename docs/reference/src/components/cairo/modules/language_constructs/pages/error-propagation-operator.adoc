@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Error propagation operator
 
 The error propagation operator `?` provides concise error handling by automatically propagating
@@ -40,7 +42,7 @@ type error.
 == Precedence and associativity
 
 The error propagation operator has high precedence (level 1 in
-`crates/cairo-lang-parser/src/operators.rs`), binding:
+link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs]), binding:
 
 - Tighter than all binary operators
 - Looser than member access `.`
@@ -99,7 +101,7 @@ fn process_empty() -> Option<u8> {
 
 == References (source)
 
-- Syntax tree: `crates/cairo-lang-syntax-codegen/src/cairo_spec.rs` (`ExprErrorPropagate`)
-- Operator precedence: `crates/cairo-lang-parser/src/operators.rs` (line 18)
-- Lexer token: `crates/cairo-lang-parser/src/lexer.rs` (`TerminalQuestionMark`)
+- Syntax tree: link:{cairo-repo}/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs] (`ExprErrorPropagate`)
+- Operator precedence: link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs] (line 18)
+- Lexer token: link:{cairo-repo}/crates/cairo-lang-parser/src/lexer.rs[crates/cairo-lang-parser/src/lexer.rs] (`TerminalQuestionMark`)
 - Error types: `corelib/src/result.cairo` (`Result`), `corelib/src/option.cairo` (`Option`)
