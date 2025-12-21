@@ -52,6 +52,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
       - run: >
-          scripts/starknet_sierra_validate.sh https://papyrus-integration-mainnet.sw-dev.io/rpc/v0_7
+          scripts/starknet_sierra_validate.sh https://starknet-mainnet.core.chainstack.com/57088c25afa0ff21277c6ee5f3b536bb/rpc/v0_7 10000
       - run: >
-          scripts/starknet_sierra_validate.sh https://papyrus-integration-sepolia-testnet.sw-dev.io/rpc/v0_7
+          scripts/starknet_sierra_validate.sh https://starknet-sepolia.core.chainstack.com/2eaebe8806ed2208f571223be415f594/rpc/v0_7 10000
