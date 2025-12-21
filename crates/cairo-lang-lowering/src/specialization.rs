@@ -1,5 +1,3 @@
-use std::vec;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::HeapSize;
