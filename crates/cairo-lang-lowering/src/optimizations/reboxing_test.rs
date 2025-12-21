@@ -41,7 +41,7 @@ fn test_reboxing_analysis(
         let formatter = LoweredFormatter::new(db, &after.variables);
         trace!("Lowering input to Reboxing:\n{:?}", after.debug(&formatter));
 
-        let candidates = find_reboxing_candidates(db, &after);
+        let candidates = find_reboxing_candidates(&after);
 
         let candidates_str = candidates
             .iter()

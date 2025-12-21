@@ -5,7 +5,6 @@ mod reboxing_test;
 use std::rc::Rc;
 
 use cairo_lang_filesystem::flag::FlagsGroup;
-use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{TypesSemantic, peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeLongId};
@@ -52,20 +51,12 @@ pub struct ReboxCandidate {
 /// 3. Box one of the members back
 ///
 /// Returns candidates that can be optimized with struct_boxed_deconstruct libfunc calls.
-pub fn find_reboxing_candidates<'db>(
-    db: &'db dyn Database,
-    lowered: &Lowered<'db>,
-) -> OrderedHashSet<ReboxCandidate> {
+pub fn find_reboxing_candidates<'db>(lowered: &Lowered<'db>) -> OrderedHashSet<ReboxCandidate> {
     if lowered.blocks.is_empty() {
         return OrderedHashSet::default();
     }
 
     trace!("Running reboxing analysis...");
-
-    let core = ModuleHelper::core(db);
-    let box_module = core.submodule("box");
-    let unbox_id = box_module.extern_function_id("unbox");
-    let into_box_id = box_module.extern_function_id("into_box");
 
     // TODO(eytan-starkware): When applied, reboxing analysis should replace the existing
     // deconstruct with a boxed-deconstruct, and add unbox statements on members as needed.
@@ -81,24 +72,20 @@ pub fn find_reboxing_candidates<'db>(
     for (block_id, block) in lowered.blocks.iter() {
         for (stmt_idx, stmt) in block.statements.iter().enumerate() {
             match stmt {
-                Statement::Call(call_stmt) => {
-                    if let Some((extern_id, _)) = call_stmt.function.get_extern(db) {
-                        if extern_id == unbox_id {
-                            let res = ReboxingValue::Unboxed(call_stmt.inputs[0].var_id);
-                            current_state.insert(call_stmt.outputs[0], res);
-                        } else if extern_id == into_box_id {
-                            let source = current_state
-                                .get(&call_stmt.inputs[0].var_id)
-                                .unwrap_or(&ReboxingValue::Revoked);
-                            if matches!(source, ReboxingValue::Revoked) {
-                                continue;
-                            }
-                            candidates.insert(ReboxCandidate {
-                                source: source.clone(),
-                                reboxed_var: call_stmt.outputs[0],
-                                into_box_location: (block_id, stmt_idx),
-                            });
-                        }
+                Statement::Unbox(unbox_stmt) => {
+                    let res = ReboxingValue::Unboxed(unbox_stmt.input.var_id);
+                    current_state.insert(unbox_stmt.output, res);
+                }
+                Statement::IntoBox(into_box_stmt) => {
+                    let source = current_state
+                        .get(&into_box_stmt.input.var_id)
+                        .unwrap_or(&ReboxingValue::Revoked);
+                    if !matches!(source, ReboxingValue::Revoked) {
+                        candidates.insert(ReboxCandidate {
+                            source: source.clone(),
+                            reboxed_var: into_box_stmt.output,
+                            into_box_location: (block_id, stmt_idx),
+                        });
                     }
                 }
                 Statement::StructDestructure(destructure_stmt) => {
@@ -211,7 +198,7 @@ pub fn apply_reboxing_candidates<'db>(
 /// And replaces it with a direct struct_boxed_deconstruct libfunc call.
 pub fn apply_reboxing<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) {
     if db.flag_future_sierra() {
-        let candidates = find_reboxing_candidates(db, lowered);
+        let candidates = find_reboxing_candidates(lowered);
         apply_reboxing_candidates(db, lowered, &candidates);
     }
 }
