@@ -71,23 +71,14 @@ Use parentheses to override the default precedence: `(2 + 3) * 4`.
 See xref:operator-precedence.adoc[Operator precedence] for the complete
 precedence table and associativity rules.
 
-== Trait-driven semantics
+== Implementing operators for custom types
 
-All operator in Cairo are implemented through traits defined in `core::traits`.
-When you use an operator, the compiler resolve the appropriate trait implementation
-for the operand types:
+Most binary operators in Cairo (arithmetics, comparison, bitwise, etc.) are
+trait-driven and can be overloaded for custom types by implementing the
+appropriate traits from `core::traits`.
 
-[source,cairo]
-----
-// This expression:
-let result = a + b;
-
-// Is transformed to:
-let result = Add::add(a, b);
-----
-
-If no suitable trait implementation exists for the operand types, the compiler
-report a type error.
+Note that some operators like indexing `[]` and compound assignment operator
+(`+=`, `-=`, `*=`, `/=`) are not currently trait-driven.
 
 To enable operators for custom type, implement the corresponding traits:
 
