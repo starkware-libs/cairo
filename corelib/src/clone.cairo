@@ -108,7 +108,7 @@ impl FixedSizedArrayCloneHelper<T> of CloneHelper<[@T; 0], [T; 0]> {
     }
 }
 
-// Recursive implementation of `CloneHelper` for tuple style structs.
+// Recursive implementation of `CloneHelper` for tuple-style structs.
 impl TupleNextCloneHelper<
     T,
     impl TH: crate::metaprogramming::TupleSplit<T>,
