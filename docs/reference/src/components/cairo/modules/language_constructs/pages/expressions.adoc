@@ -4,7 +4,7 @@ Expressions produce values. They are used in variable initializers, function arg
 flow constructs, and other contexts where evaluation yields a result.
  
 This overview mirrors the language syntax as specified in
-`crates/cairo-lang-syntax-codegen/src/cairo_spec.rs` (the `Expr` enum and its variants), and links
+link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs] (the `Expr` enum and its variants), and links
 to detailed subpages where available.
  
 == Categories of expressions
