@@ -360,14 +360,15 @@ pub fn run_test_file(
 
     let tests = parse_test_file(path)?;
 
-    let mut new_tests = OrderedHashMap::<String, Test>::default();
+    let mut new_tests = is_fix_mode.then(OrderedHashMap::<String, Test>::default);
 
     let mut errors = Vec::new();
     let mut passed_tests = 0;
     let mut failed_tests = Vec::new();
     for (test_name, mut test) in tests {
-        if !test_name.contains(&filter) {
+        if let Some(new_tests) = &mut new_tests {
             new_tests.insert(test_name.to_string(), test);
+            }
             continue;
         }
         let line_num = test.line_num;
@@ -420,7 +421,9 @@ pub fn run_test_file(
             for (key, value) in result.outputs.iter() {
                 new_test.attributes.insert(key.to_string(), value.trim_end().to_string());
             }
+            if let Some(new_tests) = &mut new_tests {
             new_tests.insert(test_name.to_string(), new_test);
+            }
         }
 
         match result.error {
@@ -459,7 +462,7 @@ pub fn run_test_file(
         }
         passed_tests += 1;
     }
-    if is_fix_mode {
+    if let Some(new_tests) = new_tests {
         dump_to_test_file(new_tests, path.to_str().unwrap())?;
     }
 
