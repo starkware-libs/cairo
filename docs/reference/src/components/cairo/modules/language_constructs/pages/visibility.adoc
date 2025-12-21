@@ -29,10 +29,11 @@ NOTE: Using `pub(...)` with any argument other than `crate` results in a compile
 An item's reachability depends on both its own visibility and the visibility of all ancestor modules on the access path. A `pub` item is not reachable through a non-`pub` module.
 
 See also:
-* xref:modules-and-source-files.adoc[Modules & source files]
-* xref:path.adoc[Paths]
-* xref:use.adoc[Use declarations]
-* xref:items.adoc[Items]
+
+- xref:modules-and-source-files.adoc[Modules & source files]
+- xref:path.adoc[Paths]
+- xref:use.adoc[Use declarations]
+- xref:items.adoc[Items]
 
 == Examples
 
