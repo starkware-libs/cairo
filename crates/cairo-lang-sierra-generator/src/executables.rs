@@ -44,7 +44,6 @@ pub fn find_executable_function_ids<'db>(
             {
                 for (free_func_id, body) in free_functions.iter() {
                     let found_attrs = executable_attributes
-                        .clone()
                         .iter()
                         .filter(|attr| body.has_attr(db, attr.long(db)))
                         .cloned()
@@ -108,7 +107,7 @@ pub fn collect_executables(
             .drain()
             .map(|(key, functions)| {
                 let mut functions = functions.into_iter().collect::<Vec<_>>();
-                functions.sort_by_key(|(full_path, _)| full_path.clone());
+                functions.sort_by(|(full_path_a, _), (full_path_b, _)| full_path_a.cmp(full_path_b));
                 (key, functions.into_iter().map(|(_, function_id)| function_id).collect::<Vec<_>>())
             })
             .collect::<HashMap<String, Vec<FunctionId>>>()
