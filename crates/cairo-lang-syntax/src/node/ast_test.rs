@@ -149,7 +149,6 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode<'_> {
     assert_eq!(token_whitespace1, token_whitespace2);
     let no_trivia = Trivia::new_green(db, &[]);
     let triviums = [token_whitespace1, token_whitespace2];
-    assert_eq!(triviums[0], triviums[1]);
     let terminal_foo = TerminalIdentifier::new_green(
         db,
         no_trivia,
