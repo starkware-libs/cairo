@@ -10,7 +10,7 @@ immutable and do not incur runtime computation.
 
 link:{cairo-repo}/crates/cairo-lang-semantic/src/items/constant.rs[Implementation reference]
 
-See also: xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+See also: xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
 == Syntax
 
@@ -36,7 +36,7 @@ const NAME: Type = expr;
   match the computed expression type.
 
 For the full evaluation rules and interpreter details, see
-xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
 == Allowed constructs (summary)
 
@@ -63,7 +63,7 @@ Calls inside const expressions are permitted when any of the following holds:
 - The call resolves to specific const-enabled trait implementations from the core library.
 - Specific externs are allowed by the compiler for casting, zero checks, and related utilities.
 
-See the detailed lists in xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+See the detailed lists in xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
 == Numeric and type notes
 
