@@ -29,6 +29,7 @@ fn trait_type_implized_by_context_tracked<'db>(
 /// Cycle handling for [ImplizationSemantic::trait_type_implized_by_context].
 fn trait_type_implized_by_context_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     trait_type_id: TraitTypeId<'db>,
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<TypeId<'db>> {

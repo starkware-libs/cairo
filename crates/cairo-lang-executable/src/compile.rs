@@ -18,6 +18,7 @@ use cairo_lang_runnable_utils::builder::{
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::debug_info::SierraProgramDebugInfo;
 use cairo_lang_sierra_generator::executables::find_executable_function_ids;
+use cairo_lang_sierra_generator::parallel_utils::CloneableDatabase;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::write_comma_separated;
@@ -98,7 +99,7 @@ pub fn prepare_db(config: &ExecutableConfig) -> Result<RootDatabase> {
 /// Compile the function given by path.
 /// Errors if there is ambiguity.
 pub fn compile_executable<'db>(
-    db: &'db mut dyn Database,
+    db: &'db mut dyn CloneableDatabase,
     path: &Path,
     executable_path: Option<&str>,
     diagnostics_reporter: DiagnosticsReporter<'_>,
@@ -123,7 +124,7 @@ pub fn compile_executable<'db>(
 /// If no executable was specified, verify that there is only one.
 /// Otherwise, return an error.
 pub fn compile_executable_in_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     executable_path: Option<&str>,
     main_crate_ids: Vec<CrateId<'db>>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,
@@ -205,7 +206,7 @@ pub fn originating_function_path<'db>(
 /// * `Ok(CompileExecutableResult<'db>)` - The compiled CASM program and associated metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_executable_function_in_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     executable: ConcreteFunctionWithBodyId<'db>,
     config: ExecutableConfig,
 ) -> Result<CompileExecutableResult<'db>> {

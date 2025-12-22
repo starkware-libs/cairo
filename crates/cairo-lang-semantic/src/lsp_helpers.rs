@@ -35,7 +35,7 @@ use crate::types::TypeHead;
 use crate::{Variant, corelib};
 
 /// A filter for types.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum TypeFilter<'db> {
     /// No filter is applied.
     NoFilter,

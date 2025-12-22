@@ -18,6 +18,7 @@ use cairo_lang_sierra::program::ProgramArtifact;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::debug_info::StatementsLocations;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
+use cairo_lang_sierra_generator::parallel_utils::CloneableDatabase;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
 use cairo_lang_starknet::contract::{
@@ -90,7 +91,7 @@ pub struct TestsCompilationConfig<'db> {
 /// * `Ok(TestCompilation)` - The compiled test cases with metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     tests_compilation_config: TestsCompilationConfig<'db>,
     test_crate_ids: Vec<CrateInput>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,

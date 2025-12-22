@@ -13,6 +13,7 @@ use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_sierra::debug_info::Annotations;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::parallel_utils::{CloneableDatabase, par_map};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_generator::replace_ids::{SierraIdReplacer, replace_sierra_ids_in_program};
 use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
@@ -20,7 +21,7 @@ use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
 use itertools::{Itertools, chain};
-use salsa::{Database, par_map};
+use salsa::Database;
 
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
@@ -62,7 +63,7 @@ pub fn compile_path(
 /// If no contract was specified, verify that there is only one.
 /// Otherwise, returns an error.
 pub fn compile_contract_in_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
@@ -110,7 +111,7 @@ pub fn compile_contract_in_prepared_db<'db>(
 /// * `Ok(Vec<ContractClass>)` - List of all compiled contract classes found in main crates.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     contracts: &[&ContractDeclaration<'db>],
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<Vec<ContractClass>> {
@@ -127,7 +128,7 @@ pub fn compile_prepared_db<'db>(
 /// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked
 /// by the caller of this function.
 fn compile_contract_with_prepared_and_checked_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     contract: &ContractDeclaration<'db>,
     compiler_config: &CompilerConfig<'_>,
 ) -> Result<ContractClass> {

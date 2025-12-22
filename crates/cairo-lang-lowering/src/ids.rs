@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
@@ -29,7 +27,7 @@ use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
 use crate::specialization::SpecializationArg;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub enum FunctionWithBodyLongId<'db> {
     Semantic(defs::ids::FunctionWithBodyId<'db>),
     Generated { parent: defs::ids::FunctionWithBodyId<'db>, key: GeneratedFunctionKey<'db> },
@@ -83,7 +81,7 @@ impl<'db> SemanticFunctionWithBodyIdEx<'db> for cairo_lang_defs::ids::FunctionWi
 }
 
 /// Concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub enum ConcreteFunctionWithBodyLongId<'db> {
     Semantic(semantic::ConcreteFunctionWithBodyId<'db>),
     Generated(GeneratedFunction<'db>),
@@ -239,7 +237,7 @@ impl<'db> ConcreteFunctionWithBodyId<'db> {
 }
 
 /// Function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub enum FunctionLongId<'db> {
     /// An original function from the user code.
     Semantic(semantic::FunctionId<'db>),
@@ -385,7 +383,7 @@ pub enum GeneratedFunctionKey<'db> {
 }
 
 /// Generated function.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub struct GeneratedFunction<'db> {
     pub parent: semantic::ConcreteFunctionWithBodyId<'db>,
     pub key: GeneratedFunctionKey<'db>,
@@ -443,12 +441,12 @@ impl<'a> DebugWithDb<'a> for GeneratedFunction<'a> {
 /// than the original one.
 ///
 /// Specialized functions are identified by the base function and the arguments.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub struct SpecializedFunction<'db> {
     /// The base function.
     pub base: crate::ids::ConcreteFunctionWithBodyId<'db>,
     /// Optional const assignments for the arguments.
-    pub args: Arc<[SpecializationArg<'db>]>,
+    pub args: Vec<SpecializationArg<'db>>,
 }
 
 impl<'db> SpecializedFunction<'db> {

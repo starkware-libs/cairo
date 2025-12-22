@@ -19,13 +19,14 @@ use cairo_lang_sierra::debug_info::{Annotations, DebugInfo};
 use cairo_lang_sierra::program::{Program, ProgramArtifact};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
+use cairo_lang_sierra_generator::parallel_utils::{CloneableDatabase, par_map};
 use cairo_lang_sierra_generator::program_generator::{
     SierraProgramWithDebug, find_all_free_function_ids, try_get_function_with_body_id,
 };
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use salsa::{Database, join, par_map};
+use salsa::Database;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::{DiagnosticsError, DiagnosticsReporter};
@@ -182,21 +183,20 @@ fn should_warmup() -> bool {
 ///
 /// Performs parallel database warmup (if possible) and calls `DiagnosticsReporter::ensure`.
 pub fn ensure_diagnostics(
-    db: &dyn Database,
+    db: &dyn CloneableDatabase,
     diagnostic_reporter: &mut DiagnosticsReporter<'_>,
 ) -> std::result::Result<(), DiagnosticsError> {
     if should_warmup() {
-        let crates = diagnostic_reporter.crates_of_interest(db);
-        join(db, |db| warmup_diagnostics_blocking(db, crates), |db| diagnostic_reporter.ensure(db))
-            .1
-    } else {
-        diagnostic_reporter.ensure(db)
+        let db = db.dyn_clone();
+        let crates = diagnostic_reporter.crates_of_interest(&*db);
+        warmup_diagnostics_blocking(&*db, crates);
     }
+    diagnostic_reporter.ensure(db)
 }
 
 /// Spawns threads to compute the diagnostics queries, making sure later calls for these queries
 /// would be faster as the queries were already computed.
-fn warmup_diagnostics_blocking(db: &dyn Database, crates: Vec<CrateInput>) {
+fn warmup_diagnostics_blocking(db: &dyn CloneableDatabase, crates: Vec<CrateInput>) {
     let _: () = par_map(db, crates, |db, crate_input| {
         let crate_id = crate_input.into_crate_long_id(db).intern(db);
         let crate_modules = db.crate_modules(crate_id);
@@ -215,21 +215,21 @@ fn warmup_diagnostics_blocking(db: &dyn Database, crates: Vec<CrateInput>) {
 ///
 /// Note that typically spawn_warmup_db should be used as this function is blocking.
 fn warmup_functions_blocking<'db>(
-    db: &dyn Database,
+    db: &dyn CloneableDatabase,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) {
     let processed_function_ids = &Mutex::new(UnorderedHashSet::<salsa::Id>::default());
     let _: () = par_map(db, requested_function_ids, move |db, func_id| {
         fn handle_func_inner<'db>(
             processed_function_ids: &Mutex<UnorderedHashSet<salsa::Id>>,
-            snapshot: &dyn Database,
+            db: &dyn CloneableDatabase,
             func_id: ConcreteFunctionWithBodyId<'db>,
         ) {
             if processed_function_ids.lock().unwrap().insert(func_id.as_intern_id()) {
-                let Ok(function) = snapshot.function_with_body_sierra(func_id) else {
+                let Ok(function) = db.function_with_body_sierra(func_id) else {
                     return;
                 };
-                let _: () = par_map(snapshot, &function.body, move |snapshot, statement| {
+                let _: () = par_map(db, &function.body, move |snapshot, statement| {
                     let related_function_id: ConcreteFunctionWithBodyId<'_> =
                         if let Some(r_id) = try_get_function_with_body_id(snapshot, statement) {
                             r_id
@@ -248,7 +248,7 @@ fn warmup_functions_blocking<'db>(
 /// Checks if there are diagnostics in the database and if there are none, returns
 /// the [SierraProgramWithDebug] object of the requested functions.
 pub fn get_sierra_program_for_functions<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
 ) -> Result<&'db SierraProgramWithDebug<'db>> {
     if should_warmup() {
@@ -275,7 +275,7 @@ pub fn get_sierra_program_for_functions<'db>(
 /// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db_program_artifact<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {
@@ -318,7 +318,7 @@ pub fn compile_prepared_db_program_artifact<'db>(
 /// * `Ok(ProgramArtifact)` - The compiled program artifact with requested debug info.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db_program_artifact_for_functions<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     requested_function_ids: Vec<ConcreteFunctionWithBodyId<'db>>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<ProgramArtifact> {

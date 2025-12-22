@@ -22,7 +22,7 @@ use crate::{
 };
 
 // A const argument for a specialized function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub enum SpecializationArg<'db> {
     Const {
         value: ConstValueId<'db>,

@@ -21,6 +21,7 @@ use semantic::inline_macros::get_default_plugin_suite;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::SierraGenGroup;
+use crate::parallel_utils::CloneableDatabase;
 use crate::pre_sierra::{self, LabelLongId};
 use crate::program_generator::SierraProgramWithDebug;
 use crate::replace_ids::replace_sierra_ids_in_program;
@@ -33,6 +34,11 @@ pub struct SierraGenDatabaseForTesting {
 }
 #[salsa::db]
 impl Database for SierraGenDatabaseForTesting {}
+impl CloneableDatabase for SierraGenDatabaseForTesting {
+    fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
+        Box::new(self.clone())
+    }
+}
 
 pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));

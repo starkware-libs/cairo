@@ -17,6 +17,7 @@ mod id_allocator;
 mod lifetime;
 mod local_variables;
 mod next_statement_index_fetch;
+pub mod parallel_utils;
 pub mod pre_sierra;
 pub mod program_generator;
 pub mod replace_ids;

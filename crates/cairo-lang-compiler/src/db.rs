@@ -16,6 +16,7 @@ use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::init_sierra_gen_group;
+use cairo_lang_sierra_generator::parallel_utils::CloneableDatabase;
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
 use salsa::Database;
 
@@ -71,6 +72,11 @@ pub struct RootDatabase {
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
+impl CloneableDatabase for RootDatabase {
+    fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
+        Box::new(self.clone())
+    }
+}
 
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, optimizations: Optimizations) -> Self {

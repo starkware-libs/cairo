@@ -815,8 +815,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             specialization_args = old_args;
         }
-        let specialized =
-            SpecializedFunction { base: called_function, args: specialization_args.into() };
+        let specialized = SpecializedFunction { base: called_function, args: specialization_args };
         let specialized_func_id =
             ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 

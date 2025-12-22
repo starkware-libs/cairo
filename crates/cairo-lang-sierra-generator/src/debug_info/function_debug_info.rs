@@ -30,13 +30,14 @@ use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxN
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
-use salsa::{Database, par_map};
+use salsa::Database;
 
 use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
     SierraFunctionId, SierraVarId,
 };
 use crate::debug_info::{SourceCodeSpan, SourceFileFullPath, maybe_code_location};
+use crate::parallel_utils::{CloneableDatabase, par_map};
 
 pub mod serializable;
 
@@ -51,7 +52,7 @@ impl<'db> AllFunctionsDebugInfo<'db> {
 
     pub fn extract_serializable_debug_info(
         &self,
-        db: &'db dyn Database,
+        db: &'db dyn CloneableDatabase,
     ) -> SerializableAllFunctionsDebugInfo {
         let all_functions_debug_info: Vec<
             Option<(SierraFunctionId, SerializableFunctionDebugInfo)>,
