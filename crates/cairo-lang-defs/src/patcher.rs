@@ -188,11 +188,9 @@ impl<'db> RewriteNode<'db> {
                 pending_text.clear();
             }
             // Replace the substring with the relevant rewrite node.
-            if let Some(node) = patches.get(&name).cloned() {
-                children.push(node);
-            } else {
-                children.push(RewriteNode::text(&format!("${}$", name)));
-            }
+            children.push(
+                patches.get(&name).cloned().unwrap_or_else(|| panic!("No patch named {name}.")),
+            );
         }
         // Flush the remaining text as a text child.
         if !pending_text.is_empty() {
