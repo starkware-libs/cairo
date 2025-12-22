@@ -108,7 +108,7 @@ pub fn collect_executables(
             .drain()
             .map(|(key, functions)| {
                 let mut functions = functions.into_iter().collect::<Vec<_>>();
-                functions.sort_by_key(|(full_path, _)| full_path.clone());
+                functions.sort_by(|a, b| a.0.cmp(&b.0));
                 (key, functions.into_iter().map(|(_, function_id)| function_id).collect::<Vec<_>>())
             })
             .collect::<HashMap<String, Vec<FunctionId>>>()
