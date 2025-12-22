@@ -106,7 +106,7 @@ pub fn lookup_allowed_libfuncs_list(
             }
             _ => {
                 return Err(AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-                    allowed_libfuncs_list_name: list_name.to_string(),
+                    allowed_libfuncs_list_name: list_name,
                 });
             }
         },
