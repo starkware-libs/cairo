@@ -6,7 +6,7 @@ They provide context for low-level operation like range checking and gas trackin
 
 == Overview
 
-Implicit argument are compiler-managed parameters
+Implicit arguments are compiler-managed parameters
 that flow through the call stack automatically.
 They're commonly used for:
 
@@ -96,7 +96,7 @@ fn caller(x: u32) -> u32 implicits(RangeCheck) {
 
 == Empty implicits
 
-Functions can explicitly declare an empty set of implicit using `implicits()`:
+Functions can explicitly declare an empty set of implicits using `implicits()`:
 
 [source,cairo]
 ----
@@ -108,7 +108,7 @@ For regular functions, this requests an empty set of implicits.
 
 == Implicit requirements
 
-A function can only call function whose implicits are a subset
+A function can only call functions whose implicits are a subset
 of its own implicits.
 If a function needs to call code requiring additional implicits,
 it must declare those implicits itself:
