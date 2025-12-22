@@ -70,7 +70,7 @@ pub fn priv_should_inline<'db>(
     let base = match function_id.long(db) {
         ConcreteFunctionWithBodyLongId::Semantic(_)
         | ConcreteFunctionWithBodyLongId::Generated(_) => function_id,
-        ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.base,
+        ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.long(db).base,
     };
     if db.concrete_in_cycle(base, DependencyType::Call, LoweringStage::Monomorphized)? {
         return Ok(false);
@@ -112,7 +112,7 @@ fn function_inline_config<'db>(
         }
         ConcreteFunctionWithBodyLongId::Generated(_) => Ok(InlineConfiguration::None),
         ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
-            function_inline_config(db, specialized.base)
+            function_inline_config(db, specialized.long(db).base)
         }
     }
 }
@@ -350,7 +350,7 @@ where
         if let Some(called_func) = stmt.function.body(db)? {
             if let ConcreteFunctionWithBodyLongId::Specialized(specialized) =
                 calling_function_id.long(db)
-                && specialized.base == called_func
+                && specialized.long(db).base == called_func
                 && stmt.is_specialization_base_call
             {
                 // A specialized function should always inline its base.

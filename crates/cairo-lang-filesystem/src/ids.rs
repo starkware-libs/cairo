@@ -153,7 +153,7 @@ impl FileInput {
 
 /// We use a higher level FileId struct, because not all files are on disk. Some might be online.
 /// Some might be virtual/computed on demand.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub enum FileLongId<'db> {
     OnDisk(PathBuf),
     Virtual(VirtualFile<'db>),

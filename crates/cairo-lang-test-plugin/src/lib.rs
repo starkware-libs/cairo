@@ -26,6 +26,7 @@ use cairo_lang_starknet::contract::{
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet_classes::casm_contract_class::ENTRY_POINT_COST;
+use cairo_lang_utils::CloneableDatabase;
 use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
@@ -90,7 +91,7 @@ pub struct TestsCompilationConfig<'db> {
 /// * `Ok(TestCompilation)` - The compiled test cases with metadata.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     tests_compilation_config: TestsCompilationConfig<'db>,
     test_crate_ids: Vec<CrateInput>,
     mut diagnostics_reporter: DiagnosticsReporter<'_>,

@@ -301,6 +301,7 @@ fn constant_semantic_data<'db>(
 /// Cycle handling for [ConstantSemantic::constant_semantic_data].
 fn constant_semantic_data_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     const_id: ConstantId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ConstantData<'db>> {

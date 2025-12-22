@@ -148,6 +148,7 @@ pub fn canonic_trait_solutions_tracked<'db>(
 /// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle<'db>(
     _db: &dyn Database,
+    _id: salsa::Id,
     _canonical_trait: CanonicalTrait<'db>,
     _lookup_context: ImplLookupContextId<'db>,
     _impl_type_bounds: BTreeMap<ImplTypeById<'db>, TypeId<'db>>,
