@@ -44,7 +44,6 @@ pub fn find_executable_function_ids<'db>(
             {
                 for (free_func_id, body) in free_functions.iter() {
                     let found_attrs = executable_attributes
-                        .clone()
                         .iter()
                         .filter(|attr| body.has_attr(db, attr.long(db)))
                         .cloned()
