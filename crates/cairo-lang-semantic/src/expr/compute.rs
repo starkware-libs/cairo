@@ -2438,7 +2438,7 @@ fn compute_expr_closure_semantic<'db>(
         param_tys: params.iter().map(|param| param.ty).collect(),
         ret_ty,
         captured_types,
-        parent_function,
+        params,
         params_location: StableLocation::new(syntax.params(db).stable_ptr(db).into()),
     })
     .intern(ctx.db);
@@ -4011,7 +4011,7 @@ fn resolve_expr_path<'db>(
     path: &ast::ExprPath<'db>,
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
-    if path.segments(db).elements(db).len() == 0 {
+    if path.segments(db).elements(db).is_empty() {
         return Err(ctx.diagnostics.report(path.stable_ptr(db), Unsupported));
     }
 
