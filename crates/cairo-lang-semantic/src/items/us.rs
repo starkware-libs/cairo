@@ -178,6 +178,7 @@ fn get_parent_single_use_path<'db>(
 /// Cycle handling for [UseSemantic::priv_use_semantic_data].
 fn priv_use_semantic_data_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_id = use_id.parent_module(db);
@@ -230,6 +231,7 @@ fn use_resolver_data_tracked<'db>(
 /// Trivial cycle handler for [UseSemantic::use_resolver_data].
 fn use_resolver_data_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     use_id: UseId<'db>,
 ) -> Maybe<Arc<ResolverData<'db>>> {
     // Forwarding (not as a query) cycle handling to `priv_use_semantic_data` cycle handler.
@@ -311,16 +313,18 @@ fn priv_global_use_semantic_data_tracked<'db>(
 /// Cycle handling for [UseSemantic::priv_global_use_semantic_data].
 fn priv_global_use_semantic_data_tracked_cycle_fn<'db>(
     _db: &'db dyn Database,
-    _value: &Maybe<UseGlobalData<'db>>,
-    _count: u32,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &Maybe<UseGlobalData<'db>>,
+    value: Maybe<UseGlobalData<'db>>,
     _global_use_id: GlobalUseId<'db>,
-) -> salsa::CycleRecoveryAction<Maybe<UseGlobalData<'db>>> {
-    salsa::CycleRecoveryAction::Iterate
+) -> Maybe<UseGlobalData<'db>> {
+    value
 }
 
 /// Cycle handling for [UseSemantic::priv_global_use_semantic_data].
 fn priv_global_use_semantic_data_tracked_initial<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let mut diagnostics = SemanticDiagnostics::default();
@@ -446,17 +450,19 @@ fn module_imported_modules<'db>(
 /// Cycle handling for [UseSemantic::module_imported_modules].
 fn module_imported_modules_cycle_fn<'db>(
     _db: &dyn Database,
-    _value: &ImportedModules<'db>,
-    _count: u32,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &ImportedModules<'db>,
+    value: ImportedModules<'db>,
     _tracked: Tracked,
     _module_id: ModuleId<'db>,
-) -> salsa::CycleRecoveryAction<ImportedModules<'db>> {
-    salsa::CycleRecoveryAction::Iterate
+) -> ImportedModules<'db> {
+    value
 }
 
 /// Cycle handling for [UseSemantic::module_imported_modules].
 fn module_imported_modules_initial<'db>(
     _db: &'db dyn Database,
+    _id: salsa::Id,
     _tracked: Tracked,
     _module_id: ModuleId<'db>,
 ) -> ImportedModules<'db> {

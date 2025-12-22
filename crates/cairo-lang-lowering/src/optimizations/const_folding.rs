@@ -715,7 +715,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
         let extract_base = |function: ConcreteFunctionWithBodyId<'db>| match function.long(self.db)
         {
-            ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.base,
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                specialized.long(self.db).base
+            }
             _ => function,
         };
         let called_base = extract_base(called_function);
@@ -753,7 +755,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             self.caller_function.long(self.db)
             && caller_base == called_base
         {
-            specialized.args.iter().map(Some).collect()
+            specialized.long(self.db).args.iter().map(Some).collect()
         } else {
             vec![None; call_stmt.inputs.len()]
         };
@@ -785,11 +787,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
             called_function.long(self.db)
         {
+            let specialized_function = specialized_function.long(self.db);
             // Canonicalize the specialization rather than adding a specialization of a specialized
             // function.
             called_function = specialized_function.base;
             let mut new_args_iter = specialization_args.into_iter();
-            let mut old_args = specialized_function.args.to_vec();
+            let mut old_args = specialized_function.args.clone();
             let mut stack = vec![];
             for arg in old_args.iter_mut().rev() {
                 stack.push(arg);
@@ -815,8 +818,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             specialization_args = old_args;
         }
-        let specialized =
-            SpecializedFunction { base: called_function, args: specialization_args.into() };
+        let specialized = SpecializedFunction { base: called_function, args: specialization_args }
+            .intern(self.db);
         let specialized_func_id =
             ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 
