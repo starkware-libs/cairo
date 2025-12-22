@@ -29,9 +29,10 @@ impl<'db> LocationLink<'db> {
     }
 }
 
-/// Collects all [`cairo_lang_syntax::node::green::GreenNode`]s for a [`SyntaxNode`],
-/// returns a vector of their [`SyntaxKind`] and text.
-fn collect_green_nodes<'db>(
+/// Extends `green_nodes` with all
+/// [`cairo_lang_syntax::node::green::GreenNode`]s for a [`SyntaxNode`],
+/// storing each node's [`SyntaxKind`] and text.
+fn extend_green_nodes<'db>(
     db: &dyn Database,
     syntax_node: &SyntaxNode<'db>,
     green_nodes: &mut Vec<(SyntaxKind, String)>,
@@ -43,7 +44,7 @@ fn collect_green_nodes<'db>(
         GreenNodeDetails::Node { .. } => {
             let syntax_node_children = syntax_node.get_children(db);
             syntax_node_children.iter().for_each(|child| {
-                collect_green_nodes(db, child, green_nodes);
+                extend_green_nodes(db, child, green_nodes);
             });
         }
     }
@@ -147,9 +148,9 @@ pub fn format_signature<'db>(
                 match get_virtual_syntax_file_signature(db, &formatted_file) {
                     Ok(syntax_file_formatted) => {
                         let mut nodes_original = Vec::new();
-                        collect_green_nodes(db, &syntax_file, &mut nodes_original);
+                        extend_green_nodes(db, &syntax_file, &mut nodes_original);
                         let mut nodes_formatted = Vec::new();
-                        collect_green_nodes(db, &syntax_file_formatted, &mut nodes_formatted);
+                        extend_green_nodes(db, &syntax_file_formatted, &mut nodes_formatted);
 
                         let offsets = get_offsets(nodes_original, nodes_formatted);
                         (
