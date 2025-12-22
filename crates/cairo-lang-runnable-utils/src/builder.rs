@@ -258,6 +258,10 @@ pub struct EntryCodeConfig {
     /// Whether to allow unsound operations in the program.
     /// Currently relevant for supporting emulated builtins.
     pub allow_unsound: bool,
+
+    /// An optional list of builtins to use in the entry code (if its none the builtins will be
+    /// inferred from the param_types)
+    pub builtin_list: Option<Vec<BuiltinName>>,
 }
 impl EntryCodeConfig {
     /// Returns a configuration for testing purposes.
@@ -265,12 +269,12 @@ impl EntryCodeConfig {
     /// This configuration will not finalize the segment arena after calling the function, to
     /// prevent failure in case of functions returning values.
     pub fn testing() -> Self {
-        Self { testing: true, allow_unsound: true }
+        Self { testing: true, allow_unsound: true, builtin_list: None }
     }
 
     /// Returns a configuration for execution purposes.
     pub fn executable(allow_unsound: bool) -> Self {
-        Self { testing: false, allow_unsound }
+        Self { testing: false, allow_unsound, builtin_list: None }
     }
 }
 
@@ -305,8 +309,19 @@ pub fn create_entry_code_from_params(
     config: EntryCodeConfig,
 ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
     let mut helper = EntryCodeHelper::new(config);
-
-    helper.process_builtins(param_types);
+    if let Some(builtin_list) = &helper.config.builtin_list {
+        helper.builtins = builtin_list.clone();
+        let mut builtin_offset = 3;
+        for builtin_name in helper.builtins.iter().rev() {
+            helper.input_builtin_vars.insert(
+                *builtin_name,
+                helper.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
+            );
+            builtin_offset += 1;
+        }
+    } else {
+        helper.process_builtins(param_types);
+    }
     helper.process_params(param_types);
     casm_build_extend!(helper.ctx, let () = call FUNCTION;);
     helper.process_output(return_types);
