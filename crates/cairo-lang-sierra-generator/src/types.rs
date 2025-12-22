@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::vec;
 
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
