@@ -30,6 +30,9 @@ use crate::zeroable::IsZeroResult;
 /// it means that the signature algorithm used should be modified accordingly.
 /// This function validates that `s` and `r` are not 0 or equal to the curve order,
 /// but does not check that `r, s < stark_curve::ORDER`, which should be checked by the caller.
+/// Additionally, it does not prevent malleability attacks of using `s` as `stark_curve::ORDER - s`,
+/// `stark_curve::ORDER + s` or `2 * stark_curve::ORDER - s` (when in felt252 range).
+/// Those can be avoided by checking that `s <= stark_curve::ORDER / 2`.
 ///
 /// # Arguments
 /// * `message_hash` - The hash of the signed message
