@@ -432,8 +432,8 @@ impl<'db> GenericFunctionWithBodyId<'db> {
             GenericFunctionWithBodyId::Free(free) => free.full_path(db),
             GenericFunctionWithBodyId::Impl(imp) => {
                 format!(
-                    "{}::{}",
-                    imp.concrete_impl_id.impl_def_id(db).full_path(db),
+                    "{:?}::{}",
+                    imp.concrete_impl_id.debug(db),
                     imp.function_body.name(db).long(db)
                 )
             }
