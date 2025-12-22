@@ -26,10 +26,36 @@ pub fn build_sint_from_felt252(
     build_felt252_range_reduction(builder, &Range::closed(min_value, max_value), false)
 }
 
-/// Handles addition of signed integers.
-/// `[min_value, max_value]` is the range of the signed integer.
-/// Note: this function assumes that `min_value <= 0` and `max_value > 0` and that the range of
-/// possible values is smaller than 2**128.
+/// Handles overflowing addition and subtraction of signed integers.
+///
+/// This function implements overflow detection and handling for signed integer operations.
+/// The algorithm works in three stages:
+///
+/// 1. **Canonicalization**: Shifts the valid range `[min_value, max_value]` to `[0, range_size)`
+///    by adding `-min_value` to the result. This simplifies range checking.
+///
+/// 2. **Range detection**: Uses three branches to handle different cases:
+///    - `IsInRange`: Value is within the valid range `[min_value, max_value]`
+///    - `IsAbove`: Value exceeds `max_value` (overflow)
+///    - `Below`: Value is below `min_value` (underflow)
+///
+/// 3. **Range checking**: For each branch, performs range checks using transformations that ensure
+///    the check value fits within `[0, 2^128)`. This is necessary because Cairo's range check
+///    builtin only works with non-negative values less than `2^128`.
+///
+/// The function returns three branches:
+/// - `Fallthrough`: Operation succeeded, value is in range
+/// - `Below`: Underflow occurred, returns wrapped value `value + range_size`
+/// - `Above`: Overflow occurred, returns wrapped value `value - range_size`
+///
+/// # Parameters
+/// - `min_value`: Lower bound of the signed integer range (must be ≤ 0)
+/// - `max_value`: Upper bound of the signed integer range (must be > 0)
+/// - `op`: The operation to perform (`OverflowingAdd` or `OverflowingSub`)
+///
+/// # Assumptions
+/// - `min_value <= 0` and `max_value > 0`
+/// - The range size `(max_value - min_value + 1) < 2^128`
 pub fn build_sint_overflowing_operation(
     builder: CompiledInvocationBuilder<'_>,
     min_value: i128,
@@ -65,46 +91,67 @@ pub fn build_sint_overflowing_operation(
             casm_build_extend! {casm_builder, assert value = lhs - rhs;};
         }
     }
+    // Canonicalize the range: shift [min_value, max_value] to [0, range_size).
+    // This allows us to check if the value is in range by testing if canonical_value < range_size.
     casm_build_extend! {casm_builder,
         const positive_range_fixer = -BigInt::from(min_value);
         const range_size = BigInt::from(max_value) - BigInt::from(min_value) + BigInt::from(1);
-        // Shift the valid range to [0, range_size).
         let canonical_value = value + positive_range_fixer;
         tempvar is_in_range;
         hint TestLessThan {lhs: canonical_value, rhs: range_size} into {dst: is_in_range};
         jump IsInRange if is_in_range != 0;
+        // Value is not in the canonical range. Determine if it's above or below.
         tempvar is_above;
         // Bound for addition or subtraction of any 2 numbers in [i128::MIN, i128::MAX].
+        // The maximum possible result from adding/subtracting two i128 values is:
         // max(2 * i128::MAX, i128::MAX - i128::MIN) + 1
-        // ==> max(2*(2**127 - 1), 2**127 - 1 -(-2**127)) + 1 ==> 2**128
+        // = max(2*(2**127 - 1), 2**127 - 1 -(-2**127)) + 1
+        // = max(2**128 - 2, 2**128 - 1) + 1
+        // = 2**128
+        // We use this bound to distinguish between values that are above max_value (overflow)
+        // and values that are below min_value (underflow) when working modulo the field.
         const above_bound = BigInt::from(u128::MAX) + BigInt::from(1);
         hint TestLessThan {lhs: value, rhs: above_bound} into {dst: is_above};
         jump IsAbove if is_above != 0;
-        // Below range case.
-        // We need to assert that the value is smaller than the lower limit:
-        // value + 2**128 - min_value < 2**128 ==> value < min_value
+        // Below range case (underflow): value < min_value
+        // To range-check that value < min_value, we transform it to a non-negative value:
+        // value + 2**128 - min_value < 2**128  ⟺  value < min_value
+        // This works because if value < min_value (a negative number), adding 2**128 makes it
+        // positive and less than 2**128 when working in the field.
         const min_value_fixer =
             BigInt::from(u128::MAX) + BigInt::from(1) - BigInt::from(min_value);
         tempvar rc_val = value + min_value_fixer;
         assert rc_val = *(range_check++);
+        // Return the wrapped value for underflow handling
         let fixed_below = value + range_size;
         jump Below;
     IsAbove:
-        // We need to assert that the value is larger than the upper limit:
-        // value - (max_value + 1) >= 0 ==> value > max_value
+        // Above range case (overflow): value > max_value
+        // To range-check that value > max_value, we check that value - (max_value + 1) >= 0:
+        // value - (max_value + 1) >= 0  ⟺  value > max_value
+        // Since value > max_value and max_value >= 0, the result is non-negative.
         const max_value_plus_one = BigInt::from(max_value) + BigInt::from(1);
         tempvar rc_val = value - max_value_plus_one;
         assert rc_val = *(range_check++);
+        // Return the wrapped value for overflow handling
         let fixed_above = value - range_size;
         jump Above;
     IsInRange:
+        // Value is within the valid range [min_value, max_value].
+        // Range-check the canonical value (which is in [0, range_size)).
         tempvar rc_val = canonical_value;
         assert rc_val = *(range_check++);
     }
-    // For i128, the previous range check already made sure the value is in range.
+    // For full i128 range (i128::MIN to i128::MAX), the previous range check on canonical_value
+    // already ensures the value is in range. For smaller types (i8, i16, i32, i64), we need an
+    // additional check to ensure value <= max_value (the canonical check only ensures
+    // value >= min_value after canonicalization).
     if !(min_value == i128::MIN && max_value == i128::MAX) {
         casm_build_extend! {casm_builder,
-            // value + 2**128 - max_value - 1 < 2**128 ==> value <= max_value
+            // To range-check that value <= max_value, we transform it:
+            // value + 2**128 - max_value - 1 < 2**128  ⟺  value <= max_value
+            // This works because if value <= max_value, adding (2**128 - max_value - 1) keeps
+            // the result within [0, 2**128) when working in the field.
             const fixer_limit = BigInt::from(u128::MAX) - BigInt::from(max_value);
             tempvar rc_val = value + fixer_limit;
             assert rc_val = *(range_check++);
