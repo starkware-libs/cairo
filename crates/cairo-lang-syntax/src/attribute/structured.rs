@@ -121,7 +121,6 @@ pub trait AttributeListStructurize<'a> {
 
 impl<'a> AttributeListStructurize<'a> for ast::AttributeList<'a> {
     fn structurize(self, db: &'a dyn Database) -> Vec<Attribute<'a>> {
-        // TODO(ilya): Consider checking for attribute repetitions.
         self.elements(db).map(|attr| attr.structurize(db)).collect()
     }
 }
