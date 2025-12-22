@@ -235,6 +235,8 @@ impl DestructU96Guarantee of Destruct<U96Guarantee> {
 }
 
 /// A value that is guaranteed to fit in a u96.
+///
+/// The destructor of the type verifies that the value is indeed within the range of a u96.
 extern type U96Guarantee;
 
 /// Expose the const required by the libfunc to allow the compiler const reusage.
@@ -686,6 +688,10 @@ impl CircuitOutputsImpl<
 extern type CircuitFailureGuarantee;
 
 /// A type that is used to guarantee that a u384 is less than another u384.
+///
+/// The guarantee is verified by `u96_limbs_lt_guarantee_verify`, which is the only way to
+/// destruct this type. This way, one can trust that the guarantee holds although it has not yet
+/// been verified.
 extern type U96LimbsLtGuarantee<const LIMB_COUNT: usize>;
 
 /// Helper trait for finding the value of a const minus 1.
@@ -761,6 +767,8 @@ pub impl DestructFailureGuarantee of Destruct<CircuitFailureGuarantee> {
     }
 }
 
+/// Returns the value of the circuit output, and a guarantee that the output is less than the
+/// modulus value.
 extern fn get_circuit_output<C, Output>(
     outputs: CircuitOutputs<C>,
 ) -> (u384, U96LimbsLtGuarantee<4>) nopanic;
