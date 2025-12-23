@@ -1,6 +1,227 @@
 = Runtime
 
-This section is a work in progress.
+This page describes Cairo's runtime execution model, including how programs execute
+on the Cairo VM, resource management, built-in functions, and error handling.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Overview
+
+Cairo programs compile to Sierra (Safe Intermediate Representation) which then lowers
+to CASM (Cairo Assembly). The resulting CASM bytecode executes on the Cairo VM, a
+register-based virtual machine with relocatable memory and built-in cryptographic
+primitives.
+
+Key runtime characteristics:
+
+- Immutable memory with relocatable addressing (segment-based)
+- Provable execution: every step generates a trace for STARK proofs
+- Resource tracking: gas costs and builtin usage are tracked
+- Deterministic execution with no undefined behavior
+- Panic-based error handling for runtime failures
+
+== Cairo VM architecture
+
+=== Relocatable memory
+
+The Cairo VM uses relocatable memory organized into segments. Memory addresses are
+pairs of (segment_index, offset) rather than flat addresses.
+
+- Memory is write-once: values cannot be modified after writing
+- Segments separate different memory regions (program, execution, builtins)
+- The VM runner allocates and manages segments during execution
+
+=== Registers
+
+The VM maintains several registers:
+
+- `AP` (Allocation Pointer): points to the next free memory cell for allocation
+- `FP` (Frame Pointer): anchors the current function's call frame
+- `PC` (Program Counter): points to the current instruction
+
+Instructions advance these pointers according to their semantics. Function calls
+update `FP` to create new frames; returns restore the previous frame.
+
+=== Execution trace
+
+Every instruction executed by the VM is recorded in an execution trace. This trace
+is used to generate STARK proofs that verify the computation was performed correctly.
+
+The trace includes:
+- All register values (PC, AP, FP) at each step
+- All memory accesses (reads and writes)
+- Builtin invocations and their results
+
+== Program execution
+
+=== Entry points
+
+Cairo programs begin execution at an entry point. For Starknet contracts, entry
+points are external functions, constructors, or L1 handlers defined in the contract.
+
+For standalone Cairo programs (`cairo-run`), execution starts at the `main` function.
+
+=== Function calls and returns
+
+Function calls in Cairo:
+
+1. Allocate a new call frame by updating `FP`
+2. Push arguments onto the stack (referenced relative to `FP`)
+3. Execute the called function's instructions
+4. Return values are placed in designated memory locations
+5. Restore the previous `FP` on return
+
+The calling convention ensures deterministic stack layout for proof generation.
+
+=== Input and output
+
+Cairo programs receive input through function parameters. For Starknet contracts,
+inputs come from transaction calldata serialized according to the ABI.
+
+Outputs are return values from functions. The runtime serializes return values
+back to the caller according to ABI specifications.
+
+== Builtins
+
+Builtins are optimized, provable implementations of common operations. They execute
+more efficiently than equivalent Cairo code and have dedicated proof generation.
+
+=== Core builtins
+
+- `RangeCheck`: Validates that a value is within a specified range
+- `Pedersen`: Computes Pedersen hash (cryptographic hash function)
+- `Poseidon`: Computes Poseidon hash (Starknet-optimized hash)
+- `EcOp`: Elliptic curve operations on the STARK curve
+- `Bitwise`: Bitwise operations (AND, OR, XOR)
+- `Keccak`: Keccak-256 hash function
+- `SegmentArena`: Memory segment management
+
+=== Builtin usage
+
+Builtins are available through special variables passed as implicit arguments:
+
+[source,cairo]
+----
+use core::pedersen::pedersen;
+
+fn hash_values(a: felt252, b: felt252) -> felt252 {
+    pedersen(a, b)  // Uses Pedersen builtin internally
+}
+----
+
+The compiler automatically threads builtin pointers through function calls.
+User code typically accesses builtins through core library functions rather than
+directly.
+
+== Resource management and gas
+
+=== Gas accounting
+
+Cairo programs executing on Starknet consume gas. Gas costs are determined by:
+
+- Number of execution steps (VM instructions)
+- Builtin invocations (each builtin has a cost)
+- Memory allocations
+
+The Sierra → CASM compilation includes gas metering instructions that track
+consumption and enforce limits.
+
+=== Resource bounds
+
+Starknet transactions specify resource bounds:
+
+- Maximum gas allowed for the transaction
+- Maximum steps for the execution trace
+
+If execution exceeds these bounds, the transaction reverts. Sierra's design ensures
+programs can safely check gas before expensive operations to avoid partial execution.
+
+== Error handling
+
+=== Panics
+
+Cairo uses panics for runtime errors. When a panic occurs:
+
+1. Execution halts immediately
+2. The panic reason (array of `felt252`) is captured
+3. Stack unwinding begins
+4. Resources are cleaned up (types with `PanicDestruct`)
+5. Control returns to the caller with an error
+
+Common panic sources:
+- Division by zero
+- Array index out of bounds
+- Arithmetic overflow (in checked mode)
+- Explicit `panic!()` macro calls
+- Failed assertions (`assert!`)
+
+=== Panic propagation
+
+Panics propagate up the call stack. At contract boundaries (external functions),
+panics are caught and returned as execution failures to the caller.
+
+[source,cairo]
+----
+fn checked_divide(a: u32, b: u32) -> u32 {
+    if b == 0 {
+        panic!("division by zero");
+    }
+    a / b
+}
+----
+
+=== Result-based error handling
+
+For recoverable errors, use `Result<T, E>` types with the `?` operator:
+
+[source,cairo]
+----
+fn safe_divide(a: u32, b: u32) -> Result<u32, ByteArray> {
+    if b == 0 {
+        return Result::Err("division by zero");
+    }
+    Result::Ok(a / b)
+}
+----
+
+See xref:language_constructs:error-propagation-operator.adoc[Error propagation] for
+details on the `?` operator.
+
+== Stack traces and debugging
+
+When a panic occurs, Cairo captures a stack trace showing the call chain:
+
+[source,text]
+----
+thread 'main' panicked at 'division by zero'
+lib.cairo:42:5
+Called from:
+  calculate() at lib.cairo:15:9
+  main() at lib.cairo:5:5
+----
+
+Stack traces include:
+- Panic message
+- Source location where the panic occurred
+- Call chain with file names and line numbers
+
+The `cairo-run` tool displays stack traces. On Starknet, stack traces are included
+in transaction failure data for debugging reverted transactions.
+
+== Native execution vs proving
+
+Cairo programs can run in two modes:
+
+- **Native execution**: Fast execution for testing and development (e.g., `cairo-run`,
+  `cairo-test`)
+- **Proving mode**: Generates STARK proofs for trustless verification (Starknet)
+
+Both modes execute the same CASM bytecode deterministically. Proving mode is slower
+but produces a proof that anyone can verify without re-executing the program.
+
+== See also
+
+- xref:memory-model.adoc[Memory model] - Cairo's memory semantics
+- xref:application-binary-interface.adoc[Application binary interface] - Contract ABI
+- xref:constant-evaluation.adoc[Constant evaluation] - Compile-time execution
+- xref:../../language_constructs/pages/contracts.adoc[Contracts] - Starknet contract structure
+- xref:../../language_constructs/pages/implicit-arguments.adoc[Implicit arguments] - Builtin
+  threading
