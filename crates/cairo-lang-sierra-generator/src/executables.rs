@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::ToOption;
@@ -8,6 +6,8 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use salsa::Database;
 
 use crate::db::SierraGenGroup;
@@ -24,8 +24,8 @@ use crate::db::SierraGenGroup;
 pub fn find_executable_function_ids<'db>(
     db: &'db dyn Database,
     main_crate_ids: Vec<CrateId<'db>>,
-) -> HashMap<ConcreteFunctionWithBodyId<'db>, Vec<SmolStrId<'db>>> {
-    let mut executable_function_ids = HashMap::new();
+) -> OrderedHashMap<ConcreteFunctionWithBodyId<'db>, Vec<SmolStrId<'db>>> {
+    let mut executable_function_ids = OrderedHashMap::default();
 
     for crate_id in main_crate_ids {
         let executable_attributes = db
@@ -73,23 +73,19 @@ pub fn find_executable_function_ids<'db>(
 /// The returned function ids are grouped by the executable attribute name, and sorted by full path.
 pub fn collect_executables(
     db: &dyn Database,
-    mut executable_function_ids: HashMap<ConcreteFunctionWithBodyId<'_>, Vec<SmolStrId<'_>>>,
+    executable_function_ids: OrderedHashMap<ConcreteFunctionWithBodyId<'_>, Vec<SmolStrId<'_>>>,
     sierra_program: &Program,
-) -> HashMap<String, Vec<FunctionId>> {
+) -> OrderedHashMap<String, Vec<FunctionId>> {
     if executable_function_ids.is_empty() {
         Default::default()
     } else {
         let executable_function_ids = executable_function_ids
-            .drain()
+            .into_iter()
             .filter_map(|(function_id, attrs)| {
-                let function_id = function_id
-                    .function_id(db)
-                    .to_option()
-                    .map(|function_id| db.intern_sierra_function(function_id));
-                function_id.map(|function_id| (function_id, attrs))
+                Some((db.intern_sierra_function(function_id.function_id(db).ok()?), attrs))
             })
-            .collect::<HashMap<FunctionId, Vec<_>>>();
-        let mut result: HashMap<String, Vec<(String, FunctionId)>> = Default::default();
+            .collect::<UnorderedHashMap<_, _>>();
+        let mut result: OrderedHashMap<String, Vec<(String, FunctionId)>> = Default::default();
         for function in &sierra_program.funcs {
             let Some(found_attrs) = executable_function_ids.get(&function.id) else {
                 continue;
@@ -104,12 +100,11 @@ pub fn collect_executables(
         }
         // Sort by full path for stability.
         result
-            .drain()
-            .map(|(key, functions)| {
-                let mut functions = functions.into_iter().collect::<Vec<_>>();
-                functions.sort_by_key(|(full_path, _)| full_path.clone());
-                (key, functions.into_iter().map(|(_, function_id)| function_id).collect::<Vec<_>>())
+            .into_iter()
+            .map(|(key, mut functions)| {
+                functions.sort_by(|(path_a, _), (path_b, _)| path_a.cmp(path_b));
+                (key, functions.into_iter().map(|(_, id)| id).collect())
             })
-            .collect::<HashMap<String, Vec<FunctionId>>>()
+            .collect()
     }
 }
