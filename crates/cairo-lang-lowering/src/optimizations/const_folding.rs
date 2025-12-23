@@ -2,6 +2,7 @@
 #[path = "const_folding_test.rs"]
 mod test;
 
+use std::rc::Rc;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FreeFunctionId};
@@ -92,33 +93,32 @@ enum VarInfo<'db> {
     /// The variable can be replaced by another variable.
     Var(VarUsage<'db>),
     /// The variable is a snapshot of another variable.
-    Snapshot(Box<VarInfo<'db>>),
+    Snapshot(Rc<VarInfo<'db>>),
     /// The variable is a struct of other variables.
     /// `None` values represent variables that are not tracked.
-    Struct(Vec<Option<VarInfo<'db>>>),
+    Struct(Vec<Option<Rc<VarInfo<'db>>>>),
     /// The variable is an enum of a known variant of other variables.
-    Enum { variant: ConcreteVariant<'db>, payload: Box<VarInfo<'db>> },
+    Enum { variant: ConcreteVariant<'db>, payload: Rc<VarInfo<'db>> },
     /// The variable is a box of another variable.
-    Box(Box<VarInfo<'db>>),
+    Box(Rc<VarInfo<'db>>),
     /// The variable is an array of known size of other variables.
     /// `None` values represent variables that are not tracked.
-    Array(Vec<Option<VarInfo<'db>>>),
+    Array(Vec<Option<Rc<VarInfo<'db>>>>),
 }
 impl<'db> VarInfo<'db> {
     /// Peels the snapshots from the variable info and returns the number of snapshots performed.
-    fn peel_snapshots(&self) -> (usize, &VarInfo<'db>) {
+    fn peel_snapshots(mut self: Rc<Self>) -> (usize, Rc<VarInfo<'db>>) {
         let mut n_snapshots = 0;
-        let mut info = self;
-        while let VarInfo::Snapshot(inner) = info {
-            info = inner.as_ref();
+        while let VarInfo::Snapshot(inner) = self.as_ref() {
+            self = inner.clone();
             n_snapshots += 1;
         }
-        (n_snapshots, info)
+        (n_snapshots, self)
     }
     /// Wraps the variable info with the given number of snapshots.
-    fn wrap_with_snapshots(mut self, n_snapshots: usize) -> VarInfo<'db> {
+    fn wrap_with_snapshots(mut self: Rc<Self>, n_snapshots: usize) -> Rc<VarInfo<'db>> {
         for _ in 0..n_snapshots {
-            self = VarInfo::Snapshot(Box::new(self));
+            self = VarInfo::Snapshot(self).into();
         }
         self
     }
@@ -172,7 +172,7 @@ pub struct ConstFoldingContext<'db, 'mt> {
     /// The variables arena, mostly used to get the type of variables.
     pub variables: &'mt mut VariableArena<'db>,
     /// The accumulated information about the const values of variables.
-    var_info: UnorderedHashMap<VariableId, VarInfo<'db>>,
+    var_info: UnorderedHashMap<VariableId, Rc<VarInfo<'db>>>,
     /// The libfunc information.
     libfunc_info: &'db ConstFoldingLibfuncInfo<'db>,
     /// The specialization base of the caller function (or the caller if the function is not
@@ -222,7 +222,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 BlockEnd::Goto(_, remapping) => {
                     for (dst, src) in remapping.iter() {
                         if let Some(v) = self.as_const(src.var_id) {
-                            self.var_info.insert(*dst, VarInfo::Const(v));
+                            self.var_info.insert(*dst, VarInfo::Const(v).into());
                         }
                     }
                 }
@@ -245,14 +245,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         self.maybe_replace_inputs(stmt.inputs_mut());
         match stmt {
             Statement::Const(StatementConst { value, output, boxed }) if *boxed => {
-                self.var_info.insert(*output, VarInfo::Box(VarInfo::Const(*value).into()));
+                self.var_info.insert(*output, VarInfo::Box(VarInfo::Const(*value).into()).into());
             }
             Statement::Const(StatementConst { value, output, .. }) => match value.long(self.db) {
                 ConstValue::Int(..)
                 | ConstValue::Struct(..)
                 | ConstValue::Enum(..)
                 | ConstValue::NonZero(..) => {
-                    self.var_info.insert(*output, VarInfo::Const(*value));
+                    self.var_info.insert(*output, VarInfo::Const(*value).into());
                 }
                 ConstValue::Generic(_)
                 | ConstValue::ImplConstant(_)
@@ -260,14 +260,17 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 | ConstValue::Missing(_) => {}
             },
             Statement::Snapshot(stmt) => {
-                if let Some(info) = self.var_info.get(&stmt.input.var_id).cloned() {
+                if let Some(info) = self.var_info.get(&stmt.input.var_id) {
+                    let info = info.clone();
                     self.var_info.insert(stmt.original(), info.clone());
-                    self.var_info.insert(stmt.snapshot(), VarInfo::Snapshot(info.into()));
+                    self.var_info.insert(stmt.snapshot(), VarInfo::Snapshot(info).into());
                 }
             }
             Statement::Desnap(StatementDesnap { input, output }) => {
-                if let Some(VarInfo::Snapshot(info)) = self.var_info.get(&input.var_id) {
-                    self.var_info.insert(*output, info.as_ref().clone());
+                if let Some(info) = self.var_info.get(&input.var_id)
+                    && let VarInfo::Snapshot(info) = info.as_ref()
+                {
+                    self.var_info.insert(*output, info.clone());
                 }
             }
             Statement::Call(call_stmt) => {
@@ -287,7 +290,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         continue;
                     };
                     contains_info = true;
-                    if let VarInfo::Const(value) = info {
+                    if let VarInfo::Const(value) = info.as_ref() {
                         const_args.push(*value);
                     }
                     all_args.push(Some(info.clone()));
@@ -295,22 +298,23 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 if const_args.len() == inputs.len() {
                     let value =
                         ConstValue::Struct(const_args, self.variables[*output].ty).intern(self.db);
-                    self.var_info.insert(*output, VarInfo::Const(value));
+                    self.var_info.insert(*output, VarInfo::Const(value).into());
                 } else if contains_info {
-                    self.var_info.insert(*output, VarInfo::Struct(all_args));
+                    self.var_info.insert(*output, VarInfo::Struct(all_args).into());
                 }
             }
             Statement::StructDestructure(StatementStructDestructure { input, outputs }) => {
                 if let Some(info) = self.var_info.get(&input.var_id) {
-                    let (n_snapshots, info) = info.peel_snapshots();
-                    match info {
+                    let (n_snapshots, info) = info.clone().peel_snapshots();
+                    match info.as_ref() {
                         VarInfo::Const(const_value) => {
                             if let ConstValue::Struct(member_values, _) = const_value.long(self.db)
                             {
                                 for (output, value) in zip_eq(outputs, member_values) {
                                     self.var_info.insert(
                                         *output,
-                                        VarInfo::Const(*value).wrap_with_snapshots(n_snapshots),
+                                        Rc::new(VarInfo::Const(*value))
+                                            .wrap_with_snapshots(n_snapshots),
                                     );
                                 }
                             }
@@ -329,29 +333,29 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
                 let value = if let Some(info) = self.var_info.get(&input.var_id) {
-                    if let VarInfo::Const(val) = info {
+                    if let VarInfo::Const(val) = info.as_ref() {
                         VarInfo::Const(ConstValue::Enum(*variant, *val).intern(self.db))
                     } else {
-                        VarInfo::Enum { variant: *variant, payload: info.clone().into() }
+                        VarInfo::Enum { variant: *variant, payload: info.clone() }
                     }
                 } else {
                     VarInfo::Enum { variant: *variant, payload: VarInfo::Var(*input).into() }
                 };
-                self.var_info.insert(*output, value);
+                self.var_info.insert(*output, value.into());
             }
             Statement::IntoBox(StatementIntoBox { input, output }) => {
                 let var_info = self.var_info.get(&input.var_id);
-                let const_value = match var_info {
-                    Some(VarInfo::Const(val)) => Some(*val),
-                    Some(VarInfo::Snapshot(info)) => {
+                let const_value = var_info.and_then(|var_info| match var_info.as_ref() {
+                    VarInfo::Const(val) => Some(*val),
+                    VarInfo::Snapshot(info) => {
                         try_extract_matches!(info.as_ref(), VarInfo::Const).copied()
                     }
                     _ => None,
-                };
+                });
                 let var_info =
                     var_info.cloned().or_else(|| var_info_if_copy(self.variables, *input));
                 if let Some(var_info) = var_info {
-                    self.var_info.insert(*output, VarInfo::Box(var_info.into()));
+                    self.var_info.insert(*output, VarInfo::Box(var_info).into());
                 }
 
                 if let Some(const_value) = const_value {
@@ -359,10 +363,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 }
             }
             Statement::Unbox(StatementUnbox { input, output }) => {
-                if let Some(VarInfo::Box(inner)) = self.var_info.get(&input.var_id) {
-                    let inner = inner.as_ref().clone();
+                if let Some(inner) = self.var_info.get(&input.var_id)
+                    && let VarInfo::Box(inner) = inner.as_ref()
+                {
+                    let inner = inner.clone();
                     if let VarInfo::Const(inner) =
-                        self.var_info.entry(*output).insert_entry(inner).get()
+                        self.var_info.entry(*output).insert_entry(inner).get().as_ref()
                     {
                         *stmt = Statement::Const(StatementConst::new_flat(*inner, *output));
                     }
@@ -461,19 +467,19 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             return None;
         } else if stmt.function == self.panic_with_byte_array && !db.flag_unsafe_panic() {
             let snap = self.var_info.get(&stmt.inputs[0].var_id)?;
-            let bytearray = try_extract_matches!(snap, VarInfo::Snapshot)?;
-            let [
-                Some(VarInfo::Array(data)),
-                Some(VarInfo::Const(pending_word)),
-                Some(VarInfo::Const(pending_len)),
-            ] = &try_extract_matches!(bytearray.as_ref(), VarInfo::Struct)?[..]
+            let bytearray = try_extract_matches!(snap.as_ref(), VarInfo::Snapshot)?;
+            let [Some(data), Some(pending_word), Some(pending_len)] =
+                &try_extract_matches!(bytearray.as_ref(), VarInfo::Struct)?[..]
             else {
                 return None;
             };
+            let data = try_extract_matches!(data.as_ref(), VarInfo::Array)?;
+            let pending_word = try_extract_matches!(pending_word.as_ref(), VarInfo::Const)?;
+            let pending_len = try_extract_matches!(pending_len.as_ref(), VarInfo::Const)?;
             let mut panic_data =
                 vec![BigInt::from_str_radix(BYTE_ARRAY_MAGIC, 16).unwrap(), data.len().into()];
             for word in data {
-                let Some(VarInfo::Const(word)) = word else {
+                let VarInfo::Const(word) = word.as_ref()?.as_ref() else {
                     return None;
                 };
                 panic_data.push(word.long(db).to_int()?.clone());
@@ -536,7 +542,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
                 && rhs.is_zero()
             {
-                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]).into());
                 None
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
@@ -550,12 +556,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && lhs.is_zero()
             {
-                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]));
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]).into());
                 None
             } else if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
                 && rhs.is_zero()
             {
-                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]).into());
                 None
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
@@ -575,12 +581,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             } else if let Some(rhs) = self.as_int(stmt.inputs[1].var_id)
                 && rhs.is_one()
             {
-                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]).into());
                 None
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 && lhs.is_one()
             {
-                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]));
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[1]).into());
                 None
             } else if let Some(lhs) = lhs
                 && let Some(rhs) = rhs
@@ -596,7 +602,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 // Returns the original value when dividing by 1.
                 && rhs.is_one()
             {
-                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]));
+                self.var_info.insert(stmt.outputs[0], VarInfo::Var(stmt.inputs[0]).into());
                 None
             } else if let Some(lhs) = self.as_int(stmt.inputs[0].var_id)
                 // If the value is 0, result is 0 regardless of the divisor.
@@ -643,10 +649,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let (q, r) = lhs?.div_rem(rhs);
             let q_output = stmt.outputs[0];
             let q_value = ConstValue::Int(q, self.variables[q_output].ty).intern(db);
-            self.var_info.insert(q_output, VarInfo::Const(q_value));
+            self.var_info.insert(q_output, VarInfo::Const(q_value).into());
             let r_output = stmt.outputs[1];
             let r_value = ConstValue::Int(r, self.variables[r_output].ty).intern(db);
-            self.var_info.insert(r_output, VarInfo::Const(r_value));
+            self.var_info.insert(r_output, VarInfo::Const(r_value).into());
             self.additional_stmts
                 .push(Statement::Const(StatementConst::new_flat(r_value, r_output)));
             Some(Statement::Const(StatementConst::new_flat(q_value, q_output)))
@@ -665,28 +671,29 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let int_value = self.as_int(stmt.inputs[0].var_id)?;
             let output = stmt.outputs[0];
             let value = ConstValue::Int(int_value.clone(), self.variables[output].ty).intern(db);
-            self.var_info.insert(output, VarInfo::Const(value));
+            self.var_info.insert(output, VarInfo::Const(value).into());
             Some(Statement::Const(StatementConst::new_flat(value, output)))
         } else if id == self.array_new {
-            self.var_info.insert(stmt.outputs[0], VarInfo::Array(vec![]));
+            self.var_info.insert(stmt.outputs[0], VarInfo::Array(vec![]).into());
             None
         } else if id == self.array_append {
-            let mut var_infos =
-                if let VarInfo::Array(var_infos) = self.var_info.get(&stmt.inputs[0].var_id)? {
-                    var_infos.clone()
-                } else {
-                    return None;
-                };
+            let mut var_infos = if let VarInfo::Array(var_infos) =
+                self.var_info.get(&stmt.inputs[0].var_id)?.as_ref()
+            {
+                var_infos.clone()
+            } else {
+                return None;
+            };
             let appended = stmt.inputs[1];
             var_infos.push(match self.var_info.get(&appended.var_id) {
                 Some(var_info) => Some(var_info.clone()),
                 None => var_info_if_copy(self.variables, appended),
             });
-            self.var_info.insert(stmt.outputs[0], VarInfo::Array(var_infos));
+            self.var_info.insert(stmt.outputs[0], VarInfo::Array(var_infos).into());
             None
         } else if id == self.array_len {
             let info = self.var_info.get(&stmt.inputs[0].var_id)?;
-            let desnapped = try_extract_matches!(info, VarInfo::Snapshot)?;
+            let desnapped = try_extract_matches!(info.as_ref(), VarInfo::Snapshot)?;
             let length = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?.len();
             Some(self.propagate_const_and_get_statement(length.into(), stmt.outputs[0]))
         } else {
@@ -847,7 +854,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     ) -> Statement<'db> {
         let ty = self.variables[output].ty;
         let value = ConstValueId::from_int(self.db, ty, &value);
-        self.var_info.insert(output, VarInfo::Const(value));
+        self.var_info.insert(output, VarInfo::Const(value).into());
         Statement::Const(StatementConst::new_flat(value, output))
     }
 
@@ -883,7 +890,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         statements: &mut Vec<Statement<'db>>,
     ) -> Option<BlockEnd<'db>> {
         let input = info.input.var_id;
-        let (n_snapshots, var_info) = self.var_info.get(&input)?.peel_snapshots();
+        let (n_snapshots, var_info) = self.var_info.get(&input)?.clone().peel_snapshots();
         let location = info.location;
         let as_usage = |var_id| VarUsage { var_id, location };
         let db = self.db;
@@ -892,13 +899,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             Statement::Snapshot(StatementSnapshot::new(as_usage(pre_snap), ignored, post_snap))
         };
         // Checking whether we have actual const info on the enum.
-        if let VarInfo::Const(const_value) = var_info
+        if let VarInfo::Const(const_value) = var_info.as_ref()
             && let ConstValue::Enum(variant, value) = const_value.long(db)
         {
             let arm = &info.arms[variant.idx];
             let output = arm.var_ids[0];
             // Propagating the const value information.
-            self.var_info.insert(output, VarInfo::Const(*value).wrap_with_snapshots(n_snapshots));
+            self.var_info
+                .insert(output, Rc::new(VarInfo::Const(*value)).wrap_with_snapshots(n_snapshots));
             if self.variables[input].info.droppable.is_ok()
                 && self.variables[output].info.copyable.is_ok()
                 && let Ok(mut ty) = value.ty(db)
@@ -916,15 +924,15 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 statements.push(stmt);
                 return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
-        } else if let VarInfo::Enum { variant, payload } = var_info {
+        } else if let VarInfo::Enum { variant, payload } = var_info.as_ref() {
             let arm = &info.arms[variant.idx];
             let variant_ty = variant.ty;
             let output = arm.var_ids[0];
-            let payload = payload.as_ref().clone();
+            let payload = payload.clone();
             let unwrapped =
                 self.variables[input].info.droppable.is_ok().then_some(()).and_then(|_| {
-                    let (extra_snapshots, inner) = payload.peel_snapshots();
-                    match inner {
+                    let (extra_snapshots, inner) = payload.clone().peel_snapshots();
+                    match inner.as_ref() {
                         VarInfo::Var(var) if self.variables[var.var_id].info.copyable.is_ok() => {
                             Some((var.var_id, extra_snapshots))
                         }
@@ -985,7 +993,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let arm = &info.arms[1];
                 let nz_var = arm.var_ids[0];
                 let nz_val = ConstValue::NonZero(val).intern(db);
-                self.var_info.insert(nz_var, VarInfo::Const(nz_val));
+                self.var_info.insert(nz_var, VarInfo::Const(nz_val).into());
                 statements.push(Statement::Const(StatementConst::new_flat(nz_val, nz_var)));
                 BlockEnd::Goto(arm.block_id, Default::default())
             })
@@ -1063,14 +1071,14 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let arm = &info.arms[arm_index];
                 let actual_output = arm.var_ids[0];
                 let value = ConstValue::Int(value, ty).intern(db);
-                self.var_info.insert(actual_output, VarInfo::Const(value));
+                self.var_info.insert(actual_output, VarInfo::Const(value).into());
                 statements.push(Statement::Const(StatementConst::new_flat(value, actual_output)));
                 return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
             if let Some(rhs) = rhs {
                 if rhs.is_zero() && !self.diff_fns.contains(&id) {
                     let arm = &info.arms[0];
-                    self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]));
+                    self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[0]).into());
                     return Some(BlockEnd::Goto(arm.block_id, Default::default()));
                 }
                 if rhs.is_one() && !self.diff_fns.contains(&id) {
@@ -1115,7 +1123,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 && (self.uadd_fns.contains(&id) || self.iadd_fns.contains(&id))
             {
                 let arm = &info.arms[0];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]));
+                self.var_info.insert(arm.var_ids[0], VarInfo::Var(info.inputs[1]).into());
                 return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
             None
@@ -1162,7 +1170,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             };
             Some(if let NormalizedResult::InRange(value) = out_range.normalized(value) {
                 let value = ConstValue::Int(value, out_ty).intern(db);
-                self.var_info.insert(success_output, VarInfo::Const(value));
+                self.var_info.insert(success_output, VarInfo::Const(value).into());
                 statements.push(Statement::Const(StatementConst::new_flat(value, success_output)));
                 BlockEnd::Goto(info.arms[success_arm].block_id, Default::default())
             } else {
@@ -1218,17 +1226,19 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             Some(BlockEnd::Goto(info.arms[arm_idx].block_id, Default::default()))
         } else if id == self.array_get {
             let index = self.as_int(info.inputs[1].var_id)?.to_usize()?;
-            if let Some(VarInfo::Snapshot(arr_info)) = self.var_info.get(&info.inputs[0].var_id)
+            if let Some(arr_info) = self.var_info.get(&info.inputs[0].var_id)
+                && let VarInfo::Snapshot(arr_info) = arr_info.as_ref()
                 && let VarInfo::Array(infos) = arr_info.as_ref()
             {
                 match infos.get(index) {
                     Some(Some(output_var_info)) => {
                         let arm = &info.arms[0];
                         let output_var_info = output_var_info.clone();
-                        let box_info =
-                            VarInfo::Box(VarInfo::Snapshot(output_var_info.clone().into()).into());
-                        self.var_info.insert(arm.var_ids[0], box_info);
-                        if let VarInfo::Const(value) = output_var_info {
+                        self.var_info.insert(
+                            arm.var_ids[0],
+                            VarInfo::Box(VarInfo::Snapshot(output_var_info.clone()).into()).into(),
+                        );
+                        if let VarInfo::Const(value) = output_var_info.as_ref() {
                             let value_ty = value.ty(db).ok()?;
                             let value_box_ty = corelib::core_box_ty(db, value_ty);
                             let location = info.location;
@@ -1242,7 +1252,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                                 location,
                             ));
                             statements.extend([
-                                Statement::Const(StatementConst::new_boxed(value, boxed)),
+                                Statement::Const(StatementConst::new_boxed(*value, boxed)),
                                 Statement::Snapshot(StatementSnapshot {
                                     input: VarUsage { var_id: boxed, location },
                                     outputs: [unused_boxed, snapped],
@@ -1283,19 +1293,21 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             None
         } else if id == self.array_pop_front {
-            let VarInfo::Array(var_infos) = self.var_info.get(&info.inputs[0].var_id)? else {
+            let VarInfo::Array(var_infos) = self.var_info.get(&info.inputs[0].var_id)?.as_ref()
+            else {
                 return None;
             };
             if let Some(first) = var_infos.first() {
                 if let Some(first) = first.as_ref().cloned() {
                     let arm = &info.arms[0];
-                    self.var_info.insert(arm.var_ids[0], VarInfo::Array(var_infos[1..].to_vec()));
-                    self.var_info.insert(arm.var_ids[1], VarInfo::Box(first.into()));
+                    self.var_info
+                        .insert(arm.var_ids[0], VarInfo::Array(var_infos[1..].to_vec()).into());
+                    self.var_info.insert(arm.var_ids[1], VarInfo::Box(first).into());
                 }
                 None
             } else {
                 let arm = &info.arms[1];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
+                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]).into());
                 Some(BlockEnd::Goto(
                     arm.block_id,
                     VarRemapping {
@@ -1305,12 +1317,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
         } else if id == self.array_snapshot_pop_back || id == self.array_snapshot_pop_front {
             let var_info = self.var_info.get(&info.inputs[0].var_id)?;
-            let desnapped = try_extract_matches!(var_info, VarInfo::Snapshot)?;
+            let desnapped = try_extract_matches!(var_info.as_ref(), VarInfo::Snapshot)?;
             let element_var_infos = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?;
             // TODO(orizi): Propagate success values as well.
             if element_var_infos.is_empty() {
                 let arm = &info.arms[1];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]));
+                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]).into());
                 Some(BlockEnd::Goto(
                     arm.block_id,
                     VarRemapping {
@@ -1327,7 +1339,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
     /// Returns the const value of a variable if it exists.
     fn as_const(&self, var_id: VariableId) -> Option<ConstValueId<'db>> {
-        try_extract_matches!(self.var_info.get(&var_id)?, VarInfo::Const).copied()
+        try_extract_matches!(self.var_info.get(&var_id)?.as_ref(), VarInfo::Const).copied()
     }
 
     /// Returns the const value as an int if it exists and is an integer.
@@ -1354,7 +1366,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
     /// Replaces the input in place if it is in the var_info map.
     fn maybe_replace_input(&self, input: &mut VarUsage<'db>) {
-        if let Some(VarInfo::Var(new_var)) = self.var_info.get(&input.var_id) {
+        if let Some(info) = self.var_info.get(&input.var_id)
+            && let VarInfo::Var(new_var) = info.as_ref()
+        {
             *input = *new_var;
         }
     }
@@ -1366,7 +1380,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
     /// the value that is used by the caller.
     fn try_get_specialization_arg(
         &self,
-        var_info: VarInfo<'db>,
+        var_info: Rc<VarInfo<'db>>,
         ty: TypeId<'db>,
         unknown_vars: &mut Vec<VarUsage<'db>>,
         coerce: Option<&SpecializationArg<'db>>,
@@ -1376,9 +1390,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         // Skip specialization arguments if they are coerced to not be specialized.
         require(!matches!(coerce, Some(SpecializationArg::NotSpecialized)))?;
 
-        match var_info {
+        match var_info.as_ref() {
             VarInfo::Const(value) => {
-                let res = const_to_specialization_arg(self.db, value, false);
+                let res = const_to_specialization_arg(self.db, *value, false);
                 let Some(coerce) = coerce else {
                     return Some(res);
                 };
@@ -1397,7 +1411,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 // Use a local accumulator to avoid mutating unknown_vars if we return None.
                 let mut local_unknown_vars: Vec<VarUsage<'db>> = Vec::new();
                 let inner = self.try_get_specialization_arg(
-                    info.as_ref().clone(),
+                    info.clone(),
                     desnap_ty,
                     &mut local_unknown_vars,
                     coerce.map(|coerce| {
@@ -1433,7 +1447,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 let mut vars = vec![];
                 let mut args = vec![];
                 for (info, coerce) in zip_eq(infos, coerces) {
-                    let info = info?;
+                    let info = info.as_ref()?.clone();
                     let arg =
                         self.try_get_specialization_arg(info, *inner_ty, &mut vars, coerce)?;
                     args.push(arg);
@@ -1474,7 +1488,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 for ((elem_ty, opt_var_info), coerce) in
                     zip_eq(zip_eq(element_types, infos), coerces)
                 {
-                    let var_info = opt_var_info?;
+                    let var_info = opt_var_info.as_ref()?.clone();
                     let arg =
                         self.try_get_specialization_arg(var_info, elem_ty, &mut vars, coerce)?;
                     struct_args.push(arg);
@@ -1496,7 +1510,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         else {
                             unreachable!("Expected an enum specialization argument");
                         };
-                        if *coercion_variant != variant {
+                        if coercion_variant != variant {
                             return None;
                         }
                         Some(payload.as_ref())
@@ -1505,17 +1519,17 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 };
                 let mut local_unknown_vars = vec![];
                 let payload_arg = self.try_get_specialization_arg(
-                    payload.as_ref().clone(),
+                    payload.clone(),
                     variant.ty,
                     &mut local_unknown_vars,
                     coerce,
                 )?;
 
                 unknown_vars.extend(local_unknown_vars);
-                Some(SpecializationArg::Enum { variant, payload: Box::new(payload_arg) })
+                Some(SpecializationArg::Enum { variant: *variant, payload: Box::new(payload_arg) })
             }
             VarInfo::Var(var_usage) => {
-                unknown_vars.push(var_usage);
+                unknown_vars.push(*var_usage);
                 Some(SpecializationArg::NotSpecialized)
             }
         }
@@ -1542,8 +1556,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 fn var_info_if_copy<'db>(
     variables: &VariableArena<'db>,
     input: VarUsage<'db>,
-) -> Option<VarInfo<'db>> {
-    variables[input.var_id].info.copyable.is_ok().then_some(VarInfo::Var(input))
+) -> Option<Rc<VarInfo<'db>>> {
+    variables[input.var_id].info.copyable.is_ok().then(|| VarInfo::Var(input).into())
 }
 
 /// Internal query for the libfuncs information required for const folding.
