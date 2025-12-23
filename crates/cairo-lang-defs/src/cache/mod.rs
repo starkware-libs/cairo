@@ -1642,12 +1642,15 @@ impl SyntaxNodeIdCached {
                 let green = syntax_node.green_node(ctx.db).clone().intern(ctx.db);
                 Self::Root(FileIdCached::new(*file_id, ctx), GreenIdCached::new(green, ctx))
             }
-            SyntaxNodeId::Child { parent, key_fields, index } => Self::Child {
-                parent: SyntaxNodeCached::new(*parent, ctx),
-                kind: syntax_node.kind(ctx.db),
-                key_fields: key_fields.into_iter().map(|id| GreenIdCached::new(*id, ctx)).collect(),
-                index: *index,
-            },
+            SyntaxNodeId::Child { parent, index } => {
+                let key_fields = syntax_node.key_fields(ctx.db);
+                Self::Child {
+                    parent: SyntaxNodeCached::new(*parent, ctx),
+                    kind: syntax_node.kind(ctx.db),
+                    key_fields: key_fields.iter().map(|id| GreenIdCached::new(*id, ctx)).collect(),
+                    index: *index,
+                }
+            }
         }
     }
 
@@ -1703,10 +1706,11 @@ impl SyntaxNodeCached {
                 let children = parent_node.get_children(ctx.db);
                 // For each child, create the cached syntax node ID and insert into syntax_nodes map
                 for child in children {
-                    let SyntaxNodeId::Child { index, key_fields, .. } = child.raw_id(ctx.db) else {
+                    let SyntaxNodeId::Child { index, .. } = child.raw_id(ctx.db) else {
                         panic!("Unexpected SyntaxNodeId type root when creating child");
                     };
                     let kind = child.kind(ctx.db);
+                    let key_fields = child.key_fields(ctx.db);
                     let Some(child_id) =
                         SyntaxNodeIdCached::from_raw(ctx, *parent, kind, *index, key_fields)
                     else {
