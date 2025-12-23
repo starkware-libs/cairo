@@ -1,24 +1,108 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+:cairo-vm-docs: https://docs.rs/crate/cairo-vm/latest
+:starknet-docs: https://docs.starknet.io
+
 = Runtime
 
-This page describes runtime behavior in Cairo: what happens when your code executes,
-how errors are handled, and resource constraints that affect program execution.
+This page describes runtime aspects of Cairo from the language perspective:
+how programs execute, resource management, error handling, and the relationship
+between Cairo code and its execution environment.
 
-== Error handling
+For details on the Cairo VM architecture and STARK proving, see the
+link:{cairo-vm-docs}[Cairo VM documentation].
+
+== Compilation and execution pipeline
+
+Cairo source code goes through several stages before execution:
+
+1. **Cairo → Sierra**: The compiler generates Sierra (Safe Intermediate
+   Representation), which guarantees safe execution and gas metering
+2. **Sierra → CASM**: Sierra lowers to CASM (Cairo Assembly), the executable
+   bytecode format
+3. **CASM execution**: The Cairo VM executes CASM instructions and generates
+   an execution trace for proving
+
+See link:{cairo-repo}/docs/SIERRA.md[Sierra documentation] for details on the
+intermediate representation.
+
+== Entry points and program execution
+
+=== Standalone programs
+
+Cairo programs compiled with `cairo-compile` begin execution at the `main`
+function. The program runs to completion and returns an exit code.
+
+[source,cairo]
+----
+fn main() {
+    println!("Hello, Cairo!");
+}
+----
+
+Run with `cairo-run`:
+
+[source,bash]
+----
+$ cairo-run --single-file program.cairo
+----
+
+=== Starknet contracts
+
+Starknet contracts define entry points as external functions, constructors,
+and L1 handlers. Entry points are invoked through transactions and execute
+within the Starknet runtime environment.
+
+See xref:language_constructs:contracts.adoc[Contracts] and
+link:{starknet-docs}[Starknet documentation] for contract execution details.
+
+== Resource management
+
+=== Gas and execution limits
+
+Cairo programs executing on Starknet consume resources tracked as gas:
+
+- **Execution steps**: Number of VM instructions executed
+- **Builtin usage**: Invocations of cryptographic and arithmetic builtins
+- **Memory usage**: Allocated memory cells
+
+Sierra compilation includes gas metering that ensures programs can check
+available gas before expensive operations. This prevents partial execution
+failures where a transaction consumes gas but fails mid-execution.
+
+Transactions specify maximum gas limits. If a program exceeds its limit,
+execution reverts.
+
+=== Builtins
+
+Builtins are optimized primitives for common operations. The compiler and
+standard library use builtins through implicit arguments.
+
+Core builtins include:
+- Range checking
+- Cryptographic hashing (Pedersen, Poseidon, Keccak)
+- Elliptic curve operations
+- Bitwise operations
+
+User code typically accesses builtins through core library functions rather
+than directly. See xref:language_constructs:implicit-arguments.adoc[Implicit
+arguments] for how builtins are threaded through function calls.
+
+== Error handling at runtime
 
 === Panics
 
-Cairo uses panics for unrecoverable runtime errors. When a panic occurs, execution
-halts immediately and control returns to the caller with an error.
+Cairo uses panics for unrecoverable errors. When a panic occurs:
 
-Common causes of panics:
+1. Execution halts immediately
+2. The panic reason (array of `felt252` values) is captured
+3. Stack unwinding begins, running destructors for types with `PanicDestruct`
+4. Control returns to the caller with an error
 
-- **Division by zero**: Integer division or modulo operations with zero divisor
-- **Array bounds violations**: Accessing array elements outside valid indices
-- **Arithmetic overflow**: Integer operations that exceed type bounds (in checked mode)
-- **Failed assertions**: `assert!()` macro with false condition
-- **Explicit panics**: `panic!()` macro calls
-
-Example:
+Common panic sources:
+- Division by zero
+- Array index out of bounds
+- Arithmetic overflow (in checked mode)
+- Explicit `panic!()` or `assert!()` calls
 
 [source,cairo]
 ----
@@ -30,17 +114,12 @@ fn divide(a: u32, b: u32) -> u32 {
 }
 ----
 
-When a panic occurs:
-
-1. Execution stops immediately
-2. The panic message (array of `felt252` values) is captured
-3. Stack unwinding begins, running destructors for types with `PanicDestruct`
-4. Control returns to the caller with an error indication
+At contract entry points, panics are caught and returned as execution failures.
+In standalone programs, panics terminate the program and display a stack trace.
 
 === Result-based error handling
 
-For errors that should be handled by callers, use `Result<T, E>` types instead
-of panicking:
+For recoverable errors, use `Result<T, E>` types:
 
 [source,cairo]
 ----
@@ -50,21 +129,16 @@ fn safe_divide(a: u32, b: u32) -> Result<u32, ByteArray> {
     }
     Result::Ok(a / b)
 }
-
-fn calculate() -> Result<u32, ByteArray> {
-    let x = safe_divide(10, 2)?;  // Propagates error if division fails
-    let y = safe_divide(x, 0)?;   // Returns Err here
-    Result::Ok(y)
-}
 ----
 
-The `?` operator automatically propagates errors through the call stack. See
-xref:language_constructs:error-propagation-operator.adoc[Error propagation] for
-details.
+The `?` operator propagates errors through the call stack. See
+xref:language_constructs:error-propagation-operator.adoc[Error propagation]
+for details.
 
-=== Stack traces
+== Stack traces
 
-When panics occur, Cairo captures stack traces showing the call chain:
+When panics occur, Cairo captures stack traces showing the call chain and
+source locations:
 
 [source,text]
 ----
@@ -75,49 +149,53 @@ Called from:
   main() at lib.cairo:5:5
 ----
 
-Stack traces include panic messages, source locations, and the complete call chain.
-Tools like `cairo-run` and `cairo-test` display stack traces for debugging.
+The `cairo-run` and `cairo-test` tools display stack traces for debugging.
+On Starknet, stack traces are included in transaction failure data.
 
-== Resource limits
+== Execution modes
 
-=== Gas consumption
+=== Native execution
 
-Cairo programs executing on Starknet consume gas for computational work. Operations
-that consume gas include:
+Native execution runs CASM bytecode directly for testing and development:
 
-- Arithmetic and logical operations
-- Memory allocations
-- Function calls
-- Cryptographic operations (hashing, signature verification)
+- `cairo-run`: Execute standalone programs
+- `cairo-test`: Run test suites
+- Starknet devnets: Local development networks
 
-Programs can check available gas and handle exhaustion gracefully. The compiler
-inserts gas checks that ensure programs can detect insufficient gas before
-attempting expensive operations.
+Native execution is fast but provides no proof of correctness.
 
-If a program exceeds its gas limit during execution, the transaction reverts.
+=== Proving execution
 
-=== Builtins
+On Starknet mainnet, Cairo programs execute in proving mode:
 
-Some operations are implemented as optimized builtins rather than regular Cairo code.
-Builtins provide:
+1. The sequencer executes the transaction and generates an execution trace
+2. A prover generates a STARK proof from the trace
+3. The proof is verified on Ethereum L1
 
-- Range checking for value bounds
-- Cryptographic hashing (Pedersen, Poseidon, Keccak)
-- Elliptic curve operations
-- Bitwise operations
+Both modes execute identical CASM bytecode deterministically. Proving mode is
+slower but produces cryptographic proofs that verify execution correctness
+without re-running the program.
 
-Builtins are typically accessed through functions in the standard library rather
-than directly. The compiler automatically threads builtin context through function
-calls using implicit arguments.
+See link:{starknet-docs}[Starknet documentation] for details on the proving
+and verification pipeline.
 
-See xref:language_constructs:implicit-arguments.adoc[Implicit arguments] for how
-builtins are passed between functions.
+== Memory model
+
+Cairo's memory model is immutable: values cannot be modified after writing.
+Variable assignment rebinds names rather than mutating memory. This enables
+efficient proof generation and ensures deterministic execution.
+
+See xref:memory-model.adoc[Memory model] for the complete memory semantics.
 
 == See also
 
 - xref:memory-model.adoc[Memory model] - Memory semantics and immutability
+- xref:application-binary-interface.adoc[Application binary interface] - ABI
+  specification
 - xref:constant-evaluation.adoc[Constant evaluation] - Compile-time execution
-- xref:../../language_constructs/pages/implicit-arguments.adoc[Implicit arguments] - Builtin
-  threading
-- xref:../../language_constructs/pages//error-propagation-operator.adoc[Error propagation] -
-  The `?` operator
+- xref:language_constructs:contracts.adoc[Contracts] - Starknet contracts
+- xref:language_constructs:implicit-arguments.adoc[Implicit arguments] -
+  Builtin threading
+- link:{cairo-vm-docs}[Cairo VM] - VM architecture and implementation
+- link:{cairo-repo}/docs/SIERRA.md[Sierra] - Safe intermediate representation
+- link:{starknet-docs}[Starknet] - Starknet execution environment
