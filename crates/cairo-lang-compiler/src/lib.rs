@@ -300,7 +300,7 @@ pub fn compile_prepared_db_program_artifact<'db>(
             .context("Compilation failed without any diagnostics.")?
     } else {
         // Compile for executable functions only.
-        executable_functions.clone().into_keys().collect()
+        executable_functions.keys().cloned().collect()
     };
 
     let mut program_artifact =
