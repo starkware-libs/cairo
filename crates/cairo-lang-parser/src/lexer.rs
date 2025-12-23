@@ -314,18 +314,15 @@ impl Lexer {
         };
 
         let span = self.consume_text_span();
-        let text_arc = self.text.clone();
-        let text = span.take(&text_arc);
+        let text = {
+            let text_slice = span.take(&self.text);
+            SmolStrId::from(db, text_slice)
+        };
         let trailing_trivia = self.match_trivia(db, false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
         // TODO(yuval): log(verbose) "consumed text: ..."
-        LexerTerminal {
-            text: SmolStrId::from(db, text),
-            kind: terminal_kind,
-            leading_trivia,
-            trailing_trivia,
-        }
+        LexerTerminal { text, kind: terminal_kind, leading_trivia, trailing_trivia }
     }
 }
 
