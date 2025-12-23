@@ -808,6 +808,38 @@ impl<'db> Resolver<'db> {
         }
     }
 
+    /// Resolves an item in a module, checking direct items, macro expansions, and star uses.
+    ///
+    /// Returns `Some(info)` if the item is found uniquely, `None` otherwise (not found, ambiguous,
+    /// or not visible).
+    pub fn resolve_item_in_module(
+        &mut self,
+        module_id: ModuleId<'db>,
+        ident: SmolStrId<'db>,
+    ) -> Option<ModuleItemInfo<'db>> {
+        self.resolve_item_in_module_ex(module_id, ident).ok()
+    }
+
+    /// Resolves an item in a module, checking direct items, macro expansions, and star uses.
+    ///
+    /// Returns `SemanticDiagnosticKind` on failure. Note: `PathNotFound` uses
+    /// `NotFoundItemType::Identifier` as default; callers may need to adjust based on context.
+    fn resolve_item_in_module_ex(
+        &mut self,
+        module_id: ModuleId<'db>,
+        ident: SmolStrId<'db>,
+    ) -> Result<ModuleItemInfo<'db>, SemanticDiagnosticKind<'db>> {
+        if let Some(info) = self.resolve_item_in_module_or_expanded_macro(module_id, ident) {
+            return Ok(info);
+        }
+        match self.resolve_path_using_use_star(module_id, ident) {
+            UseStarResult::UniquePathFound(info) => Ok(info),
+            UseStarResult::AmbiguousPath(items) => Err(AmbiguousPath(items)),
+            UseStarResult::PathNotFound => Err(PathNotFound(NotFoundItemType::Identifier)),
+            UseStarResult::ItemNotVisible(item, modules) => Err(ItemNotVisible(item, modules)),
+        }
+    }
+
     /// Resolves an item in a module and falls back to the expanded macro code of the module.
     fn resolve_item_in_module_or_expanded_macro(
         &mut self,
@@ -2134,31 +2166,16 @@ impl<'db, 'a> Resolution<'db, 'a> {
         identifier: &TerminalIdentifier<'db>,
     ) -> Maybe<ModuleItemInfo<'db>> {
         let db = self.resolver.db;
-        if let Some(info) =
-            self.resolver.resolve_item_in_module_or_expanded_macro(*module_id, ident)
-        {
-            return Ok(info);
-        }
-        match self.resolver.resolve_path_using_use_star(*module_id, ident) {
-            UseStarResult::UniquePathFound(item_info) => Ok(item_info),
-            UseStarResult::AmbiguousPath(module_items) => {
-                Err(self.diagnostics.report(identifier.stable_ptr(db), AmbiguousPath(module_items)))
-            }
-            UseStarResult::PathNotFound => {
-                let item_type = if self.segments.len() == 0 {
-                    self.expected_item_type
-                } else {
-                    NotFoundItemType::Identifier
-                };
-                Err(self.diagnostics.report(identifier.stable_ptr(db), PathNotFound(item_type)))
-            }
-            UseStarResult::ItemNotVisible(module_item_id, containing_modules) => {
-                Err(self.diagnostics.report(
-                    identifier.stable_ptr(db),
-                    ItemNotVisible(module_item_id, containing_modules),
-                ))
-            }
-        }
+        self.resolver.resolve_item_in_module_ex(*module_id, ident).map_err(|err| {
+            // Adjust PathNotFound's item type based on context.
+            let err = match err {
+                PathNotFound(_) if self.segments.len() == 0 => {
+                    PathNotFound(self.expected_item_type)
+                }
+                _ => err,
+            };
+            self.diagnostics.report(identifier.stable_ptr(db), err)
+        })
     }
 
     /// Given the current resolved item, resolves the next segment.

@@ -2600,7 +2600,7 @@ fn compute_method_function_call_data<'db>(
         SmolStrId<'db>,
         TraitInferenceErrors<'db>,
     ) -> Option<SemanticDiagnosticKind<'db>>,
-    multiple_trait_diagnostic: fn(
+    multiple_trait_diagnostic: impl Fn(
         TypeId<'db>,
         TraitFunctionId<'db>,
         TraitFunctionId<'db>,
@@ -3207,7 +3207,11 @@ fn extract_concrete_enum_from_pattern_and_validate<'db>(
     if pattern_enum != concrete_enum.enum_id(ctx.db) {
         return Err(ctx.diagnostics.report(
             pattern.stable_ptr(ctx.db),
-            WrongEnum { expected_enum: concrete_enum.enum_id(ctx.db), actual_enum: pattern_enum },
+            WrongEnum {
+                context_module: ctx.resolver.module_id,
+                expected_enum: concrete_enum.enum_id(ctx.db),
+                actual_enum: pattern_enum,
+            },
         ));
     }
     Ok((concrete_enum, n_snapshots))
@@ -3714,7 +3718,11 @@ fn method_call_expr<'db>(
                 Some(CannotCallMethod { ty, method_name, inference_errors, relevant_traits })
             },
             |_, trait_function_id0, trait_function_id1| {
-                Some(AmbiguousTrait { trait_function_id0, trait_function_id1 })
+                Some(AmbiguousTrait {
+                    context_module: module_id,
+                    trait_function_id0,
+                    trait_function_id1,
+                })
             },
         )
         .inspect_err(|_| {

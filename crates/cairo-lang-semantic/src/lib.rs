@@ -14,6 +14,7 @@ pub mod items;
 pub mod keyword;
 pub mod lookup_item;
 pub mod lsp_helpers;
+pub mod path;
 pub mod plugin;
 pub mod resolve;
 pub mod substitution;
@@ -30,5 +31,7 @@ pub use self::semantic::*;
 #[cfg(any(feature = "testing", test))]
 pub mod test_utils;
 
+#[cfg(test)]
+mod path_test;
 #[cfg(test)]
 mod test;
