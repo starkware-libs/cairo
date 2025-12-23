@@ -148,6 +148,14 @@ jobs:
       - if: needs.parallel-cairo-tests.result != 'success'
         run: exit 1
 
+  # Checks that error codes are not duplicated.
+  error-code-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: >
+          scripts/validate_error_codes.sh
+
   # Check for unnecessary dependencies.
   udeps:
     runs-on: ubuntu-latest
