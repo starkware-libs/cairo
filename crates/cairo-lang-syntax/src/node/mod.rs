@@ -42,10 +42,9 @@ pub enum SyntaxNodeId<'db> {
         /// Parent of this node, either another node or if node is root, its file id.
         parent: SyntaxNode<'db>,
         /// Chronological index among all nodes with the same (parent, kind, key_fields).
-        index: usize,
         /// Which fields are used is determined by each SyntaxKind.
         /// For example, a function item might use the name of the function.
-        key_fields: Box<[GreenId<'db>]>,
+        index: usize,
     },
 }
 
@@ -152,7 +151,11 @@ impl<'db> SyntaxNode<'db> {
     /// Gets the key fields of this syntax node. These define the unique identifier of the node.
     pub fn key_fields(self, db: &'db dyn Database) -> &'db [GreenId<'db>] {
         match self.data.id(db) {
-            SyntaxNodeId::Child { key_fields, .. } => key_fields,
+            SyntaxNodeId::Child { .. } => {
+                let green = self.green_node(db);
+                let range = key_fields::key_fields_range(self.kind);
+                &green.children()[range]
+            }
             SyntaxNodeId::Root(_) => &[],
         }
     }
@@ -325,7 +328,7 @@ impl<'a> SyntaxNode<'a> {
                 db,
                 *green_id,
                 offset,
-                SyntaxNodeId::Child { parent: *self, index, key_fields: Box::from(key_fields) },
+                SyntaxNodeId::Child { parent: *self, index },
                 kind,
             ));
 
