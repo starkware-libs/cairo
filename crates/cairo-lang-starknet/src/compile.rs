@@ -19,8 +19,10 @@ use cairo_lang_starknet_classes::allowed_libfuncs::ListSelector;
 use cairo_lang_starknet_classes::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints,
 };
+use cairo_lang_utils::CloneableDatabase;
 use itertools::{Itertools, chain};
-use salsa::{Database, par_map};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use salsa::Database;
 
 use crate::abi::AbiBuilder;
 use crate::aliased::Aliased;
@@ -62,7 +64,7 @@ pub fn compile_path(
 /// If no contract was specified, verify that there is only one.
 /// Otherwise, returns an error.
 pub fn compile_contract_in_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId<'db>>,
     mut compiler_config: CompilerConfig<'_>,
@@ -110,15 +112,17 @@ pub fn compile_contract_in_prepared_db<'db>(
 /// * `Ok(Vec<ContractClass>)` - List of all compiled contract classes found in main crates.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     contracts: &[&ContractDeclaration<'db>],
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<Vec<ContractClass>> {
     ensure_diagnostics(db, &mut compiler_config.diagnostics_reporter)?;
-
-    par_map(db, contracts, |db, contract| {
-        compile_contract_with_prepared_and_checked_db(db, contract, &compiler_config)
-    })
+    contracts
+        .par_iter()
+        .map_with(db.dyn_clone(), |db, contract| {
+            compile_contract_with_prepared_and_checked_db(db.as_ref(), contract, &compiler_config)
+        })
+        .collect()
 }
 
 /// Compile the declared Starknet contract.
@@ -127,7 +131,7 @@ pub fn compile_prepared_db<'db>(
 /// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked
 /// by the caller of this function.
 fn compile_contract_with_prepared_and_checked_db<'db>(
-    db: &'db dyn Database,
+    db: &'db dyn CloneableDatabase,
     contract: &ContractDeclaration<'db>,
     compiler_config: &CompilerConfig<'_>,
 ) -> Result<ContractClass> {

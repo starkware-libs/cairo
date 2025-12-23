@@ -2,9 +2,11 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_sierra::program::StatementIdx;
+use cairo_lang_utils::CloneableDatabase;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
-use salsa::{Database, par_map};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use salsa::Database;
 
 use crate::debug_info::statements_locations::statements_functions::{
     maybe_containing_function_identifier, maybe_containing_function_identifier_for_tests,
@@ -66,43 +68,47 @@ impl<'db> StatementsLocations<'db> {
     }
 
     /// Creates a new [StatementsFunctions] struct using [StatementsLocations].
-    pub fn extract_statements_functions(&self, db: &dyn Database) -> StatementsFunctions {
+    pub fn extract_statements_functions(&self, db: &dyn CloneableDatabase) -> StatementsFunctions {
         StatementsFunctions {
-            statements_to_functions_map: par_map(
-                db,
-                self.locations.iter_sorted().collect_vec(),
-                |db, (statement_idx, stable_locations)| {
+            statements_to_functions_map: self
+                .locations
+                .iter_sorted()
+                .collect_vec()
+                .into_par_iter()
+                .map_with(db.dyn_clone(), |db, (statement_idx, stable_locations)| {
                     (
                         *statement_idx,
                         stable_locations
                             .iter()
-                            .filter_map(|s| maybe_containing_function_identifier(db, *s))
+                            .filter_map(|s| maybe_containing_function_identifier(db.as_ref(), *s))
                             .collect(),
                     )
-                },
-            ),
+                })
+                .collect(),
         }
     }
 
     /// Creates a new [StatementsSourceCodeLocations] struct using [StatementsLocations].
     pub fn extract_statements_source_code_locations(
         &self,
-        db: &dyn Database,
+        db: &dyn CloneableDatabase,
     ) -> StatementsSourceCodeLocations {
         StatementsSourceCodeLocations {
-            statements_to_code_location_map: par_map(
-                db,
-                self.locations.iter_sorted().collect_vec(),
-                |db, (statement_idx, stable_locations)| {
+            statements_to_code_location_map: self
+                .locations
+                .iter_sorted()
+                .collect_vec()
+                .into_par_iter()
+                .map_with(db.dyn_clone(), |db, (statement_idx, stable_locations)| {
                     (
                         *statement_idx,
                         stable_locations
                             .iter()
-                            .filter_map(|s| maybe_code_location(db, *s))
+                            .filter_map(|s| maybe_code_location(db.as_ref(), *s))
                             .collect(),
                     )
-                },
-            ),
+                })
+                .collect(),
         }
     }
 

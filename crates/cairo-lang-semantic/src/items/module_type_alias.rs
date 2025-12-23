@@ -65,6 +65,7 @@ fn module_type_alias_semantic_data<'db>(
 /// Cycle handling for [module_type_alias_semantic_data].
 fn module_type_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     module_type_alias_id: ModuleTypeAliasId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ModuleTypeAliasData<'db>> {

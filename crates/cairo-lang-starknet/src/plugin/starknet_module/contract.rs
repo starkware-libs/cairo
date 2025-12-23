@@ -119,7 +119,6 @@ impl<'db> ComponentsGenerationData<'db> {
                 &[
                     ("component_name".to_string(), RewriteNode::from_ast_trimmed(&component_name)),
                     ("component_path".to_string(), RewriteNode::from_ast_trimmed(component_path)),
-                    ("storage_name".to_string(), RewriteNode::from_ast_trimmed(storage_name)),
                     ("event_name".to_string(), RewriteNode::from_ast_trimmed(event_name)),
                 ]
                 .into(),

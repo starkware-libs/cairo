@@ -12,7 +12,7 @@ use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_gro
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
-use cairo_lang_utils::Intern;
+use cairo_lang_utils::{CloneableDatabase, Intern};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::Optimizations;
@@ -33,6 +33,11 @@ pub struct SierraGenDatabaseForTesting {
 }
 #[salsa::db]
 impl Database for SierraGenDatabaseForTesting {}
+impl CloneableDatabase for SierraGenDatabaseForTesting {
+    fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
+        Box::new(self.clone())
+    }
+}
 
 pub static SHARED_DB: LazyLock<Mutex<SierraGenDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));

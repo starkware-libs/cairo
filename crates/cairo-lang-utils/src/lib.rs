@@ -68,6 +68,21 @@ impl<T> OptionHelper for Option<T> {
     }
 }
 
+/// Traits requesting the for a dynamic clone for a salsa database.
+#[cfg(feature = "std")]
+pub trait CloneableDatabase: salsa::Database + Send {
+    /// Returns a Box of the cloned database.
+    fn dyn_clone(&self) -> Box<dyn CloneableDatabase>;
+}
+
+/// Implements Clone for `Box<dyn CloneableDatabase>`.
+#[cfg(feature = "std")]
+impl Clone for Box<dyn CloneableDatabase> {
+    fn clone(&self) -> Self {
+        self.dyn_clone()
+    }
+}
+
 #[cfg(feature = "std")]
 pub trait Intern<'db, Target> {
     fn intern(self, db: &'db dyn salsa::Database) -> Target;

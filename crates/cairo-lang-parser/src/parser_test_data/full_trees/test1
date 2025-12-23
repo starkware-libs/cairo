@@ -13,27 +13,27 @@ false
 false
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test1.cairo:6:1
 ;
 ^
 
-error: Skipped tokens. Expected: parameter.
+error[E1000]: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:8
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
        ^
 
-error: Skipped tokens. Expected: parameter.
+error[E1000]: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:19
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> src/parser_test_data/cairo_test_files/test1.cairo:32:14
     return x;
              ^
 
-error: Missing tokens. Expected an item after attributes.
+error[E1023]: Missing tokens. Expected an item after attributes.
  --> src/parser_test_data/cairo_test_files/test1.cairo:64:26
 #[attribute_without_item]
                          ^
@@ -1057,27 +1057,27 @@ true
 false
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test1.cairo:6:1
 ;
 ^
 
-error: Skipped tokens. Expected: parameter.
+error[E1000]: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:8
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
        ^
 
-error: Skipped tokens. Expected: parameter.
+error[E1000]: Skipped tokens. Expected: parameter.
  --> src/parser_test_data/cairo_test_files/test1.cairo:7:19
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> src/parser_test_data/cairo_test_files/test1.cairo:32:14
     return x;
              ^
 
-error: Missing tokens. Expected an item after attributes.
+error[E1023]: Missing tokens. Expected an item after attributes.
  --> src/parser_test_data/cairo_test_files/test1.cairo:64:26
 #[attribute_without_item]
                          ^

@@ -179,7 +179,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Cannot desnap a non copyable type.
+error[E3003]: Cannot desnap a non copyable type.
  --> lib.cairo:2:5
     *value
     ^^^^^^

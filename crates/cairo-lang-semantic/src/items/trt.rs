@@ -54,7 +54,7 @@ use crate::{
 #[path = "trt_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub struct ConcreteTraitLongId<'db> {
     pub trait_id: TraitId<'db>,
     pub generic_args: Vec<GenericArgumentId<'db>>,
@@ -112,7 +112,9 @@ impl<'db> ConcreteTraitId<'db> {
 }
 
 /// The ID of a generic function in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
+#[derive(
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitGenericFunctionLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
@@ -154,7 +156,9 @@ impl<'db> ConcreteTraitGenericFunctionId<'db> {
 }
 
 /// The ID of a type item in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
+#[derive(
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitTypeLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
@@ -196,7 +200,9 @@ impl<'db> ConcreteTraitTypeId<'db> {
 }
 
 /// The ID of a constant item in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
+#[derive(
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitConstantLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
@@ -238,7 +244,9 @@ impl<'db> ConcreteTraitConstantId<'db> {
 }
 
 /// The ID of an impl item in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, HeapSize)]
+#[derive(
+    Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update, HeapSize,
+)]
 #[debug_db(dyn Database)]
 pub struct ConcreteTraitImplLongId<'db> {
     // Note the members are private to prevent direct call to the constructor.
@@ -334,6 +342,7 @@ fn trait_generic_params_data_tracked<'db>(
 /// Cycle handling for [PrivTraitSemantic::trait_generic_params_data].
 fn trait_generic_params_data_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     trait_id: TraitId<'db>,
     _in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {

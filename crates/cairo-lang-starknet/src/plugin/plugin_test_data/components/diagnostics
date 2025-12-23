@@ -179,7 +179,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
+error[E2200]: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
  --> lib.cairo:8:5
     #[embeddable_as]
     ^^^^^^^^^^^^^^^^
@@ -367,7 +367,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
+error[E2200]: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
  --> lib.cairo:8:5
     #[embeddable_as(X, Y)]
     ^^^^^^^^^^^^^^^^^^^^^^
@@ -555,7 +555,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
+error[E2200]: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
  --> lib.cairo:8:5
     #[embeddable_as(name: MyImpl)]
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -739,7 +739,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
+error[E2200]: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
  --> lib.cairo:9:10
     impl MyInnerImpl of MyTrait<ComponentState<usize>> {
          ^^^^^^^^^^^
@@ -923,7 +923,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
+error[E2200]: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
  --> lib.cairo:9:21
     impl MyInnerImpl<> of MyTrait<ComponentState<usize>> {
                     ^^
@@ -1111,7 +1111,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
+error[E2200]: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
  --> lib.cairo:9:21-11:5
       impl MyInnerImpl<
  _____________________^
@@ -1298,7 +1298,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: An impl with #[embeddable_as] should have a generic parameter which is an impl of `HasComponent<TContractState>`.
+error[E2200]: Plugin diagnostic: An impl with #[embeddable_as] should have a generic parameter which is an impl of `HasComponent<TContractState>`.
  --> lib.cairo:9:21
     impl MyInnerImpl<TContractState> of MyTrait<ComponentState<TContractState>> {
                     ^^^^^^^^^^^^^^^^
@@ -1478,7 +1478,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `embeddable_as` attribute is not supported for empty impls.
+error[E2200]: Plugin diagnostic: `embeddable_as` attribute is not supported for empty impls.
  --> lib.cairo:11:49
     > of MyTrait<ComponentState<TContractState>>;
                                                 ^
@@ -1698,17 +1698,17 @@ pub mod __constructor_MyImpl {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: A function in an #[embeddable_as] impl in a component must have a first `self` parameter.
+error[E2200]: Plugin diagnostic: A function in an #[embeddable_as] impl in a component must have a first `self` parameter.
  --> lib.cairo:12:20
         fn no_self() {}
                    ^
 
-error: Plugin diagnostic: The first parameter of a function in an #[embeddable_as] impl in a component must be either `self: @ComponentState<TContractState>` (for view functions) or `ref self: ComponentState<TContractState>` (for external functions).
+error[E2200]: Plugin diagnostic: The first parameter of a function in an #[embeddable_as] impl in a component must be either `self: @ComponentState<TContractState>` (for view functions) or `ref self: ComponentState<TContractState>` (for external functions).
  --> lib.cairo:13:31
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: Plugin diagnostic: Impls with the embeddable attribute must implement a starknet interface trait.
+warning[E2200]: Plugin diagnostic: Impls with the embeddable attribute must implement a starknet interface trait.
  --> lib.cairo:8:5
     #[embeddable_as(MyImpl)]
     ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1745,7 +1745,7 @@ trait MyTrait<T> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `embeddable_as` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
+error[E2200]: Plugin diagnostic: `embeddable_as` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:10:63
         TContractState, impl X: HasComponent<TContractState>, +Destruct<TContractState>,
                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1933,7 +1933,7 @@ trait MyTrait<T> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `embeddable_as` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
+error[E2200]: Plugin diagnostic: `embeddable_as` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:10:63
         TContractState, impl X: HasComponent<TContractState>, +PanicDestruct<TContractState>,
                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

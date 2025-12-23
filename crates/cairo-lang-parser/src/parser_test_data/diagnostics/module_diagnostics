@@ -8,7 +8,7 @@ mod my_mod
 fn foo() {}
 
 //! > expected_diagnostics
-error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
+error[E1029]: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
  --> dummy_file.cairo:1:11
 mod my_mod
           ^
@@ -24,12 +24,12 @@ get_diagnostics
 mod my_mod }
 
 //! > expected_diagnostics
-error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
+error[E1029]: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
  --> dummy_file.cairo:1:11
 mod my_mod }
           ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:1:12
 mod my_mod }
            ^
@@ -46,7 +46,7 @@ mod my_mod {
 fn foo() {}
 
 //! > expected_diagnostics
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:2:12
 fn foo() {}
            ^
@@ -62,7 +62,7 @@ get_diagnostics
 mod my_mod const X: felt252 = 5;
 
 //! > expected_diagnostics
-error: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
+error[E1029]: Expected either ';' or '{' after module name. Use ';' for an external module declaration or '{' for a module with a body.
  --> dummy_file.cairo:1:11
 mod my_mod const X: felt252 = 5;
           ^

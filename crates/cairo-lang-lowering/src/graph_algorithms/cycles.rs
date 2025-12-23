@@ -70,6 +70,7 @@ pub fn final_contains_call_cycle<'db>(
 /// Cycle handling for [LoweringGroup::final_contains_call_cycle].
 pub fn final_contains_call_cycle_handle_cycle<'db>(
     _db: &'db dyn Database,
+    _id: salsa::Id,
     _function_id: ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
     Ok(true)

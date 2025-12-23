@@ -12,7 +12,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: A numeric literal of type core::pedersen::Pedersen cannot be created.
+error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be created.
  --> lib.cairo:2:14
     let _a = 'a'_Pedersen;
              ^^^^^^^^^^^^

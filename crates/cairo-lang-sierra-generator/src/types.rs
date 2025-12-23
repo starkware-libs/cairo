@@ -246,6 +246,7 @@ pub fn has_in_deps<'db>(
 /// See [SierraGenGroup::has_in_deps] for documentation.
 pub fn has_in_deps_cycle<'db>(
     _db: &'db dyn Database,
+    _id: salsa::Id,
     _type_id: semantic::TypeId<'db>,
     _needle: semantic::TypeId<'db>,
 ) -> Maybe<bool> {

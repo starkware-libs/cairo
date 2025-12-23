@@ -77,13 +77,13 @@ fn test_generated_function(
                     ConcreteFunctionWithBodyLongId::Generated(*generated).intern(db),
                 )),
                 FunctionLongId::Specialized(specialized) => try_extract_matches!(
-                    specialized.base.function_id(db).unwrap().long(db),
+                    specialized.long(db).base.function_id(db).unwrap().long(db),
                     FunctionLongId::Generated
                 )
                 .map(|generated| {
                     (
                         generated.key,
-                        ConcreteFunctionWithBodyLongId::Specialized(specialized.clone()).intern(db),
+                        ConcreteFunctionWithBodyLongId::Specialized(*specialized).intern(db),
                     )
                 }),
             })
