@@ -1165,7 +1165,16 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
     }
 
     fn error_code(&self) -> Option<ErrorCode> {
-        self.kind.error_code()
+        Some(match &self.kind {
+            SemanticDiagnosticKind::UnusedVariable => error_code!(E0001),
+            SemanticDiagnosticKind::CannotCallMethod { .. } => error_code!(E0002),
+            SemanticDiagnosticKind::MissingMember(_) => error_code!(E0003),
+            SemanticDiagnosticKind::MissingItemsInImpl(_) => error_code!(E0004),
+            SemanticDiagnosticKind::ModuleFileNotFound(_) => error_code!(E0005),
+            SemanticDiagnosticKind::PathNotFound(_) => error_code!(E0006),
+            SemanticDiagnosticKind::NoSuchTypeMember { .. } => error_code!(E0007),
+            _ => return None,
+        })
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {
@@ -1570,23 +1579,6 @@ pub enum MultiArmExprKind {
     If,
     Match,
     Loop,
-}
-
-impl<'db> SemanticDiagnosticKind<'db> {
-    pub fn error_code(&self) -> Option<ErrorCode> {
-        Some(match &self {
-            Self::UnusedVariable => error_code!(E0001),
-            Self::CannotCallMethod { .. } => {
-                error_code!(E0002)
-            }
-            Self::MissingMember(_) => error_code!(E0003),
-            Self::MissingItemsInImpl(_) => error_code!(E0004),
-            Self::ModuleFileNotFound(_) => error_code!(E0005),
-            Self::PathNotFound(_) => error_code!(E0006),
-            Self::NoSuchTypeMember { .. } => error_code!(E0007),
-            _ => return None,
-        })
-    }
 }
 
 // TODO(Gil): It seems to have the same functionality as ElementKind, maybe we can merge them.
