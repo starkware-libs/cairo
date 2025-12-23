@@ -25,6 +25,7 @@ const_format.workspace = true
 indent.workspace = true
 indoc.workspace = true
 itertools = { workspace = true, default-features = true }
+rayon.workspace = true
 salsa.workspace = true
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true

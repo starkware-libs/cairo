@@ -12,7 +12,7 @@ use salsa::Database;
 /// Represents the long ID of a pre-Sierra label.
 /// The long id consists of the parent function and a unique identifier inside the function.
 // TODO(lior): Make sure this struct can only be constructed by expr_generator_context.
-#[derive(Clone, Debug, Eq, PartialEq, Hash, HeapSize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, salsa::Update, HeapSize)]
 pub struct LabelLongId<'db> {
     pub parent: ConcreteFunctionWithBodyId<'db>,
     // A unique identifier inside the function
