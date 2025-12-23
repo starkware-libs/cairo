@@ -184,7 +184,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        self.specialize_signature(context, args)
+        <Self as NamedLibfunc>::specialize_signature(self, context, args)
     }
 
     fn specialize(
@@ -192,7 +192,7 @@ impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        self.specialize(context, args)
+        <Self as NamedLibfunc>::specialize(self, context, args)
     }
 }
 
@@ -216,7 +216,7 @@ impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        self.specialize_signature(context, args)
+        <Self as SignatureOnlyGenericLibfunc>::specialize_signature(self, context, args)
     }
 
     fn specialize(
@@ -224,7 +224,11 @@ impl<T: SignatureOnlyGenericLibfunc> NamedLibfunc for T {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibfunc { signature: self.specialize_signature(context, args)? })
+        Ok(SignatureOnlyConcreteLibfunc {
+            signature: <Self as SignatureOnlyGenericLibfunc>::specialize_signature(
+                self, context, args,
+            )?,
+        })
     }
 }
 
