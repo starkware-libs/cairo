@@ -31,22 +31,22 @@ enum MyEnum2 {
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "test::MyEnum".
+error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "test::MyEnum".
  --> lib.cairo:11:33
     let MyEnum::A(x): felt252 = MyEnum::A(7) else {
                                 ^^^^^^^^^^^^
 
-error: Unexpected type for enum pattern. "core::felt252" is not an enum.
+error[E2103]: Unexpected type for enum pattern. "core::felt252" is not an enum.
  --> lib.cairo:11:9
     let MyEnum::A(x): felt252 = MyEnum::A(7) else {
         ^^^^^^^^^^^^
 
-error: Unexpected type for enum pattern. "core::felt252" is not an enum.
+error[E2103]: Unexpected type for enum pattern. "core::felt252" is not an enum.
  --> lib.cairo:14:9
     let MyEnum::A(x): felt252 = 7 else {
         ^^^^^^^^^^^^
 
-error: Wrong enum in pattern. Expected: "test::MyEnum". Got: "test::MyEnum2".
+error[E2109]: Wrong enum in pattern. Expected: "test::MyEnum". Got: "test::MyEnum2".
  --> lib.cairo:17:9
     let MyEnum2::A(x): MyEnum = MyEnum::A(7) else {
         ^^^^^^^^^^^^^

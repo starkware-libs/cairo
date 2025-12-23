@@ -78,7 +78,7 @@ StatementExpr
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Consecutive comparison operators are not allowed: '<' followed by '>'
+error[E1028]: Consecutive comparison operators are not allowed: '<' followed by '>'
  --> dummy_file.cairo:2:14
     3 < 1    > 5
              ^

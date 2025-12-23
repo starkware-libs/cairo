@@ -101,42 +101,42 @@ struct MyStruct {
 //! > function_body
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unsupported attribute.
+error[E2200]: Plugin diagnostic: Unsupported attribute.
  --> lib.cairo:5:1
 #[some]
 ^^^^^^^
 
-error: Plugin diagnostic: Expected arguments.
+error[E2200]: Plugin diagnostic: Expected arguments.
  --> lib.cairo:8:1
 #[allow_attr]
 ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Expected simple identifier.
+error[E2200]: Plugin diagnostic: Expected simple identifier.
  --> lib.cairo:11:14
 #[allow_attr(my_attr = "value")]
              ^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Expected simple identifier.
+error[E2200]: Plugin diagnostic: Expected simple identifier.
  --> lib.cairo:14:14
 #[allow_attr(1234)]
              ^^^^
 
-error: Plugin diagnostic: Expected simple identifier.
+error[E2200]: Plugin diagnostic: Expected simple identifier.
  --> lib.cairo:17:14
 #[allow_attr("string")]
              ^^^^^^^^
 
-error: Plugin diagnostic: Expected simple identifier.
+error[E2200]: Plugin diagnostic: Expected simple identifier.
  --> lib.cairo:20:14
 #[allow_attr(a::b)]
              ^^^^
 
-error: Plugin diagnostic: Unsupported attribute.
+error[E2200]: Plugin diagnostic: Unsupported attribute.
  --> lib.cairo:31:5
     #[attr4]
     ^^^^^^^^
 
-error: Plugin diagnostic: Unsupported attribute.
+error[E2200]: Plugin diagnostic: Unsupported attribute.
  --> lib.cairo:42:5
     #[other]
     ^^^^^^^^

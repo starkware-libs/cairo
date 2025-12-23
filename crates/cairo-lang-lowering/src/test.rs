@@ -144,7 +144,7 @@ a = a * 3
     assert_eq!(
         builder.build().format(db),
         indoc::indoc! {"
-error: Cannot inline a function that might call itself.
+error[E3005]: Cannot inline a function that might call itself.
  --> lib.cairo:1:1-3:4
   fn test_func() { let mut a = 5; {
  _^

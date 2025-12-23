@@ -16,7 +16,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Cannot inline a function that might call itself.
+error[E3005]: Cannot inline a function that might call itself.
  --> lib.cairo:1:1-5:1
   #[inline(always)]
  _^

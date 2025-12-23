@@ -9,7 +9,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error: Invalid string escaping.
+error[E1017]: Invalid string escaping.
  --> dummy_file.cairo:2:13
     let a = '\p';
             ^^^^
@@ -27,7 +27,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error: Short string literals can only include ASCII characters.
+error[E1018]: Short string literals can only include ASCII characters.
  --> dummy_file.cairo:2:13
     let a = '\u{1024}';
             ^^^^^^^^^^
@@ -45,7 +45,7 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error: String literals can only include ASCII characters.
+error[E1019]: String literals can only include ASCII characters.
  --> dummy_file.cairo:2:13
     let a = "\u{1024}";
             ^^^^^^^^^^

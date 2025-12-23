@@ -247,7 +247,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `_` not covered.
+error[E3004]: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:3:5-6:5
       match x {
  _____^
@@ -430,7 +430,7 @@ fn foo() {
 foo
 
 //! > semantic_diagnostics
-error: Type mismatch: `core::felt252` and `core::integer::u8`.
+error[E2302]: Type mismatch: `core::felt252` and `core::integer::u8`.
  --> lib.cairo:4:9
         1_felt252 | 2_u8 => 8,
         ^^^^^^^^^
@@ -458,7 +458,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `_` not covered.
+error[E3004]: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:2:5
     match Some(5) {};
     ^^^^^^^^^^^^^^^^
@@ -514,7 +514,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `_` not covered.
+error[E3004]: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:2:5
     match felt252_is_zero(5) {};
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -618,12 +618,12 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable pattern arm.
+warning[E3004]: Unreachable pattern arm.
  --> lib.cairo:13:24
         A::Three(_) => 5,
                        ^
 
-warning: Unreachable pattern arm.
+warning[E3004]: Unreachable pattern arm.
  --> lib.cairo:12:22
         A::Two(_) => 4,
                      ^
@@ -856,7 +856,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `Some(None(_))` not covered.
+error[E3004]: Match is non-exhaustive: `Some(None(_))` not covered.
  --> lib.cairo:2:5-5:5
       match a {
  _____^
@@ -896,7 +896,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `Three(_)` not covered.
+error[E3004]: Match is non-exhaustive: `Three(_)` not covered.
  --> lib.cairo:8:5-11:5
       match a {
  _____^
@@ -1322,7 +1322,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `(One(_), Two(_))` not covered.
+error[E3004]: Match is non-exhaustive: `(One(_), Two(_))` not covered.
  --> lib.cairo:9:5-15:5
       match (a, b) {
  _____^
@@ -1735,7 +1735,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable pattern arm.
+warning[E3004]: Unreachable pattern arm.
  --> lib.cairo:12:14
         _ => 5,
              ^
@@ -1811,7 +1811,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable pattern arm.
+warning[E3004]: Unreachable pattern arm.
  --> lib.cairo:12:22
         A::One(_) => 5,
                      ^
@@ -2330,7 +2330,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable pattern arm.
+warning[E3004]: Unreachable pattern arm.
  --> lib.cairo:5:14
         _ => 7,
              ^
@@ -2376,7 +2376,7 @@ fn foo(a: felt252) -> felt252 {
 foo
 
 //! > semantic_diagnostics
-warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
  --> lib.cairo:3:9
         Some => 2,
         ^^^^
@@ -2506,7 +2506,7 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `Some(None(_))` not covered.
+error[E3004]: Match is non-exhaustive: `Some(None(_))` not covered.
  --> lib.cairo:7:5-12:5
       match a {
  _____^
@@ -2855,7 +2855,7 @@ type C = Result<(), ()>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `Ok(Ok(Ok(_)))` not covered.
+error[E3004]: Match is non-exhaustive: `Ok(Ok(Ok(_)))` not covered.
  --> lib.cairo:5:5-14:5
       match a {
  _____^
@@ -2898,7 +2898,7 @@ type C = Result<(), ()>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `Ok(Err(_))` not covered.
+error[E3004]: Match is non-exhaustive: `Ok(Err(_))` not covered.
  --> lib.cairo:5:5-14:5
       match a {
  _____^
@@ -2941,7 +2941,7 @@ type C = Result<(), ()>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `Ok(_)` not covered.
+error[E3004]: Match is non-exhaustive: `Ok(_)` not covered.
  --> lib.cairo:5:5-14:5
       match a {
  _____^

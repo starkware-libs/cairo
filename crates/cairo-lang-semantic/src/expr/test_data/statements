@@ -13,7 +13,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> lib.cairo:2:18
     let mut x = 3
                  ^
@@ -34,7 +34,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> lib.cairo:2:19
     let mut _x = 3
                   ^
@@ -58,7 +58,7 @@ fn foo() -> felt252 {
 foo
 
 //! > expected_diagnostics
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> lib.cairo:3:17
         return 1
                 ^
@@ -79,7 +79,7 @@ fn foo() -> felt252 {
 foo
 
 //! > expected_diagnostics
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> lib.cairo:2:13
     return 1
             ^
@@ -104,7 +104,7 @@ foo
 fn bar() {}
 
 //! > expected_diagnostics
-error: Missing semicolon
+error[E2133]: Missing semicolon
  --> lib.cairo:3:10
     bar()
          ^
@@ -173,12 +173,12 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unknown statement attribute.
+error[E2155]: Unknown statement attribute.
  --> lib.cairo:2:5
     #[unknown_attr1]
     ^^^^^^^^^^^^^^^^
 
-error: Unknown statement attribute.
+error[E2155]: Unknown statement attribute.
  --> lib.cairo:3:5
     #[unknown_attr2]
     ^^^^^^^^^^^^^^^^

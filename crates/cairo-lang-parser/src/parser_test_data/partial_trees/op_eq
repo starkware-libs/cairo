@@ -110,22 +110,22 @@ StatementList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing token '='.
+error[E1001]: Missing token '='.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:11
     let x += 5;
           ^^

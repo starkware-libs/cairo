@@ -141,52 +141,52 @@ StatementList
 ExprPath
 
 //! > expected_diagnostics
-error: Literal is not a valid number.
+error[E1016]: Literal is not a valid number.
  --> dummy_file.cairo:3:23
     let illegal_bin = 0b2;
                       ^^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:3:25
     let illegal_bin = 0b2;
                         ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:4:26
     let illegal_bin = 0b12;
                          ^
 
-error: Literal is not a valid number.
+error[E1016]: Literal is not a valid number.
  --> dummy_file.cairo:6:23
     let illegal_oct = 0o8;
                       ^^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:6:25
     let illegal_oct = 0o8;
                         ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:7:26
     let illegal_oct = 0o78;
                          ^
 
-error: Literal is not a valid number.
+error[E1016]: Literal is not a valid number.
  --> dummy_file.cairo:9:23
     let illegal_hex = 0xg;
                       ^^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:9:25
     let illegal_hex = 0xg;
                         ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:10:26
     let illegal_hex = 0xfg;
                          ^
 
-error: Missing literal suffix.
+error[E1015]: Missing literal suffix.
  --> dummy_file.cairo:11:35
     let missing_suffix = 10000000_;
                                   ^
@@ -327,7 +327,7 @@ StatementLet
 ExprPath
 
 //! > expected_diagnostics
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:16
     let a = 'a'u16;
                ^

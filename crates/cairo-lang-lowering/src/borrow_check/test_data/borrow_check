@@ -93,7 +93,7 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:13:5
     y
     ^
@@ -103,7 +103,7 @@ note: variable was previously used here:
                    ^
 note: Trait has no implementation in context: core::traits::Copy::<test::ADrop>.
 
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:8:8
 fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
@@ -279,7 +279,7 @@ struct A {}
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:2:12
 fn foo(ref a: A) {
            ^
@@ -332,7 +332,7 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:12:12
     return y;
            ^
@@ -392,7 +392,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:6:11
     panic(arr);
           ^^^
@@ -442,7 +442,7 @@ extern fn do_match_extern(x: NonCopy) -> Option<NonCopy> nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:8:21
     do_match_extern(x)
                     ^
@@ -511,7 +511,7 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:12:12
     return x;
            ^
@@ -559,7 +559,7 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:8:12
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
            ^^
@@ -569,7 +569,7 @@ note: variable was previously used here:
                ^^^^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>.
 
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:8:30
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
                              ^^
@@ -621,7 +621,7 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:8:12
 fn foo(ref self: MyStruct) {
            ^^^^
@@ -758,7 +758,7 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:9:12
 fn foo(mut x: MyStruct) -> MyStruct {
            ^
@@ -875,7 +875,7 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:7:12
 fn foo(mut x: MyStruct) -> MyStruct {
            ^
@@ -931,7 +931,7 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:11:5
     x
     ^
@@ -1003,7 +1003,7 @@ End:
   Return(v4)
 
 //! > lowering_diagnostics
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:4:8
 fn foo(x: NonDrop) {
        ^
@@ -1108,7 +1108,7 @@ extern fn use_x(x: Wrapper) nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:12:11
     use_x(x); // Second use.
           ^
@@ -1118,7 +1118,7 @@ note: variable was previously used here:
               ^
 note: Trait has no implementation in context: core::traits::Copy::<test::Wrapper>.
 
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:12:11
     use_x(x); // Second use.
           ^

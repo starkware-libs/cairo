@@ -43,7 +43,7 @@ error[E0006]: Type not found.
     fn foo(x: T, y: u8, z: u16) -> T {}
                                    ^
 
-error: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `core::integer::u16`.
+error[E2031]: Parameter type of impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: `core::integer::u8`, actual: `core::integer::u16`.
  --> lib.cairo:7:28
     fn foo(x: T, y: u8, z: u16) -> T {}
                            ^^^

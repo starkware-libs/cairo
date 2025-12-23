@@ -120,7 +120,7 @@ fn bar() nopanic {}
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:4:5
     x // Variable was previously moved.
     ^

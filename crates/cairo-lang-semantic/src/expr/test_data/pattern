@@ -87,12 +87,12 @@ foo
 struct MyStruct {}
 
 //! > expected_diagnostics
-error: Struct "test::MyStruct" has no member "a"
+error[E2058]: Struct "test::MyStruct" has no member "a"
  --> lib.cairo:3:20
     let MyStruct { a, b } = s;
                    ^
 
-error: Struct "test::MyStruct" has no member "b"
+error[E2058]: Struct "test::MyStruct" has no member "b"
  --> lib.cairo:3:23
     let MyStruct { a, b } = s;
                       ^
@@ -119,12 +119,12 @@ struct MyStruct {
 }
 
 //! > expected_diagnostics
-error: Redefinition of member "a" on struct "test::MyStruct".
+error[E2050]: Redefinition of member "a" on struct "test::MyStruct".
  --> lib.cairo:6:32
     let MyStruct { a: _, b: _, a: _, b: _ } = s;
                                ^
 
-error: Redefinition of member "b" on struct "test::MyStruct".
+error[E2050]: Redefinition of member "b" on struct "test::MyStruct".
  --> lib.cairo:6:38
     let MyStruct { a: _, b: _, a: _, b: _ } = s;
                                      ^
@@ -151,12 +151,12 @@ struct MyStruct {
 }
 
 //! > expected_diagnostics
-error: Struct "test::MyStruct" has no member "c"
+error[E2058]: Struct "test::MyStruct" has no member "c"
  --> lib.cairo:6:26
     let MyStruct { a: _, c: _, a: _ } = s;
                          ^
 
-error: Redefinition of member "a" on struct "test::MyStruct".
+error[E2050]: Redefinition of member "a" on struct "test::MyStruct".
  --> lib.cairo:6:32
     let MyStruct { a: _, c: _, a: _ } = s;
                                ^
@@ -182,7 +182,7 @@ fn foo(s: [felt252; 3]) {
 foo
 
 //! > expected_diagnostics
-error: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
+error[E2108]: Wrong number of fixed size array elements in pattern. Expected: 3. Got: 2.
  --> lib.cairo:2:9
     let [_a, _b] = s;
         ^^^^^^^^
@@ -203,7 +203,7 @@ fn foo(s: (felt252, felt252, felt252)) {
 foo
 
 //! > expected_diagnostics
-error: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array.
+error[E2106]: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array.
  --> lib.cairo:2:9
     let [_a, _b, _c] = s;
         ^^^^^^^^^^^^
@@ -224,7 +224,7 @@ fn foo(s: [felt252; 3]) {
 foo
 
 //! > expected_diagnostics
-error: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
+error[E2105]: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
  --> lib.cairo:2:9
     let (_a, _b, _c) = s;
         ^^^^^^^^^^^^
@@ -248,7 +248,7 @@ fn foo(s: [felt252; 3]) {
 foo
 
 //! > expected_diagnostics
-error: If blocks have incompatible types: "()" and "(core::array::Array::<(?3, ?4, ?5)>,)"
+error[E2056]: If blocks have incompatible types: "()" and "(core::array::Array::<(?3, ?4, ?5)>,)"
  --> lib.cairo:2:25-4:5
       let (unresolved,) = if true {} else {
  _________________________^
@@ -256,7 +256,7 @@ error: If blocks have incompatible types: "()" and "(core::array::Array::<(?3, ?
 |     };
 |_____^
 
-error: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
+error[E2107]: Wrong number of tuple elements in pattern. Expected: 0. Got: 1.
  --> lib.cairo:2:9
     let (unresolved,) = if true {} else {
         ^^^^^^^^^^^^^
@@ -277,7 +277,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Redefinition of variable name "_a" in pattern.
+error[E2049]: Redefinition of variable name "_a" in pattern.
  --> lib.cairo:2:14
     let (_a, _a) = (1, 2);
              ^^
@@ -304,12 +304,12 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Redefinition of variable name "_a" in pattern.
+error[E2049]: Redefinition of variable name "_a" in pattern.
  --> lib.cairo:3:14
         (_a, _a) => (),
              ^^
 
-error: Redefinition of variable name "_b" in pattern.
+error[E2049]: Redefinition of variable name "_b" in pattern.
  --> lib.cairo:7:19
         ((_b, _), _b) => (),
                   ^^

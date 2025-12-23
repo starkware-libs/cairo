@@ -13,37 +13,37 @@ false
 false
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:5:12
     let z = ;
            ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
         if bla.
                ^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
         if bla.
                ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:21:14
         x.a *+-. s.s * foo(1,3)
              ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:21:16
         x.a *+-. s.s * foo(1,3)
                ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test2.cairo:30:8
 skipped tokens
        ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test2.cairo:30:15
 skipped tokens
               ^
@@ -467,37 +467,37 @@ true
 false
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:5:12
     let z = ;
            ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
         if bla.
                ^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
         if bla.
                ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:21:14
         x.a *+-. s.s * foo(1,3)
              ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> src/parser_test_data/cairo_test_files/test2.cairo:21:16
         x.a *+-. s.s * foo(1,3)
                ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test2.cairo:30:8
 skipped tokens
        ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> src/parser_test_data/cairo_test_files/test2.cairo:30:15
 skipped tokens
               ^

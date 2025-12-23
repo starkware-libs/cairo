@@ -20,42 +20,42 @@ fn foo() {
 foo
 
 //! > lowering_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
+error[E3009]: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:3:18
     let _a: u8 = 0x100;
                  ^^^^^
 
-error: The value does not fit within the range of type core::integer::u16.
+error[E3009]: The value does not fit within the range of type core::integer::u16.
  --> lib.cairo:4:19
     let _a: u16 = 0x10000;
                   ^^^^^^^
 
-error: The value does not fit within the range of type core::integer::u32.
+error[E3009]: The value does not fit within the range of type core::integer::u32.
  --> lib.cairo:5:19
     let _a: u32 = 0x100000000;
                   ^^^^^^^^^^^
 
-error: The value does not fit within the range of type core::integer::u64.
+error[E3009]: The value does not fit within the range of type core::integer::u64.
  --> lib.cairo:6:19
     let _b: u64 = 0x10000000000000000;
                   ^^^^^^^^^^^^^^^^^^^
 
-error: The value does not fit within the range of type core::integer::u128.
+error[E3009]: The value does not fit within the range of type core::integer::u128.
  --> lib.cairo:7:20
     let _c: u128 = 0x100000000000000000000000000000000;
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: The value does not fit within the range of type core::felt252.
+error[E3009]: The value does not fit within the range of type core::felt252.
  --> lib.cairo:8:23
     let _d: felt252 = 0x800000000000011000000000000000000000000000000000000000000000001;
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: The value does not fit within the range of type core::zeroable::NonZero::<core::felt252>.
+error[E3009]: The value does not fit within the range of type core::zeroable::NonZero::<core::felt252>.
  --> lib.cairo:9:32
     let _e: NonZero<felt252> = 0;
                                ^
 
-error: The value does not fit within the range of type core::internal::bounded_int::BoundedInt::<3, 15>.
+error[E3009]: The value does not fit within the range of type core::internal::bounded_int::BoundedInt::<3, 15>.
  --> lib.cairo:10:62
     let _f: core::internal::bounded_int::BoundedInt<3, 15> = 2;
                                                              ^
@@ -86,32 +86,32 @@ fn foo() {
 foo
 
 //! > lowering_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
+error[E3009]: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:2:18
     let _a: u8 = 'aa';
                  ^^^^
 
-error: The value does not fit within the range of type core::integer::u16.
+error[E3009]: The value does not fit within the range of type core::integer::u16.
  --> lib.cairo:3:19
     let _a: u16 = 'aba';
                   ^^^^^
 
-error: The value does not fit within the range of type core::integer::u32.
+error[E3009]: The value does not fit within the range of type core::integer::u32.
  --> lib.cairo:4:19
     let _b: u32 = 'abcda';
                   ^^^^^^^
 
-error: The value does not fit within the range of type core::integer::u64.
+error[E3009]: The value does not fit within the range of type core::integer::u64.
  --> lib.cairo:5:19
     let _b: u64 = 'abcdabcda';
                   ^^^^^^^^^^^
 
-error: The value does not fit within the range of type core::integer::u128.
+error[E3009]: The value does not fit within the range of type core::integer::u128.
  --> lib.cairo:6:20
     let _c: u128 = 'abcdabcdabcdabcda';
                    ^^^^^^^^^^^^^^^^^^^
 
-error: The value does not fit within the range of type core::felt252.
+error[E3009]: The value does not fit within the range of type core::felt252.
  --> lib.cairo:7:23
     let _d: felt252 = 'abcdabcdabcdabcdabcdabcdabcdabcd';
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

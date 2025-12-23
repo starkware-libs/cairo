@@ -26,27 +26,27 @@ struct A {
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "()", found: "core::felt252".
+error[E2041]: Unexpected argument type. Expected: "()", found: "core::felt252".
  --> lib.cairo:8:12
         b: 1_felt252,
            ^^^^^^^^^
 
-error: Unknown member.
+error[E2018]: Unknown member.
  --> lib.cairo:10:9
         c: 7,
         ^
 
-error: Member specified more than once.
+error[E2021]: Member specified more than once.
  --> lib.cairo:11:9
         a: 3,
         ^
 
-error: The base struct must always be the last argument.
+error[E2022]: The base struct must always be the last argument.
  --> lib.cairo:12:9
         ..d,
         ^^^
 
-error: Unknown member.
+error[E2018]: Unknown member.
  --> lib.cairo:13:9
         f: 4,
         ^
@@ -82,17 +82,17 @@ error[E0007]: Type "test::A" has no member "f"
     a.f;
       ^
 
-error: Invalid member expression.
+error[E2085]: Invalid member expression.
  --> lib.cairo:8:7
     a.a::b;
       ^^^^
 
-error: Invalid member expression.
+error[E2085]: Invalid member expression.
  --> lib.cairo:9:7
     a.4.4;
       ^
 
-error: Invalid member expression.
+error[E2085]: Invalid member expression.
  --> lib.cairo:9:9
     a.4.4;
         ^
@@ -123,7 +123,7 @@ struct A {
 }
 
 //! > expected_diagnostics
-error: Base struct has no effect, all the fields in the struct have already been specified.
+error[E2023]: Base struct has no effect, all the fields in the struct have already been specified.
  --> lib.cairo:5:15
     A { a: 4, ..a }
               ^^^

@@ -327,7 +327,7 @@ Root: 3
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable clause.
+warning[E3004]: Unreachable clause.
  --> lib.cairo:4:12-6:5
       } else {
  ____________^
@@ -335,7 +335,7 @@ warning: Unreachable clause.
 |     }
 |_____^
 
-warning: Unreachable clause.
+warning[E3004]: Unreachable clause.
  --> lib.cairo:2:17-4:5
       if panic!() {
  _________________^
@@ -577,7 +577,7 @@ Root: 5
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable clause.
+warning[E3004]: Unreachable clause.
  --> lib.cairo:2:42-4:5
       if let Some(_) = Some(0) && panic!() {
  __________________________________________^
@@ -645,7 +645,7 @@ Root: 2
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable clause.
+warning[E3004]: Unreachable clause.
  --> lib.cairo:4:12-6:5
       } else {
  ____________^
@@ -687,7 +687,7 @@ Root: 3
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported type in if-let. Type: `[core::integer::u16; 2]`.
+error[E3004]: Unsupported type in if-let. Type: `[core::integer::u16; 2]`.
  --> lib.cairo:2:12
     if let [_, _] = x {
            ^^^^^^

@@ -23,7 +23,7 @@ generate_unreachable!();
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable code
+warning[E3000]: Unreachable code
  --> lib.cairo:9:1
 generate_unreachable!();
 ^^^^^^^^^^^^^^^^^^^^^^^^
