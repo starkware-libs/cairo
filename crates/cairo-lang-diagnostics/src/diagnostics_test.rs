@@ -16,6 +16,7 @@ struct SimpleDiag<'db> {
     file_id: FileId<'db>,
 }
 impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
+    type Kind = ();
     fn format(&self, _db: &dyn Database) -> String {
         "Simple diagnostic.".into()
     }
@@ -25,10 +26,6 @@ impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
             file_id: self.file_id,
             span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
         }
-    }
-
-    fn is_same_kind(&self, _other: &Self) -> bool {
-        true
     }
 }
 

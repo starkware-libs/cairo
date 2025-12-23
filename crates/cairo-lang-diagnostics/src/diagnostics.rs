@@ -34,6 +34,9 @@ impl fmt::Display for Severity {
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
 pub trait DiagnosticEntry<'db>: Clone + fmt::Debug + Eq + Hash {
+    /// The kind of the diagnostic.
+    type Kind: Eq;
+
     fn format(&self, db: &'db dyn Database) -> String;
     fn location(&self, db: &'db dyn Database) -> SpanInFile<'db>;
     fn notes(&self, _db: &'db dyn Database) -> &[DiagnosticNote<'_>] {
@@ -45,9 +48,6 @@ pub trait DiagnosticEntry<'db>: Clone + fmt::Debug + Eq + Hash {
     fn error_code(&self) -> Option<ErrorCode> {
         None
     }
-    /// Returns true if the two should be regarded as the same kind when filtering duplicate
-    /// diagnostics.
-    fn is_same_kind(&self, other: &Self) -> bool;
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
@@ -368,7 +368,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         let mut diagnostic_without_dup = vec![prev_diagnostic_indexed];
 
         for diag in indexed_dup_diagnostic {
-            if prev_diagnostic_indexed.1.is_same_kind(diag.1)
+            if prev_diagnostic_indexed.1 == diag.1
                 && prev_diagnostic_indexed.1.location(db).user_location(files_db).span
                     == diag.1.location(db).user_location(files_db).span
             {

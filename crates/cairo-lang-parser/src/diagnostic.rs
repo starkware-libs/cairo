@@ -130,46 +130,41 @@ pub enum ParserDiagnosticKind {
 }
 
 impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
+    type Kind = ParserDiagnosticKind;
     fn format(&self, _db: &'a dyn Database) -> String {
         match &self.kind {
-            ParserDiagnosticKind::InvalidParamKindInMacroExpansion => {
+            Self::Kind::InvalidParamKindInMacroExpansion => {
                 "Parameter kinds are not allowed in macro expansion.".to_string()
             }
-            ParserDiagnosticKind::InvalidParamKindInMacroRule => {
+            Self::Kind::InvalidParamKindInMacroRule => {
                 "Macro parameter must have a kind.".to_string()
             }
-            ParserDiagnosticKind::SkippedElement { element_name } => {
+            Self::Kind::SkippedElement { element_name } => {
                 format!("Skipped tokens. Expected: {element_name}.")
             }
-            ParserDiagnosticKind::MissingToken(kind) => {
+            Self::Kind::MissingToken(kind) => {
                 format!("Missing token {}.", self.kind_to_string(*kind))
             }
-            ParserDiagnosticKind::MissingExpression => {
-                "Missing tokens. Expected an expression.".to_string()
-            }
-            ParserDiagnosticKind::MissingPathSegment => {
+            Self::Kind::MissingExpression => "Missing tokens. Expected an expression.".to_string(),
+            Self::Kind::MissingPathSegment => {
                 "Missing tokens. Expected a path segment.".to_string()
             }
-            ParserDiagnosticKind::MissingTypeClause => {
+            Self::Kind::MissingTypeClause => {
                 "Unexpected token, expected ':' followed by a type.".to_string()
             }
-            ParserDiagnosticKind::MissingTypeExpression => {
+            Self::Kind::MissingTypeExpression => {
                 "Missing tokens. Expected a type expression.".to_string()
             }
-            ParserDiagnosticKind::MissingWrappedArgList => "Missing tokens. Expected an argument \
-                                                            list wrapped in either parentheses, \
-                                                            brackets, or braces."
+            Self::Kind::MissingWrappedArgList => "Missing tokens. Expected an argument list \
+                                                  wrapped in either parentheses, brackets, or \
+                                                  braces."
                 .to_string(),
-            ParserDiagnosticKind::MissingPattern => {
-                "Missing tokens. Expected a pattern.".to_string()
-            }
-            ParserDiagnosticKind::MissingMacroRuleParamKind => {
+            Self::Kind::MissingPattern => "Missing tokens. Expected a pattern.".to_string(),
+            Self::Kind::MissingMacroRuleParamKind => {
                 "Missing tokens. Expected a macro rule parameter kind.".to_string()
             }
-            ParserDiagnosticKind::ExpectedInToken => {
-                "Missing identifier token, expected 'in'.".to_string()
-            }
-            ParserDiagnosticKind::ItemInlineMacroWithoutBang { identifier, bracket_type } => {
+            Self::Kind::ExpectedInToken => "Missing identifier token, expected 'in'.".to_string(),
+            Self::Kind::ItemInlineMacroWithoutBang { identifier, bracket_type } => {
                 let (left, right) = match bracket_type {
                     SyntaxKind::TerminalLParen => ("(", ")"),
                     SyntaxKind::TerminalLBrack => ("[", "]"),
@@ -181,58 +176,53 @@ impl<'a> DiagnosticEntry<'a> for ParserDiagnostic<'a> {
 Did you mean to write `{identifier}!{left}...{right}'?",
                 )
             }
-            ParserDiagnosticKind::ReservedIdentifier { identifier } => {
+            Self::Kind::ReservedIdentifier { identifier } => {
                 format!("'{identifier}' is a reserved identifier.")
             }
-            ParserDiagnosticKind::UnderscoreNotAllowedAsIdentifier => {
+            Self::Kind::UnderscoreNotAllowedAsIdentifier => {
                 "An underscore ('_') is not allowed as an identifier in this context.".to_string()
             }
-            ParserDiagnosticKind::MissingLiteralSuffix => "Missing literal suffix.".to_string(),
-            ParserDiagnosticKind::InvalidNumericLiteralValue => {
-                "Literal is not a valid number.".to_string()
-            }
-            ParserDiagnosticKind::IllegalStringEscaping => "Invalid string escaping.".to_string(),
-            ParserDiagnosticKind::ShortStringMustBeAscii => {
+            Self::Kind::MissingLiteralSuffix => "Missing literal suffix.".to_string(),
+            Self::Kind::InvalidNumericLiteralValue => "Literal is not a valid number.".to_string(),
+            Self::Kind::IllegalStringEscaping => "Invalid string escaping.".to_string(),
+            Self::Kind::ShortStringMustBeAscii => {
                 "Short string literals can only include ASCII characters.".into()
             }
-            ParserDiagnosticKind::StringMustBeAscii => {
+            Self::Kind::StringMustBeAscii => {
                 "String literals can only include ASCII characters.".into()
             }
-            ParserDiagnosticKind::UnterminatedShortString => {
-                "Unterminated short string literal.".into()
-            }
-            ParserDiagnosticKind::UnterminatedString => "Unterminated string literal.".into(),
-            ParserDiagnosticKind::VisibilityWithoutItem => {
+            Self::Kind::UnterminatedShortString => "Unterminated short string literal.".into(),
+            Self::Kind::UnterminatedString => "Unterminated string literal.".into(),
+            Self::Kind::VisibilityWithoutItem => {
                 "Missing tokens. Expected an item after visibility.".to_string()
             }
-            ParserDiagnosticKind::AttributesWithoutItem => {
+            Self::Kind::AttributesWithoutItem => {
                 "Missing tokens. Expected an item after attributes.".to_string()
             }
-            ParserDiagnosticKind::AttributesWithoutTraitItem => {
+            Self::Kind::AttributesWithoutTraitItem => {
                 "Missing tokens. Expected a trait item after attributes.".to_string()
             }
-            ParserDiagnosticKind::AttributesWithoutImplItem => {
+            Self::Kind::AttributesWithoutImplItem => {
                 "Missing tokens. Expected an impl item after attributes.".to_string()
             }
-            ParserDiagnosticKind::AttributesWithoutStatement => {
+            Self::Kind::AttributesWithoutStatement => {
                 "Missing tokens. Expected a statement after attributes.".to_string()
             }
-            ParserDiagnosticKind::DisallowedTrailingSeparatorOr => {
+            Self::Kind::DisallowedTrailingSeparatorOr => {
                 "A trailing `|` is not allowed in an or-pattern.".to_string()
             }
-            ParserDiagnosticKind::ConsecutiveMathOperators { first_op, second_op } => {
+            Self::Kind::ConsecutiveMathOperators { first_op, second_op } => {
                 format!(
                     "Consecutive comparison operators are not allowed: {} followed by {}",
                     self.kind_to_string(*first_op),
                     self.kind_to_string(*second_op)
                 )
             }
-            ParserDiagnosticKind::ExpectedSemicolonOrBody => {
-                "Expected either ';' or '{' after module name. Use ';' for an external module \
-                 declaration or '{' for a module with a body."
-                    .to_string()
-            }
-            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { op } => {
+            Self::Kind::ExpectedSemicolonOrBody => "Expected either ';' or '{' after module name. \
+                                                    Use ';' for an external module declaration or \
+                                                    '{' for a module with a body."
+                .to_string(),
+            Self::Kind::LowPrecedenceOperatorInIfLet { op } => {
                 format!(
                     "Operator {} is not allowed in let chains. Consider wrapping the expression \
                      in parentheses.",
@@ -244,9 +234,5 @@ Did you mean to write `{identifier}!{left}...{right}'?",
 
     fn location(&self, _db: &'a dyn Database) -> SpanInFile<'a> {
         SpanInFile { file_id: self.file_id, span: self.span }
-    }
-
-    fn is_same_kind(&self, other: &Self) -> bool {
-        other.kind == self.kind
     }
 }

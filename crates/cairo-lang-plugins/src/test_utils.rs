@@ -72,6 +72,8 @@ pub fn expand_module_text<'db>(
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 struct TestDiagnosticEntry<'a>(pub PluginDiagnostic<'a>);
 impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
+    type Kind = PluginDiagnostic<'a>;
+
     fn format(&self, _db: &dyn Database) -> String {
         self.0.message.to_string()
     }
@@ -88,8 +90,5 @@ impl<'a> DiagnosticEntry<'a> for TestDiagnosticEntry<'a> {
     }
     fn error_code(&self) -> Option<ErrorCode> {
         None
-    }
-    fn is_same_kind(&self, other: &Self) -> bool {
-        self.0 == other.0
     }
 }

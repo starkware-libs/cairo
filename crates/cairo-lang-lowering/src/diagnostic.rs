@@ -43,41 +43,43 @@ pub struct LoweringDiagnostic<'db> {
 }
 
 impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
+    type Kind = LoweringDiagnosticKind<'db>;
+
     fn format(&self, db: &'db dyn Database) -> String {
         match &self.kind {
-            LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
-            LoweringDiagnosticKind::VariableMoved { .. } => "Variable was previously moved.".into(),
-            LoweringDiagnosticKind::VariableNotDropped { .. } => "Variable not dropped.".into(),
-            LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => {
+            Self::Kind::Unreachable { .. } => "Unreachable code".into(),
+            Self::Kind::VariableMoved { .. } => "Variable was previously moved.".into(),
+            Self::Kind::VariableNotDropped { .. } => "Variable not dropped.".into(),
+            Self::Kind::DesnappingANonCopyableType { .. } => {
                 "Cannot desnap a non copyable type.".into()
             }
-            LoweringDiagnosticKind::MatchError(match_err) => match_err.format(),
-            LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
+            Self::Kind::MatchError(match_err) => match_err.format(),
+            Self::Kind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
-            LoweringDiagnosticKind::MemberPathLoop => {
+            Self::Kind::MemberPathLoop => {
                 "Currently, loops must change the entire variable.".into()
             }
-            LoweringDiagnosticKind::UnexpectedError => {
+            Self::Kind::UnexpectedError => {
                 "Unexpected error has occurred, Please submit a full bug report. \
                 See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.\
                 "
                 .into()
             }
-            LoweringDiagnosticKind::NoPanicFunctionCycle => {
+            Self::Kind::NoPanicFunctionCycle => {
                 "Call cycle of `nopanic` functions is not allowed.".into()
             }
-            LoweringDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
-            LoweringDiagnosticKind::UnsupportedPattern => {
+            Self::Kind::LiteralError(literal_error) => literal_error.format(db),
+            Self::Kind::UnsupportedPattern => {
                 "Inner patterns are not allowed in this context.".into()
             }
-            LoweringDiagnosticKind::Unsupported => "Unsupported feature.".into(),
-            LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => {
+            Self::Kind::Unsupported => "Unsupported feature.".into(),
+            Self::Kind::FixedSizeArrayNonCopyableType => {
                 "Fixed size array inner type must implement the `Copy` trait when the array size \
                  is greater than 1."
                     .into()
             }
-            LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => {
+            Self::Kind::EmptyRepeatedElementFixedSizeArray => {
                 "Fixed size array repeated element size must be greater than 0.".into()
             }
         }
@@ -103,10 +105,6 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             return self.location.stable_location.span_in_file_until(db, *block_end_ptr);
         }
         self.location.stable_location.span_in_file(db)
-    }
-
-    fn is_same_kind(&self, other: &Self) -> bool {
-        other.kind == self.kind
     }
 }
 

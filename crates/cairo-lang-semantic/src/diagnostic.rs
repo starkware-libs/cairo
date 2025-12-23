@@ -108,36 +108,31 @@ impl<'db> SemanticDiagnostic<'db> {
     }
 }
 impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
+    type Kind = SemanticDiagnosticKind<'db>;
+
     fn format(&self, db: &dyn Database) -> String {
         match &self.kind {
-            SemanticDiagnosticKind::ModuleFileNotFound(path) => {
+            Self::Kind::ModuleFileNotFound(path) => {
                 format!("Module file not found. Expected path: {path}")
             }
-            SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
-            SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
-            SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
-            SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
-            SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
-            SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
+            Self::Kind::Unsupported => "Unsupported feature.".into(),
+            Self::Kind::UnknownLiteral => "Unknown literal.".into(),
+            Self::Kind::UnknownBinaryOperator => "Unknown binary operator.".into(),
+            Self::Kind::UnknownTrait => "Unknown trait.".into(),
+            Self::Kind::UnknownImpl => "Unknown impl.".into(),
+            Self::Kind::UnexpectedElement { expected, actual } => {
                 let expected_str = expected.iter().map(|kind| kind.to_string()).join(" or ");
                 format!("Expected {expected_str}, found {actual}.")
             }
-            SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
-            SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
-            SemanticDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
-            SemanticDiagnosticKind::NotAVariant => {
-                "Not a variant. Use the full name Enum::Variant.".into()
-            }
-            SemanticDiagnosticKind::NotAStruct => "Not a struct.".into(),
-            SemanticDiagnosticKind::NotAType => "Not a type.".into(),
-            SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
-            SemanticDiagnosticKind::NotAnImpl => "Not an impl.".into(),
-            SemanticDiagnosticKind::ImplItemNotInTrait {
-                impl_def_id,
-                impl_item_name,
-                trait_id,
-                item_kind,
-            } => {
+            Self::Kind::UnknownType => "Unknown type.".into(),
+            Self::Kind::UnknownEnum => "Unknown enum.".into(),
+            Self::Kind::LiteralError(literal_error) => literal_error.format(db),
+            Self::Kind::NotAVariant => "Not a variant. Use the full name Enum::Variant.".into(),
+            Self::Kind::NotAStruct => "Not a struct.".into(),
+            Self::Kind::NotAType => "Not a type.".into(),
+            Self::Kind::NotATrait => "Not a trait.".into(),
+            Self::Kind::NotAnImpl => "Not an impl.".into(),
+            Self::Kind::ImplItemNotInTrait { impl_def_id, impl_item_name, trait_id, item_kind } => {
                 format!(
                     "Impl item {item_kind} `{}::{}` is not a member of trait `{}`.",
                     impl_def_id.name(db).long(db),
@@ -145,10 +140,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     trait_id.name(db).long(db)
                 )
             }
-            SemanticDiagnosticKind::ImplicitImplNotInferred {
-                trait_impl_id,
-                concrete_trait_id,
-            } => {
+            Self::Kind::ImplicitImplNotInferred { trait_impl_id, concrete_trait_id } => {
                 format!(
                     "Cannot infer implicit impl `{}.`\nCould not find implementation of trait \
                      `{:?}`",
@@ -156,35 +148,28 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     concrete_trait_id.debug(db)
                 )
             }
-            SemanticDiagnosticKind::GenericsNotSupportedInItem { scope, item_kind } => {
+            Self::Kind::GenericsNotSupportedInItem { scope, item_kind } => {
                 format!("Generic parameters are not supported in {scope} item {item_kind}.")
             }
-            SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
-            SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
-            SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
-                "Member specified more than once.".into()
-            }
-            SemanticDiagnosticKind::ConstCycle => {
-                "Cycle detected while resolving 'const' items.".into()
-            }
-            SemanticDiagnosticKind::UseCycle => {
-                "Cycle detected while resolving 'use' items.".into()
-            }
-            SemanticDiagnosticKind::TypeAliasCycle => {
+            Self::Kind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
+            Self::Kind::UnknownMember => "Unknown member.".into(),
+            Self::Kind::MemberSpecifiedMoreThanOnce => "Member specified more than once.".into(),
+            Self::Kind::ConstCycle => "Cycle detected while resolving 'const' items.".into(),
+            Self::Kind::UseCycle => "Cycle detected while resolving 'use' items.".into(),
+            Self::Kind::TypeAliasCycle => {
                 "Cycle detected while resolving type-alias/impl-type items.".into()
             }
-            SemanticDiagnosticKind::ImplAliasCycle => {
+            Self::Kind::ImplAliasCycle => {
                 "Cycle detected while resolving 'impls alias' items.".into()
             }
-            SemanticDiagnosticKind::ImplRequirementCycle => {
-                "Cycle detected while resolving generic param. Try specifying the generic impl \
-                 parameter explicitly to break the cycle."
-                    .into()
-            }
-            SemanticDiagnosticKind::MissingMember(member_name) => {
+            Self::Kind::ImplRequirementCycle => "Cycle detected while resolving generic param. \
+                                                 Try specifying the generic impl parameter \
+                                                 explicitly to break the cycle."
+                .into(),
+            Self::Kind::MissingMember(member_name) => {
                 format!(r#"Missing member "{}"."#, member_name.long(db))
             }
-            SemanticDiagnosticKind::WrongNumberOfParameters {
+            Self::Kind::WrongNumberOfParameters {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -203,10 +188,10 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     actual,
                 )
             }
-            SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
+            Self::Kind::WrongNumberOfArguments { expected, actual } => {
                 format!("Wrong number of arguments. Expected {expected}, found: {actual}")
             }
-            SemanticDiagnosticKind::WrongParameterType {
+            Self::Kind::WrongParameterType {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -225,21 +210,17 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::VariantCtorNotImmutable => {
+            Self::Kind::VariantCtorNotImmutable => {
                 "Variant constructor argument must be immutable.".to_string()
             }
-            SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
+            Self::Kind::TraitParamMutable { trait_id, function_id } => {
                 format!(
                     "Parameter of trait function `{}::{}` can't be defined as mutable.",
                     trait_id.name(db).long(db),
                     function_id.name(db).long(db),
                 )
             }
-            SemanticDiagnosticKind::ParameterShouldBeReference {
-                impl_def_id,
-                impl_function_id,
-                trait_id,
-            } => {
+            Self::Kind::ParameterShouldBeReference { impl_def_id, impl_function_id, trait_id } => {
                 let function_name = impl_function_id.name(db).long(db);
                 format!(
                     "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
@@ -250,7 +231,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     function_name,
                 )
             }
-            SemanticDiagnosticKind::ParameterShouldNotBeReference {
+            Self::Kind::ParameterShouldNotBeReference {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -265,7 +246,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     function_name,
                 )
             }
-            SemanticDiagnosticKind::WrongParameterName {
+            Self::Kind::WrongParameterName {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -280,18 +261,18 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     expected_name.long(db)
                 )
             }
-            SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
+            Self::Kind::WrongType { expected_ty, actual_ty } => {
                 format!(
                     r#"Expected type "{}", found: "{}"."#,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::InconsistentBinding => "variable is bound inconsistently \
-                                                            across alternatives separated by `|` \
-                                                            bound in different ways"
+            Self::Kind::InconsistentBinding => "variable is bound inconsistently across \
+                                                alternatives separated by `|` bound in different \
+                                                ways"
                 .into(),
-            SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
+            Self::Kind::WrongArgumentType { expected_ty, actual_ty } => {
                 let diagnostic_prefix = format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
                     expected_ty.format(db),
@@ -309,30 +290,27 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     )
                 }
             }
-            SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
+            Self::Kind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected return type. Expected: "{}", found: "{}"."#,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::WrongExprType { expected_ty, actual_ty } => {
+            Self::Kind::WrongExprType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected expression type. Expected: "{}", found: "{}"."#,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::WrongNumberOfGenericParamsForImplFunction {
-                expected,
-                actual,
-            } => {
+            Self::Kind::WrongNumberOfGenericParamsForImplFunction { expected, actual } => {
                 format!(
                     "Wrong number of generic parameters for impl function. Expected: {expected}, \
                      found: {actual}."
                 )
             }
-            SemanticDiagnosticKind::WrongReturnTypeForImpl {
+            Self::Kind::WrongReturnTypeForImpl {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -351,7 +329,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::WrongGenericParamTraitForImplFunction {
+            Self::Kind::WrongGenericParamTraitForImplFunction {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -370,7 +348,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     actual_trait.debug(db)
                 )
             }
-            SemanticDiagnosticKind::WrongGenericParamKindForImplFunction {
+            Self::Kind::WrongGenericParamKindForImplFunction {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -389,7 +367,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     actual_kind
                 )
             }
-            SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
+            Self::Kind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
                 format!(
                     "Ambiguous method call. More than one applicable trait function with a \
                      suitable self type was found: {} and {}. Consider adding type annotations or \
@@ -398,36 +376,34 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     trait_function_id1.full_path(db)
                 )
             }
-            SemanticDiagnosticKind::VariableNotFound(name) => {
+            Self::Kind::VariableNotFound(name) => {
                 format!(r#"Variable "{}" not found."#, name.long(db))
             }
-            SemanticDiagnosticKind::MissingVariableInPattern => {
-                "Missing variable in pattern.".into()
-            }
-            SemanticDiagnosticKind::VariableDefinedMultipleTimesInPattern(name) => {
+            Self::Kind::MissingVariableInPattern => "Missing variable in pattern.".into(),
+            Self::Kind::VariableDefinedMultipleTimesInPattern(name) => {
                 format!(r#"Redefinition of variable name "{}" in pattern."#, name.long(db))
             }
-            SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
+            Self::Kind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
                     r#"Redefinition of member "{}" on struct "{}"."#,
                     member_name.long(db),
                     struct_id.full_path(db)
                 )
             }
-            SemanticDiagnosticKind::EnumVariantRedefinition { enum_id, variant_name } => {
+            Self::Kind::EnumVariantRedefinition { enum_id, variant_name } => {
                 format!(
                     r#"Redefinition of variant "{}" on enum "{}"."#,
                     variant_name.long(db),
                     enum_id.full_path(db)
                 )
             }
-            SemanticDiagnosticKind::InfiniteSizeType(ty) => {
+            Self::Kind::InfiniteSizeType(ty) => {
                 format!(r#"Recursive type "{}" has infinite size."#, ty.format(db))
             }
-            SemanticDiagnosticKind::ArrayOfZeroSizedElements(ty) => {
+            Self::Kind::ArrayOfZeroSizedElements(ty) => {
                 format!(r#"Cannot have array of type "{}" that is zero sized."#, ty.format(db))
             }
-            SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
+            Self::Kind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{}"{}"#,
                     param_name.long(db),
@@ -439,10 +415,10 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                         .unwrap_or(".".into()),
                 )
             }
-            SemanticDiagnosticKind::ConditionNotBool(condition_ty) => {
+            Self::Kind::ConditionNotBool(condition_ty) => {
                 format!(r#"Condition has type "{}", expected bool."#, condition_ty.format(db))
             }
-            SemanticDiagnosticKind::IncompatibleArms {
+            Self::Kind::IncompatibleArms {
                 multi_arm_expr_kind: incompatibility_kind,
                 pending_ty: first_ty,
                 different_ty,
@@ -454,49 +430,47 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 };
                 format!(r#"{prefix}: "{}" and "{}""#, first_ty.format(db), different_ty.format(db))
             }
-            SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
+            Self::Kind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
-            SemanticDiagnosticKind::NoSuchStructMember { struct_id, member_name } => {
+            Self::Kind::NoSuchStructMember { struct_id, member_name } => {
                 format!(
                     r#"Struct "{}" has no member "{}""#,
                     struct_id.full_path(db),
                     member_name.long(db)
                 )
             }
-            SemanticDiagnosticKind::NoSuchTypeMember { ty, member_name } => {
+            Self::Kind::NoSuchTypeMember { ty, member_name } => {
                 format!(r#"Type "{}" has no member "{}""#, ty.format(db), member_name.long(db))
             }
-            SemanticDiagnosticKind::MemberNotVisible(member_name) => {
+            Self::Kind::MemberNotVisible(member_name) => {
                 format!(r#"Member "{}" is not visible in this context."#, member_name.long(db))
             }
-            SemanticDiagnosticKind::NoSuchVariant { enum_id, variant_name } => {
+            Self::Kind::NoSuchVariant { enum_id, variant_name } => {
                 format!(
                     r#"Enum "{}" has no variant "{}""#,
                     enum_id.full_path(db),
                     variant_name.long(db)
                 )
             }
-            SemanticDiagnosticKind::ReturnTypeNotErrorPropagateType => {
+            Self::Kind::ReturnTypeNotErrorPropagateType => {
                 "`?` can only be used in a function with `Option` or `Result` return type.".into()
             }
-            SemanticDiagnosticKind::IncompatibleErrorPropagateType { return_ty, err_ty } => {
+            Self::Kind::IncompatibleErrorPropagateType { return_ty, err_ty } => {
                 format!(
                     r#"Return type "{}" does not wrap error "{}""#,
                     return_ty.format(db),
                     err_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::ErrorPropagateOnNonErrorType(ty) => {
+            Self::Kind::ErrorPropagateOnNonErrorType(ty) => {
                 format!(r#"Type "{}" cannot error propagate"#, ty.format(db))
             }
-            SemanticDiagnosticKind::UnhandledMustUseType(ty) => {
+            Self::Kind::UnhandledMustUseType(ty) => {
                 format!(r#"Unhandled `#[must_use]` type `{}`"#, ty.format(db))
             }
-            SemanticDiagnosticKind::UnhandledMustUseFunction => {
-                "Unhandled `#[must_use]` function.".into()
-            }
-            SemanticDiagnosticKind::UnstableFeature { feature_name, note } => {
+            Self::Kind::UnhandledMustUseFunction => "Unhandled `#[must_use]` function.".into(),
+            Self::Kind::UnstableFeature { feature_name, note } => {
                 format!(
                     "Usage of unstable feature `{0}` with no `#[feature({0})]` attribute.{1}",
                     feature_name.long(db),
@@ -505,7 +479,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                         .unwrap_or_default()
                 )
             }
-            SemanticDiagnosticKind::DeprecatedFeature { feature_name, note } => {
+            Self::Kind::DeprecatedFeature { feature_name, note } => {
                 format!(
                     "Usage of deprecated feature `{0}` with no `#[feature({0})]` attribute.{1}",
                     feature_name.long(db),
@@ -514,7 +488,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                         .unwrap_or_default()
                 )
             }
-            SemanticDiagnosticKind::InternalFeature { feature_name, note } => {
+            Self::Kind::InternalFeature { feature_name, note } => {
                 format!(
                     "Usage of internal feature `{0}` with no `#[feature({0})]` attribute.{1}",
                     feature_name.long(db),
@@ -523,7 +497,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                         .unwrap_or_default()
                 )
             }
-            SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
+            Self::Kind::FeatureMarkerDiagnostic(diagnostic) => match diagnostic {
                 FeatureMarkerDiagnostic::MultipleMarkers => {
                     "Multiple feature marker attributes.".into()
                 }
@@ -537,47 +511,43 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     "Duplicated argument for feature marker attribute.".into()
                 }
             },
-            SemanticDiagnosticKind::UnusedVariable => {
+            Self::Kind::UnusedVariable => {
                 "Unused variable. Consider ignoring by prefixing with `_`.".into()
             }
-            SemanticDiagnosticKind::UnusedConstant => {
+            Self::Kind::UnusedConstant => {
                 "Unused constant. Consider ignoring by prefixing with `_`.".into()
             }
-            SemanticDiagnosticKind::MultipleConstantDefinition(constant_name) => {
+            Self::Kind::MultipleConstantDefinition(constant_name) => {
                 format!(r#"Multiple definitions of constant "{}"."#, constant_name.long(db))
             }
-            SemanticDiagnosticKind::UnusedUse => "Unused use.".into(),
-            SemanticDiagnosticKind::MultipleDefinitionforBinding(name) => {
+            Self::Kind::UnusedUse => "Unused use.".into(),
+            Self::Kind::MultipleDefinitionforBinding(name) => {
                 format!(
                     r#"Multiple definitions of identifier '{}' as constant and variable."#,
                     name.long(db)
                 )
             }
-            SemanticDiagnosticKind::MultipleGenericItemDefinition(type_name) => {
+            Self::Kind::MultipleGenericItemDefinition(type_name) => {
                 format!(r#"Multiple definitions of an item "{}"."#, type_name.long(db))
             }
-            SemanticDiagnosticKind::UnsupportedUseItemInStatement => {
+            Self::Kind::UnsupportedUseItemInStatement => {
                 "Unsupported use item in statement.".into()
             }
-            SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
-            SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
-            SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
-            SemanticDiagnosticKind::RefArgNotMutable => {
-                "ref argument must be a mutable variable.".into()
-            }
-            SemanticDiagnosticKind::RefArgNotExplicit => {
+            Self::Kind::InvalidMemberExpression => "Invalid member expression.".into(),
+            Self::Kind::InvalidPath => "Invalid path.".into(),
+            Self::Kind::RefArgNotAVariable => "ref argument must be a variable.".into(),
+            Self::Kind::RefArgNotMutable => "ref argument must be a mutable variable.".into(),
+            Self::Kind::RefArgNotExplicit => {
                 "ref argument must be passed with a preceding 'ref'.".into()
             }
-            SemanticDiagnosticKind::ImmutableArgWithModifiers => {
+            Self::Kind::ImmutableArgWithModifiers => {
                 "Argument to immutable parameter cannot have modifiers.".into()
             }
-            SemanticDiagnosticKind::AssignmentToImmutableVar => {
+            Self::Kind::AssignmentToImmutableVar => {
                 "Cannot assign to an immutable variable.".into()
             }
-            SemanticDiagnosticKind::InvalidLhsForAssignment => {
-                "Invalid left-hand side of assignment.".into()
-            }
-            SemanticDiagnosticKind::PathNotFound(item_type) => match item_type {
+            Self::Kind::InvalidLhsForAssignment => "Invalid left-hand side of assignment.".into(),
+            Self::Kind::PathNotFound(item_type) => match item_type {
                 NotFoundItemType::Identifier => "Identifier not found.".into(),
                 NotFoundItemType::Function => "Function not found.".into(),
                 NotFoundItemType::Type => "Type not found.".into(),
@@ -585,53 +555,51 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 NotFoundItemType::Impl => "Impl not found.".into(),
                 NotFoundItemType::Macro => "Macro not found.".into(),
             },
-            SemanticDiagnosticKind::AmbiguousPath(module_items) => {
+            Self::Kind::AmbiguousPath(module_items) => {
                 format!(
                     "Ambiguous path. Multiple matching items: {}",
                     module_items.iter().map(|item| format!("`{}`", item.full_path(db))).join(", ")
                 )
             }
-            SemanticDiagnosticKind::UseSelfNonMulti => {
+            Self::Kind::UseSelfNonMulti => {
                 "`self` in `use` items is not allowed not in multi.".into()
             }
-            SemanticDiagnosticKind::UseSelfEmptyPath => {
+            Self::Kind::UseSelfEmptyPath => {
                 "`self` in `use` items is not allowed for empty path.".into()
             }
-            SemanticDiagnosticKind::UseStarEmptyPath => {
+            Self::Kind::UseStarEmptyPath => {
                 "`*` in `use` items is not allowed for empty path.".into()
             }
-            SemanticDiagnosticKind::GlobalUsesNotSupportedInEdition(edition) => {
+            Self::Kind::GlobalUsesNotSupportedInEdition(edition) => {
                 format!("Global `use` item is not supported in `{edition:?}` edition.")
             }
-            SemanticDiagnosticKind::TraitInTraitMustBeExplicit => {
+            Self::Kind::TraitInTraitMustBeExplicit => {
                 "In a trait, paths of the same trait must be fully explicit. Either use `Self` if \
                  this is the intention, or explicitly specify all the generic arguments."
                     .to_string()
             }
-            SemanticDiagnosticKind::ImplInImplMustBeExplicit => {
+            Self::Kind::ImplInImplMustBeExplicit => {
                 "In an impl, paths of the same impl must be fully explicit. Either use `Self` if \
                  this is the intention, or explicitly specify all the generic arguments."
                     .to_string()
             }
-            SemanticDiagnosticKind::TraitItemForbiddenInTheTrait => {
+            Self::Kind::TraitItemForbiddenInTheTrait => {
                 "In a trait, paths of the same trait are not allowed. Did you mean to use `Self::`?"
                     .to_string()
             }
-            SemanticDiagnosticKind::TraitItemForbiddenInItsImpl => "In an impl, paths of the \
-                                                                    impl's trait are not allowed. \
-                                                                    Did you mean to use `Self::`?"
+            Self::Kind::TraitItemForbiddenInItsImpl => "In an impl, paths of the impl's trait are \
+                                                        not allowed. Did you mean to use `Self::`?"
                 .to_string(),
-            SemanticDiagnosticKind::ImplItemForbiddenInTheImpl => {
-                "In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?"
-                    .to_string()
-            }
-            SemanticDiagnosticKind::SuperUsedInRootModule => {
+            Self::Kind::ImplItemForbiddenInTheImpl => "In an impl, paths of the same impl are not \
+                                                       allowed. Did you mean to use `Self::`?"
+                .to_string(),
+            Self::Kind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
-            SemanticDiagnosticKind::SuperUsedInMacroCallTopLevel => {
+            Self::Kind::SuperUsedInMacroCallTopLevel => {
                 "`super` used in macro call top level.".into()
             }
-            SemanticDiagnosticKind::ItemNotVisible(item_id, containing_modules) => {
+            Self::Kind::ItemNotVisible(item_id, containing_modules) => {
                 format!(
                     "Item `{}` is not visible in this context{}.",
                     item_id.full_path(db),
@@ -650,45 +618,45 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     }
                 )
             }
-            SemanticDiagnosticKind::UnusedImport(use_id) => {
+            Self::Kind::UnusedImport(use_id) => {
                 format!("Unused import: `{}`", use_id.full_path(db))
             }
-            SemanticDiagnosticKind::UnexpectedEnumPattern(ty) => {
+            Self::Kind::UnexpectedEnumPattern(ty) => {
                 format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
             }
-            SemanticDiagnosticKind::UnexpectedStructPattern(ty) => {
+            Self::Kind::UnexpectedStructPattern(ty) => {
                 format!(
                     r#"Unexpected type for struct pattern. "{}" is not a struct."#,
                     ty.format(db),
                 )
             }
-            SemanticDiagnosticKind::UnexpectedTuplePattern(ty) => {
+            Self::Kind::UnexpectedTuplePattern(ty) => {
                 format!(r#"Unexpected type for tuple pattern. "{}" is not a tuple."#, ty.format(db),)
             }
-            SemanticDiagnosticKind::UnexpectedFixedSizeArrayPattern(ty) => {
+            Self::Kind::UnexpectedFixedSizeArrayPattern(ty) => {
                 format!(
                     "Unexpected type for fixed size array pattern. \"{}\" is not a fixed size \
                      array.",
                     ty.format(db),
                 )
             }
-            SemanticDiagnosticKind::WrongNumberOfTupleElements { expected, actual } => format!(
+            Self::Kind::WrongNumberOfTupleElements { expected, actual } => format!(
                 r#"Wrong number of tuple elements in pattern. Expected: {expected}. Got: {actual}."#,
             ),
-            SemanticDiagnosticKind::WrongNumberOfFixedSizeArrayElements { expected, actual } => {
+            Self::Kind::WrongNumberOfFixedSizeArrayElements { expected, actual } => {
                 format!(
                     "Wrong number of fixed size array elements in pattern. Expected: {expected}. \
                      Got: {actual}.",
                 )
             }
-            SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
+            Self::Kind::WrongEnum { expected_enum, actual_enum } => {
                 format!(
                     r#"Wrong enum in pattern. Expected: "{}". Got: "{}"."#,
                     expected_enum.full_path(db),
                     actual_enum.full_path(db)
                 )
             }
-            SemanticDiagnosticKind::RedundantModifier { current_modifier, previous_modifier } => {
+            Self::Kind::RedundantModifier { current_modifier, previous_modifier } => {
                 format!(
                     "`{}` modifier was specified after another modifier (`{}`). Only a single \
                      modifier is allowed.",
@@ -696,26 +664,25 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     previous_modifier.long(db)
                 )
             }
-            SemanticDiagnosticKind::ReferenceLocalVariable => {
-                "`ref` is only allowed for function parameters, not for local variables."
-                    .to_string()
-            }
-            SemanticDiagnosticKind::InvalidCopyTraitImpl(inference_error) => {
+            Self::Kind::ReferenceLocalVariable => "`ref` is only allowed for function parameters, \
+                                                   not for local variables."
+                .to_string(),
+            Self::Kind::InvalidCopyTraitImpl(inference_error) => {
                 format!("Invalid copy trait implementation, {}", inference_error.format(db))
             }
-            SemanticDiagnosticKind::InvalidDropTraitImpl(inference_error) => {
+            Self::Kind::InvalidDropTraitImpl(inference_error) => {
                 format!("Invalid drop trait implementation, {}", inference_error.format(db))
             }
-            SemanticDiagnosticKind::InvalidImplItem(item_kw) => {
+            Self::Kind::InvalidImplItem(item_kw) => {
                 format!("`{}` is not allowed inside impl.", item_kw.long(db))
             }
-            SemanticDiagnosticKind::MissingItemsInImpl(item_names) => {
+            Self::Kind::MissingItemsInImpl(item_names) => {
                 format!(
                     "Not all trait items are implemented. Missing: {}.",
                     item_names.iter().map(|name| format!("'{}'", name.long(db))).join(", ")
                 )
             }
-            SemanticDiagnosticKind::PassPanicAsNopanic { impl_function_id, trait_id } => {
+            Self::Kind::PassPanicAsNopanic { impl_function_id, trait_id } => {
                 let name = impl_function_id.name(db).long(db);
                 let trait_name = trait_id.name(db).long(db);
                 format!(
@@ -723,7 +690,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
-            SemanticDiagnosticKind::PassConstAsNonConst { impl_function_id, trait_id } => {
+            Self::Kind::PassConstAsNonConst { impl_function_id, trait_id } => {
                 let name = impl_function_id.name(db).long(db);
                 let trait_name = trait_id.name(db).long(db);
                 format!(
@@ -731,77 +698,69 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                      `{trait_name}`. The trait function is declared as const."
                 )
             }
-            SemanticDiagnosticKind::PanicableFromNonPanicable => {
+            Self::Kind::PanicableFromNonPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
-            SemanticDiagnosticKind::PanicableExternFunction => {
+            Self::Kind::PanicableExternFunction => {
                 "An extern function must be marked as nopanic.".into()
             }
-            SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
+            Self::Kind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
-            SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) => {
+            Self::Kind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) => {
                 format!("Parser error in macro-expanded code: {}", parser_diagnostic.format(db))
             }
-            SemanticDiagnosticKind::NameDefinedMultipleTimes(name) => {
+            Self::Kind::NameDefinedMultipleTimes(name) => {
                 format!("The name `{}` is defined multiple times.", name.long(db))
             }
-            SemanticDiagnosticKind::NonPrivateUseStar => {
-                "`pub` not supported for global `use`.".into()
-            }
-            SemanticDiagnosticKind::SelfGlobalUse => {
-                "cannot glob-import a module into itself".into()
-            }
-            SemanticDiagnosticKind::NamedArgumentsAreNotSupported => {
+            Self::Kind::NonPrivateUseStar => "`pub` not supported for global `use`.".into(),
+            Self::Kind::SelfGlobalUse => "cannot glob-import a module into itself".into(),
+            Self::Kind::NamedArgumentsAreNotSupported => {
                 "Named arguments are not supported in this context.".into()
             }
-            SemanticDiagnosticKind::UnnamedArgumentFollowsNamed => {
+            Self::Kind::UnnamedArgumentFollowsNamed => {
                 "Unnamed arguments cannot follow named arguments.".into()
             }
-            SemanticDiagnosticKind::NamedArgumentMismatch { expected, found } => {
+            Self::Kind::NamedArgumentMismatch { expected, found } => {
                 format!(
                     "Unexpected argument name. Expected: '{}', found '{}'.",
                     expected.long(db),
                     found.long(db)
                 )
             }
-            SemanticDiagnosticKind::UnsupportedOutsideOfFunction(feature_name) => {
+            Self::Kind::UnsupportedOutsideOfFunction(feature_name) => {
                 let feature_name_str = match feature_name {
                     UnsupportedOutsideOfFunctionFeatureName::ReturnStatement => "Return statement",
                     UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate => "The '?' operator",
                 };
                 format!("{feature_name_str} is not supported outside of functions.")
             }
-            SemanticDiagnosticKind::ConstTypeNotVarFree => {
-                "Constant type must not depend on its value.".into()
-            }
-            SemanticDiagnosticKind::UnsupportedConstant => {
+            Self::Kind::ConstTypeNotVarFree => "Constant type must not depend on its value.".into(),
+            Self::Kind::UnsupportedConstant => {
                 "This expression is not supported as constant.".into()
             }
-            SemanticDiagnosticKind::FailedConstantCalculation => {
-                "Failed to calculate constant.".into()
-            }
-            SemanticDiagnosticKind::ConstantCalculationDepthExceeded => {
+            Self::Kind::FailedConstantCalculation => "Failed to calculate constant.".into(),
+            Self::Kind::ConstantCalculationDepthExceeded => {
                 "Constant calculation depth exceeded.".into()
             }
-            SemanticDiagnosticKind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
-            SemanticDiagnosticKind::DivisionByZero => "Division by zero.".into(),
-            SemanticDiagnosticKind::ExternTypeWithImplGenericsNotSupported => {
+            Self::Kind::InnerFailedConstantCalculation(inner, _) => inner.format(db),
+            Self::Kind::DivisionByZero => "Division by zero.".into(),
+            Self::Kind::ExternTypeWithImplGenericsNotSupported => {
                 "Extern types with impl generics are not supported.".into()
             }
-            SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
-            SemanticDiagnosticKind::TraitMismatch { expected_trt, actual_trt } => {
+            Self::Kind::MissingSemicolon => "Missing semicolon".into(),
+            Self::Kind::TraitMismatch { expected_trt, actual_trt } => {
                 format!(
                     "Expected an impl of `{:?}`. Got an impl of `{:?}`.",
                     expected_trt.debug(db),
                     actual_trt.debug(db),
                 )
             }
-            SemanticDiagnosticKind::InternalInferenceError(err) => err.format(db),
-            SemanticDiagnosticKind::DerefNonRef { ty } => {
+            Self::Kind::InternalInferenceError(err) => err.format(db),
+            Self::Kind::DerefNonRef { ty } => {
                 format!("Type `{}` cannot be dereferenced", ty.format(db))
             }
-            SemanticDiagnosticKind::NoImplementationOfIndexOperator { ty, inference_errors } => {
+            Self::Kind::NoImplementationOfIndexOperator { ty, inference_errors } => {
                 if inference_errors.is_empty() {
                     format!(
                         "Type `{}` does not implement the `Index` trait nor the `IndexView` trait.",
@@ -815,31 +774,22 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     )
                 }
             }
-            SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(ty) => {
+            Self::Kind::MultipleImplementationOfIndexOperator(ty) => {
                 format!(
                     r#"Type "{}" implements both the "Index" trait and the "IndexView" trait."#,
                     ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::UnsupportedInlineArguments => {
-                "Unsupported `inline` arguments.".into()
-            }
-            SemanticDiagnosticKind::RedundantInlineAttribute => {
-                "Redundant `inline` attribute.".into()
-            }
-            SemanticDiagnosticKind::InlineAttrForExternFunctionNotAllowed => {
+            Self::Kind::UnsupportedInlineArguments => "Unsupported `inline` arguments.".into(),
+            Self::Kind::RedundantInlineAttribute => "Redundant `inline` attribute.".into(),
+            Self::Kind::InlineAttrForExternFunctionNotAllowed => {
                 "`inline` attribute is not allowed for extern functions.".into()
             }
-            SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed => {
+            Self::Kind::InlineAlwaysWithImplGenericArgNotAllowed => {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
-            SemanticDiagnosticKind::CannotCallMethod {
-                ty,
-                method_name,
-                inference_errors,
-                relevant_traits,
-            } => {
+            Self::Kind::CannotCallMethod { ty, method_name, inference_errors, relevant_traits } => {
                 if !inference_errors.is_empty() {
                     return format!(
                         "Method `{}` could not be called on type `{}`.\n{}",
@@ -871,151 +821,138 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     )
                 }
             }
-            SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
+            Self::Kind::TailExpressionNotAllowedInLoop => {
                 "Tail expression not allowed in a `loop` block.".into()
             }
-            SemanticDiagnosticKind::ContinueOnlyAllowedInsideALoop => {
+            Self::Kind::ContinueOnlyAllowedInsideALoop => {
                 "`continue` only allowed inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
+            Self::Kind::BreakOnlyAllowedInsideALoop => {
                 "`break` only allowed inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::BreakWithValueOnlyAllowedInsideALoop => {
+            Self::Kind::BreakWithValueOnlyAllowedInsideALoop => {
                 "Can only break with a value inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop => {
+            Self::Kind::ErrorPropagateNotAllowedInsideALoop => {
                 "`?` not allowed inside a `loop`.".into()
             }
-            SemanticDiagnosticKind::ConstGenericParamNotSupported => {
+            Self::Kind::ConstGenericParamNotSupported => {
                 "Const generic args are not allowed in this context.".into()
             }
-            SemanticDiagnosticKind::NegativeImplsNotEnabled => {
+            Self::Kind::NegativeImplsNotEnabled => {
                 "Negative impls are not enabled in the current crate.".into()
             }
-            SemanticDiagnosticKind::NegativeImplsOnlyOnImpls => {
+            Self::Kind::NegativeImplsOnlyOnImpls => {
                 "Negative impls supported only in impl definitions.".into()
             }
-            SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
+            Self::Kind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
                 "`implicit_precedence` attribute is not allowed for extern functions.".into()
             }
-            SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute => {
+            Self::Kind::RedundantImplicitPrecedenceAttribute => {
                 "Redundant `implicit_precedence` attribute.".into()
             }
-            SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
+            Self::Kind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
             }
-            SemanticDiagnosticKind::UnsupportedFeatureAttrArguments => {
+            Self::Kind::UnsupportedFeatureAttrArguments => {
                 "`feature` attribute argument should be a single string.".into()
             }
-            SemanticDiagnosticKind::UnsupportedAllowAttrArguments => {
+            Self::Kind::UnsupportedAllowAttrArguments => {
                 // TODO(orizi): Add information about the allowed arguments.
                 "`allow` attribute argument not supported.".into()
             }
-            SemanticDiagnosticKind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
-            SemanticDiagnosticKind::UnknownStatementAttribute => {
-                "Unknown statement attribute.".into()
-            }
-            SemanticDiagnosticKind::InlineMacroNotFound(macro_name) => {
+            Self::Kind::UnsupportedPubArgument => "Unsupported `pub` argument.".into(),
+            Self::Kind::UnknownStatementAttribute => "Unknown statement attribute.".into(),
+            Self::Kind::InlineMacroNotFound(macro_name) => {
                 format!("Inline macro `{}` not found.", macro_name.long(db))
             }
-            SemanticDiagnosticKind::InlineMacroFailed(macro_name) => {
+            Self::Kind::InlineMacroFailed(macro_name) => {
                 format!("Inline macro `{}` failed.", macro_name.long(db))
             }
-            SemanticDiagnosticKind::InlineMacroNoMatchingRule(macro_name) => {
+            Self::Kind::InlineMacroNoMatchingRule(macro_name) => {
                 format!("No matching rule found in inline macro `{}`.", macro_name.long(db))
             }
-            SemanticDiagnosticKind::MacroCallToNotAMacro(name) => {
+            Self::Kind::MacroCallToNotAMacro(name) => {
                 format!("Call to `{}` which is not a macro.", name.long(db))
             }
-            SemanticDiagnosticKind::UnknownGenericParam(name) => {
+            Self::Kind::UnknownGenericParam(name) => {
                 format!("Unknown generic parameter `{}`.", name.long(db))
             }
-            SemanticDiagnosticKind::PositionalGenericAfterNamed => {
+            Self::Kind::PositionalGenericAfterNamed => {
                 "Positional generic parameters must come before named generic parameters.".into()
             }
-            SemanticDiagnosticKind::GenericArgDuplicate(name) => {
+            Self::Kind::GenericArgDuplicate(name) => {
                 format!("Generic argument `{}` is specified more than once.", name.long(db))
             }
-            SemanticDiagnosticKind::TooManyGenericArguments { expected, actual } => {
+            Self::Kind::TooManyGenericArguments { expected, actual } => {
                 format!("Expected {expected} generic arguments, found {actual}.")
             }
-            SemanticDiagnosticKind::GenericArgOutOfOrder(name) => {
+            Self::Kind::GenericArgOutOfOrder(name) => {
                 format!("Generic argument `{}` is out of order.", name.long(db))
             }
-            SemanticDiagnosticKind::ArgPassedToNegativeImpl => {
+            Self::Kind::ArgPassedToNegativeImpl => {
                 "Only `_` is valid as a negative impl argument.".into()
             }
-            SemanticDiagnosticKind::CouponForExternFunctionNotAllowed => {
+            Self::Kind::CouponForExternFunctionNotAllowed => {
                 "Coupon cannot be used with extern functions.".into()
             }
-            SemanticDiagnosticKind::CouponArgumentNoModifiers => {
+            Self::Kind::CouponArgumentNoModifiers => {
                 "The __coupon__ argument cannot have modifiers.".into()
             }
-            SemanticDiagnosticKind::CouponsDisabled => {
-                "Coupons are disabled in the current crate.\nYou can enable them by enabling the \
-                 coupons experimental feature in the crate config."
-                    .into()
-            }
-            SemanticDiagnosticKind::ReprPtrsDisabled => {
-                "Representation pointers are disabled in the current crate.\nYou can enable them \
-                 by enabling the `repr_ptrs` experimental feature in the crate config."
-                    .into()
-            }
-            SemanticDiagnosticKind::AssignmentToReprPtrVariable { .. } => {
+            Self::Kind::CouponsDisabled => "Coupons are disabled in the current crate.\nYou can \
+                                            enable them by enabling the coupons experimental \
+                                            feature in the crate config."
+                .into(),
+            Self::Kind::ReprPtrsDisabled => "Representation pointers are disabled in the current \
+                                             crate.\nYou can enable them by enabling the \
+                                             `repr_ptrs` experimental feature in the crate config."
+                .into(),
+            Self::Kind::AssignmentToReprPtrVariable { .. } => {
                 "Cannot assign to a variable with a taken pointer".into()
             }
-            SemanticDiagnosticKind::StructBaseStructExpressionNotLast => {
+            Self::Kind::StructBaseStructExpressionNotLast => {
                 "The base struct must always be the last argument.".into()
             }
-            SemanticDiagnosticKind::StructBaseStructExpressionNoEffect => {
-                "Base struct has no effect, all the fields in the struct have already been \
-                 specified."
-                    .into()
-            }
-            SemanticDiagnosticKind::FixedSizeArrayTypeNonSingleType => {
+            Self::Kind::StructBaseStructExpressionNoEffect => "Base struct has no effect, all the \
+                                                               fields in the struct have already \
+                                                               been specified."
+                .into(),
+            Self::Kind::FixedSizeArrayTypeNonSingleType => {
                 "Fixed size array type must have exactly one type.".into()
             }
-            SemanticDiagnosticKind::FixedSizeArrayTypeEmptySize => {
+            Self::Kind::FixedSizeArrayTypeEmptySize => {
                 "Fixed size array type must have a size clause.".into()
             }
-            SemanticDiagnosticKind::FixedSizeArrayNonNumericSize => {
+            Self::Kind::FixedSizeArrayNonNumericSize => {
                 "Fixed size array type must have a positive integer size.".into()
             }
-            SemanticDiagnosticKind::FixedSizeArrayNonSingleValue => {
+            Self::Kind::FixedSizeArrayNonSingleValue => {
                 "Fixed size array with defined size must have exactly one value.".into()
             }
-            SemanticDiagnosticKind::FixedSizeArraySizeTooBig => {
+            Self::Kind::FixedSizeArraySizeTooBig => {
                 "Fixed size array size must be smaller than 2^15.".into()
             }
-            SemanticDiagnosticKind::SelfNotSupportedInContext => {
+            Self::Kind::SelfNotSupportedInContext => {
                 "`Self` is not supported in this context.".into()
             }
-            SemanticDiagnosticKind::SelfMustBeFirst => {
-                "`Self` can only be the first segment of a path.".into()
-            }
-            SemanticDiagnosticKind::DollarNotSupportedInContext => {
+            Self::Kind::SelfMustBeFirst => "`Self` can only be the first segment of a path.".into(),
+            Self::Kind::DollarNotSupportedInContext => {
                 "`$` is not supported in this context.".into()
             }
-            SemanticDiagnosticKind::UnknownResolverModifier { modifier } => {
+            Self::Kind::UnknownResolverModifier { modifier } => {
                 format!("`${}` is not supported.", modifier.long(db))
             }
-            SemanticDiagnosticKind::EmptyPathAfterResolverModifier => {
-                "Expected path after modifier.".into()
-            }
-            SemanticDiagnosticKind::CannotCreateInstancesOfPhantomTypes => {
+            Self::Kind::EmptyPathAfterResolverModifier => "Expected path after modifier.".into(),
+            Self::Kind::CannotCreateInstancesOfPhantomTypes => {
                 "Can not create instances of phantom types.".into()
             }
-            SemanticDiagnosticKind::NonPhantomTypeContainingPhantomType => {
+            Self::Kind::NonPhantomTypeContainingPhantomType => {
                 "Non-phantom type containing phantom type.".into()
             }
-            SemanticDiagnosticKind::DerefCycle { deref_chain } => {
+            Self::Kind::DerefCycle { deref_chain } => {
                 format!("Deref impls cycle detected:\n{deref_chain}")
             }
-            SemanticDiagnosticKind::NoImplementationOfTrait {
-                ty,
-                trait_name,
-                inference_errors,
-            } => {
+            Self::Kind::NoImplementationOfTrait { ty, trait_name, inference_errors } => {
                 if inference_errors.is_empty() {
                     format!(
                         "Implementation of trait `{}` not found on type `{}`. Did you import the \
@@ -1032,7 +969,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     )
                 }
             }
-            SemanticDiagnosticKind::CallExpressionRequiresFunction { ty, inference_errors } => {
+            Self::Kind::CallExpressionRequiresFunction { ty, inference_errors } => {
                 if inference_errors.is_empty() {
                     format!("Call expression requires a function, found `{}`.", ty.format(db))
                 } else {
@@ -1043,58 +980,52 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                     )
                 }
             }
-            SemanticDiagnosticKind::CompilerTraitReImplementation { trait_id } => {
+            Self::Kind::CompilerTraitReImplementation { trait_id } => {
                 format!(
                     "Trait `{}` should not be implemented outside of the corelib.",
                     trait_id.full_path(db)
                 )
             }
-            SemanticDiagnosticKind::ClosureInGlobalScope => {
-                "Closures are not allowed in this context.".into()
-            }
-            SemanticDiagnosticKind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
-            SemanticDiagnosticKind::CallingShadowedFunction { shadowed_function_name } => {
+            Self::Kind::ClosureInGlobalScope => "Closures are not allowed in this context.".into(),
+            Self::Kind::MaybeMissingColonColon => "Are you missing a `::`?.".into(),
+            Self::Kind::CallingShadowedFunction { shadowed_function_name } => {
                 format!(
                     "Function `{}` is shadowed by a local variable.",
                     shadowed_function_name.long(db)
                 )
             }
-            SemanticDiagnosticKind::RefClosureArgument => {
+            Self::Kind::RefClosureArgument => {
                 "Arguments to closure functions cannot be references".into()
             }
-            SemanticDiagnosticKind::RefClosureParam => {
-                "Closure parameters cannot be references".into()
-            }
-            SemanticDiagnosticKind::MustBeNextToTypeOrTrait { trait_id } => {
+            Self::Kind::RefClosureParam => "Closure parameters cannot be references".into(),
+            Self::Kind::MustBeNextToTypeOrTrait { trait_id } => {
                 format!(
                     "'{}' implementation must be defined in the same module as either the type \
                      being dereferenced or the trait itself",
                     trait_id.name(db).long(db)
                 )
             }
-            SemanticDiagnosticKind::MutableCapturedVariable => {
+            Self::Kind::MutableCapturedVariable => {
                 "Capture of mutable variables in a closure is not supported".into()
             }
-            SemanticDiagnosticKind::NonTraitTypeConstrained { identifier, concrete_trait_id } => {
+            Self::Kind::NonTraitTypeConstrained { identifier, concrete_trait_id } => {
                 format!(
                     "associated type `{}` not found for `{}`",
                     identifier.long(db),
                     concrete_trait_id.full_path(db)
                 )
             }
-            SemanticDiagnosticKind::DuplicateTypeConstraint {
-                concrete_trait_type_id: trait_type_id,
-            } => {
+            Self::Kind::DuplicateTypeConstraint { concrete_trait_type_id: trait_type_id } => {
                 format!(
                     "the value of the associated type `{}` in trait `{}` is already specified",
                     trait_type_id.trait_type(db).name(db).long(db),
                     trait_type_id.concrete_trait(db).full_path(db)
                 )
             }
-            SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => {
+            Self::Kind::TypeConstraintsSyntaxNotEnabled => {
                 "Type constraints syntax is not enabled in the current crate.".into()
             }
-            SemanticDiagnosticKind::PatternMissingArgs(path) => {
+            Self::Kind::PatternMissingArgs(path) => {
                 format!(
                     "Pattern missing subpattern for the payload of variant. Consider using `{}(_)`",
                     path.segments(db)
@@ -1103,26 +1034,24 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                         .join("::")
                 )
             }
-            SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
+            Self::Kind::UndefinedMacroPlaceholder(name) => {
                 format!("Undefined macro placeholder: '{}'.", name.long(db))
             }
-            SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
+            Self::Kind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
-            SemanticDiagnosticKind::NonNeverLetElseType => concat!(
+            Self::Kind::NonNeverLetElseType => concat!(
                 "`else` clause of `let...else` must exit the scope. ",
                 "Consider using `return`, `continue`, ..."
             )
             .into(),
-            SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => {
+            Self::Kind::OnlyTypeOrConstParamsInNegImpl => {
                 "Negative impls may only use type or const generic parameters.".into()
             }
         }
     }
     fn location(&self, db: &'db dyn Database) -> SpanInFile<'db> {
-        if let SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) =
-            &self.kind
-        {
+        if let Self::Kind::MacroGeneratedCodeParserDiagnostic(parser_diagnostic) = &self.kind {
             return SpanInFile { file_id: parser_diagnostic.file_id, span: parser_diagnostic.span };
         };
 
@@ -1135,50 +1064,46 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
 
     fn severity(&self) -> Severity {
         match &self.kind {
-            SemanticDiagnosticKind::UnusedVariable
-            | SemanticDiagnosticKind::UnhandledMustUseType { .. }
-            | SemanticDiagnosticKind::UnhandledMustUseFunction
-            | SemanticDiagnosticKind::TraitInTraitMustBeExplicit
-            | SemanticDiagnosticKind::ImplInImplMustBeExplicit
-            | SemanticDiagnosticKind::TraitItemForbiddenInTheTrait
-            | SemanticDiagnosticKind::TraitItemForbiddenInItsImpl
-            | SemanticDiagnosticKind::ImplItemForbiddenInTheImpl
-            | SemanticDiagnosticKind::UnstableFeature { .. }
-            | SemanticDiagnosticKind::DeprecatedFeature { .. }
-            | SemanticDiagnosticKind::UnusedImport { .. }
-            | SemanticDiagnosticKind::CallingShadowedFunction { .. }
-            | SemanticDiagnosticKind::UnusedConstant
-            | SemanticDiagnosticKind::UnusedUse
-            | SemanticDiagnosticKind::PatternMissingArgs(_)
-            | SemanticDiagnosticKind::UnsupportedAllowAttrArguments => Severity::Warning,
-            SemanticDiagnosticKind::PluginDiagnostic(diag) => diag.severity,
+            Self::Kind::UnusedVariable
+            | Self::Kind::UnhandledMustUseType { .. }
+            | Self::Kind::UnhandledMustUseFunction
+            | Self::Kind::TraitInTraitMustBeExplicit
+            | Self::Kind::ImplInImplMustBeExplicit
+            | Self::Kind::TraitItemForbiddenInTheTrait
+            | Self::Kind::TraitItemForbiddenInItsImpl
+            | Self::Kind::ImplItemForbiddenInTheImpl
+            | Self::Kind::UnstableFeature { .. }
+            | Self::Kind::DeprecatedFeature { .. }
+            | Self::Kind::UnusedImport { .. }
+            | Self::Kind::CallingShadowedFunction { .. }
+            | Self::Kind::UnusedConstant
+            | Self::Kind::UnusedUse
+            | Self::Kind::PatternMissingArgs(_)
+            | Self::Kind::UnsupportedAllowAttrArguments => Severity::Warning,
+            Self::Kind::PluginDiagnostic(diag) => diag.severity,
             _ => Severity::Error,
         }
     }
 
     fn notes(&self, _db: &dyn Database) -> &[DiagnosticNote<'_>] {
         match &self.kind {
-            SemanticDiagnosticKind::InnerFailedConstantCalculation(_, notes) => notes,
-            SemanticDiagnosticKind::AssignmentToReprPtrVariable(notes) => notes,
+            Self::Kind::InnerFailedConstantCalculation(_, notes) => notes,
+            Self::Kind::AssignmentToReprPtrVariable(notes) => notes,
             _ => &[],
         }
     }
 
     fn error_code(&self) -> Option<ErrorCode> {
         Some(match &self.kind {
-            SemanticDiagnosticKind::UnusedVariable => error_code!(E0001),
-            SemanticDiagnosticKind::CannotCallMethod { .. } => error_code!(E0002),
-            SemanticDiagnosticKind::MissingMember(_) => error_code!(E0003),
-            SemanticDiagnosticKind::MissingItemsInImpl(_) => error_code!(E0004),
-            SemanticDiagnosticKind::ModuleFileNotFound(_) => error_code!(E0005),
-            SemanticDiagnosticKind::PathNotFound(_) => error_code!(E0006),
-            SemanticDiagnosticKind::NoSuchTypeMember { .. } => error_code!(E0007),
+            Self::Kind::UnusedVariable => error_code!(E0001),
+            Self::Kind::CannotCallMethod { .. } => error_code!(E0002),
+            Self::Kind::MissingMember(_) => error_code!(E0003),
+            Self::Kind::MissingItemsInImpl(_) => error_code!(E0004),
+            Self::Kind::ModuleFileNotFound(_) => error_code!(E0005),
+            Self::Kind::PathNotFound(_) => error_code!(E0006),
+            Self::Kind::NoSuchTypeMember { .. } => error_code!(E0007),
             _ => return None,
         })
-    }
-
-    fn is_same_kind(&self, other: &Self) -> bool {
-        other.kind == self.kind
     }
 }
 
