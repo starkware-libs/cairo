@@ -148,7 +148,7 @@ If(
 )
 
 //! > expected_diagnostics
-error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
+error[E2056]: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:2:1-6:1
   if a {
  _^
@@ -256,7 +256,7 @@ If(
 )
 
 //! > expected_diagnostics
-error: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
+error[E2056]: If blocks have incompatible types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:2:1-6:1
   if a {
  _^

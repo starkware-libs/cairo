@@ -494,7 +494,7 @@ FunctionCall(
 )
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::BitAnd::<core::box::Box::<@core::integer::u32>>.
+error[E2311]: Trait has no implementation in context: core::traits::BitAnd::<core::box::Box::<@core::integer::u32>>.
  --> lib.cairo:3:1
 a & &b
 ^^^^^^
@@ -675,7 +675,7 @@ FunctionCall(
 )
 
 //! > expected_diagnostics
-error: Cannot assign to a variable with a taken pointer
+error[E2169]: Cannot assign to a variable with a taken pointer
  --> lib.cairo:7:18
 modify_value(ref value)
                  ^^^^^

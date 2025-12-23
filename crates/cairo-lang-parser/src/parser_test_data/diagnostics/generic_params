@@ -7,42 +7,42 @@ get_diagnostics
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
 
 //! > expected_diagnostics
-error: Missing token ':'.
+error[E1001]: Missing token ':'.
  --> dummy_file.cairo:1:34
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                  ^
 
-error: Missing tokens. Expected a type expression.
+error[E1005]: Missing tokens. Expected a type expression.
  --> dummy_file.cairo:1:34
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                  ^
 
-error: Missing token ','.
+error[E1001]: Missing token ','.
  --> dummy_file.cairo:1:37
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                     ^
 
-error: Skipped tokens. Expected: generic param.
+error[E1000]: Skipped tokens. Expected: generic param.
  --> dummy_file.cairo:1:37
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                     ^
 
-error: Missing token ','.
+error[E1001]: Missing token ','.
  --> dummy_file.cairo:1:39
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                       ^
 
-error: Skipped tokens. Expected: generic param.
+error[E1000]: Skipped tokens. Expected: generic param.
  --> dummy_file.cairo:1:39
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                       ^
 
-error: Missing token ','.
+error[E1001]: Missing token ','.
  --> dummy_file.cairo:1:41
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                         ^
 
-error: Skipped tokens. Expected: generic param.
+error[E1000]: Skipped tokens. Expected: generic param.
  --> dummy_file.cairo:1:41
 fn f<+I[a : b], impl C: G<A, B>[c],T[a:b]>() {}
                                         ^

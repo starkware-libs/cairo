@@ -27,7 +27,7 @@ Block(
 )
 
 //! > expected_diagnostics
-warning: Unused use.
+warning[E2071]: Unused use.
  --> lib.cairo:5:10
 { use X::Y; }
          ^
@@ -63,7 +63,7 @@ Block(
 )
 
 //! > expected_diagnostics
-warning: Unused use.
+warning[E2071]: Unused use.
  --> lib.cairo:6:32
 fn test_func() { use X::{X, Y, Z};
                                ^
@@ -98,7 +98,7 @@ Block(
 )
 
 //! > expected_diagnostics
-error: Multiple definitions of constant "A".
+error[E2072]: Multiple definitions of constant "A".
  --> lib.cairo:5:7
 const A: u8 = 4;
       ^
@@ -614,7 +614,7 @@ Block(
 )
 
 //! > expected_diagnostics
-error: Enum "test::X::R" has no variant "C"
+error[E2060]: Enum "test::X::R" has no variant "C"
  --> lib.cairo:14:8
     R::C;
        ^
@@ -685,7 +685,7 @@ Block(
 )
 
 //! > expected_diagnostics
-error: Expected variable or constant, found type.
+error[E2005]: Expected variable or constant, found type.
  --> lib.cairo:12:14
     let _y = R;
              ^
@@ -1044,7 +1044,7 @@ Block(
 )
 
 //! > expected_diagnostics
-warning: Unused import: `test::a::b`
+warning[E2100]: Unused import: `test::a::b`
  --> lib.cairo:2:18
     use a::a::a::a as b;
                  ^^^^^^
@@ -1479,7 +1479,7 @@ Missing(
 )
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::integer::i64", found: "core::integer::u32".
+error[E2041]: Unexpected argument type. Expected: "core::integer::i64", found: "core::integer::u32".
  --> lib.cairo:2:13
 Some::<i64>(3_u32)
             ^^^^^

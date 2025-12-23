@@ -18,7 +18,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+error[E2311]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:6:19
             break 0;
                   ^
@@ -45,7 +45,7 @@ fn foo(x: Option<()>) {
 foo
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "()", found: "core::bool".
+error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:23-9:1
   fn foo(x: Option<()>) {
  _______________________^
@@ -69,7 +69,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: `continue` only allowed inside a `loop`.
+error[E2145]: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
     continue;
     ^^^^^^^^^
@@ -90,7 +90,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: `break` only allowed inside a `loop`.
+error[E2146]: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break 5;
     ^^^^^^^^
@@ -130,7 +130,7 @@ fn foo() -> bool {
 foo
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::bool", found: "()".
+error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:2:11
     return;
           ^
@@ -170,7 +170,7 @@ fn foo() -> bool {
 foo
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::bool", found: "()".
+error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:3:15
         return;
               ^
@@ -193,7 +193,7 @@ fn foo() -> bool {
 foo
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::bool", found: "()".
+error[E2042]: Unexpected return type. Expected: "core::bool", found: "()".
  --> lib.cairo:1:13
 fn foo() -> bool {
             ^^^^
@@ -233,7 +233,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: `break` only allowed inside a `loop`.
+error[E2146]: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break;
     ^^^^^^
@@ -285,7 +285,7 @@ foo
 use option::Option;
 
 //! > expected_diagnostics
-error: Tail expression not allowed in a `loop` block.
+error[E2144]: Tail expression not allowed in a `loop` block.
  --> lib.cairo:4:9
         1
         ^
@@ -358,7 +358,7 @@ fn foo(a: u32) -> Option<bool> {
 foo
 
 //! > expected_diagnostics
-error: Loop has incompatible return types: "core::never" and "()"
+error[E2056]: Loop has incompatible return types: "core::never" and "()"
  --> lib.cairo:6:14
         break;
              ^

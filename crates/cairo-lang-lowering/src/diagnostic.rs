@@ -1,6 +1,6 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, DiagnosticsBuilder, Severity,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, DiagnosticsBuilder, Severity, error_code,
 };
 use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_semantic as semantic;
@@ -103,6 +103,25 @@ impl<'db> DiagnosticEntry<'db> for LoweringDiagnostic<'db> {
             return self.location.stable_location.span_in_file_until(db, *block_end_ptr);
         }
         self.location.stable_location.span_in_file(db)
+    }
+
+    fn error_code(&self) -> Option<cairo_lang_diagnostics::ErrorCode> {
+        Some(match &self.kind {
+            LoweringDiagnosticKind::Unreachable { .. } => error_code!(E3000),
+            LoweringDiagnosticKind::VariableMoved { .. } => error_code!(E3001),
+            LoweringDiagnosticKind::VariableNotDropped { .. } => error_code!(E3002),
+            LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => error_code!(E3003),
+            LoweringDiagnosticKind::MatchError(_) => error_code!(E3004),
+            LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => error_code!(E3005),
+            LoweringDiagnosticKind::MemberPathLoop => error_code!(E3006),
+            LoweringDiagnosticKind::UnexpectedError => error_code!(E3007),
+            LoweringDiagnosticKind::NoPanicFunctionCycle => error_code!(E3008),
+            LoweringDiagnosticKind::LiteralError(_) => error_code!(E3009),
+            LoweringDiagnosticKind::UnsupportedPattern => error_code!(E3010),
+            LoweringDiagnosticKind::Unsupported => error_code!(E3011),
+            LoweringDiagnosticKind::FixedSizeArrayNonCopyableType => error_code!(E3012),
+            LoweringDiagnosticKind::EmptyRepeatedElementFixedSizeArray => error_code!(E3013),
+        })
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {

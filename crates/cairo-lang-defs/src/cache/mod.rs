@@ -2021,6 +2021,7 @@ impl PluginDiagnosticCached {
                 SeverityCached::Warning => Severity::Warning,
             },
             inner_span: self.inner_span,
+            error_code: None,
         }
     }
 }

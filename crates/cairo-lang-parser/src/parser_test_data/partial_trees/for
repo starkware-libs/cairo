@@ -62,7 +62,7 @@ ExprFor
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: 'in'.
+error[E1000]: Skipped tokens. Expected: 'in'.
  --> dummy_file.cairo:3:15
     for index at array {
               ^^

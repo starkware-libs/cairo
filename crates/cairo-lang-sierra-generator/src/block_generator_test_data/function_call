@@ -129,13 +129,9 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-extern fn felt252_add(a: felt252, b: felt252) -> felt252;
+extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
 
 //! > semantic_diagnostics
-error: An extern function must be marked as nopanic.
- --> lib.cairo:1:1
-extern fn felt252_add(a: felt252, b: felt252) -> felt252;
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > lowering_diagnostics
 
@@ -145,10 +141,8 @@ extern fn felt252_add(a: felt252, b: felt252) -> felt252;
 const_as_immediate<Const<felt252, 3>>() -> ([0])
 const_as_immediate<Const<felt252, 6>>() -> ([1])
 felt252_add([0], [1]) -> ([2])
-struct_construct<Tuple<felt252>>([2]) -> ([3])
-enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
-PushValues([4]: core::panics::PanicResult::<(core::felt252,)>) -> ([4])
-return([4])
+PushValues([2]: felt252) -> ([2])
+return([2])
 
 //! > lowering_flat
 Parameters:
@@ -157,7 +151,5 @@ Statements:
   (v0: core::felt252) <- 3
   (v1: core::felt252) <- 6
   (v2: core::felt252) <- test::felt252_add(v0, v1)
-  (v3: (core::felt252,)) <- struct_construct(v2)
-  (v4: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v3)
 End:
-  Return(v4)
+  Return(v2)

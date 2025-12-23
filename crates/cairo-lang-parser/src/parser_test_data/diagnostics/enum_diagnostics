@@ -9,22 +9,22 @@ enum MyEnum {
 }
 
 //! > expected_diagnostics
-error: Missing token ','.
+error[E1001]: Missing token ','.
  --> dummy_file.cairo:2:6
     A(felt252),
      ^
 
-error: Skipped tokens. Expected: variant.
+error[E1000]: Skipped tokens. Expected: variant.
  --> dummy_file.cairo:2:6
     A(felt252),
      ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:2:14
     A(felt252),
              ^
 
-error: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
+error[E1000]: Skipped tokens. Expected: Const/Enum/ExternFunction/ExternType/Function/Impl/InlineMacro/Module/Struct/Trait/TypeAlias/Use or an attribute.
  --> dummy_file.cairo:2:14-3:1
       A(felt252),
  ______________^

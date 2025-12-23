@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::Severity;
+use cairo_lang_diagnostics::{ErrorCode, Severity};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CodeMapping, SmolStrId};
@@ -111,6 +111,8 @@ pub struct PluginDiagnostic<'db> {
     /// is not segmented into each argument.
     /// The tuple is (offset, width).
     pub inner_span: Option<(TextWidth, TextWidth)>,
+    /// An optional error code associated with the diagnostic.
+    pub error_code: Option<ErrorCode>,
 }
 impl<'db> PluginDiagnostic<'db> {
     pub fn error(
@@ -122,6 +124,7 @@ impl<'db> PluginDiagnostic<'db> {
             message,
             severity: Severity::Error,
             inner_span: None,
+            error_code: None,
         }
     }
 
@@ -140,6 +143,7 @@ impl<'db> PluginDiagnostic<'db> {
             message,
             severity: Severity::Error,
             inner_span: Some((offset, width)),
+            error_code: None,
         }
     }
 
@@ -152,7 +156,13 @@ impl<'db> PluginDiagnostic<'db> {
             message,
             severity: Severity::Warning,
             inner_span: None,
+            error_code: None,
         }
+    }
+
+    /// Updates the diagnostic with an error code.
+    pub fn with_error_code(self, error_code: ErrorCode) -> PluginDiagnostic<'db> {
+        PluginDiagnostic { error_code: Some(error_code), ..self }
     }
 }
 

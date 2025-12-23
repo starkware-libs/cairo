@@ -17,7 +17,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Can only break with a value inside a `loop`.
+error[E2147]: Can only break with a value inside a `loop`.
  --> lib.cairo:5:9
         break 5;
         ^^^^^^^^
@@ -46,7 +46,7 @@ struct A {
 }
 
 //! > expected_diagnostics
-error: Not a variant. Use the full name Enum::Variant.
+error[E2009]: Not a variant. Use the full name Enum::Variant.
  --> lib.cairo:6:9
     for A(x) in arr {
         ^
@@ -72,7 +72,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Redefinition of variable name "_a" in pattern.
+error[E2049]: Redefinition of variable name "_a" in pattern.
  --> lib.cairo:2:14
     for (_a, _a) in array![(1, 2)] {}
              ^^

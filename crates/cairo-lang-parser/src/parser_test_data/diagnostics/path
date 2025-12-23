@@ -9,7 +9,7 @@ fn foo () {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a path segment.
+error[E1003]: Missing tokens. Expected a path segment.
  --> dummy_file.cairo:2:16
     let x = a::;
                ^
@@ -27,17 +27,17 @@ fn foo () {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a path segment.
+error[E1003]: Missing tokens. Expected a path segment.
  --> dummy_file.cairo:2:16
     let x = a::::c;
                ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:16
     let x = a::::c;
                ^
 
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:16
     let x = a::::c;
                ^^

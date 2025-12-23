@@ -17,12 +17,12 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Condition has type "core::felt252", expected bool.
+error[E2055]: Condition has type "core::felt252", expected bool.
  --> lib.cairo:3:8
     if x {
        ^
 
-error: Unexpected return type. Expected: "()", found: "core::bool".
+error[E2042]: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:10-8:1
   fn foo() {
  __________^
@@ -50,7 +50,7 @@ fn foo() -> bool {
 foo
 
 //! > expected_diagnostics
-error: Condition has type "core::integer::u64", expected bool.
+error[E2055]: Condition has type "core::integer::u64", expected bool.
  --> lib.cairo:3:8
     if x {
        ^
@@ -81,7 +81,7 @@ enum MyEnum {
 }
 
 //! > expected_diagnostics
-error: Wrong enum in pattern. Expected: "core::option::Option". Got: "test::MyEnum".
+error[E2109]: Wrong enum in pattern. Expected: "core::option::Option". Got: "test::MyEnum".
  --> lib.cairo:6:12
     if let MyEnum::A(y) = x {
            ^^^^^^^^^^^^
@@ -112,7 +112,7 @@ fn foo() -> bool {
 foo
 
 //! > expected_diagnostics
-error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> lib.cairo:3:24
     if let Some(y) = x || true {
                        ^
@@ -138,7 +138,7 @@ fn foo() -> bool {
 foo
 
 //! > expected_diagnostics
-warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
  --> lib.cairo:3:12
     if let Some = x {
            ^^^^
