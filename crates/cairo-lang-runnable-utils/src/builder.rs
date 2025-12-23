@@ -314,7 +314,6 @@ pub fn create_entry_code_from_params(
 
     if helper.has_post_calculation_loop {
         helper.validate_segment_arena();
-        helper.update_builtins_as_locals();
     }
 
     if !helper.config.testing {
@@ -545,12 +544,15 @@ impl EntryCodeHelper {
         assert_eq!(self.input_builtin_vars.len(), self.output_builtin_vars.len());
         if self.has_post_calculation_loop {
             // Storing local data on FP - as we have a loop now.
-            for (cell, local_expr) in zip_eq(
-                self.output_builtin_vars.iter().filter_map(non_segment_arena_var).copied(),
+            for (output_cell, local_expr) in zip_eq(
+                self.output_builtin_vars.iter_mut().filter_map(non_segment_arena_var),
                 &self.local_exprs,
             ) {
                 let local_cell = self.ctx.add_var(local_expr.clone());
-                casm_build_extend!(self.ctx, assert local_cell = cell;);
+
+                let current_cell = *output_cell;
+                casm_build_extend!(self.ctx, assert local_cell = current_cell;);
+                *output_cell = local_cell;
             }
         }
     }
@@ -590,16 +592,6 @@ impl EntryCodeHelper {
             jump LOOP_START;
             DONE_VALIDATION:
         };
-    }
-
-    /// Updates the builtins as local variables for post-calculation loop.
-    fn update_builtins_as_locals(&mut self) {
-        for (var, local_expr) in zip_eq(
-            self.output_builtin_vars.iter_mut().filter_map(non_segment_arena_var),
-            &self.local_exprs,
-        ) {
-            *var = self.ctx.add_var(local_expr.clone());
-        }
     }
 
     /// Processes the output builtins for the end of a run.
