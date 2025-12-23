@@ -31,19 +31,20 @@ pub fn function_with_body_direct_function_with_body_callees<'db>(
     function_id: FunctionWithBodyId<'db>,
     dependency_type: DependencyType,
 ) -> Maybe<OrderedHashSet<FunctionWithBodyId<'db>>> {
-    let mut result = OrderedHashSet::default();
-    for function_id in db.function_with_body_direct_callees(function_id, dependency_type)? {
-        if let Some(body) = function_id.body(db)? {
-            let id = match body.generic_or_specialized(db) {
+    db.function_with_body_direct_callees(function_id, dependency_type)?
+        .into_iter()
+        .map(|function_id| {
+            function_id.body(db).transpose()?.map(|id| match id.generic_or_specialized(db) {
                 GenericOrSpecialized::Generic(id) => id,
                 GenericOrSpecialized::Specialized(_) => {
                     unreachable!("Specialization of functions only occurs post concretization.")
                 }
-            };
-            result.insert(id);
-        }
-    }
-    Ok(result)
+            })
+        })
+        .collect::<Maybe<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect()
 }
 
 /// Query implementation of [LoweringGroup::final_contains_call_cycle].
