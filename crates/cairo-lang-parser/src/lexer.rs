@@ -314,10 +314,7 @@ impl Lexer {
         };
 
         let span = self.consume_text_span();
-        let text = {
-            let text_slice = span.take(&self.text);
-            SmolStrId::from(db, text_slice)
-        };
+        let text = SmolStrId::from(db, span.take(&self.text));
         let trailing_trivia = self.match_trivia(db, false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
