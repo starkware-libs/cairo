@@ -12,7 +12,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?1)".
+error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "(?0, ?1)".
  --> lib.cairo:2:22
     let _: felt252 = (3, 3);
                      ^^^^^^
@@ -34,12 +34,12 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
+error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
  --> lib.cairo:2:22
     let _: felt252 = @3_felt252;
                      ^^^^^^^^^^
 
-error: Unexpected argument type. Expected: "@core::integer::u32", found: "@core::felt252".
+error[E2041]: Unexpected argument type. Expected: "@core::integer::u32", found: "@core::felt252".
  --> lib.cairo:3:19
     let _: @u32 = @3_felt252;
                   ^^^^^^^^^^
@@ -60,7 +60,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Type `core::integer::u32` cannot be dereferenced
+error[E2135]: Type `core::integer::u32` cannot be dereferenced
  --> lib.cairo:2:22
     let _: felt252 = *3_u32;
                      ^
@@ -81,7 +81,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "[core::felt252; 2]", found: "[core::integer::u16; 2]".
+error[E2041]: Unexpected argument type. Expected: "[core::felt252; 2]", found: "[core::integer::u16; 2]".
  --> lib.cairo:2:27
     let _: [felt252; 2] = [3_u16; 2];
                           ^^^^^^^^^^
@@ -102,7 +102,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
+error[E2041]: Unexpected argument type. Expected: "core::integer::u16", found: "core::integer::u32".
  --> lib.cairo:2:35
     let _: [felt252; 2] = [3_u16, 3_u32];
                                   ^^^^^
@@ -128,7 +128,7 @@ struct MyGenericType<T> {
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
+error[E2041]: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
  --> lib.cairo:5:37
     let _: MyGenericType<felt252> = MyGenericType { x: 3_u32 };
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -154,7 +154,7 @@ struct MyGenericType<T> {
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
+error[E2041]: Unexpected argument type. Expected: "test::MyGenericType::<core::felt252>", found: "test::MyGenericType::<core::integer::u32>".
  --> lib.cairo:5:69
     let _: MyGenericType<felt252> = MyGenericType { x: 3_felt252, ..other };
                                                                     ^^^^^
@@ -175,7 +175,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::option::Option::<core::felt252>", found: "core::option::Option::<core::integer::u16>".
+error[E2041]: Unexpected argument type. Expected: "core::option::Option::<core::felt252>", found: "core::option::Option::<core::integer::u16>".
  --> lib.cairo:2:30
     let _: Option<felt252> = Some(3_u16);
                              ^^^^^^^^^^^
@@ -209,7 +209,7 @@ impl ImplIssue of Issue<felt252> {
 }
 
 //! > expected_diagnostics
-error: `test::ImplIssue::Index` type mismatch: `@core::felt252` and `core::felt252`.
+error[E2308]: `test::ImplIssue::Index` type mismatch: `@core::felt252` and `core::felt252`.
  --> lib.cairo:13:15
     1_felt252.issue(@2_felt252);
               ^^^^^
@@ -231,12 +231,12 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::box::Box::<core::integer::u32>", found: "core::box::Box::<@core::integer::u32>".
+error[E2041]: Unexpected argument type. Expected: "core::box::Box::<core::integer::u32>", found: "core::box::Box::<@core::integer::u32>".
  --> lib.cairo:2:23
     let _: Box<u32> = &3_u32;
                       ^^^^^^
 
-error: Unexpected argument type. Expected: "core::box::Box::<@core::felt252>", found: "core::box::Box::<@core::integer::u32>".
+error[E2041]: Unexpected argument type. Expected: "core::box::Box::<@core::felt252>", found: "core::box::Box::<@core::integer::u32>".
  --> lib.cairo:3:28
     let _: Box<@felt252> = &3_u32;
                            ^^^^^^
@@ -263,7 +263,7 @@ fn foo(mut param: u32) {
 foo
 
 //! > expected_diagnostics
-error: Cannot assign to a variable with a taken pointer
+error[E2169]: Cannot assign to a variable with a taken pointer
  --> lib.cairo:4:5
     x = 5;
     ^^^^^
@@ -272,7 +272,7 @@ note: variable pointer taken here:
     let _r = &x;
              ^^
 
-error: Cannot assign to a variable with a taken pointer
+error[E2169]: Cannot assign to a variable with a taken pointer
  --> lib.cairo:8:5
     y = 10;
     ^^^^^^

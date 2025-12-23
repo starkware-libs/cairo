@@ -98,7 +98,7 @@ mod a {
 }
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'use' items.
+error[E2025]: Cycle detected while resolving 'use' items.
  --> lib.cairo:2:19
     use super::a::b;
                   ^
@@ -150,7 +150,7 @@ mod a {
 use a::b::self;
 
 //! > expected_diagnostics
-error: `self` in `use` items is not allowed not in multi.
+error[E2088]: `self` in `use` items is not allowed not in multi.
  --> lib.cairo:7:11
 use a::b::self;
           ^^^^
@@ -172,7 +172,7 @@ foo
 use {self, u8};
 
 //! > expected_diagnostics
-error: `self` in `use` items is not allowed for empty path.
+error[E2089]: `self` in `use` items is not allowed for empty path.
  --> lib.cairo:1:6
 use {self, u8};
      ^^^^
@@ -265,7 +265,7 @@ mod b {
 }
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'use' items.
+error[E2025]: Cycle detected while resolving 'use' items.
  --> lib.cairo:5:23
     pub use super::a::a;
                       ^

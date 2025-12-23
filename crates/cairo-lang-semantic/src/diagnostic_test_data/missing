@@ -84,7 +84,7 @@ mod a {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a path segment.
+error[E1003]: Missing tokens. Expected a path segment.
  --> lib.cairo:4:17
     let _x = a::;
                 ^

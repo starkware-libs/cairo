@@ -1,4 +1,4 @@
-use cairo_lang_diagnostics::DiagnosticEntry;
+use cairo_lang_diagnostics::{DiagnosticEntry, error_code};
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -234,5 +234,41 @@ Did you mean to write `{identifier}!{left}...{right}'?",
 
     fn location(&self, _db: &'a dyn Database) -> SpanInFile<'a> {
         SpanInFile { file_id: self.file_id, span: self.span }
+    }
+
+    fn error_code(&self) -> Option<cairo_lang_diagnostics::ErrorCode> {
+        Some(match &self.kind {
+            Self::Kind::SkippedElement { .. } => error_code!(E1000),
+            Self::Kind::MissingToken(_) => error_code!(E1001),
+            Self::Kind::MissingExpression => error_code!(E1002),
+            Self::Kind::MissingPathSegment => error_code!(E1003),
+            Self::Kind::MissingTypeClause => error_code!(E1004),
+            Self::Kind::MissingTypeExpression => error_code!(E1005),
+            Self::Kind::MissingWrappedArgList => error_code!(E1006),
+            Self::Kind::MissingPattern => error_code!(E1007),
+            Self::Kind::MissingMacroRuleParamKind => error_code!(E1008),
+            Self::Kind::InvalidParamKindInMacroExpansion => error_code!(E1009),
+            Self::Kind::InvalidParamKindInMacroRule => error_code!(E1010),
+            Self::Kind::ExpectedInToken => error_code!(E1011),
+            Self::Kind::ItemInlineMacroWithoutBang { .. } => error_code!(E1012),
+            Self::Kind::ReservedIdentifier { .. } => error_code!(E1013),
+            Self::Kind::UnderscoreNotAllowedAsIdentifier => error_code!(E1014),
+            Self::Kind::MissingLiteralSuffix => error_code!(E1015),
+            Self::Kind::InvalidNumericLiteralValue => error_code!(E1016),
+            Self::Kind::IllegalStringEscaping => error_code!(E1017),
+            Self::Kind::ShortStringMustBeAscii => error_code!(E1018),
+            Self::Kind::StringMustBeAscii => error_code!(E1019),
+            Self::Kind::UnterminatedShortString => error_code!(E1020),
+            Self::Kind::UnterminatedString => error_code!(E1021),
+            Self::Kind::VisibilityWithoutItem => error_code!(E1022),
+            Self::Kind::AttributesWithoutItem => error_code!(E1023),
+            Self::Kind::AttributesWithoutTraitItem => error_code!(E1024),
+            Self::Kind::AttributesWithoutImplItem => error_code!(E1025),
+            Self::Kind::AttributesWithoutStatement => error_code!(E1026),
+            Self::Kind::DisallowedTrailingSeparatorOr => error_code!(E1027),
+            Self::Kind::ConsecutiveMathOperators { .. } => error_code!(E1028),
+            Self::Kind::ExpectedSemicolonOrBody => error_code!(E1029),
+            Self::Kind::LowPrecedenceOperatorInIfLet { .. } => error_code!(E1030),
+        })
     }
 }

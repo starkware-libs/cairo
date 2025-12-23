@@ -20,12 +20,12 @@ fn foo(a: u32, mut b: Array<u32>, mut c: Felt252Dict<felt252>) {
 foo
 
 //! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
+error[E2188]: Capture of mutable variables in a closure is not supported
  --> lib.cairo:6:17
         let _ = b.append(d);
                 ^
 
-error: Capture of mutable variables in a closure is not supported
+error[E2188]: Capture of mutable variables in a closure is not supported
  --> lib.cairo:9:17
         let _ = c.insert(d, d);
                 ^
@@ -95,7 +95,7 @@ fn foo(mut a: Array<u32>) {
 foo
 
 //! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
+error[E2188]: Capture of mutable variables in a closure is not supported
  --> lib.cairo:3:17
         let _ = a.append(b);
                 ^
@@ -135,7 +135,7 @@ extern fn use_s(s: S) nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error[E3001]: Variable was previously moved.
  --> lib.cairo:13:13
     let _ = a.a;
             ^^^
@@ -177,7 +177,7 @@ foo
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
+error[E2188]: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:17
         let _ = a.append(b);
                 ^
@@ -248,7 +248,7 @@ foo
 extern fn use_f<T>(f: T) nopanic;
 
 //! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
+error[E2188]: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:9
         a = array![];
         ^
@@ -361,7 +361,7 @@ fn foo() -> felt252 {
 foo
 
 //! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
+error[E2188]: Capture of mutable variables in a closure is not supported
  --> lib.cairo:4:9
         x * (a + 3)
         ^
@@ -395,7 +395,7 @@ fn foo() {
 foo
 
 //! > semantic_diagnostics
-error: Capture of mutable variables in a closure is not supported
+error[E2188]: Capture of mutable variables in a closure is not supported
  --> lib.cairo:7:9
         x * (a + 3)
         ^

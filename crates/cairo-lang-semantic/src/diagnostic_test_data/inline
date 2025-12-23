@@ -17,32 +17,32 @@ fn foo() {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Redundant `inline` attribute.
+error[E2141]: Redundant `inline` attribute.
  --> lib.cairo:2:3
 #[inline(never)]
   ^^^^^^
 
-error: Unsupported `inline` arguments.
+error[E2140]: Unsupported `inline` arguments.
  --> lib.cairo:3:9
 #[inline(always, never)]
         ^^^^^^^^^^^^^^^
 
-error: Redundant `inline` attribute.
+error[E2141]: Redundant `inline` attribute.
  --> lib.cairo:3:3
 #[inline(always, never)]
   ^^^^^^
 
-error: Unsupported `inline` arguments.
+error[E2140]: Unsupported `inline` arguments.
  --> lib.cairo:4:9
 #[inline(1 + 1)]
         ^^^^^^^
 
-error: Redundant `inline` attribute.
+error[E2141]: Redundant `inline` attribute.
  --> lib.cairo:4:3
 #[inline(1 + 1)]
   ^^^^^^
 
-error: Redundant `inline` attribute.
+error[E2141]: Redundant `inline` attribute.
  --> lib.cairo:5:3
 #[inline]
   ^^^^^^
@@ -66,7 +66,7 @@ trait MyTrait;
 //! > function_body
 
 //! > expected_diagnostics
-error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
+error[E2143]: `#[inline(always)]` is not allowed for functions with impl generic parameters.
  --> lib.cairo:1:1
 #[inline(always)]
 ^^^^^^^^^^^^^^^^^
@@ -94,7 +94,7 @@ trait MyTrait2;
 //! > function_body
 
 //! > expected_diagnostics
-error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
+error[E2143]: `#[inline(always)]` is not allowed for functions with impl generic parameters.
  --> lib.cairo:5:5
     #[inline(always)]
     ^^^^^^^^^^^^^^^^^
@@ -119,12 +119,12 @@ extern fn bar() nopanic;
 //! > function_body
 
 //! > expected_diagnostics
-error: `inline` attribute is not allowed for extern functions.
+error[E2142]: `inline` attribute is not allowed for extern functions.
  --> lib.cairo:1:1
 #[inline(always)]
 ^^^^^^^^^^^^^^^^^
 
-error: `inline` attribute is not allowed for extern functions.
+error[E2142]: `inline` attribute is not allowed for extern functions.
  --> lib.cairo:4:1
 #[inline(never)]
 ^^^^^^^^^^^^^^^^

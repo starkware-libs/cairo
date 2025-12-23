@@ -28,37 +28,37 @@ enum MyEnum {
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
+error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
  --> lib.cairo:8:19
     bar(0, 1, 2, :d, e: 0);
                   ^
 
-error: Unexpected argument name. Expected: 'a', found 'x'.
+error[E2124]: Unexpected argument name. Expected: 'a', found 'x'.
  --> lib.cairo:11:9
     bar(x: 0, 1, y: 2, 3, false);
         ^
 
-error: Unnamed arguments cannot follow named arguments.
+error[E2123]: Unnamed arguments cannot follow named arguments.
  --> lib.cairo:11:15
     bar(x: 0, 1, y: 2, 3, false);
               ^
 
-error: Unexpected argument name. Expected: 'c', found 'y'.
+error[E2124]: Unexpected argument name. Expected: 'c', found 'y'.
  --> lib.cairo:11:18
     bar(x: 0, 1, y: 2, 3, false);
                  ^
 
-error: Named arguments are not supported in this context.
+error[E2121]: Named arguments are not supported in this context.
  --> lib.cairo:12:15
     MyEnum::A(x: 0);
               ^
 
-error: Wrong number of arguments. Expected 5, found: 4
+error[E2030]: Wrong number of arguments. Expected 5, found: 4
  --> lib.cairo:14:5
     bar(0, 1, 2, 3);
     ^^^^^^^^^^^^^^^
 
-error: Wrong number of arguments. Expected 5, found: 6
+error[E2030]: Wrong number of arguments. Expected 5, found: 6
  --> lib.cairo:16:5
     bar(0, 1, 2, 3, 4, 5);
     ^^^^^^^^^^^^^^^^^^^^^
@@ -89,42 +89,42 @@ foo
 fn bar(a: felt252, ref b: felt252) {}
 
 //! > expected_diagnostics
-error: ref argument must be passed with a preceding 'ref'.
+error[E2081]: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:5:12
     bar(a, a);
            ^
 
-error: ref argument must be a mutable variable.
+error[E2080]: ref argument must be a mutable variable.
  --> lib.cairo:6:12
     bar(b, b);
            ^
 
-error: ref argument must be passed with a preceding 'ref'.
+error[E2081]: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:6:12
     bar(b, b);
            ^
 
-error: ref argument must be passed with a preceding 'ref'.
+error[E2081]: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:7:12
     bar(c, c);
            ^
 
-error: Argument to immutable parameter cannot have modifiers.
+error[E2082]: Argument to immutable parameter cannot have modifiers.
  --> lib.cairo:8:13
     bar(ref a, ref a);
             ^
 
-error: Argument to immutable parameter cannot have modifiers.
+error[E2082]: Argument to immutable parameter cannot have modifiers.
  --> lib.cairo:9:13
     bar(ref b, ref b);
             ^
 
-error: ref argument must be a mutable variable.
+error[E2080]: ref argument must be a mutable variable.
  --> lib.cairo:9:20
     bar(ref b, ref b);
                    ^
 
-error: Argument to immutable parameter cannot have modifiers.
+error[E2082]: Argument to immutable parameter cannot have modifiers.
  --> lib.cairo:10:13
     bar(ref c, ref c);
             ^
@@ -177,7 +177,7 @@ Candidate `test::MyTrait::baz` inference failed with: Trait has no implementatio
     d.baz();
       ^^^
 
-error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>.
+error[E2311]: Trait has no implementation in context: core::traits::Add::<test::MyStruct>.
  --> lib.cairo:13:5
     d + 0;
     ^^^^^
@@ -198,7 +198,7 @@ fn foo() -> () {
 foo
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "()", found: "core::integer::u8".
+error[E2042]: Unexpected return type. Expected: "()", found: "core::integer::u8".
  --> lib.cairo:1:13
 fn foo() -> () {
             ^^
@@ -217,7 +217,7 @@ fn foo() -> u8 {}
 foo
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::integer::u8", found: "()".
+error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "()".
  --> lib.cairo:1:13
 fn foo() -> u8 {}
             ^^
@@ -243,7 +243,7 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
  --> lib.cairo:2:17
     fn bar() -> u8 {
                 ^^
@@ -273,7 +273,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
  --> lib.cairo:6:17
     fn bar() -> u8 {
                 ^^
@@ -296,7 +296,7 @@ fn foo() -> () {
 foo
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
+error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "core::integer::u16".
  --> lib.cairo:2:11
     || -> u8 {
           ^^

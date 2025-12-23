@@ -381,27 +381,27 @@ macro some_macro {
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: '{'.
+error[E1000]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:11
     () => (bad prefix {
           ^^^^^^^^^^^
 
-error: Skipped tokens. Expected: '{'.
+error[E1000]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:5:11
     () => no-rule
           ^^^^^^^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> dummy_file.cairo:5:18
     () => no-rule
                  ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:5:18
     () => no-rule
                  ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:5:18
     () => no-rule
                  ^

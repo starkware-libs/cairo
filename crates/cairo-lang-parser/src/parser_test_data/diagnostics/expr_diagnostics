@@ -9,7 +9,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:14
     {4} - 1 + / 2 + {5}
              ^
@@ -50,12 +50,12 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:20
     let x = true && let y = 1;
                    ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:20
     let x = true && let y = 1;
                    ^

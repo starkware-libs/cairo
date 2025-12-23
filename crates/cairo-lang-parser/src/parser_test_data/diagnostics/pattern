@@ -11,42 +11,42 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token '='.
+error[E1001]: Missing token '='.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^
 
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:3:14
     let A { x
              ^
 
-error: Missing token '='.
+error[E1001]: Missing token '='.
  --> dummy_file.cairo:3:14
     let A { x
              ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:3:14
     let A { x
              ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:3:14
     let A { x
              ^

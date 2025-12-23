@@ -27,7 +27,7 @@ impl BDeref of core::ops::Deref<B> {
 //! > function_body
 
 //! > expected_diagnostics
-error: Deref impls cycle detected:
+error[E2180]: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::A>
  --> lib.cairo:11:1-16:1
   impl BDeref of core::ops::Deref<B> {
@@ -36,7 +36,7 @@ core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::A>
 | }
 |_^
 
-error: Deref impls cycle detected:
+error[E2180]: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
  --> lib.cairo:4:1-9:1
   impl ADeref of core::ops::Deref<A> {
@@ -84,7 +84,7 @@ impl CDeref of core::ops::Deref<C> {
 //! > function_body
 
 //! > expected_diagnostics
-error: Deref impls cycle detected:
+error[E2180]: Deref impls cycle detected:
 core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A>
  --> lib.cairo:12:1-17:1
   impl BDeref of core::ops::Deref<B> {
@@ -93,7 +93,7 @@ core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C> -> core
 | }
 |_^
 
-error: Deref impls cycle detected:
+error[E2180]: Deref impls cycle detected:
 core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B>
  --> lib.cairo:19:1-24:1
   impl CDeref of core::ops::Deref<C> {
@@ -102,7 +102,7 @@ core::ops::deref::Deref::<test::C> -> core::ops::deref::Deref::<test::A> -> core
 | }
 |_^
 
-error: Deref impls cycle detected:
+error[E2180]: Deref impls cycle detected:
 core::ops::deref::Deref::<test::A> -> core::ops::deref::Deref::<test::B> -> core::ops::deref::Deref::<test::C>
  --> lib.cairo:5:1-10:1
   impl ADeref of core::ops::Deref<A> {
@@ -134,7 +134,7 @@ impl U32Deref of core::ops::Deref<u32> {
 //! > function_body
 
 //! > expected_diagnostics
-error: 'Deref' implementation must be defined in the same module as either the type being dereferenced or the trait itself
+error[E2187]: 'Deref' implementation must be defined in the same module as either the type being dereferenced or the trait itself
  --> lib.cairo:1:1-6:1
   impl U32Deref of core::ops::Deref<u32> {
  _^

@@ -34,7 +34,7 @@ Root: 5
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable pattern arm.
+warning[E3004]: Unreachable pattern arm.
  --> lib.cairo:12:39
         Color::Blue | Color::Green => 3,
                                       ^
@@ -1411,7 +1411,7 @@ Root: 9
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `MyStruct{a: Some(None(_)), b: (Some(_), _, _)}` not covered.
+error[E3004]: Match is non-exhaustive: `MyStruct{a: Some(None(_)), b: (Some(_), _, _)}` not covered.
  --> lib.cairo:6:5-9:5
       match x {
  _____^
@@ -1448,33 +1448,33 @@ Root: 7
 0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
-error: Unexpected type for tuple pattern. "core::felt252" is not a tuple.
+error[E2105]: Unexpected type for tuple pattern. "core::felt252" is not a tuple.
  --> lib.cairo:3:13
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
             ^^
 
-error: Unexpected type for tuple pattern. "core::option::Option::<(core::felt252, core::felt252)>" is not a tuple.
+error[E2105]: Unexpected type for tuple pattern. "core::option::Option::<(core::felt252, core::felt252)>" is not a tuple.
  --> lib.cairo:3:20
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                    ^^
 
-error: Unexpected type for enum pattern. "(core::felt252, core::felt252)" is not an enum.
+error[E2103]: Unexpected type for enum pattern. "(core::felt252, core::felt252)" is not an enum.
  --> lib.cairo:3:35
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                                   ^^^^
 
 //! > lowering_diagnostics
-error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+error[E3007]: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
  --> lib.cairo:3:20
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                    ^^
 
-error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+error[E3007]: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
  --> lib.cairo:3:35
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                                   ^^^^
 
-error: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
+error[E3007]: Unexpected error has occurred, Please submit a full bug report. See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.
  --> lib.cairo:3:13
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
             ^^
@@ -1508,12 +1508,12 @@ Root: 4
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
+error[E3009]: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:3:15
         255 | 256 | 257 => false,
               ^^^
 
-error: The value does not fit within the range of type core::integer::u8.
+error[E3009]: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:3:21
         255 | 256 | 257 => false,
                     ^^^
@@ -1540,7 +1540,7 @@ Root: 1
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `_` not covered.
+error[E3004]: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:2:5
     match x {}
     ^^^^^^^^^^
@@ -1602,7 +1602,7 @@ Root: 1
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Match is non-exhaustive: `_` not covered.
+error[E3004]: Match is non-exhaustive: `_` not covered.
  --> lib.cairo:5:5
     match x {}
     ^^^^^^^^^^
@@ -2034,7 +2034,7 @@ Root: 19
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: The value does not fit within the range of type core::integer::u256.
+error[E3009]: The value does not fit within the range of type core::integer::u256.
  --> lib.cairo:10:9
         0x10000000000000000000000000000000000000000000000000000000000000000 => 7,
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

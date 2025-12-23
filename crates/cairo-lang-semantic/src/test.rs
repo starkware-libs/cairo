@@ -165,7 +165,7 @@ fn test_mapping_translate_consecutive_spans() {
     assert_eq!(
         diags,
         indoc! {r#"
-        error: Cannot assign to an immutable variable.
+        error[E2083]: Cannot assign to an immutable variable.
          --> lib.cairo:3:5
             x = 2;
             ^^^^^
