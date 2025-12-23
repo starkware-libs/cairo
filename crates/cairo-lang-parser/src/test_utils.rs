@@ -67,7 +67,7 @@ impl MockToken {
         Self { content, span }
     }
 
-    /// Create a token based on [SyntaxNode]
+    /// Creates a token based on [SyntaxNode]
     pub fn from_syntax_node(db: &dyn Database, node: SyntaxNode<'_>) -> MockToken {
         MockToken::new(node.get_text(db).to_string(), node.span(db))
     }

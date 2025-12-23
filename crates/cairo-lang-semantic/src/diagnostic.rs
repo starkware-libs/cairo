@@ -95,11 +95,11 @@ pub struct SemanticDiagnostic<'db> {
     pub after: bool,
 }
 impl<'db> SemanticDiagnostic<'db> {
-    /// Create a diagnostic in the given location.
+    /// Creates a diagnostic in the given location.
     pub fn new(stable_location: StableLocation<'db>, kind: SemanticDiagnosticKind<'db>) -> Self {
         SemanticDiagnostic { stable_location, kind, after: false }
     }
-    /// Create a diagnostic in the location after the given location (with width 0).
+    /// Creates a diagnostic in the location after the given location (with width 0).
     pub fn new_after(
         stable_location: StableLocation<'db>,
         kind: SemanticDiagnosticKind<'db>,

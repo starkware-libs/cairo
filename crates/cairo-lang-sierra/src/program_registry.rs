@@ -89,7 +89,7 @@ pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
     concrete_libfuncs: LibfuncMap<TLibfunc::Concrete>,
 }
 impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfunc> {
-    /// Create a registry for the program.
+    /// Creates a registry for the program.
     pub fn new(
         program: &Program,
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {

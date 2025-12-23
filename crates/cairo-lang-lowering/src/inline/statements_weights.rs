@@ -54,7 +54,7 @@ pub struct ApproxCasmInlineWeight<'db> {
     lowered: &'db Lowered<'db>,
 }
 impl<'db> ApproxCasmInlineWeight<'db> {
-    /// Create a new `ApproxCasmInlineWeight` for the given lowered function.
+    /// Creates a new `ApproxCasmInlineWeight` for the given lowered function.
     pub fn new(db: &'db dyn Database, lowered: &'db Lowered<'db>) -> Self {
         Self { db, lowered }
     }

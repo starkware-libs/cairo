@@ -57,7 +57,7 @@ impl<'a> Printer<'a> {
         }
     }
 
-    /// Create a new printer that is capable of partial printing of the syntax tree.
+    /// Creates a new printer that is capable of partial printing of the syntax tree.
     fn new_partial(
         db: &'a dyn Database,
         top_level_kind: &str,

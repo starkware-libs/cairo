@@ -96,7 +96,7 @@ pub struct ProgramArtifact {
 }
 
 impl ProgramArtifact {
-    /// Create a new [`ProgramArtifact`] without any extra information.
+    /// Creates a new [`ProgramArtifact`] without any extra information.
     pub fn stripped(program: Program) -> Self {
         Self { program, debug_info: None }
     }
@@ -130,7 +130,7 @@ impl Program {
         self.statements.get(id.0)
     }
 
-    /// Create a new [`ProgramArtifact`] out of this [`Program`].
+    /// Creates a new [`ProgramArtifact`] out of this [`Program`].
     pub fn into_artifact(self) -> VersionedProgram {
         ProgramArtifact::stripped(self).into()
     }

@@ -113,7 +113,7 @@ impl IndexAndBindings {
         }
     }
 
-    /// Create a node that binds the [FlowControlVar]s in [Self::bindings] to the [PatternVarId]s
+    /// Creates a node that binds the [FlowControlVar]s in [Self::bindings] to the [PatternVarId]s
     /// and continues to the given `node`.
     pub fn wrap_node<'db>(
         self,
