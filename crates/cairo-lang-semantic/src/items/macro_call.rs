@@ -201,15 +201,18 @@ pub fn expose_content_and_mapping<'db>(
 /// Cycle handling for [MacroCallSemantic::priv_macro_call_data].
 fn priv_macro_call_data_cycle<'db>(
     _db: &'db dyn Database,
-    _value: &Maybe<MacroCallData<'db>>,
-    _count: u32,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &Maybe<MacroCallData<'db>>,
+    value: Maybe<MacroCallData<'db>>,
     _macro_call_id: MacroCallId<'db>,
-) -> salsa::CycleRecoveryAction<Maybe<MacroCallData<'db>>> {
-    salsa::CycleRecoveryAction::Iterate
+) -> Maybe<MacroCallData<'db>> {
+    value
 }
+
 /// Cycle handling for [MacroCallSemantic::priv_macro_call_data].
 fn priv_macro_call_data_initial<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     macro_call_id: MacroCallId<'db>,
 ) -> Maybe<MacroCallData<'db>> {
     // If we are in a cycle, we return an empty MacroCallData with no diagnostics.
@@ -272,15 +275,17 @@ fn macro_call_module_id_tracked<'db>(
 /// Cycle handling for [MacroCallSemantic::macro_call_module_id].
 fn macro_call_module_id_cycle<'db>(
     _db: &'db dyn Database,
-    _value: &Maybe<ModuleId<'db>>,
-    _count: u32,
+    _cycle: &salsa::Cycle<'_>,
+    _last_provisional_value: &Maybe<ModuleId<'db>>,
+    value: Maybe<ModuleId<'db>>,
     _macro_call_id: MacroCallId<'db>,
-) -> salsa::CycleRecoveryAction<Maybe<ModuleId<'db>>> {
-    salsa::CycleRecoveryAction::Iterate
+) -> Maybe<ModuleId<'db>> {
+    value
 }
 /// Cycle handling for [MacroCallSemantic::macro_call_module_id].
 fn macro_call_module_id_initial<'db>(
     _db: &'db dyn Database,
+    _id: salsa::Id,
     _macro_call_id: MacroCallId<'db>,
 ) -> Maybe<ModuleId<'db>> {
     Err(skip_diagnostic())

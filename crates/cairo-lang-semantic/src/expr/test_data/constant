@@ -125,32 +125,32 @@ error[E0006]: Type not found.
 const MY_CONST: MissingType = {
                 ^^^^^^^^^^^
 
-error: Return statement is not supported outside of functions.
+error[E2125]: Return statement is not supported outside of functions.
  --> lib.cairo:2:5
     return foo();
     ^^^^^^^^^^^^^
 
-error: The '?' operator is not supported outside of functions.
+error[E2125]: The '?' operator is not supported outside of functions.
  --> lib.cairo:3:5
     Option::<felt252>::Some(0)?
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Trait has no implementation in context: core::traits::Add::<core::bool>.
+error[E2311]: Trait has no implementation in context: core::traits::Add::<core::bool>.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^^^^^
 
-error: This expression is not supported as constant.
+error[E2127]: This expression is not supported as constant.
  --> lib.cairo:14:47
 const CALCULATION_NOT_CORELIB_IMPL: felt252 = 8 / 4;
                                               ^^^^^
 
-error: Failed to calculate constant.
+error[E2128]: Failed to calculate constant.
  --> lib.cairo:17:5
     core::panic_with_felt252('this should fail')
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Failed to calculate constant.
+error[E2130]: Failed to calculate constant.
  --> lib.cairo:30:31
 const FUNC_CALC_FAILURE: () = assert(false);
                               ^^^^^^^^^^^^^
@@ -159,12 +159,12 @@ note: In `test::assert`:
         core::panic_with_felt252('failed assertion')
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Constant calculation depth exceeded.
+error[E2129]: Constant calculation depth exceeded.
  --> lib.cairo:59:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
-error: Failed to calculate constant.
+error[E2130]: Failed to calculate constant.
  --> lib.cairo:66:37
 const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -190,7 +190,7 @@ foo
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
-error: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
+error[E2311]: Mismatched types. The type `core::bool` cannot be created from a numeric literal.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^
@@ -213,12 +213,12 @@ const FULLY_UNKNOWN: _ = 1_u8;
 const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
 
 //! > expected_diagnostics
-error: Constant type must not depend on its value.
+error[E2126]: Constant type must not depend on its value.
  --> lib.cairo:1:22
 const FULLY_UNKNOWN: _ = 1_u8;
                      ^
 
-error: Constant type must not depend on its value.
+error[E2126]: Constant type must not depend on its value.
  --> lib.cairo:2:33
 const FIXED_SIZED_TYPE_UNKNOWN: [_; 2] = [1_u8, 2_u8];
                                 ^^^^^^
@@ -240,7 +240,7 @@ foo
 const B: u8 = -1;
 
 //! > expected_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
+error[E2008]: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:1:15
 const B: u8 = -1;
               ^^
@@ -264,17 +264,17 @@ const B: i8 = C;
 const C: i8 = B;
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'const' items.
+error[E2024]: Cycle detected while resolving 'const' items.
  --> lib.cairo:1:1
 const A: i8 = A;
 ^^^^^^^^^^^^^^^^
 
-error: Cycle detected while resolving 'const' items.
+error[E2024]: Cycle detected while resolving 'const' items.
  --> lib.cairo:2:1
 const B: i8 = C;
 ^^^^^^^^^^^^^^^^
 
-error: Cycle detected while resolving 'const' items.
+error[E2024]: Cycle detected while resolving 'const' items.
  --> lib.cairo:3:1
 const C: i8 = B;
 ^^^^^^^^^^^^^^^^
@@ -331,42 +331,42 @@ const COMPLEX_STRUCT: ComplexStruct = ComplexStruct {
 const CONST_MEMBER: u8 = COMPLEX_STRUCT.a;
 
 //! > expected_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
+error[E2008]: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:1:26
 const UNSIGNED_VAR: u8 = 256;
                          ^^^
 
-error: The value does not fit within the range of type core::integer::i8.
+error[E2008]: The value does not fit within the range of type core::integer::i8.
  --> lib.cairo:2:24
 const SIGNED_VAR: i8 = 128;
                        ^^^
 
-error: The value does not fit within the range of type core::integer::i8.
+error[E2008]: The value does not fit within the range of type core::integer::i8.
  --> lib.cairo:5:36
 const OUT_OF_RANGE_NEGATIVE1: i8 = -0x81;
                                    ^^^^^
 
-error: The value does not fit within the range of type core::integer::i16.
+error[E2008]: The value does not fit within the range of type core::integer::i16.
  --> lib.cairo:6:37
 const OUT_OF_RANGE_NEGATIVE2: i16 = -0x8001;
                                     ^^^^^^^
 
-error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
+error[E2008]: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
  --> lib.cairo:7:36
 const ZERO_NON_ZERO: NonZero<u8> = 0;
                                    ^
 
-error: The value does not fit within the range of type core::integer::i8.
+error[E2008]: The value does not fit within the range of type core::integer::i8.
  --> lib.cairo:9:39
 const CALCULATION_WITH_OVERFLOW: i8 = 120 + 10;
                                       ^^^^^^^^
 
-error: Division by zero.
+error[E2131]: Division by zero.
  --> lib.cairo:10:39
 const CALCULATION_WITH_DIVISION: u8 = 120 / 0;
                                       ^^^^^^^
 
-error: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
+error[E2008]: The value does not fit within the range of type core::zeroable::NonZero::<core::integer::u8>.
  --> lib.cairo:31:38
     }, c: OUT_OF_RANGE_NEGATIVE2, d: 0, e: true,
                                      ^
@@ -390,7 +390,7 @@ fn foo() -> () {
 foo
 
 //! > expected_diagnostics
-warning: Unused constant. Consider ignoring by prefixing with `_`.
+warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:15
         const X: u8 = 2;
               ^
@@ -434,37 +434,37 @@ fn foo() -> () {
 foo
 
 //! > expected_diagnostics
-error: Multiple definitions of constant "A".
+error[E2072]: Multiple definitions of constant "A".
  --> lib.cairo:3:11
     const A: u8 = 2;
           ^
 
-error: Multiple definitions of identifier 'B' as constant and variable.
+error[E2073]: Multiple definitions of identifier 'B' as constant and variable.
  --> lib.cairo:5:9
     let B = 4;
         ^
 
-error: Multiple definitions of identifier 'C' as constant and variable.
+error[E2073]: Multiple definitions of identifier 'C' as constant and variable.
  --> lib.cairo:7:11
     const C: u8 = 6;
           ^
 
-error: Multiple definitions of constant "D".
+error[E2072]: Multiple definitions of constant "D".
  --> lib.cairo:10:15
         const D: u8 = 8;
               ^
 
-error: Multiple definitions of identifier 'E' as constant and variable.
+error[E2073]: Multiple definitions of identifier 'E' as constant and variable.
  --> lib.cairo:12:13
         let E = 10;
             ^
 
-error: Multiple definitions of identifier 'F' as constant and variable.
+error[E2073]: Multiple definitions of identifier 'F' as constant and variable.
  --> lib.cairo:14:15
         const F: u8 = 12;
               ^
 
-warning: Unused constant. Consider ignoring by prefixing with `_`.
+warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:10:15
         const D: u8 = 8;
               ^
@@ -474,12 +474,12 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
         let E = 10;
             ^
 
-warning: Unused constant. Consider ignoring by prefixing with `_`.
+warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:14:15
         const F: u8 = 12;
               ^
 
-warning: Unused constant. Consider ignoring by prefixing with `_`.
+warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:3:11
     const A: u8 = 2;
           ^
@@ -489,7 +489,7 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
     let B = 4;
         ^
 
-warning: Unused constant. Consider ignoring by prefixing with `_`.
+warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:7:11
     const C: u8 = 6;
           ^
@@ -513,12 +513,12 @@ fn foo(param: u8) -> () {
 foo
 
 //! > expected_diagnostics
-error: This expression is not supported as constant.
+error[E2127]: This expression is not supported as constant.
  --> lib.cairo:2:19
     const A: u8 = param;
                   ^^^^^
 
-error: This expression is not supported as constant.
+error[E2127]: This expression is not supported as constant.
  --> lib.cairo:4:19
     const B: u8 = local;
                   ^^^^^
@@ -549,7 +549,7 @@ const fn my_unwrap<T>(v: Option<T>) -> T {
 }
 
 //! > expected_diagnostics
-error: Failed to calculate constant.
+error[E2130]: Failed to calculate constant.
  --> lib.cairo:1:44
 const ADDRESS: starknet::ContractAddress = my_unwrap((-1).try_into());
                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -558,7 +558,7 @@ note: In `test::my_unwrap::<core::starknet::contract_address::ContractAddress>`:
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Failed to calculate constant.
+error[E2130]: Failed to calculate constant.
  --> lib.cairo:2:41
 const CLASS_HASH: starknet::ClassHash = my_unwrap((-1).try_into());
                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^

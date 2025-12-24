@@ -208,7 +208,7 @@ macro macro_name {
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a macro rule parameter kind.
+error[E1008]: Missing tokens. Expected a macro rule parameter kind.
  --> dummy_file.cairo:2:9
     ($x:unknown) => {
         ^

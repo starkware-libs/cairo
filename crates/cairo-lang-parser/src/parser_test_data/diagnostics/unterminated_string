@@ -9,19 +9,19 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Unterminated short string literal.
+error[E1020]: Unterminated short string literal.
  --> dummy_file.cairo:2:27-3:1
      let unterminated_str = 'abc;
  ___________________________^
 | }
 |_^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^
@@ -39,19 +39,19 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Unterminated string literal.
+error[E1021]: Unterminated string literal.
  --> dummy_file.cairo:2:27-3:1
      let unterminated_str = "abc;
  ___________________________^
 | }
 |_^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^

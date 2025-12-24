@@ -17,7 +17,7 @@ fn foo(a: A<felt252>) -> A<A<felt252>> {
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
+error[E2041]: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
  --> lib.cairo:6:28
     let _bad: A<A<bool>> = res;
                            ^^^
@@ -113,17 +113,17 @@ error[E0006]: Trait not found.
 fn bar<A, const B: usize, impl C: MyTrait<felt252>>() {}
                                   ^^^^^^^
 
-error: Expected 3 generic arguments, found 4.
+error[E2163]: Expected 3 generic arguments, found 4.
  --> lib.cairo:10:20
     bar::<1, 1, 1, 1>();
                    ^
 
-error: Expected variable or constant, found type.
+error[E2005]: Expected variable or constant, found type.
  --> lib.cairo:11:20
     bar::<felt252, felt252>();
                    ^^^^^^^
 
-error: The value does not fit within the range of type core::integer::u32.
+error[E2008]: The value does not fit within the range of type core::integer::u32.
  --> lib.cairo:13:18
     bar::<usize, -1, A>();
                  ^^
@@ -133,17 +133,17 @@ error[E0006]: Impl not found.
     bar::<usize, -1, A>();
                      ^
 
-error: Expected 0 generic arguments, found 1.
+error[E2163]: Expected 0 generic arguments, found 1.
  --> lib.cairo:14:36
     1_felt252.method_no_generics::<felt252>();
                                    ^^^^^^^
 
-error: Expected 1 generic arguments, found 2.
+error[E2163]: Expected 1 generic arguments, found 2.
  --> lib.cairo:15:45
     1_felt252.method_one_generic::<felt252, felt252>();
                                             ^^^^^^^
 
-error: Expected 2 generic arguments, found 3.
+error[E2163]: Expected 2 generic arguments, found 3.
  --> lib.cairo:16:55
     1_felt252.method_two_generics::<felt252, felt252, felt252>();
                                                       ^^^^^^^
@@ -178,12 +178,12 @@ impl AnotherImpl of AnotherTrait<felt252> {}
 foo
 
 //! > expected_diagnostics
-error: Extern types with impl generics are not supported.
+error[E2132]: Extern types with impl generics are not supported.
  --> lib.cairo:4:15
 extern type A<impl C: MyTrait<felt252>>;
               ^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
+error[E2134]: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::AnotherTrait::<core::felt252>`.
  --> lib.cairo:14:11
     bar::<AnotherImpl>();
           ^^^^^^^^^^^
@@ -227,7 +227,7 @@ impl AnotherImpl of AnotherTrait<felt252> {
 f
 
 //! > expected_diagnostics
-error: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::MyTrait::<T>`.
+error[E2134]: Expected an impl of `test::MyTrait::<core::felt252>`. Got an impl of `test::MyTrait::<T>`.
  --> lib.cairo:7:14
     bar::<T, GenericImpl>();
              ^^^^^^^^^^^
@@ -289,7 +289,7 @@ extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
+error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
  --> lib.cairo:8:9
     x = bar::<u16, u32>();
         ^^^^^^^^^^^^^^^^^
@@ -376,32 +376,32 @@ impl BUint of BTrait<u32> {}
 fn bar<T, S, impl X: ATrait<T>, impl Y: BTrait<S>>() {}
 
 //! > expected_diagnostics
-error: Unknown generic parameter `G`.
+error[E2160]: Unknown generic parameter `G`.
  --> lib.cairo:9:20
     bar::<felt252, G: felt252>();
                    ^^^^^^^^^^
 
-error: Positional generic parameters must come before named generic parameters.
+error[E2161]: Positional generic parameters must come before named generic parameters.
  --> lib.cairo:10:23
     bar::<T: felt252, u32>();
                       ^^^
 
-error: Generic argument `T` is specified more than once.
+error[E2162]: Generic argument `T` is specified more than once.
  --> lib.cairo:11:23
     bar::<T: felt252, T: u32>();
                       ^^^^^^
 
-error: Generic argument `T` is specified more than once.
+error[E2162]: Generic argument `T` is specified more than once.
  --> lib.cairo:12:20
     bar::<felt252, T: u32>();
                    ^^^^^^
 
-error: Expected 4 generic arguments, found 5.
+error[E2163]: Expected 4 generic arguments, found 5.
  --> lib.cairo:13:39
     bar::<felt252, u32, AFelt, BUint, u64>();
                                       ^^^
 
-error: Generic argument `T` is out of order.
+error[E2164]: Generic argument `T` is out of order.
  --> lib.cairo:14:23
     bar::<S: felt252, T: u32>();
                       ^^^^^^
@@ -478,12 +478,12 @@ impl Felt252Introspect of Introspect<felt252> {}
 foo
 
 //! > expected_diagnostics
-error: Inference cycle detected
+error[E2301]: Inference cycle detected
  --> lib.cairo:14:17
 > of Introspect<Generic<T>> {}
                 ^^^^^^^
 
-error: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
+error[E2028]: Cycle detected while resolving generic param. Try specifying the generic impl parameter explicitly to break the cycle.
  --> lib.cairo:13:8
     T, impl IntrospectTImp: Introspect<Generic<T>>,
        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -558,7 +558,7 @@ impl MyImpl<T> of MyTrait<T, T> {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Unknown impl.
+error[E2004]: Unknown impl.
  --> lib.cairo:3:30
 impl MyImpl<T> of MyTrait<T, T> {}
                              ^
@@ -613,12 +613,12 @@ mod A {
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
+error[E2041]: Unexpected argument type. Expected: "test::S::<-1>", found: "test::S::<11>".
  --> lib.cairo:10:28
     let _s: S<{ 1 - 2 }> = bar();
                            ^^^^^
 
-error: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<11>".
+error[E2041]: Unexpected argument type. Expected: "test::S::<107>", found: "test::S::<11>".
  --> lib.cairo:6:46
         let _x: super::S<{ super::K + 9 }> = super::bar();
                                              ^^^^^^^^^^^^
@@ -673,7 +673,7 @@ struct S<const N: felt252> {
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<N>".
+error[E2042]: Unexpected return type. Expected: "test::S::<1>", found: "test::S::<N>".
  --> lib.cairo:1:31
 fn bar<const N: felt252>() -> S<{ 3 - 2 }> {
                               ^^^^^^^^^^^^
@@ -708,7 +708,7 @@ fn bar2(s: MyStruct<2>) {}
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
+error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
  --> lib.cairo:11:10
     bar2(s);
          ^

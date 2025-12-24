@@ -39,7 +39,7 @@ fn bar_panic() {}
 fn bar_nopanic() nopanic {}
 
 //! > expected_diagnostics
-error: Function is declared as nopanic but calls a function that may panic.
+error[E2115]: Function is declared as nopanic but calls a function that may panic.
  --> lib.cairo:4:5
     bar_panic();
     ^^^^^^^^^^^

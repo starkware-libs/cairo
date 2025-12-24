@@ -479,6 +479,7 @@ fn generic_param_data<'db>(
 /// Cycle handling for [generic_param_data].
 fn generic_param_data_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     generic_param_id: GenericParamId<'db>,
     _in_cycle: bool,
 ) -> Maybe<GenericParamData<'db>> {

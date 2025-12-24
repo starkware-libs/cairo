@@ -24,12 +24,12 @@ struct Storage {
 }
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:10:5
     has_a: HasA,
     ^^^^^
 
-warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:17:9
     pub has_a: HasA,
         ^^^^^
@@ -71,7 +71,7 @@ mod contract_with_and_without_ignored {
 }
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `y.member0` collides with existing path `x.ignored_member.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `y.member0` collides with existing path `x.ignored_member.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:25:13
         pub y: Struct0,
             ^
@@ -109,12 +109,12 @@ mod component_with_and_without_ignored {
 }
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:19:13
         pub has_a: HasA,
             ^^^^^
 
-warning: Plugin diagnostic: The path `has_has_a.has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `has_has_a.has_a.a` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:21:13
         pub has_has_a: HasHasA,
             ^^^^^^^^^
@@ -166,12 +166,12 @@ mod contract_with_component {
 }
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `y.ignored_member.member0` collides with existing path `x.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `y.ignored_member.member0` collides with existing path `x.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:25:13
         pub y: IgnoredMemberStruct,
             ^
 
-warning: Plugin diagnostic: The path `member.y.ignored_member.member0` collides with existing path `member.x.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `member.y.ignored_member.member0` collides with existing path `member.x.member0`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:35:9
         member: component::Storage,
         ^^^^^^
@@ -234,7 +234,7 @@ struct IgnoredCollision1 {
 }
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:5:9
     pub b: felt252,
         ^
@@ -281,17 +281,17 @@ struct InvalidMapStorage {
 }
 
 //! > diagnostics
-warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::array::Array::<core::felt252>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
+warning[E2200]: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::array::Array::<core::felt252>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:10:24
     pub invalid_array: Array<felt252>,
                        ^^^^^^^^^^^^^^
 
-warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::vec::Vec::<test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
+warning[E2200]: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::vec::Vec::<test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:21:22
     pub invalid_vec: Vec<InvalidStorageStruct>,
                      ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::map::Map::<core::felt252, test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
+warning[E2200]: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<core::starknet::storage::map::Map::<core::felt252, test::InvalidStorageStruct>>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:31:22
     pub invalid_map: Map<felt252, InvalidStorageStruct>,
                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -355,12 +355,12 @@ struct IgnoreCollidingPaths {
 }
 
 //! > diagnostics
-warning: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `b` collides with existing path `a`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:10:9
     pub b: felt252,
         ^
 
-warning: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<test::InvalidStorageStruct>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
+warning[E2200]: Plugin diagnostic: Missing `ValidStorageTypeTrait` for member type. Inference failed with: `Trait has no implementation in context: core::starknet::storage::ValidStorageTypeTrait::<test::InvalidStorageStruct>.`. Possible solutions: implement `Store`, mark type with `#[storage_node]`, or use valid args for `Vec` or `Map` library types. To suppress this warning, use `#[allow(starknet::invalid_storage_member_types)]`.
  --> lib.cairo:16:12
     pub a: InvalidStorageStruct,
            ^^^^^^^^^^^^^^^^^^^^

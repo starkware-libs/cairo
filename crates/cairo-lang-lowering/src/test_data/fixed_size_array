@@ -145,7 +145,7 @@ struct MyStruct {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
+error[E3012]: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
  --> lib.cairo:6:5
     [MyStruct { x: 10 }; 3]
     ^^^^^^^^^^^^^^^^^^^^^^^
@@ -190,7 +190,7 @@ impl CtorMyStruct of CtorTrait<MyStruct> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
+error[E3012]: Fixed size array inner type must implement the `Copy` trait when the array size is greater than 1.
  --> lib.cairo:19:5
     [CtorTrait::<T>::new(); 3]
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -251,7 +251,7 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Fixed size array repeated element size must be greater than 0.
+error[E3013]: Fixed size array repeated element size must be greater than 0.
  --> lib.cairo:2:5
     [0_u32; 0]
     ^^^^^^^^^^

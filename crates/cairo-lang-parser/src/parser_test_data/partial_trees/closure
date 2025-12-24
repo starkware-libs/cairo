@@ -210,17 +210,17 @@ ExprClosure
 ExprPath
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: '{'.
+error[E1000]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:40
     let expensive_closure =  || -> u32 3;
                                        ^^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> dummy_file.cairo:2:42
     let expensive_closure =  || -> u32 3;
                                          ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:42
     let expensive_closure =  || -> u32 3;
                                          ^
@@ -259,17 +259,17 @@ ExprClosure
 ExprPath
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: '{'.
+error[E1000]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:41
     let expensive_closure =  || nopanic 3;
                                         ^^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> dummy_file.cairo:2:43
     let expensive_closure =  || nopanic 3;
                                           ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:43
     let expensive_closure =  || nopanic 3;
                                           ^

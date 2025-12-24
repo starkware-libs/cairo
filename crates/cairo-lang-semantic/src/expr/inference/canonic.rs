@@ -43,7 +43,7 @@ use crate::{
 };
 
 /// A canonical representation of a concrete trait that needs to be solved.
-#[derive(Clone, PartialEq, Hash, Eq, Debug, SemanticObject)]
+#[derive(Clone, PartialEq, Hash, Eq, Debug, SemanticObject, salsa::Update)]
 pub struct CanonicalTrait<'db> {
     pub id: ConcreteTraitId<'db>,
     pub mappings: ImplVarTraitItemMappings<'db>,

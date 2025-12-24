@@ -39,7 +39,7 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "test::A" has infinite size.
  --> lib.cairo:2:5
     Variant: A,
     ^^^^^^^^^^
@@ -87,7 +87,7 @@ enum B {
 }
 
 //! > expected_diagnostics
-error: Non-phantom type containing phantom type.
+error[E2020]: Non-phantom type containing phantom type.
  --> lib.cairo:5:5
     Variant: A,
     ^^^^^^^^^^
@@ -111,7 +111,7 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Cannot have array of type "()" that is zero sized.
+error[E2053]: Cannot have array of type "()" that is zero sized.
  --> lib.cairo:2:5
     Variant: Array<()>,
     ^^^^^^^^^^^^^^^^^^
@@ -142,7 +142,7 @@ enum E {
 }
 
 //! > expected_diagnostics
-error: Invalid path.
+error[E2086]: Invalid path.
  --> lib.cairo:6:12
     let E::aa(b) = makeE();
            ^^
@@ -179,7 +179,7 @@ enum A {
 use A::{E, T};
 
 //! > expected_diagnostics
-error: Not a variant. Use the full name Enum::Variant.
+error[E2009]: Not a variant. Use the full name Enum::Variant.
  --> lib.cairo:8:9
     let T(a) = A::T(2);
         ^

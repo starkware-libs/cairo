@@ -51,7 +51,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-warning: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+warning[E2096]: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
  --> lib.cairo:8:9
         MyImpl::X
         ^^^^^^
@@ -82,7 +82,7 @@ impl MyImpl<T> of MyTrait {
 }
 
 //! > expected_diagnostics
-warning: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
+warning[E2096]: In an impl, paths of the same impl are not allowed. Did you mean to use `Self::`?
  --> lib.cairo:8:9
         MyImpl::<T>::X
         ^^^^^^^^^^^
@@ -141,7 +141,7 @@ impl MyImpl<T, +SomeTrait> of MyTrait {
 }
 
 //! > expected_diagnostics
-warning: In an impl, paths of the same impl must be fully explicit. Either use `Self` if this is the intention, or explicitly specify all the generic arguments.
+warning[E2093]: In an impl, paths of the same impl must be fully explicit. Either use `Self` if this is the intention, or explicitly specify all the generic arguments.
  --> lib.cairo:9:9
         MyImpl::<T>::X
         ^^^^^^^^^^^
@@ -168,7 +168,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Expected type "core::integer::u32", found: "core::integer::i32".
+error[E2039]: Expected type "core::integer::u32", found: "core::integer::i32".
  --> lib.cairo:5:12
     const X: i32 = 9;
            ^^^^^
@@ -230,7 +230,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
+error[E2311]: Trait has no implementation in context: core::traits::Neg::<core::integer::u32>.
  --> lib.cairo:8:9
         -Self::X
         ^^^^^^^^
@@ -263,7 +263,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::PartialOrd::<core::felt252>.
+error[E2311]: Trait has no implementation in context: core::traits::PartialOrd::<core::felt252>.
  --> lib.cairo:10:9
         Self::X < Self::Y
         ^^^^^^^^^^^^^^^^^
@@ -329,7 +329,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
+error[E2042]: Unexpected return type. Expected: "core::integer::u16", found: "core::integer::u32".
  --> lib.cairo:11:17
     fn foo() -> u16 {
                 ^^^
@@ -376,12 +376,12 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
+error[E2313]: Trait `test::AnotherTrait2` has multiple implementations, in: `test::AnotherImpl20`, `test::AnotherImpl21`
  --> lib.cairo:21:24
         AnotherTrait2::X
                        ^
 
-error: Trait has no implementation in context: test::AnotherTrait0.
+error[E2311]: Trait has no implementation in context: test::AnotherTrait0.
  --> lib.cairo:24:24
         AnotherTrait0::X
                        ^
@@ -458,12 +458,12 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `test::S::<32>`, actual: `test::S::<16>`.
+error[E2045]: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `test::S::<32>`, actual: `test::S::<16>`.
  --> lib.cairo:16:18
     fn foo1() -> S<AnotherTrait::X> {
                  ^^^^^^^^^^^^^^^^^^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `test::S::<32>`, actual: `test::S::<16>`.
+error[E2031]: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `test::S::<32>`, actual: `test::S::<16>`.
  --> lib.cairo:19:16
     fn foo2(x: S<Self::Y>) {}
                ^^^^^^^^^^
@@ -552,12 +552,12 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `test::S::<3>`, actual: `test::S::<4>`.
+error[E2045]: Return type of impl function `MyImpl::foo1` is incompatible with `MyTrait::foo1`. Expected: `test::S::<3>`, actual: `test::S::<4>`.
  --> lib.cairo:10:18
     fn foo1() -> S<4> {
                  ^^^^
 
-error: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `test::S::<3>`, actual: `test::S::<4>`.
+error[E2031]: Parameter type of impl function `MyImpl::foo2` is incompatible with `MyTrait::foo2`. Expected: `test::S::<3>`, actual: `test::S::<4>`.
  --> lib.cairo:13:16
     fn foo2(x: S<4>) {}
                ^^^^
@@ -590,7 +590,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Expected variable or constant, found function.
+error[E2005]: Expected variable or constant, found function.
  --> lib.cairo:12:18
     let _: u32 = MyImpl::my_function;
                  ^^^^^^^^^^^^^^^^^^^
@@ -644,7 +644,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Type mismatch: `core::integer::u32` and `core::integer::u16`.
+error[E2302]: Type mismatch: `core::integer::u32` and `core::integer::u16`.
  --> lib.cairo:6:5
     const X: u16 = Self::Y;
     ^^^^^^^^^^^^^^^^^^^^^^^
@@ -671,7 +671,7 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'const' items.
+error[E2024]: Cycle detected while resolving 'const' items.
  --> lib.cairo:5:5
     const X: u32 = Self::X;
     ^^^^^^^^^^^^^^^^^^^^^^^
@@ -700,12 +700,12 @@ impl MyImpl of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'const' items.
+error[E2024]: Cycle detected while resolving 'const' items.
  --> lib.cairo:6:5
     const X: u32 = Self::Y;
     ^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Cycle detected while resolving 'const' items.
+error[E2024]: Cycle detected while resolving 'const' items.
  --> lib.cairo:7:5
     const Y: u32 = Self::X;
     ^^^^^^^^^^^^^^^^^^^^^^^
@@ -737,7 +737,7 @@ error[E0004]: Not all trait items are implemented. Missing: 'Y'.
 impl MyImpl of MyTrait {}
      ^^^^^^
 
-error: Trait has no implementation in context: test::MyTrait.
+error[E2311]: Trait has no implementation in context: test::MyTrait.
  --> lib.cairo:5:17-7:1
   fn foo() -> i32 {
  _________________^

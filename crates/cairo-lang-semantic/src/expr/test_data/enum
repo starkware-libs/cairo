@@ -28,32 +28,32 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Wrong number of arguments. Expected 1, found: 0
+error[E2030]: Wrong number of arguments. Expected 1, found: 0
  --> lib.cairo:13:17
     let _a: A = A::a();
                 ^^^^^^
 
-error: Wrong number of arguments. Expected 1, found: 2
+error[E2030]: Wrong number of arguments. Expected 1, found: 2
  --> lib.cairo:14:17
     let _a: A = A::b(1, 2);
                 ^^^^^^^^^^
 
-error: Invalid path.
+error[E2086]: Invalid path.
  --> lib.cairo:15:23
     let _a: A = A::a::a(());
                       ^
 
-error: Enum "test::A" has no variant "c"
+error[E2060]: Enum "test::A" has no variant "c"
  --> lib.cairo:16:20
     let _a: A = A::c();
                    ^
 
-error: Enum "test::A" has no variant "d"
+error[E2060]: Enum "test::A" has no variant "d"
  --> lib.cairo:17:20
     let _a: A = A::d;
                    ^
 
-error: Expected variable or constant, found type.
+error[E2005]: Expected variable or constant, found type.
  --> lib.cairo:18:17
     let _a: A = A;
                 ^

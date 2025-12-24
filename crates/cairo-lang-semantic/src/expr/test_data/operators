@@ -15,7 +15,7 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::traits::Add::<test::MyType>.
+error[E2311]: Trait has no implementation in context: core::traits::Add::<test::MyType>.
  --> lib.cairo:3:5
     a + a * a;
     ^^^^^^^^^
@@ -41,22 +41,22 @@ fn foo(a: u128, b: bool) implicits(RangeCheck) {
 foo
 
 //! > expected_diagnostics
-error: Consecutive comparison operators are not allowed: '>' followed by '>'
+error[E1028]: Consecutive comparison operators are not allowed: '>' followed by '>'
  --> lib.cairo:6:11
     a > a > a;
           ^
 
-error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
+error[E2041]: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
  --> lib.cairo:6:13
     a > a > a;
             ^
 
-error: Unexpected argument type. Expected: "core::integer::u128", found: "core::bool".
+error[E2041]: Unexpected argument type. Expected: "core::integer::u128", found: "core::bool".
  --> lib.cairo:7:9
     a - b
         ^
 
-error: Unexpected return type. Expected: "()", found: "core::integer::u128".
+error[E2042]: Unexpected return type. Expected: "()", found: "core::integer::u128".
  --> lib.cairo:1:48-8:1
   fn foo(a: u128, b: bool) implicits(RangeCheck) {
  ________________________________________________^
@@ -82,12 +82,12 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: The value does not fit within the range of type core::integer::u8.
+error[E2008]: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:3:5
     -1_u8;
     ^^^^^
 
-error: Trait has no implementation in context: core::traits::Neg::<core::bool>.
+error[E2311]: Trait has no implementation in context: core::traits::Neg::<core::bool>.
  --> lib.cairo:2:5
     -(1 == 2);
     ^^^^^^^^^
@@ -131,14 +131,14 @@ impl Struct2Index of Index<Struct2, usize, felt252> {
 }
 
 //! > expected_diagnostics
-error: Type `test::Struct1` could not be indexed.
+error[E2136]: Type `test::Struct1` could not be indexed.
 Candidate `core::ops::index::Index::index` inference failed with: Trait has no implementation in context: core::ops::index::Index::<test::Struct1, ?3>.
 Candidate `core::ops::index::IndexView::index` inference failed with: Trait has no implementation in context: core::ops::index::IndexView::<test::Struct1, ?3>.
  --> lib.cairo:21:15
     let _y1 = x1[0];
               ^^^^^
 
-error: Type "test::Struct2" implements both the "Index" trait and the "IndexView" trait.
+error[E2139]: Type "test::Struct2" implements both the "Index" trait and the "IndexView" trait.
  --> lib.cairo:23:15
     let _y2 = x2[0];
               ^^^^^

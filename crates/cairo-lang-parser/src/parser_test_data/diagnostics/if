@@ -13,7 +13,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:18
     if MyStruct{a: 0} == MyStruct{a: 1} {
                  ^
@@ -35,12 +35,12 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:12
     if 0 == if x {1} else {2} {
            ^
 
-error: Skipped tokens. Expected: '{'.
+error[E1000]: Skipped tokens. Expected: '{'.
  --> dummy_file.cairo:2:13
     if 0 == if x {1} else {2} {
             ^^^^
@@ -61,7 +61,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a pattern.
+error[E1007]: Missing tokens. Expected a pattern.
  --> dummy_file.cairo:2:11
     if let = 5 {
           ^
@@ -81,37 +81,37 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token '|'.
+error[E1001]: Missing token '|'.
  --> dummy_file.cairo:2:16
     if let x {}
                ^
 
-error: A trailing `|` is not allowed in an or-pattern.
+error[E1027]: A trailing `|` is not allowed in an or-pattern.
  --> dummy_file.cairo:3:1
 }
 ^
 
-error: Missing token '='.
+error[E1001]: Missing token '='.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Skipped tokens. Expected: pattern.
+error[E1000]: Skipped tokens. Expected: pattern.
  --> dummy_file.cairo:3:1
 }
 ^
@@ -131,52 +131,52 @@ fn f(a:felt252 b:felt252) {
 }
 
 //! > expected_diagnostics
-error: Missing token ','.
+error[E1001]: Missing token ','.
  --> dummy_file.cairo:1:15
 fn f(a:felt252 b:felt252) {
               ^
 
-error: Missing token '|'.
+error[E1001]: Missing token '|'.
  --> dummy_file.cairo:2:13
     if let x == y {}
             ^
 
-error: Skipped tokens. Expected: pattern.
+error[E1000]: Skipped tokens. Expected: pattern.
  --> dummy_file.cairo:2:14
     if let x == y {}
              ^^
 
-error: Missing token '|'.
+error[E1001]: Missing token '|'.
  --> dummy_file.cairo:2:21
     if let x == y {}
                     ^
 
-error: A trailing `|` is not allowed in an or-pattern.
+error[E1027]: A trailing `|` is not allowed in an or-pattern.
  --> dummy_file.cairo:3:1
 }
 ^
 
-error: Missing token '='.
+error[E1001]: Missing token '='.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing tokens. Expected an expression.
+error[E1002]: Missing tokens. Expected an expression.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Skipped tokens. Expected: pattern.
+error[E1000]: Skipped tokens. Expected: pattern.
  --> dummy_file.cairo:3:1
 }
 ^
@@ -196,27 +196,27 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token ')'.
+error[E1001]: Missing token ')'.
  --> dummy_file.cairo:2:9
     if (let x = 0) {}
         ^
 
-error: Missing token '{'.
+error[E1001]: Missing token '{'.
  --> dummy_file.cairo:2:9
     if (let x = 0) {}
         ^
 
-error: Missing token ';'.
+error[E1001]: Missing token ';'.
  --> dummy_file.cairo:2:18
     if (let x = 0) {}
                  ^
 
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:18
     if (let x = 0) {}
                  ^
 
-error: Missing token '}'.
+error[E1001]: Missing token '}'.
  --> dummy_file.cairo:3:2
 }
  ^
@@ -241,27 +241,27 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:4:20
     if let x = 10  || false < > { += }
                    ^
 
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:4:35
     if let x = 10  || false < > { += }
                                   ^^
 
-error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:5:28
     if let x = 10 && false || true {}
                            ^
 
-error: Operator '+=' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '+=' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:6:18
     if let x = 0 += 2 {}
                  ^
 
-error: Operator '..' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '..' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:7:17
     if let x = 0..2 {}
                 ^
@@ -286,32 +286,32 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:4:8
     if x == 5 || y == 333   && let x = 10 || false < > { += }
        ^^^^^^^^^^^^^^^^^^
 
-error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:4:43
     if x == 5 || y == 333   && let x = 10 || false < > { += }
                                           ^
 
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:4:58
     if x == 5 || y == 333   && let x = 10 || false < > { += }
                                                          ^^
 
-error: Operator '+=' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '+=' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:7:8
     if x += 3 && let x = 10 || false < > { += }
        ^^^^^^
 
-error: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
+error[E1030]: Operator '||' is not allowed in let chains. Consider wrapping the expression in parentheses.
  --> dummy_file.cairo:7:29
     if x += 3 && let x = 10 || false < > { += }
                             ^
 
-error: Skipped tokens. Expected: statement.
+error[E1000]: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:7:44
     if x += 3 && let x = 10 || false < > { += }
                                            ^^

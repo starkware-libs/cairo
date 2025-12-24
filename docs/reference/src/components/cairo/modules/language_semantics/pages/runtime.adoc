@@ -1,6 +1,75 @@
+:cairo-vm-docs: https://docs.rs/crate/cairo-vm/latest
+
 = Runtime
 
-This section is a work in progress.
+This page describes runtime behavior in Cairo: how programs execute and
+resource constraints that affect program execution.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Execution model
+
+Cairo programs execute through a compilation and execution pipeline:
+
+1. **Cairo → Sierra**: Cairo source compiles to Sierra (Safe Intermediate
+   Representation), which provides gas metering and safe execution guarantees
+2. **Sierra → CASM**: Sierra lowers to CASM (Cairo Assembly), the executable
+   bytecode format
+3. **CASM execution**: CASM bytecode runs on the Cairo VM
+
+At runtime, panics are actual executable code. This means panic behavior is
+part of the proven execution trace - panics are proved to panic.
+
+For details on the Cairo VM architecture, see
+link:{cairo-vm-docs}[Cairo VM documentation].
+
+== Execution modes
+
+=== Native execution
+
+Native execution runs Sierra code directly for testing and development
+(using `cairo-run`, `cairo-test`, and local devnets). This mode is fast
+but provides no proof of correctness.
+
+=== Proving execution
+
+On Starknet, Cairo programs execute in proving mode: Sierra is lowered to CASM,
+executed on the Cairo VM, and an execution trace is generated. A STARK proof
+is then created from this trace and verified on Ethereum L1.
+
+Both modes execute the same Sierra code deterministically. Proving mode produces
+cryptographic proofs of correct execution.
+
+== Resource limits
+
+=== Gas consumption
+
+Cairo programs executing on Starknet consume gas for computational work:
+
+- Execution steps (Sierra/CASM instructions)
+- Builtin usage (cryptographic and arithmetic operations)
+- Memory allocations
+
+The Sierra compiler includes gas metering that allows programs to check available
+gas before expensive operations. If a program exceeds its gas limit, execution
+reverts.
+
+=== Builtins
+
+Builtins provide optimized implementations of common operations:
+
+- Range checking
+- Cryptographic hashing (Pedersen, Poseidon, Keccak)
+- Elliptic curve operations
+- Bitwise operations
+
+Builtins are accessed through core library functions and passed between functions
+using implicit arguments.
+
+See xref:language_constructs:implicit-arguments.adoc[Implicit arguments] for
+how builtins are threaded through function calls.
+
+== See also
+
+- xref:memory-model.adoc[Memory model] - Memory semantics and immutability
+- xref:../../language_constructs/pages/implicit-arguments.adoc[Implicit arguments] - Builtin
+  threading
+- link:{cairo-vm-docs}[Cairo VM] - VM architecture and implementation

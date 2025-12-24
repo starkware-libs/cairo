@@ -352,14 +352,14 @@ impl ADestruct of Destruct<A> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Call cycle of `nopanic` functions is not allowed.
+error[E3008]: Call cycle of `nopanic` functions is not allowed.
  --> lib.cairo:3:5-4:35
       #[inline(always)]
  _____^
 |     fn destruct(self: A) nopanic {}
 |___________________________________^
 
-error: Cannot inline a function that might call itself.
+error[E3005]: Cannot inline a function that might call itself.
  --> lib.cairo:3:5-4:35
       #[inline(always)]
  _____^

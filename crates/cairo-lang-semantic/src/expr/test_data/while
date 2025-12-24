@@ -16,7 +16,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Can only break with a value inside a `loop`.
+error[E2147]: Can only break with a value inside a `loop`.
  --> lib.cairo:4:9
         break 5;
         ^^^^^^^^
@@ -41,7 +41,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-error: Unsupported feature.
+error[E2000]: Unsupported feature.
  --> lib.cairo:2:11
     while let Some(x) = Some(5) && 4 == 7 {
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -65,7 +65,7 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
-warning: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
+warning[E2192]: Pattern missing subpattern for the payload of variant. Consider using `Some(_)`
  --> lib.cairo:2:15
     while let Some = Some(5) {
               ^^^^

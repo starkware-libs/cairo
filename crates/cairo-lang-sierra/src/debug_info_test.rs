@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use indoc::indoc;
 
 use super::DebugInfo;
@@ -22,16 +20,16 @@ fn test_extract_names() {
                 .unwrap(),
         ),
         DebugInfo {
-            type_names: HashMap::from([
+            type_names: From::from([
                 ("u128".into(), "u128".into()),
                 ("GasBuiltin".into(), "GasBuiltin".into()),
                 ("NonZeroInt".into(), "NonZeroInt".into())
             ]),
-            libfunc_names: HashMap::from([
+            libfunc_names: From::from([
                 ("rename_u128".into(), "rename_u128".into()),
                 ("rename_gb".into(), "rename_gb".into())
             ]),
-            user_func_names: HashMap::from([
+            user_func_names: From::from([
                 ("Func1".into(), "Func1".into()),
                 ("Func2".into(), "Func2".into())
             ]),
@@ -60,16 +58,16 @@ fn test_populate_names() {
     "})
         .unwrap();
     DebugInfo {
-        type_names: HashMap::from([
+        type_names: From::from([
             (0.into(), "u128".into()),
             (1.into(), "GasBuiltin".into()),
             (2.into(), "NonZeroInt".into()),
         ]),
-        libfunc_names: HashMap::from([
+        libfunc_names: From::from([
             (0.into(), "rename_u128".into()),
             (1.into(), "rename_gb".into()),
         ]),
-        user_func_names: HashMap::from([(0.into(), "Func1".into()), (1.into(), "Func2".into())]),
+        user_func_names: From::from([(0.into(), "Func1".into()), (1.into(), "Func2".into())]),
         annotations: Default::default(),
         executables: Default::default(),
     }

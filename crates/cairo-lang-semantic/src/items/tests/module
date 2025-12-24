@@ -34,42 +34,42 @@ trait abc {}
 impl abc of abc;
 
 //! > expected_diagnostics
-error: The name `abc` is defined multiple times.
+error[E2118]: The name `abc` is defined multiple times.
  --> lib.cairo:3:4
 fn abc(a: felt252) {}
    ^^^
 
-error: The name `abc` is defined multiple times.
+error[E2118]: The name `abc` is defined multiple times.
  --> lib.cairo:8:12
 use inner::abc;
            ^^^
 
-error: The name `abc` is defined multiple times.
+error[E2118]: The name `abc` is defined multiple times.
  --> lib.cairo:10:8
 struct abc {
        ^^^
 
-error: The name `abc` is defined multiple times.
+error[E2118]: The name `abc` is defined multiple times.
  --> lib.cairo:14:6
 enum abc {
      ^^^
 
-error: The name `abc` is defined multiple times.
+error[E2118]: The name `abc` is defined multiple times.
  --> lib.cairo:18:5
 mod abc {}
     ^^^
 
-error: The name `abc` is defined multiple times.
+error[E2118]: The name `abc` is defined multiple times.
  --> lib.cairo:20:7
 trait abc {}
       ^^^
 
-error: The name `abc` is defined multiple times.
+error[E2118]: The name `abc` is defined multiple times.
  --> lib.cairo:22:6
 impl abc of abc;
      ^^^
 
-error: Not a trait.
+error[E2012]: Not a trait.
  --> lib.cairo:22:13
 impl abc of abc;
             ^^^

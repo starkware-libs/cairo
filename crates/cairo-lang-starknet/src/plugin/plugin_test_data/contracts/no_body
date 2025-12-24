@@ -14,7 +14,7 @@ lib.cairo:
 mod test_contract;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Contracts without body are not supported.
+error[E2200]: Plugin diagnostic: Contracts without body are not supported.
  --> lib.cairo:1:1-2:18
   #[starknet::contract]
  _^

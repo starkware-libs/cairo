@@ -68,27 +68,19 @@ impl<T> OptionHelper for Option<T> {
     }
 }
 
-/// Borrows a mutable reference as Box for the lifespan of this function.
-///
-/// Runs the given closure with the boxed value as a parameter.
-/// The closure is expected to return a boxed value, whose changes will be reflected on the mutable
-/// reference.
-/// Example:
-/// ```
-/// use cairo_lang_utils::borrow_as_box;
-/// let mut x = 5;
-/// borrow_as_box(&mut x, |mut x: Box<usize>| {
-///     *x += 1;
-///     ((), x)
-/// });
-/// assert_eq!(x, 6);
-/// ```
-pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut T, f: F) -> R {
-    // TODO(spapini): Consider replacing take with something that leaves the memory dangling,
-    // instead of filling with default().
-    let (res, boxed) = f(Box::new(core::mem::take(ptr)));
-    *ptr = *boxed;
-    res
+/// Traits requesting the for a dynamic clone for a salsa database.
+#[cfg(feature = "std")]
+pub trait CloneableDatabase: salsa::Database + Send {
+    /// Returns a Box of the cloned database.
+    fn dyn_clone(&self) -> Box<dyn CloneableDatabase>;
+}
+
+/// Implements Clone for `Box<dyn CloneableDatabase>`.
+#[cfg(feature = "std")]
+impl Clone for Box<dyn CloneableDatabase> {
+    fn clone(&self) -> Self {
+        self.dyn_clone()
+    }
 }
 
 #[cfg(feature = "std")]

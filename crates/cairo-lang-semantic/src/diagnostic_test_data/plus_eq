@@ -34,7 +34,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: ref argument must be a variable.
+error[E2079]: ref argument must be a variable.
  --> lib.cairo:2:5
     4 += 4;
     ^
@@ -58,7 +58,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: ref argument must be a mutable variable.
+error[E2080]: ref argument must be a mutable variable.
  --> lib.cairo:3:5
     x += 4;
     ^
@@ -82,7 +82,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::ops::arith::AddAssign::<core::felt252, core::bool>.
+error[E2311]: Trait has no implementation in context: core::ops::arith::AddAssign::<core::felt252, core::bool>.
  --> lib.cairo:3:5
     x += true;
     ^^^^^^^^^
@@ -106,7 +106,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::ops::arith::DivAssign::<core::bool, core::bool>.
+error[E2311]: Trait has no implementation in context: core::ops::arith::DivAssign::<core::bool, core::bool>.
  --> lib.cairo:3:5
     x /= false;
     ^^^^^^^^^^

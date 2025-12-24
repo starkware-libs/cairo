@@ -31,17 +31,17 @@ pub impl ImplBad2<T> of Bad<T, T> {
 //! > function_body
 
 //! > expected_diagnostics
-error: Negative impls supported only in impl definitions.
+error[E2078]: Negative impls supported only in impl definitions.
  --> lib.cairo:3:18
 pub trait Bad<T, -NegImpl> {
                  ^^^^^^^^
 
-error: Only `_` is valid as a negative impl argument.
+error[E2122]: Only `_` is valid as a negative impl argument.
  --> lib.cairo:13:32
 pub impl ImplBad2<T> of Bad<T, T> {
                                ^
 
-error: Only `_` is valid as a negative impl argument.
+error[E2122]: Only `_` is valid as a negative impl argument.
  --> lib.cairo:20:17
     Bad::<u128, core::NegImpl>::bad();
                 ^^^^^^^^^^^^^
@@ -70,7 +70,7 @@ impl BadImpl<-NegImpl> of NegImpl {
 //! > function_body
 
 //! > expected_diagnostics
-error: Inference cycle detected
+error[E2301]: Inference cycle detected
  --> lib.cairo:10:14
     NegImpl::bar()
              ^^^

@@ -44,7 +44,7 @@ use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericIte
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, FunctionId, GenericArgumentId, semantic, semantic_object_for_id};
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub enum TypeLongId<'db> {
     Concrete(ConcreteTypeId<'db>),
     /// Some expressions might have invalid types during processing, either due to errors or
@@ -313,7 +313,7 @@ pub enum TypeHead<'db> {
     FixedSizeArray,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub enum ConcreteTypeId<'db> {
     Struct(ConcreteStructId<'db>),
     Enum(ConcreteEnumId<'db>),
@@ -384,7 +384,7 @@ impl<'db> DebugWithDb<'db> for ConcreteTypeId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub struct ConcreteStructLongId<'db> {
     pub struct_id: StructId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -404,7 +404,7 @@ impl<'db> DebugWithDb<'db> for ConcreteStructLongId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub struct ConcreteEnumLongId<'db> {
     pub enum_id: EnumId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -425,7 +425,7 @@ impl<'db> ConcreteEnumId<'db> {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub struct ConcreteExternTypeLongId<'db> {
     pub extern_type_id: ExternTypeId<'db>,
     pub generic_args: Vec<semantic::GenericArgumentId<'db>>,
@@ -439,7 +439,7 @@ impl<'db> ConcreteExternTypeId<'db> {
 }
 
 /// A type id of a closure function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject, salsa::Update, HeapSize)]
 pub struct ClosureTypeLongId<'db> {
     pub param_tys: Vec<TypeId<'db>>,
     pub ret_ty: TypeId<'db>,
@@ -991,6 +991,7 @@ fn check_all_type_are_zero_sized<'a>(
 /// Cycle handling of [TypesSemantic::type_size_info].
 fn type_size_info_cycle<'db>(
     _db: &'db dyn Database,
+    _id: salsa::Id,
     _ty: TypeId<'db>,
 ) -> Maybe<TypeSizeInformation> {
     Ok(TypeSizeInformation::Infinite)
