@@ -7,7 +7,7 @@ license-file.workspace = true
 description = "Debug utilities for query objects."
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.15.0", features = ["tracing"] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.15.0", features = ["tracing"] }
 id-arena.workspace = true
 salsa.workspace = true
 
