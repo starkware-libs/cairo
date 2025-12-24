@@ -592,7 +592,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 )
             }
             SemanticDiagnosticKind::UseSelfNonMulti => {
-                "`self` in `use` items is not allowed not in multi.".into()
+                "`self` in `use` items is not allowed in multi.".into()
             }
             SemanticDiagnosticKind::UseSelfEmptyPath => {
                 "`self` in `use` items is not allowed for empty path.".into()
