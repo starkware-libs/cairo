@@ -17,7 +17,7 @@ smol_str.workspace = true
 # Optional
 parity-scale-codec = { workspace = true, optional = true }
 salsa = { workspace = true, optional = true }
-schemars = { workspace = true, features = ["preserve_order"], optional = true }
+schemars = { workspace = true, optional = true }
 serde = { workspace = true, features = ["alloc"], optional = true }
 tracing = { workspace = true, optional = true }
 tracing-log = { workspace = true, optional = true }

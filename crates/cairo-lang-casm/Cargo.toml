@@ -14,7 +14,7 @@ num-traits = { workspace = true }
 
 # Optional
 parity-scale-codec = { workspace = true, optional = true }
-schemars = { workspace = true, features = ["preserve_order"], optional = true }
+schemars = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 
 [dev-dependencies]
