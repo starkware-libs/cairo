@@ -17,7 +17,7 @@ impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
         &self,
         id: cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> Option<cairo_lang_sierra::extensions::types::TypeInfo> {
-        self.0.get_type_info(id).map(|info| (*info).clone()).to_option()
+        self.0.get_type_info(id).cloned().to_option()
     }
 }
 impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_> {
@@ -35,10 +35,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         &self,
         function_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> Option<cairo_lang_sierra::program::FunctionSignature> {
-        self.0
-            .get_function_signature(function_id.clone())
-            .map(|signature| (*signature).clone())
-            .to_option()
+        self.0.get_function_signature(function_id.clone()).cloned().to_option()
     }
 
     fn try_get_function_ap_change(
