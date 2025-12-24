@@ -88,7 +88,7 @@ pub const BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST: &str = "experimental";
 /// The experimental list contains all the libfuncs and is currently used for development.
 pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
 
-/// Returns the Sierra version corresponding to the given version id.
+/// Returns the list of allowed Sierra libfuncs based on the provided list selector.
 pub fn lookup_allowed_libfuncs_list(
     list_selector: ListSelector,
 ) -> Result<AllowedLibfuncs, AllowedLibfuncsError> {
@@ -106,7 +106,7 @@ pub fn lookup_allowed_libfuncs_list(
             }
             _ => {
                 return Err(AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-                    allowed_libfuncs_list_name: list_name.to_string(),
+                    allowed_libfuncs_list_name: list_name,
                 });
             }
         },

@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Application binary interface
 
 The Application Binary Interface (ABI) is the machine-readable description of a Starknet
@@ -175,9 +177,9 @@ tooling.
 
 - xref:language_constructs:contracts.adoc[Contracts]
 - ABI model and JSON serialization live in the codebase:
-  * link:https://github.com/andrewbig655/cairo/blob/main/crates/cairo-lang-starknet-classes/src/abi.rs[`crates/cairo-lang-starknet-classes/src/abi.rs`]
-  * link:https://github.com/andrewbig655/cairo/blob/main/crates/cairo-lang-starknet/src/abi.rs[`crates/cairo-lang-starknet/src/abi.rs`]
-  * link:https://github.com/andrewbig655/cairo/blob/main/crates/cairo-lang-starknet/src/compile.rs[ABI building during compilation]
+  * link:{cairo-repo}/crates/cairo-lang-starknet-classes/src/abi.rs[crates/cairo-lang-starknet-classes/src/abi.rs]
+  * link:{cairo-repo}/crates/cairo-lang-starknet/src/abi.rs[crates/cairo-lang-starknet/src/abi.rs]
+  * link:{cairo-repo}/crates/cairo-lang-starknet/src/compile.rs[ABI building during compilation]
 
 == Open points and versioning
 

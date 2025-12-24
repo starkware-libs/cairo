@@ -102,6 +102,7 @@ pub fn impl_alias_semantic_data_helper<'db>(
 
 fn impl_alias_semantic_data_cycle<'db>(
     db: &'db dyn Database,
+    _id: salsa::Id,
     impl_alias_id: ImplAliasId<'db>,
     _in_cycle: bool,
 ) -> Maybe<ImplAliasData<'db>> {
@@ -218,6 +219,7 @@ fn impl_alias_impl_def<'db>(
 /// Cycle handling for [ImplAliasSemantic::impl_alias_impl_def].
 fn impl_alias_impl_def_cycle<'db>(
     _db: &dyn Database,
+    _id: salsa::Id,
     _impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplDefId<'db>> {
     // Skipping diagnostics since we will get these through when resolving in the

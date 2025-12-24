@@ -12,7 +12,7 @@ pub enum GreenNodeDetails<'a> {
     Node { children: Vec<GreenId<'a>>, width: TextWidth },
 }
 /// Green node. Underlying untyped representation of the syntax tree.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub struct GreenNode<'a> {
     pub kind: SyntaxKind,
     pub details: GreenNodeDetails<'a>,

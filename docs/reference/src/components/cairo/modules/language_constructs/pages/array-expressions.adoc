@@ -1,8 +1,10 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Array expressions
 
 Array expressions construct array values directly in place.
 They correspond to the `FixedSizeArray` expression in the Cairo syntax (see
-link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs], variant `ExprFixedSizeArray`).
+link:{cairo-repo}/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs], variant `ExprFixedSizeArray`).
 
 == Syntax
 
@@ -52,7 +54,8 @@ let grid = [[1, 2], [3, 4]];
 // Repeat form: repeat the element 0 four times.
 let zeros = [0; 4];
 
-// Using type context for an empty array (element type provided by the annotation).
+// Empty array using list form [] with type annotation [felt252; 0].
+// Note: [felt252; 0] is a type annotation syntax, not a repeat form expression.
 let empty: [felt252; 0] = [];
 
 ----
@@ -61,6 +64,7 @@ Invalid examples (illustrative):
 
 - Heterogeneous elements: `[1, true]`
 - Mixed forms: `[1, 2; 3]`
+- Repeat form with zero size: `[0; 0]` (size must be greater than 0)
 
 == Related
 

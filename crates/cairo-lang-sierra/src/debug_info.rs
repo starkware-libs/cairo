@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::hash::Hash;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -20,25 +19,25 @@ pub struct DebugInfo {
         serialize_with = "serialize_map::<ConcreteTypeId, _>",
         deserialize_with = "deserialize_map::<ConcreteTypeId, _>"
     )]
-    pub type_names: HashMap<ConcreteTypeId, SmolStr>,
+    pub type_names: OrderedHashMap<ConcreteTypeId, SmolStr>,
     #[serde(
         serialize_with = "serialize_map::<ConcreteLibfuncId, _>",
         deserialize_with = "deserialize_map::<ConcreteLibfuncId, _>"
     )]
-    pub libfunc_names: HashMap<ConcreteLibfuncId, SmolStr>,
+    pub libfunc_names: OrderedHashMap<ConcreteLibfuncId, SmolStr>,
     #[serde(
         serialize_with = "serialize_map::<FunctionId, _>",
         deserialize_with = "deserialize_map::<FunctionId, _>"
     )]
-    pub user_func_names: HashMap<FunctionId, SmolStr>,
+    pub user_func_names: OrderedHashMap<FunctionId, SmolStr>,
     /// Non-crucial information about the program, for use by external libraries and tools.
     ///
     /// See [`Annotations`] type documentation for more information about this field.
     #[serde(default, skip_serializing_if = "Annotations::is_empty")]
     pub annotations: Annotations,
     /// List of functions marked as executable.
-    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
-    pub executables: HashMap<String, Vec<FunctionId>>,
+    #[serde(default, skip_serializing_if = "OrderedHashMap::is_empty")]
+    pub executables: OrderedHashMap<String, Vec<FunctionId>>,
 }
 
 /// Store for non-crucial information about the program, for use by external libraries and tools.
@@ -200,7 +199,7 @@ impl IdAsHashKey for FunctionId {
 }
 
 fn serialize_map<Id: IdAsHashKey, S: serde::Serializer>(
-    m: &HashMap<Id, SmolStr>,
+    m: &OrderedHashMap<Id, SmolStr>,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
     let v: Vec<_> = m.iter().map(|(id, name)| (id.get(), name)).sorted().collect();
@@ -209,7 +208,7 @@ fn serialize_map<Id: IdAsHashKey, S: serde::Serializer>(
 
 fn deserialize_map<'de, Id: IdAsHashKey, D: serde::Deserializer<'de>>(
     deserializer: D,
-) -> Result<HashMap<Id, SmolStr>, D::Error> {
+) -> Result<OrderedHashMap<Id, SmolStr>, D::Error> {
     Ok(Vec::<(u64, SmolStr)>::deserialize(deserializer)?
         .into_iter()
         .map(|(id, name)| (Id::new(id), name))

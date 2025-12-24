@@ -17,6 +17,7 @@ use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::init_sierra_gen_group;
 use cairo_lang_sierra_generator::program_generator::get_dummy_program_for_size_estimation;
+use cairo_lang_utils::CloneableDatabase;
 use salsa::Database;
 
 use crate::project::update_crate_roots_from_project_config;
@@ -71,6 +72,11 @@ pub struct RootDatabase {
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
+impl CloneableDatabase for RootDatabase {
+    fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
+        Box::new(self.clone())
+    }
+}
 
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, optimizations: Optimizations) -> Self {
@@ -182,7 +188,7 @@ impl RootDatabaseBuilder {
 
     pub fn build(&mut self) -> Result<RootDatabase> {
         // NOTE: Order of operations matters here!
-        //   Errors if something is not OK are very subtle, mostly this results in missing
+        //   Errors from incorrect ordering are very subtle, mostly resulting in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
         let mut db =

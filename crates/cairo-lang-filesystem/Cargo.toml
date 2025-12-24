@@ -7,9 +7,9 @@ license-file.workspace = true
 description = "Virtual filesystem for the compiler."
 
 [dependencies]
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.14.0" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.14.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.0", features = ["serde"] }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "=2.15.0" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "=2.15.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.15.0", features = ["serde"] }
 itertools.workspace = true
 path-clean.workspace = true
 salsa.workspace = true

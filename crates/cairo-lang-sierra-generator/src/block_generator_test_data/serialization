@@ -51,7 +51,7 @@ End:
 
 blk1:
 Statements:
-  (v5: core::felt252) <- core::box::unbox::<core::felt252>(v3)
+  (v5: core::felt252) <- unbox(v3)
   (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v5)
   (v7: core::array::Array::<core::felt252>) <- test::serialize_array_felt_helper(v6, v2)
 End:

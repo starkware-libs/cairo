@@ -27,10 +27,11 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode, ast};
-use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::{CloneableDatabase, Intern};
 use itertools::Itertools;
-use salsa::{Database, par_map};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use salsa::Database;
 
 use crate::debug_info::function_debug_info::serializable::{
     CairoVariableName, SerializableAllFunctionsDebugInfo, SerializableFunctionDebugInfo,
@@ -40,7 +41,7 @@ use crate::debug_info::{SourceCodeSpan, SourceFileFullPath, maybe_code_location}
 
 pub mod serializable;
 
-/// The debug info of all sierra functions in the program.
+/// The debug info of all Sierra functions in the program.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AllFunctionsDebugInfo<'db>(OrderedHashMap<FunctionId, FunctionDebugInfo<'db>>);
 
@@ -51,22 +52,27 @@ impl<'db> AllFunctionsDebugInfo<'db> {
 
     pub fn extract_serializable_debug_info(
         &self,
-        db: &'db dyn Database,
+        db: &'db dyn CloneableDatabase,
     ) -> SerializableAllFunctionsDebugInfo {
-        let all_functions_debug_info: Vec<
-            Option<(SierraFunctionId, SerializableFunctionDebugInfo)>,
-        > = par_map(db, self.0.iter().collect_vec(), |db, (function_id, function_debug_info)| {
-            Some((
-                SierraFunctionId(function_id.id),
-                function_debug_info.extract_serializable_debug_info(db)?,
-            ))
-        });
-        SerializableAllFunctionsDebugInfo(all_functions_debug_info.into_iter().flatten().collect())
+        SerializableAllFunctionsDebugInfo(
+            self.0
+                .iter()
+                .collect_vec()
+                .into_par_iter()
+                .map_with(db.dyn_clone(), |db, (function_id, function_debug_info)| {
+                    Some((
+                        SierraFunctionId(function_id.id),
+                        function_debug_info.extract_serializable_debug_info(db.as_ref())?,
+                    ))
+                })
+                .flatten()
+                .collect(),
+        )
     }
 }
 
-/// The debug info of a sierra function.
-/// Contains a signature location and locations of sierra variables of this function.
+/// The debug info of a Sierra function.
+/// Contains a signature location and locations of Sierra variables of this function.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FunctionDebugInfo<'db> {
     pub signature_location: LocationId<'db>,

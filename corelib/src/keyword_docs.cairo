@@ -133,8 +133,8 @@ mod keyword_for {}
 ///     let mut i = 0;
 ///     loop {
 ///         if i >= xs.len() { return 0; }
-///         let v = *xs.at(i).unwrap();
-///         if v > 0 { return v; }
+///         let v = *xs.at(i);
+///         if v != 0 { return v; }
 ///         i = i + 1;
 ///     }
 /// }
@@ -274,7 +274,7 @@ mod keyword_continue {}
 ///
 /// ### Example
 /// ```cairo
-/// fn clamp01(x: i32) -> u32 {
+/// fn clamp01(x: i32) -> i32    {
 ///     if x < 0 { return 0; }
 ///     if x > 1 { return 1; }
 ///     x

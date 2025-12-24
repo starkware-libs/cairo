@@ -62,7 +62,9 @@ pub fn concretize_lowered<'db>(
                 Statement::Snapshot(_)
                 | Statement::Desnap(_)
                 | Statement::StructConstruct(_)
-                | Statement::StructDestructure(_) => {}
+                | Statement::StructDestructure(_)
+                | Statement::IntoBox(_)
+                | Statement::Unbox(_) => {}
             }
         }
         if let BlockEnd::Match { info } = &mut block.end {

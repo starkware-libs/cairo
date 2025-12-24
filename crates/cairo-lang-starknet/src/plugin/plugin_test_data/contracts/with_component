@@ -1111,7 +1111,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:26:9
         component2_storage: super::component2::Storage,
         ^^^^^^^^^^^^^^^^^^
@@ -1166,7 +1166,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:26:9
         component2_storage: super::component2::Storage,
         ^^^^^^^^^^^^^^^^^^

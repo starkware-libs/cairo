@@ -198,7 +198,7 @@ impl S1DerefMut of core::ops::DerefMut<S1> {
 }
 
 //! > expected_diagnostics
-error: Type `test::S1` cannot be dereferenced
+error[E2135]: Type `test::S1` cannot be dereferenced
  --> lib.cairo:13:14
     let _ = (*a);
              ^

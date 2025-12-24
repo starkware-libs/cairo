@@ -1425,17 +1425,17 @@ impl IContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<IContra
 impl IContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<IContractSafeDispatcherSubPointersMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
  --> lib.cairo:3:29
     fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
                             ^^^
 
-error: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
  --> lib.cairo:3:48
     fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
                                                ^^^
 
-error: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
+error[E2200]: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
  --> lib.cairo:5:27
     fn bad_sig2(self: @T, __calldata__: felt252);
                           ^^^^^^^^^^^^
@@ -1457,12 +1457,12 @@ trait IContract<T> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `starknet::interface` does not yet support type items.
+error[E2200]: Plugin diagnostic: `starknet::interface` does not yet support type items.
  --> lib.cairo:3:5
     type X;
     ^^^^
 
-error: Plugin diagnostic: `starknet::interface` does not yet support constant items.
+error[E2200]: Plugin diagnostic: `starknet::interface` does not yet support constant items.
  --> lib.cairo:4:5
     const Y: usize;
     ^^^^^

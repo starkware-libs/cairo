@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Constant items
 
 == Overview
@@ -6,9 +8,9 @@ Constant items define named compile-time values. They are resolved, type-checked
 during semantic analysis and can be referenced from code like normal names. Their values are
 immutable and do not incur runtime computation.
 
-link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-semantic/src/items/constant.rs[Implementation reference]
+link:{cairo-repo}/crates/cairo-lang-semantic/src/items/constant.rs[Implementation reference]
 
-See also: xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+See also: xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
 == Syntax
 
@@ -34,7 +36,7 @@ const NAME: Type = expr;
   match the computed expression type.
 
 For the full evaluation rules and interpreter details, see
-xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
 == Allowed constructs (summary)
 
@@ -61,7 +63,7 @@ Calls inside const expressions are permitted when any of the following holds:
 - The call resolves to specific const-enabled trait implementations from the core library.
 - Specific externs are allowed by the compiler for casting, zero checks, and related utilities.
 
-See the detailed lists in xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+See the detailed lists in xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
 == Numeric and type notes
 
@@ -116,5 +118,5 @@ Typical errors reported for const items include:
 == See also
 
 - xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation]
-- link:https://github.com/starkware-libs/cairo/edit/main/crates/cairo-lang-semantic/src/items/constant.rs[crates/cairo-lang-semantic/src/items/constant.rs]
-- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs]
+- link:{cairo-repo}/crates/cairo-lang-semantic/src/items/constant.rs[crates/cairo-lang-semantic/src/items/constant.rs]
+- link:{cairo-repo}/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs]

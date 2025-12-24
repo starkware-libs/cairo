@@ -38,7 +38,7 @@ use num_integer::Integer;
 use num_traits::Signed;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
-use starknet_types_core::hash::{Poseidon, StarkHash};
+use starknet_types_core::hash::{Blake2Felt252, Poseidon, StarkHash};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -123,8 +123,13 @@ pub struct CasmContractClass {
     pub entry_points_by_type: CasmContractEntryPoints,
 }
 impl CasmContractClass {
-    /// Returns the Poseidon hash value for the compiled contract class.
+    /// Returns the Blake2 hash value for the compiled contract class.
     pub fn compiled_class_hash(&self) -> Felt252 {
+        self.compiled_class_hash_inner::<Blake2Felt252>()
+    }
+
+    /// Returns the Poseidon hash value for the compiled contract class.
+    pub fn legacy_compiled_class_hash(&self) -> Felt252 {
         self.compiled_class_hash_inner::<Poseidon>()
     }
 

@@ -70,7 +70,6 @@ impl ProfilingInfo {
         trace: &[RelocatedTraceEntry],
     ) -> Self {
         let sierra_statement_info = &builder.casm_program().debug_info.sierra_statement_info;
-        let sierra_len = sierra_statement_info.len();
         let bytecode_len = sierra_statement_info.last().unwrap().end_offset;
 
         // The function stack trace of the current function, excluding the current function (that
@@ -181,9 +180,6 @@ impl ProfilingInfo {
                 }
             }
         }
-
-        // Remove the footer.
-        sierra_statement_weights.remove(&StatementIdx(sierra_len));
 
         ProfilingInfo {
             sierra_statement_weights,

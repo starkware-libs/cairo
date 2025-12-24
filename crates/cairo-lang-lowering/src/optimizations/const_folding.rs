@@ -43,8 +43,9 @@ use crate::utils::InliningStrategy;
 use crate::{
     Block, BlockEnd, BlockId, DependencyType, Lowered, LoweringStage, MatchArm, MatchEnumInfo,
     MatchExternInfo, MatchInfo, Statement, StatementCall, StatementConst, StatementDesnap,
-    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VarUsage, Variable, VariableArena, VariableId,
+    StatementEnumConstruct, StatementIntoBox, StatementSnapshot, StatementStructConstruct,
+    StatementStructDestructure, StatementUnbox, VarRemapping, VarUsage, Variable, VariableArena,
+    VariableId,
 };
 
 /// Converts a const value to a specialization arg.
@@ -337,6 +338,35 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     VarInfo::Enum { variant: *variant, payload: VarInfo::Var(*input).into() }
                 };
                 self.var_info.insert(*output, value);
+            }
+            Statement::IntoBox(StatementIntoBox { input, output }) => {
+                let var_info = self.var_info.get(&input.var_id);
+                let const_value = match var_info {
+                    Some(VarInfo::Const(val)) => Some(*val),
+                    Some(VarInfo::Snapshot(info)) => {
+                        try_extract_matches!(info.as_ref(), VarInfo::Const).copied()
+                    }
+                    _ => None,
+                };
+                let var_info =
+                    var_info.cloned().or_else(|| var_info_if_copy(self.variables, *input));
+                if let Some(var_info) = var_info {
+                    self.var_info.insert(*output, VarInfo::Box(var_info.into()));
+                }
+
+                if let Some(const_value) = const_value {
+                    *stmt = Statement::Const(StatementConst::new_boxed(const_value, *output));
+                }
+            }
+            Statement::Unbox(StatementUnbox { input, output }) => {
+                if let Some(VarInfo::Box(inner)) = self.var_info.get(&input.var_id) {
+                    let inner = inner.as_ref().clone();
+                    if let VarInfo::Const(inner) =
+                        self.var_info.entry(*output).insert_entry(inner).get()
+                    {
+                        *stmt = Statement::Const(StatementConst::new_flat(*inner, *output));
+                    }
+                }
             }
         }
     }
@@ -631,32 +661,6 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     self.storage_base_address_const.concretize(db, vec![arg]).lowered(db);
             }
             None
-        } else if id == self.into_box {
-            let input = stmt.inputs[0];
-            let var_info = self.var_info.get(&input.var_id);
-            let const_value = match var_info {
-                Some(VarInfo::Const(val)) => Some(*val),
-                Some(VarInfo::Snapshot(info)) => {
-                    try_extract_matches!(info.as_ref(), VarInfo::Const).copied()
-                }
-                _ => None,
-            };
-            let var_info = var_info.cloned().or_else(|| var_info_if_copy(self.variables, input))?;
-            self.var_info.insert(stmt.outputs[0], VarInfo::Box(var_info.into()));
-            Some(Statement::Const(StatementConst::new_boxed(const_value?, stmt.outputs[0])))
-        } else if id == self.unbox {
-            if let VarInfo::Box(inner) = self.var_info.get(&stmt.inputs[0].var_id)? {
-                let inner = inner.as_ref().clone();
-                if let VarInfo::Const(inner) =
-                    self.var_info.entry(stmt.outputs[0]).insert_entry(inner).get()
-                {
-                    return Some(Statement::Const(StatementConst::new_flat(
-                        *inner,
-                        stmt.outputs[0],
-                    )));
-                }
-            }
-            None
         } else if self.upcast_fns.contains(&id) {
             let int_value = self.as_int(stmt.inputs[0].var_id)?;
             let output = stmt.outputs[0];
@@ -711,7 +715,9 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
 
         let extract_base = |function: ConcreteFunctionWithBodyId<'db>| match function.long(self.db)
         {
-            ConcreteFunctionWithBodyLongId::Specialized(specialized) => specialized.base,
+            ConcreteFunctionWithBodyLongId::Specialized(specialized) => {
+                specialized.long(self.db).base
+            }
             _ => function,
         };
         let called_base = extract_base(called_function);
@@ -749,7 +755,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             self.caller_function.long(self.db)
             && caller_base == called_base
         {
-            specialized.args.iter().map(Some).collect()
+            specialized.long(self.db).args.iter().map(Some).collect()
         } else {
             vec![None; call_stmt.inputs.len()]
         };
@@ -781,11 +787,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         if let ConcreteFunctionWithBodyLongId::Specialized(specialized_function) =
             called_function.long(self.db)
         {
+            let specialized_function = specialized_function.long(self.db);
             // Canonicalize the specialization rather than adding a specialization of a specialized
             // function.
             called_function = specialized_function.base;
             let mut new_args_iter = specialization_args.into_iter();
-            let mut old_args = specialized_function.args.to_vec();
+            let mut old_args = specialized_function.args.clone();
             let mut stack = vec![];
             for arg in old_args.iter_mut().rev() {
                 stack.push(arg);
@@ -811,8 +818,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             specialization_args = old_args;
         }
-        let specialized =
-            SpecializedFunction { base: called_function, args: specialization_args.into() };
+        let specialized = SpecializedFunction { base: called_function, args: specialization_args }
+            .intern(self.db);
         let specialized_func_id =
             ConcreteFunctionWithBodyLongId::Specialized(specialized).intern(self.db);
 
@@ -1558,10 +1565,6 @@ pub struct ConstFoldingLibfuncInfo<'db> {
     felt_mul: ExternFunctionId<'db>,
     /// The `felt252_div` libfunc.
     felt_div: ExternFunctionId<'db>,
-    /// The `into_box` libfunc.
-    into_box: ExternFunctionId<'db>,
-    /// The `unbox` libfunc.
-    unbox: ExternFunctionId<'db>,
     /// The `box_forward_snapshot` libfunc.
     box_forward_snapshot: GenericFunctionId<'db>,
     /// The set of functions that check if numbers are equal.
@@ -1718,8 +1721,6 @@ impl<'db> ConstFoldingLibfuncInfo<'db> {
             felt_add: core.extern_function_id("felt252_add"),
             felt_mul: core.extern_function_id("felt252_mul"),
             felt_div: core.extern_function_id("felt252_div"),
-            into_box: box_module.extern_function_id("into_box"),
-            unbox: box_module.extern_function_id("unbox"),
             box_forward_snapshot: box_module.generic_function_id("box_forward_snapshot"),
             eq_fns,
             uadd_fns,

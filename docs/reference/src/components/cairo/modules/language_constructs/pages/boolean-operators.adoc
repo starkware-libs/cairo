@@ -36,7 +36,7 @@ fn main() {
 ----
 
 Const evaluation: logical `&&` / `\|\|` are supported and preserve short-circuit semantics
-in const contexts. See xref:language_semantics:constant-evaluation.adoc[Constant evaluation].
+in const contexts. See xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
 == Bitwise boolean operators on `bool` (`&`, `\|`, `^`)
 

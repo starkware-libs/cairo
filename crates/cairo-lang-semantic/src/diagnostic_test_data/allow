@@ -20,7 +20,7 @@ fn func() {}
 //! > function_body
 
 //! > expected_diagnostics
-warning: `allow` attribute argument not supported.
+warning[E2153]: `allow` attribute argument not supported.
  --> lib.cairo:6:8
 #[allow(invalid_lint)] // Invalid allow arg.
        ^^^^^^^^^^^^^^
@@ -134,12 +134,12 @@ use core::traits::Into;
 //! > function_body
 
 //! > expected_diagnostics
-warning: Unused import: `test::ArrayTrait`
+warning[E2100]: Unused import: `test::ArrayTrait`
  --> lib.cairo:22:18
 use core::array::ArrayTrait; // Not covered by prev item's unused.
                  ^^^^^^^^^^
 
-warning: Unused import: `test::no_allow_unused::ArrayTrait`
+warning[E2100]: Unused import: `test::no_allow_unused::ArrayTrait`
  --> lib.cairo:16:22
     use core::array::ArrayTrait; // Not covered by allow on prev module.
                      ^^^^^^^^^^

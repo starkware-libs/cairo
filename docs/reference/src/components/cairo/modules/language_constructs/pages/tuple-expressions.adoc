@@ -1,12 +1,47 @@
 = Tuple expressions
 
 A tuple expression constructs xref:tuple-types.adoc[tuple] values.
-The syntax for tuple expressions is a parenthesized, comma separated list of expressions.
-1-ary tuple expressions require a comma after their tuple initializer operand to be disambiguated with a parenthetical expression.
 
-Tuple expressions without any tuple initializer operands produce the unit tuple value.
+== Syntax
 
-Examples:
+The syntax for tuple expressions is a parenthesized, comma separated list of expressions:
+
+[source,cairo]
+----
+(expression1, expression2, ..., expressionN)
+----
+
+=== 0-ary tuples (unit type)
+
+Tuple expressions without any tuple initializer operands produce the unit tuple value `()`.
+
+=== 1-ary tuples
+
+1-ary tuple expressions require a trailing comma after their tuple initializer operand to be disambiguated with a parenthetical expression.
+
+- `(1,)` is a 1-ary tuple of type `(felt252,)`
+- `(1)` is just a parenthetical expression evaluating to `1`, not a tuple
+
+This trailing comma is mandatory for single-element tuples to distinguish them from ordinary parenthesized expressions.
+
+=== N-ary tuples (N ≥ 2)
+
+Tuples with two or more elements use comma-separated expressions without requiring a trailing comma:
+
+[source,cairo]
+----
+(1, 2)           // 2-ary tuple
+(1, 2, 3)        // 3-ary tuple
+(true, 5_u32)    // Mixed-type tuple
+----
+
+== Semantics
+
+A tuple expression is evaluated by evaluating each of its operand expressions from left to right, then constructing a tuple value with the results in the same order.
+
+== Examples
+
+Valid examples:
 
 [cols="1,1",options="header"]
 |===
@@ -15,4 +50,15 @@ Examples:
 | (1_u32,)                      | (u32,)
 | (1_u32, Some(3_u8))           | (u32, Option<u8>)
 | (true, false, 'abc')          | (bool, bool, felt252)
+| ((1, 2), (3, 4))              | ((felt252, felt252), (felt252, felt252))
 |===
+
+Invalid examples (illustrative):
+
+- Missing comma in 1-ary tuple: `(1)` when intending a tuple (this is just a parenthesized expression)
+- Trailing comma in 0-ary tuple: `(,)` is invalid syntax
+- Missing parentheses: `1, 2` is not a tuple expression (tuples require parentheses)
+
+== Related
+
+- xref:tuple-types.adoc[Tuple types]

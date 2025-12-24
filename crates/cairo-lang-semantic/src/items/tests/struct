@@ -46,22 +46,22 @@ struct C {
 }
 
 //! > expected_diagnostics
-error: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "test::A" has infinite size.
  --> lib.cairo:2:5
     member: A,
     ^^^^^^^^^
 
-error: Recursive type "test::C" has infinite size.
+error[E2052]: Recursive type "test::C" has infinite size.
  --> lib.cairo:6:5
     member: C,
     ^^^^^^^^^
 
-error: Recursive type "test::A" has infinite size.
+error[E2052]: Recursive type "test::A" has infinite size.
  --> lib.cairo:7:5
     member2: A,
     ^^^^^^^^^^
 
-error: Recursive type "test::B" has infinite size.
+error[E2052]: Recursive type "test::B" has infinite size.
  --> lib.cairo:11:5
     member: B,
     ^^^^^^^^^
@@ -109,7 +109,7 @@ struct B {
 }
 
 //! > expected_diagnostics
-error: Non-phantom type containing phantom type.
+error[E2020]: Non-phantom type containing phantom type.
  --> lib.cairo:5:5
     member: A,
     ^^^^^^^^^
@@ -133,7 +133,7 @@ struct A {
 }
 
 //! > expected_diagnostics
-error: Cannot have array of type "((), ())" that is zero sized.
+error[E2053]: Cannot have array of type "((), ())" that is zero sized.
  --> lib.cairo:2:5
     member: Array<((), ())>,
     ^^^^^^^^^^^^^^^^^^^^^^^

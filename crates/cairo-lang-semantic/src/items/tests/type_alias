@@ -152,7 +152,7 @@ foo
 type A<T> = (felt252, T);
 
 //! > expected_diagnostics
-error: Unknown type.
+error[E2006]: Unknown type.
  --> lib.cairo:2:13
 fn foo(a: A<5>) -> felt252 {
             ^
@@ -177,12 +177,12 @@ type A = B;
 type B = A;
 
 //! > expected_diagnostics
-error: Cycle detected while resolving type-alias/impl-type items.
+error[E2026]: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:1:6
 type A = B;
      ^
 
-error: Cycle detected while resolving type-alias/impl-type items.
+error[E2026]: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:2:6
 type B = A;
      ^
@@ -206,7 +206,7 @@ foo
 type A = A;
 
 //! > expected_diagnostics
-error: Cycle detected while resolving type-alias/impl-type items.
+error[E2026]: Cycle detected while resolving type-alias/impl-type items.
  --> lib.cairo:1:6
 type A = A;
      ^

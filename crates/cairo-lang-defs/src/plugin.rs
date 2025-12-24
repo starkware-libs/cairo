@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::Severity;
+use cairo_lang_diagnostics::{ErrorCode, Severity};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{CodeMapping, SmolStrId};
@@ -73,12 +73,12 @@ pub struct PluginGeneratedFile {
     pub name: String,
     /// Code content for the file.
     pub content: String,
-    /// A code mapper, to allow more readable diagnostics that originate in plugin generated
+    /// A code mapper, to allow more readable diagnostics that originate in plugin-generated
     /// virtual files.
     pub code_mappings: Vec<CodeMapping>,
     /// Arbitrary data that the plugin generates along with the file.
     pub aux_data: Option<DynGeneratedFileAuxData>,
-    /// Diagnostic note for the plugin generated file.
+    /// Diagnostic note for the plugin-generated file.
     /// This will be used as [`cairo_lang_diagnostics::DiagnosticNote`] on diagnostics originating
     /// from this file.
     pub diagnostics_note: Option<String>,
@@ -111,6 +111,8 @@ pub struct PluginDiagnostic<'db> {
     /// is not segmented into each argument.
     /// The tuple is (offset, width).
     pub inner_span: Option<(TextWidth, TextWidth)>,
+    /// An optional error code associated with the diagnostic.
+    pub error_code: Option<ErrorCode>,
 }
 impl<'db> PluginDiagnostic<'db> {
     pub fn error(
@@ -122,6 +124,7 @@ impl<'db> PluginDiagnostic<'db> {
             message,
             severity: Severity::Error,
             inner_span: None,
+            error_code: None,
         }
     }
 
@@ -140,6 +143,7 @@ impl<'db> PluginDiagnostic<'db> {
             message,
             severity: Severity::Error,
             inner_span: Some((offset, width)),
+            error_code: None,
         }
     }
 
@@ -152,7 +156,13 @@ impl<'db> PluginDiagnostic<'db> {
             message,
             severity: Severity::Warning,
             inner_span: None,
+            error_code: None,
         }
+    }
+
+    /// Updates the diagnostic with an error code.
+    pub fn with_error_code(self, error_code: ErrorCode) -> PluginDiagnostic<'db> {
+        PluginDiagnostic { error_code: Some(error_code), ..self }
     }
 }
 
@@ -170,7 +180,7 @@ pub struct MacroPluginMetadata<'a> {
 }
 
 // TODO(spapini): Move to another place.
-/// A trait for a macro plugin: external plugin that generates additional code for items.
+/// A trait for a macro plugin: an external plugin that generates additional code for items.
 pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns `PluginResult` with the generated virtual submodule.
@@ -183,7 +193,7 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send + Any {
 
     /// Attributes this plugin uses.
     /// Attributes the plugin uses without declaring here are likely to cause a compilation error
-    /// for unknown attribute.
+    /// for unknown attributes.
     /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
     /// plugin writers should not rely on that.
     fn declared_attributes<'db>(&self, db: &'db dyn Database) -> Vec<SmolStrId<'db>>;

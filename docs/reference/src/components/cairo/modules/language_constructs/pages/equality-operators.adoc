@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Equality operators
  
  Equality in Cairo is provided by the `==` (equality) and `!=` (inequality) operators.
@@ -29,7 +31,7 @@
  - Looser than bitwise `&`, `^`, `|`, arithmetic `+`, `-`, `*`, `/`, `%`,
    indexing `[]`, and member access `.`.
  
- This is defined in `crates/cairo-lang-parser/src/operators.rs`.
+ This is defined in link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs].
  
  == Examples
  
@@ -99,6 +101,6 @@
  
  == References (source)
  
- - Lexer tokens: `crates/cairo-lang-parser/src/lexer.rs` (`EqEq`, `Neq`).
- - Operator precedence: `crates/cairo-lang-parser/src/operators.rs`.
+ - Lexer tokens: link:{cairo-repo}/crates/cairo-lang-parser/src/lexer.rs[crates/cairo-lang-parser/src/lexer.rs] (`EqEq`, `Neq`).
+ - Operator precedence: link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs].
  - Trait and behavior: `corelib/src/traits.cairo` (`PartialEq`).

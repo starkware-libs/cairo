@@ -16,7 +16,7 @@ loop {
 }
 
 //! > expected_diagnostics
-error: Loop has incompatible return types: "core::integer::u32" and "core::integer::u16"
+error[E2056]: Loop has incompatible return types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:6:15
         break 3_u16;
               ^^^^^
@@ -110,7 +110,7 @@ loop {
 }
 
 //! > expected_diagnostics
-error: Loop has incompatible return types: "core::integer::u32" and "core::integer::u16"
+error[E2056]: Loop has incompatible return types: "core::integer::u32" and "core::integer::u16"
  --> lib.cairo:6:15
         break 3 + 3_u16;
               ^^^^^^^^^

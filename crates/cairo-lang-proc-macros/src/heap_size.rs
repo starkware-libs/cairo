@@ -54,7 +54,7 @@ fn emit_enum_heap_size(
     let mut arms = quote! {};
     for v in enm.variants.iter() {
         let v_ident = &v.ident;
-        let (pat, heap_size_calls) = emit_variant_heap_size(v_ident.to_string(), &v.fields);
+        let (pat, heap_size_calls) = emit_variant_heap_size(&v.fields);
         arms = quote! {
             #arms
             #name :: #v_ident #pat => { #heap_size_calls }
@@ -78,10 +78,7 @@ fn emit_enum_heap_size(
 
 /// Helper function for emit_enum_heap_size. Both struct and enum variants use
 /// fields, but enum variants need pattern matching.
-fn emit_variant_heap_size(
-    _variant_name: String,
-    fields: &syn::Fields,
-) -> (TokenStream2, TokenStream2) {
+fn emit_variant_heap_size(fields: &syn::Fields) -> (TokenStream2, TokenStream2) {
     let crt = heap_size_crate();
     let mut pattern = quote! {};
     let mut calls = quote! { 0 };

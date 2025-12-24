@@ -47,7 +47,7 @@ GenericArgs
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a type expression.
+error[E1005]: Missing tokens. Expected a type expression.
  --> dummy_file.cairo:2:13
     bar::<S: >();
             ^

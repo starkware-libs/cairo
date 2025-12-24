@@ -1,0 +1,237 @@
+//! > Account contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+account__account
+
+//! > compiled_class_hash
+f84283927c7e4c99093d6bfe2d8448d8dbc9ffb859a4f1f4f0e729c2b243e7
+
+//! > legacy_compiled_class_hash
+57689902ba4385de9fe6bac615009194745147dfe761f7dbb7c476591e6739f
+
+//! > ==========================================================================
+
+//! > Circuit contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+circuit_contract__circuit_contract
+
+//! > compiled_class_hash
+3b41aa7fcbc31225858478a7496f5bf96143e96197133c65a359d018b7d1a4a
+
+//! > legacy_compiled_class_hash
+6e0217bc7fc100aa61b24a5fe84f81c2a0ab7bef9bd4fa7c4a7f88f1352b72f
+
+//! > ==========================================================================
+
+//! > Basic test contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+test_contract__test_contract
+
+//! > compiled_class_hash
+799466a2cbe9aa4aa98c5d78cc867713ee74e576ef6d0b51e1d81df38a563d4
+
+//! > legacy_compiled_class_hash
+2a3d7c357e84627109dd35faddce0320e819ccda9850e541261f74ac8fd752d
+
+//! > ==========================================================================
+
+//! > New test contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+new_syntax_test_contract__counter_contract
+
+//! > compiled_class_hash
+23b142f4c3c780d7806757af84faa61e1a696736525290125fe6c5fd61724e2
+
+//! > legacy_compiled_class_hash
+39a3cc83379b149189dd36937cdb6b87ca53b74d523dec13b85c4e9ce3d9337
+
+//! > ==========================================================================
+
+//! > Minimal contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+minimal_contract__minimal_contract
+
+//! > compiled_class_hash
+76382995abb39c16cb19179655d4194132ce25cd59ccdb5cceffb0fa0f9d0bc
+
+//! > legacy_compiled_class_hash
+1a5a627b1f1923229781457e5d2b6f43a34845a6ffe99962ea59b98fbba041a
+
+//! > ==========================================================================
+
+//! > Hello starknet contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+hello_starknet__hello_starknet
+
+//! > compiled_class_hash
+72f5d69c4c2e9d99515ff43e80367c35214a501c31a42bbe81f5d4c1caecfb5
+
+//! > legacy_compiled_class_hash
+320b5a10c7182b278b9a346826f0096186a4d4b164952d4e1eb6658e5ac817b
+
+//! > ==========================================================================
+
+//! > Libfuncs coverage contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+libfuncs_coverage__libfuncs_coverage
+
+//! > compiled_class_hash
+7ed6a6960d3d76c77413bb7426ed049ed7f8b70dac44a229fff88c5d67b39c3
+
+//! > legacy_compiled_class_hash
+5d02dbee8064e03707182b9b5754e9c89f7ccd91be33133cebd95f7b58496e6
+
+//! > ==========================================================================
+
+//! > ERC20 contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+erc20__erc_20
+
+//! > compiled_class_hash
+5970d51ec18663ca5359a4de3c73b975ca2af80cb3674a72653f1d5bfda58f2
+
+//! > legacy_compiled_class_hash
+63d770d6182d0e98a99dc16811313acea7599abb4cbe080bc7ec6afbc993ba2
+
+//! > ==========================================================================
+
+//! > Token bridge contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+token_bridge__token_bridge
+
+//! > compiled_class_hash
+1b84455c8bc1c125db6b585508791808c8986ebc232b4dbad2232613d91c388
+
+//! > legacy_compiled_class_hash
+964d098814cb12c6d5e9e6829e3ed6f28c62a9c7de1b35e66c8b09705f6ab7
+
+//! > ==========================================================================
+
+//! > With ERC20 contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+with_erc20__erc20_contract
+
+//! > compiled_class_hash
+5eb0c834a95f09b965292169d16228df1299cb8296df8bbedc7c17e727cf094
+
+//! > legacy_compiled_class_hash
+2a49ad449a547c83cbf9fe162886e2a636771a46c67b7b4945cfa1ebb1a1a14
+
+//! > ==========================================================================
+
+//! > With Ownable contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+with_ownable__ownable_balance
+
+//! > compiled_class_hash
+55bc84e5357a7ae92ada13edea786831e8de7cd4ef0f5c654a563604efb364a
+
+//! > legacy_compiled_class_hash
+e8b6ca2c5e0aaeb14bbf6106168eebb93601abd55ae5f03efe5e130340fade
+
+//! > ==========================================================================
+
+//! > Ownable ERC20 contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+ownable_erc20__ownable_erc20_contract
+
+//! > compiled_class_hash
+5622e4065a706ba18ec9405dcd417b724bdb1f22e4e85cecdd23e4a82efd684
+
+//! > legacy_compiled_class_hash
+7f16f2ae2d2db868399cab14f8121b073d8b1991c11f644a016ad0a14776a64
+
+//! > ==========================================================================
+
+//! > Upgradable counter contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+upgradable_counter__counter_contract
+
+//! > compiled_class_hash
+4d6d06d6ff789eb51766c15bd6bce634e80f856dc42fea3b88e627aebd0a8e3
+
+//! > legacy_compiled_class_hash
+3547adc14b0468512a998c0be40cf42246b3a8a99b8bf69db31e61dfc126e84
+
+//! > ==========================================================================
+
+//! > Mintable ERC20 contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+mintable__mintable_erc20_ownable
+
+//! > compiled_class_hash
+71daa136f7c83c84c4309f0c08c0953de100f589412d2469dd4a79aed6195fb
+
+//! > legacy_compiled_class_hash
+3179dde8cc165fbf64dee858784b06bb1e97741e801c88d606ae30b3b241411
+
+//! > ==========================================================================
+
+//! > Multi component contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+multi_component__contract_with_4_components
+
+//! > compiled_class_hash
+341a8c04ed7f0e5ca770a40eec5c9c386faf0f713122d80b1bafe8fdfe46bb5
+
+//! > legacy_compiled_class_hash
+671a3f37217861f0b0033f92e8f32969c5487bb583522494e4d2616386e155a

@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Arithmetic operators
 
 Arithmetic operations in Cairo are provided by the operators `+`, `-`, `*`, `/`, `%`.
@@ -29,7 +31,7 @@ type error (trait resolution fails).
 == Precedence and associativity
 
 Arithmetic operators have different precedence levels defined in
-`crates/cairo-lang-parser/src/operators.rs`:
+link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs]:
 
 - `*`, `/`, `%` share precedence level 2
 - `+`, `-` share precedence level 3
@@ -141,6 +143,6 @@ Cairo also provides compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`)
 
 == References (source)
 
-- link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-parser/src/operators.rs#L21-L22[Operator precedence]
-- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/traits.cairo[Traits] (`Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`)
-- link:https://github.com/starkware-libs/cairo/blob/main/corelib/src/ops/arith.cairo[`Assignment operators`]
+- link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs#L21-L22[Operator precedence]
+- link:{cairo-repo}/corelib/src/traits.cairo[Traits] (`Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`)
+- link:{cairo-repo}/corelib/src/ops/arith.cairo[`Assignment operators`]

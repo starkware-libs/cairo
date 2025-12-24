@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Constant evaluation
 
 == Overview
@@ -8,7 +10,7 @@ produce a `ConstValue` for items such as constant definitions and constant funct
 
 Implementation reference:
 
-- `crates/cairo-lang-semantic/src/items/constant.rs`
+- link:{cairo-repo}/crates/cairo-lang-semantic/src/items/constant.rs[crates/cairo-lang-semantic/src/items/constant.rs]
   * `resolve_const_expr_and_evaluate()` — resolve types, validate const context, evaluate value.
   * `validate_const_expr()` and `ConstantEvaluateContext::validate()` — admissible constructs.
   * `ConstantEvaluateContext::evaluate()` — interpreter for const expressions.
@@ -16,7 +18,7 @@ Implementation reference:
 
 Note: IR-level constant folding is an optimization step and not part of language semantics:
 
-- `crates/cairo-lang-lowering/src/optimizations/const_folding.rs`.
+- link:{cairo-repo}/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs].
 
 == Allowed constructs in const expressions
 
@@ -99,10 +101,10 @@ solved or finalized for consts; unresolved or mismatched types result in diagnos
 
 The semantic rules above define what is valid and how values are computed for consts. Separately,
 the lowering/IR optimizer performs constant folding and related simplifications on lowered code
-(`crates/cairo-lang-lowering/src/optimizations/const_folding.rs`). Those optimizations do not alter
+(link:{cairo-repo}/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs]). Those optimizations do not alter
 language semantics.
 
 == Related sources
 
-- `crates/cairo-lang-semantic/src/items/constant.rs`
-- `crates/cairo-lang-lowering/src/optimizations/const_folding.rs`
+- link:{cairo-repo}/crates/cairo-lang-semantic/src/items/constant.rs[crates/cairo-lang-semantic/src/items/constant.rs]
+- link:{cairo-repo}/crates/cairo-lang-lowering/src/optimizations/const_folding.rs[crates/cairo-lang-lowering/src/optimizations/const_folding.rs]

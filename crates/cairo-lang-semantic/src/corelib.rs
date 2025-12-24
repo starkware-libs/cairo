@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, NamedLanguageElementId,
-    TraitFunctionId, TraitId,
+    EnumId, ExternFunctionId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId,
+    NamedLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
@@ -998,6 +998,8 @@ pub struct CoreInfo<'db> {
     pub box_new_fn: TraitFunctionId<'db>,
     pub upcast_fn: GenericFunctionId<'db>,
     pub downcast_fn: GenericFunctionId<'db>,
+    pub into_box: ExternFunctionId<'db>,
+    pub unbox: ExternFunctionId<'db>,
     pub tuple_submodule: ModuleId<'db>,
     pub fixed_size_array_submodule: ModuleId<'db>,
     pub keyword_docs_submodule: ModuleId<'db>,
@@ -1143,6 +1145,8 @@ impl<'db> CoreInfo<'db> {
             box_new_fn: trait_fn(box_trt, "new"),
             upcast_fn: bounded_int.generic_function_id("upcast"),
             downcast_fn: bounded_int.generic_function_id("downcast"),
+            into_box: box_module.extern_function_id("into_box"),
+            unbox: box_module.extern_function_id("unbox"),
             tuple_submodule,
             fixed_size_array_submodule,
             keyword_docs_submodule: core.submodule("keyword_docs").id,

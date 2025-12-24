@@ -18,17 +18,17 @@ struct MyStruct {
 }
 
 //! > expected_diagnostics
-error: Variable "a" not found.
+error[E2047]: Variable "a" not found.
  --> lib.cairo:6:25
     let _x = MyStruct { a, b, a: 3 };
                         ^
 
-error: Variable "b" not found.
+error[E2047]: Variable "b" not found.
  --> lib.cairo:6:28
     let _x = MyStruct { a, b, a: 3 };
                            ^
 
-error: Member specified more than once.
+error[E2021]: Member specified more than once.
  --> lib.cairo:6:31
     let _x = MyStruct { a, b, a: 3 };
                               ^

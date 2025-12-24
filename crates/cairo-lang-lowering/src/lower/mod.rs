@@ -1,5 +1,3 @@
-use std::vec;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
@@ -1351,7 +1349,7 @@ fn perform_function_call<'db>(
         function_call_info;
 
     // If the function is not extern, simply call it.
-    if function.try_get_extern_function_id(ctx.db).is_none() {
+    let Some(extern_function_id) = function.try_get_extern_function_id(ctx.db) else {
         let call_result = generators::Call {
             function: function.lowered(ctx.db),
             inputs,
@@ -1390,6 +1388,23 @@ fn perform_function_call<'db>(
 
     // Extern function.
     assert!(coupon_input.is_none(), "Extern functions cannot have a __coupon__ argument.");
+
+    // Handle boxing - place a placeholder instead of calling the libfunc just yet, for
+    // later optimization purposes.
+    let info = ctx.db.core_info();
+    if extern_function_id == info.into_box {
+        assert!(extra_ret_tys.is_empty(), "into_box should not have extra return types");
+        let input = inputs.into_iter().exactly_one().expect("into_box expects exactly one input");
+        let res = generators::IntoBox { input, location }.add(ctx, &mut builder.statements);
+        return Ok((vec![], LoweredExpr::AtVariable(res)));
+    }
+    if extern_function_id == info.unbox {
+        assert!(extra_ret_tys.is_empty(), "unbox should not have extra return types");
+        let input = inputs.into_iter().exactly_one().expect("unbox expects exactly one input");
+        let res = generators::Unbox { input, location }.add(ctx, &mut builder.statements);
+        return Ok((vec![], LoweredExpr::AtVariable(res)));
+    }
+
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
     let call_result = generators::Call {
         function: function.lowered(ctx.db),

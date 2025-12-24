@@ -45,8 +45,8 @@ impl BoxCopy<T, +Copy<T>> of Copy<Box<T>>;
 impl BoxDrop<T, +Drop<T>> of Drop<Box<T>>;
 
 
-// These functions are only exposed in the corelib through the trait below since calling them
-// directly with tuples panics due to auto unpacking of the tuple.
+// These functions are only exposed in the corelib through the trait below, since calling them
+// directly with tuples panics due to auto-unpacking of the tuple.
 // TODO(Gil): Expose in the core lib when the described behaviour is fixed.
 extern fn into_box<T>(value: T) -> Box<T> nopanic;
 extern fn unbox<T>(box: Box<T>) -> T nopanic;
@@ -108,7 +108,7 @@ pub impl BoxImpl<T> of BoxTrait<T> {
 impl BoxDeref<T> of crate::ops::Deref<Box<T>> {
     /// The target type after dereferencing.
     type Target = T;
-    /// Takes a `Box<T>`, dereferences it and returns a value of type `T`.
+    /// Takes a `Box<T>`, dereferences it, and returns a value of type `T`.
     ///
     /// # Examples
     ///

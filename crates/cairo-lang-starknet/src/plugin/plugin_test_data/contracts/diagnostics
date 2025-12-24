@@ -190,17 +190,17 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first parameter of an entry point must be `self`.
+error[E2200]: Plugin diagnostic: The first parameter of an entry point must be `self`.
  --> lib.cairo:7:11
     fn foo() {}
           ^^
 
-error: Plugin diagnostic: The first parameter of an entry point must be `self`.
+error[E2200]: Plugin diagnostic: The first parameter of an entry point must be `self`.
  --> lib.cairo:10:12
     fn bar(_n: u32) {}
            ^^^^^^^
 
-warning: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
+warning[E2200]: Plugin diagnostic: Failed to generate ABI: Entrypoints must have a self first param.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^^^^^^^^^^^^^^^^^^^^^
@@ -432,7 +432,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The constructor function must be called `constructor`.
+error[E2200]: Plugin diagnostic: The constructor function must be called `constructor`.
  --> lib.cairo:7:8
     fn invalid_constructor_name(ref self: ContractState) {}
        ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -706,12 +706,12 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Only #[external(v0)] is supported.
+error[E2200]: Plugin diagnostic: Only #[external(v0)] is supported.
  --> lib.cairo:7:5
     #[external]
     ^^^^^^^^^^^
 
-error: Plugin diagnostic: Only #[external(v0)] is supported.
+error[E2200]: Plugin diagnostic: Only #[external(v0)] is supported.
  --> lib.cairo:9:5
     #[external(v1)]
     ^^^^^^^^^^^^^^^
@@ -939,7 +939,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
+error[E2311]: Trait has no implementation in context: core::serde::Serde::<test::MyType>.
  --> lib.cairo:5:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
@@ -1153,7 +1153,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+error[E2042]: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
  --> lib.cairo:6:40
     fn foo(ref self: ContractState) -> (felt252, felt252) {}
                                        ^^^^^^^^^^^^^^^^^^
@@ -1369,12 +1369,12 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Contract entry points cannot have generic arguments
+error[E2200]: Plugin diagnostic: Contract entry points cannot have generic arguments
  --> lib.cairo:6:11
     fn foo<T>(ref self: ContractState, x: T) {}
           ^^^
 
-warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
+warning[E2200]: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^^^^^^^^^^^^^^^^^^^^^
@@ -1384,12 +1384,12 @@ error[E0006]: Type not found.
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error: Trait has no implementation in context: core::serde::Serde::<<missing>>.
+error[E2311]: Trait has no implementation in context: core::serde::Serde::<<missing>>.
  --> lib.cairo:5:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:6:40
     fn foo<T>(ref self: ContractState, x: T) {}
                                        ^
@@ -1616,7 +1616,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+error[E2042]: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
  --> lib.cairo:8:10
     ) -> (felt252, felt252) {}
          ^^^^^^^^^^^^^^^^^^
@@ -1907,14 +1907,14 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-warning: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
+warning[E2200]: Plugin diagnostic: Failed to generate ABI: `__validate__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
  --> lib.cairo:5:5-6:47
       #[external(v0)]
  _____^
 |     fn __validate__(ref self: ContractState) {}
 |_______________________________________________^
 
-warning: Plugin diagnostic: Failed to generate ABI: `__execute__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
+warning[E2200]: Plugin diagnostic: Failed to generate ABI: `__execute__` is a reserved entry point name for account contracts only (marked with `#[starknet::contract(account)]`).
  --> lib.cairo:11:5-12:46
       #[external(v0)]
  _____^
@@ -2161,37 +2161,37 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+error[E2200]: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
  --> lib.cairo:8:37
     fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
                                     ^^^
 
-error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+error[E2200]: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
  --> lib.cairo:8:53
     fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
                                                     ^^^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error[E2200]: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:8:69
     fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
                                                                     ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error[E2200]: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:12:53
     fn bar1(ref self: ContractState, a: felt252) -> felt252 {
                                                     ^^^^^^^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error[E2200]: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:18:50
     fn bar2(ref self: ContractState, a: felt252) {}
                                                  ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error[E2200]: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:23:53
     fn bar3(ref self: ContractState, a: felt252) -> core::Array<felt252> {
                                                     ^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error[E2200]: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:31:53
     fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
                                                     ^^^^^^^^^^^^^^^^^^^^^
@@ -2422,7 +2422,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Contracts must define a 'Storage' struct.
+error[E2200]: Plugin diagnostic: Contracts must define a 'Storage' struct.
  --> lib.cairo:1:1-6:1
   #[starknet::contract]
  _^
@@ -2462,7 +2462,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
+error[E2200]: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
  --> lib.cairo:3:5-5:5
       struct Storage {
  _____^
@@ -2688,17 +2688,17 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
+warning[E2200]: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:5:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Only #[external(v0)] is supported.
+error[E2200]: Plugin diagnostic: Only #[external(v0)] is supported.
  --> lib.cairo:9:5
     #[external(v1)]
     ^^^^^^^^^^^^^^^
 
-warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
+warning[E2200]: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:9:5
     #[external(v1)]
     ^^^^^^^^^^^^^^^
@@ -2727,19 +2727,19 @@ mod test_contract {}
 trait ContractAbi {}
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
+error[E2200]: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
  --> lib.cairo:1:1-2:20
   #[contract]
  _^
 | mod test_contract {}
 |____________________^
 
-error: Plugin diagnostic: Unsupported attribute.
+error[E2200]: Plugin diagnostic: Unsupported attribute.
  --> lib.cairo:1:1
 #[contract]
 ^^^^^^^^^^^
 
-error: Plugin diagnostic: The 'abi' attribute for traits was deprecated, please use `starknet::interface` instead.
+error[E2200]: Plugin diagnostic: The 'abi' attribute for traits was deprecated, please use `starknet::interface` instead.
  --> lib.cairo:4:1-5:20
   #[abi]
  _^
@@ -2789,42 +2789,42 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
+warning[E2200]: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:13:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+error[E2200]: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:15:9
         #[external(v0)]
         ^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+error[E2200]: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:17:9
         #[l1_handler]
         ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+error[E2200]: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:19:9
         #[constructor]
         ^^^^^^^^^^^^^^
 
-warning: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
+warning[E2200]: Plugin diagnostic: The 'external' attribute on impls is deprecated. Use 'abi(per_item)' or 'abi(embed_v0)'.
  --> lib.cairo:24:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+error[E2200]: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:26:9
         #[external(v0)]
         ^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+error[E2200]: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:28:9
         #[l1_handler]
         ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+error[E2200]: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
  --> lib.cairo:30:9
         #[constructor]
         ^^^^^^^^^^^^^^
@@ -4127,7 +4127,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
+error[E2200]: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
  --> lib.cairo:7:10
     enum Event {}
          ^^^^^
@@ -4352,7 +4352,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Contract type that is marked with #[event] must be named `Event`.
+error[E2200]: Plugin diagnostic: Contract type that is marked with #[event] must be named `Event`.
  --> lib.cairo:8:10
     enum MyEvent {}
          ^^^^^^^
@@ -4369,7 +4369,7 @@ ExpandContractTestRunner(expect_diagnostics: true)
 trait IContract<T>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Starknet interfaces without a body are not supported.
+error[E2200]: Plugin diagnostic: Starknet interfaces without a body are not supported.
  --> lib.cairo:2:19
 trait IContract<T>;
                   ^
@@ -4398,17 +4398,17 @@ trait IContract0Generics {}
 trait IContractNonTypeGenerics<+Destruct<u32>> {}
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
+error[E2200]: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
  --> lib.cairo:2:25
 trait IContract2Generics<T, S> {}
                         ^^^^^^
 
-error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
+error[E2200]: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
  --> lib.cairo:5:26
 trait IContract0Generics {}
                          ^
 
-error: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
+error[E2200]: Plugin diagnostic: Starknet interfaces must have exactly one generic parameter, which is a type.
  --> lib.cairo:8:31
 trait IContractNonTypeGenerics<+Destruct<u32>> {}
                               ^^^^^^^^^^^^^^^^
@@ -4441,17 +4441,17 @@ trait IContract<T> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first parameter must be named `self`.
+error[E2200]: Plugin diagnostic: The first parameter must be named `self`.
  --> lib.cairo:3:21
     fn ref_bad_name(ref wrong_name: T, other: felt252) -> felt252;
                     ^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The first parameter must be named `self`.
+error[E2200]: Plugin diagnostic: The first parameter must be named `self`.
  --> lib.cairo:4:22
     fn snap_bad_name(wrong_name: @T, other: felt252) -> felt252;
                      ^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: `starknet::interface` functions must have a `self` parameter.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions must have a `self` parameter.
  --> lib.cairo:5:5
     fn no_params() -> felt252;
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -5113,27 +5113,27 @@ trait IContract<T> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support `ref` parameters other than the first one.
  --> lib.cairo:5:9
         ref param_ref: felt252,
         ^^^
 
-error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:6:18
         t_param: T,
                  ^
 
-error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:7:20
         arr_param: Array<T>,
                    ^^^^^^^^
 
-error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:8:21
         snap_param: @T,
                     ^^
 
-error: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support parameters that depend on the trait's generic param type.
  --> lib.cairo:9:20
         tup_param: (felt252, T),
                    ^^^^^^^^^^^^
@@ -5793,7 +5793,7 @@ trait IContract<T> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
+error[E2200]: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
  --> lib.cairo:3:24
     fn non_ref_or_snap(self: T, other: felt252) -> felt252;
                        ^^^^^^^
@@ -6447,12 +6447,12 @@ trait IContract<T> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
+error[E2200]: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
  --> lib.cairo:3:12
     fn foo(ref self: u32, other: felt252) -> felt252;
            ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
+error[E2200]: Plugin diagnostic: `starknet::interface` function first parameter must be a reference to the trait's generic parameter or a snapshot of it.
  --> lib.cairo:4:12
     fn bar(self: @u32, other: felt252) -> felt252;
            ^^^^^^^^^^
@@ -7108,7 +7108,7 @@ trait InterfaceTrait<TContractState> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `starknet::interface` functions don't support bodies.
+error[E2200]: Plugin diagnostic: `starknet::interface` functions don't support bodies.
  --> lib.cairo:3:56-5:5
       fn foo_with_body(self: @TContractState) -> felt252 {
  ________________________________________________________^
@@ -7840,17 +7840,17 @@ impl EmbeddableImpl<TContractState> of Interface<TContractState> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
+error[E2200]: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:9:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
+error[E2200]: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:11:5
     #[l1_handler]
     ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
+error[E2200]: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:13:5
     #[constructor]
     ^^^^^^^^^^^^^^
@@ -8783,17 +8783,17 @@ mod contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
+error[E2200]: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:16:9
         #[external(v0)]
         ^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
+error[E2200]: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:18:9
         #[l1_handler]
         ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
+error[E2200]: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:20:9
         #[constructor]
         ^^^^^^^^^^^^^^
@@ -10098,14 +10098,14 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The 'abi' attribute for impl aliases only supports the 'embed_v0' argument.
+error[E2200]: Plugin diagnostic: The 'abi' attribute for impl aliases only supports the 'embed_v0' argument.
  --> lib.cairo:10:5-11:48
       #[abi(v0)]
  _____^
 |     impl Alias = super::SomeImpl<ContractState>;
 |________________________________________________^
 
-error: Plugin diagnostic: The 'abi' attribute for impls only supports the 'per_item' or 'embed_v0' argument.
+error[E2200]: Plugin diagnostic: The 'abi' attribute for impls only supports the 'per_item' or 'embed_v0' argument.
  --> lib.cairo:13:5
     #[abi(embed)]
     ^^^^^^^^^^^^^
@@ -10382,14 +10382,14 @@ mod component3 {
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?2>", found: "test::component3::ComponentState::<TContractState>".
+error[E2041]: Unexpected argument type. Expected: "@test::component3::ComponentState::<?2>", found: "test::component3::ComponentState::<TContractState>".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:55:32
             get_dep_component!(self, Comp1).foo1();
                                ^^^^
 
-error: Expected variable or constant, found impl.
+error[E2005]: Expected variable or constant, found impl.
  --> lib.cairo:56:32
             get_dep_component!(Comp1, @self).foo1();
                                ^^^^^
@@ -10404,7 +10404,7 @@ error[E0006]: Identifier not found.
             get_dep_component!(@self, @self).foo1();
                                        ^^^^
 
-error: Expected variable or constant, found impl.
+error[E2005]: Expected variable or constant, found impl.
  --> lib.cairo:58:32
             get_dep_component!(Comp1, Comp1).foo1();
                                ^^^^^
@@ -10414,12 +10414,12 @@ error[E0002]: Method `foo1` not found on type `@test::component2::ComponentState
             get_dep_component!(@self, Comp2).foo1();
                                              ^^^^
 
-error: Invalid path.
+error[E2086]: Invalid path.
  --> lib.cairo:60:13
             get_dep_component!(@self, super::NotHasComponent).foo1();
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
+error[E2041]: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "core::felt252".
 It is possible that the type inference failed because the types differ in the number of snapshots.
 Consider adding or removing snapshots.
  --> lib.cairo:62:32
@@ -11828,7 +11828,7 @@ mod component3 {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+error[E2200]: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:51:36
             get_dep_component_mut!(Comp1, self).foo1();
                                    ^^^^^
@@ -11838,12 +11838,12 @@ error[E0006]: Identifier not found.
             get_dep_component_mut!(ref self, self).foo1();
                                              ^^^^
 
-error: Expected variable or constant, found impl.
+error[E2005]: Expected variable or constant, found impl.
  --> lib.cairo:53:40
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
                                        ^^^^^
 
-error: ref argument must be a variable.
+error[E2079]: ref argument must be a variable.
  --> lib.cairo:53:40
             get_dep_component_mut!(ref Comp1, Comp1).foo1();
                                        ^^^^^
@@ -11854,22 +11854,22 @@ Candidate `test::component1::Comp1HelperTrait::foo1` inference failed with: Type
             get_dep_component_mut!(ref self, Comp2).foo1();
                                                     ^^^^
 
-error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+error[E2200]: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:55:36
             get_dep_component_mut!(self, Comp1).foo1();
                                    ^^^^
 
-error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+error[E2200]: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:56:40
             get_dep_component_mut!(mut self, Comp1).foo1();
                                        ^^^^
 
-error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+error[E2200]: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:57:44
             get_dep_component_mut!(ref ref self, Comp1).foo1();
                                            ^^^^
 
-error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+error[E2200]: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
  --> lib.cairo:58:44
             get_dep_component_mut!(ref mut self, Comp1).foo1();
                                            ^^^^
@@ -15264,7 +15264,7 @@ error[E0007]: Type "core::starknet::storage::storage_base::StorageBase::<test::u
             self.u256_pair.a.read()
                            ^
 
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::starknet::storage::map::StorageMapReadAccess::read and core::starknet::storage::StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: core::starknet::storage::map::StorageMapReadAccess::read and core::starknet::storage::StoragePointerReadAccess::read. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:59:30
             self.u256_pair.a.read()
                              ^^^^
@@ -17411,7 +17411,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Variable not dropped.
+error[E3002]: Variable not dropped.
  --> lib.cairo:15:13
         let _ = self.field.read();
             ^
@@ -17773,7 +17773,7 @@ pub mod my_contract {
 }
 
 //! > expected_diagnostics
-warning: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
+warning[E2200]: Plugin diagnostic: Failed to generate ABI: Got unexpected type.
  --> lib.cairo:1:1
 #[starknet::contract]
 ^^^^^^^^^^^^^^^^^^^^^
@@ -17788,7 +17788,7 @@ error[E0006]: Type not found.
     #[external(v0)]
     ^^^^^^^^^^^^^^^
 
-error: Trait has no implementation in context: core::serde::Serde::<<missing>>.
+error[E2311]: Trait has no implementation in context: core::serde::Serde::<<missing>>.
  --> lib.cairo:6:5
     #[external(v0)]
     ^^^^^^^^^^^^^^^
@@ -18015,12 +18015,12 @@ pub mod my_contract {
 }
 
 //! > expected_diagnostics
-error: Parameter type of impl function `Impl::foo` is incompatible with `Interface::foo`. Expected: `core::integer::u256`, actual: `core::felt252`.
+error[E2031]: Parameter type of impl function `Impl::foo` is incompatible with `Interface::foo`. Expected: `core::integer::u256`, actual: `core::felt252`.
  --> lib.cairo:15:48
         fn foo(ref self: ContractState, value: felt252) {}
                                                ^^^^^^^
 
-error: Unexpected argument type. Expected: "core::integer::u256", found: "core::felt252".
+error[E2041]: Unexpected argument type. Expected: "core::integer::u256", found: "core::felt252".
  --> lib.cairo:13:5
     #[abi(embed_v0)]
     ^^^^^^^^^^^^^^^^

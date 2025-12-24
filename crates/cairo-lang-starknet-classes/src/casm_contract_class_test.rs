@@ -3,6 +3,8 @@ use std::fs;
 use std::io::BufReader;
 
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use starknet_types_core::felt::Felt as Felt252;
 use test_case::test_case;
@@ -98,18 +100,38 @@ fn test_contract_libfuncs_coverage(name: &str) {
     }
 }
 
-/// Tests that compiled_class_hash() returns the correct hash, by comparing it to hard-coded
-/// constant that was computed by other implementations.
-#[test_case("account__account", "57689902ba4385de9fe6bac615009194745147dfe761f7dbb7c476591e6739f")]
-fn test_compiled_class_hash(name: &str, expected_hash: &str) {
+/// Tests that `compiled_class_hash()` and `legacy_compiled_class_hash()` returns the correct hash.
+fn test_compiled_class_hash(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let name = inputs.get("compiled_class").expect("Missing `compiled_class` input.");
     let compiled_json_path =
         get_example_file_path(format!("{name}.compiled_contract_class.json").as_str());
     let compiled_json_str = fs::read_to_string(compiled_json_path.clone())
         .unwrap_or_else(|_| panic!("Could not read file: '{compiled_json_path:?}'"));
     let casm_contract_class: CasmContractClass =
         serde_json::from_str(compiled_json_str.as_str()).unwrap();
-    assert_eq!(
-        format!("{:x}", casm_contract_class.compiled_class_hash().to_biguint()),
-        expected_hash
-    );
+
+    TestRunnerResult::success(
+        [
+            (
+                "compiled_class_hash".to_string(),
+                format!("{:x}", casm_contract_class.compiled_class_hash().to_biguint()),
+            ),
+            (
+                "legacy_compiled_class_hash".to_string(),
+                format!("{:x}", casm_contract_class.legacy_compiled_class_hash().to_biguint()),
+            ),
+        ]
+        .into_iter()
+        .collect(),
+    )
 }
+
+cairo_lang_test_utils::test_file_test!(
+    test_compiled_class_hash,
+    "src/compiled_class_hash_test_data",
+    { contracts: "contracts" },
+    test_compiled_class_hash
+);

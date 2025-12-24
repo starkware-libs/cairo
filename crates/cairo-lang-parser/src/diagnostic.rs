@@ -1,4 +1,4 @@
-use cairo_lang_diagnostics::DiagnosticEntry;
+use cairo_lang_diagnostics::{DiagnosticEntry, error_code};
 use cairo_lang_filesystem::ids::{FileId, SpanInFile};
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -244,6 +244,42 @@ Did you mean to write `{identifier}!{left}...{right}'?",
 
     fn location(&self, _db: &'a dyn Database) -> SpanInFile<'a> {
         SpanInFile { file_id: self.file_id, span: self.span }
+    }
+
+    fn error_code(&self) -> Option<cairo_lang_diagnostics::ErrorCode> {
+        Some(match &self.kind {
+            ParserDiagnosticKind::SkippedElement { .. } => error_code!(E1000),
+            ParserDiagnosticKind::MissingToken(_) => error_code!(E1001),
+            ParserDiagnosticKind::MissingExpression => error_code!(E1002),
+            ParserDiagnosticKind::MissingPathSegment => error_code!(E1003),
+            ParserDiagnosticKind::MissingTypeClause => error_code!(E1004),
+            ParserDiagnosticKind::MissingTypeExpression => error_code!(E1005),
+            ParserDiagnosticKind::MissingWrappedArgList => error_code!(E1006),
+            ParserDiagnosticKind::MissingPattern => error_code!(E1007),
+            ParserDiagnosticKind::MissingMacroRuleParamKind => error_code!(E1008),
+            ParserDiagnosticKind::InvalidParamKindInMacroExpansion => error_code!(E1009),
+            ParserDiagnosticKind::InvalidParamKindInMacroRule => error_code!(E1010),
+            ParserDiagnosticKind::ExpectedInToken => error_code!(E1011),
+            ParserDiagnosticKind::ItemInlineMacroWithoutBang { .. } => error_code!(E1012),
+            ParserDiagnosticKind::ReservedIdentifier { .. } => error_code!(E1013),
+            ParserDiagnosticKind::UnderscoreNotAllowedAsIdentifier => error_code!(E1014),
+            ParserDiagnosticKind::MissingLiteralSuffix => error_code!(E1015),
+            ParserDiagnosticKind::InvalidNumericLiteralValue => error_code!(E1016),
+            ParserDiagnosticKind::IllegalStringEscaping => error_code!(E1017),
+            ParserDiagnosticKind::ShortStringMustBeAscii => error_code!(E1018),
+            ParserDiagnosticKind::StringMustBeAscii => error_code!(E1019),
+            ParserDiagnosticKind::UnterminatedShortString => error_code!(E1020),
+            ParserDiagnosticKind::UnterminatedString => error_code!(E1021),
+            ParserDiagnosticKind::VisibilityWithoutItem => error_code!(E1022),
+            ParserDiagnosticKind::AttributesWithoutItem => error_code!(E1023),
+            ParserDiagnosticKind::AttributesWithoutTraitItem => error_code!(E1024),
+            ParserDiagnosticKind::AttributesWithoutImplItem => error_code!(E1025),
+            ParserDiagnosticKind::AttributesWithoutStatement => error_code!(E1026),
+            ParserDiagnosticKind::DisallowedTrailingSeparatorOr => error_code!(E1027),
+            ParserDiagnosticKind::ConsecutiveMathOperators { .. } => error_code!(E1028),
+            ParserDiagnosticKind::ExpectedSemicolonOrBody => error_code!(E1029),
+            ParserDiagnosticKind::LowPrecedenceOperatorInIfLet { .. } => error_code!(E1030),
+        })
     }
 
     fn is_same_kind(&self, other: &Self) -> bool {

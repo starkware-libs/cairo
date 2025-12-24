@@ -319,7 +319,7 @@ pub mod v3 {
         /// contract: its class hash, address salt and constructor calldata.
         /// Used for V3 transactions.
         pub account_deployment_data: Span<felt252>,
-        /// The proof facts of the transaction. Used for client side proving.
+        /// The proof facts of the transaction. Used for client-side proving.
         pub proof_facts: Span<felt252>,
     }
 }

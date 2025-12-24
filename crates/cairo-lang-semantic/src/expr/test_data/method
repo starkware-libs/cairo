@@ -88,17 +88,17 @@ error[E0002]: Method `is_foo` not found on type `core::option::Option::<?0>`. Di
     x.is_foo();
       ^^^^^^
 
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: test::MyTrait::is_bar and test::AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: test::MyTrait::is_bar and test::AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:40:7
     y.is_bar();
       ^^^^^^
 
-error: Invalid member expression.
+error[E2085]: Invalid member expression.
  --> lib.cairo:41:7
     y.SomeOtherPrefix::is_bar();
       ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic parameter.
+error[E2313]: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic parameter.
  --> lib.cairo:38:7
     x.is_bla();
       ^^^^^^
@@ -374,12 +374,12 @@ impl MyImpl of MyTrait<felt252> {
 }
 
 //! > expected_diagnostics
-error: Wrong number of arguments. Expected 3, found: 2
+error[E2030]: Wrong number of arguments. Expected 3, found: 2
  --> lib.cairo:8:7
     0.bar(1);
       ^^^^^^
 
-error: Wrong number of arguments. Expected 3, found: 4
+error[E2030]: Wrong number of arguments. Expected 3, found: 4
  --> lib.cairo:9:7
     0.bar(1, 2, 3);
       ^^^^^^^^^^^^

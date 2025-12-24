@@ -789,12 +789,12 @@ impl WrappedFelt252SubPointersMutDrop<> of core::traits::Drop::<WrappedFelt252Su
 impl WrappedFelt252SubPointersMutCopy<> of core::traits::Copy::<WrappedFelt252SubPointersMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Multiple variants annotated with `#[default]`
+error[E2200]: Plugin diagnostic: Multiple variants annotated with `#[default]`
  --> lib.cairo:39:9
         #[default]
         ^^^^^^^^^^
 
-warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
+warning[E2200]: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default variant. Either add one, or add `#[allow(starknet::store_no_default_variant)]`
  --> lib.cairo:20:5-24:5
       #[derive(Drop, Serde, starknet::Store)]
  _____^
@@ -802,12 +802,12 @@ warning: Plugin diagnostic: Enum with `#[derive(starknet::Store)] has no default
 |     }
 |_____^
 
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+warning[E2066]: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:10:18
         mapping: LegacyMap<WrappedFelt252, WrappedFelt252>,
                  ^^^^^^^^^
 
-warning: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
+warning[E2066]: Usage of deprecated feature `"deprecated_legacy_map"` with no `#[feature("deprecated_legacy_map")]` attribute. Note: "Use `starknet::storage::Map` instead."
  --> lib.cairo:11:28
         zero_size_mapping: LegacyMap<ZeroSize, ZeroSize>,
                            ^^^^^^^^^

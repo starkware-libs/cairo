@@ -20,7 +20,7 @@ use crate::{
 /// Adds redeposit gas actions.
 ///
 /// The algorithm is as follows:
-/// Check if the function will have the `GasBuiltin` implicit after the lower_implicits stage.
+/// Checks if the function will have the `GasBuiltin` implicit after the lower_implicits stage.
 /// If so, after every block that ends with match, add a call to `redeposit_gas` in every arm
 /// that is followed by a convergence point or a return.
 /// Note that assuming `reorganize_blocks` stage is applied before this stage, every `goto`

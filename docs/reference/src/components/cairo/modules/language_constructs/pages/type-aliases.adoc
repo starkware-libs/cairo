@@ -1,6 +1,83 @@
 = Type aliases
 
-This section is a work in progress.
+Type aliases provide alternative names for existing types.
+They do not introduce new types; instead, they refer to an existing type,
+possibly with concrete generic arguments.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+Type aliases are useful for:
+
+- Providing shorter or more descriptive names for complex types.
+- Re-exporting types from other modules.
+- Fixing some generic arguments of a type while keeping others generic.
+
+See also xref:aliases.adoc[Type and impl aliases] and xref:generics.adoc[Generics].
+
+== Syntax
+
+A type alias has the following form:
+
+[source,cairo]
+----
+type TypeAliasName<GenericParams> = path::to::Type<GenericArgs>;
+----
+
+Where:
+
+- `TypeAliasName` is the new name of the type.
+- `GenericParams` are the generic parameters introduced by the alias (optional).
+- `path::to::Type` is a path to an existing type or type alias.
+- `GenericArgs` are the concrete generic arguments passed to that type (optional).
+
+== Basic examples
+
+[source,cairo]
+----
+struct MyStruct {
+    a: felt252,
+}
+
+type RenamedStruct = MyStruct;
+
+enum MyEnum {
+    f: felt252,
+}
+
+type RenamedEnum = MyEnum;
+
+type IntAlias = i32;
+type BoxIntAlias = Box<i32>;
+type TupleAlias = (felt252, u128);
+----
+
+== Generic type aliases
+
+Type aliases can themselves be generic.
+This allows fixing some of the generic arguments of an existing type
+while leaving others as parameters of the alias.
+
+[source,cairo]
+----
+type BoxOption<T> = Box<Option<T>>;
+type RenamedTuple<T> = (felt252, T);
+----
+
+== Chaining type aliases
+
+A type alias can refer to another type alias.
+The compiler resolves such chains transitively until it reaches the
+underlying concrete type.
+
+[source,cairo]
+----
+type A<P4> = B<felt252, P4, u128>;
+type B<P1, P2, P3> = (P1, P3, P2);
+----
+
+== Errors and limitations
+
+When working with type aliases, the compiler enforces several rules:
+
+- The right-hand side of a type alias must resolve to a valid type.
+  If it does not, a compilation error is reported.
+- Cyclic type aliases (where aliases form a cycle through their right-hand sides)
+  are rejected by the compiler.

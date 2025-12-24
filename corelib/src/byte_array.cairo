@@ -123,7 +123,7 @@ pub impl ByteArrayImpl of ByteArrayTrait {
     /// 2. len <= BYTES_IN_BYTES31.
     ///
     /// If these assumptions are not met, it can corrupt the `ByteArray`. Thus, this should be a
-    /// private function. We could add masking/assertions but it would be more expensive.
+    /// private function. We could add masking/assertions, but it would be more expensive.
     ///
     /// # Examples
     ///
@@ -980,7 +980,7 @@ pub struct ByteSpanIter {
     data_iter: SpanIter<bytes31>,
     /// The word currently being iterated over.
     current_word: ShortString,
-    /// The last, partial word of the ByteSpan, iterated over after all full words are consumed.
+    /// The last, partial word of the ByteSpan, is iterated over after all full words are consumed.
     remainder: ShortString,
 }
 
@@ -1013,7 +1013,7 @@ impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
     fn into_iter(self: ByteSpan) -> Self::IntoIter {
         let mut data_iter = self.data.into_iter();
 
-        // Get first word in data array if exists, otherwise iterate on the remainder word.
+        // Get first word in data array if it exists, otherwise iterate on the remainder word.
         let Some(first_word) = data_iter.next() else {
             // On an empty data span, the remainder length is greater than or equal to the start
             // offset.
@@ -1052,7 +1052,7 @@ impl ByteSpanIntoIterator of crate::iter::IntoIterator<ByteSpan> {
 /// 1. `word` is validly convertible to a `bytes31` which has no more than `len` bytes of data.
 /// 2. `index <= len`.
 /// If these assumptions are not met, it can corrupt the `bytes31`. Thus, this should be a
-/// private function. We could add masking/assertions but it would be more expensive.
+/// private function. We could add masking/assertions, but it would be more expensive.
 fn split_bytes31(value: felt252, split_index: Bytes31Index) -> U256Split {
     let Some(split_index) = helpers::index_non_zero(split_index) else {
         return U256Split { high: value, low: 0 };

@@ -371,32 +371,32 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Invalid component macro argument. Expected `path: <value>`
+error[E2200]: Plugin diagnostic: Invalid component macro argument. Expected `path: <value>`
  --> lib.cairo:20:16
     component!(path1: super::test_component, storage1: test_component_storage, event1: ABC);
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro argument. Expected `storage: <value>`
+error[E2200]: Plugin diagnostic: Invalid component macro argument. Expected `storage: <value>`
  --> lib.cairo:20:46
     component!(path1: super::test_component, storage1: test_component_storage, event1: ABC);
                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro argument. Expected `event: <value>`
+error[E2200]: Plugin diagnostic: Invalid component macro argument. Expected `event: <value>`
  --> lib.cairo:20:80
     component!(path1: super::test_component, storage1: test_component_storage, event1: ABC);
                                                                                ^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro argument. Expected `path: <value>`
+error[E2200]: Plugin diagnostic: Invalid component macro argument. Expected `path: <value>`
  --> lib.cairo:22:16
     component!(super::test_component, test_component_storage, ABC);
                ^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro argument. Expected `storage: <value>`
+error[E2200]: Plugin diagnostic: Invalid component macro argument. Expected `storage: <value>`
  --> lib.cairo:22:39
     component!(super::test_component, test_component_storage, ABC);
                                       ^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro argument. Expected `event: <value>`
+error[E2200]: Plugin diagnostic: Invalid component macro argument. Expected `event: <value>`
  --> lib.cairo:22:63
     component!(super::test_component, test_component_storage, ABC);
                                                               ^^^
@@ -772,22 +772,22 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Component macro argument `storage` must be a simple identifier.
+error[E2200]: Plugin diagnostic: Component macro argument `storage` must be a simple identifier.
  --> lib.cairo:19:54
     component!(path: super::test_component, storage: a::test_component_storage, event: b::ABC);
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Component macro argument `event` must be a simple identifier.
+error[E2200]: Plugin diagnostic: Component macro argument `event` must be a simple identifier.
  --> lib.cairo:19:88
     component!(path: super::test_component, storage: a::test_component_storage, event: b::ABC);
                                                                                        ^^^^^^
 
-error: Plugin diagnostic: Component macro argument `storage` must be a simple identifier.
+error[E2200]: Plugin diagnostic: Component macro argument `storage` must be a simple identifier.
  --> lib.cairo:20:54
     component!(path: super::test_component, storage: test_component_storage::<a>, event: ABC::<b>);
                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Component macro argument `event` must be a simple identifier.
+error[E2200]: Plugin diagnostic: Component macro argument `event` must be a simple identifier.
  --> lib.cairo:20:90
     component!(path: super::test_component, storage: test_component_storage::<a>, event: ABC::<b>);
                                                                                          ^^^^^^^^
@@ -1161,17 +1161,17 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Component macro argument `path` must be a path expression.
+error[E2200]: Plugin diagnostic: Component macro argument `path` must be a path expression.
  --> lib.cairo:19:22
     component!(path: a + b, storage: c + d, event: e + f);
                      ^^^^^
 
-error: Plugin diagnostic: Component macro argument `storage` must be a path expression.
+error[E2200]: Plugin diagnostic: Component macro argument `storage` must be a path expression.
  --> lib.cairo:19:38
     component!(path: a + b, storage: c + d, event: e + f);
                                      ^^^^^
 
-error: Plugin diagnostic: Component macro argument `event` must be a path expression.
+error[E2200]: Plugin diagnostic: Component macro argument `event` must be a path expression.
  --> lib.cairo:19:52
     component!(path: a + b, storage: c + d, event: e + f);
                                                    ^^^^^
@@ -1563,17 +1563,17 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
+error[E2200]: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:20:5
     component![path: super::test_component, storage: test_component_storage, event: ABC];
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
+error[E2200]: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:22:5
     component!{path: super::test_component, storage: test_component_storage, event: ABC};
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
+error[E2200]: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:24:5-26:6
       component!(
  _____^
@@ -1581,7 +1581,7 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(path: <c
 |     );
 |______^
 
-error: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
+error[E2200]: Plugin diagnostic: Invalid component macro, expected `component!(path: <component_path>, storage: <storage_name>, event: <event_name>);`
  --> lib.cairo:28:5
     component!(path: super::test_component, storage: test_component_storage);
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2027,19 +2027,19 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Only #[substorage(v0)] is supported.
+error[E2200]: Plugin diagnostic: Only #[substorage(v0)] is supported.
  --> lib.cairo:19:9
         #[substorage]
         ^^^^^^^^^^^^^
 
-error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
+error[E2200]: Plugin diagnostic: `substorage` attribute is only allowed for members of type `[some_path::]Storage`
  --> lib.cairo:14:9-15:37
           #[substorage(v0)]
  _________^
 |         non_path_type: (usize, usize),
 |_____________________________________^
 
-error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
+error[E2200]: Plugin diagnostic: `substorage` attribute is only allowed for members of type `[some_path::]Storage`
  --> lib.cairo:16:9-17:28
           #[substorage(v0)]
  _________^
@@ -2076,7 +2076,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `non_existing` is not a substorage member in the contract's `Storage`.
+error[E2200]: Plugin diagnostic: `non_existing` is not a substorage member in the contract's `Storage`.
 Consider adding to `Storage`:
 ```
 #[substorage(v0)]
@@ -2457,7 +2457,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `test_component_storage` is not a substorage member in the contract's `Storage`.
+error[E2200]: Plugin diagnostic: `test_component_storage` is not a substorage member in the contract's `Storage`.
 Consider adding to `Storage`:
 ```
 #[substorage(v0)]
@@ -2847,7 +2847,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `NonExisting` is not a nested event in the contract's `Event` enum.
+error[E2200]: Plugin diagnostic: `NonExisting` is not a nested event in the contract's `Event` enum.
 Consider adding to the `Event` enum:
 ```
 NonExisting: path::to::component::Event,
@@ -3259,7 +3259,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `ABC` is not a nested event in the contract's `Event` enum.
+error[E2200]: Plugin diagnostic: `ABC` is not a nested event in the contract's `Event` enum.
 Consider adding to the `Event` enum:
 ```
 ABC: path::to::component::Event,
@@ -3704,7 +3704,7 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `Comp2Event` is not a nested event in the contract's `Event` enum.
+error[E2200]: Plugin diagnostic: `Comp2Event` is not a nested event in the contract's `Event` enum.
 Consider adding to the `Event` enum:
 ```
 Comp2Event: path::to::component::Event,
@@ -3714,7 +3714,7 @@ Note: currently with components, only an enum Event directly in the contract is 
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
                                                                             ^^^^^^^^^^
 
-warning: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
+warning[E2200]: Plugin diagnostic: The path `component2_storage.data` collides with existing path `component1_storage.data`. Fix or add `#[allow(starknet::colliding_storage_paths)]` if intentional.
  --> lib.cairo:27:9
         component2_storage: super::component2::Storage,
         ^^^^^^^^^^^^^^^^^^

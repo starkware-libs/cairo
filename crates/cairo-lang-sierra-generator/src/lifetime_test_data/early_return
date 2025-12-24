@@ -81,7 +81,7 @@ BeginningOfBlock(blk0): v0
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable code
+warning[E3000]: Unreachable code
  --> lib.cairo:5:5
     x + 1
     ^^^^^
@@ -140,7 +140,7 @@ BeginningOfBlock(blk0): v1
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-warning: Unreachable code
+warning[E3000]: Unreachable code
  --> lib.cairo:7:5
     x + y
     ^^^^^

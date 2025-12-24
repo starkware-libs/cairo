@@ -101,7 +101,7 @@ pub fn get_generic_params<'db>(
     Ok((buff, location_links))
 }
 
-/// Formats and returns syntax of documentable item.
+/// Formats and returns syntax of a documentable item.
 pub fn get_syntactic_evaluation<'db>(
     item_id: DocumentableItemId<'db>,
     db: &'db dyn Database,
@@ -249,7 +249,7 @@ pub fn get_struct_attributes_syntax<'db>(
         let syntax_node = attribute.stable_ptr.lookup(db).as_syntax_node();
         for child in syntax_node.get_children(db).iter() {
             let to_text = child.get_text_without_all_comment_trivia(db);
-            let cleaned_text = to_text.replace("\n", "");
+            let cleaned_text = to_text.replace("\r\n", "").replace("\n", "");
             buff.push_str(&cleaned_text);
         }
         buff.push('\n');
@@ -257,7 +257,7 @@ pub fn get_struct_attributes_syntax<'db>(
     Ok(buff)
 }
 
-/// Returns relevant [`DocumentableItemId`] for [`TypeId`] if one can be retrieved.
+/// Returns the relevant [`DocumentableItemId`] for [`TypeId`] if one can be retrieved.
 pub fn resolve_type<'db>(
     db: &'db dyn Database,
     type_id: TypeId<'db>,
@@ -343,7 +343,7 @@ pub fn resolve_type<'db>(
     }
 }
 
-/// Returns relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
+/// Returns the relevant [`DocumentableItemId`] for [`GenericItemId`] if one can be retrieved.
 fn resolve_generic_item<'db>(
     generic_item_id: GenericItemId<'db>,
     db: &'db dyn Database,

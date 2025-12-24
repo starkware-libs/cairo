@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.14.0" }
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "=2.15.0" }
 clap.workspace = true
 mimalloc = { workspace = true, optional = true }
 serde_json.workspace = true

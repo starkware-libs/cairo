@@ -1,5 +1,3 @@
-use std::vec;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::HeapSize;
@@ -15,7 +13,7 @@ use salsa::Database;
 
 use crate::blocks::BlocksBuilder;
 use crate::db::LoweringGroup;
-use crate::ids::{self, LocationId, SemanticFunctionIdEx, SpecializedFunction};
+use crate::ids::{self, LocationId, SemanticFunctionIdEx, SpecializedFunctionId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::objects::StatementEnumConstruct as StatementEnumConstructObj;
 use crate::{
@@ -24,7 +22,7 @@ use crate::{
 };
 
 // A const argument for a specialized function.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, salsa::Update, HeapSize)]
 pub enum SpecializationArg<'db> {
     Const {
         value: ConstValueId<'db>,
@@ -104,8 +102,9 @@ enum SpecializationArgBuildingState<'db, 'a> {
 /// Returns the lowering of a specialized function.
 pub fn specialized_function_lowered<'db>(
     db: &'db dyn Database,
-    specialized: SpecializedFunction<'db>,
+    specialized: SpecializedFunctionId<'db>,
 ) -> Maybe<Lowered<'db>> {
+    let specialized = specialized.long(db);
     let base = db.lowered_body(specialized.base, LoweringStage::Monomorphized)?;
     let base_semantic = specialized.base.base_semantic_function(db);
 
@@ -324,13 +323,11 @@ pub fn priv_should_specialize<'db>(
     db: &'db dyn Database,
     function_id: ids::ConcreteFunctionWithBodyId<'db>,
 ) -> Maybe<bool> {
-    let ids::ConcreteFunctionWithBodyLongId::Specialized(SpecializedFunction { base, .. }) =
-        function_id.long(db)
-    else {
+    let ids::ConcreteFunctionWithBodyLongId::Specialized(specialized) = function_id.long(db) else {
         panic!("Expected a specialized function");
     };
 
     // The heuristic is that the size is 8/10*orig_size > specialized_size of the original size.
-    Ok(db.estimate_size(*base)?.saturating_mul(8)
+    Ok(db.estimate_size(specialized.long(db).base)?.saturating_mul(8)
         > db.estimate_size(function_id)?.saturating_mul(10))
 }

@@ -1,5 +1,3 @@
-use std::vec;
-
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::felt252_dict::{

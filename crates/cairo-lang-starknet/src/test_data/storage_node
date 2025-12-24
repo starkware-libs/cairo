@@ -11,7 +11,7 @@ struct A {
 }
 
 //! > diagnostics
-error: Plugin diagnostic: Multiple storage node attributes are not allowed.
+error[E2200]: Plugin diagnostic: Multiple storage node attributes are not allowed.
  --> lib.cairo:2:1
 #[starknet::storage_node]
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ enum Options {
 }
 
 //! > diagnostics
-error: Plugin diagnostic: Can only be applied to structs.
+error[E2200]: Plugin diagnostic: Can only be applied to structs.
  --> lib.cairo:1:1
 #[starknet::storage_node]
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -52,7 +52,7 @@ enum Options {
 }
 
 //! > diagnostics
-error: Plugin diagnostic: Multiple sub pointers attributes are not allowed.
+error[E2200]: Plugin diagnostic: Multiple sub pointers attributes are not allowed.
  --> lib.cairo:2:1
 #[starknet::sub_pointers(OptionsVariants2)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -82,17 +82,17 @@ enum Options3 {
 }
 
 //! > diagnostics
-error: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
+error[E2200]: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
  --> lib.cairo:1:25
 #[starknet::sub_pointers()]
                         ^^
 
-error: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
+error[E2200]: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
  --> lib.cairo:6:25
 #[starknet::sub_pointers]
                         ^
 
-error: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
+error[E2200]: Plugin diagnostic: Sub pointers attribute must have exactly one unnamed argument.
  --> lib.cairo:11:25
 #[starknet::sub_pointers(A, B)]
                         ^^^^^^
@@ -111,7 +111,7 @@ struct A {
 }
 
 //! > diagnostics
-error: Plugin diagnostic: Can only be applied to enums.
+error[E2200]: Plugin diagnostic: Can only be applied to enums.
  --> lib.cairo:1:1
 #[starknet::sub_pointers(OptionsVariants)]
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
