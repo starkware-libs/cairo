@@ -143,9 +143,20 @@ where
 {
     use serde::ser::SerializeSeq;
 
+    /// Borrowing wrapper to avoid cloning BigInt values during serialization.
+    struct BigIntRef<'a>(&'a BigInt);
+    impl<'a> serde::Serialize for BigIntRef<'a> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::ser::Serializer,
+        {
+            serialize_big_int(self.0, serializer)
+        }
+    }
+
     let mut seq = serializer.serialize_seq(Some(nums.len()))?;
     for num in nums {
-        seq.serialize_element(&BigIntAsHex { value: num.clone() })?;
+        seq.serialize_element(&BigIntRef(num))?;
     }
     seq.end()
 }
