@@ -502,7 +502,7 @@ fn simulate_u8_libfunc(
             (vec![CoreValue::Felt252(Felt252::from(value))], 0)
         }
         Uint8Concrete::FromFelt252(_) => {
-            take_inputs!(let [CoreValue::RangeCheck, CoreValue::Uint8(value)] = inputs);
+            take_inputs!(let [CoreValue::RangeCheck, CoreValue::Felt252(value)] = inputs);
             match value.to_u8() {
                 Some(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint8(value)], 0),
                 None => (vec![CoreValue::RangeCheck], 1),
@@ -554,7 +554,7 @@ fn simulate_u16_libfunc(
             (vec![CoreValue::Felt252(Felt252::from(value))], 0)
         }
         Uint16Concrete::FromFelt252(_) => {
-            take_inputs!(let [CoreValue::RangeCheck, CoreValue::Uint16(value)] = inputs);
+            take_inputs!(let [CoreValue::RangeCheck, CoreValue::Felt252(value)] = inputs);
             match value.to_u16() {
                 Some(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint16(value)], 0),
                 None => (vec![CoreValue::RangeCheck], 1),
