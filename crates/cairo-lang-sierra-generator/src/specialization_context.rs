@@ -35,10 +35,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         &self,
         function_id: &cairo_lang_sierra::ids::FunctionId,
     ) -> Option<cairo_lang_sierra::program::FunctionSignature> {
-        self.0
-            .get_function_signature(function_id.clone())
-            .cloned()
-            .to_option()
+        self.0.get_function_signature(function_id.clone()).cloned().to_option()
     }
 
     fn try_get_function_ap_change(
