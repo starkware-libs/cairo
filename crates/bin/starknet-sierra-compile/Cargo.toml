@@ -13,9 +13,9 @@ mimalloc = { workspace = true, optional = true }
 serde = { workspace = true, default-features = true }
 serde_json.workspace = true
 
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.14.1-dev.2" }
-cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.14.1-dev.2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.14.1-dev.2", features = ["serde"] }
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "~2.14.1-dev.3" }
+cairo-lang-starknet-classes = { path = "../../cairo-lang-starknet-classes", version = "~2.14.1-dev.3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "~2.14.1-dev.3", features = ["serde"] }
 
 [features]
 mimalloc = ["dep:mimalloc"]

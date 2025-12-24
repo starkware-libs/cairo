@@ -7,10 +7,10 @@ license-file.workspace = true
 description = "Diagnostic utilities."
 
 [dependencies]
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.14.1-dev.2" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.14.1-dev.2" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.14.1-dev.2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.1-dev.2", features = ["tracing"] }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "~2.14.1-dev.3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "~2.14.1-dev.3" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "~2.14.1-dev.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.1-dev.3", features = ["tracing"] }
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
 
