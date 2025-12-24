@@ -7,13 +7,13 @@ license-file.workspace = true
 description = "Helpers for creating cairo runnable artifact."
 
 [dependencies]
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.14.1-dev.1" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.14.1-dev.1" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "~2.14.1-dev.1" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "~2.14.1-dev.1" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.14.1-dev.1" }
-cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.14.1-dev.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.1-dev.1" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "~2.14.1-dev.2" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "~2.14.1-dev.2" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "~2.14.1-dev.2" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "~2.14.1-dev.2" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "~2.14.1-dev.2" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "~2.14.1-dev.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "~2.14.1-dev.2" }
 cairo-vm.workspace = true
 itertools = { workspace = true, default-features = true }
 thiserror.workspace = true
