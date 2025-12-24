@@ -48,7 +48,7 @@ See a full list of content and what is currently missing below:
 ## Support
 
 - We encourage developers to ask and answer questions on https://stackoverflow.com/questions/tagged/cairo-lang[stackoverflow].
-- Contact options listed on link:https://github.com/starkware-libs[this GitHub profile]
+- Contact options are listed on link:https://github.com/starkware-libs[this GitHub profile]
 
 ## Project assistance
 
