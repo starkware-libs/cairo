@@ -11,8 +11,6 @@ pub fn derive_semantic_object(input: TokenStream) -> TokenStream {
     let name = &input.ident;
     let generics = &input.generics;
 
-    // TODO(yuval/shahar): extract the lifetime here and use it instead of `'a` below.
-
     let body = match &input.data {
         syn::Data::Struct(structure) => emit_struct_semantic_object(name, generics, structure),
         syn::Data::Enum(enm) => emit_enum_semantic_object(name, generics, enm),
