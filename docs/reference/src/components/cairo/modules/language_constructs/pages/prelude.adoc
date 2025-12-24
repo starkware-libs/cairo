@@ -5,3 +5,5 @@ A _prelude_ is a collection of items that are always available in every module i
 The _standard library prelude_ is a module defined in the standard library: `std::prelude::v1`.
 It is automatically used in every module.
 It is not possible to disable standard library prelude importing.
+This means that items from `std::prelude::v1` are always in scope without explicit imports,
+which is why you can use types like `Option`, `Result`, and common traits without importing them.
