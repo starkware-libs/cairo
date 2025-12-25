@@ -215,6 +215,7 @@ fn test_empty_snapshot_fixed_size_array_iterator() {
     assert!(iter.next().is_none());
 }
 
+#[test]
 fn test_snapshot_array_into_iter() {
     let mut iter = (@array![1, 2, 3, 4, 5]).into_iter();
     assert_eq!(iter.next(), Some(@1));
