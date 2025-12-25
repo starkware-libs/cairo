@@ -163,7 +163,7 @@ impl<'a> Printer<'a> {
             return;
         }
 
-        let extra_info = if is_missing_kind(kind) {
+        let extra_info = if kind.is_missing() {
             format!(": {}", self.red("Missing".into()))
         } else {
             format!(" (kind: {kind:?})")
@@ -287,17 +287,4 @@ impl<'a> Printer<'a> {
     fn bright_purple(&self, text: ColoredString) -> ColoredString {
         if self.print_colors { text.bright_purple() } else { text }
     }
-}
-
-// TODO(yuval): autogenerate.
-fn is_missing_kind(kind: SyntaxKind) -> bool {
-    matches!(
-        kind,
-        SyntaxKind::ExprMissing
-            | SyntaxKind::WrappedArgListMissing
-            | SyntaxKind::StatementMissing
-            | SyntaxKind::ModuleItemMissing
-            | SyntaxKind::TraitItemMissing
-            | SyntaxKind::ImplItemMissing
-    )
 }
