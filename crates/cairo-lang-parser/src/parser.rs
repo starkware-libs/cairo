@@ -3103,7 +3103,6 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     self.create_and_report_missing::<PathSegment<'_>>(
                         ParserDiagnosticKind::MissingPathSegment,
                     ),
-                    // TODO(ilya, 10/10/2022): Should we continue parsing the path here?
                     None,
                 );
             }
@@ -3137,7 +3136,6 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                     self.create_and_report_missing::<PathSegment<'_>>(
                         ParserDiagnosticKind::MissingPathSegment,
                     ),
-                    // TODO(ilya, 10/10/2022): Should we continue parsing the path here?
                     None,
                 );
             }
