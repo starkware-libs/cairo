@@ -260,10 +260,6 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
     }
 }
 
-// TODO(spapini): Constraint using Copy and Drop traits.
-extern fn dup<T>(obj: T) -> (T, T) nopanic;
-extern fn drop<T>(obj: T) nopanic;
-
 pub mod blake;
 
 pub mod box;

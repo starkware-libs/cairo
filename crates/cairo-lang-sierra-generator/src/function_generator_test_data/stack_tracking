@@ -57,6 +57,8 @@ fn foo() -> (felt252, felt252) {
 foo
 
 //! > module_code
+extern fn drop<T, +Drop<T>>(value: T) nopanic;
+
 #[inline(never)]
 fn get_val() -> (felt252, felt252) {
     (13, 17)
