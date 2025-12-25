@@ -3209,7 +3209,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Returns a GreenId of a node with an
-    /// ExprLiteral|ExprPath|ExprParenthesized|ExprTuple|ExprUnderscore kind, or TryParseFailure if
+    /// ExprNumericLiteral|ExprPath|ExprParenthesized|ExprTuple|ExprUnderscore kind, or TryParseFailure if
     /// such an expression can't be parsed.
     fn try_parse_generic_arg(&mut self) -> TryParseResult<GenericArgGreen<'a>> {
         let expr = match self.peek().kind {
