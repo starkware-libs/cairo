@@ -86,7 +86,7 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
             OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
-            OptimizationPhase::Reboxing => apply_reboxing(db, lowered),
+            OptimizationPhase::Reboxing => apply_reboxing(db, lowered)?,
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),
             OptimizationPhase::ReorganizeBlocks => reorganize_blocks(lowered),
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
