@@ -30,15 +30,15 @@ fn check_positive(x: i32) -> felt252 {
 == Return type
 
 The type of a return expression is the xref:never-type.adoc[never type]
-(`!`), which indicates the expression does not produce a value but
-instead changes control flow. This allows return expressions to be
+`core::never`, which indicates the expression does not produce a value
+but instead changes control flow. This allows return expressions to be
 used in any context regardless of the expected type.
 
 [source,cairo]
 ----
 let x: u32 = {
     if condition {
-        return 42;  // Type is never (!), coerced to u32
+        return 42;  // 42 coerced to u32, return type is core::never
     }
     10
 };
@@ -46,14 +46,14 @@ let x: u32 = {
 
 == Implicit returns
 
-Cairo functions can return values without using `return` by using a
-tail expression (an expression without a semicolon at the end of the
-function body).
+Cairo functions can return values without using `return`. The value
+of the function block (an expression without a semicolon at the end)
+becomes the return value.
 
 [source,cairo]
 ----
 fn add(a: u32, b: u32) -> u32 {
-    a + b  // Implicit return (no semicolon)
+    a + b  // Block value becomes return value
 }
 
 fn add_explicit(a: u32, b: u32) -> u32 {
@@ -61,8 +61,8 @@ fn add_explicit(a: u32, b: u32) -> u32 {
 }
 ----
 
-Both forms are equivalent, but tail expressions are more idiomatic in
-Cairo.
+Both forms are equivalent, but returning the block value is more
+idiomatic in Cairo.
 
 == Returning unit type
 
@@ -86,4 +86,4 @@ This is equivalent to `return ();`.
 - xref:functions.adoc[Functions] - Function return types and bodies
 - xref:never-type.adoc[Never type] - Control flow type
 - xref:unit-type.adoc[Unit type] - Empty return value
-- xref:block-expression.adoc[Block expression] - Tail expressions
+- xref:block-expression.adoc[Block expression] - Block values
