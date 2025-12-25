@@ -7,7 +7,7 @@ making them essential for Cairo's linear type system.
 
 == Overview
 
-In Cairo's xref:pages/linear-types.adoc[linear type system],
+In Cairo's xref:../../language_semantics/pages/linear-types.adoc[linear type system],
 values are moved by default and cannot be used multiple times
 unless they implement the `Copy` trait.
 Snapshots provide a way to reference a value multiple times
@@ -192,6 +192,6 @@ Cairo automatically creates a snapshot of the value.
 
 == See also
 
-* xref:linear-types.adoc[Linear types] — Move semantics and snapshots
-* xref:linear-types.adoc#snapshot[Snapshot section in Linear types]
+* xref:../../language_semantics/pages/linear-types.adoc[Linear types] — Move semantics and snapshots
+* xref:../../language_semantics/pages/linear-types.adoc#snapshot[Snapshot section in Linear types]
 * xref:variables.adoc[Variables] — Snapshots and variable bindings
