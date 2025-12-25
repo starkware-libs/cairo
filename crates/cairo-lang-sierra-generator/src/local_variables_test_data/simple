@@ -99,6 +99,8 @@ fn foo(x: felt252) -> felt252 {
 }
 
 //! > module_code
+extern fn dup<T, +Copy<T>>(value: T) -> (T, T) nopanic;
+
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
@@ -110,9 +112,9 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- core::felt252_add(v0, v0)
   (v2: core::felt252) <- core::felt252_add(v1, v1)
-  (v3: core::felt252, v4: core::felt252) <- core::dup::<core::felt252>(v2)
-  (v5: core::felt252, v6: core::felt252) <- core::dup::<core::felt252>(v4)
-  (v7: core::felt252, v8: core::felt252) <- core::dup::<core::felt252>(v5)
+  (v3: core::felt252, v4: core::felt252) <- test::dup::<core::felt252, core::felt252Copy>(v2)
+  (v5: core::felt252, v6: core::felt252) <- test::dup::<core::felt252, core::felt252Copy>(v4)
+  (v7: core::felt252, v8: core::felt252) <- test::dup::<core::felt252, core::felt252Copy>(v5)
   (v9: core::felt252) <- test::revoke_ap()
   (v10: core::felt252) <- core::felt252_add(v7, v8)
 End:
