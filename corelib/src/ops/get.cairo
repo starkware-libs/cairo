@@ -36,7 +36,6 @@
 /// assert!(span.get(10).is_none());
 /// assert!(span.get(10..20).is_none());
 /// ```
-// TODO(giladchase): add examples for `usize` once supported.
 #[unstable(feature: "corelib-get-trait")]
 pub trait Get<C, I> {
     /// The returned type after indexing.

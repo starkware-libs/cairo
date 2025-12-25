@@ -80,117 +80,32 @@ mod mul_based {
         }
     }
 
-    // TODO(gil): Use a macro for it instead of copy-paste.
-    // TODO(orizi): Consider extracting this for other corelib const calculations.
-    // Not using a trait for the implementation to allow `fn` to be `const`.
-
-    impl ConstPowHelperFelt252 of ConstPowHelper<felt252> {
-        const fn one() -> felt252 {
-            1
-        }
-        const fn mul(lhs: felt252, rhs: felt252) -> felt252 {
-            lhs * rhs
-        }
+    /// Macro for generating an implementation for `ConstPowHelper`.
+    /// Not using a trait for the implementation to allow `fn` to be `const`.
+    macro impl_const_pow_helper {
+        ($impl_name: ident, $ty: ident) => {
+            impl $impl_name of $defsite::ConstPowHelper<$ty> {
+                const fn one() -> $ty {
+                    1
+                }
+                const fn mul(lhs: $ty, rhs: $ty) -> $ty {
+                    lhs * rhs
+                }
+            }
+        };
     }
-
-    impl ConstPowHelperI8 of ConstPowHelper<i8> {
-        const fn one() -> i8 {
-            1
-        }
-        const fn mul(lhs: i8, rhs: i8) -> i8 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperU8 of ConstPowHelper<u8> {
-        const fn one() -> u8 {
-            1
-        }
-        const fn mul(lhs: u8, rhs: u8) -> u8 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperI16 of ConstPowHelper<i16> {
-        const fn one() -> i16 {
-            1
-        }
-        const fn mul(lhs: i16, rhs: i16) -> i16 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperU16 of ConstPowHelper<u16> {
-        const fn one() -> u16 {
-            1
-        }
-        const fn mul(lhs: u16, rhs: u16) -> u16 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperI32 of ConstPowHelper<i32> {
-        const fn one() -> i32 {
-            1
-        }
-        const fn mul(lhs: i32, rhs: i32) -> i32 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperU32 of ConstPowHelper<u32> {
-        const fn one() -> u32 {
-            1
-        }
-        const fn mul(lhs: u32, rhs: u32) -> u32 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperI64 of ConstPowHelper<i64> {
-        const fn one() -> i64 {
-            1
-        }
-        const fn mul(lhs: i64, rhs: i64) -> i64 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperU64 of ConstPowHelper<u64> {
-        const fn one() -> u64 {
-            1
-        }
-        const fn mul(lhs: u64, rhs: u64) -> u64 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperI128 of ConstPowHelper<i128> {
-        const fn one() -> i128 {
-            1
-        }
-        const fn mul(lhs: i128, rhs: i128) -> i128 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperU128 of ConstPowHelper<u128> {
-        const fn one() -> u128 {
-            1
-        }
-        const fn mul(lhs: u128, rhs: u128) -> u128 {
-            lhs * rhs
-        }
-    }
-
-    impl ConstPowHelperU256 of ConstPowHelper<u256> {
-        const fn one() -> u256 {
-            1
-        }
-        const fn mul(lhs: u256, rhs: u256) -> u256 {
-            lhs * rhs
-        }
-    }
+    impl_const_pow_helper!(ConstPowHelperFelt252, felt252);
+    impl_const_pow_helper!(ConstPowHelperI8, i8);
+    impl_const_pow_helper!(ConstPowHelperU8, u8);
+    impl_const_pow_helper!(ConstPowHelperI16, i16);
+    impl_const_pow_helper!(ConstPowHelperU16, u16);
+    impl_const_pow_helper!(ConstPowHelperI32, i32);
+    impl_const_pow_helper!(ConstPowHelperU32, u32);
+    impl_const_pow_helper!(ConstPowHelperI64, i64);
+    impl_const_pow_helper!(ConstPowHelperU64, u64);
+    impl_const_pow_helper!(ConstPowHelperI128, i128);
+    impl_const_pow_helper!(ConstPowHelperU128, u128);
+    impl_const_pow_helper!(ConstPowHelperU256, u256);
 }
 
 impl PowFelt252 = mul_based::PowByMul<felt252>;
