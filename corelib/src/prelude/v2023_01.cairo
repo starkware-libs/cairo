@@ -80,7 +80,7 @@ use crate::{
     BoolPartialEq, BoolSerde, Felt252Add, Felt252AddEq, Felt252Default, Felt252Felt252DictValue,
     Felt252Mul, Felt252MulEq, Felt252Neg, Felt252PartialEq, Felt252Serde, Felt252Sub, Felt252SubEq,
     Felt252TryIntoNonZero, RangeCheck, SegmentArena, assert, bool, bool_and_impl, bool_not_impl,
-    bool_or_impl, bool_to_felt252, bool_xor_impl, cmp, debug, drop, dup, ecdsa, felt252,
-    felt252_add, felt252_const, felt252_div, felt252_is_zero, felt252_mul, felt252_sub, hash,
-    internal, keccak, math, never, panic_with_felt252, testing, to_byte_array, usize,
+    bool_or_impl, bool_to_felt252, bool_xor_impl, cmp, debug, ecdsa, felt252, felt252_add,
+    felt252_const, felt252_div, felt252_is_zero, felt252_mul, felt252_sub, hash, internal, keccak,
+    math, never, panic_with_felt252, testing, to_byte_array, usize,
 };

@@ -169,6 +169,8 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
+extern fn dup<T, +Copy<T>>(value: T) -> (T, T) nopanic;
+
 fn revoke_ap() -> felt252 {
     revoke_ap()
 }
