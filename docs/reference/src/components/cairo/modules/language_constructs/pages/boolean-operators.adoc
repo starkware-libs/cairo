@@ -4,20 +4,29 @@ Boolean operators combine or negate boolean (`bool`) values.
 
 Two groups of operators work with `bool`:
 
-- Logical operators: `&&`, `\|\|` (short-circuiting)
-- Bitwise operators on `bool`: `&`, `\|`, `^` (no short-circuit)
+- Logical operators: `&&`, `||` (short-circuiting)
+- Bitwise operators on `bool`: `&`, `|`, `^` (no short-circuit)
 
 See xref:operator-precedence.adoc[Operator precedence] for their relative precedence.
 
-== Logical operators (`&&`, `\|\|`)
+== Logical operators (`&&`, `||`)
 
 Logical operators evaluate their left operand first and may skip evaluating the right
 operand (short-circuiting):
 
 - `a && b`: evaluates `b` only if `a` is `true`.
-- `a \|\| b`: evaluates `b` only if `a` is `false`.
+- `a || b`: evaluates `b` only if `a` is `false`.
 
 Both operands and the result are of type `bool`.
+
+[cols="1,1,1,1",options="header"]
+|===
+| `a` | `b` | `a && b` | `a || b`
+| `true` | `true` | `true` | `true`
+| `true` | `false` | `false` | `true`
+| `false` | `true` | `false` | `true`
+| `false` | `false` | `false` | `false`
+|===
 
 [#logical-examples]
 [source,rust]
@@ -35,17 +44,25 @@ fn main() {
 }
 ----
 
-Const evaluation: logical `&&` / `\|\|` are supported and preserve short-circuit semantics
+Const evaluation: logical `&&` / `||` are supported and preserve short-circuit semantics
 in const contexts. See xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation].
 
-== Bitwise boolean operators on `bool` (`&`, `\|`, `^`)
+== Bitwise boolean operators on `bool` (`&`, `|`, `^`)
 
 The bitwise operators are also defined for `bool` via traits in the core library and do not
 short-circuit: both operands are always evaluated.
 
-- `a & b` – bitwise-and on `bool` values.
-- `a \| b` – bitwise-or on `bool` values.
+- `a | b` – bitwise-or on `bool` values.
 - `a ^ b` – bitwise-xor on `bool` values.
+
+[cols="1,1,1,1,1",options="header"]
+|===
+| `a` | `b` | `a & b` | `a | b` | `a ^ b`
+| `true` | `true` | `true` | `true` | `false`
+| `true` | `false` | `false` | `true` | `true`
+| `false` | `true` | `false` | `true` | `true`
+| `false` | `false` | `false` | `false` | `false`
+|===
 
 [#bitwise-examples]
 [source,rust]
