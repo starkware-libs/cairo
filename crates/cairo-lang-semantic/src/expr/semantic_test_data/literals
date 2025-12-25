@@ -128,7 +128,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 66,
         ty: core::integer::u128,
     },
