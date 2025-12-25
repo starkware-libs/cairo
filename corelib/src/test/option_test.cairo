@@ -185,6 +185,7 @@ fn test_option_xor() {
     assert_eq!(x.xor(y), None);
 }
 
+#[test]
 fn test_option_some_is_none_or() {
     assert_eq!(Some(2_u8).is_none_or(|x| x > 1), true);
     assert_eq!(Some(0_u8).is_none_or(|x| x > 1), false);
@@ -243,6 +244,7 @@ fn test_option_none_map_or_else() {
     assert_eq!(x.map_or_else(|| 2 * k, |v: ByteArray| v.len()), 42);
 }
 
+#[test]
 fn test_option_some_into_iter() {
     let x: Option<u32> = Some(5);
     let mut x_iter = x.into_iter();
