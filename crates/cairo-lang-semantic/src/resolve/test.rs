@@ -148,7 +148,7 @@ fn test_resolve_path_trait_impl() {
         "Some(Block(ExprBlock { statements: [], tail: Some(FunctionCall(ExprFunctionCall { \
          function: core::Felt252Add::add, args: [Value(FunctionCall(ExprFunctionCall { function: \
          test::MyImpl::foo, args: [], coupon_arg: None, ty: core::felt252 })), \
-         Value(Literal(ExprLiteral { value: 1, ty: core::felt252 }))], coupon_arg: None, ty: \
+         Value(Literal(ExprNumericLiteral { value: 1, ty: core::felt252 }))], coupon_arg: None, ty: \
          core::felt252 })), ty: core::felt252 }))"
     );
 }
