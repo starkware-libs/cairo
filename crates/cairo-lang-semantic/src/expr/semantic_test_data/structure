@@ -129,7 +129,7 @@ StructCtor(
         members: [
             (
                 Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 1,
                         ty: core::felt252,
                     },
