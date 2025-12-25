@@ -49,6 +49,8 @@ Calls are permitted if one of the following holds (see `is_function_const` and
 - The function is marked `is_const` in its signature and depth limits are respected.
 - The call resolves to a trait implementation in the core library for specific const-enabled
   traits (see below).
+- The function is `core::panic_with_felt252`; such calls are permitted in const context but
+  always result in a `FailedConstantCalculation` during evaluation.
 - Specific extern functions enumerated in `ConstCalcInfo` are allowed.
 
 Const-enabled traits (corelib):
