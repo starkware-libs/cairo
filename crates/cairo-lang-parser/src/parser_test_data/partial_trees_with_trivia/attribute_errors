@@ -732,7 +732,7 @@ error[E1023]: Missing tokens. Expected an item after attributes.
         │               │   │   │       │   └── trailing_trivia (kind: Trivia)
         │               │   │   │       │       └── child #0 (kind: TokenNewline).
         │               │   │   │       └── segments (kind: ExprPathInner)
-        │               │   │   │           └── item #0 (kind: PathSegmentMissing)
+        │               │   │   │           └── item #0: Missing
         │               │   │   │               └── ident (kind: TerminalIdentifier)
         │               │   │   │                   ├── leading_trivia (kind: Trivia) []
         │               │   │   │                   ├── token: Missing

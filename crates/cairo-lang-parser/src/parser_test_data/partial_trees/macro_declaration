@@ -232,7 +232,7 @@ error[E1008]: Missing tokens. Expected a macro rule parameter kind.
     │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
     │       │       │   │   │   └── kind (kind: ParamKind)
     │       │       │   │   │       ├── colon (kind: TokenColon): ':'
-    │       │       │   │   │       └── kind (kind: MacroParamKindMissing) []
+    │       │       │   │   │       └── kind: Missing []
     │       │       │   │   └── child #1 (kind: TokenTreeLeaf)
     │       │       │   │       └── leaf (kind: TokenIdentifier): 'unknown'
     │       │       │   └── rparen (kind: TokenRParen): ')'

@@ -618,6 +618,22 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalPub
         )
     }
+    pub fn is_missing(&self) -> bool {
+        matches!(
+            *self,
+            SyntaxKind::ExprMissing
+                | SyntaxKind::PathSegmentMissing
+                | SyntaxKind::WrappedArgListMissing
+                | SyntaxKind::StatementMissing
+                | SyntaxKind::ModuleItemMissing
+                | SyntaxKind::TraitItemMissing
+                | SyntaxKind::ImplItemMissing
+                | SyntaxKind::TokenTreeMissing
+                | SyntaxKind::WrappedTokenTreeMissing
+                | SyntaxKind::MacroRepetitionOperatorMissing
+                | SyntaxKind::MacroParamKindMissing
+        )
+    }
 }
 impl fmt::Display for SyntaxKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -74,6 +74,13 @@ fn generate_kinds_code() -> rust::Tokens {
     let terminal_kinds = name_tokens(&spec, |k| matches!(k, NodeKind::Terminal { .. }));
     let keyword_terminal_kinds =
         name_tokens(&spec, |k| matches!(k, NodeKind::Terminal { is_keyword, .. } if *is_keyword));
+    let missing_kinds = spec.iter().filter_map(|n| {
+        if let NodeKind::Enum { missing_variant, .. } = &n.kind {
+            missing_variant.as_ref().map(|v| v.kind.as_str())
+        } else {
+            None
+        }
+    });
 
     tokens.extend(quote! {
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, salsa::Update, cairo_lang_proc_macros::HeapSize)]
@@ -103,6 +110,12 @@ fn generate_kinds_code() -> rust::Tokens {
                 matches!(
                     *self,
                     $(for t in keyword_terminal_kinds join ( | ) => SyntaxKind::$t)
+                )
+            }
+            pub fn is_missing(&self) -> bool {
+                matches!(
+                    *self,
+                    $(for t in missing_kinds join ( | ) => SyntaxKind::$t)
                 )
             }
         }

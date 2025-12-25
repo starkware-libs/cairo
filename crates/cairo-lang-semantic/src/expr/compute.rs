@@ -32,7 +32,6 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -736,20 +735,7 @@ fn expand_inline_macro<'db>(
     let macro_path = syntax.path(db);
     let crate_id = ctx.resolver.owning_crate_id;
     // Skipping expanding an inline macro if it had a parser error.
-    if syntax.as_syntax_node().descendants(db).any(|node| {
-        matches!(
-            node.kind(db),
-            SyntaxKind::ExprMissing
-                | SyntaxKind::WrappedArgListMissing
-                | SyntaxKind::StatementMissing
-                | SyntaxKind::ModuleItemMissing
-                | SyntaxKind::TraitItemMissing
-                | SyntaxKind::ImplItemMissing
-                | SyntaxKind::TokenMissing
-                | SyntaxKind::TokenSkipped
-                | SyntaxKind::WrappedTokenTreeMissing
-        )
-    }) {
+    if syntax.as_syntax_node().descendants(db).any(|node| node.kind(db).is_missing()) {
         return Err(skip_diagnostic());
     }
     // We call the resolver with a new diagnostics, since the diagnostics should not be reported
