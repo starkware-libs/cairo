@@ -97,7 +97,7 @@ If `T: PartialOrd + Copy`, comparisons on `@T` are supported automatically via `
 #[derive(Copy, Drop, PartialEq)]
 struct Pair { a: u32, b: u32 }
 
-impl PairOrd of PartialOrd<Pair> {
+impl PairPartialOrd of PartialOrd<Pair> {
     fn lt(lhs: Pair, rhs: Pair) -> bool {
         if lhs.a != rhs.a { lhs.a < rhs.a } else { lhs.b < rhs.b }
     }
