@@ -6,7 +6,7 @@ Starknet contracts can be written in Cairo.
 
 == Example
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::contract]
 mod my_contract {
@@ -120,7 +120,7 @@ Events are defined by creating an `enum` named `Event` annotated with `#[event]`
 Each variant represents a different event type and must be a struct deriving `starknet::Event`.
 
 For example:
-[source,rust]
+[source,cairo]
 ----
     #[derive(Drop, starknet::Event)]
     pub struct MyEvent {
@@ -135,7 +135,7 @@ For example:
 ----
 
 Events are emitted using `self.emit()`:
-[source,rust]
+[source,cairo]
 ----
     #[external(v0)]
     fn trigger_event(ref self: ContractState, value: u128) {
@@ -160,7 +160,7 @@ You can also write a contract interface manually, for contracts that are not imp
 your code.
 
 For example, the contract interface for `my_contract` above can be manually written as:
-[source,rust]
+[source,cairo]
 ----
 #[starknet::interface]
 trait IMyContract {
@@ -177,7 +177,7 @@ That is, for every contract you implement or contract interface you manually add
 You can use another contract interface contract-dispatcher to call another contract
 in the following way:
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::interface]
 trait IMyContract<TContractState> {
@@ -206,7 +206,7 @@ You can also call a function from another contract class as a library function.
 This means the function's logic is executed from the caller contract's context.
 This can be done using the library-dispatcher in the following way:
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::interface]
 trait IMyContract {
@@ -241,7 +241,7 @@ deserialize yourself.
 You also need to compute the selector of the function you want to call, which is the
 keccak hash of the function name - in this case `starknet_keccak("foo")`.
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::contract]
 mod my_second_contract {

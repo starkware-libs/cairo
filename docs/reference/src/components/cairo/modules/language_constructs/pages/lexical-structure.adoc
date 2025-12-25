@@ -64,7 +64,7 @@ See the xref:punctuation.adoc[punctuation page] for a complete reference.
 
 Cairo supports xref:comments.adoc[line comments] using the `//` syntax:
 
-[source,rust]
+[source,cairo]
 ----
 // This is a line comment
 let x = 42;  // Comment after code

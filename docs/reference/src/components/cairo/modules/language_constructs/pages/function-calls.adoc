@@ -3,14 +3,14 @@
 A call expression calls a xref:functions.adoc[function]. The syntax for a call expression is the
 xref:path.adoc[concrete path] of the function followed by a list of arguments.
 The list of arguments is a comma-separated list of expressions enclosed in parentheses.
-[source,rust]
+[source,cairo]
 ----
 <concrete_path>(<arg0>,<arg1>,...)
 ----
 
 Examples:
 
-[source,rust]
+[source,cairo]
 ----
 cmp::max(a: 5, b: 1)
 get_info()
@@ -43,7 +43,7 @@ xref:assignment-statement.adoc[assignment].
 `lvalue` is passed to the function and then reassigned when the function returns.
 Example: `increment(ref a.b)`.
 
-[source,rust]
+[source,cairo]
 ----
 fn main() {
     let x = 3;

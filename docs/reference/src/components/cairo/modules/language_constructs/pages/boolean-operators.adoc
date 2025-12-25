@@ -29,7 +29,7 @@ Both operands and the result are of type `bool`.
 |===
 
 [#logical-examples]
-[source,rust]
+[source,cairo]
 ----
 fn expensive() -> bool { true }
 
@@ -65,7 +65,7 @@ short-circuit: both operands are always evaluated.
 |===
 
 [#bitwise-examples]
-[source,rust]
+[source,cairo]
 ----
 fn side_effect() -> bool { /* ... */ false }
 

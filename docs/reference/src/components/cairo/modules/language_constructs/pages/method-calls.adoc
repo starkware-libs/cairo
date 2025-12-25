@@ -17,7 +17,7 @@ It must be the first parameter of the function.
 
 A function defined in such a way can be called as a method on the value:
 
-[source,rust]
+[source,cairo]
 ----
 trait Display<T> {
     fn display(self: T) -> Array<u8>;
