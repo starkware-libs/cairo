@@ -70,7 +70,7 @@ If(
                     statements: [],
                     tail: Some(
                         Literal(
-                            ExprLiteral {
+                            ExprNumericLiteral {
                                 value: 1,
                                 ty: core::felt252,
                             },
@@ -118,7 +118,7 @@ If(
                 statements: [],
                 tail: Some(
                     Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 3,
                             ty: core::integer::u32,
                         },
@@ -133,7 +133,7 @@ If(
                     statements: [],
                     tail: Some(
                         Literal(
-                            ExprLiteral {
+                            ExprNumericLiteral {
                                 value: 3,
                                 ty: core::integer::u16,
                             },
@@ -193,7 +193,7 @@ If(
                             args: [
                                 Value(
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 3,
                                             ty: core::integer::u32,
                                         },
@@ -201,7 +201,7 @@ If(
                                 ),
                                 Value(
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 3,
                                             ty: core::integer::u32,
                                         },
@@ -227,7 +227,7 @@ If(
                                 args: [
                                     Value(
                                         Literal(
-                                            ExprLiteral {
+                                            ExprNumericLiteral {
                                                 value: 3,
                                                 ty: core::integer::u16,
                                             },
@@ -235,7 +235,7 @@ If(
                                     ),
                                     Value(
                                         Literal(
-                                            ExprLiteral {
+                                            ExprNumericLiteral {
                                                 value: 3,
                                                 ty: core::integer::u16,
                                             },
@@ -339,7 +339,7 @@ If(
                     statements: [],
                     tail: Some(
                         Literal(
-                            ExprLiteral {
+                            ExprNumericLiteral {
                                 value: 3,
                                 ty: core::felt252,
                             },
