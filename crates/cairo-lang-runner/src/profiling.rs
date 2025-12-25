@@ -91,8 +91,7 @@ impl ProfilingInfo {
         let mut end_of_program_reached = false;
         // The total weight of each Sierra statement.
         // Note the header and footer (CASM instructions added for running the program by the
-        // runner). The header is not counted, and the footer is, but then the relevant
-        // entry is removed.
+        // runner). Both header and footer are not counted when collecting the weights.
         let mut sierra_statement_weights = UnorderedHashMap::default();
         // Total weight of Sierra statements grouped by the respective (collapsed) user function
         // call stack.
