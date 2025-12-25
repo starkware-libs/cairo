@@ -1,7 +1,89 @@
 = Return expressions
 
-This section is a work in progress.
+A return expression exits the enclosing function early and specifies
+the value to return to the caller. Return expressions use the `return`
+keyword followed by an optional expression.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
 
+[source,cairo]
+----
+return;           // Returns unit type ()
+return <expr>;    // Returns the value of <expr>
+----
+
+== Basic usage
+
+Return expressions exit the function immediately, skipping any
+remaining code in the function body.
+
+[source,cairo]
+----
+fn check_positive(x: i32) -> felt252 {
+    if x < 0 {
+        return 0;  // Exit early if negative
+    }
+    x.into()
+}
+----
+
+== Return type
+
+The type of a return expression is the xref:never-type.adoc[never type]
+(`!`), which indicates the expression does not produce a value but
+instead changes control flow. This allows return expressions to be
+used in any context regardless of the expected type.
+
+[source,cairo]
+----
+let x: u32 = {
+    if condition {
+        return 42;  // Type is never (!), coerced to u32
+    }
+    10
+};
+----
+
+== Implicit returns
+
+Cairo functions can return values without using `return` by using a
+tail expression (an expression without a semicolon at the end of the
+function body).
+
+[source,cairo]
+----
+fn add(a: u32, b: u32) -> u32 {
+    a + b  // Implicit return (no semicolon)
+}
+
+fn add_explicit(a: u32, b: u32) -> u32 {
+    return a + b;  // Explicit return (equivalent)
+}
+----
+
+Both forms are equivalent, but tail expressions are more idiomatic in
+Cairo.
+
+== Returning unit type
+
+When a return expression has no value (`return;`), it returns the
+xref:unit-type.adoc[unit type] `()`.
+
+[source,cairo]
+----
+fn maybe_return(condition: bool) {
+    if condition {
+        return;  // Returns (), exits early
+    }
+    // Rest of function...
+}
+----
+
+This is equivalent to `return ();`.
+
+== See also
+
+- xref:functions.adoc[Functions] - Function return types and bodies
+- xref:never-type.adoc[Never type] - Control flow type
+- xref:unit-type.adoc[Unit type] - Empty return value
+- xref:block-expression.adoc[Block expression] - Tail expressions
