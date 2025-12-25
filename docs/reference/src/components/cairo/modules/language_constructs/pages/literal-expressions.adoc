@@ -78,3 +78,14 @@ Cairo doesn't have a string type at the moment.
 
 The short string's first character is the most significant byte of the integer (big endian
 representation).
+
+== String literals
+
+A string literal is a sequence of characters enclosed in double quotes ("...").
+String literals support escape sequences (for example, for newlines or quotes) and are
+limited to ASCII characters.
+
+Unlike short string literals, string literals do not have a numeric representation and
+cannot be suffixed with a type like `_u8` or `_felt252`.
+They are primarily used in language features and tooling that consume string values,
+while the core language still does not define a built-in `string` type.
