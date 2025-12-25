@@ -3502,14 +3502,14 @@ fn new_literal_expr<'db>(
     let inference = &mut ctx.resolver.inference();
     inference.new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context);
 
-    Ok(ExprLiteral { value, ty, stable_ptr })
+    Ok(ExprNumericLiteral { value, ty, stable_ptr })
 }
 
 /// Creates the semantic model of a literal expression from its AST.
 fn literal_to_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     literal_syntax: &ast::TerminalLiteralNumber<'db>,
-) -> Maybe<ExprLiteral<'db>> {
+) -> Maybe<ExprNumericLiteral<'db>> {
     let db = ctx.db;
 
     let (value, ty) = literal_syntax.numeric_value_and_suffix(db).unwrap_or_default();
@@ -3521,7 +3521,7 @@ fn literal_to_semantic<'db>(
 fn short_string_to_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     short_string_syntax: &ast::TerminalShortString<'db>,
-) -> Maybe<ExprLiteral<'db>> {
+) -> Maybe<ExprNumericLiteral<'db>> {
     let db = ctx.db;
 
     let value = short_string_syntax.numeric_value(db).unwrap_or_default();
