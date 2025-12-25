@@ -40,7 +40,7 @@ Their individual usages and meanings are defined in the linked pages.
 
 | `@`
 | At
-| xref:linear-types.adoc#snapshot[Snapshot] operator
+| xref:../../language_semantics/pages/linear-types.adoc#snapshot[Snapshot] operator
 
 | `#`
 | Hash

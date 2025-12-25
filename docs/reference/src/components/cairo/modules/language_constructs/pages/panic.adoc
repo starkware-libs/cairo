@@ -2,7 +2,7 @@
 
 Code in _Cairo_ may _panic_ - which means it may fail with an unrecoverable error - meaning
 it is impossible to catch and handle.
-When the program panics, using the xref:linear-types.adoc[linear type system] all living variables
+When the program panics, using the xref:../../language_semantics/pages/linear-types.adoc[linear type system] all living variables
 on the stack would be `Dropped` or otherwise destructed, which makes sure the run remains provable
 and valid.
 
@@ -32,7 +32,7 @@ Only _nopanic_ functions may be called from a _nopanic_ function.
 If a trait function is marked with `nopanic`, all implementations of that trait must also be marked
 with `nopanic`, as the trait function may be called from a _nopanic_ function.
 An example for such a function is `Destruct` trait `destruct` function, which is _nopanic_ as it is
-called during panic handling, see xref:linear-types.adoc[linear type system] for more info.
+called during panic handling, see xref:../../language_semantics/pages/linear-types.adoc[linear type system] for more info.
 
 If a trait function is not marked with `nopanic`, all implementations of that trait may be marked
 with `nopanic` or not.

@@ -112,5 +112,5 @@ but not for implicit type conversion when passing arguments to functions.
 
 == See also
 
-* xref:linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
+* xref:../../language_semantics/pages/linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
 * Implementation: `corelib/src/box.cairo`
