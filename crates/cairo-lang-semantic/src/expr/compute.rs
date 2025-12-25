@@ -3476,7 +3476,7 @@ fn new_literal_expr<'db>(
     ty: Option<SmolStrId<'db>>,
     value: BigInt,
     stable_ptr: ExprPtr<'db>,
-) -> Maybe<ExprLiteral<'db>> {
+) -> Maybe<ExprNumericLiteral<'db>> {
     if let Some(ty_str) = ty {
         // Requires specific blocking as `NonZero` now has NumericLiteral support.
         if ty_str.long(ctx.db) == "NonZero" {
@@ -3490,7 +3490,7 @@ fn new_literal_expr<'db>(
         if let Err(err) = validate_literal(ctx.db, ty, &value) {
             ctx.diagnostics.report(stable_ptr, SemanticDiagnosticKind::LiteralError(err));
         }
-        return Ok(ExprLiteral { value, ty, stable_ptr });
+        return Ok(ExprNumericLiteral { value, ty, stable_ptr });
     };
     let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
 
