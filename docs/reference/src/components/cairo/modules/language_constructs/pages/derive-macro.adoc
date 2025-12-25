@@ -24,7 +24,7 @@ struct FeltAndT<T, impl TCopy: Copy<T>> {
 == Existing derived traits
 * `Copy` - Marks the type as being safe to copy by simply copying bits.
 All members of the type must also be `Copy`.
-See xref:linear-types.adoc[linear types] for more information.
+See xref:../../language_semantics/pages/linear-types.adoc[linear types] for more information.
 * `Clone` - Implements the clone method to explicitly create a copy of the type.
 All members of the type must also be `Clone`.
 See xref:linear-types.adoc[linear types] for more information.
