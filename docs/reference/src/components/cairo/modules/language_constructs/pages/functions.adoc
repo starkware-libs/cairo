@@ -3,7 +3,7 @@
 A function is a unit of code that performs some logic. It is defined using the `fn` keyword.
 
 Examples of functions are:
-[source]
+[source,cairo]
 ----
 fn main() {
     let x = 3;
@@ -16,7 +16,7 @@ fn inc(x: u32) -> u32 {
 
 A function consists of 2 main parts: the function signature and the function body.
 For example,
-[source]
+[source,cairo]
 ----
 // Function signature |         | Body starts here
 //                    V         V
@@ -30,7 +30,7 @@ fn inc_n<T, const N>(x: T) -> T {
 The function signature defines the function name, the xref:generics.adoc[generic parameters],
 the parameters and the return type.
 
-[source,rust]
+[source,cairo]
 ----
 fn <name>[<<generic_parameters>>](<parameters>) [-> <return_type>]
 ----
@@ -63,7 +63,7 @@ and can be modified in the function.
 A parameter that is defined with the `ref` modifier, simulates a reference to the
 value passed to the function. It behaves similarly to a mutable variable, but mutating
 it also affects its value in the caller function. For example:
-[source,rust]
+[source,cairo]
 ----
     fn foo(mut x: u32, ref y: u32) {
         x *= 3;

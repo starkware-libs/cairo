@@ -6,7 +6,7 @@ Starknet contracts can be written in Cairo.
 
 == Example
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::contract]
 mod my_contract {
@@ -66,7 +66,7 @@ Starknet contracts have no main() function. Instead, each function may be annota
 function using one of the attributes below:
 
 - `#[external(v0)]` functions may be called by Starknet users or by other contracts. For example:
-[source]
+[source,cairo]
 ----
     #[external(v0)]
     fn external_example(ref self: ContractState, value: felt252) {
@@ -76,7 +76,7 @@ function using one of the attributes below:
 Note the first parameter. It represents the state of the contract storage.
 The `ref` modifier means that the state may change - by writing to storage, for example.
 Another possibility is to get a read-only reference to the storage:
-[source]
+[source,cairo]
 ----
     #[external(v0)]
     fn view_example(self: @ContractState) -> felt252 {
@@ -87,7 +87,7 @@ This is a view function - it can only read from the storage.
 - `#[constructor]` function is called when the contract is deployed. There may be only one such
 function and it must be called `constructor`. If it is not defined, the contract is deployed with
 all storage variables default-initialized. For example:
-[source]
+[source,cairo]
 ----
     #[constructor]
     fn constructor() {
@@ -95,7 +95,7 @@ all storage variables default-initialized. For example:
     }
 ----
 - `#[l1_handler]` functions are called when the contract receives a message from L1. For example:
-[source]
+[source,cairo]
 ----
     #[l1_handler]
     fn l1_handler_example(from_address: felt252) {
@@ -105,7 +105,7 @@ all storage variables default-initialized. For example:
 ----
 - Functions without any of the above attributes are private functions, and may only be called by
 other functions in the same contract. They are not entry points. For example:
-[source]
+[source,cairo]
 ----
     fn private_helper_add(a: felt252, b: felt252) -> felt252 {
         a + b
@@ -120,7 +120,7 @@ Events are defined by creating an `enum` named `Event` annotated with `#[event]`
 Each variant represents a different event type and must be a struct deriving `starknet::Event`.
 
 For example:
-[source,rust]
+[source,cairo]
 ----
     #[derive(Drop, starknet::Event)]
     pub struct MyEvent {
@@ -135,7 +135,7 @@ For example:
 ----
 
 Events are emitted using `self.emit()`:
-[source,rust]
+[source,cairo]
 ----
     #[external(v0)]
     fn trigger_event(ref self: ContractState, value: u128) {
@@ -160,7 +160,7 @@ You can also write a contract interface manually, for contracts that are not imp
 your code.
 
 For example, the contract interface for `my_contract` above can be manually written as:
-[source,rust]
+[source,cairo]
 ----
 #[starknet::interface]
 trait IMyContract {
@@ -177,7 +177,7 @@ That is, for every contract you implement or contract interface you manually add
 You can use another contract interface contract-dispatcher to call another contract
 in the following way:
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::interface]
 trait IMyContract<TContractState> {
@@ -206,7 +206,7 @@ You can also call a function from another contract class as a library function.
 This means the function's logic is executed from the caller contract's context.
 This can be done using the library-dispatcher in the following way:
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::interface]
 trait IMyContract {
@@ -241,7 +241,7 @@ deserialize yourself.
 You also need to compute the selector of the function you want to call, which is the
 keccak hash of the function name - in this case `starknet_keccak("foo")`.
 
-[source,rust]
+[source,cairo]
 ----
 #[starknet::contract]
 mod my_second_contract {

@@ -5,8 +5,7 @@ The derive macro is used to implement traits for structs and enums automatically
 The compiler will generate implementations for the requested traits.
 Note this is supported for generic types as well.
 
-// TODO(spapini): Use cairo syntax highlighting.
-[source,rust]
+[source,cairo]
 ----
 #[derive(Copy, Drop, PartialEq)]
 struct Foo {

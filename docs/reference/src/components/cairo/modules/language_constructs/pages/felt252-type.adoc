@@ -6,7 +6,7 @@ specified range, using modular arithmetic.
 == Code Example
 The following example demonstrates how the maximum value of `felt252` behaves when adding `1`.
 
-[source, rust]
+[source,cairo]
 ----
 fn main() {
     // max value of felt252
@@ -20,7 +20,7 @@ fn main() {
 Since `felt252` is the default data type, there's no need to explicitly specify it in simple cases.
 Here’s the simplified version:
 
-[source, rust]
+[source,cairo]
 ----
 fn main() {
     // max value of felt252
