@@ -17,6 +17,7 @@ struct SimpleDiag<'db> {
     message: String,
     severity: Severity,
     notes: Vec<DiagnosticNote<'db>>,
+    span: TextSpan,
 }
 impl<'db> SimpleDiag<'db> {
     fn new(file_id: FileId<'db>) -> Self {
@@ -25,27 +26,37 @@ impl<'db> SimpleDiag<'db> {
             message: "Simple diagnostic.".into(),
             severity: Severity::Error,
             notes: vec![],
+            span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
         }
     }
 
     fn with_severity(file_id: FileId<'db>, severity: Severity) -> Self {
-        Self { file_id, message: "Simple diagnostic.".into(), severity, notes: vec![] }
+        Self {
+            file_id,
+            message: "Simple diagnostic.".into(),
+            severity,
+            notes: vec![],
+            span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
+        }
     }
 
     fn with_notes(file_id: FileId<'db>, notes: Vec<DiagnosticNote<'db>>) -> Self {
-        Self { file_id, message: "Simple diagnostic.".into(), severity: Severity::Error, notes }
+        Self {
+            file_id,
+            message: "Simple diagnostic.".into(),
+            severity: Severity::Error,
+            notes,
+            span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
+        }
     }
 }
 impl<'db> DiagnosticEntry<'db> for SimpleDiag<'db> {
     fn format(&self, _db: &dyn Database) -> String {
-        self.message.clone()
+        "Simple diagnostic.".into()
     }
 
     fn location(&self, _db: &'db dyn Database) -> SpanInFile<'db> {
-        SpanInFile {
-            file_id: self.file_id,
-            span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
-        }
+        SpanInFile { file_id: self.file_id, span: self.span }
     }
 
     fn severity(&self) -> Severity {
@@ -119,6 +130,7 @@ fn test_multiple_diagnostics() {
         message: "Second diagnostic.".into(),
         severity: Severity::Error,
         notes: vec![],
+        span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
     });
 
     let built = diagnostics.build();
@@ -159,6 +171,7 @@ fn test_extend_diagnostics() {
         message: "Extended diagnostic.".into(),
         severity: Severity::Error,
         notes: vec![],
+        span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
     });
     let diagnostics2 = builder2.build();
 
@@ -186,6 +199,7 @@ fn test_merge_diagnostics() {
         message: "Merged diagnostic.".into(),
         severity: Severity::Error,
         notes: vec![],
+        span: TextSpan::new(TextOffset::START, TextWidth::new_for_testing(6).as_offset()),
     });
     let diagnostics2 = builder2.build();
 
@@ -203,9 +217,19 @@ fn test_diagnostics_with_notes() {
     let mut diagnostics: DiagnosticsBuilder<'_, SimpleDiag<'_>> = DiagnosticsBuilder::default();
     diagnostics.add(SimpleDiag::with_notes(file_id, vec![note]));
 
-    let formatted = diagnostics.build().format(&db_val);
-    assert!(formatted.contains("note:"));
-    assert!(formatted.contains("This is a note."));
+    assert_eq!(
+        diagnostics.build().format(&db_val),
+        indoc! { "
+            error: Simple diagnostic.
+             --> dummy_file.sierra:1:1-2:1
+              abcd
+             _^
+            | efg.
+            |_^
+            note: This is a note.
+
+        " }
+    );
 }
 
 #[test]
