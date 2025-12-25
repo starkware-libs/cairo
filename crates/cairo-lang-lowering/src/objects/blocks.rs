@@ -3,7 +3,8 @@ use std::ops::{Index, IndexMut};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::require;
 
-use crate::Block;
+use crate::borrow_check::analysis::StatementLocation;
+use crate::{Block, Statement};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
 pub struct BlockId(pub usize);
@@ -129,5 +130,12 @@ impl<'db> Index<BlockId> for Blocks<'db> {
 impl<'db> IndexMut<BlockId> for Blocks<'db> {
     fn index_mut(&mut self, index: BlockId) -> &mut Self::Output {
         &mut self.0[index.0]
+    }
+}
+impl<'db> Index<StatementLocation> for Blocks<'db> {
+    type Output = Statement<'db>;
+
+    fn index(&self, index: StatementLocation) -> &Self::Output {
+        &self[index.0].statements[index.1]
     }
 }
