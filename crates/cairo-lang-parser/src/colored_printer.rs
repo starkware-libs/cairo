@@ -38,7 +38,15 @@ impl ColoredPrinter<'_> {
 
 // TODO(yuval): autogenerate both.
 fn is_missing_kind(kind: SyntaxKind) -> bool {
-    matches!(kind, SyntaxKind::ExprMissing | SyntaxKind::StatementMissing)
+    matches!(
+        kind,
+        SyntaxKind::ExprMissing
+            | SyntaxKind::WrappedArgListMissing
+            | SyntaxKind::StatementMissing
+            | SyntaxKind::ModuleItemMissing
+            | SyntaxKind::TraitItemMissing
+            | SyntaxKind::ImplItemMissing
+    )
 }
 
 // TODO(yuval): Move to SyntaxKind.
