@@ -575,11 +575,19 @@ impl<'db> Resolver<'db> {
             && last.identifier(self.db).long(self.db) == SELF_PARAM_KW
         {
             // If the `self` keyword is used in a non-multi-use path, report an error.
-            if use_path.as_syntax_node().parent_kind(self.db).unwrap() != SyntaxKind::UsePathList {
-                diagnostics.report(use_path.stable_ptr(self.db), UseSelfNonMulti);
+            match use_path.as_syntax_node().parent_kind(self.db) {
+                Some(SyntaxKind::UsePathList) => {}
+                Some(_) => {
+                    diagnostics.report(use_path.stable_ptr(self.db), UseSelfNonMulti);
+                }
+                None => {
+                    // No parent syntax node – avoid panic.
+                }
             }
+
             segments.segments.pop();
         }
+
         if segments.segments.is_empty() {
             return Err(diagnostics.report(use_path.stable_ptr(self.db), UseSelfEmptyPath));
         }
