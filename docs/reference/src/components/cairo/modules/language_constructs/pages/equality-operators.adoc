@@ -1,42 +1,42 @@
 :cairo-repo: https://github.com/starkware-libs/cairo/blob/main
 
 = Equality operators
- 
+
  Equality in Cairo is provided by the `==` (equality) and `!=` (inequality) operators.
  Both operators evaluate to `bool`.
- 
+
  == Syntax
- 
+
  - `lhs == rhs` → `bool`
  - `lhs != rhs` → `bool`
- 
+
  == Semantics (PartialEq)
- 
+
  The semantics of `==`/`!=` are trait-driven via `core::traits::PartialEq<T>`:
- 
+
  - `==` calls `PartialEq::eq(@T, @T) -> bool`.
  - `!=` defaults to `!PartialEq::eq(@T, @T)` via `PartialEq::ne`.
  - `PartialEq` can be derived for structs and enums (`#[derive(PartialEq)]`).
  - Snapshots `@T` are supported automatically if `T: PartialEq`.
- 
+
  If no suitable `PartialEq` implementation is available for the operand type,
  the comparison is a type error (trait resolution fails).
- 
+
  == Precedence and associativity
- 
+
  Equality operators share the same precedence level as relational operators
  (`<`, `<=`, `>`, `>=`) and bind:
- 
+
  - Tighter than logical `&&` and `||`.
  - Looser than bitwise `&`, `^`, `|`, arithmetic `+`, `-`, `*`, `/`, `%`,
    indexing `[]`, and member access `.`.
- 
+
  This is defined in link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs].
- 
+
  == Examples
- 
+
  === Primitives
- 
+
  [source,cairo]
  ----
  fn main() {
@@ -46,14 +46,14 @@
      assert!(b == true);
  }
  ----
- 
+
  === Deriving equality for a struct
- 
+
  [source,cairo]
  ----
  #[derive(Copy, Drop, PartialEq)]
  struct Point { x: u32, y: u32 }
- 
+
  fn main() {
      let p1 = Point { x: 1, y: 2 };
      let p2 = Point { x: 1, y: 2 };
@@ -61,46 +61,52 @@
      assert!(!(p1 != p2));
  }
  ----
- 
+
  === Manual implementation
- 
+
  [source,cairo]
  ----
  #[derive(Copy, Drop)]
  struct Id { value: felt252 }
- 
+
  impl IdEq of PartialEq<Id> {
      fn eq(lhs: @Id, rhs: @Id) -> bool { lhs.value == rhs.value }
  }
  ----
- 
- === Generics requiring PartialEq
- 
- [source,cairo]
- ----
- fn contains<T, +PartialEq<T>>(a: @T, b: @T) -> bool {
-     PartialEq::<T>::eq(a, b)
- }
- ----
- 
+
+=== Generics requiring PartialEq
+
+[source,cairo]
+----
+fn contains<T, +PartialEq<T>>(a: @T, b: @T) -> bool {
+    PartialEq::<T>::eq(a, b)
+}
+
+fn main() {
+    let p1 = Point { x: 1, y: 2 };
+    let p2 = Point { x: 1, y: 2 };
+    assert!(contains(@p1, @p2));
+}
+----
+
  === Snapshots
- 
+
  If `T: PartialEq`, comparisons on `@T` are supported automatically:
- 
+
  [source,cairo]
  ----
  fn same_point(p1: @Point, p2: @Point) -> bool {
      p1 == p2 // uses PartialEq<@Point> derived from PartialEq<Point>
  }
  ----
- 
+
  == Notes
- 
+
  - Cairo does not provide `===`/`!==`.
  - `!=` is implemented by default as logical negation of `==` via `PartialEq::ne`.
- 
+
  == References (source)
- 
+
  - Lexer tokens: link:{cairo-repo}/crates/cairo-lang-parser/src/lexer.rs[crates/cairo-lang-parser/src/lexer.rs] (`EqEq`, `Neq`).
  - Operator precedence: link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs].
  - Trait and behavior: `corelib/src/traits.cairo` (`PartialEq`).
