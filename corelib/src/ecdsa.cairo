@@ -200,7 +200,7 @@ pub fn recover_public_key(
     Some(state.finalize_nz()?.x())
 }
 
-/// Checks if `value != 0` (mod stark_curve::ORDER).
+/// Checks if `value == 0` (mod stark_curve::ORDER).
 fn is_equivalent_to_zero(value: felt252) -> bool {
     // Note that `2 * ec::stark_curve::ORDER` is larger than the felt252 PRIME.
     value == 0 || value == ec::stark_curve::ORDER
