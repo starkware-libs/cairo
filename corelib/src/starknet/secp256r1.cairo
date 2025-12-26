@@ -27,9 +27,10 @@ impl Secp256r1PointCopy of Copy<Secp256r1Point>;
 impl Secp256r1PointDrop of Drop<Secp256r1Point>;
 
 pub(crate) impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
-    // TODO(yuval): change to constant once u256 constants are supported.
+    const CURVE_SIZE: u256 = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551;
+
     fn get_curve_size() -> u256 {
-        0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
+        Self::CURVE_SIZE
     }
 
     fn get_generator_point() -> Secp256r1Point {
