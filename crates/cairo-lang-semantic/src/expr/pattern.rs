@@ -10,8 +10,8 @@ use salsa::Database;
 use super::fmt::ExprFormatter;
 use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::{
-    ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternArena, PatternId,
-    semantic,
+    ConcreteStructId, ExprNumericLiteral, ExprStringLiteral, LocalVariable, PatternArena,
+    PatternId, semantic,
 };
 
 /// Semantic representation of a Pattern.
@@ -137,7 +137,7 @@ impl<'a> PatternVariablesQueryable<'a> for QueryPatternVariablesFromDb<'a> {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'db>)]
 pub struct PatternLiteral<'db> {
-    pub literal: ExprLiteral<'db>,
+    pub literal: ExprNumericLiteral<'db>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr<'db>,

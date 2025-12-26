@@ -139,7 +139,7 @@ Block(
                             members: [
                                 (
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 3,
                                             ty: core::integer::u8,
                                         },
@@ -164,7 +164,7 @@ Block(
                     members: [
                         (
                             Literal(
-                                ExprLiteral {
+                                ExprNumericLiteral {
                                     value: 4,
                                     ty: core::integer::u8,
                                 },
@@ -219,7 +219,7 @@ Block(
                             members: [
                                 (
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 3,
                                             ty: core::integer::u8,
                                         },
@@ -244,7 +244,7 @@ Block(
                     members: [
                         (
                             Literal(
-                                ExprLiteral {
+                                ExprNumericLiteral {
                                     value: 4,
                                     ty: core::integer::u8,
                                 },
@@ -298,7 +298,7 @@ Block(
                         ExprEnumVariantCtor {
                             variant: R::A,
                             value_expr: Literal(
-                                ExprLiteral {
+                                ExprNumericLiteral {
                                     value: 2,
                                     ty: core::integer::u8,
                                 },
@@ -317,7 +317,7 @@ Block(
                 ExprEnumVariantCtor {
                     variant: R::B,
                     value_expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 3,
                             ty: core::integer::u16,
                         },
@@ -367,7 +367,7 @@ Block(
                         ExprEnumVariantCtor {
                             variant: R::A,
                             value_expr: Literal(
-                                ExprLiteral {
+                                ExprNumericLiteral {
                                     value: 2,
                                     ty: core::integer::u8,
                                 },
@@ -386,7 +386,7 @@ Block(
                 ExprEnumVariantCtor {
                     variant: R::B,
                     value_expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 3,
                             ty: core::integer::u16,
                         },
@@ -600,7 +600,7 @@ Block(
                 ExprEnumVariantCtor {
                     variant: R::B,
                     value_expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 3,
                             ty: core::integer::u16,
                         },
@@ -671,7 +671,7 @@ Block(
                 ExprEnumVariantCtor {
                     variant: R::B,
                     value_expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 3,
                             ty: core::integer::u16,
                         },
@@ -742,7 +742,7 @@ Block(
                 ExprEnumVariantCtor {
                     variant: R::B,
                     value_expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 3,
                             ty: core::integer::u16,
                         },
@@ -806,7 +806,7 @@ Block(
                                 ExprEnumVariantCtor {
                                     variant: E::B,
                                     value_expr: Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 3,
                                             ty: core::integer::u16,
                                         },
@@ -877,7 +877,7 @@ Block(
                         ExprEnumVariantCtor {
                             variant: E::A,
                             value_expr: Literal(
-                                ExprLiteral {
+                                ExprNumericLiteral {
                                     value: 1,
                                     ty: core::integer::u8,
                                 },
@@ -1448,7 +1448,7 @@ EnumVariantCtor(
     ExprEnumVariantCtor {
         variant: myEnum::Variant,
         value_expr: Literal(
-            ExprLiteral {
+            ExprNumericLiteral {
                 value: 3,
                 ty: core::integer::u32,
             },
@@ -1509,7 +1509,7 @@ EnumVariantCtor(
     ExprEnumVariantCtor {
         variant: myEnum::Variant,
         value_expr: Literal(
-            ExprLiteral {
+            ExprNumericLiteral {
                 value: 3,
                 ty: core::integer::u32,
             },

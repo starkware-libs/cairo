@@ -924,7 +924,7 @@ fn lower_expr<'db>(
 /// Lowers a semantic expression that is a literal, possibly including a negation.
 fn lower_expr_literal<'db>(
     ctx: &mut LoweringContext<'db, '_>,
-    expr: &semantic::ExprLiteral<'db>,
+    expr: &semantic::ExprNumericLiteral<'db>,
     builder: &mut BlockBuilder<'db>,
 ) -> LoweringResult<'db, LoweredExpr<'db>> {
     log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));

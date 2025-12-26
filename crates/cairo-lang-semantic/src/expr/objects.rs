@@ -151,7 +151,7 @@ pub enum Expr<'db> {
     Match(ExprMatch<'db>),
     If(ExprIf<'db>),
     Var(ExprVar<'db>),
-    Literal(ExprLiteral<'db>),
+    Literal(ExprNumericLiteral<'db>),
     StringLiteral(ExprStringLiteral<'db>),
     MemberAccess(ExprMemberAccess<'db>),
     StructCtor(ExprStructCtor<'db>),
@@ -497,10 +497,9 @@ impl<'db> DebugWithDb<'db> for ExprVar<'db> {
     }
 }
 
-// TODO(yuval): rename to ExprNumericLiteral.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
 #[debug_db(ExprFormatter<'db>)]
-pub struct ExprLiteral<'db> {
+pub struct ExprNumericLiteral<'db> {
     #[dont_rewrite]
     pub value: BigInt,
     pub ty: semantic::TypeId<'db>,

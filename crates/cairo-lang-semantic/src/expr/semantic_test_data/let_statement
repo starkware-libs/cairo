@@ -19,7 +19,7 @@ Block(
                         a,
                     ),
                     expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 3,
                             ty: core::felt252,
                         },
@@ -72,19 +72,19 @@ Block(
                             items: Items(
                                 [
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 1,
                                             ty: core::integer::u8,
                                         },
                                     ),
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 2,
                                             ty: core::integer::u8,
                                         },
                                     ),
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 3,
                                             ty: core::integer::u8,
                                         },

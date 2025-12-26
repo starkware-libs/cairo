@@ -8,7 +8,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 7,
         ty: core::felt252,
     },
@@ -28,7 +28,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 291,
         ty: core::felt252,
     },
@@ -48,7 +48,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 12,
         ty: core::felt252,
     },
@@ -68,7 +68,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 16,
         ty: core::integer::u128,
     },
@@ -88,7 +88,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 22,
         ty: core::integer::u128,
     },
@@ -108,7 +108,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 97,
         ty: core::felt252,
     },
@@ -128,7 +128,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 66,
         ty: core::integer::u128,
     },
@@ -148,7 +148,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 126207244316550804821666916,
         ty: core::integer::u128,
     },
@@ -168,7 +168,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 39,
         ty: core::felt252,
     },
@@ -188,7 +188,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 4660,
         ty: core::integer::u128,
     },
@@ -208,7 +208,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 86400,
         ty: core::integer::u128,
     },
@@ -228,7 +228,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 86400,
         ty: core::integer::u128,
     },
@@ -248,7 +248,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 86400,
         ty: core::felt252,
     },
@@ -268,7 +268,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 86400,
         ty: core::felt252,
     },
@@ -288,7 +288,7 @@ test_expr_semantics(expect_diagnostics: false)
 
 //! > expected_semantics
 Literal(
-    ExprLiteral {
+    ExprNumericLiteral {
         value: 7986,
         ty: core::felt252,
     },

@@ -24,7 +24,7 @@ Assignment(
                     ),
                     Value(
                         Literal(
-                            ExprLiteral {
+                            ExprNumericLiteral {
                                 value: 3,
                                 ty: core::felt252,
                             },
