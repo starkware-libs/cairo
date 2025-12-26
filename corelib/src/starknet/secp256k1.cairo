@@ -27,10 +27,11 @@ pub extern type Secp256k1Point;
 impl Secp256k1PointCopy of Copy<Secp256k1Point>;
 impl Secp256k1PointDrop of Drop<Secp256k1Point>;
 
+const CURVE_SIZE: u256 = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551;
+
 pub(crate) impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
-    const CURVE_SIZE: u256 = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141;
     fn get_curve_size() -> u256 {
-        Self::CURVE_SIZE
+        CURVE_SIZE
     }
 
     fn get_generator_point() -> Secp256k1Point {
