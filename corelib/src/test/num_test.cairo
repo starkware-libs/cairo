@@ -67,6 +67,7 @@ fn test_overflowing_add_negative_signed_integers() {
     assert!(Bounded::<i128>::MIN.overflowing_add(-1) == (0x7fffffffffffffffffffffffffffffff, true));
 }
 
+#[test]
 fn test_overflowing_sub_unsigned_integers() {
     assert_eq!(3_u8.overflowing_sub(2), (1, false));
     assert_eq!(0_u8.overflowing_sub(1), (Bounded::<u8>::MAX, true));
