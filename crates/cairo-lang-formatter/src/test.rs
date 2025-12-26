@@ -7,7 +7,6 @@ use test_case::test_case;
 
 use crate::{FormatterConfig, get_formatted_file};
 
-// TODO(Gil): Add tests
 #[test_case(
     "test_data/cairo_files/test1.cairo",
     "test_data/expected_results/test1.cairo",

@@ -23,7 +23,6 @@ pub enum InstructionBody {
 }
 impl InstructionBody {
     pub fn op_size(&self) -> usize {
-        // TODO(spapini): Make this correct.
         match self {
             InstructionBody::AddAp(insn) => insn.op_size(),
             InstructionBody::AssertEq(insn) | InstructionBody::QM31AssertEq(insn) => insn.op_size(),

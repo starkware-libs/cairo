@@ -376,7 +376,6 @@ impl NonZeroEcPointNeg of Neg<NonZeroEcPoint> {
 #[cfg(not(sierra: "future"))]
 impl NonZeroEcPointNeg of Neg<NonZeroEcPoint> {
     fn neg(a: NonZeroEcPoint) -> NonZeroEcPoint {
-        // TODO(orizi): Have a `ec_neg` for NonZeroEcPoint as well.
         let p: EcPoint = a.into();
         (-p).try_into().unwrap()
     }
@@ -384,15 +383,12 @@ impl NonZeroEcPointNeg of Neg<NonZeroEcPoint> {
 
 impl EcPointAdd of Add<EcPoint> {
     /// Computes the sum of two points on the curve.
-    // TODO(lior): Implement using a libfunc to make it more efficient.
     fn add(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
-        let lhs_nz = match lhs.try_into() {
-            Some(pt) => pt,
-            None => { return rhs; },
+        let Some(lhs_nz) = lhs.try_into() else {
+            return rhs;
         };
-        let rhs_nz = match rhs.try_into() {
-            Some(pt) => pt,
-            None => { return lhs; },
+        let Some(rhs_nz) = rhs.try_into() else {
+            return lhs;
         };
         let mut state = ec_state_init();
         state.add(lhs_nz);

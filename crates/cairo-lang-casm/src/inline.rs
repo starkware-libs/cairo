@@ -244,8 +244,6 @@ pub struct CasmContext {
     pub current_code_offset: usize,
     pub current_hints: Vec<Hint>,
     pub instructions: Vec<Instruction>,
-    // TODO(spapini): Branches.
-    // TODO(spapini): Relocations.
 }
 
 #[macro_export]

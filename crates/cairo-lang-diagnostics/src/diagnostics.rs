@@ -48,8 +48,6 @@ pub trait DiagnosticEntry<'db>: Clone + fmt::Debug + Eq + Hash {
     /// Returns true if the two should be regarded as the same kind when filtering duplicate
     /// diagnostics.
     fn is_same_kind(&self, other: &Self) -> bool;
-
-    // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 
 /// Diagnostic notes for diagnostics originating in the plugin generated files identified by

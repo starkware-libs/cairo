@@ -1138,7 +1138,6 @@ define_language_element_id_as_enum! {
         Struct(StructId<'db>),
         Enum(EnumId<'db>),
         Extern(ExternTypeId<'db>),
-        // TODO(spapini): associated types in impls.
     }
 }
 impl<'db> GenericTypeId<'db> {
