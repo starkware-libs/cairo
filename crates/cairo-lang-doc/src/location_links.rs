@@ -2,7 +2,6 @@ use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_formatter::{FormatterConfig, get_formatted_file};
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax::node::green::GreenNodeDetails;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -30,13 +29,14 @@ impl<'db> LocationLink<'db> {
     }
 }
 
-/// Collects all [`cairo_lang_syntax::node::green::GreenNode`]s for a [`SyntaxNode`],
-/// returns a vector of their [`SyntaxKind`] and text.
-fn collect_green_nodes<'db>(
+/// Extends `green_nodes` with all
+/// [`cairo_lang_syntax::node::green::GreenNode`]s for a [`SyntaxNode`],
+/// storing each node's [`SyntaxKind`] and text.
+fn extend_green_nodes<'db>(
     db: &dyn Database,
     syntax_node: &SyntaxNode<'db>,
     green_nodes: &mut Vec<(SyntaxKind, String)>,
-) -> Vec<(SyntaxKind, String)> {
+) {
     let green_node = syntax_node.green_node(db);
 
     match &green_node.details {
@@ -44,17 +44,16 @@ fn collect_green_nodes<'db>(
         GreenNodeDetails::Node { .. } => {
             let syntax_node_children = syntax_node.get_children(db);
             syntax_node_children.iter().for_each(|child| {
-                collect_green_nodes(db, child, green_nodes);
+                extend_green_nodes(db, child, green_nodes);
             });
         }
     }
-    green_nodes.to_owned()
 }
 
 /// Creates a virtual file for further signature syntax processing.
 fn get_virtual_syntax_file_signature<'db>(
     sig_db: &'db dyn Database,
-    signature: String,
+    signature: &str,
 ) -> Maybe<SyntaxNode<'db>> {
     let virtual_file = FileLongId::Virtual(VirtualFile {
         parent: None,
@@ -72,9 +71,8 @@ fn get_virtual_syntax_file_signature<'db>(
         Parser::parse_file(sig_db, &mut diagnostics_builder, virtual_file, content)
             .as_syntax_node();
 
-    let diagnostics = sig_db.file_syntax_diagnostics(virtual_file);
     // Allow a single "Missing token '{'..." error
-    if diagnostics.0.error_count <= 1 { Ok(syntax_file) } else { Err(DiagnosticAdded) }
+    if diagnostics_builder.error_count <= 1 { Ok(syntax_file) } else { Err(DiagnosticAdded) }
 }
 
 /// Calculates offsets for original and formatted signature,
@@ -142,16 +140,17 @@ pub fn format_signature<'db>(
     signature: String,
     location_links: Vec<LocationLink<'db>>,
 ) -> (String, Vec<LocationLink<'db>>) {
-    match get_virtual_syntax_file_signature(db, signature.clone()) {
+    match get_virtual_syntax_file_signature(db, &signature) {
         Ok(syntax_file) => {
             let formatted_file = get_formatted_file(db, &syntax_file, FormatterConfig::default());
 
             if !location_links.is_empty() {
-                match get_virtual_syntax_file_signature(db, formatted_file.clone()) {
+                match get_virtual_syntax_file_signature(db, &formatted_file) {
                     Ok(syntax_file_formatted) => {
-                        let nodes_original = collect_green_nodes(db, &syntax_file, &mut Vec::new());
-                        let nodes_formatted =
-                            collect_green_nodes(db, &syntax_file_formatted, &mut Vec::new());
+                        let mut nodes_original = Vec::new();
+                        extend_green_nodes(db, &syntax_file, &mut nodes_original);
+                        let mut nodes_formatted = Vec::new();
+                        extend_green_nodes(db, &syntax_file_formatted, &mut nodes_formatted);
 
                         let offsets = get_offsets(nodes_original, nodes_formatted);
                         (
