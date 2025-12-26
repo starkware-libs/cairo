@@ -468,7 +468,7 @@ impl SpanSerde<T, +Serde<T>, +Drop<T>, -TypeEqual<felt252, T>> of Serde<Span<T>>
 #[generate_trait]
 pub impl SpanImpl<T> of SpanTrait<T> {
     /// Pops a value from the front of the span.
-    /// Returns `Some(@value)` if the array is not empty, `None` otherwise.
+    /// Returns `Some(@value)` if the span is not empty, `None` otherwise.
     ///
     /// # Examples
     ///
@@ -488,7 +488,7 @@ pub impl SpanImpl<T> of SpanTrait<T> {
     }
 
     /// Pops a value from the back of the span.
-    /// Returns `Some(@value)` if the array is not empty, `None` otherwise.
+    /// Returns `Some(@value)` if the span is not empty, `None` otherwise.
     ///
     /// # Examples
     /// ```
