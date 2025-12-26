@@ -66,8 +66,10 @@ impl GasInfo {
             (fd.long_id.generic_id.0 == BranchAlignLibfunc::STR_ID).then_some(&fd.id)
         });
         let mut fail = false;
-        for ((idx, token), val) in
-            self.variable_values.clone().sub_collection(other.variable_values.clone())
+        for ((idx, token), val) in self
+            .variable_values
+            .clone()
+            .sub_collection(other.variable_values.iter().map(|(k, v)| (*k, *v)))
         {
             if val != 0
                 && !matches!(
