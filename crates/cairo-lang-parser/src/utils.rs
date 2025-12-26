@@ -86,9 +86,7 @@ impl SimpleParserDatabase {
             original_item_removed: false,
         })
         .intern(self);
-        let mut diagnostics = DiagnosticsBuilder::default();
-        let syntax = Parser::parse_token_stream(self, &mut diagnostics, file_id, token_stream);
-        (syntax.as_syntax_node(), diagnostics.build())
+        get_syntax_root_and_diagnostics(self, file_id)
     }
 
     /// Parses a token stream (based on a single expression).
