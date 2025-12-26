@@ -10,9 +10,9 @@
 ///
 /// # Examples
 ///
-/// The following example shows how `ByteSpan` implements `Get` for both `Range<usize>`
-/// and `RangeInclusive<usize>`, enabling safe slicing operations that return `None` when
-/// out of bounds.
+/// The following example shows how `ByteSpan` implements `Get` for `usize`, `Range<usize>`,
+/// and `RangeInclusive<usize>`, enabling safe indexing and slicing operations that return `None`
+/// when out of bounds.
 ///
 /// ```
 /// use core::byte_array::{ByteSpan, ByteSpanTrait};
@@ -36,7 +36,6 @@
 /// assert!(span.get(10).is_none());
 /// assert!(span.get(10..20).is_none());
 /// ```
-// TODO(giladchase): add examples for `usize` once supported.
 #[unstable(feature: "corelib-get-trait")]
 pub trait Get<C, I> {
     /// The returned type after indexing.
