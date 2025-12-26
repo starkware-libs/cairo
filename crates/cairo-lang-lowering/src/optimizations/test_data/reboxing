@@ -40,10 +40,10 @@ Parameters: v0: core::box::Box::<test::A>
 blk0 (root):
 Statements:
   (v1: test::A) <- unbox(v0)
+  (v5: core::box::Box::<core::felt252>, v6: core::box::Box::<core::felt252>) <- struct_destructure(v0)
   (v2: core::felt252, v3: core::felt252) <- struct_destructure(v1)
-  (v5: core::box::Box::<core::felt252>, v4: core::box::Box::<core::felt252>) <- struct_destructure(v0)
 End:
-  Return(v4)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -54,8 +54,6 @@ test_reboxing_analysis
 
 //! > function_name
 multi_member
-
-//! > TODO(eytan-starkware): Support multiple members by unboxing each member separately.
 
 //! > module_code
 #[derive(Drop, Copy)]
@@ -96,12 +94,12 @@ Parameters: v0: core::box::Box::<test::Point>
 blk0 (root):
 Statements:
   (v1: test::Point) <- unbox(v0)
+  (v12: core::box::Box::<core::integer::u32>, v13: core::box::Box::<core::integer::u32>, v14: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
   (v2: core::integer::u32, v3: core::integer::u32, v4: core::integer::u32) <- struct_destructure(v1)
-  (v5: core::box::Box::<core::integer::u32>, v12: core::box::Box::<core::integer::u32>, v13: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
   (v6: test::Point) <- unbox(v0)
+  (v15: core::box::Box::<core::integer::u32>, v16: core::box::Box::<core::integer::u32>, v17: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
   (v7: core::integer::u32, v8: core::integer::u32, v9: core::integer::u32) <- struct_destructure(v6)
-  (v14: core::box::Box::<core::integer::u32>, v15: core::box::Box::<core::integer::u32>, v10: core::box::Box::<core::integer::u32>) <- struct_destructure(v0)
-  (v11: (core::box::Box::<core::integer::u32>, core::box::Box::<core::integer::u32>)) <- struct_construct(v5, v10)
+  (v11: (core::box::Box::<core::integer::u32>, core::box::Box::<core::integer::u32>)) <- struct_construct(v12, v17)
 End:
   Return(v11)
 
@@ -114,8 +112,6 @@ test_reboxing_analysis
 
 //! > function_name
 nested_struct
-
-//! > TODO(eytan-starkware): Add nesting support
 
 //! > module_code
 #[derive(Drop, Copy)]
@@ -157,11 +153,12 @@ Parameters: v0: core::box::Box::<test::Outer>
 blk0 (root):
 Statements:
   (v1: test::Outer) <- unbox(v0)
+  (v6: core::box::Box::<test::Inner>, v7: core::box::Box::<core::felt252>) <- struct_destructure(v0)
   (v2: test::Inner, v3: core::felt252) <- struct_destructure(v1)
+  (v8: core::box::Box::<core::felt252>) <- struct_destructure(v6)
   (v4: core::felt252) <- struct_destructure(v2)
-  (v5: core::box::Box::<core::felt252>) <- into_box(v4)
 End:
-  Return(v5)
+  Return(v8)
 
 //! > ==========================================================================
 
@@ -172,8 +169,6 @@ test_reboxing_analysis
 
 //! > function_name
 with_snapshot
-
-//! > TODO(eytan-starkware): Add snapshot support
 
 //! > module_code
 #[derive(Drop)]
@@ -214,10 +209,10 @@ Parameters: v0: core::box::Box::<@test::Data>
 blk0 (root):
 Statements:
   (v1: @test::Data) <- unbox(v0)
+  (v5: core::box::Box::<@test::NonCopy>, v6: core::box::Box::<@core::felt252>) <- struct_destructure(v0)
   (v2: @test::NonCopy, v3: @core::felt252) <- struct_destructure(v1)
-  (v4: core::box::Box::<@test::NonCopy>, v5: core::box::Box::<@core::felt252>) <- struct_destructure(v0)
 End:
-  Return(v4)
+  Return(v5)
 
 //! > ==========================================================================
 
@@ -434,10 +429,10 @@ Parameters: v0: core::box::Box::<(core::integer::u32, core::felt252, core::integ
 blk0 (root):
 Statements:
   (v1: (core::integer::u32, core::felt252, core::integer::u64)) <- unbox(v0)
+  (v6: core::box::Box::<core::integer::u32>, v7: core::box::Box::<core::felt252>, v8: core::box::Box::<core::integer::u64>) <- struct_destructure(v0)
   (v2: core::integer::u32, v3: core::felt252, v4: core::integer::u64) <- struct_destructure(v1)
-  (v6: core::box::Box::<core::integer::u32>, v5: core::box::Box::<core::felt252>, v7: core::box::Box::<core::integer::u64>) <- struct_destructure(v0)
 End:
-  Return(v5)
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -468,7 +463,6 @@ fn non_copy_struct_rebox(s: Box<NonCopyStruct>) -> Box<felt252> {
 //! > lowering_diagnostics
 
 //! > candidates
-v4
 
 //! > before
 Parameters: v0: core::box::Box::<test::NonCopyStruct>
@@ -513,7 +507,6 @@ fn non_copy_tuple_rebox(t: Box<(Array<felt252>, felt252)>) -> Box<felt252> {
 //! > lowering_diagnostics
 
 //! > candidates
-v4
 
 //! > before
 Parameters: v0: core::box::Box::<(core::array::Array::<core::felt252>, core::felt252)>
@@ -664,7 +657,6 @@ fn main(a: Box<A>) -> (Box<felt252>, NonDrop) {
 //! > lowering_diagnostics
 
 //! > candidates
-v4
 
 //! > before
 Parameters: v0: core::box::Box::<test::A>
@@ -742,10 +734,10 @@ Parameters: v0: core::box::Box::<@test::A>
 blk0 (root):
 Statements:
   (v1: @test::A) <- unbox(v0)
+  (v8: core::box::Box::<@core::felt252>, v9: core::box::Box::<@test::NonDrop>) <- struct_destructure(v0)
   (v2: @core::felt252, v3: @test::NonDrop) <- struct_destructure(v1)
-  (v4: core::box::Box::<@core::felt252>, v8: core::box::Box::<@test::NonDrop>) <- struct_destructure(v0)
   (v5: @core::felt252, v6: @test::NonDrop) <- struct_destructure(v1)
-  (v7: (core::box::Box::<@core::felt252>, @test::NonDrop)) <- struct_construct(v4, v6)
+  (v7: (core::box::Box::<@core::felt252>, @test::NonDrop)) <- struct_construct(v8, v6)
 End:
   Return(v7)
 
@@ -833,18 +825,18 @@ blk1:
 Statements:
   (v4: test::Point) <- unbox(v0)
   (v6: test::Point) <- unbox(v0)
+  (v15: core::box::Box::<core::felt252>, v16: core::box::Box::<core::felt252>) <- struct_destructure(v0)
   (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
-  (v15: core::box::Box::<core::felt252>, v9: core::box::Box::<core::felt252>) <- struct_destructure(v0)
 End:
-  Goto(blk3, {v9 -> v10})
+  Goto(blk3, {v16 -> v10})
 
 blk2:
 Statements:
   (v11: test::Point) <- unbox(v0)
+  (v17: core::box::Box::<core::felt252>, v18: core::box::Box::<core::felt252>) <- struct_destructure(v0)
   (v12: core::felt252, v13: core::felt252) <- struct_destructure(v11)
-  (v14: core::box::Box::<core::felt252>, v16: core::box::Box::<core::felt252>) <- struct_destructure(v0)
 End:
-  Goto(blk3, {v14 -> v10})
+  Goto(blk3, {v17 -> v10})
 
 blk3:
 Statements:

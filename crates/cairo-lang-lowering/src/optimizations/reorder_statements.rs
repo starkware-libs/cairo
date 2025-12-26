@@ -44,7 +44,7 @@ pub fn reorder_statements(db: &dyn Database, lowered: &mut Lowered<'_>) {
         changes_by_block.entry(src.0).or_insert_with(Vec::new).push((src.1, None));
 
         if let Some(dst) = opt_dst {
-            let statement = lowered.blocks[src.0].statements[src.1].clone();
+            let statement = lowered[src].clone();
             changes_by_block.entry(dst.0).or_insert_with(Vec::new).push((dst.1, Some(statement)));
         }
     }

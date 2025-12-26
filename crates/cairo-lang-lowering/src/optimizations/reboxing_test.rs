@@ -41,7 +41,7 @@ fn test_reboxing_analysis(
         let formatter = LoweredFormatter::new(db, &after.variables);
         trace!("Lowering input to Reboxing:\n{:?}", after.debug(&formatter));
 
-        let candidates = find_reboxing_candidates(&after);
+        let candidates = find_reboxing_candidates(db, &after);
 
         let candidates_str = candidates
             .iter()
@@ -50,7 +50,7 @@ fn test_reboxing_analysis(
             .join(", ");
 
         // Apply reboxing optimizations to create "after" state
-        apply_reboxing_candidates(db, &mut after, &candidates);
+        apply_reboxing_candidates(db, &mut after, &candidates).unwrap();
 
         TestRunnerResult::success(OrderedHashMap::from([
             ("candidates".into(), candidates_str),
