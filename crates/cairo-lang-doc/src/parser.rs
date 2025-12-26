@@ -211,17 +211,16 @@ impl<'db> DocumentationCommentParser<'db> {
                                     current_link = Some(CommentLinkToken {
                                         label: "".to_string(),
                                         path: None,
-                                        resolved_item: self.resolve_linked_item(item_id, path), /* Or resolve item here */
+                                        resolved_item: self.resolve_linked_item(item_id, &path), /* Or resolve item here */
                                     });
                                 }
                                 _ => {
+                                    let path = dest_url.clone().into_string();
+                                    let resolved_item = self.resolve_linked_item(item_id, &path);
                                     current_link = Some(CommentLinkToken {
                                         label: "".to_string(),
-                                        path: Some(dest_url.clone().into_string()),
-                                        resolved_item: self.resolve_linked_item(
-                                            item_id,
-                                            dest_url.clone().into_string(),
-                                        ), // Or resolve item here
+                                        path: Some(path),
+                                        resolved_item, // Or resolve item here
                                     });
                                 }
                             }
@@ -330,7 +329,7 @@ impl<'db> DocumentationCommentParser<'db> {
     fn resolve_linked_item(
         &self,
         item_id: DocumentableItemId<'db>,
-        path: String,
+        path: &str,
     ) -> Option<DocumentableItemId<'db>> {
         let syntax_node = item_id.stable_location(self.db)?.syntax_node(self.db);
         let containing_module = self.db.find_module_containing_node(syntax_node)?;
@@ -349,7 +348,7 @@ impl<'db> DocumentationCommentParser<'db> {
     }
 
     /// Parses the path as a string to a Path Expression, which can be later used by a resolver.
-    fn parse_comment_link_path(&self, path: String) -> Option<ExprPath<'db>> {
+    fn parse_comment_link_path(&self, path: &str) -> Option<ExprPath<'db>> {
         let virtual_file = FileLongId::Virtual(VirtualFile {
             parent: Default::default(),
             name: SmolStrId::from(self.db, ""),
@@ -453,7 +452,7 @@ impl<'db> ToDocumentableItemId<'db, DocumentableItemId<'db>> for ResolvedGeneric
 
 impl fmt::Display for CommentLinkToken<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.path.clone() {
+        match &self.path {
             Some(path) => write!(f, "[{}]({})", self.label, path),
             None => write!(f, "[{}]", self.label),
         }
