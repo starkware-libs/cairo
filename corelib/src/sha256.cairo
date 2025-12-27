@@ -124,99 +124,55 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
 /// * `last_input_word` - Final word for non-word-aligned inputs
 /// * `last_input_num_bytes` - Number of valid bytes in last_input_word
 fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_bytes: u32) {
-    let len = arr.len();
-    if last_input_num_bytes == 0 {
-        arr.append(0x80000000);
-    } else {
-        let (q, m, pad) = if last_input_num_bytes == 1 {
-            (0x100, 0x1000000, 0x800000)
-        } else if last_input_num_bytes == 2 {
-            (0x10000, 0x10000, 0x8000)
-        } else {
-            (0x1000000, 0x100, 0x80)
-        };
-        let (_, r) = crate::integer::u32_safe_divmod(last_input_word, q);
-        arr.append(r * m + pad);
-    }
-
-    let mut remaining: felt252 = 16 - ((arr.len() + 1) % 16).into();
-
-    append_zeros(ref arr, remaining);
-
-    arr.append(len * 32 + last_input_num_bytes * 8);
+    let bitlen = conversions::bitlen(arr.len(), last_input_num_bytes);
+    arr.append(conversions::to_last_word(last_input_word, last_input_num_bytes));
+    // Now writing the length in bits, at the end of a block.
+    // We always need to append a zero to the array, as the length is actually the two last u32
+    // words, in which we assume the least significant is enough.
+    let zero = 0;
+    arr.append(zero);
+    // Now we make sure we fill all the remaining space in the block, without the last word.
+    let mut remaining = 15 - (arr.len() % 16).into();
+    repeatedly_append_value(ref arr, remaining, zero);
+    arr.append(bitlen);
 }
 
-/// Appends `count` zeros to the array.
-fn append_zeros(ref arr: Array<u32>, count: felt252) {
-    if count == 0 {
-        return;
-    }
-    arr.append(0);
-    if count == 1 {
-        return;
-    }
-    arr.append(0);
-    if count == 2 {
-        return;
-    }
-    arr.append(0);
-    if count == 3 {
-        return;
-    }
-    arr.append(0);
-    if count == 4 {
-        return;
-    }
-    arr.append(0);
-    if count == 5 {
-        return;
-    }
-    arr.append(0);
-    if count == 6 {
-        return;
-    }
-    arr.append(0);
-    if count == 7 {
-        return;
-    }
-    arr.append(0);
-    if count == 8 {
-        return;
-    }
-    arr.append(0);
-    if count == 9 {
-        return;
-    }
-    arr.append(0);
-    if count == 10 {
-        return;
-    }
-    arr.append(0);
-    if count == 11 {
-        return;
-    }
-    arr.append(0);
-    if count == 12 {
-        return;
-    }
-    arr.append(0);
-    if count == 13 {
-        return;
-    }
-    arr.append(0);
-    if count == 14 {
-        return;
-    }
-    arr.append(0);
-    if count == 15 {
-        return;
-    }
-    arr.append(0);
+/// Appends `count` `value`s to the array.
+fn repeatedly_append_value(ref arr: Array<u32>, count: felt252, value: u32) {
+    let mut remaining = count;
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 0`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 1`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 2`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 3`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 4`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 5`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 6`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 7`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 8`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 9`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 10`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 11`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 12`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 13`.
+    dec_and_append_or_return!(remaining, arr, value); // returns if `count == 14`.
+}
+
+/// Macro to decrement a counter and append a value to an array, or return if the counter is value.
+macro dec_and_append_or_return {
+    ($remaining: ident, $arr: ident, $value: ident) => {
+        if $remaining == 0 {
+            return;
+        }
+        $remaining -= 1;
+        $arr.append($value);
+    };
 }
 
 mod conversions {
     #[feature("bounded-int-utils")]
-    use core::internal::bounded_int::{self, AddHelper, BoundedInt, MulHelper, UnitInt};
+    use core::internal::bounded_int::{
+        self, AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt,
+    };
 
     impl U8Shift of MulHelper<u8, UnitInt<0x100>> {
         type Result = BoundedInt<0, 0xFF00>;
@@ -256,5 +212,61 @@ mod conversions {
         word: T, byte: u8,
     ) -> SAB::Add::Result {
         bounded_int::add::<_, _, SAB::Add>(bounded_int::mul::<_, _, SAB::Mul>(word, 0x100), byte)
+    }
+
+    impl DoubleU32 of MulHelper<u32, UnitInt<2>> {
+        type Result = BoundedInt<0, 0x1FFFFFFFE>;
+    }
+
+    impl DoubleU32Inc of AddHelper<BoundedInt<0, 0x1FFFFFFFE>, UnitInt<1>> {
+        type Result = BoundedInt<1, 0x1FFFFFFFF>;
+    }
+
+    impl DoubleU32IncRightPadded of MulHelper<BoundedInt<1, 0x1FFFFFFFF>, BoundedInt<0, 0x800000>> {
+        type Result = BoundedInt<0, 0xFFFFFFFF800000>;
+    }
+
+    impl DoubleU32IncRightPaddedTrim of DivRemHelper<
+        BoundedInt<0, 0xFFFFFFFF800000>, UnitInt<0x100000000>,
+    > {
+        type DivT = BoundedInt<0, 0xFFFFFF>;
+        type RemT = BoundedInt<0, 0xFFFFFFFF>;
+    }
+
+    /// Returns the last word to append to the input `u32` array given the last word input.
+    pub fn to_last_word(word: u32, len: u32) -> u32 {
+        let shift: BoundedInt<0, 0x800000> = match len {
+            0 => { return 0x80000000; },
+            1 => 0x800000,
+            2 => 0x8000,
+            _ => 0x80,
+        };
+        let doubled = bounded_int::mul::<_, _, DoubleU32>(word, 2);
+        let incremented = bounded_int::add::<_, _, DoubleU32Inc>(doubled, 1);
+        let result = bounded_int::mul::<_, _, DoubleU32IncRightPadded>(incremented, shift);
+        // For backwards compatibility, we make sure to ignore high bits.
+        let (_, r) = bounded_int::div_rem::<_, _, DoubleU32IncRightPaddedTrim>(result, 0x100000000);
+        bounded_int::upcast(r)
+    }
+
+    impl ArrBitLen of MulHelper<u32, UnitInt<32>> {
+        type Result = BoundedInt<0, 0x1FFFFFFFE0>;
+    }
+
+    impl WordBitLen of MulHelper<u32, UnitInt<8>> {
+        type Result = BoundedInt<0, 0x7FFFFFFF8>;
+    }
+
+    impl FullBitLen of AddHelper<BoundedInt<0, 0x1FFFFFFFE0>, BoundedInt<0, 0x7FFFFFFF8>> {
+        type Result = BoundedInt<0, { 0x1FFFFFFFE0 + 0x7FFFFFFF8 }>;
+    }
+
+    /// Returns the bit length of the input message, given the length of the representation u32
+    /// array and last word bytes.
+    pub fn bitlen(arr_len: u32, last_word_bytes: u32) -> u32 {
+        let arr_bits = bounded_int::mul::<_, _, ArrBitLen>(arr_len, 32);
+        let last_word_bits = bounded_int::mul::<_, _, WordBitLen>(last_word_bytes, 8);
+        bounded_int::downcast(bounded_int::add::<_, _, FullBitLen>(arr_bits, last_word_bits))
+            .unwrap()
     }
 }
