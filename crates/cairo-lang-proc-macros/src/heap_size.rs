@@ -96,7 +96,9 @@ fn emit_variant_heap_size(fields: &syn::Fields) -> (TokenStream2, TokenStream2) 
         pattern = quote! { #pattern #field_ident, };
 
         if !should_skip {
-            // In enum patterns, the bindings are already references, so we don't need &
+            // In enum patterns when matching on &self, bindings for non-Copy types
+            // are automatically references. For Copy types, Rust automatically borrows
+            // them when passed to methods expecting &T, so we don't need & here.
             calls = quote! {
                 #calls + #crt::HeapSize::heap_size(#field_ident)
             };
