@@ -14,7 +14,7 @@ Cairo uses the following integer types:
 | u256  | 0       | 2^256 - 1
 |===
 
-The `usize` type is an alias to `u32`, and is used for array indexing.
+The `usize` type is an alias for `u32`, and is used for array indexing.
 
 == Integer Creation
 
