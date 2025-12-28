@@ -72,7 +72,6 @@ pub const BYTE_ARRAY_MAGIC: felt252 =
 const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = BYTES_IN_BYTES31 - 1;
 
-// TODO(yuval): don't allow creation of invalid ByteArray?
 /// Byte array type.
 #[derive(Drop, Clone, PartialEq)]
 pub struct ByteArray {

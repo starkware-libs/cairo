@@ -1,7 +1,7 @@
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 
-use num_bigint::{BigInt, ToBigInt};
+use num_bigint::BigInt;
 
 use crate::hints::Hint;
 use crate::instructions::{Instruction, InstructionBody};
@@ -318,8 +318,7 @@ impl ResOperand {
             ResOperand::Immediate(operand) => ResDescription {
                 off1: -1,
                 off2: 1,
-                // TODO(alon): Change immediate to always work with bigint.
-                imm: operand.value.to_bigint(),
+                imm: Some(operand.value.clone()),
                 op0_register: Register::FP,
                 op1_addr: Op1Addr::Imm,
                 res: Res::Op1,

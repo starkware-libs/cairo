@@ -45,9 +45,8 @@ impl BoxCopy<T, +Copy<T>> of Copy<Box<T>>;
 impl BoxDrop<T, +Drop<T>> of Drop<Box<T>>;
 
 
-// These functions are only exposed in the corelib through the trait below, since calling them
+// These functions must only be exposed in the corelib through the trait below, since calling them
 // directly with tuples panics due to auto-unpacking of the tuple.
-// TODO(Gil): Expose in the core lib when the described behaviour is fixed.
 extern fn into_box<T>(value: T) -> Box<T> nopanic;
 extern fn unbox<T>(box: Box<T>) -> T nopanic;
 extern fn box_forward_snapshot<T>(value: @Box<T>) -> Box<@T> nopanic;
