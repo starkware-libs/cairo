@@ -110,7 +110,8 @@ use super::{
 ///     allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 /// }
 ///
-/// fn read_storage(self: @ContractState, address: ContractAddress) {
+/// fn read_storage(self: @ContractState, address: ContractAddress, owner: ContractAddress, spender:
+/// ContractAddress) {
 ///     // Read from single mapping
 ///     let balance = self.balances.read(address);
 ///     // Read from nested mapping
@@ -139,7 +140,8 @@ pub trait StorageMapReadAccess<TMemberState> {
 ///     allowances: Map<ContractAddress, Map<ContractAddress, u256>>,
 /// }
 ///
-/// fn write_storage(ref self: ContractState, address: ContractAddress) {
+/// fn write_storage(ref self: ContractState, address: ContractAddress, owner: ContractAddress,
+/// spender: ContractAddress) {
 ///     // Write to single mapping
 ///     self.balances.write(address, 100);
 ///     // Write to nested mapping
@@ -169,8 +171,10 @@ pub trait StorageMapWriteAccess<TMemberState> {
 ///     balances: Map<ContractAddress, u256>,
 /// }
 ///
-/// // Get the storage path for the balance of a specific address
-/// let balance_path = self.balances.entry(address);
+/// fn example(self: @ContractState, address: ContractAddress) {
+///     // Get the storage path for the balance of a specific address
+///     let balance_path = self.balances.entry(address);
+/// }
 /// ```
 pub trait StoragePathEntry<C> {
     type Key;
