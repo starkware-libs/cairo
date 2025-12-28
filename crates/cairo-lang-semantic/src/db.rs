@@ -20,7 +20,7 @@ use salsa::{Database, Setter};
 
 use crate::SemanticDiagnostic;
 use crate::cache::{SemanticCacheLoadingData, load_cached_crate_modules_semantic};
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::ConstantSemantic;
 use crate::items::enm::EnumSemantic;
@@ -200,7 +200,7 @@ fn module_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
-    let mut diagnostics = DiagnosticsBuilder::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     for (_module_id, plugin_diag) in
         module_id.module_data(db)?.plugin_diagnostics(db).iter().cloned()
     {
@@ -212,6 +212,7 @@ fn module_semantic_diagnostics<'db>(
                 }
             },
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+            module_id,
         ));
     }
     let data = db.priv_module_semantic_data(module_id)?;
@@ -267,6 +268,7 @@ fn module_semantic_diagnostics<'db>(
                     diagnostics.add(SemanticDiagnostic::new(
                         stable_location,
                         SemanticDiagnosticKind::ModuleFileNotFound(path),
+                        module_id,
                     ));
                 }
             }
@@ -307,6 +309,7 @@ fn module_semantic_diagnostics<'db>(
             diagnostics.add(SemanticDiagnostic::new(
                 StableLocation::new(diag.stable_ptr),
                 SemanticDiagnosticKind::PluginDiagnostic(diag),
+                module_id,
             ));
         }
     }
@@ -318,7 +321,7 @@ fn module_semantic_diagnostics<'db>(
 fn add_duplicated_names_from_macro_expansions_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
     if matches!(module_id, ModuleId::MacroCall { .. }) {
         // Macro calls are handled by the caller.
@@ -370,7 +373,7 @@ fn add_unused_item_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
     data: &ModuleSemanticData<'db>,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
     let Ok(all_used_uses) = db.module_all_used_uses(module_id) else {
         return;
@@ -390,7 +393,7 @@ fn add_unused_import_diagnostics<'db>(
     db: &'db dyn Database,
     all_used_uses: &OrderedHashSet<UseId<'db>>,
     use_id: UseId<'db>,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
     let _iife = (|| {
         let item = db.use_resolved_item(use_id).ok()?;
@@ -409,9 +412,11 @@ fn add_unused_import_diagnostics<'db>(
                 .allowed_lints
                 .contains(&SmolStrId::from(db, UNUSED_IMPORTS)),
         )?;
+        let module_id = use_id.parent_module(db);
         Some(diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(use_id.untyped_stable_ptr(db)),
             SemanticDiagnosticKind::UnusedImport(use_id),
+            module_id,
         )))
     })();
 }

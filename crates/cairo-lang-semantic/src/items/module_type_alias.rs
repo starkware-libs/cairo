@@ -41,7 +41,7 @@ fn module_type_alias_semantic_data<'db>(
         module_type_alias_generic_params_data(db, module_type_alias_id).maybe_as_ref()?.clone();
     let lookup_item_id = LookupItemId::ModuleItem(ModuleItemId::TypeAlias(module_type_alias_id));
 
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let type_alias_data = if in_cycle {
         type_alias_semantic_data_cycle_helper(
             db,

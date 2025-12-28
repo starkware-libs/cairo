@@ -9,8 +9,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, DiagnosticsBuilder, ErrorCode, Severity,
-    error_code,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, DiagnosticsBuilder, ErrorCode,
+    Severity, error_code,
 };
 use cairo_lang_filesystem::db::Edition;
 use cairo_lang_filesystem::ids::{SmolStrId, SpanInFile};
@@ -35,7 +35,43 @@ use crate::{ConcreteTraitId, semantic};
 #[path = "diagnostic_test.rs"]
 mod test;
 
-pub type SemanticDiagnostics<'db> = DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>;
+/// A diagnostics builder with module context for semantic diagnostics.
+pub struct SemanticDiagnostics<'db> {
+    builder: DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    context_module: ModuleId<'db>,
+}
+
+impl<'db> SemanticDiagnostics<'db> {
+    pub fn new(context_module: ModuleId<'db>) -> Self {
+        Self { builder: DiagnosticsBuilder::default(), context_module }
+    }
+
+    pub fn from_diagnostics(
+        context_module: ModuleId<'db>,
+        diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
+    ) -> Self {
+        let mut builder = DiagnosticsBuilder::default();
+        builder.extend(diagnostics);
+        Self { builder, context_module }
+    }
+
+    pub fn add(&mut self, diagnostic: SemanticDiagnostic<'db>) -> DiagnosticAdded {
+        self.builder.add(diagnostic)
+    }
+
+    pub fn extend(&mut self, diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>) {
+        self.builder.extend(diagnostics);
+    }
+
+    pub fn build(self) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
+        self.builder.build()
+    }
+
+    pub fn error_count(&self) -> usize {
+        self.builder.error_count
+    }
+}
+
 pub trait SemanticDiagnosticsBuilder<'db> {
     /// Report a diagnostic in the location of the given ptr.
     fn report(
@@ -64,14 +100,22 @@ impl<'db> SemanticDiagnosticsBuilder<'db> for SemanticDiagnostics<'db> {
         stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
         kind: SemanticDiagnosticKind<'db>,
     ) -> DiagnosticAdded {
-        self.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr.into()), kind))
+        self.add(SemanticDiagnostic::new(
+            StableLocation::new(stable_ptr.into()),
+            kind,
+            self.context_module,
+        ))
     }
     fn report_after(
         &mut self,
         stable_ptr: impl Into<SyntaxStablePtrId<'db>>,
         kind: SemanticDiagnosticKind<'db>,
     ) -> DiagnosticAdded {
-        self.add(SemanticDiagnostic::new_after(StableLocation::new(stable_ptr.into()), kind))
+        self.add(SemanticDiagnostic::new_after(
+            StableLocation::new(stable_ptr.into()),
+            kind,
+            self.context_module,
+        ))
     }
     fn report_with_inner_span(
         &mut self,
@@ -82,6 +126,7 @@ impl<'db> SemanticDiagnosticsBuilder<'db> for SemanticDiagnostics<'db> {
         self.add(SemanticDiagnostic::new(
             StableLocation::with_inner_span(stable_ptr.into(), inner_span),
             kind,
+            self.context_module,
         ))
     }
 }
@@ -93,18 +138,25 @@ pub struct SemanticDiagnostic<'db> {
     /// true if the diagnostic should be reported *after* the given location. Normally false, in
     /// which case the diagnostic points to the given location (as-is).
     pub after: bool,
+    /// The module context in which this diagnostic was reported.
+    pub context_module: ModuleId<'db>,
 }
 impl<'db> SemanticDiagnostic<'db> {
     /// Create a diagnostic in the given location.
-    pub fn new(stable_location: StableLocation<'db>, kind: SemanticDiagnosticKind<'db>) -> Self {
-        SemanticDiagnostic { stable_location, kind, after: false }
+    pub fn new(
+        stable_location: StableLocation<'db>,
+        kind: SemanticDiagnosticKind<'db>,
+        context_module: ModuleId<'db>,
+    ) -> Self {
+        SemanticDiagnostic { stable_location, kind, after: false, context_module }
     }
     /// Create a diagnostic in the location after the given location (with width 0).
     pub fn new_after(
         stable_location: StableLocation<'db>,
         kind: SemanticDiagnosticKind<'db>,
+        context_module: ModuleId<'db>,
     ) -> Self {
-        SemanticDiagnostic { stable_location, kind, after: true }
+        SemanticDiagnostic { stable_location, kind, after: true, context_module }
     }
 }
 impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {

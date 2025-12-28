@@ -1443,7 +1443,7 @@ impl<'db, 'id> Inference<'db, 'id> {
             InferenceErrorStatus::Consumed(diag_added) => *diag_added,
             InferenceErrorStatus::Pending(pending) => {
                 let diag_added = match &pending.err {
-                    InferenceError::TypeNotInferred(_) if diagnostics.error_count > 0 => {
+                    InferenceError::TypeNotInferred(_) if diagnostics.error_count() > 0 => {
                         // If we have other diagnostics, there is no need to TypeNotInferred.
 
                         // Note that `diagnostics` is not empty, so it is safe to return

@@ -1,6 +1,5 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
-use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_syntax::attribute::consts::{
@@ -37,8 +36,9 @@ pub enum FeatureKind<'db> {
 impl<'db> FeatureKind<'db> {
     pub fn from_ast(
         db: &'db dyn Database,
-        diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
         attrs: &ast::AttributeList<'db>,
+        context_module: ModuleId<'db>,
     ) -> Self {
         let unstable_attrs = attrs.query_attr(db, UNSTABLE_ATTR).collect_vec();
         let deprecated_attrs = attrs.query_attr(db, DEPRECATED_ATTR).collect_vec();
@@ -47,28 +47,53 @@ impl<'db> FeatureKind<'db> {
             return Self::Stable;
         };
         if unstable_attrs.len() + deprecated_attrs.len() + internal_attrs.len() > 1 {
-            add_diag(diagnostics, attrs.stable_ptr(db), FeatureMarkerDiagnostic::MultipleMarkers);
+            add_diag(
+                diagnostics,
+                attrs.stable_ptr(db),
+                FeatureMarkerDiagnostic::MultipleMarkers,
+                context_module,
+            );
             return Self::Stable;
         }
 
         if !unstable_attrs.is_empty() {
             let attr = unstable_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            let [feature, note, _] = parse_feature_attr(
+                db,
+                diagnostics,
+                &attr,
+                ["feature", "note", "since"],
+                context_module,
+            );
             feature.map(|feature| Self::Unstable { feature, note }).ok_or(attr)
         } else if !deprecated_attrs.is_empty() {
             let attr = deprecated_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            let [feature, note, _] = parse_feature_attr(
+                db,
+                diagnostics,
+                &attr,
+                ["feature", "note", "since"],
+                context_module,
+            );
             feature.map(|feature| Self::Deprecated { feature, note }).ok_or(attr)
         } else {
             let attr = internal_attrs.into_iter().next().unwrap().structurize(db);
-            let [feature, note, _] =
-                parse_feature_attr(db, diagnostics, &attr, ["feature", "note", "since"]);
+            let [feature, note, _] = parse_feature_attr(
+                db,
+                diagnostics,
+                &attr,
+                ["feature", "note", "since"],
+                context_module,
+            );
             feature.map(|feature| Self::Internal { feature, note }).ok_or(attr)
         }
         .unwrap_or_else(|attr| {
-            add_diag(diagnostics, attr.stable_ptr, FeatureMarkerDiagnostic::MissingAllowFeature);
+            add_diag(
+                diagnostics,
+                attr.stable_ptr,
+                FeatureMarkerDiagnostic::MissingAllowFeature,
+                context_module,
+            );
             Self::Stable
         })
     }
@@ -96,22 +121,38 @@ pub enum FeatureMarkerDiagnostic {
 /// Parses the feature attribute.
 fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
     db: &'db dyn Database,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
     attr: &structured::Attribute<'db>,
     allowed_args: [&str; EXTRA_ALLOWED],
+    context_module: ModuleId<'db>,
 ) -> [Option<SmolStrId<'db>>; EXTRA_ALLOWED] {
     let mut arg_values = std::array::from_fn(|_| None);
     for AttributeArg { variant, arg, .. } in &attr.args {
         let AttributeArgVariant::Named { value: ast::Expr::String(value), name } = variant else {
-            add_diag(diagnostics, arg.stable_ptr(db), FeatureMarkerDiagnostic::UnsupportedArgument);
+            add_diag(
+                diagnostics,
+                arg.stable_ptr(db),
+                FeatureMarkerDiagnostic::UnsupportedArgument,
+                context_module,
+            );
             continue;
         };
         let Some(i) = allowed_args.iter().position(|x| *x == name.text.long(db)) else {
-            add_diag(diagnostics, name.stable_ptr, FeatureMarkerDiagnostic::UnsupportedArgument);
+            add_diag(
+                diagnostics,
+                name.stable_ptr,
+                FeatureMarkerDiagnostic::UnsupportedArgument,
+                context_module,
+            );
             continue;
         };
         if arg_values[i].is_some() {
-            add_diag(diagnostics, name.stable_ptr, FeatureMarkerDiagnostic::DuplicatedArgument);
+            add_diag(
+                diagnostics,
+                name.stable_ptr,
+                FeatureMarkerDiagnostic::DuplicatedArgument,
+                context_module,
+            );
         } else {
             arg_values[i] = Some(value.text(db));
         }
@@ -121,13 +162,15 @@ fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
 
 /// Helper for adding a marker diagnostic.
 fn add_diag<'db>(
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
     stable_ptr: impl TypedStablePtr<'db>,
     diagnostic: FeatureMarkerDiagnostic,
+    context_module: ModuleId<'db>,
 ) {
     diagnostics.add(SemanticDiagnostic::new(
         StableLocation::new(stable_ptr.untyped()),
         SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic),
+        context_module,
     ));
 }
 
@@ -287,7 +330,7 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
                 current_module_id = id.parent_module(db);
                 let module = &current_module_id.module_data(db).unwrap().submodules(db)[&id];
                 // TODO(orizi): Add parent module diagnostics.
-                let ignored = &mut SemanticDiagnostics::default();
+                let ignored = &mut SemanticDiagnostics::new(current_module_id);
                 config_stack.push(feature_config_from_ast_item(db, crate_id, module, ignored));
             }
             ModuleId::MacroCall { id, .. } => {

@@ -54,7 +54,7 @@ fn priv_use_semantic_data<'db>(
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_id = use_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let module_item_id = ModuleItemId::Use(use_id);
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(module_item_id));
     let mut resolver = Resolver::new(db, module_id, inference_id);
@@ -182,7 +182,7 @@ fn priv_use_semantic_data_cycle<'db>(
     use_id: UseId<'db>,
 ) -> Maybe<Arc<UseData<'db>>> {
     let module_id = use_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let use_ast = db.module_use_by_id(use_id)?;
     let err = Err(diagnostics.report(use_ast.stable_ptr(db), UseCycle));
     let inference_id =
@@ -263,7 +263,7 @@ fn priv_global_use_semantic_data<'db>(
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
     let module_id = global_use_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let inference_id = InferenceId::GlobalUseStar(global_use_id);
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);
     let mut resolver = Resolver::new(db, module_id, inference_id);
@@ -327,7 +327,8 @@ fn priv_global_use_semantic_data_tracked_initial<'db>(
     _id: salsa::Id,
     global_use_id: GlobalUseId<'db>,
 ) -> Maybe<UseGlobalData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = global_use_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let global_use_ast = db.module_global_use_by_id(global_use_id)?;
     let star_ast = ast::UsePath::Star(db.module_global_use_by_id(global_use_id)?);
     let segments = get_use_path_segments(db, star_ast)?;

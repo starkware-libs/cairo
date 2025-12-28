@@ -15,7 +15,7 @@ use cairo_lang_defs::ids::{
     TraitId, TraitImplId, TraitTypeId, UseId,
 };
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef, ToMaybe, skip_diagnostic,
+    DiagnosticAdded, Diagnostics, Maybe, MaybeAsRef, ToMaybe, skip_diagnostic,
 };
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, SmolStrId, Tracked, UnstableSalsaId};
@@ -500,7 +500,7 @@ fn impl_def_generic_params_data<'db>(
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = impl_def_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id =
@@ -537,7 +537,7 @@ fn impl_def_substitution<'db>(
 #[salsa::tracked]
 fn impl_def_trait<'db>(db: &'db dyn Database, impl_def_id: ImplDefId<'db>) -> Maybe<TraitId<'db>> {
     let module_id = impl_def_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
@@ -566,7 +566,7 @@ fn impl_def_shallow_trait_generic_args_helper<'db>(
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
     let module_id = impl_def_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     let impl_ast = db.module_impl_by_id(impl_def_id)?;
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
@@ -649,7 +649,7 @@ fn impl_alias_trait_generic_args_helper<'db>(
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
     let module_id = impl_alias_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
@@ -823,7 +823,8 @@ fn impl_declaration_data_inner<'db>(
     impl_def_id: ImplDefId<'db>,
     resolve_trait: bool,
 ) -> Maybe<ImplDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = impl_def_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -948,7 +949,8 @@ fn impl_semantic_definition_diagnostics<'db>(
     db: &'db dyn Database,
     impl_def_id: ImplDefId<'db>,
 ) -> Diagnostics<'db, SemanticDiagnostic<'db>> {
-    let mut diagnostics = DiagnosticsBuilder::default();
+    let module_id = impl_def_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     let Ok(data) = impl_definition_data(db, impl_def_id) else {
         return Diagnostics::default();
@@ -978,7 +980,7 @@ fn impl_semantic_definition_diagnostics<'db>(
             .extend(db.implicit_impl_impl_semantic_diagnostics(impl_def_id, *implicit_impl_id));
     }
     // Diagnostics for special traits.
-    if diagnostics.error_count == 0 {
+    if diagnostics.error_count() == 0 {
         let concrete_trait =
             impl_declaration_data(db, impl_def_id).as_ref().unwrap().concrete_trait.unwrap();
 
@@ -1125,7 +1127,7 @@ fn deref_impl_diagnostics<'db>(
     db: &'db dyn Database,
     mut impl_def_id: ImplDefId<'db>,
     concrete_trait: ConcreteTraitId<'db>,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
     let mut visited_impls: OrderedHashSet<ImplDefId<'_>> = OrderedHashSet::default();
     let deref_trait_id = concrete_trait.trait_id(db);
@@ -1408,7 +1410,7 @@ fn impl_definition_data<'db>(
     impl_def_id: ImplDefId<'db>,
 ) -> Maybe<ImplDefinitionData<'db>> {
     let module_id = impl_def_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     let generic_params =
         impl_def_generic_params_data(db, impl_def_id).maybe_as_ref()?.generic_params.clone();
@@ -1465,8 +1467,12 @@ fn impl_definition_data<'db>(
                         ImplFunctionLongId(module_id, func.stable_ptr(db)).intern(db);
                     let name_node = func.declaration(db).name(db);
                     let name = name_node.text(db);
-                    let feature_kind =
-                        FeatureKind::from_ast(db, &mut diagnostics, &func.attributes(db));
+                    let feature_kind = FeatureKind::from_ast(
+                        db,
+                        &mut diagnostics,
+                        &func.attributes(db),
+                        module_id,
+                    );
                     if item_id_by_name
                         .insert(
                             name,
@@ -1487,7 +1493,7 @@ fn impl_definition_data<'db>(
                     let name_node = ty.name(db);
                     let name = name_node.text(db);
                     let feature_kind =
-                        FeatureKind::from_ast(db, &mut diagnostics, &ty.attributes(db));
+                        FeatureKind::from_ast(db, &mut diagnostics, &ty.attributes(db), module_id);
                     if item_id_by_name
                         .insert(
                             name,
@@ -1505,8 +1511,12 @@ fn impl_definition_data<'db>(
                         ImplConstantDefLongId(module_id, constant.stable_ptr(db)).intern(db);
                     let name_node = constant.name(db);
                     let name = name_node.text(db);
-                    let feature_kind =
-                        FeatureKind::from_ast(db, &mut diagnostics, &constant.attributes(db));
+                    let feature_kind = FeatureKind::from_ast(
+                        db,
+                        &mut diagnostics,
+                        &constant.attributes(db),
+                        module_id,
+                    );
                     if item_id_by_name
                         .insert(
                             name,
@@ -1529,7 +1539,7 @@ fn impl_definition_data<'db>(
                     let name_node = imp.name(db);
                     let name = name_node.text(db);
                     let feature_kind =
-                        FeatureKind::from_ast(db, &mut diagnostics, &imp.attributes(db));
+                        FeatureKind::from_ast(db, &mut diagnostics, &imp.attributes(db), module_id);
                     if item_id_by_name
                         .insert(
                             name,
@@ -2442,7 +2452,8 @@ fn impl_type_semantic_data<'db>(
     impl_type_def_id: ImplTypeDefId<'db>,
     in_cycle: bool,
 ) -> Maybe<ImplItemTypeData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = impl_type_def_id.impl_def_id(db).parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let impl_type_def_ast = db.impl_type_by_id(impl_type_def_id)?;
     let generic_params_data =
         impl_type_def_generic_params_data(db, impl_type_def_id).maybe_as_ref()?.clone();
@@ -2621,7 +2632,9 @@ fn impl_constant_semantic_data<'db>(
     impl_constant_def_id: ImplConstantDefId<'db>,
     in_cycle: bool,
 ) -> Maybe<ImplItemConstantData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let impl_def_id = impl_constant_def_id.impl_def_id(db);
+    let module_id = impl_def_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let impl_def_id = impl_constant_def_id.impl_def_id(db);
     let impl_constant_defs = db.impl_constants(impl_def_id)?;
     let impl_constant_def_ast = impl_constant_defs.get(&impl_constant_def_id).to_maybe()?;
@@ -2877,7 +2890,9 @@ fn impl_impl_semantic_data<'db>(
     impl_impl_def_id: ImplImplDefId<'db>,
     in_cycle: bool,
 ) -> Maybe<ImplItemImplData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let impl_def_id = impl_impl_def_id.impl_def_id(db);
+    let module_id = impl_def_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let impl_def_id = impl_impl_def_id.impl_def_id(db);
     let impl_impl_defs = db.impl_impls(impl_def_id)?;
     let impl_impl_def_ast = impl_impl_defs.get(&impl_impl_def_id).to_maybe()?;
@@ -3020,7 +3035,8 @@ fn implicit_impl_impl_semantic_data<'db>(
     trait_impl_id: TraitImplId<'db>,
     in_cycle: bool,
 ) -> Maybe<ImplicitImplImplData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = impl_def_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     if in_cycle {
         let err = Err(diagnostics.report(impl_def_id.stable_ptr(db).untyped(), ImplAliasCycle));
         return Ok(ImplicitImplImplData {
@@ -3232,7 +3248,7 @@ fn impl_function_generic_params_data<'db>(
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = impl_function_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let impl_def_id = impl_function_id.impl_def_id(db);
     let data = impl_definition_data(db, impl_def_id).maybe_as_ref()?;
     let function_syntax = &data.function_asts[&impl_function_id];
@@ -3264,7 +3280,9 @@ fn impl_function_declaration_data<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<ImplFunctionDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let impl_def_id = impl_function_id.impl_def_id(db);
+    let module_id = impl_def_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let impl_def_id = impl_function_id.impl_def_id(db);
     let data = impl_definition_data(db, impl_def_id).maybe_as_ref()?;
     let function_syntax = &data.function_asts[&impl_function_id];
@@ -3588,7 +3606,9 @@ fn priv_impl_function_body_data<'db>(
     db: &'db dyn Database,
     impl_function_id: ImplFunctionId<'db>,
 ) -> Maybe<FunctionBodyData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let impl_def_id = impl_function_id.impl_def_id(db);
+    let module_id = impl_def_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let impl_def_id = impl_function_id.impl_def_id(db);
     let data = impl_definition_data(db, impl_def_id).maybe_as_ref()?;
     let function_syntax = &data.function_asts[&impl_function_id];
@@ -3792,27 +3812,28 @@ fn uninferred_impl_trait_dependency<'db>(
     trait_deps: &mut OrderedHashMap<TraitId<'db>, OrderedHashSet<TraitId<'db>>>,
 ) -> Maybe<()> {
     if let Ok(imp_trait_id) = impl_id.trait_id(db) {
-        let mut diagnostics = SemanticDiagnostics::default();
-        let (mut resolver, module_id, generic_params) = match impl_id {
+        let (mut resolver, module_id, generic_params, mut diagnostics) = match impl_id {
             UninferredImpl::Def(impl_def_id) => {
                 let module_id = impl_def_id.parent_module(db);
+                let mut diagnostics = SemanticDiagnostics::new(module_id);
 
                 let impl_ast = db.module_impl_by_id(impl_def_id)?;
                 let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
                 let mut resolver = Resolver::new(db, module_id, inference_id);
                 resolver.set_feature_config(&impl_def_id, &impl_ast, &mut diagnostics);
-                (resolver, module_id, impl_ast.generic_params(db))
+                (resolver, module_id, impl_ast.generic_params(db), diagnostics)
             }
             UninferredImpl::ImplAlias(impl_alias_id) => {
                 let module_id = impl_alias_id.parent_module(db);
+                let mut diagnostics = SemanticDiagnostics::new(module_id);
 
                 let impl_ast = db.module_impl_alias_by_id(impl_alias_id)?;
                 let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 
                 let mut resolver = Resolver::new(db, module_id, inference_id);
                 resolver.set_feature_config(&impl_alias_id, &impl_ast, &mut diagnostics);
-                (resolver, module_id, impl_ast.generic_params(db))
+                (resolver, module_id, impl_ast.generic_params(db), diagnostics)
             }
             _ => {
                 return Ok(());

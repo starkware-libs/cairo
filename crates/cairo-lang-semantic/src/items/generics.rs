@@ -291,7 +291,7 @@ fn generic_impl_param_trait<'db>(
         }
     };
 
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
     // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
     // in the context.
@@ -310,8 +310,7 @@ fn generic_impl_param_shallow_trait_generic_args<'db>(
 ) -> Maybe<Vec<(GenericParamId<'db>, ShallowGenericArg<'db>)>> {
     let db: &dyn Database = db;
     let module_id = generic_param_id.parent_module(db);
-    let mut diagnostics: cairo_lang_diagnostics::DiagnosticsBuilder<'_, SemanticDiagnostic<'_>> =
-        SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let parent_item_id = generic_param_id.generic_item(db);
     let lookup_item: LookupItemId<'_> = parent_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
@@ -412,8 +411,9 @@ fn generic_param_data<'db>(
     generic_param_id: GenericParamId<'db>,
     in_cycle: bool,
 ) -> Maybe<GenericParamData<'db>> {
+    let module_id = generic_param_id.parent_module(db);
     if in_cycle {
-        let mut diagnostics = SemanticDiagnostics::default();
+        let mut diagnostics = SemanticDiagnostics::new(module_id);
         return Ok(GenericParamData {
             generic_param: Err(diagnostics.report(
                 generic_param_id.stable_ptr(db).untyped(),
@@ -426,8 +426,7 @@ fn generic_param_data<'db>(
             )),
         });
     }
-    let module_id = generic_param_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let parent_item_id = generic_param_id.generic_item(db);
     let lookup_item: LookupItemId<'_> = parent_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;

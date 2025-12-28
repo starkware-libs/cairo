@@ -335,7 +335,7 @@ impl<'db> DocumentationCommentParser<'db> {
         let syntax_node = item_id.stable_location(self.db)?.syntax_node(self.db);
         let containing_module = self.db.find_module_containing_node(syntax_node)?;
         let mut resolver = Resolver::new(self.db, containing_module, InferenceId::NoContext);
-        let mut diagnostics = SemanticDiagnostics::default();
+        let mut diagnostics = SemanticDiagnostics::new(containing_module);
         let segments = self.parse_comment_link_path(path)?;
         resolver
             .resolve_generic_path(

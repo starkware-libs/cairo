@@ -1,12 +1,10 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_syntax::node::{Terminal, ast};
 use salsa::Database;
 
-use crate::SemanticDiagnostic;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::diagnostic::{SemanticDiagnostic, SemanticDiagnosticKind, SemanticDiagnostics};
 
 /// Visibility of an item.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, salsa::Update)]
@@ -18,8 +16,9 @@ pub enum Visibility {
 impl Visibility {
     pub fn from_ast<'db>(
         db: &'db dyn Database,
-        diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
         visibility: &ast::Visibility<'db>,
+        context_module: ModuleId<'db>,
     ) -> Self {
         match visibility {
             ast::Visibility::Pub(visibility_pub) => match visibility_pub.argument_clause(db) {
@@ -31,6 +30,7 @@ impl Visibility {
                         diagnostics.add(SemanticDiagnostic::new(
                             StableLocation::from_ast(db, &argument),
                             SemanticDiagnosticKind::UnsupportedPubArgument,
+                            context_module,
                         ));
                         Self::Public
                     }

@@ -304,7 +304,7 @@ fn trait_generic_params_data<'db>(
     in_cycle: bool,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = trait_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_ast = db.module_trait_by_id(trait_id)?;
 
     // Generic params.
@@ -380,7 +380,8 @@ fn priv_trait_declaration_data<'db>(
     db: &'db dyn Database,
     trait_id: TraitId<'db>,
 ) -> Maybe<TraitDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = trait_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -605,7 +606,7 @@ fn priv_trait_definition_data<'db>(
     trait_id: TraitId<'db>,
 ) -> Maybe<TraitDefinitionData<'db>> {
     let module_id = trait_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
 
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
@@ -628,7 +629,8 @@ fn priv_trait_definition_data<'db>(
                     let name_node = func.declaration(db).name(db);
                     let name = name_node.text(db);
                     let attributes = func.attributes(db);
-                    let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
+                    let feature_kind =
+                        FeatureKind::from_ast(db, &mut diagnostics, &attributes, module_id);
                     if item_id_by_name
                         .insert(
                             name,
@@ -651,7 +653,8 @@ fn priv_trait_definition_data<'db>(
                     let name_node = ty.name(db);
                     let name = name_node.text(db);
                     let attributes = ty.attributes(db);
-                    let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
+                    let feature_kind =
+                        FeatureKind::from_ast(db, &mut diagnostics, &attributes, module_id);
                     if item_id_by_name
                         .insert(
                             name,
@@ -673,7 +676,8 @@ fn priv_trait_definition_data<'db>(
                     let name_node = constant.name(db);
                     let name = name_node.text(db);
                     let attributes = constant.attributes(db);
-                    let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
+                    let feature_kind =
+                        FeatureKind::from_ast(db, &mut diagnostics, &attributes, module_id);
                     if item_id_by_name
                         .insert(
                             name,
@@ -697,7 +701,8 @@ fn priv_trait_definition_data<'db>(
                     let name_node = imp.name(db);
                     let name = name_node.text(db);
                     let attributes = imp.attributes(db);
-                    let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
+                    let feature_kind =
+                        FeatureKind::from_ast(db, &mut diagnostics, &attributes, module_id);
                     if item_id_by_name
                         .insert(
                             name,
@@ -744,7 +749,7 @@ fn priv_trait_type_generic_params_data<'db>(
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = trait_type_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_id = trait_type_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let trait_type_ast = &data.item_type_asts[&trait_type_id];
@@ -789,7 +794,8 @@ fn priv_trait_type_data<'db>(
     db: &'db dyn Database,
     trait_type_id: TraitTypeId<'db>,
 ) -> Maybe<TraitItemTypeData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = trait_type_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_id = trait_type_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let type_syntax = &data.item_type_asts[&trait_type_id];
@@ -829,7 +835,8 @@ fn priv_trait_constant_data<'db>(
     db: &'db dyn Database,
     trait_constant: TraitConstantId<'db>,
 ) -> Maybe<TraitItemConstantData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = trait_constant.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_id = trait_constant.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let constant_syntax = &data.item_constant_asts[&trait_constant];
@@ -888,7 +895,8 @@ fn priv_trait_impl_data<'db>(
     db: &'db dyn Database,
     trait_impl: TraitImplId<'db>,
 ) -> Maybe<TraitItemImplData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = trait_impl.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_id = trait_impl.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let impl_syntax = &data.item_impl_asts[&trait_impl];
@@ -949,7 +957,7 @@ fn priv_trait_function_generic_params_data<'db>(
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = trait_function_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_id = trait_function_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
@@ -986,7 +994,8 @@ fn priv_trait_function_declaration_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = trait_function_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_id = trait_function_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];
@@ -1114,7 +1123,8 @@ fn priv_trait_function_body_data<'db>(
     db: &'db dyn Database,
     trait_function_id: TraitFunctionId<'db>,
 ) -> Maybe<Option<FunctionBodyData<'db>>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = trait_function_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let trait_id = trait_function_id.trait_id(db);
     let data = db.priv_trait_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[&trait_function_id];

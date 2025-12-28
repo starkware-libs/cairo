@@ -66,7 +66,8 @@ pub fn impl_alias_semantic_data_helper<'db>(
     lookup_item_id: LookupItemId<'db>,
     generic_params_data: GenericParamsData<'db>,
 ) -> Maybe<ImplAliasData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = lookup_item_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -116,7 +117,8 @@ pub fn impl_alias_semantic_data_cycle_helper<'db>(
     lookup_item_id: LookupItemId<'db>,
     generic_params_data: GenericParamsData<'db>,
 ) -> Maybe<ImplAliasData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = lookup_item_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -160,7 +162,7 @@ pub fn impl_alias_generic_params_data_helper<'db>(
     lookup_item_id: LookupItemId<'db>,
     parent_resolver_data: Option<Arc<ResolverData<'db>>>,
 ) -> Maybe<GenericParamsData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let inference_id = InferenceId::LookupItemGenerics(lookup_item_id);
 
     let mut resolver = match parent_resolver_data {
@@ -193,7 +195,7 @@ fn impl_alias_impl_def<'db>(
     impl_alias_id: ImplAliasId<'db>,
 ) -> Maybe<ImplDefId<'db>> {
     let module_id = impl_alias_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let impl_alias_ast = db.module_impl_alias_by_id(impl_alias_id)?;
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 

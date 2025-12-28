@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
     TraitId, UseId,
 };
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -20,7 +20,7 @@ use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
 use crate::corelib::{core_submodule, get_submodule};
 use crate::db::{SemanticGroup, get_resolver_data_options};
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
 use crate::items::imp::ImplSemantic;
 use crate::items::impl_alias::ImplAliasSemantic;
@@ -60,7 +60,7 @@ fn priv_module_semantic_data<'db>(
         }
     };
     // We use the builder here since the items can come from different file_ids.
-    let mut diagnostics = DiagnosticsBuilder::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let mut items = OrderedHashMap::default();
     let module_data = module_id.module_data(db)?;
     for item_id in module_data.items(db).iter().copied() {
@@ -119,8 +119,8 @@ fn priv_module_semantic_data<'db>(
                 (item_id.name(db), item.attributes(db), item.visibility(db))
             }
         };
-        let visibility = Visibility::from_ast(db, &mut diagnostics, &visibility);
-        let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes);
+        let visibility = Visibility::from_ast(db, &mut diagnostics, &visibility, module_id);
+        let feature_kind = FeatureKind::from_ast(db, &mut diagnostics, &attributes, module_id);
         if items.insert(name, ModuleItemInfo { item_id, visibility, feature_kind }).is_some() {
             // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
             // guaranteed to succeed.
@@ -137,7 +137,7 @@ fn priv_module_semantic_data<'db>(
         .map(|(global_use_id, use_path_star)| {
             let item = ast::UsePath::Star(use_path_star.clone()).get_item(db);
             let visibility = item.visibility(db);
-            (*global_use_id, Visibility::from_ast(db, &mut diagnostics, &visibility))
+            (*global_use_id, Visibility::from_ast(db, &mut diagnostics, &visibility, module_id))
         })
         .collect();
     Ok(ModuleSemanticData { items, global_uses, diagnostics: diagnostics.build() })
