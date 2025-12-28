@@ -38,7 +38,7 @@ fn extern_function_declaration_generic_params_data<'db>(
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = extern_function_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?;
     let declaration = extern_function_syntax.declaration(db);
 
@@ -70,7 +70,7 @@ fn priv_extern_function_declaration_data<'db>(
     db: &'db dyn Database,
     extern_function_id: ExternFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(extern_function_id.parent_module(db));
     let extern_function_syntax = db.module_extern_function_by_id(extern_function_id)?;
 
     let declaration = extern_function_syntax.declaration(db);

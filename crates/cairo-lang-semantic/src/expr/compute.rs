@@ -741,7 +741,7 @@ fn expand_inline_macro<'db>(
     // We call the resolver with a new diagnostics, since the diagnostics should not be reported
     // if the macro was found as a plugin.
     let user_defined_macro = ctx.resolver.resolve_generic_path(
-        &mut Default::default(),
+        &mut SemanticDiagnostics::new(ctx.resolver.module_id),
         &macro_path,
         NotFoundItemType::Macro,
         ResolutionContext::Statement(&mut ctx.environment),
@@ -2820,7 +2820,7 @@ fn maybe_compute_pattern_semantic<'db>(
         }
         ast::Pattern::Path(path) => {
             let item_result = ctx.resolver.resolve_generic_path_with_args(
-                &mut Default::default(),
+                &mut SemanticDiagnostics::new(ctx.resolver.module_id),
                 path,
                 NotFoundItemType::Identifier,
                 ResolutionContext::Statement(&mut ctx.environment),
@@ -2831,7 +2831,7 @@ fn maybe_compute_pattern_semantic<'db>(
                 // Resolving as concrete path first might create vars which will not be inferred so
                 // we use the generic path first.
                 let item = ctx.resolver.resolve_concrete_path_ex(
-                    &mut Default::default(),
+                    &mut SemanticDiagnostics::new(ctx.resolver.module_id),
                     path,
                     NotFoundItemType::Identifier,
                     ResolutionContext::Statement(&mut ctx.environment),

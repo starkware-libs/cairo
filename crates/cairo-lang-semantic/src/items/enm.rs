@@ -44,7 +44,7 @@ fn enum_declaration_data<'db>(
     db: &'db dyn Database,
     enum_id: EnumId<'db>,
 ) -> Maybe<EnumDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(enum_id.parent_module(db));
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -76,7 +76,7 @@ fn enum_generic_params_data<'db>(
     enum_id: EnumId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = enum_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let enum_ast = db.module_enum_by_id(enum_id)?;
 
     // Generic params.
@@ -152,7 +152,7 @@ fn enum_definition_data<'db>(
 ) -> Maybe<EnumDefinitionData<'db>> {
     let module_id = enum_id.parent_module(db);
     let crate_id = module_id.owning_crate(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -228,7 +228,8 @@ fn enum_definition_diagnostics<'db>(
     {
         return data.diagnostics.clone();
     }
-    let mut diagnostics = SemanticDiagnostics::from(data.diagnostics.clone());
+    let mut diagnostics =
+        SemanticDiagnostics::from_diagnostics(enum_id.parent_module(db), data.diagnostics.clone());
     for (_, variant) in data.variant_semantic.iter() {
         let stable_ptr = variant.id.stable_ptr(db);
         add_type_based_diagnostics(db, &mut diagnostics, variant.ty, stable_ptr);

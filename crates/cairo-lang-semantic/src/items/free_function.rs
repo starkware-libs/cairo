@@ -38,7 +38,7 @@ fn free_function_generic_params_data<'db>(
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = free_function_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     let declaration = free_function_syntax.declaration(db);
 
@@ -70,7 +70,7 @@ fn free_function_declaration_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(free_function_id.parent_module(db));
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     let declaration = free_function_syntax.declaration(db);
 
@@ -129,7 +129,7 @@ fn priv_free_function_body_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionBodyData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(free_function_id.parent_module(db));
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     // Compute declaration semantic.
     let declaration = free_function_declaration_data(db, free_function_id).maybe_as_ref()?;

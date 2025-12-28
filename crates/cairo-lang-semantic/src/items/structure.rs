@@ -43,7 +43,7 @@ fn struct_declaration_data<'db>(
     db: &'db dyn Database,
     struct_id: StructId<'db>,
 ) -> Maybe<StructDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(struct_id.parent_module(db));
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -78,7 +78,7 @@ fn struct_generic_params_data<'db>(
     struct_id: StructId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = struct_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -129,7 +129,7 @@ fn struct_definition_data<'db>(
 ) -> Maybe<StructDefinitionData<'db>> {
     let module_id = struct_id.parent_module(db);
     let crate_id = module_id.owning_crate(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -196,7 +196,10 @@ fn struct_definition_diagnostics<'db>(
     {
         return data.diagnostics.clone();
     }
-    let mut diagnostics = SemanticDiagnostics::from(data.diagnostics.clone());
+    let mut diagnostics = SemanticDiagnostics::from_diagnostics(
+        struct_id.parent_module(db),
+        data.diagnostics.clone(),
+    );
     for (_, member) in data.members.iter() {
         let stable_ptr = member.id.stable_ptr(db);
         add_type_based_diagnostics(db, &mut diagnostics, member.ty, stable_ptr);

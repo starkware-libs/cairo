@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ImplAliasId, InlineMacroExprPluginId, InlineMacroExprPluginLongId, LanguageElementId,
     LookupItemId, MacroPluginId, MacroPluginLongId, ModuleId, ModuleItemId, UseId,
@@ -20,7 +19,7 @@ use salsa::{Database, Setter};
 
 use crate::SemanticDiagnostic;
 use crate::cache::{SemanticCacheLoadingData, load_cached_crate_modules_semantic};
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::ids::{AnalyzerPluginId, AnalyzerPluginLongId};
 use crate::items::constant::ConstantSemantic;
 use crate::items::enm::EnumSemantic;
@@ -200,19 +199,21 @@ fn module_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
-    let mut diagnostics = DiagnosticsBuilder::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     for (_module_id, plugin_diag) in
         module_id.module_data(db)?.plugin_diagnostics(db).iter().cloned()
     {
-        diagnostics.add(SemanticDiagnostic::new(
-            match plugin_diag.inner_span {
-                None => StableLocation::new(plugin_diag.stable_ptr),
-                Some(inner_span) => {
-                    StableLocation::with_inner_span(plugin_diag.stable_ptr, inner_span)
-                }
-            },
-            SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
-        ));
+        match plugin_diag.inner_span {
+            None => diagnostics.report(
+                plugin_diag.stable_ptr,
+                SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+            ),
+            Some(inner_span) => diagnostics.report_with_inner_span(
+                plugin_diag.stable_ptr,
+                inner_span,
+                SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+            ),
+        };
     }
     let data = db.priv_module_semantic_data(module_id)?;
     diagnostics.extend(data.diagnostics.clone());
@@ -262,12 +263,10 @@ fn module_semantic_diagnostics<'db>(
                         }
                     };
 
-                    let stable_location =
-                        StableLocation::new(submodule_id.stable_ptr(db).untyped());
-                    diagnostics.add(SemanticDiagnostic::new(
-                        stable_location,
+                    diagnostics.report(
+                        submodule_id.stable_ptr(db).untyped(),
                         SemanticDiagnosticKind::ModuleFileNotFound(path),
-                    ));
+                    );
                 }
             }
             ModuleItemId::ExternType(extern_type) => {
@@ -304,10 +303,7 @@ fn module_semantic_diagnostics<'db>(
         let analyzer_plugin = analyzer_plugin_id.long(db);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
-            diagnostics.add(SemanticDiagnostic::new(
-                StableLocation::new(diag.stable_ptr),
-                SemanticDiagnosticKind::PluginDiagnostic(diag),
-            ));
+            diagnostics.report(diag.stable_ptr, SemanticDiagnosticKind::PluginDiagnostic(diag));
         }
     }
 
@@ -318,7 +314,7 @@ fn module_semantic_diagnostics<'db>(
 fn add_duplicated_names_from_macro_expansions_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
     if matches!(module_id, ModuleId::MacroCall { .. }) {
         // Macro calls are handled by the caller.
@@ -370,7 +366,7 @@ fn add_unused_item_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
     data: &ModuleSemanticData<'db>,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
     let Ok(all_used_uses) = db.module_all_used_uses(module_id) else {
         return;
@@ -390,30 +386,31 @@ fn add_unused_import_diagnostics<'db>(
     db: &'db dyn Database,
     all_used_uses: &OrderedHashSet<UseId<'db>>,
     use_id: UseId<'db>,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
-    let _iife = (|| {
-        let item = db.use_resolved_item(use_id).ok()?;
-        // TODO(orizi): Properly handle usages of impls, and then add warnings on their usages as
-        // well.
-        require(!matches!(
-            item,
-            ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_)
-        ))?;
-        require(!all_used_uses.contains(&use_id))?;
-        let resolver_data = db.use_resolver_data(use_id).ok()?;
+    let _iife =
+        (|| {
+            let item = db.use_resolved_item(use_id).ok()?;
+            // TODO(orizi): Properly handle usages of impls, and then add warnings on their usages
+            // as well.
+            require(!matches!(
+                item,
+                ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_)
+            ))?;
+            require(!all_used_uses.contains(&use_id))?;
+            let resolver_data = db.use_resolver_data(use_id).ok()?;
 
-        require(
-            !resolver_data
-                .feature_config
-                .allowed_lints
-                .contains(&SmolStrId::from(db, UNUSED_IMPORTS)),
-        )?;
-        Some(diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(use_id.untyped_stable_ptr(db)),
-            SemanticDiagnosticKind::UnusedImport(use_id),
-        )))
-    })();
+            require(
+                !resolver_data
+                    .feature_config
+                    .allowed_lints
+                    .contains(&SmolStrId::from(db, UNUSED_IMPORTS)),
+            )?;
+            Some(diagnostics.report(
+                use_id.untyped_stable_ptr(db),
+                SemanticDiagnosticKind::UnusedImport(use_id),
+            ))
+        })();
 }
 
 #[salsa::tracked]
