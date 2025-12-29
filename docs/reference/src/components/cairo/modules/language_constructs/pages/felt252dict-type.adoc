@@ -8,7 +8,7 @@ By default, the value `0`, or value logically equivalent to `0`, is returned for
 
 Here is a simple usage example for a dictionary:
 
-[source,rust]
+[source,cairo]
 ----
 let mut dict: Felt252Dict<u128> = Default::default();
 dict.insert(10, 110);
@@ -31,7 +31,7 @@ value of the given key. The `Felt252DictEntry` object is a temporary owner of th
 and can only be destructed by calling `finalize(new_value)` on it, which returns ownership of
 the dictionary. This ensures that the dictionary is not used while it is being modified.
 
-[source,rust]
+[source,cairo]
 ----
 let mut dict: Felt252Dict<u128> = Default::default();
 dict.insert(10, 110);
@@ -46,9 +46,9 @@ let val10 = dict[10]; // new_val
 Dictionaries are automatically destroyed when they go out of scope. However, the destruction
 process of a dictionary is not trivial, and the `Destruct` trait is implemented for `Felt252Dict`.
 This means that `Destruct` must be derived for any type that contains a dictionary. For more
-information, see the xref:linear-types.adoc#Destructors[Destructors] section.
+information, see the xref:../../language_semantics/pages/linear-types.adoc#Destructors[Destructors] section.
 
-[source,rust]
+[source,cairo]
 ----
 #[derive(Destruct)]
 struct MyStruct {

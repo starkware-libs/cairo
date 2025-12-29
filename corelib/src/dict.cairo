@@ -300,7 +300,7 @@ pub impl SquashedFelt252DictImpl<T> of SquashedFelt252DictTrait<T> {
     /// # Example
     /// ```
     /// let squashed_dict = dict.squash();
-    /// let entries = squashed_dict.entries();
+    /// let entries = squashed_dict.into_entries();
     /// ```
     #[inline]
     fn into_entries(self: SquashedFelt252Dict<T>) -> Array<(felt252, T, T)> {

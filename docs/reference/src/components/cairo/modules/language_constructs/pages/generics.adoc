@@ -3,7 +3,7 @@
 Generic programming is a way to define "recipes" for creating concrete xref:items.adoc[items].
 This recipe has parameters called "generic parameters" (in addition to the "normal" parameters).
 For example:
-[source,rust]
+[source,cairo]
 ----
 fn foo<T>(x: T) -> T { x }
 ----
@@ -18,7 +18,7 @@ If an item doesn't require generic parameters, the whole `<...>` clause can be o
 Each generic parameter has a name that is used to refer to it in the item's body.
 
 For example, the generic struct `Box` below defines a type that can hold any type of data:
-[source,rust]
+[source,cairo]
 ----
 fn main() {
     struct Box<T> {
@@ -63,7 +63,7 @@ which impl will be actually used.
 
 For example:
 
-[source,rust]
+[source,cairo]
 ----
 trait MulTrait<T> {
     fn mul(x: T) -> T;
@@ -102,7 +102,7 @@ For example, `foo` from the above example can't have a concrete form in which `T
 as there is no impl of `MulTrait` for `u128`.
 
 In this case, you can also use anonymous impl generic parameters:
-[source,rust]
+[source,cairo]
 ----
 fn foo<T, +MyTrait<T>>(x: T) -> T {
     MyTrait::mul(x)
@@ -132,7 +132,7 @@ Each kind of generic parameter has its own kind of generic arguments:
 Generic arguments can be named.
 This allows specifying them in any order, and also allows specifying only some of them.
 For example, the following two statements are equivalent:
-[source,rust]
+[source,cairo]
 ----
 let x = foo::<T: u32, S: u64>(5);
 let x = foo::<S: u64, T: u32>(5);

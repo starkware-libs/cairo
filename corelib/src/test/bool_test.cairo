@@ -25,5 +25,5 @@ fn test_bool_operators() {
 #[test]
 fn test_bool_conversion() {
     assert_eq(@false.into(), @0, 'f.into() != 0');
-    assert_eq(@true.into(), @1, 'f.into() != 1');
+    assert_eq(@true.into(), @1, 't.into() != 1');
 }

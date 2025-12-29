@@ -91,15 +91,26 @@ This is useful when working with non-copyable types.
 
 == Dereferencing
 
-`Box<T>` implements the `Deref` trait, allowing automatic dereferencing:
+`Box<T>` implements the `Deref` trait, allowing automatic dereferencing
+for field and method access:
 
 [source,cairo]
 ----
-let boxed_value: Box<u32> = BoxTrait::new(42);
-let value: u32 = boxed_value.deref();  // Extracts the value
+#[derive(Copy, Drop)]
+struct Point {
+    x: u32,
+    y: u32,
+}
+
+let boxed_point: Box<Point> = BoxTrait::new(Point { x: 10, y: 20 });
+let x_value = boxed_point.x;  // Automatic dereferencing for field access
+let value: Point = boxed_point.deref();  // Explicit deref to get the value
 ----
+
+Note: Automatic dereferencing works for field and method access,
+but not for implicit type conversion when passing arguments to functions.
 
 == See also
 
-* xref:linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
+* xref:../../language_semantics/pages/linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
 * Implementation: `corelib/src/box.cairo`

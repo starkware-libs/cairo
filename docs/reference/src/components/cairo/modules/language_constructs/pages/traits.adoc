@@ -6,7 +6,7 @@ functions. This feature promotes code reusability and modular design.
 
 == Example
 
-[source,rust]
+[source,cairo]
 ----
 trait Display<T> {
     fn display(x: T) -> Array<u8>;
@@ -34,7 +34,7 @@ Note that unlike Rust, impls have names, so that they can be explicitly specifie
 In Cairo, impls can be used as generic parameters, allowing for a more flexible and modular design.
 For example, the following code defines a function that takes a generic parameter `T` and
 an implementation of the `Display<T>` trait:
-[source,rust]
+[source,cairo]
 ----
 fn foo<T, impl TDisplay: Display<T>>(value: T) {
     let a = TDisplay::display(value);

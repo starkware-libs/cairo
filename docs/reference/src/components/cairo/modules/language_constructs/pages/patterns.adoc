@@ -4,7 +4,7 @@ Patterns are used to match values to specific structures.
 They can be used in xref:let-statement.adoc[`let` statements] and xref:match-expressions.adoc[`match`] arms.
 == Pattern examples
 
-[source]
+[source,cairo]
 ----
 MyStruct {a: a, b : _b, c: _}
 MyEnum(a, b, c)

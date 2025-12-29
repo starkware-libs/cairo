@@ -311,11 +311,12 @@ fn build_enum_match_long(
 /// A struct representing an actual enum value in the Sierra program.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EnumView {
-    /// This would be ReferenceExpression::Immediate after enum_init, and would be
-    /// ReferenceExpression::Deref after store_*.
+    /// The selector of the active variant.
+    /// It is `CellExpression::Immediate` right after `enum_init`, and `CellExpression::Deref`
+    /// after the enum value is stored in memory.
     pub variant_selector: CellExpression,
     /// The inner value of the enum (a flat vector of cell expressions), padded with
-    /// CellExpression::Padding to match the size of the largest variant.
+    /// zero `CellExpression::Immediate` cells to match the size of the largest variant.
     pub inner_value: Vec<CellExpression>,
 }
 

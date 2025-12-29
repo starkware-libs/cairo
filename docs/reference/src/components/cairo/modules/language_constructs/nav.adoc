@@ -75,7 +75,6 @@
 **** xref:pages/enum-types.adoc[9.1.9 Enum types 🚧]
 **** xref:pages/array-types.adoc[9.1.10 Array types 🚧]
 **** xref:pages/felt252dict-type.adoc[9.1.11 Dict type]
-*** xref:pages/linear-types.adoc[9.2 Linear Types]
 *** xref:pages/generics.adoc[9.3 Generics]
 *** xref:pages/inference.adoc[9.4 Inference]
 

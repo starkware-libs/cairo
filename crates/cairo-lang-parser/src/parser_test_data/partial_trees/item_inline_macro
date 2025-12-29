@@ -464,7 +464,7 @@ a_macro!
     │   │           └── ident (kind: TokenIdentifier): 'a_macro'
     │   ├── bang (kind: TokenNot): '!'
     │   ├── arguments (kind: TokenTreeNode)
-    │   │   └── subtree (kind: WrappedTokenTreeMissing) []
+    │   │   └── subtree: Missing []
     │   └── semicolon: Missing
     └── child #1 (kind: FunctionWithBody) <ignored>
 

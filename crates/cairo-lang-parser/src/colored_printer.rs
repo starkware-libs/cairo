@@ -22,7 +22,7 @@ impl ColoredPrinter<'_> {
                 }
             }
             GreenNodeDetails::Node { .. } => {
-                if self.verbose && is_missing_kind(node.kind) {
+                if self.verbose && node.kind.is_missing() {
                     self.result.push_str(&format!("{}", "<m>".red()));
                 } else if self.verbose && is_empty_kind(node.kind) {
                     self.result.push_str(&format!("{}", "<e>".red()));
@@ -34,11 +34,6 @@ impl ColoredPrinter<'_> {
             }
         }
     }
-}
-
-// TODO(yuval): autogenerate both.
-fn is_missing_kind(kind: SyntaxKind) -> bool {
-    matches!(kind, SyntaxKind::ExprMissing | SyntaxKind::StatementMissing)
 }
 
 // TODO(yuval): Move to SyntaxKind.
