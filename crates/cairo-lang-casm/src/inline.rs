@@ -199,7 +199,7 @@ macro_rules! casm_extend {
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ syscall_handler.syscall(syscall_ptr=memory $addr:tt + $offset:tt) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::CoreHint::SystemCall {
+        $ctx.current_hints.push($crate::hints::StarknetHint::SystemCall {
             system: $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
                 op: cairo_lang_casm::operand::Operation::Add,
                 a: $crate::deref!($addr),
@@ -208,7 +208,7 @@ macro_rules! casm_extend {
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ syscall_handler.syscall(syscall_ptr=memory $addr:tt) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::CoreHint::SystemCall {
+        $ctx.current_hints.push($crate::hints::StarknetHint::SystemCall {
             system: $crate::operand::ResOperand::Deref($crate::deref!($addr))
         }.into());
         $crate::casm_extend!($ctx, $($tok)*)
