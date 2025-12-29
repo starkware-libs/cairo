@@ -652,7 +652,7 @@ fn simulate_u64_libfunc(
             (vec![], usize::from(lhs == rhs))
         }
         Uint64Concrete::ToFelt252(_) => {
-            take_inputs!(let [CoreValue::RangeCheck, CoreValue::Uint64(value)] = inputs);
+            take_inputs!(let [CoreValue::Uint64(value)] = inputs);
             (vec![CoreValue::Felt252(Felt252::from(value))], 0)
         }
         Uint64Concrete::FromFelt252(_) => {
