@@ -1,20 +1,75 @@
 = Member access expressions
 
-A member access expression is an expression that consists of a primary expression followed by a
-dot (.) and an identifier.
-The primary expression must have a xref:structs.adoc[struct] type that contains a member with the
-identifier as its name.
-The type of the member access expression is the type of the member that the identifier refers to.
+A member access expression is an expression that accesses a member (field) of a xref:structs.adoc[struct].
+Additionally, if a type implements the `Deref` trait, member access expressions can access members of the `Deref::Target` type.
 
-Example:
+== Syntax
+
+The syntax for member access expressions is:
+
+[source,cairo]
+----
+expression.member_name
+----
+
+where `member_name` is an identifier corresponding to a field name in the struct type.
+
+== Semantics
+
+A member access expression is evaluated by:
+
+1. First evaluating the primary expression (left side of the dot)
+2. Then accessing the specified member from the resulting value
+
+The type of the member access expression is the type of the accessed member.
+
+== Examples
+
+Valid examples:
+
 [source,cairo]
 ----
 struct Point {
-    x: usize,
-    y: usize,
+    x: felt252,
+    y: felt252,
 }
 
-fn foo(p: Point) -> usize {
-    p.x
+struct Line {
+    start: Point,
+    end: Point,
+}
+
+fn example() -> felt252 {
+    let p = Point { x: 10, y: 20 };
+
+    // Basic member access
+    let x_val: felt252 = p.x;
+
+    // Member access in expressions
+    let sum: felt252 = p.x + p.y;
+
+    // Nested struct member access
+    let line = Line {
+        start: Point { x: 0, y: 0 },
+        end: Point { x: 10, y: 10 }
+    };
+    let end_x: felt252 = line.end.x;
+
+    sum
 }
 ----
+
+Invalid examples (illustrative):
+
+- Accessing non-existent member: `p.z` when `Point` only has `x` and `y`
+- Missing dot operator: `px` instead of `p.x`
+- Accessing member on non-struct type: `5.field`
+
+NOTE: Tuples in Cairo currently do not support member access syntax. To access tuple
+elements, use pattern matching with `let` destructuring: `let (first, second, third) = tuple;`
+
+== Related
+
+- xref:structs.adoc[Structs]
+- xref:tuple-types.adoc[Tuple types] (note: tuples use destructuring, not member access)
+- xref:method-calls.adoc[Method calls]
