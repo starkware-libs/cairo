@@ -21,7 +21,7 @@ At the language semantics level, memory is immutable. Assigning to an lvalue doe
 existing memory; instead, a variable is a logical placeholder that can point to a different value
 after assignment. See the language constructs reference for the canonical wording.
 
-xref:language_constructs:lvalue.adoc#_mutability_in_an_immutable_world[Mutability in an immutable world]
+xref:../../language_constructs/pages/lvalue.adoc#_mutability_in_an_immutable_world[Mutability in an immutable world]
 
 == Struct member updates and copying
 
@@ -29,7 +29,7 @@ Assigning to a member (e.g. `s.x = ...`) is defined as producing a new struct va
 structs, this may copy the entire struct logically; compilers may optimize to reduce copies when
 possible. The language constructs docs explain this performance aspect.
 
-xref:language_constructs:structs.adoc[Structs] (copy behavior notes)
+xref:../../language_constructs/pages/structs.adoc[Structs] (copy behavior notes)
 
 == Linear types, Copy and Drop
 

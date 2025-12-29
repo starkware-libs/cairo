@@ -10,7 +10,7 @@ interact with contracts in a consistent way.
 
 This page explains what the ABI contains, its JSON representation, how it is generated and
 validated by the compiler, and how events are serialized. For how entry points are authored in
-contracts, see xref:language_constructs:contracts.adoc[Contracts].
+contracts, see xref:../../language_constructs/pages/contracts.adoc[Contracts].
 
 == What the ABI contains
 
@@ -142,7 +142,7 @@ Key invariants and diagnostics include (non‑exhaustive):
 - Exactly one constructor at most; having more than one is rejected.
 - Contracts must define exactly one `Storage` struct.
 - Entry points must have a `self` first parameter with the correct mutability (`ref` for external,
-  `@` for view), see xref:language_constructs:contracts.adoc[Contracts].
+  `@` for view), see xref:../../language_constructs/pages/contracts.adoc[Contracts].
 - Events must derive `starknet::Event`; flattened variants marked with `#[flat]` must be enums.
 - Duplicate entry point names/selectors and duplicate event selectors are rejected.
 - Interfaces embedded into a contract must be marked with the correct attributes, and interface
@@ -175,7 +175,7 @@ tooling.
 
 == Related documentation and sources
 
-- xref:language_constructs:contracts.adoc[Contracts]
+- xref:../../language_constructs/pages/contracts.adoc[Contracts]
 - ABI model and JSON serialization live in the codebase:
   * link:{cairo-repo}/crates/cairo-lang-starknet-classes/src/abi.rs[crates/cairo-lang-starknet-classes/src/abi.rs]
   * link:{cairo-repo}/crates/cairo-lang-starknet/src/abi.rs[crates/cairo-lang-starknet/src/abi.rs]
