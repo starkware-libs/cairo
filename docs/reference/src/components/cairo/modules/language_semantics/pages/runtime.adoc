@@ -64,7 +64,7 @@ Builtins provide optimized implementations of common operations:
 Builtins are accessed through core library functions and passed between functions
 using implicit arguments.
 
-See xref:language_constructs:implicit-arguments.adoc[Implicit arguments] for
+See xref:../../language_constructs/pages/implicit-arguments.adoc[Implicit arguments] for
 how builtins are threaded through function calls.
 
 == See also
