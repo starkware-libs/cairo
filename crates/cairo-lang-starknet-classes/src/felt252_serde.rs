@@ -60,8 +60,6 @@ pub enum Felt252SerdeError {
     OutOfOrderUserFunctionDeclarationsForSerialization,
     #[error("Invalid function declaration for serialization.")]
     FunctionArgumentsMismatchInSerialization,
-    #[error("The sierra version is too long and cannot fit within a felt252.")]
-    VersionIdTooLongForSerialization,
 }
 
 /// Serializes a Sierra program and the current compiler and Sierra versions into a vector of
