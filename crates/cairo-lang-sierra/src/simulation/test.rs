@@ -6,7 +6,7 @@ use super::LibfuncSimulationError::{
     self, FunctionSimulationError, WrongArgType, WrongNumberOfArgs,
 };
 use super::value::CoreValue::{
-    self, Array, GasBuiltin, RangeCheck, Uint32, Uint128, Uninitialized,
+    self, Array, Felt252, GasBuiltin, RangeCheck, Uint32, Uint64, Uint128, Uninitialized,
 };
 use super::{SimulationError, core};
 use crate::extensions::GenericLibfunc;
@@ -180,6 +180,8 @@ fn simulate_branch(
              => Ok(vec![]); "function_call<drop_all_inputs>()")]
 #[test_case("function_call", vec![user_func_arg("identity")], vec![Uint128(3), Uint128(5)]
              => Ok(vec![Uint128(3), Uint128(5)]); "function_call<identity>()")]
+#[test_case("u64_to_felt252", vec![], vec![Uint64(5)]
+             => Ok(vec![Felt252(5u64.into())]); "u64_to_felt252(5)")]
 fn simulate_none_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -215,6 +217,8 @@ fn simulate_none_branch(
 #[test_case("finalize_locals", vec![], vec![Uint128(4)] => WrongNumberOfArgs; "finalize_locals(4)")]
 #[test_case("rename", vec![type_arg("u128")], vec![] => WrongNumberOfArgs; "rename<u128>()")]
 #[test_case("jump", vec![], vec![Uint128(4)] => WrongNumberOfArgs; "jump(4)")]
+#[test_case("u64_to_felt252", vec![], vec![RangeCheck, Uint64(1)] => WrongNumberOfArgs;
+            "u64_to_felt252(RangeCheck, 1)")]
 #[test_case("function_call", vec![user_func_arg("unimplemented")], vec![] =>
             FunctionSimulationError(
                 "unimplemented".into(),
