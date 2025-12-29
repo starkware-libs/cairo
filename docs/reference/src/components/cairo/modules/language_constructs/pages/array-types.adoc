@@ -97,6 +97,29 @@ for value in arr.span() {
 modifying the span (for example via `pop_front()`) does not modify the
 original array.
 
+== Fixed-size array types `[T; N]`
+
+In addition to the growable `Array<T>` type, Cairo also supports fixed-size
+array types written as `[T; N]`, where `T` is the element type and `N` is a
+compile-time constant length.
+
+[source,cairo]
+----
+let triple: [u32; 3] = [1, 2, 3];
+let empty: [felt252; 0] = [];
+----
+
+Unlike `Array<T>`, a fixed-size array cannot grow or shrink: its length is
+part of the type and does not change at runtime. You cannot call methods like
+`append` or `pop_front` on `[T; N]`.
+
+Fixed-size arrays integrate with spans and dynamic arrays:
+
+- `Span<T>` can expose fixed-size segments of its data as `[T; N]` values
+  through helper methods that return `@Box<[T; N]>`.
+- A fixed-size array `[T; N]` can be viewed as a `Span<T>` using `.span()`,
+  which allows uniform iteration over both dynamic and fixed-size arrays.
+
 == Limitations and Why Certain Patterns Are Forbidden
 
 Due to memory immutability:
