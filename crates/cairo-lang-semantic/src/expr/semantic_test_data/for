@@ -53,7 +53,7 @@ For(
                                                                 ),
                                                                 Value(
                                                                     Literal(
-                                                                        ExprLiteral {
+                                                                        ExprNumericLiteral {
                                                                             value: 1,
                                                                             ty: core::felt252,
                                                                         },
@@ -77,7 +77,7 @@ For(
                                                                 ),
                                                                 Value(
                                                                     Literal(
-                                                                        ExprLiteral {
+                                                                        ExprNumericLiteral {
                                                                             value: 2,
                                                                             ty: core::felt252,
                                                                         },

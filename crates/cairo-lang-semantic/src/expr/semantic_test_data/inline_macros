@@ -44,7 +44,7 @@ FunctionCall(
                                                         ),
                                                         Value(
                                                             Literal(
-                                                                ExprLiteral {
+                                                                ExprNumericLiteral {
                                                                     value: 10,
                                                                     ty: core::felt252,
                                                                 },
@@ -68,7 +68,7 @@ FunctionCall(
                                                         ),
                                                         Value(
                                                             Literal(
-                                                                ExprLiteral {
+                                                                ExprNumericLiteral {
                                                                     value: 11,
                                                                     ty: core::felt252,
                                                                 },
@@ -92,7 +92,7 @@ FunctionCall(
                                                         ),
                                                         Value(
                                                             Literal(
-                                                                ExprLiteral {
+                                                                ExprNumericLiteral {
                                                                     value: 12,
                                                                     ty: core::felt252,
                                                                 },

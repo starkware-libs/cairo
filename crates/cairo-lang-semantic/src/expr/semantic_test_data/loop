@@ -44,7 +44,7 @@ Loop(
                                             StatementBreak {
                                                 expr_option: Some(
                                                     Literal(
-                                                        ExprLiteral {
+                                                        ExprNumericLiteral {
                                                             value: 3,
                                                             ty: core::integer::u32,
                                                         },
@@ -65,7 +65,7 @@ Loop(
                                                 StatementBreak {
                                                     expr_option: Some(
                                                         Literal(
-                                                            ExprLiteral {
+                                                            ExprNumericLiteral {
                                                                 value: 3,
                                                                 ty: core::integer::u16,
                                                             },
@@ -143,7 +143,7 @@ Loop(
                                                             args: [
                                                                 Value(
                                                                     Literal(
-                                                                        ExprLiteral {
+                                                                        ExprNumericLiteral {
                                                                             value: 3,
                                                                             ty: core::integer::u32,
                                                                         },
@@ -151,7 +151,7 @@ Loop(
                                                                 ),
                                                                 Value(
                                                                     Literal(
-                                                                        ExprLiteral {
+                                                                        ExprNumericLiteral {
                                                                             value: 3,
                                                                             ty: core::integer::u32,
                                                                         },
@@ -183,7 +183,7 @@ Loop(
                                                                 args: [
                                                                     Value(
                                                                         Literal(
-                                                                            ExprLiteral {
+                                                                            ExprNumericLiteral {
                                                                                 value: 3,
                                                                                 ty: core::integer::u16,
                                                                             },
@@ -191,7 +191,7 @@ Loop(
                                                                     ),
                                                                     Value(
                                                                         Literal(
-                                                                            ExprLiteral {
+                                                                            ExprNumericLiteral {
                                                                                 value: 3,
                                                                                 ty: core::integer::u16,
                                                                             },

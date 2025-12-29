@@ -15,7 +15,7 @@ FunctionCall(
         args: [
             Value(
                 Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 1,
                         ty: core::integer::u8,
                     },
@@ -23,7 +23,7 @@ FunctionCall(
             ),
             Value(
                 Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 10,
                         ty: core::integer::u8,
                     },

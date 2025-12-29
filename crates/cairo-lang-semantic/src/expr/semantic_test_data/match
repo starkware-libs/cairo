@@ -23,7 +23,7 @@ Match(
                 patterns: [
                     Literal(
                         PatternLiteral {
-                            literal: ExprLiteral {
+                            literal: ExprNumericLiteral {
                                 value: 0,
                                 ty: core::felt252,
                             },
@@ -31,7 +31,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 0,
                         ty: core::felt252,
                     },
@@ -46,7 +46,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 1,
                         ty: core::felt252,
                     },
@@ -93,7 +93,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 0,
                         ty: core::felt252,
                     },
@@ -110,7 +110,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 1,
                         ty: core::felt252,
                     },
@@ -171,7 +171,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 0,
                         ty: core::felt252,
                     },
@@ -188,7 +188,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 1,
                         ty: core::felt252,
                     },
@@ -429,7 +429,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 3,
                         ty: core::integer::u32,
                     },
@@ -446,7 +446,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 3,
                         ty: core::integer::u16,
                     },
@@ -508,7 +508,7 @@ Match(
                         args: [
                             Value(
                                 Literal(
-                                    ExprLiteral {
+                                    ExprNumericLiteral {
                                         value: 3,
                                         ty: core::integer::u32,
                                     },
@@ -516,7 +516,7 @@ Match(
                             ),
                             Value(
                                 Literal(
-                                    ExprLiteral {
+                                    ExprNumericLiteral {
                                         value: 3,
                                         ty: core::integer::u32,
                                     },
@@ -544,7 +544,7 @@ Match(
                         args: [
                             Value(
                                 Literal(
-                                    ExprLiteral {
+                                    ExprNumericLiteral {
                                         value: 3,
                                         ty: core::integer::u16,
                                     },
@@ -552,7 +552,7 @@ Match(
                             ),
                             Value(
                                 Literal(
-                                    ExprLiteral {
+                                    ExprNumericLiteral {
                                         value: 3,
                                         ty: core::integer::u16,
                                     },
@@ -1021,7 +1021,7 @@ Match(
                     ),
                 ],
                 expression: Literal(
-                    ExprLiteral {
+                    ExprNumericLiteral {
                         value: 1,
                         ty: core::felt252,
                     },

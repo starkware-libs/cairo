@@ -13,7 +13,7 @@ Block(
             Expr(
                 StatementExpr {
                     expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 6,
                             ty: core::felt252,
                         },
@@ -23,7 +23,7 @@ Block(
             Expr(
                 StatementExpr {
                     expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 8,
                             ty: core::felt252,
                         },
@@ -55,7 +55,7 @@ Block(
             Expr(
                 StatementExpr {
                     expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 6,
                             ty: core::felt252,
                         },
@@ -65,7 +65,7 @@ Block(
             Expr(
                 StatementExpr {
                     expr: Literal(
-                        ExprLiteral {
+                        ExprNumericLiteral {
                             value: 8,
                             ty: core::felt252,
                         },
@@ -75,7 +75,7 @@ Block(
         ],
         tail: Some(
             Literal(
-                ExprLiteral {
+                ExprNumericLiteral {
                     value: 9,
                     ty: core::felt252,
                 },
@@ -200,7 +200,7 @@ Block(
                             args: [
                                 Value(
                                     Literal(
-                                        ExprLiteral {
+                                        ExprNumericLiteral {
                                             value: 97,
                                             ty: core::felt252,
                                         },

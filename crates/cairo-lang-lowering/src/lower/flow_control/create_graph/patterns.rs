@@ -7,7 +7,7 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::StructSemantic;
 use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
-    self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, ExprLiteral,
+    self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, ExprNumericLiteral,
     PatternEnumVariant, PatternLiteral, PatternStruct, PatternTuple, TypeId, TypeLongId, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
@@ -518,7 +518,7 @@ fn handle_u256_literal<'db>(
     item_idx: usize,
 ) -> Maybe<semantic::Pattern<'db>> {
     let PatternLiteral {
-        literal: ExprLiteral { value, ty, stable_ptr: expr_stable_ptr },
+        literal: ExprNumericLiteral { value, ty, stable_ptr: expr_stable_ptr },
         stable_ptr,
     } = pattern_literal;
     if let Err(err) = validate_literal(ctx.db, *ty, value) {
@@ -534,7 +534,7 @@ fn handle_u256_literal<'db>(
     };
 
     Ok(semantic::Pattern::Literal(semantic::PatternLiteral {
-        literal: semantic::ExprLiteral {
+        literal: semantic::ExprNumericLiteral {
             value: inner_value,
             ty: ctx.db.core_info().u128,
             stable_ptr: *expr_stable_ptr,

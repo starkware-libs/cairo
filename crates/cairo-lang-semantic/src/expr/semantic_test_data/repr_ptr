@@ -27,7 +27,7 @@ Block(
                                     Snapshot(
                                         ExprSnapshot {
                                             inner: Literal(
-                                                ExprLiteral {
+                                                ExprNumericLiteral {
                                                     value: 1,
                                                     ty: core::integer::u32,
                                                 },
@@ -64,7 +64,7 @@ Block(
                                                             Snapshot(
                                                                 ExprSnapshot {
                                                                     inner: Literal(
-                                                                        ExprLiteral {
+                                                                        ExprNumericLiteral {
                                                                             value: 2,
                                                                             ty: core::integer::u32,
                                                                         },
@@ -117,7 +117,7 @@ Block(
                                                                                     Snapshot(
                                                                                         ExprSnapshot {
                                                                                             inner: Literal(
-                                                                                                ExprLiteral {
+                                                                                                ExprNumericLiteral {
                                                                                                     value: 3,
                                                                                                     ty: core::integer::u32,
                                                                                                 },
@@ -186,7 +186,7 @@ FunctionCall(
                                         Snapshot(
                                             ExprSnapshot {
                                                 inner: Literal(
-                                                    ExprLiteral {
+                                                    ExprNumericLiteral {
                                                         value: 5,
                                                         ty: core::integer::u32,
                                                     },
@@ -241,7 +241,7 @@ FunctionCall(
                                 Snapshot(
                                     ExprSnapshot {
                                         inner: Literal(
-                                            ExprLiteral {
+                                            ExprNumericLiteral {
                                                 value: 1,
                                                 ty: core::integer::u32,
                                             },
@@ -272,7 +272,7 @@ FunctionCall(
                                                         Snapshot(
                                                             ExprSnapshot {
                                                                 inner: Literal(
-                                                                    ExprLiteral {
+                                                                    ExprNumericLiteral {
                                                                         value: 2,
                                                                         ty: core::integer::u32,
                                                                     },
@@ -319,7 +319,7 @@ FunctionCall(
                                                                                 Snapshot(
                                                                                     ExprSnapshot {
                                                                                         inner: Literal(
-                                                                                            ExprLiteral {
+                                                                                            ExprNumericLiteral {
                                                                                                 value: 3,
                                                                                                 ty: core::integer::u32,
                                                                                             },
@@ -381,7 +381,7 @@ FunctionCall(
                         inner: Snapshot(
                             ExprSnapshot {
                                 inner: Literal(
-                                    ExprLiteral {
+                                    ExprNumericLiteral {
                                         value: 5,
                                         ty: core::integer::u32,
                                     },
@@ -422,7 +422,7 @@ Snapshot(
                         Snapshot(
                             ExprSnapshot {
                                 inner: Literal(
-                                    ExprLiteral {
+                                    ExprNumericLiteral {
                                         value: 5,
                                         ty: core::integer::u32,
                                     },
@@ -596,7 +596,7 @@ FunctionCall(
                                     ),
                                     Value(
                                         Literal(
-                                            ExprLiteral {
+                                            ExprNumericLiteral {
                                                 value: 1,
                                                 ty: core::integer::u32,
                                             },
