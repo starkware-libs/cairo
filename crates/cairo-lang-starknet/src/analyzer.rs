@@ -185,12 +185,11 @@ fn analyze_storage_struct<'db>(
 
     for (member_name, member) in members.iter() {
         let member_ast = member.id.stable_ptr(db).lookup(db);
-        let concrete_trait_id = concrete_valid_storage_trait(db, member.ty);
-
         let member_allows_invalid =
             member_ast.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_INVALID_STORAGE_MEMBERS_ATTR);
 
         if !(allow_invalid_members || member_allows_invalid) {
+            let concrete_trait_id = concrete_valid_storage_trait(db, member.ty);
             let inference_result = get_impl_at_context(db, lookup_context, concrete_trait_id, None);
 
             if let Err(inference_error) = inference_result {
