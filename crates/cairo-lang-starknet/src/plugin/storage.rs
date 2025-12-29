@@ -29,9 +29,6 @@ pub fn handle_storage_struct<'db, 'a>(
     let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
 
-    let mut members_struct_code = vec![];
-    let mut members_struct_code_mut = vec![];
-    let mut members_init_code = vec![];
     let mut substorage_members_struct_code = vec![];
     let mut substorage_members_init_code = vec![];
     let mut storage_struct_members = vec![];
@@ -53,11 +50,8 @@ pub fn handle_storage_struct<'db, 'a>(
                 ));
             }
         }
-        let SimpleMemberGeneratedCode { struct_code, struct_code_mut, init_code, storage_member } =
+        let SimpleMemberGeneratedCode { storage_member, .. } =
             get_simple_member_code(db, &member, config, metadata);
-        members_struct_code.push(struct_code);
-        members_struct_code_mut.push(struct_code_mut);
-        members_init_code.push(init_code);
         storage_struct_members.push(storage_member);
     }
 
@@ -129,12 +123,6 @@ pub fn handle_storage_struct<'db, 'a>(
                 "substorage_members_init_code".to_string(),
                 RewriteNode::new_modified(substorage_members_init_code),
             ),
-            ("members_struct_code".to_string(), RewriteNode::new_modified(members_struct_code)),
-            (
-                "members_struct_code_mut".to_string(),
-                RewriteNode::new_modified(members_struct_code_mut),
-            ),
-            ("members_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
         ]
         .into(),
     )
