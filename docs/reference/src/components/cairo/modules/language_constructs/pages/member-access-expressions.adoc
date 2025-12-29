@@ -1,6 +1,7 @@
 = Member access expressions
 
 A member access expression is an expression that accesses a member (field) of a xref:structs.adoc[struct].
+Additionally, if a type implements the `Deref` trait, member access expressions can access members of the `Deref::Target` type.
 
 == Syntax
 
@@ -40,20 +41,20 @@ struct Line {
 
 fn example() -> felt252 {
     let p = Point { x: 10, y: 20 };
-    
+
     // Basic member access
-    let x_val = p.x;                    // felt252
-    
+    let x_val: felt252 = p.x;
+
     // Member access in expressions
-    let sum = p.x + p.y;                // felt252
-    
+    let sum: felt252 = p.x + p.y;
+
     // Nested struct member access
-    let line = Line { 
+    let line = Line {
         start: Point { x: 0, y: 0 },
         end: Point { x: 10, y: 10 }
     };
-    let end_x = line.end.x;             // felt252
-    
+    let end_x: felt252 = line.end.x;
+
     sum
 }
 ----
@@ -64,7 +65,8 @@ Invalid examples (illustrative):
 - Missing dot operator: `px` instead of `p.x`
 - Accessing member on non-struct type: `5.field`
 
-NOTE: Tuples in Cairo do not support member access syntax. To access tuple elements, use pattern matching with `let` destructuring: `let (first, second, third) = tuple;`
+NOTE: Tuples in Cairo currently do not support member access syntax. To access tuple
+elements, use pattern matching with `let` destructuring: `let (first, second, third) = tuple;`
 
 == Related
 
