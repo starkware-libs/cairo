@@ -2397,9 +2397,6 @@ fn compute_expr_closure_semantic<'db>(
         }
         ContextFunction::Function(function_id) => function_id,
     };
-    if matches!(ctx.function_id, ContextFunction::Global) {
-        ctx.diagnostics.report(syntax.stable_ptr(db), ClosureInGlobalScope);
-    }
 
     let mut usages = Usages { usages: Default::default() };
     let usage = usages.handle_closure(&ctx.arenas, &params, body);
