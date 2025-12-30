@@ -16,7 +16,7 @@ use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
-use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
+use cairo_lang_sierra::extensions::enm::{EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc};
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
@@ -37,6 +37,7 @@ use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
 use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
 use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
+use cairo_lang_sierra::extensions::lib_func::SignatureOnlyConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -398,8 +399,11 @@ pub fn core_libfunc_cost(
                 1 | 2 => vec![ConstCost::default().into()],
                 _ => vec![ConstCost::steps(1).into()],
             },
-            EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig) => {
-                let n = sig.signature.branch_signatures.len();
+            EnumConcreteLibfunc::Match(SignatureOnlyConcreteLibfunc { signature, .. })
+            | EnumConcreteLibfunc::SnapshotMatch(SignatureOnlyConcreteLibfunc {
+                signature, ..
+            }) => {
+                let n = signature.branch_signatures.len();
                 match n {
                     0 => vec![],
                     1 => vec![ConstCost::default().into()],
@@ -407,6 +411,24 @@ pub fn core_libfunc_cost(
                     _ => chain!(
                         iter::once(ConstCost::steps(1).into()),
                         itertools::repeat_n(ConstCost::steps(2).into(), n - 1)
+                    )
+                    .collect_vec(),
+                }
+            }
+            EnumConcreteLibfunc::BoxedMatch(EnumBoxedMatchConcreteLibfunc {
+                signature, ..
+            }) => {
+                // BoxedMatch needs to load the variant selector with a double-deref (1 step)
+                // plus the regular match cost - but only when branching is actually needed
+                let n = signature.branch_signatures.len();
+                match n {
+                    0 => vec![],
+                    1 => vec![ConstCost::default().into()], // No branching needed for single
+                    // variant
+                    2 => vec![ConstCost::steps(2).into(); 2],
+                    _ => chain!(
+                        iter::once(ConstCost::steps(2).into()),
+                        itertools::repeat_n(ConstCost::steps(3).into(), n - 1)
                     )
                     .collect_vec(),
                 }

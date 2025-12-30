@@ -7,18 +7,22 @@ use num_traits::One;
 use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 
 use super::bounded_int::BoundedIntType;
+use super::boxing::box_ty;
 use super::bytes31::Bytes31Type;
 use super::int::signed::{Sint8Type, Sint16Type, Sint32Type, Sint64Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint8Type, Uint16Type, Uint32Type, Uint64Type};
 use super::int::unsigned128::Uint128Type;
+use super::snapshot::{SnapshotType, snapshot_ty};
 use super::structure::StructType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    NamedType, OutputVarReferenceInfo, SpecializationError, args_as_single_type,
+};
 use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
 
@@ -125,4 +129,28 @@ pub fn fixed_size_array_ty(
     )
     .collect();
     context.get_concrete_type(StructType::id(), &args)
+}
+
+/// Returns the inner type and whether the provided type is a snapshot.
+pub fn unwrap_snapshot_type(
+    context: &dyn SignatureSpecializationContext,
+    ty: ConcreteTypeId,
+) -> Result<(ConcreteTypeId, bool), SpecializationError> {
+    let type_info = context.get_type_info(ty.clone())?;
+    if type_info.long_id.generic_id == SnapshotType::id() {
+        Ok((args_as_single_type(&type_info.long_id.generic_args)?, true))
+    } else {
+        Ok((ty, false))
+    }
+}
+
+/// Helper to create a boxed output variable for unpack operations.
+pub fn boxed_output_var_info(
+    context: &dyn SignatureSpecializationContext,
+    component_ty: ConcreteTypeId,
+    is_snapshot: bool,
+    ref_info: OutputVarReferenceInfo,
+) -> Result<OutputVarInfo, SpecializationError> {
+    let inner_type = if is_snapshot { snapshot_ty(context, component_ty)? } else { component_ty };
+    Ok(OutputVarInfo { ty: box_ty(context, inner_type)?, ref_info })
 }
