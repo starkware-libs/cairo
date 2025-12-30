@@ -139,25 +139,10 @@ fn create_person() -> Person {
 }
 ----
 
-== Default Values
-
-Structs can implement the `Default` trait to provide default values:
-
-[source,cairo]
-----
-#[derive(Drop, Default)]
-struct Counter {
-    count: u32,
-}
-
-fn example() {
-    let c: Counter = Default::default();  // count is 0
-}
-----
-
 == Generic Structs
 
-Struct expressions work with generic types:
+Struct expressions work with generic types. You can either explicitly specify the generic type
+parameters or let the compiler infer them from the field values:
 
 [source,cairo]
 ----
@@ -166,8 +151,14 @@ struct Pair<T, U> {
     second: U,
 }
 
-fn example() -> Pair<felt252, bool> {
-    Pair { first: 42, second: true }
+// Explicit generic parameters
+fn explicit_example() -> Pair<felt252, bool> {
+    Pair::<felt252, bool> { first: 42, second: true }
+}
+
+// Inferred generic parameters (more common)
+fn inferred_example() -> Pair<felt252, bool> {
+    Pair { first: 42, second: true }  // Types inferred from field values
 }
 ----
 
