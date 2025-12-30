@@ -1,0 +1,38 @@
+//! > Ambiguous trait function via glob use
+
+//! > test_runner_name
+test_path_diagnostics(expect_diagnostics: true)
+
+//! > crate_settings
+edition = "2024_07"
+
+//! > module_code
+mod a {
+    pub trait T {
+        fn foo(self: @felt252);
+    }
+    impl TImpl of T {
+        fn foo(self: @felt252) {}
+    }
+}
+mod b {
+    pub trait T {
+        fn foo(self: @felt252);
+    }
+    impl TImpl of T {
+        fn foo(self: @felt252) {}
+    }
+}
+use a::*;
+use b::*;
+
+fn main() {
+    let x = 1_felt252;
+    x.foo();
+}
+
+//! > expected_diagnostics
+error[E2046]: Ambiguous method call. More than one applicable trait function with a suitable self type was found: a::T::foo and b::T::foo. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:22:7
+    x.foo();
+      ^^^

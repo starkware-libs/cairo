@@ -81,7 +81,7 @@ enum MyEnum {
 }
 
 //! > expected_diagnostics
-error[E2109]: Wrong enum in pattern. Expected: "core::option::Option". Got: "test::MyEnum".
+error[E2109]: Wrong enum in pattern. Expected: "Option". Got: "MyEnum".
  --> lib.cairo:6:12
     if let MyEnum::A(y) = x {
            ^^^^^^^^^^^^
