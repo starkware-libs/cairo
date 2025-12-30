@@ -314,7 +314,7 @@ pub fn create_entry_code_from_params(
 
     if helper.has_post_calculation_loop {
         helper.validate_segment_arena();
-        helper.update_builtins_as_locals();
+        helper.rebind_output_builtin_locals();
     }
 
     if !helper.config.testing {
@@ -592,8 +592,9 @@ impl EntryCodeHelper {
         };
     }
 
-    /// Updates the builtins as local variables for post-calculation loop.
-    fn update_builtins_as_locals(&mut self) {
+    /// Rebind the output builtin vars to the corresponding local expressions.
+    /// This is necessary because after rescoping, the output builtin vars are no longer valid.
+    fn rebind_output_builtin_locals(&mut self) {
         for (var, local_expr) in zip_eq(
             self.output_builtin_vars.iter_mut().filter_map(non_segment_arena_var),
             &self.local_exprs,
