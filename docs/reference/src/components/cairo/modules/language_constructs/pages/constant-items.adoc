@@ -103,7 +103,7 @@ Cross-type constants (casts validated at compile time):
 [source,cairo]
 ----
 const MAX_U8: u8 = 255;
-const NEG_ONE: felt252 = -1;
+const NEG_ONE: i32 = -1;
 ----
 
 == Diagnostics
