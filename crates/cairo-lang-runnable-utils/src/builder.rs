@@ -314,7 +314,6 @@ pub fn create_entry_code_from_params(
 
     if helper.has_post_calculation_loop {
         helper.validate_segment_arena();
-        helper.rebind_output_builtin_locals();
     }
 
     if !helper.config.testing {
@@ -337,7 +336,8 @@ struct EntryCodeHelper {
     builtins: Vec<BuiltinName>,
     got_segment_arena: bool,
     has_post_calculation_loop: bool,
-    local_exprs: Vec<CellExpression>,
+    // Local expressions for the output builtin vars.
+    local_exprs: OrderedHashMap<BuiltinName, CellExpression>,
     output_builtin_vars: OrderedHashMap<BuiltinName, Var>,
     emulated_builtins: UnorderedHashSet<GenericTypeId>,
 }
@@ -353,7 +353,7 @@ impl EntryCodeHelper {
             builtins: vec![],
             got_segment_arena: false,
             has_post_calculation_loop: false,
-            local_exprs: vec![],
+            local_exprs: OrderedHashMap::default(),
             output_builtin_vars: OrderedHashMap::default(),
             emulated_builtins: UnorderedHashSet::<_>::from_iter([SystemType::ID]),
         }
@@ -400,7 +400,7 @@ impl EntryCodeHelper {
             for name in self.input_builtin_vars.keys() {
                 if name != &BuiltinName::segment_arena {
                     casm_build_extend!(self.ctx, localvar local;);
-                    self.local_exprs.push(self.ctx.get_value(local, false));
+                    self.local_exprs.insert(*name, self.ctx.get_value(local, false));
                 }
             }
             if !self.local_exprs.is_empty() {
@@ -547,10 +547,14 @@ impl EntryCodeHelper {
             // Storing local data on FP - as we have a loop now.
             for (cell, local_expr) in zip_eq(
                 self.output_builtin_vars.iter().filter_map(non_segment_arena_var).copied(),
-                &self.local_exprs,
+                self.local_exprs.values(),
             ) {
+                let local_expr = local_expr.clone();
                 let local_cell = self.ctx.add_var(local_expr.clone());
                 casm_build_extend!(self.ctx, assert local_cell = cell;);
+
+                // Note that we don't update the builtin var map here, as those vars are going to be
+                // invalidated by the rescope in `validate_segment_arena`
             }
         }
     }
@@ -592,21 +596,15 @@ impl EntryCodeHelper {
         };
     }
 
-    /// Rebind the output builtin vars to the corresponding local expressions.
-    /// This is necessary because after rescoping, the output builtin vars are no longer valid.
-    fn rebind_output_builtin_locals(&mut self) {
-        for (var, local_expr) in zip_eq(
-            self.output_builtin_vars.iter_mut().filter_map(non_segment_arena_var),
-            &self.local_exprs,
-        ) {
-            *var = self.ctx.add_var(local_expr.clone());
-        }
-    }
-
     /// Processes the output builtins for the end of a run.
     fn process_builtins_output(&mut self) {
         for name in &self.builtins {
-            if let Some(var) = self.output_builtin_vars.swap_remove(name) {
+            if let Some(mut var) = self.output_builtin_vars.swap_remove(name) {
+                if let Some(local_expr) = self.local_exprs.get(name) {
+                    // If the builtin was stored in a local variable, use it instead of the output
+                    // builtin var.
+                    var = self.ctx.add_var(local_expr.clone());
+                }
                 casm_build_extend!(self.ctx, tempvar cell = var;);
             }
         }
