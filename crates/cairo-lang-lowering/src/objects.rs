@@ -4,7 +4,7 @@
 //! assigned once. It is also normal form: each function argument is a variable, rather than a
 //! compound expression.
 
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Index};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -28,6 +28,7 @@ use salsa::Database;
 use semantic::MatchArmSelector;
 
 use self::blocks::Blocks;
+use crate::borrow_check::analysis::StatementLocation;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::fmt::LoweredFormatter;
 use crate::ids::{FunctionId, LocationId, Signature};
@@ -151,6 +152,14 @@ pub struct Lowered<'db> {
     pub blocks: Blocks<'db>,
     /// function parameters, including implicits.
     pub parameters: Vec<VariableId>,
+}
+
+impl<'db> Index<StatementLocation> for Lowered<'db> {
+    type Output = Statement<'db>;
+
+    fn index(&self, location: StatementLocation) -> &Self::Output {
+        &self.blocks[location]
+    }
 }
 
 unsafe impl<'db> salsa::Update for Lowered<'db> {

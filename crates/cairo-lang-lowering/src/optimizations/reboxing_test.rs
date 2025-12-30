@@ -50,7 +50,7 @@ fn test_reboxing_analysis(
             .join(", ");
 
         // Apply reboxing optimizations to create "after" state
-        apply_reboxing_candidates(db, &mut after, &candidates);
+        apply_reboxing_candidates(db, &mut after, &candidates).unwrap();
 
         TestRunnerResult::success(OrderedHashMap::from([
             ("candidates".into(), candidates_str),
