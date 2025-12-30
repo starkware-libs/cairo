@@ -7,18 +7,24 @@ use num_traits::One;
 use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 
 use super::bounded_int::BoundedIntType;
+use super::boxing::box_ty;
 use super::bytes31::Bytes31Type;
 use super::int::signed::{Sint8Type, Sint16Type, Sint32Type, Sint64Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint8Type, Uint16Type, Uint32Type, Uint64Type};
 use super::int::unsigned128::Uint128Type;
+use super::snapshot::{SnapshotType, snapshot_ty};
 use super::structure::StructType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
+    SpecializationError, args_as_single_type,
+};
 use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
 
@@ -125,4 +131,95 @@ pub fn fixed_size_array_ty(
     )
     .collect();
     context.get_concrete_type(StructType::id(), &args)
+}
+
+/// Trait for implementing a library function that unpacks a boxed composite type
+/// (struct or enum) into boxed components (members or variants).
+pub trait BoxUnpackLibfunc: Default {
+    const STR_ID: &'static str;
+    type Concrete: SignatureBasedConcreteLibfunc;
+
+    /// Extracts the component types from an unwrapped composite type.
+    fn extract_components(
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<Vec<ConcreteTypeId>, SpecializationError>;
+
+    /// Creates the libfunc signature for the boxed unpack operation.
+    fn create_signature(
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+        components: Vec<ConcreteTypeId>,
+        is_snapshot: bool,
+    ) -> Result<LibfuncSignature, SpecializationError>;
+
+    /// Creates the concrete libfunc instance.
+    fn create_concrete(
+        components: Vec<ConcreteTypeId>,
+        signature: LibfuncSignature,
+    ) -> Self::Concrete;
+
+    /// Analyzes the type to extract components and snapshot status.
+    fn analyze_type(
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<(Vec<ConcreteTypeId>, bool), SpecializationError> {
+        // Unwrap snapshot if present
+        let type_info = context.get_type_info(ty.clone())?;
+        let is_snapshot = type_info.long_id.generic_id == SnapshotType::id();
+        let unwrapped_ty = if is_snapshot {
+            match &type_info.long_id.generic_args[0] {
+                GenericArg::Type(ty) => ty.clone(),
+                _ => return Err(SpecializationError::UnsupportedGenericArg),
+            }
+        } else {
+            ty
+        };
+
+        let components = Self::extract_components(context, unwrapped_ty)?;
+        Ok((components, is_snapshot))
+    }
+}
+
+/// Helper to create a boxed output variable for unpack operations.
+pub fn create_boxed_output(
+    context: &dyn SignatureSpecializationContext,
+    component_ty: ConcreteTypeId,
+    is_snapshot: bool,
+) -> Result<OutputVarInfo, SpecializationError> {
+    let inner_type = if is_snapshot { snapshot_ty(context, component_ty)? } else { component_ty };
+    Ok(OutputVarInfo {
+        ty: box_ty(context, inner_type)?,
+        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+    })
+}
+
+/// Wrapper to prevent implementation collisions for `NamedLibfunc`.
+#[derive(Default)]
+pub struct WrapBoxUnpackLibfunc<T: BoxUnpackLibfunc>(T);
+
+impl<T: BoxUnpackLibfunc> NamedLibfunc for WrapBoxUnpackLibfunc<T> {
+    type Concrete = T::Concrete;
+    const STR_ID: &'static str = <T as BoxUnpackLibfunc>::STR_ID;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let (components, is_snapshot) = T::analyze_type(context, ty.clone())?;
+        T::create_signature(context, ty, components, is_snapshot)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = args_as_single_type(args)?;
+        let (components, is_snapshot) = T::analyze_type(context, ty.clone())?;
+        let signature = T::create_signature(context, ty, components.clone(), is_snapshot)?;
+        Ok(T::create_concrete(components, signature))
+    }
 }

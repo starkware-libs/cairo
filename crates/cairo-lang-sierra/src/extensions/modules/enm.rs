@@ -21,9 +21,12 @@ use num_traits::Signed;
 
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
-use super::utils::reinterpret_cast_signature;
+use super::utils::{
+    BoxUnpackLibfunc, WrapBoxUnpackLibfunc, create_boxed_output, reinterpret_cast_signature,
+};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bounded_int::bounded_int_ty;
+use crate::extensions::boxing::box_ty;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
@@ -127,6 +130,7 @@ define_libfunc_hierarchy! {
         FromBoundedInt(EnumFromBoundedIntLibfunc),
         Match(EnumMatchLibfunc),
         SnapshotMatch(EnumSnapshotMatchLibfunc),
+        BoxedMatch(EnumBoxedMatchLibfunc),
     }, EnumConcreteLibfunc
 }
 
@@ -365,3 +369,70 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
         })
     }
 }
+
+/// Concrete implementation of the boxed enum match libfunc.
+pub struct EnumBoxedMatchConcreteLibfunc {
+    /// The concrete types of the enum variants (no additional snapshots and boxing) that will be
+    /// extracted as boxed values.
+    pub variants: Vec<ConcreteTypeId>,
+    pub signature: LibfuncSignature,
+}
+
+impl SignatureBasedConcreteLibfunc for EnumBoxedMatchConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
+/// Libfunc for matching a boxed enum into boxes of its variants.
+#[derive(Default)]
+pub struct EnumBoxedMatchLibfuncWrapped {}
+
+impl BoxUnpackLibfunc for EnumBoxedMatchLibfuncWrapped {
+    const STR_ID: &'static str = "enum_boxed_match";
+    type Concrete = EnumBoxedMatchConcreteLibfunc;
+
+    fn extract_components(
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<Vec<ConcreteTypeId>, SpecializationError> {
+        let enum_type = EnumConcreteType::try_from_concrete_type(context, &ty)?;
+        Ok(enum_type.variants)
+    }
+
+    fn create_signature(
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+        variant_types: Vec<ConcreteTypeId>,
+        is_snapshot: bool,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let is_empty = variant_types.is_empty();
+        let no_ap_change = variant_types.len() <= 1;
+        let branch_signatures = variant_types
+            .into_iter()
+            .map(|variant_ty| {
+                Ok(BranchSignature {
+                    vars: vec![create_boxed_output(context, variant_ty, is_snapshot)?],
+                    ap_change: SierraApChange::Known { new_vars_only: no_ap_change },
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(box_ty(context, ty)?).with_allow_add_const(),
+            ],
+            branch_signatures,
+            fallthrough: if is_empty { None } else { Some(0) },
+        })
+    }
+
+    fn create_concrete(
+        components: Vec<ConcreteTypeId>,
+        signature: LibfuncSignature,
+    ) -> Self::Concrete {
+        EnumBoxedMatchConcreteLibfunc { variants: components, signature }
+    }
+}
+
+pub type EnumBoxedMatchLibfunc = WrapBoxUnpackLibfunc<EnumBoxedMatchLibfuncWrapped>;
