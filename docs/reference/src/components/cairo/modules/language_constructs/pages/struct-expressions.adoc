@@ -1,6 +1,208 @@
 = Struct expressions
 
-This section is a work in progress.
+A struct expression creates a value of a xref:structs.adoc[struct type] by specifying values for
+each of its fields.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+[source,cairo]
+----
+StructName { field1: value1, field2: value2, ... }
+----
+
+Struct expressions support three forms:
+
+1. **Basic instantiation**: Explicitly provide values for all fields
+2. **Field init shorthand**: Omit the value when a variable has the same name as the field
+3. **Functional update syntax**: Use `..expression` to copy remaining fields from another instance
+
+== Basic Instantiation
+
+The most common form specifies each field name followed by its value:
+
+[source,cairo]
+----
+struct Point {
+    x: felt252,
+    y: felt252,
+}
+
+fn example() -> Point {
+    Point { x: 10, y: 20 }
+}
+----
+
+Fields can be specified in any order:
+
+[source,cairo]
+----
+// Both are equivalent
+let p1 = Point { x: 10, y: 20 };
+let p2 = Point { y: 20, x: 10 };
+----
+
+== Field Init Shorthand
+
+When a variable has the same name as a struct field, you can omit the field value:
+
+[source,cairo]
+----
+fn create_point(x: felt252, y: felt252) -> Point {
+    Point { x, y }  // Shorthand for Point { x: x, y: y }
+}
+----
+
+You can mix shorthand and explicit syntax:
+
+[source,cairo]
+----
+let x = 5;
+let point = Point { x, y: 10 };  // x uses shorthand, y is explicit
+----
+
+== Functional Update Syntax
+
+The `..expression` syntax copies fields from another struct instance. This is useful when you want
+to create a new instance with only some fields changed:
+
+[source,cairo]
+----
+struct Config {
+    timeout: u32,
+    retries: u32,
+    verbose: bool,
+}
+
+fn update_config(old: Config) -> Config {
+    Config {
+        timeout: 60,  // Override this field
+        ..old         // Copy retries and verbose from old
+    }
+}
+----
+
+The `..` syntax must appear last in the struct expression.
+
+IMPORTANT: The functional update syntax accesses fields **individually** from the base struct.
+Only the fields that are not explicitly specified are taken from the base. When the base is a
+simple variable, unused fields remain accessible:
+
+[source,cairo]
+----
+#[derive(Drop)]
+struct NonCopy {
+    a: ByteArray,
+    b: ByteArray,
+}
+
+fn example(v: NonCopy) -> (NonCopy, ByteArray) {
+    let result = NonCopy { a: "new value", ..v };
+    // Only v.b was moved to result
+    // v.a is still accessible!
+    (result, v.a)
+}
+----
+
+However, if you specify all fields explicitly, using `..base` is an error:
+
+[source,cairo]
+----
+struct Point { x: felt252, y: felt252 }
+let p1 = Point { x: 1, y: 2 };
+let p2 = Point { x: 3, y: 4, ..p1 };  // ERROR: base has no effect
+----
+
+== Nested Structs
+
+Struct expressions can be nested to construct complex types:
+
+[source,cairo]
+----
+struct Address {
+    street: ByteArray,
+    city: ByteArray,
+}
+
+struct Person {
+    name: ByteArray,
+    address: Address,
+}
+
+fn create_person() -> Person {
+    Person {
+        name: "Alice",
+        address: Address {
+            street: "123 Main St",
+            city: "Cairo City",
+        },
+    }
+}
+----
+
+== Default Values
+
+Structs can implement the `Default` trait to provide default values:
+
+[source,cairo]
+----
+#[derive(Drop, Default)]
+struct Counter {
+    count: u32,
+}
+
+fn example() {
+    let c: Counter = Default::default();  // count is 0
+}
+----
+
+== Generic Structs
+
+Struct expressions work with generic types:
+
+[source,cairo]
+----
+struct Pair<T, U> {
+    first: T,
+    second: U,
+}
+
+fn example() -> Pair<felt252, bool> {
+    Pair { first: 42, second: true }
+}
+----
+
+== Examples
+
+Valid struct expressions:
+
+[source,cairo]
+----
+#[derive(Drop, Copy)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+fn examples() {
+    // Basic instantiation
+    let rect1 = Rectangle { width: 30, height: 50 };
+
+    // Field init shorthand
+    let width = 40;
+    let height = 60;
+    let rect2 = Rectangle { width, height };
+
+    // Functional update
+    let rect3 = Rectangle { width: 100, ..rect1 };  // height copied from rect1
+
+    // Fields in different order
+    let rect4 = Rectangle { height: 20, width: 10 };
+}
+----
+
+== Related
+
+- xref:structs.adoc[Structs]
+- xref:member-access-expressions.adoc[Member access expressions]
+- xref:patterns.adoc[Patterns] (for destructuring structs)
+- xref:tuple-types.adoc[Tuple types]
