@@ -173,7 +173,7 @@ fn get_impl_aliases_abi_functions<'db>(
     module_prefix: SmolStrId<'db>,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId<'db>>>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(generated_module_id);
     let mut all_abi_functions = vec![];
     for (impl_alias_id, impl_alias) in generated_module_id
         .module_data(db)

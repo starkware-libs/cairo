@@ -3,7 +3,7 @@ use cairo_lang_defs::ids::{
     GlobalUseId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, NamedLanguageElementId,
     TraitId, UseId,
 };
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, MaybeAsRef};
+use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::db::CrateSettings;
 use cairo_lang_filesystem::ids::{SmolStrId, Tracked};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -20,7 +20,7 @@ use super::visibility::{Visibility, peek_visible_in};
 use crate::SemanticDiagnostic;
 use crate::corelib::{core_submodule, get_submodule};
 use crate::db::{SemanticGroup, get_resolver_data_options};
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnosticsBuilder};
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::items::feature_kind::HasFeatureKind;
 use crate::items::imp::ImplSemantic;
 use crate::items::impl_alias::ImplAliasSemantic;
@@ -60,7 +60,7 @@ fn priv_module_semantic_data<'db>(
         }
     };
     // We use the builder here since the items can come from different file_ids.
-    let mut diagnostics = DiagnosticsBuilder::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let mut items = OrderedHashMap::default();
     let module_data = module_id.module_data(db)?;
     for item_id in module_data.items(db).iter().copied() {

@@ -76,7 +76,7 @@ fn priv_macro_call_data<'db>(
             parent_macro_call_data,
         });
     }
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(callsite_module_id);
     let macro_declaration_id = match resolver.resolve_generic_path(
         &mut diagnostics,
         &macro_call_path,
@@ -217,7 +217,8 @@ fn priv_macro_call_data_initial<'db>(
 ) -> Maybe<MacroCallData<'db>> {
     // If we are in a cycle, we return an empty MacroCallData with no diagnostics.
     // This is to prevent infinite recursion in case of cyclic macro calls.
-    let mut diagnostics = SemanticDiagnostics::default();
+    let module_id = macro_call_id.parent_module(db);
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let macro_call_syntax = db.module_macro_call_by_id(macro_call_id)?;
     let macro_call_path = macro_call_syntax.path(db);
     let macro_name = macro_call_path.as_syntax_node().get_text_without_trivia(db);
@@ -226,7 +227,6 @@ fn priv_macro_call_data_initial<'db>(
         macro_call_id.stable_ptr(db).untyped(),
         SemanticDiagnosticKind::InlineMacroNotFound(macro_name),
     );
-    let module_id = macro_call_id.parent_module(db);
 
     Ok(MacroCallData {
         macro_call_module: Err(diag_added),

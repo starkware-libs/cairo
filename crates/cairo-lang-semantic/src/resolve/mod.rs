@@ -568,7 +568,7 @@ impl<'db> Resolver<'db> {
         path: &ast::ExprPath<'db>,
         ctx: ResolutionContext<'db, '_>,
     ) -> Option<InlineMacroExprPluginId<'db>> {
-        let mut diagnostics = SemanticDiagnostics::default();
+        let mut diagnostics = SemanticDiagnostics::new(self.module_id);
         let resolution =
             Resolution::new(self, &mut diagnostics, path, NotFoundItemType::Macro, ctx).ok()?;
         let macro_name = resolution.segments.exactly_one().ok()?;

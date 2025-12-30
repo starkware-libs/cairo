@@ -39,7 +39,7 @@ fn extern_type_declaration_generic_params_data<'db>(
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<GenericParamsData<'db>> {
     let module_id = extern_type_id.parent_module(db);
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?;
 
     let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
@@ -80,7 +80,7 @@ fn extern_type_declaration_data<'db>(
     db: &'db dyn Database,
     extern_type_id: ExternTypeId<'db>,
 ) -> Maybe<ExternTypeDeclarationData<'db>> {
-    let mut diagnostics = SemanticDiagnostics::default();
+    let mut diagnostics = SemanticDiagnostics::new(extern_type_id.parent_module(db));
     let extern_type_syntax = db.module_extern_type_by_id(extern_type_id)?;
 
     // Generic params.

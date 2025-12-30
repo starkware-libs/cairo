@@ -323,7 +323,8 @@ pub fn constant_semantic_data_helper<'db>(
     parent_resolver_data: Option<Arc<ResolverData<'db>>>,
     element_id: &impl LanguageElementId<'db>,
 ) -> Maybe<ConstantData<'db>> {
-    let mut diagnostics: SemanticDiagnostics<'_> = SemanticDiagnostics::default();
+    let module_id = element_id.parent_module(db);
+    let mut diagnostics: SemanticDiagnostics<'_> = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -334,7 +335,7 @@ pub fn constant_semantic_data_helper<'db>(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.parent_module(db), inference_id),
+        None => Resolver::new(db, module_id, inference_id),
     };
     resolver.set_feature_config(element_id, constant_ast, &mut diagnostics);
 
@@ -377,7 +378,8 @@ pub fn constant_semantic_data_cycle_helper<'db>(
     parent_resolver_data: Option<Arc<ResolverData<'db>>>,
     element_id: &impl LanguageElementId<'db>,
 ) -> Maybe<ConstantData<'db>> {
-    let mut diagnostics: SemanticDiagnostics<'_> = SemanticDiagnostics::default();
+    let module_id = element_id.parent_module(db);
+    let mut diagnostics: SemanticDiagnostics<'_> = SemanticDiagnostics::new(module_id);
 
     let inference_id = InferenceId::LookupItemDeclaration(lookup_item_id);
 
@@ -385,7 +387,7 @@ pub fn constant_semantic_data_cycle_helper<'db>(
         Some(parent_resolver_data) => {
             Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id))
         }
-        None => Resolver::new(db, element_id.parent_module(db), inference_id),
+        None => Resolver::new(db, module_id, inference_id),
     };
 
     let resolver_data = Arc::new(resolver.data);
@@ -1050,7 +1052,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 .intern(db),
             );
         }
-        let mut diagnostics = SemanticDiagnostics::default();
+        let mut diagnostics = SemanticDiagnostics::new(concrete_body_id.parent_module(db));
         let mut inner = ConstantEvaluateContext {
             db,
             info: self.info,

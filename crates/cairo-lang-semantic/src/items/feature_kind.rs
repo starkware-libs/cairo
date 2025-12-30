@@ -1,6 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
-use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_filesystem::db::{FilesGroup, default_crate_settings};
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
 use cairo_lang_syntax::attribute::consts::{
@@ -17,7 +15,6 @@ use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 use salsa::Database;
 
-use crate::SemanticDiagnostic;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 
@@ -37,7 +34,7 @@ pub enum FeatureKind<'db> {
 impl<'db> FeatureKind<'db> {
     pub fn from_ast(
         db: &'db dyn Database,
-        diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+        diagnostics: &mut SemanticDiagnostics<'db>,
         attrs: &ast::AttributeList<'db>,
     ) -> Self {
         let unstable_attrs = attrs.query_attr(db, UNSTABLE_ATTR).collect_vec();
@@ -96,7 +93,7 @@ pub enum FeatureMarkerDiagnostic {
 /// Parses the feature attribute.
 fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
     db: &'db dyn Database,
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
     attr: &structured::Attribute<'db>,
     allowed_args: [&str; EXTRA_ALLOWED],
 ) -> [Option<SmolStrId<'db>>; EXTRA_ALLOWED] {
@@ -121,14 +118,12 @@ fn parse_feature_attr<'db, const EXTRA_ALLOWED: usize>(
 
 /// Helper for adding a marker diagnostic.
 fn add_diag<'db>(
-    diagnostics: &mut DiagnosticsBuilder<'db, SemanticDiagnostic<'db>>,
+    diagnostics: &mut SemanticDiagnostics<'db>,
     stable_ptr: impl TypedStablePtr<'db>,
     diagnostic: FeatureMarkerDiagnostic,
 ) {
-    diagnostics.add(SemanticDiagnostic::new(
-        StableLocation::new(stable_ptr.untyped()),
-        SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic),
-    ));
+    diagnostics
+        .report(stable_ptr.untyped(), SemanticDiagnosticKind::FeatureMarkerDiagnostic(diagnostic));
 }
 
 /// The feature configuration on an item.
@@ -287,7 +282,7 @@ pub fn feature_config_from_item_and_parent_modules<'db>(
                 current_module_id = id.parent_module(db);
                 let module = &current_module_id.module_data(db).unwrap().submodules(db)[&id];
                 // TODO(orizi): Add parent module diagnostics.
-                let ignored = &mut SemanticDiagnostics::default();
+                let ignored = &mut SemanticDiagnostics::new(current_module_id);
                 config_stack.push(feature_config_from_ast_item(db, crate_id, module, ignored));
             }
             ModuleId::MacroCall { id, .. } => {
