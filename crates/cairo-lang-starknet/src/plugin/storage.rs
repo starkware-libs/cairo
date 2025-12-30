@@ -29,9 +29,6 @@ pub fn handle_storage_struct<'db, 'a>(
     let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
 
-    let mut members_struct_code = vec![];
-    let mut members_struct_code_mut = vec![];
-    let mut members_init_code = vec![];
     let mut substorage_members_struct_code = vec![];
     let mut substorage_members_init_code = vec![];
     let mut storage_struct_members = vec![];
@@ -53,12 +50,7 @@ pub fn handle_storage_struct<'db, 'a>(
                 ));
             }
         }
-        let SimpleMemberGeneratedCode { struct_code, struct_code_mut, init_code, storage_member } =
-            get_simple_member_code(db, &member, config, metadata);
-        members_struct_code.push(struct_code);
-        members_struct_code_mut.push(struct_code_mut);
-        members_init_code.push(init_code);
-        storage_struct_members.push(storage_member);
+        storage_struct_members.push(get_simple_member_code(db, &member, config, metadata));
     }
 
     let module_kind = starknet_module_kind.to_str_lower();
@@ -129,12 +121,6 @@ pub fn handle_storage_struct<'db, 'a>(
                 "substorage_members_init_code".to_string(),
                 RewriteNode::new_modified(substorage_members_init_code),
             ),
-            ("members_struct_code".to_string(), RewriteNode::new_modified(members_struct_code)),
-            (
-                "members_struct_code_mut".to_string(),
-                RewriteNode::new_modified(members_struct_code_mut),
-            ),
-            ("members_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
         ]
         .into(),
     )
@@ -206,75 +192,28 @@ fn get_substorage_member_code<'db>(
     }
 }
 
-struct SimpleMemberGeneratedCode<'db> {
-    struct_code: RewriteNode<'db>,
-    struct_code_mut: RewriteNode<'db>,
-    init_code: RewriteNode<'db>,
-    storage_member: RewriteNode<'db>,
-}
-
-/// Returns the relevant code for a substorage storage member.
+/// Returns the relevant code for a storage member.
 fn get_simple_member_code<'db>(
     db: &'db dyn Database,
     member: &ast::Member<'db>,
-    config: &StorageMemberConfig,
+    _config: &StorageMemberConfig,
     metadata: &MacroPluginMetadata<'_>,
-) -> SimpleMemberGeneratedCode<'db> {
-    let member_wrapper_type = RewriteNode::text(
-        if matches!(config.kind, StorageMemberKind::SubStorage | StorageMemberKind::Flat) {
-            "FlattenedStorage"
-        } else {
-            "StorageBase"
-        },
-    );
+) -> RewriteNode<'db> {
     let member_visibility = if backwards_compatible_storage(metadata.edition) {
         RewriteNode::text("pub")
     } else {
         RewriteNode::from_ast(&member.visibility(db))
     };
     let member_name = RewriteNode::from_ast_trimmed(&member.name(db));
-    let member_selector_name =
-        config.rename.as_deref().map_or_else(|| member_name.clone(), RewriteNode::text);
-    let patches = [
-        ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
-        ("member_visibility".to_string(), member_visibility),
-        ("member_wrapper_type".to_string(), member_wrapper_type),
-        ("member_name".to_string(), member_name),
-        ("member_selector_name".to_string(), member_selector_name),
-        ("member_type".to_string(), RewriteNode::from_ast_trimmed(&member.type_clause(db).ty(db))),
-    ]
-    .into();
-
-    SimpleMemberGeneratedCode {
-        struct_code: RewriteNode::interpolate_patched(
-            "\n$attributes$    $member_visibility$ $member_name$: \
-             starknet::storage::$member_wrapper_type$<$member_type$>,",
-            &patches,
-        )
-        .mapped(db, member),
-        struct_code_mut: RewriteNode::interpolate_patched(
-            "\n$attributes$    $member_visibility$ $member_name$: \
-             starknet::storage::$member_wrapper_type$<starknet::storage::Mutable<$member_type$>>,",
-            &patches,
-        )
-        .mapped(db, member),
-        init_code: if member.has_attr(db, SUBSTORAGE_ATTR) || member.has_attr(db, FLAT_ATTR) {
-            RewriteNode::interpolate_patched(
-                "\n           $member_name$: starknet::storage::FlattenedStorage{},",
-                &patches,
-            )
-        } else {
-            RewriteNode::interpolate_patched(
-                "\n           $member_name$: starknet::storage::StorageBase{ address: \
-                 selector!(\"$member_selector_name$\") },",
-                &patches,
-            )
-        }
-        .mapped(db, member),
-        storage_member: RewriteNode::interpolate_patched(
-            "\n$attributes$        $member_visibility$ $member_name$: $member_type$,",
-            &patches,
-        )
-        .mapped(db, member),
-    }
+    RewriteNode::interpolate_patched(
+        "\n$attributes$        $member_visibility$ $member_name$: $member_type$,",
+        &[
+            ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
+            ("member_visibility".to_string(), member_visibility),
+            ("member_name".to_string(), member_name),
+            ("member_type".to_string(), RewriteNode::from_ast_trimmed(&member.type_clause(db).ty(db))),
+        ]
+        .into(),
+    )
+    .mapped(db, member)
 }
