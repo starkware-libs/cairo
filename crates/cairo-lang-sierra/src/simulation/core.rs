@@ -235,7 +235,9 @@ pub fn simulate<
             (vec![CoreValue::Enum { value: Box::new(value), index: *index }], 0)
         }
         CoreConcreteLibfunc::Enum(
-            EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_),
+            EnumConcreteLibfunc::Match(_)
+            | EnumConcreteLibfunc::SnapshotMatch(_)
+            | EnumConcreteLibfunc::BoxedMatch(_),
         ) => {
             take_inputs!(let [CoreValue::Enum { value, index }] = inputs);
             (vec![*value], index)
