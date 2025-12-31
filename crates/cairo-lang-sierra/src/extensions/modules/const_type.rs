@@ -84,7 +84,7 @@ fn validate_const_data(
     } else if *inner_generic_id == NonZeroType::ID {
         return validate_const_nz_data(context, &inner_type_info, inner_data);
     } else if *inner_generic_id == EcPointType::ID {
-        return validate_const_ec_data(context, inner_data);
+        return validate_const_ec_data(inner_data);
     }
     let type_range = if *inner_generic_id == ContractAddressType::id() {
         Range::half_open(0, ContractAddressConstLibfuncWrapped::bound())
@@ -223,11 +223,8 @@ fn validate_const_nz_data(
     if is_non_zero { Ok(()) } else { Err(SpecializationError::UnsupportedGenericArg) }
 }
 
-/// Given a
-fn validate_const_ec_data(
-    _context: &dyn TypeSpecializationContext,
-    inner_data: &[GenericArg],
-) -> Result<(), SpecializationError> {
+/// Given the inner data of an EC const point const type, validates it is a valid EC point.
+fn validate_const_ec_data(inner_data: &[GenericArg]) -> Result<(), SpecializationError> {
     // Assert that the inner data is the `x` and `y` values of the point on the `ec` curve.
     let [GenericArg::Value(x), GenericArg::Value(y)] = inner_data else {
         return Err(SpecializationError::UnsupportedGenericArg);
