@@ -89,9 +89,8 @@ impl SignatureAndTypeGenericLibfunc for LocalIntoBoxLibfuncWrapped {
             vec![ty.clone()],
             vec![OutputVarInfo {
                 ty: box_ty(context, ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                    param_idx: 0,
-                }),
+                // TODO: `AddConst` is wrong unless we change its definition (see `AddConst`).
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
             }],
             SierraApChange::Known { new_vars_only: false },
         ))

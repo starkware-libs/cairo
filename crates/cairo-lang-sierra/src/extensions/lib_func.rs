@@ -382,8 +382,9 @@ pub enum OutputVarReferenceInfo {
 pub enum DeferredOutputKind {
     /// The output is a constant. For example, `7`.
     Const,
-    /// The output is the addition of a constant to one of the parameters. For example, `x + 3`.
-    AddConst { param_idx: usize },
+    // TODO: Can we change the documentation to the following?
+    /// The output is of the form `[ap/fp + ?] + ?`. For example, `[ap + 1] + 3`.
+    AddConst,
     /// The output is not one of the above (e.g., `[ap] + [fp]`, `[ap + 1] * [fp - 3]`,
     /// `[ap] * 3`).
     Generic,
@@ -400,7 +401,7 @@ impl OutputVarInfo {
     pub fn new_builtin(builtin: ConcreteTypeId, param_idx: usize) -> Self {
         Self {
             ty: builtin,
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst { param_idx }),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
         }
     }
 }

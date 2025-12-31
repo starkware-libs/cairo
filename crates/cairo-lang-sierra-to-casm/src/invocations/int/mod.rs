@@ -52,6 +52,7 @@ pub fn build_small_wide_mul(
 }
 
 /// Helper struct for creating libfuncs that handle small integer diff operations.
+// TODO: Document assumptions on the range of a, b.
 pub struct SmallDiffHelper<'a> {
     builder: CompiledInvocationBuilder<'a>,
     casm_builder: CasmBuilder,

@@ -105,7 +105,7 @@ impl VariablesState {
                     ty: output_info.ty.clone(),
                     kind: match kind {
                         DeferredOutputKind::Const => DeferredVariableKind::Const,
-                        DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
+                        DeferredOutputKind::AddConst => DeferredVariableKind::AddConst,
                         DeferredOutputKind::Generic => DeferredVariableKind::Generic,
                     },
                 },

@@ -163,7 +163,7 @@ impl SignatureOnlyGenericLibfunc for IntRangePopFrontLibfunc {
                         OutputVarInfo {
                             ty: range_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {

@@ -61,23 +61,30 @@ fn build_into_box(
 fn build_local_into_box(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    // TODO: Add implementation comments explaining what's going on in this function.
     let [operand] = builder.try_get_refs()?;
 
-    let cell = CellRef { register: Register::AP, offset: -2 };
+    let fp_val = CellRef { register: Register::AP, offset: -2 };
     let addr = match operand.cells.as_slice() {
         [] | [CellExpression::Deref(CellRef { register: Register::FP, offset: 0 }), ..] => {
-            CellExpression::Deref(cell)
+            CellExpression::Deref(fp_val)
         }
         [CellExpression::Deref(CellRef { register: Register::FP, offset }), ..] => {
+            // TODO: refactor to a function that returns `CellExpression::BinOp` or
+            //   `CellExpression::Deref` and simplify the match.
             CellExpression::BinOp {
                 op: CellOperator::Add,
-                a: cell,
+                a: fp_val,
                 b: DerefOrImmediate::Immediate((*offset).into()),
             }
         }
-
+        // TODO: Is ok to raise this `Err` in this phase? It means that checking "compilability"
+        //   will be complicated.
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
+
+    // TODO: should we check that the cells in `operand.cells` are contiguous?
+
     Ok(builder.build(
         casm!(call rel 0;).instructions,
         vec![RelocationEntry { instruction_idx: 0, relocation: Relocation::EndOfProgram }],

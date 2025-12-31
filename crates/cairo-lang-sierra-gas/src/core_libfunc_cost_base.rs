@@ -371,7 +371,7 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(n_steps).into()]
             }
             BoxConcreteLibfunc::LocalInto(_) => {
-                vec![ConstCost::steps(3).into()]
+                vec![ConstCost::steps(2).into()]
             }
             BoxConcreteLibfunc::Unbox(_) | BoxConcreteLibfunc::ForwardSnapshot(_) => {
                 vec![ConstCost::default().into()]

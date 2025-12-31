@@ -298,8 +298,8 @@ impl StructBoxedDeconstructLibfunc {
         let arg_type_info = context.get_type_info(ty.clone())?;
         let is_snapshot = arg_type_info.long_id.generic_id == SnapshotType::id();
         if is_snapshot {
-            ty = match &arg_type_info.long_id.generic_args[0] {
-                GenericArg::Type(ty) => ty.clone(),
+            ty = match &arg_type_info.long_id.generic_args[..] {
+                [GenericArg::Type(ty)] => ty.clone(),
                 _ => return Err(SpecializationError::UnsupportedGenericArg),
             }
         }
@@ -333,9 +333,7 @@ impl StructBoxedDeconstructLibfunc {
                         if is_snapshot { snapshot_ty(context, member_ty)? } else { member_ty };
                     Ok(OutputVarInfo {
                         ty: box_ty(context, inner_type)?,
-                        ref_info: OutputVarReferenceInfo::Deferred(
-                            crate::extensions::lib_func::DeferredOutputKind::Generic,
-                        ),
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
                     })
                 })
                 .collect::<Result<Vec<_>, _>>()?,

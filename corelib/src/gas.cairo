@@ -93,4 +93,5 @@ pub extern fn gas_reserve_create(
 
 /// Adds the gas stored in the reserve back to the gas counter.
 /// The reserve is consumed in the process.
+#[cfg(not(gas: "disabled"))]
 pub extern fn gas_reserve_utilize(reserve: GasReserve) implicits(GasBuiltin) nopanic;

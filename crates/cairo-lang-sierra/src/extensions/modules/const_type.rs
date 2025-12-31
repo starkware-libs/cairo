@@ -236,12 +236,14 @@ fn validate_const_ec_data(
         return Ok(());
     }
     let prime: &BigInt = &CAIRO_PRIME_BIGINT;
-    if x < &BigInt::ZERO || x >= prime || y < &BigInt::ZERO || y >= prime {
-        return Err(SpecializationError::UnsupportedGenericArg);
-    }
-    match AffinePoint::new(Felt252::from(x), Felt252::from(y)) {
-        Ok(_) => Ok(()),
-        Err(_) => Err(SpecializationError::UnsupportedGenericArg),
+    if x > &BigInt::ZERO && x < prime && y > &BigInt::ZERO && y < prime {
+        // TODO: Remove dependency on `AffinePoint`. Just use the curve equation here.
+        match AffinePoint::new(Felt252::from(x), Felt252::from(y)) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(SpecializationError::UnsupportedGenericArg),
+        }
+    } else {
+        Err(SpecializationError::UnsupportedGenericArg)
     }
 }
 

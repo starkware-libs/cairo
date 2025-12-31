@@ -521,9 +521,7 @@ impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
             vec![
                 OutputVarInfo {
                     ty: range_check96_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
                 },
                 OutputVarInfo {
                     ty: circuit_input_accumulator_ty,

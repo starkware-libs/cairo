@@ -109,9 +109,7 @@ impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
                     context,
                     context.get_wrapped_concrete_type(ArrayType::id(), member_type)?,
                 )?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                    param_idx: 0,
-                }),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
@@ -222,9 +220,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
             ],
             vec![OutputVarInfo {
                 ty: arr_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                    param_idx: 0,
-                }),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
@@ -253,7 +249,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {
@@ -299,7 +295,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontConsumeLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {
@@ -435,7 +431,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {
@@ -481,7 +477,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopBackLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {

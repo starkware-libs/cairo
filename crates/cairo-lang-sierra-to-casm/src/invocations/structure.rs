@@ -58,28 +58,30 @@ fn build_struct_boxed_deconstruct(
     libfunc: &ConcreteStructBoxedDeconstructLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [cell] = builder.try_get_single_cells()?;
-    let Some((boxed_struct_addr, orig_offset)) = cell.to_deref_with_offset() else {
+    let [input_ptr] = builder.try_get_single_cells()?;
+    let Some((boxed_struct_ptr, orig_offset)) = input_ptr.to_deref_with_offset() else {
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     };
-    let mut next_member_box = cell.clone();
     let mut outputs = vec![];
+    // TODO: Why i16 and not i32 as returned by `to_deref_with_offset`?
+    // TODO: Why panic instead of using `Result::Err`?
     let mut current_offset = orig_offset.into_or_panic::<i16>();
     for member_ty in &libfunc.members {
-        outputs.push(next_member_box);
+        // TODO: Refactor to a function that returns `CellExpression::Deref` if the offset is zero.
+        //   This may help if there are zero-sized members.
+        outputs.push(ReferenceExpression::from_cell(CellExpression::BinOp {
+            op: CellOperator::Add,
+            a: boxed_struct_ptr,
+            b: DerefOrImmediate::Immediate(current_offset.into()),
+        }));
         let member_size = *builder
             .program_info
             .type_sizes
             .get(member_ty)
             .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        // TODO: Should use `checked_add`?
         current_offset += member_size;
-        next_member_box = CellExpression::BinOp {
-            op: CellOperator::Add,
-            a: boxed_struct_addr,
-            b: DerefOrImmediate::Immediate(current_offset.into()),
-        };
     }
 
-    Ok(builder
-        .build_only_reference_changes(outputs.into_iter().map(ReferenceExpression::from_cell)))
+    Ok(builder.build_only_reference_changes(outputs.into_iter()))
 }

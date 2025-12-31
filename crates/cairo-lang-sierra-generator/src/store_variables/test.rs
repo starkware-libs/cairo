@@ -66,9 +66,7 @@ fn get_libfunc_signature(
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: felt252_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
             }],
@@ -93,9 +91,7 @@ fn get_libfunc_signature(
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: array_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
             }],
