@@ -6,6 +6,7 @@ There are three keyword categories:
 - xref:keywords.adoc#reserved_keywords[reserved]
 - xref:keywords.adoc#contextual_keywords[contextual]
 
+[[strict_keywords]]
 == Strict keywords
 
 These keywords can only be used in their correct contexts.
@@ -43,6 +44,7 @@ use
 while
 ----
 
+[[reserved_keywords]]
 == Reserved keywords
 
 These keywords aren't used yet, but they are reserved for future use.
@@ -73,6 +75,7 @@ with
 yield
 ----
 
+[[contextual_keywords]]
 == Contextual keywords
 
 Some grammar productions may make use of new keywords not listed here.

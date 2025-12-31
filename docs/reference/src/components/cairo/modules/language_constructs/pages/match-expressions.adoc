@@ -21,7 +21,7 @@ used in their place.
 A match expression is evaluated by evaluating the expression and then matching the value against
 the patterns in the arms in order. The first arm whose pattern matches the value of the expression
 is executed and the result of the expression in the arm is returned as the result of the match.
-[Note]
+[NOTE]
 ====
 All the arms that don't break the control flow must evaluate to the same type.
 An arm breaks the control flow if it

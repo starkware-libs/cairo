@@ -141,6 +141,7 @@ loop {
     if condition { break; }
     result.append(computed_value);
 };
+----
 
 - **Checking if an array is empty**:
 [source,cairo]
