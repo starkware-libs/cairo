@@ -1,13 +1,21 @@
 use serde::{Deserialize, Serialize};
 
+#[cfg(test)]
+#[path = "compiler_version_test.rs"]
+mod test;
+
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct VersionId {
     pub major: usize,
     pub minor: usize,
     pub patch: usize,
 }
-
-pub const CONTRACT_SEGMENTATION_MINOR_VERSION: usize = 5;
+impl VersionId {
+    /// Returns whether this version support the given version.
+    pub fn supports(&self, other: VersionId) -> bool {
+        self.major > other.major || (self.major == other.major && self.minor >= other.minor)
+    }
+}
 
 impl std::fmt::Display for VersionId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

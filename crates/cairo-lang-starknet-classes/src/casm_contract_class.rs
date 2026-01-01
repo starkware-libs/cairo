@@ -42,10 +42,7 @@ use starknet_types_core::hash::{Blake2Felt252, Poseidon, StarkHash};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::compiler_version::{
-    CONTRACT_SEGMENTATION_MINOR_VERSION, VersionId, current_compiler_version_id,
-    current_sierra_version_id,
-};
+use crate::compiler_version::{VersionId, current_compiler_version_id, current_sierra_version_id};
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::contract_segmentation::{
     NestedIntList, SegmentationError, compute_bytecode_segment_lengths,
@@ -423,7 +420,8 @@ impl CasmContractClass {
         // TODO(lior): Remove this assert and condition once the equation solver is removed in major
         //   version 2.
         assert_eq!(sierra_version.major, 1);
-        let no_eq_solver = sierra_version.minor >= 4;
+        const NO_EQ_SOLVER_VERSION: VersionId = VersionId { major: 1, minor: 4, patch: 0 };
+        let no_eq_solver = sierra_version.supports(NO_EQ_SOLVER_VERSION);
         let metadata_computation_config = MetadataComputationConfig {
             function_set_costs: entrypoint_ids
                 .map(|id| (id, CostTokenMap::from_iter([(CostTokenType::Const, ENTRY_POINT_COST)])))
@@ -457,12 +455,12 @@ impl CasmContractClass {
             })
             .collect_vec();
 
-        let bytecode_segment_lengths =
-            if sierra_version.minor >= CONTRACT_SEGMENTATION_MINOR_VERSION {
-                Some(compute_bytecode_segment_lengths(&program, &cairo_program, bytecode.len())?)
-            } else {
-                None
-            };
+        const CONTRACT_SEGMENTATION_VERSION: VersionId = VersionId { major: 1, minor: 5, patch: 0 };
+        let bytecode_segment_lengths = if sierra_version.supports(CONTRACT_SEGMENTATION_VERSION) {
+            Some(compute_bytecode_segment_lengths(&program, &cairo_program, bytecode.len())?)
+        } else {
+            None
+        };
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
             RangeCheckType::id(),
