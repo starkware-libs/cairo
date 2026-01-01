@@ -30,7 +30,6 @@ use cairo_lang_sierra_to_casm::metadata::{
 use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
 use thiserror::Error;
@@ -331,7 +330,7 @@ struct EntryCodeHelper {
     ctx: CasmBuilder,
     config: EntryCodeConfig,
     input_builtin_vars: OrderedHashMap<BuiltinName, Var>,
-    builtin_ty_to_vm_name: UnorderedHashMap<GenericTypeId, BuiltinName>,
+    builtin_ty_to_vm_name: OrderedHashMap<GenericTypeId, BuiltinName>,
     builtins: Vec<BuiltinName>,
     got_segment_arena: bool,
     has_post_calculation_loop: bool,
@@ -348,7 +347,17 @@ impl EntryCodeHelper {
             ctx: CasmBuilder::default(),
             config,
             input_builtin_vars: OrderedHashMap::default(),
-            builtin_ty_to_vm_name: UnorderedHashMap::default(),
+            builtin_ty_to_vm_name: OrderedHashMap::from_iter([
+                (PedersenType::ID, BuiltinName::pedersen),
+                (RangeCheckType::ID, BuiltinName::range_check),
+                (BitwiseType::ID, BuiltinName::bitwise),
+                (EcOpType::ID, BuiltinName::ec_op),
+                (PoseidonType::ID, BuiltinName::poseidon),
+                (RangeCheck96Type::ID, BuiltinName::range_check96),
+                (AddModType::ID, BuiltinName::add_mod),
+                (MulModType::ID, BuiltinName::mul_mod),
+                (SegmentArenaType::ID, BuiltinName::segment_arena),
+            ]),
             builtins: vec![],
             got_segment_arena: false,
             has_post_calculation_loop: false,
@@ -361,24 +370,16 @@ impl EntryCodeHelper {
     /// Processes the builtins required for the function parameters.
     fn process_builtins(&mut self, param_types: &[(GenericTypeId, i16)]) {
         let mut builtin_offset = 3;
-        for (builtin_name, builtin_ty) in [
-            (BuiltinName::mul_mod, MulModType::ID),
-            (BuiltinName::add_mod, AddModType::ID),
-            (BuiltinName::range_check96, RangeCheck96Type::ID),
-            (BuiltinName::poseidon, PoseidonType::ID),
-            (BuiltinName::ec_op, EcOpType::ID),
-            (BuiltinName::bitwise, BitwiseType::ID),
-            (BuiltinName::range_check, RangeCheckType::ID),
-            (BuiltinName::pedersen, PedersenType::ID),
-        ] {
-            if param_types.iter().any(|(ty, _)| ty == &builtin_ty) {
+
+        // Process all builtins except the segment arena in reverse order.
+        for (builtin_ty, builtin_name) in self.builtin_ty_to_vm_name.iter().rev().skip(1) {
+            if param_types.iter().any(|(ty, _)| ty == builtin_ty) {
                 self.input_builtin_vars.insert(
-                    builtin_name,
+                    *builtin_name,
                     self.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
                 );
-                self.builtin_ty_to_vm_name.insert(builtin_ty, builtin_name);
                 builtin_offset += 1;
-                self.builtins.push(builtin_name);
+                self.builtins.push(*builtin_name);
             }
         }
         if !self.config.testing {
@@ -421,7 +422,6 @@ impl EntryCodeHelper {
             }
             // Adding the segment arena to the builtins var map.
             self.input_builtin_vars.insert(BuiltinName::segment_arena, segment_arena);
-            self.builtin_ty_to_vm_name.insert(SegmentArenaType::ID, BuiltinName::segment_arena);
         }
         let mut unallocated_count = 0;
         let mut param_index = 0;
