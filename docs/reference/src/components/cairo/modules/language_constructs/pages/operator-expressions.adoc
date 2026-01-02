@@ -155,7 +155,7 @@ fn main() {
     let result = flags & mask;  // 0b0010
     let combined = flags | mask; // 0b1011
     let toggled = flags ^ mask;  // 0b1001
-    let inverted = ~flags;       // 0b11110101 (for u8)
+    let inverted = ~flags;       // 0b11110101
 }
 ----
 
