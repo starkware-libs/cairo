@@ -80,8 +80,8 @@ pub fn handle_hash(info: &PluginTypeInfo<'_>) -> String {
                     }),
                     info.members_info.iter().map(|member| {
                         format!(
-                            "let __hash_derive_state = {imp}::update_state(__hash_derive_state, {}.value);",
-                            member.name,
+                            "let __hash_derive_state = {imp}::update_state(__hash_derive_state, {member}.value);",
+                            member = member.name,
                             imp = member.impl_name(HASH_TRAIT),
                         )
                     })
