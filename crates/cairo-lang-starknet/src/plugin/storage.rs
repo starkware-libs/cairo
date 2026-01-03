@@ -50,7 +50,7 @@ pub fn handle_storage_struct<'db, 'a>(
                 ));
             }
         }
-        storage_struct_members.push(get_simple_member_code(db, &member, config, metadata));
+        storage_struct_members.push(get_simple_member_code(db, &member, metadata));
     }
 
     let module_kind = starknet_module_kind.to_str_lower();
@@ -196,7 +196,6 @@ fn get_substorage_member_code<'db>(
 fn get_simple_member_code<'db>(
     db: &'db dyn Database,
     member: &ast::Member<'db>,
-    _config: &StorageMemberConfig,
     metadata: &MacroPluginMetadata<'_>,
 ) -> RewriteNode<'db> {
     let member_visibility = if backwards_compatible_storage(metadata.edition) {
