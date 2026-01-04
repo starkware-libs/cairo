@@ -99,6 +99,20 @@ impl CellExpression {
             })
         }
     }
+
+    /// Returns a cell expression which is the sum of `cell` and `value`.
+    /// If the value is zero, returns the cell itself.
+    pub fn add_with_const(cell: CellRef, value: i16) -> CellExpression {
+        if value == 0 {
+            CellExpression::Deref(cell)
+        } else {
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: cell,
+                b: DerefOrImmediate::Immediate(value.into()),
+            }
+        }
+    }
 }
 
 impl ApplyApChange for CellExpression {
