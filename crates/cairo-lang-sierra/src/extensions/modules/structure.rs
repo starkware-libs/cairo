@@ -298,10 +298,7 @@ impl StructBoxedDeconstructLibfunc {
         let arg_type_info = context.get_type_info(ty.clone())?;
         let is_snapshot = arg_type_info.long_id.generic_id == SnapshotType::id();
         if is_snapshot {
-            ty = match &arg_type_info.long_id.generic_args[0] {
-                GenericArg::Type(ty) => ty.clone(),
-                _ => return Err(SpecializationError::UnsupportedGenericArg),
-            }
+            ty = args_as_single_type(&arg_type_info.long_id.generic_args)?;
         }
         let struct_type = StructConcreteType::try_from_concrete_type(context, &ty)?;
         Ok((struct_type.members, is_snapshot))
@@ -321,21 +318,26 @@ impl StructBoxedDeconstructLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-        member_types: Vec<ConcreteTypeId>,
+        member_types: impl IntoIterator<Item = ConcreteTypeId>,
         is_snapshot: bool,
     ) -> Result<LibfuncSignature, SpecializationError> {
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature::new(box_ty(context, ty)?).with_allow_add_const()],
             member_types
                 .into_iter()
-                .map(|member_ty| {
+                .enumerate()
+                .map(|(index, member_ty)| {
                     let inner_type =
                         if is_snapshot { snapshot_ty(context, member_ty)? } else { member_ty };
                     Ok(OutputVarInfo {
                         ty: box_ty(context, inner_type)?,
-                        ref_info: OutputVarReferenceInfo::Deferred(
-                            crate::extensions::lib_func::DeferredOutputKind::Generic,
-                        ),
+                        ref_info: if index == 0 {
+                            OutputVarReferenceInfo::SameAsParam { param_idx: 0 }
+                        } else {
+                            OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                                param_idx: 0,
+                            })
+                        },
                     })
                 })
                 .collect::<Result<Vec<_>, _>>()?,
@@ -367,7 +369,7 @@ impl NamedLibfunc for StructBoxedDeconstructLibfunc {
         let ty = args_as_single_type(args)?;
         let (members, is_snapshot) = self.analyze_struct_type(context, ty.clone())?;
         let signature =
-            self.inner_specialize_signature(context, ty, members.clone(), is_snapshot)?;
+            self.inner_specialize_signature(context, ty, members.iter().cloned(), is_snapshot)?;
         Ok(ConcreteStructBoxedDeconstructLibfunc { members, signature })
     }
 }
