@@ -1,5 +1,3 @@
-use std::ops::Shl;
-
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
@@ -11,6 +9,7 @@ use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError,
     get_non_fallthrough_statement_id,
 };
+use crate::invocations::int::u128_bound;
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{BuiltinInfo, CostValidationInfo, add_input_variables};
 
@@ -89,7 +88,7 @@ pub fn build_felt252_range_reduction(
         maybe_tempvar rc_val = value + minus_range_lower;
         assert rc_val = *(range_check++);
     }
-    let rc_size = BigInt::from(1).shl(128);
+    let rc_size = u128_bound().clone();
     // If the out range is exactly `rc_size` the previous addition to the buffer validated this
     // case as well.
     if out_range.size() < rc_size {

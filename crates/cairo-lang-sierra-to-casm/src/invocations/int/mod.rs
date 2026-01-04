@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -18,6 +20,12 @@ pub mod unsigned;
 pub mod unsigned128;
 pub mod unsigned256;
 pub mod unsigned512;
+
+/// The value of 2^128.
+pub fn u128_bound() -> &'static BigInt {
+    static U128_BOUND: LazyLock<BigInt> = LazyLock::new(|| BigInt::from(1) << 128);
+    &U128_BOUND
+}
 
 /// Builds invocations for uint const values.
 fn build_const<TIntTraits: IntTraits>(
@@ -79,7 +87,7 @@ impl<'a> SmallDiffHelper<'a> {
             let orig_range_check = range_check;
             tempvar a_ge_b;
             tempvar a_minus_b = a - b;
-            const u128_limit = BigInt::from(u128::MAX) + BigInt::from(1);
+            const u128_limit = u128_bound().clone();
             const limit = limit;
             hint TestLessThan {lhs: a_minus_b, rhs: limit} into {dst: a_ge_b};
             jump NoOverflow if a_ge_b != 0;

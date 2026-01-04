@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
 use num_traits::{Num, One};
 
-use super::{bounded, build_128bit_diff, build_const};
+use super::{bounded, build_128bit_diff, build_const, u128_bound};
 use crate::invocations::{
     BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
     InvocationError, add_input_variables, bitwise, get_non_fallthrough_statement_id, misc,
@@ -25,8 +25,8 @@ pub fn build(
         },
         Uint128Concrete::Divmod(_) => bounded::build_div_rem(
             builder,
-            &Range::closed(0, u128::MAX),
-            &Range::closed(1, u128::MAX),
+            &Range::half_open(0, u128_bound().clone()),
+            &Range::half_open(1, u128_bound().clone()),
         ),
         Uint128Concrete::GuaranteeMul(_) => build_u128_guarantee_mul(builder),
         Uint128Concrete::MulGuaranteeVerify(_) => build_u128_mul_guarantee_verify(builder),
@@ -57,7 +57,7 @@ fn build_u128_overflowing_add(
             let orig_range_check = range_check;
             tempvar no_overflow;
             tempvar a_plus_b = a + b;
-            const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
+            const u128_limit = u128_bound().clone();
             hint TestLessThan {lhs: a_plus_b, rhs: u128_limit} into {dst: no_overflow};
             jump NoOverflow if no_overflow != 0;
             // Overflow:
@@ -194,7 +194,7 @@ fn build_u128_mul_guarantee_verify(
         // Note that `lower_uint128_with_carry` is bounded by 193 bits, as `a0_b` is capped
         // at 192 bits and `shifted_a1_b0_bottom` can contribute at most 1 additional bit,
         // added to (the carry of) `lower_uint128_with_carry = a0_b + shifted_a1_b0_bottom`.
-        const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
+        const u128_limit = u128_bound().clone();
         hint DivMod {
             lhs: lower_uint128_with_carry,
             rhs: u128_limit
@@ -239,7 +239,7 @@ fn build_u128_from_felt252(
     let value = expr_value.try_unpack_single()?;
 
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let u128_bound: BigInt = BigInt::from(u128::MAX) + 1; // = 2**128.
+    let u128_bound = u128_bound(); // = 2**128.
     // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
     let max_x: i128 = 10633823966279327296825105735305134080;
     let max_y: i128 = 0;
@@ -275,7 +275,7 @@ fn build_u128_from_felt252(
             assert x_minus_max_x = x + minus_max_x;
             jump XNotMaxX if x_minus_max_x != 0;
             // If x == max_x, check that y <= max_y.
-            const le_max_y_fix = (u128_bound.clone() - max_y - 1) as BigInt;
+            const le_max_y_fix = (u128_bound - max_y - 1) as BigInt;
             assert rced_value = y + le_max_y_fix;
             jump WriteRcedValue;
         XNotMaxX:

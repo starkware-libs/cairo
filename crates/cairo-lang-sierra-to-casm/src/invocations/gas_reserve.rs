@@ -1,9 +1,8 @@
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas_reserve::GasReserveConcreteLibfunc;
-use num_bigint::BigInt;
 
-use crate::invocations::int::SmallDiffHelper;
+use crate::invocations::int::{SmallDiffHelper, u128_bound};
 use crate::invocations::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, add_input_variables,
 };
@@ -23,7 +22,7 @@ pub fn build(
 fn build_gas_reserve_create(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let data = SmallDiffHelper::new(builder, BigInt::from(u128::MAX) + BigInt::from(1))?;
+    let data = SmallDiffHelper::new(builder, u128_bound().clone())?;
     let no_overflow_res: &[&[Var]] = &[&[data.range_check], &[data.a_minus_b], &[data.b]];
     let overflow_res: &[&[Var]] = &[&[data.range_check], &[data.a]];
     data.finalize(no_overflow_res, overflow_res)
