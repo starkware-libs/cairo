@@ -16,7 +16,7 @@
 #[feature("byte-span")]
 use core::byte_array::ToByteSpanTrait;
 #[feature("bounded-int-utils")]
-use core::internal::bounded_int::upcast;
+use core::internal::bounded_int::{BoundedInt, downcast, upcast};
 use starknet::SyscallResultTrait;
 
 /// A handle to the state of a SHA-256 hash.
@@ -36,17 +36,29 @@ const SHA256_INITIAL_STATE: [u32; 8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
-/// Computes the SHA-256 hash of an array of 32-bit words.
+/// Computes the SHA-256 hash of an input provided as 32-bit words, with optional trailing bytes.
+///
+/// # Note
+///
+/// For better type safety, consider using `compute_sha256_u32_array_safe` when
+/// `last_input_num_bytes` is guaranteed to be in the range 0..=3.
 ///
 /// # Arguments
 ///
-/// * `input` - An array of `u32` values to hash
-/// * `last_input_word` - The final word when input is not word-aligned
-/// * `last_input_num_bytes` - Number of bytes in the last input word (must be less than 4)
+/// * `input` - The main input, expressed as an array of `u32` words.
+/// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
+/// word-aligned.
+/// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`. Must be in the range
+/// 0..=3.
+///
+/// # Panics
+///
+/// * If `last_input_num_bytes` is greater than 3.
 ///
 /// # Returns
 ///
-/// * The SHA-256 hash of the `input array` + `last_input_word` as big endian
+/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
+/// `last_input_word`, interpreted in big-endian order.
 ///
 /// # Examples
 ///
@@ -59,6 +71,39 @@ const SHA256_INITIAL_STATE: [u32; 8] = [
 /// ```
 pub fn compute_sha256_u32_array(
     mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u32,
+) -> [u32; 8] {
+    let last_input_num_bytes = downcast(last_input_num_bytes).expect('`last_input_num_bytes` > 3');
+    compute_sha256_u32_array_safe(input, last_input_word, last_input_num_bytes)
+}
+
+/// A type representing a bounded integer in the range `0..=3`.
+pub type u2 = BoundedInt<0, 3>;
+
+/// Computes the SHA-256 hash of an input provided as 32-bit words, with optional trailing bytes.
+///
+/// # Arguments
+///
+/// * `input` - The main input, expressed as an array of `u32` words.
+/// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
+/// word-aligned.
+/// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`.
+///
+/// # Returns
+///
+/// * The SHA-256 hash of `input` followed by the `last_input_num_bytes` most significant bytes of
+/// `last_input_word`, interpreted in big-endian order.
+///
+/// # Examples
+///
+/// ```
+/// use core::sha256::compute_sha256_u32_array_safe;
+///
+/// let hash = compute_sha256_u32_array_safe(array![0x68656c6c], 0x6f, 1);
+/// assert!(hash == [0x2cf24dba, 0x5fb0a30e, 0x26e83b2a, 0xc5b9e29e, 0x1b161e5c, 0x1fa7425e,
+/// 0x73043362, 0x938b9824]);
+/// ```
+pub fn compute_sha256_u32_array_safe(
+    mut input: Array<u32>, last_input_word: u32, last_input_num_bytes: u2,
 ) -> [u32; 8] {
     add_sha256_padding(ref input, last_input_word, last_input_num_bytes);
 
@@ -107,7 +152,7 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
         word_arr.append(upcast(conversions::shift_append_byte(b0_b1_b2, b3)));
     };
 
-    compute_sha256_u32_array(word_arr, last_word, last_word_len)
+    compute_sha256_u32_array_safe(word_arr, last_word, last_word_len)
 }
 
 /// Adds padding to the input array according to the SHA-256 specification.
@@ -121,9 +166,10 @@ pub fn compute_sha256_byte_array(arr: @ByteArray) -> [u32; 8] {
 ///
 /// # Arguments
 /// * `arr` - Array to pad (modified in place)
-/// * `last_input_word` - Final word for non-word-aligned inputs
-/// * `last_input_num_bytes` - Number of valid bytes in last_input_word
-fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_bytes: u32) {
+/// * `last_input_word` - A partial final word containing any remaining bytes when the input is not
+/// word-aligned.
+/// * `last_input_num_bytes` - The number of valid bytes in `last_input_word`.
+fn add_sha256_padding(ref arr: Array<u32>, last_input_word: u32, last_input_num_bytes: u2) {
     let bitlen = conversions::bitlen(arr.len(), last_input_num_bytes);
     arr.append(conversions::to_last_word(last_input_word, last_input_num_bytes));
     // Now writing the length in bits, at the end of a block.
@@ -173,6 +219,7 @@ mod conversions {
     use core::internal::bounded_int::{
         self, AddHelper, BoundedInt, DivRemHelper, MulHelper, UnitInt,
     };
+    use super::u2;
 
     impl U8Shift of MulHelper<u8, UnitInt<0x100>> {
         type Result = BoundedInt<0, 0xFF00>;
@@ -234,7 +281,7 @@ mod conversions {
     }
 
     /// Returns the last word to append to the input `u32` array given the last word input.
-    pub fn to_last_word(word: u32, len: u32) -> u32 {
+    pub fn to_last_word(word: u32, len: u2) -> u32 {
         let shift: BoundedInt<0, 0x800000> = match len {
             0 => { return 0x80000000; },
             1 => 0x800000,
@@ -253,17 +300,17 @@ mod conversions {
         type Result = BoundedInt<0, 0x1FFFFFFFE0>;
     }
 
-    impl WordBitLen of MulHelper<u32, UnitInt<8>> {
-        type Result = BoundedInt<0, 0x7FFFFFFF8>;
+    impl WordBitLen of MulHelper<u2, UnitInt<8>> {
+        type Result = BoundedInt<0, 0x18>;
     }
 
-    impl FullBitLen of AddHelper<BoundedInt<0, 0x1FFFFFFFE0>, BoundedInt<0, 0x7FFFFFFF8>> {
-        type Result = BoundedInt<0, { 0x1FFFFFFFE0 + 0x7FFFFFFF8 }>;
+    impl FullBitLen of AddHelper<BoundedInt<0, 0x1FFFFFFFE0>, BoundedInt<0, 0x18>> {
+        type Result = BoundedInt<0, { 0x1FFFFFFFE0 + 0x18 }>;
     }
 
     /// Returns the bit length of the input message, given the length of the representation u32
     /// array and last word bytes.
-    pub fn bitlen(arr_len: u32, last_word_bytes: u32) -> u32 {
+    pub fn bitlen(arr_len: u32, last_word_bytes: u2) -> u32 {
         let arr_bits = bounded_int::mul::<_, _, ArrBitLen>(arr_len, 32);
         let last_word_bits = bounded_int::mul::<_, _, WordBitLen>(last_word_bytes, 8);
         bounded_int::downcast(bounded_int::add::<_, _, FullBitLen>(arr_bits, last_word_bits))
