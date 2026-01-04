@@ -1,0 +1,48 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use openzeppelin_governance::governor::DefaultConfig;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor: GovernorComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {}
+    use openzeppelin_governance::governor::GovernorComponent;
+
+    component!(path: GovernorComponent, storage: governor, event: GovernorEvent);
+
+    impl GovernorInternalImpl = GovernorComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorEvent: GovernorComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: It looks like the initializers for the following components are missing:
+
+Governor
+
+This may lead to unexpected behavior.
+We recommend adding the corresponding initializer calls to the constructor.
+====
+
+AuxData:
+
+None

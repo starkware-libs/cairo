@@ -1,0 +1,11 @@
+diff --git a/packages/merkle_tree/src/merkle_proof.cairo b/packages/merkle_tree/src/merkle_proof.cairo
+--- a/packages/merkle_tree/src/merkle_proof.cairo
++++ b/packages/merkle_tree/src/merkle_proof.cairo
+@@ -27,6 +27,7 @@
+
+ /// Version of `verify` using Pedersen as the hashing function.
+ pub fn verify_pedersen(proof: Span<felt252>, root: felt252, leaf: felt252) -> bool {
++    println!("bench0");
+     verify::<PedersenCHasher>(proof, root, leaf)
+ }
+

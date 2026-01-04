@@ -1,0 +1,226 @@
+= Votes
+
+:votes-component: xref:api/governance.adoc#VotesComponent[VotesComponent]
+:delegate: xref:api/governance.adoc#VotesComponent-delegate[delegate]
+:delegate_by_sig: xref:api/governance.adoc#VotesComponent-delegate_by_sig[delegate_by_sig]
+:voting_units_trait: xref:api/governance.adoc#VotingUnitsTrait[VotingUnitsTrait]
+:votes-usage: xref:Usage[usage]
+:nonces-component: xref:api/utilities.adoc#NoncesComponent[NoncesComponent]
+:snip12-metadata: xref:api/utilities.adoc#snip12[SNIP12Metadata]
+
+The {votes-component} provides a flexible system for tracking and delegating voting power. This system allows users to delegate their voting power to other addresses, enabling more active participation in governance.
+
+NOTE: By default, token balance does not account for voting power. This makes transfers cheaper. The downside is that it requires users to delegate to themselves in order to activate checkpoints and have their voting power tracked.
+
+IMPORTANT: The transferring of voting units must be handled by the implementing contract. In the case of `ERC20` and `ERC721` this is usually done via the hooks. You can check the {votes-usage} section for examples of how to implement this.
+
+== Key features
+
+1. *Delegation*: Users can delegate their voting power to any address, including themselves. Vote power can be delegated either by calling the {delegate} function directly, or by providing a signature to be used with {delegate_by_sig}.
+2. *Historical lookups*: The system keeps track of historical snapshots for each account, which allows the voting power of an account to be queried at a specific timestamp. +
+This can be used for example to determine the voting power of an account when a proposal was created, rather than using the current balance.
+
+== Usage
+
+When integrating the `VotesComponent`, the {voting_units_trait} must be implemented to get the voting units for a given account as a function of the implementing contract. +
+For simplicity, this module already provides two implementations for `ERC20` and `ERC721` tokens, which will work out of the box if the respective components are integrated. +
+Additionally, you must implement the {nonces-component} and the {snip12-metadata} trait to enable delegation by signatures.
+
+Here's an example of how to structure a simple ERC20Votes contract:
+
+[source,cairo]
+----
+#[starknet::contract]
+mod ERC20VotesContract {
+    use openzeppelin_governance::votes::VotesComponent;
+    use openzeppelin_token::erc20::{ERC20Component, DefaultConfig};
+    use openzeppelin_utils::cryptography::nonces::NoncesComponent;
+    use openzeppelin_utils::cryptography::snip12::SNIP12Metadata;
+    use starknet::ContractAddress;
+
+    component!(path: VotesComponent, storage: erc20_votes, event: ERC20VotesEvent);
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+    component!(path: NoncesComponent, storage: nonces, event: NoncesEvent);
+
+    // Votes
+    #[abi(embed_v0)]
+    impl VotesImpl = VotesComponent::VotesImpl<ContractState>;
+    impl VotesInternalImpl = VotesComponent::InternalImpl<ContractState>;
+
+    // ERC20
+    #[abi(embed_v0)]
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    // Nonces
+    #[abi(embed_v0)]
+    impl NoncesImpl = NoncesComponent::NoncesImpl<ContractState>;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub erc20_votes: VotesComponent::Storage,
+        #[substorage(v0)]
+        pub erc20: ERC20Component::Storage,
+        #[substorage(v0)]
+        pub nonces: NoncesComponent::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC20VotesEvent: VotesComponent::Event,
+        #[flat]
+        ERC20Event: ERC20Component::Event,
+        #[flat]
+        NoncesEvent: NoncesComponent::Event
+    }
+
+    // Required for hash computation.
+    pub impl SNIP12MetadataImpl of SNIP12Metadata {
+        fn name() -> felt252 {
+            'DAPP_NAME'
+        }
+        fn version() -> felt252 {
+            'DAPP_VERSION'
+        }
+    }
+
+    // We need to call the `transfer_voting_units` function after
+    // every mint, burn and transfer.
+    // For this, we use the `after_update` hook of the `ERC20Component::ERC20HooksTrait`.
+    impl ERC20VotesHooksImpl of ERC20Component::ERC20HooksTrait<ContractState> {
+        fn after_update(
+            ref self: ERC20Component::ComponentState<ContractState>,
+            from: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) {
+            let mut contract_state = self.get_contract_mut();
+            contract_state.erc20_votes.transfer_voting_units(from, recipient, amount);
+        }
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.erc20.initializer("MyToken", "MTK");
+    }
+}
+----
+
+And here's an example of how to structure a simple ERC721Votes contract:
+
+[source,cairo]
+----
+#[starknet::contract]
+pub mod ERC721VotesContract {
+    use openzeppelin_governance::votes::VotesComponent;
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_token::erc721::ERC721Component;
+    use openzeppelin_utils::cryptography::nonces::NoncesComponent;
+    use openzeppelin_utils::cryptography::snip12::SNIP12Metadata;
+    use starknet::ContractAddress;
+
+    component!(path: VotesComponent, storage: erc721_votes, event: ERC721VotesEvent);
+    component!(path: ERC721Component, storage: erc721, event: ERC721Event);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+    component!(path: NoncesComponent, storage: nonces, event: NoncesEvent);
+
+    // Votes
+    #[abi(embed_v0)]
+    impl VotesImpl = VotesComponent::VotesImpl<ContractState>;
+    impl VotesInternalImpl = VotesComponent::InternalImpl<ContractState>;
+
+    // ERC721
+    #[abi(embed_v0)]
+    impl ERC721MixinImpl = ERC721Component::ERC721MixinImpl<ContractState>;
+    impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
+
+    // Nonces
+    #[abi(embed_v0)]
+    impl NoncesImpl = NoncesComponent::NoncesImpl<ContractState>;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub erc721_votes: VotesComponent::Storage,
+        #[substorage(v0)]
+        pub erc721: ERC721Component::Storage,
+        #[substorage(v0)]
+        pub src5: SRC5Component::Storage,
+        #[substorage(v0)]
+        pub nonces: NoncesComponent::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC721VotesEvent: VotesComponent::Event,
+        #[flat]
+        ERC721Event: ERC721Component::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+        #[flat]
+        NoncesEvent: NoncesComponent::Event
+    }
+
+    /// Required for hash computation.
+    pub impl SNIP12MetadataImpl of SNIP12Metadata {
+        fn name() -> felt252 {
+            'DAPP_NAME'
+        }
+        fn version() -> felt252 {
+            'DAPP_VERSION'
+        }
+    }
+
+    // We need to call the `transfer_voting_units` function after 
+    // every mint, burn and transfer.
+    // For this, we use the `before_update` hook of the
+    //`ERC721Component::ERC721HooksTrait`.
+    // This hook is called before the transfer is executed.
+    // This gives us access to the previous owner.
+    impl ERC721VotesHooksImpl of ERC721Component::ERC721HooksTrait<ContractState> {
+        fn before_update(
+            ref self: ERC721Component::ComponentState<ContractState>,
+            to: ContractAddress,
+            token_id: u256,
+            auth: ContractAddress
+        ) {
+            let mut contract_state = self.get_contract_mut();
+
+            // We use the internal function here since it does not check if the token
+            // id exists which is necessary for mints
+            let previous_owner = self._owner_of(token_id);
+            contract_state.erc721_votes.transfer_voting_units(previous_owner, to, 1);
+        }
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.erc721.initializer("MyToken", "MTK", "");
+    }
+}
+----
+
+== Interface
+
+This is the full interface of the `VotesImpl` implementation:
+[source,cairo]
+----
+#[starknet::interface]
+pub trait VotesABI<TState> {
+    // IVotes
+    fn get_votes(self: @TState, account: ContractAddress) -> u256;
+    fn get_past_votes(self: @TState, account: ContractAddress, timepoint: u64) -> u256;
+    fn get_past_total_supply(self: @TState, timepoint: u64) -> u256;
+    fn delegates(self: @TState, account: ContractAddress) -> ContractAddress;
+    fn delegate(ref self: TState, delegatee: ContractAddress);
+    fn delegate_by_sig(ref self: TState, delegator: ContractAddress, delegatee: ContractAddress, nonce: felt252, expiry: u64, signature: Span<felt252>);
+
+    // INonces
+    fn nonces(self: @TState, owner: ContractAddress) -> felt252;
+}
+----

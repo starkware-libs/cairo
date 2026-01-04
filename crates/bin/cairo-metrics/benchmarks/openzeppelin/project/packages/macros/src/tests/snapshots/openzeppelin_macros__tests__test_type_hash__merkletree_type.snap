@@ -1,0 +1,26 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    #[snip12(kind: "merkletree")]
+    pub member: felt252,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!("\"MyType\"(\"member\":\"merkletree\")");
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x186d7d11e58c4c3b13da8a9b81ec72cf8c82a32106917255cf8801e61f9039e;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

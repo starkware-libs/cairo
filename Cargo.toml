@@ -42,6 +42,7 @@ members = [
   "crates/bin/cairo-compile",
   "crates/bin/cairo-execute",
   "crates/bin/cairo-format",
+  "crates/bin/cairo-metrics",
   "crates/bin/cairo-run",
   "crates/bin/cairo-size-profiler",
   "crates/bin/cairo-test",
@@ -113,6 +114,7 @@ colored = "3.0.0"
 const-fnv1a-hash = "1.1.0"
 const_format = "0.2.34"
 convert_case = "0.10.0"
+crossterm = "0.28"
 derivative = "2.2.0"
 diffy = "0.4.2"
 genco = "0.19.0"
@@ -137,8 +139,10 @@ pretty_assertions = "1.4.1"
 proc-macro2 = "1.0.95"
 quote = "1.0.40"
 rand = "0.9.2"
+ratatui = "0.29"
 rayon = "1.10.0"
 rstest = "0.26.1"
+rusqlite = { version = "0.32", features = ["bundled"] }
 salsa = "0.24.0"
 schemars = { version = "1.0.4", features = ["preserve_order"] }
 semver = { version = "1.0.26", features = ["serde"] }

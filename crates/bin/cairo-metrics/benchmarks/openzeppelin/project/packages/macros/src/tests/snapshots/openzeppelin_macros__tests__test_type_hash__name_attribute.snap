@@ -1,0 +1,31 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    #[snip12(name: "Variant 1")]
+    Variant1: (felt252, felt252, ClassHash, NftId),
+    #[snip12(name: "Variant 2")]
+    Variant2: Array<TokenAmount>,
+    #[snip12(name: "Variant 3")]
+    Variant3: Span<ClassHash>,
+    #[snip12(name: "Variant 4")]
+    Variant4: (ContractAddress, TokenAmount),
+    #[snip12(name: "Variant 5")]
+    Variant5: Array<ContractAddress>,
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x3c7d0abfeb251d79dfafa4f0249bcd5f6d8c28dc3a75c25fefa455af910915;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

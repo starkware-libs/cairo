@@ -1,0 +1,34 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    #[snip12(name: "Member 1")]
+    Member1: Array<felt252>,
+    #[snip12(name: "Member 2")]
+    Member2: Span<u128>,
+    #[snip12(name: "Timestamps", kind: "Array<timestamp>")]
+    Timestamps: Array<u128>,
+    #[snip12(name: "Name and Last Name", kind: "(shortstring, shortstring)")]
+    NameAndLastName: (felt252, felt252),
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"My Enum\"(\"Member 1\"(\"felt*\"),\"Member 2\"(\"u128*\"),\"Timestamps\"(\"timestamp*\"),\"Name and Last Name\"(\"shortstring\",\"shortstring\"))",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x9e3e1ebad4448a8344b3318f9cfda5df237588fd8328e1c2968635f09c735d;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

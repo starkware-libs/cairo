@@ -1,0 +1,142 @@
+:eip165: https://eips.ethereum.org/EIPS/eip-165[EIP165]
+:src5: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-5.md[SRC5]
+:src5-rs: https://github.com/ericnordelo/src5-rs[src5-rs]
+:src5-component: xref:api/introspection.adoc#SRC5Component[SRC5Component]
+
+= Introspection
+
+To smooth interoperability, often standards require smart contracts to implement https://en.wikipedia.org/wiki/Type_introspection[introspection mechanisms].
+
+In Ethereum, the {eip165} standard defines how contracts should declare
+their support for a given interface, and how other contracts may query this support.
+
+Starknet offers a similar mechanism for interface introspection defined by the {src5} standard.
+
+== SRC5
+
+Similar to its Ethereum counterpart, the {src5} standard requires contracts to implement the `supports_interface` function,
+which can be used by others to query if a given interface is supported.
+
+=== Usage
+
+To expose this functionality, the contract must implement the {src5-component}, which defines the `supports_interface` function.
+Here is an example contract:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_introspection::src5::SRC5Component;
+
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        src5: SRC5Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        SRC5Event: SRC5Component::Event
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.src5.register_interface(selector!("some_interface"));
+    }
+}
+----
+
+=== Interface
+
+[,cairo]
+----
+#[starknet::interface]
+pub trait ISRC5 {
+    /// Query if a contract implements an interface.
+    /// Receives the interface identifier as specified in SRC-5.
+    /// Returns `true` if the contract implements `interface_id`, `false` otherwise.
+    fn supports_interface(interface_id: felt252) -> bool;
+}
+----
+
+== Computing the interface ID
+
+The interface ID, as specified in the standard, is the https://en.wikipedia.org/wiki/Exclusive_or[XOR] of all the
+https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-5.md#extended-function-selector[Extended Function Selectors]
+of the interface. We strongly advise reading the SNIP to understand the specifics of computing these
+extended function selectors. There are tools such as {src5-rs} that can help with this process.
+
+== Registering interfaces
+
+For a contract to declare its support for a given interface, we recommend using the SRC5 component to register support upon contract deployment through a constructor either directly or indirectly (as an initializer) like this:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_account::interface;
+    use openzeppelin_introspection::src5::SRC5Component;
+
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+    impl InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        src5: SRC5Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        SRC5Event: SRC5Component::Event
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        // Register the contract's support for the ISRC6 interface
+        self.src5.register_interface(interface::ISRC6_ID);
+    }
+
+    (...)
+}
+----
+
+== Querying interfaces
+
+Use the `supports_interface` function to query a contract's support for a given interface.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_account::interface;
+    use openzeppelin_introspection::interface::ISRC5DispatcherTrait;
+    use openzeppelin_introspection::interface::ISRC5Dispatcher;
+    use starknet::ContractAddress;
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn query_is_account(self: @ContractState, target: ContractAddress) -> bool {
+        let dispatcher = ISRC5Dispatcher { contract_address: target };
+        dispatcher.supports_interface(interface::ISRC6_ID)
+    }
+}
+----
+
+TIP: If you are unsure whether a contract implements SRC5 or not, you can follow the process described in
+https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-5.md#how-to-detect-if-a-contract-implements-src-5[here].

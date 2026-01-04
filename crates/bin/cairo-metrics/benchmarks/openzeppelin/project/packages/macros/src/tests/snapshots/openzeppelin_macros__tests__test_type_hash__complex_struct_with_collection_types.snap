@@ -1,0 +1,39 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    pub member1: (felt252, felt252, ClassHash, NftId),
+    pub member2: Array<TokenAmount>,
+    pub member3: Span<ClassHash>,
+    pub member4: (ContractAddress, TokenAmount),
+    pub member5: Array<ContractAddress>,
+    pub member6: (),
+    #[snip12(kind: "(timestamp, shortstring)")]
+    pub member7: (u128, felt252),
+    pub member8: (ContractAddress,),
+    pub member9: (TokenAmount, (felt252, ClassHash), NftId),
+    pub member10: (Array<TokenAmount>, Array<ContractAddress>),
+    pub member11: Array<(TokenAmount, ContractAddress, Array<felt252>)>,
+    pub member12: Array<Array<(Array<TokenAmount>, Array<ContractAddress>, Array<felt252>)>>,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"member1\":\"(felt,felt,ClassHash,NftId)\",\"member2\":\"TokenAmount*\",\"member3\":\"ClassHash*\",\"member4\":\"(ContractAddress,TokenAmount)\",\"member5\":\"ContractAddress*\",\"member6\":\"()\",\"member7\":\"(timestamp,shortstring)\",\"member8\":\"(ContractAddress)\",\"member9\":\"(TokenAmount,(felt,ClassHash),NftId)\",\"member10\":\"(TokenAmount*,ContractAddress*)\",\"member11\":\"(TokenAmount,ContractAddress,felt*)*\",\"member12\":\"(TokenAmount*,ContractAddress*,felt*)**\")\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x1a48dfeb06697d53df4c5bd3186b36a31f197beb0f4c1d98967152eff37c1c0;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

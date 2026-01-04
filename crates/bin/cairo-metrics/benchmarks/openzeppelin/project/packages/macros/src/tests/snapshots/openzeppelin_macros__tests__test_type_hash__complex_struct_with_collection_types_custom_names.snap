@@ -1,0 +1,50 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    #[snip12(name: "Member 1")]
+    pub member1: (felt252, felt252, ClassHash, NftId),
+    #[snip12(name: "Member 2")]
+    pub member2: Array<TokenAmount>,
+    #[snip12(name: "Member 3")]
+    pub member3: Span<ClassHash>,
+    #[snip12(name: "Member 4")]
+    pub member4: (ContractAddress, TokenAmount),
+    #[snip12(name: "Member 5")]
+    pub member5: Array<ContractAddress>,
+    #[snip12(name: "Member 6")]
+    pub member6: (),
+    #[snip12(name: "Member 7", kind: "(timestamp, shortstring)")]
+    pub member7: (u128, felt252),
+    #[snip12(name: "Member 8")]
+    pub member8: (ContractAddress,),
+    #[snip12(name: "Member 9")]
+    pub member9: (TokenAmount, (felt252, ClassHash), NftId),
+    #[snip12(name: "Member 10")]
+    pub member10: (Array<TokenAmount>, Array<ContractAddress>),
+    #[snip12(name: "Member 11")]
+    pub member11: Array<(TokenAmount, ContractAddress, Array<felt252>)>,
+    #[snip12(name: "Member 12")]
+    pub member12: Array<Array<(Array<TokenAmount>, Array<ContractAddress>, Array<felt252>)>>,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"Member 1\":\"(felt,felt,ClassHash,NftId)\",\"Member 2\":\"TokenAmount*\",\"Member 3\":\"ClassHash*\",\"Member 4\":\"(ContractAddress,TokenAmount)\",\"Member 5\":\"ContractAddress*\",\"Member 6\":\"()\",\"Member 7\":\"(timestamp,shortstring)\",\"Member 8\":\"(ContractAddress)\",\"Member 9\":\"(TokenAmount,(felt,ClassHash),NftId)\",\"Member 10\":\"(TokenAmount*,ContractAddress*)\",\"Member 11\":\"(TokenAmount,ContractAddress,felt*)*\",\"Member 12\":\"(TokenAmount*,ContractAddress*,felt*)**\")\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x21ce4c57fdf9d50cd48f0ea26f3d49aab5ef09f9c87d28eae607d740878e4c5;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

@@ -1,0 +1,295 @@
+= Utilities
+
+:deploy_syscall: link:https://docs.starknet.io/architecture-and-concepts/smart-contracts/system-calls-cairo1/#deploy[deploy_syscall]
+
+This crate provides miscellaneous components and libraries containing utility functions to handle common tasks.
+
+== Core
+
+[.contract]
+[[utils]]
+=== `++utils++`
+
+```cairo
+use openzeppelin_utils;
+```
+
+Module containing core utilities of the library.
+
+[.contract-index]
+.Members
+--
+.Inner modules
+* xref:#utils-cryptography[`++cryptography++`]
+* xref:#utils-deployments[`++deployments++`]
+* xref:#utils-math[`++math++`]
+* xref:#utils-serde[`++serde++`]
+--
+
+[#utils-Inner-Modules]
+==== Inner modules
+
+[.contract-item]
+[[utils-cryptography]]
+==== `[.contract-item-name]#++cryptography++#` [.item-kind]#module#
+
+See xref:#cryptography[`openzeppelin_utils::cryptography`].
+
+[.contract-item]
+[[utils-deployments]]
+==== `[.contract-item-name]#++deployments++#` [.item-kind]#module#
+
+See xref:#deployments[`openzeppelin_utils::deployments`].
+
+[.contract-item]
+[[utils-math]]
+==== `[.contract-item-name]#++math++#` [.item-kind]#module#
+
+See xref:#math[`openzeppelin_utils::math`].
+
+[.contract-item]
+[[utils-serde]]
+==== `[.contract-item-name]#++serde++#` [.item-kind]#module#
+
+See xref:#serde[`openzeppelin_utils::serde`].
+
+[.contract]
+[[cryptography]]
+=== `++cryptography++`
+
+:snip12: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-12.md[SNIP12]
+
+```cairo
+use openzeppelin_utils::cryptography;
+```
+
+Module containing utilities related to cryptography.
+
+[.contract-index]
+.Members
+--
+.Inner modules
+* xref:#cryptography-nonces[`++nonces++`]
+* xref:#cryptography-snip12[`++snip12++`]
+--
+
+[#cryptography-Inner modules]
+==== Inner modules
+
+[.contract-item]
+[[cryptography-nonces]]
+==== `[.contract-item-name]#++nonces++#` [.item-kind]#module#
+
+See xref:#NoncesComponent[`openzeppelin_utils::cryptography::nonces::NoncesComponent`].
+
+[.contract-item]
+[[cryptography-snip12]]
+==== `[.contract-item-name]#++snip12++#` [.item-kind]#module#
+
+See xref:#snip12[`openzeppelin_utils::cryptography::snip12`].
+
+[.contract]
+[[deployments]]
+=== `++deployments++`
+
+:udc-doc: xref:/udc.adoc[Universal Deployer Contract]
+
+```cairo
+use openzeppelin_utils::deployments;
+```
+
+Module containing utility functions for calculating contract addresses through {deploy_syscall} and the {udc-doc} (UDC).
+
+[.contract-index]
+.Members
+--
+.Structs
+* xref:deployments-DeployerInfo[`++DeployerInfo(caller_address, udc_address)++`]
+
+.Functions
+* xref:deployments-calculate_contract_address_from_deploy_syscall[`++calculate_contract_address_from_deploy_syscall(salt, class_hash, constructor_calldata, deployer_address)++`]
+* xref:deployments-compute_hash_on_elements[`++compute_hash_on_elements(data)++`]
+* xref:deployments-calculate_contract_address_from_udc[`++calculate_contract_address_from_udc(salt, class_hash, constructor_calldata, deployer_info)++`]
+--
+
+[#deployments-Structs]
+==== Structs
+
+:calculate_contract_address_from_udc: xref:deployments-calculate_contract_address_from_udc[utils::calculate_contract_address_from_udc]
+
+[.contract-item]
+[[deployments-DeployerInfo]]
+==== `[.contract-item-name]#++DeployerInfo++#++(caller_address: ContractAddress, udc_address: ContractAddress)++` [.item-kind]#struct#
+
+Struct containing arguments necessary in {calculate_contract_address_from_udc} for origin-dependent deployment calculations.
+
+[#deployments-Functions]
+==== Functions
+
+:deployer-info: xref:deployments-DeployerInfo[DeployerInfo]
+
+[.contract-item]
+[[deployments-calculate_contract_address_from_deploy_syscall]]
+==== `[.contract-item-name]#++calculate_contract_address_from_deploy_syscall++#++(salt: felt252, class_hash: ClassHash, constructor_calldata: Span<felt252>, deployer_address: ContractAddress) → ContractAddress++` [.item-kind]#function#
+
+Returns the contract address when passing the given arguments to {deploy_syscall}.
+
+[.contract-item]
+[[deployments-compute_hash_on_elements]]
+==== `[.contract-item-name]#++compute_hash_on_elements++#++(data: Span<felt252>) → felt252++` [.item-kind]#function#
+
+Creates a Pedersen hash chain with the elements of `data` and returns the finalized hash.
+
+[.contract-item]
+[[deployments-calculate_contract_address_from_udc]]
+==== `[.contract-item-name]#++calculate_contract_address_from_udc++#++(salt: felt252, class_hash: ClassHash, constructor_calldata: Span<felt252>, deployer_info: Option<DeployerInfo>) → ContractAddress++` [.item-kind]#function#
+
+Returns the calculated contract address for UDC deployments.
+
+Origin-independent deployments (deployed from zero) should pass `Option::None` as `deployer_info`.
+
+Origin-dependent deployments hash `salt` with `caller_address` (member of {deployer-info}) and pass the hashed salt to the inner {deploy_syscall} as the `contract_address_salt` argument.
+
+[.contract]
+[[math]]
+=== `++math++`
+
+```cairo
+use openzeppelin_utils::math;
+```
+
+Module containing math utilities.
+
+[.contract-index]
+.Members
+--
+.Functions
+* xref:#math-average[`++average(a, b)++`]
+--
+
+[#math-Functions]
+==== Functions
+
+[.contract-item]
+[[math-average]]
+==== `[.contract-item-name]#++average++#++(a: T, b: T) → T++` [.item-kind]#function#
+
+Returns the average of two unsigned integers. The result is rounded down.
+
+NOTE: `T` is a generic value matching different numeric implementations.
+
+[.contract]
+[[serde]]
+=== `++serde++`
+
+```cairo
+use openzeppelin_utils::serde;
+```
+
+Module containing utilities related to serialization and deserialization of Cairo data structures.
+
+[.contract-index]
+.Members
+--
+.Traits
+* xref:#serde-SerializedAppend[`++SerializedAppend++`]
+--
+
+[#serde-Traits]
+==== Traits
+
+[.contract-item]
+[[serde-SerializedAppend]]
+==== `[.contract-item-name]#++SerializedAppend++#` [.item-kind]#trait#
+
+Importing this trait allows the ability to append a serialized representation of a Cairo data structure already
+implementing the `Serde` trait to a `felt252` buffer.
+
+Usage example:
+
+```cairo
+use openzeppelin_utils::serde::SerializedAppend;
+use starknet::ContractAddress;
+
+fn to_calldata(recipient: ContractAddress, amount: u256) -> Array<felt252> {
+    let mut calldata = array![];
+    calldata.append_serde(recipient);
+    calldata.append_serde(amount);
+    calldata
+}
+```
+
+Note that the `append_serde` method is automatically available for arrays of felts, and it accepts any data structure
+that implements the `Serde` trait.
+
+== Cryptography
+
+[.contract]
+[[NoncesComponent]]
+=== `++NoncesComponent++`
+
+```cairo
+use openzeppelin_utils::cryptography::nonces::NoncesComponent;
+```
+
+This component provides a simple mechanism for handling incremental
+nonces for a set of addresses. It is commonly used to prevent replay attacks
+when contracts accept signatures as input.
+
+[.contract-index#NoncesComponent-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#NoncesComponent-Embeddable-Impls-NoncesImpl]
+.NoncesImpl
+
+* xref:#NoncesComponent-nonces[`++nonces(self, owner)++`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#NoncesComponent-use_nonce[`++use_nonce(self, owner)++`]
+* xref:#NoncesComponent-use_checked_nonce[`++use_checked_nonce(self, owner, nonce)++`]
+--
+
+[#NoncesComponent-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[NoncesComponent-nonces]]
+==== `[.contract-item-name]#++nonces++#++(self: @ContractState, owner: ContractAddress) → felt252++` [.item-kind]#external#
+
+Returns the next unused nonce for an `owner`.
+
+[#NoncesComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[NoncesComponent-use_nonce]]
+==== `[.contract-item-name]#++use_nonce++#++(ref self: ComponentState, owner: ContractAddress) → felt252++` [.item-kind]#internal#
+
+Consumes a nonce, returns the current value, and increments nonce.
+
+For each account, the nonce has an initial value of 0, can only be incremented by one, and cannot be
+decremented or reset. This guarantees that the nonce never overflows.
+
+[.contract-item]
+[[NoncesComponent-use_checked_nonce]]
+==== `[.contract-item-name]#++use_checked_nonce++#++(ref self: ComponentState, owner: ContractAddress, nonce: felt252) → felt252++` [.item-kind]#internal#
+
+Same as `use_nonce` but checking that `nonce` is the next valid one for `owner`.
+
+[.contract]
+[[snip12]]
+=== `++snip12++`
+
+```cairo
+use openzeppelin_utils::snip12;
+```
+
+Supports on-chain generation of message hashes compliant with {snip12}.
+
+NOTE: For a full walkthrough on how to use this module, see the
+xref:/guides/snip12.adoc[SNIP12 and Typed Messages] guide.

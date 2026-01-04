@@ -1,0 +1,66 @@
+* xref:index.adoc[Overview]
+* xref:wizard.adoc[Wizard]
+
+* Learn
+
+** xref:components.adoc[Components]
+** xref:presets.adoc[Presets]
+** xref:interfaces.adoc[Interfaces and Dispatchers]
+** xref:guides/deployment.adoc[Counterfactual Deployments]
+** xref:guides/snip12.adoc[SNIP12 and Typed Messages]
+
+* Modules
+
+** xref:access.adoc[Access]
+*** xref:/api/access.adoc[API Reference]
+
+** xref:accounts.adoc[Accounts]
+*** xref:/api/account.adoc[API Reference]
+
+** xref:finance.adoc[Finance]
+*** xref:/api/finance.adoc[API Reference]
+
+** Governance
+*** xref:/governance/governor.adoc[Governor]
+*** xref:/governance/multisig.adoc[Multisig]
+*** xref:/governance/timelock.adoc[Timelock Controller]
+*** xref:/governance/votes.adoc[Votes]
+*** xref:/api/governance.adoc[API Reference]
+
+** xref:introspection.adoc[Introspection]
+*** xref:/guides/src5-migration.adoc[Migrating ERC165 to SRC5]
+*** xref:/api/introspection.adoc[API Reference]
+
+** xref:macros.adoc[Macros]
+*** xref:/macros/with_components.adoc[with_components]
+*** xref:/macros/type_hash.adoc[type_hash]
+
+** xref:/api/merkle-tree.adoc[Merkle Tree]
+
+** xref:security.adoc[Security]
+*** xref:/api/security.adoc[API Reference]
+
+** Tokens
+*** xref:/erc20.adoc[ERC20]
+**** xref:/guides/erc20-supply.adoc[Creating Supply]
+**** xref:/guides/erc20-permit.adoc[ERC20Permit]
+**** xref:/api/erc20.adoc[API Reference]
+*** xref:erc721.adoc[ERC721]
+**** xref:/api/erc721.adoc[API Reference]
+*** xref:erc1155.adoc[ERC1155]
+**** xref:/api/erc1155.adoc[API Reference]
+*** xref:erc4626.adoc[ERC4626]
+**** xref:/api/erc20.adoc#ERC4626Component[API Reference]
+*** xref:/api/token_common.adoc[Common]
+
+** xref:udc.adoc[Universal Deployer Contract]
+*** xref:/api/udc.adoc[API Reference]
+
+** xref:upgrades.adoc[Upgrades]
+*** xref:/api/upgrades.adoc[API Reference]
+
+** xref:/api/utilities.adoc[Utilities]
+** xref:/api/testing.adoc[Test Utilities]
+
+* xref:backwards-compatibility.adoc[Backwards Compatibility]
+* xref:contracts::index.adoc[Contracts for Solidity]

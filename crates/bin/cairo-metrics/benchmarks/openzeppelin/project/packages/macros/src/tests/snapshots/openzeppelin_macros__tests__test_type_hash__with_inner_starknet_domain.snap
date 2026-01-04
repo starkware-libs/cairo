@@ -1,0 +1,27 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    pub starknet_domain: StarknetDomain,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"starknet_domain\":\"StarknetDomain\")\"StarknetDomain\"(\"name\":\"shortstring\",\"version\":\"shortstring\",\"chainId\":\"shortstring\",\"revision\":\"shortstring\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x4e8c31d893ad8a47bfb12367edb6b0970c83ec63f8cb08dbd3be1ce792e794;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

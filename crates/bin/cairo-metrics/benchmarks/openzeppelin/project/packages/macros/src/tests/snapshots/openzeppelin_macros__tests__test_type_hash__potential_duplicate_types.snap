@@ -1,0 +1,31 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    // TokenAmount type contains u256, which should be resolved
+    // and appended to the final type hash.
+    pub token_amount: TokenAmount,
+    pub token_amount_2: TokenAmount,
+    pub number: u256,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"token_amount\":\"TokenAmount\",\"token_amount_2\":\"TokenAmount\",\"number\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0xe875ac1b5bfbe52aac3f89c302a4410a945700aca4dc2da513da7b1f2e1f00;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

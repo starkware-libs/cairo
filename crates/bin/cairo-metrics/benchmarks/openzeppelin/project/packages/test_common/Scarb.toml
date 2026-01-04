@@ -1,0 +1,39 @@
+[package]
+name = "openzeppelin_test_common"
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+repository.workspace = true
+license-file.workspace = true
+keywords.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[dependencies]
+starknet.workspace = true
+snforge_std.workspace = true
+openzeppelin_access = { path = "../access" }
+openzeppelin_account = { path = "../account" }
+openzeppelin_finance = { path = "../finance" }
+openzeppelin_governance = { path = "../governance" }
+openzeppelin_introspection = { path = "../introspection" }
+openzeppelin_macros = { path = "../macros" }
+openzeppelin_security = { path = "../security" }
+openzeppelin_token = { path = "../token" }
+openzeppelin_testing = { path = "../testing" }
+openzeppelin_upgrades = { path = "../upgrades" }
+openzeppelin_utils = { path = "../utils" }
+
+[lib]
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
+sierra = true
+casm = false

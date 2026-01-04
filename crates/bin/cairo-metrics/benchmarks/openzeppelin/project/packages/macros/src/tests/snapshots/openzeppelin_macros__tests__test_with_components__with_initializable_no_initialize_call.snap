@@ -1,0 +1,39 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub initializable: InitializableComponent::Storage,
+    }
+    use openzeppelin_security::InitializableComponent;
+
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
+
+    impl InitializableInternalImpl = InitializableComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        InitializableEvent: InitializableComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: It looks like the `self.initializable.initialize()` function is not used in the contract. If
+this is intentional, you may consider removing the Initializable component.
+====
+
+AuxData:
+
+None

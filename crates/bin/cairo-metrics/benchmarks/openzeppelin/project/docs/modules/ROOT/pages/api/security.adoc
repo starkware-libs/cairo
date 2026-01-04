@@ -1,0 +1,200 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+
+= Security
+
+This crate provides components to handle common security-related tasks.
+
+== Initializable
+
+[.contract]
+[[InitializableComponent]]
+=== `++InitializableComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/security/src/initializable.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_security::InitializableComponent;
+```
+
+Component enabling one-time initialization for contracts.
+
+[.contract-index]
+.Embeddable Implementations
+--
+.InitializableImpl
+
+* xref:#InitializableComponent-is_initialized[`++is_initialized(self)++`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#InitializableComponent-initialize[`++initialize(self)++`]
+--
+
+[#InitializableComponent-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[InitializableComponent-is_initialized]]
+==== `[.contract-item-name]#++is_initialized++#++(self: @ComponentState)++ → bool` [.item-kind]#external#
+
+Returns whether the contract has been initialized.
+
+[#InitializableComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[InitializableComponent-initialize]]
+==== `[.contract-item-name]#++initialize++#++(ref self: ComponentState)++` [.item-kind]#internal#
+
+Initializes the contract. Can only be called once.
+
+Requirements:
+
+- the contract must not have been initialized before.
+
+== Pausable
+
+[.contract]
+[[PausableComponent]]
+=== `++PausableComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/security/src/pausable.cairo[{github-icon},role=heading-link]
+
+:Paused: xref:PausableComponent-Paused[Paused]
+:Unpaused: xref:PausableComponent-Unpaused[Unpaused]
+
+```cairo
+use openzeppelin_security::PausableComponent;
+```
+
+Component to implement an emergency stop mechanism.
+
+[.contract-index]
+.Embeddable Implementations
+--
+.PausableImpl
+
+* xref:#PausableComponent-is_paused[`++is_paused(self)++`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#PausableComponent-assert_not_paused[`++assert_not_paused(self)++`]
+* xref:#PausableComponent-assert_paused[`++assert_paused(self)++`]
+* xref:#PausableComponent-pause[`++pause(self)++`]
+* xref:#PausableComponent-unpause[`++unpause(self)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#PausableComponent-Paused[`++Paused(account)++`]
+* xref:#PausableComponent-Unpaused[`++Unpaused(account)++`]
+--
+
+[#PausableComponent-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[PausableComponent-is_paused]]
+==== `[.contract-item-name]#++is_paused++#++(self: @ComponentState)++ → bool` [.item-kind]#external#
+
+Returns whether the contract is currently paused.
+
+[#PausableComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[PausableComponent-assert_not_paused]]
+==== `[.contract-item-name]#++assert_not_paused++#++(self: @ComponentState)++` [.item-kind]#internal#
+
+Panics if the contract is paused.
+
+[.contract-item]
+[[PausableComponent-assert_paused]]
+==== `[.contract-item-name]#++assert_paused++#++(self: @ComponentState)++` [.item-kind]#internal#
+
+Panics if the contract is not paused.
+
+[.contract-item]
+[[PausableComponent-pause]]
+==== `[.contract-item-name]#++pause++#++(ref self: ComponentState)++` [.item-kind]#internal#
+
+Pauses the contract.
+
+Requirements:
+
+- the contract must not be paused.
+
+Emits a {Paused} event.
+
+[.contract-item]
+[[PausableComponent-unpause]]
+==== `[.contract-item-name]#++unpause++#++(ref self: ComponentState)++` [.item-kind]#internal#
+
+Unpauses the contract.
+
+Requirements:
+
+- the contract must be paused.
+
+Emits an {Unpaused} event.
+
+
+[#PausableComponent-Events]
+==== Events
+
+[.contract-item]
+[[PausableComponent-Paused]]
+==== `[.contract-item-name]#++Paused++#++(account: ContractAddress)++` [.item-kind]#event#
+
+Emitted when the contract is paused by `account`.
+
+[.contract-item]
+[[PausableComponent-Unpaused]]
+==== `[.contract-item-name]#++Unpaused++#++(account: ContractAddress)++` [.item-kind]#event#
+
+Emitted when the contract is unpaused by `account`.
+
+== ReentrancyGuard
+
+[.contract]
+[[ReentrancyGuardComponent]]
+=== `++ReentrancyGuardComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/security/src/reentrancyguard.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_security::ReentrancyGuardComponent;
+```
+
+Component to help prevent reentrant calls.
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#ReentrancyGuardComponent-start[`++start(self)++`]
+* xref:#ReentrancyGuardComponent-end[`++end(self)++`]
+--
+
+[#ReentrancyGuardComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[ReentrancyGuardComponent-start]]
+==== `[.contract-item-name]#++start++#++(ref self: ComponentState)++` [.item-kind]#internal#
+
+Prevents a contract's function from calling itself or another protected function, directly or indirectly.
+
+Requirements:
+
+- the guard must not be currently enabled.
+
+[.contract-item]
+[[ReentrancyGuardComponent-end]]
+==== `[.contract-item-name]#++end++#++(ref self: ComponentState)++` [.item-kind]#internal#
+
+Removes the reentrant guard.

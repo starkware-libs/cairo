@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "tool": "cairo-metrics",
+    "version": "2.14.0",
+    "timestamp_utc": "2025-12-28T07:17:21.913353085Z",
+    "git_commit": "b8f9ecd61a552ab19b9b33b3e1283d7057a9280a",
+    "hostname": "ubu-giladch-lt"
+  },
+  "benchmarks": []
+}

@@ -1,0 +1,50 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    #[snip12(name: "Variant 1")]
+    Variant1: (felt252, felt252, ClassHash, NftId),
+    #[snip12(name: "Variant 2")]
+    Variant2: Array<TokenAmount>,
+    #[snip12(name: "Variant 3")]
+    Variant3: Span<ClassHash>,
+    #[snip12(name: "Variant 4")]
+    Variant4: (ContractAddress, TokenAmount),
+    #[snip12(name: "Variant 5")]
+    Variant5: Array<ContractAddress>,
+    #[snip12(name: "Variant 6")]
+    Variant6: (),
+    #[snip12(name: "Variant 7", kind: "(timestamp, shortstring)")]
+    Variant7: (u128, felt252),
+    #[snip12(name: "Variant 8")]
+    Variant8: (ContractAddress,),
+    #[snip12(name: "Variant 9")]
+    Variant9: (TokenAmount, (felt252, ClassHash), NftId),
+    #[snip12(name: "Variant 10")]
+    Variant10: (Array<TokenAmount>, Array<ContractAddress>),
+    #[snip12(name: "Variant 11")]
+    Variant11: Array<(TokenAmount, ContractAddress, Array<felt252>)>,
+    #[snip12(name: "Variant 12")]
+    Variant12: Array<Array<(Array<TokenAmount>, Array<ContractAddress>, Array<felt252>)>>,
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"MyEnum\"(\"Variant 1\"(\"felt\",\"felt\",\"ClassHash\",\"NftId\"),\"Variant 2\"(\"TokenAmount*\"),\"Variant 3\"(\"ClassHash*\"),\"Variant 4\"(\"ContractAddress\",\"TokenAmount\"),\"Variant 5\"(\"ContractAddress*\"),\"Variant 6\"(),\"Variant 7\"(\"timestamp\",\"shortstring\"),\"Variant 8\"(\"ContractAddress\"),\"Variant 9\"(\"TokenAmount\",\"(felt,ClassHash)\",\"NftId\"),\"Variant 10\"(\"TokenAmount*\",\"ContractAddress*\"),\"Variant 11\"(\"(TokenAmount,ContractAddress,felt*)*\"),\"Variant 12\"(\"(TokenAmount*,ContractAddress*,felt*)**\"))\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x246875b684a08f2dc43df30da0ae72480b809352d97c5707b5edc124839c7ce;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

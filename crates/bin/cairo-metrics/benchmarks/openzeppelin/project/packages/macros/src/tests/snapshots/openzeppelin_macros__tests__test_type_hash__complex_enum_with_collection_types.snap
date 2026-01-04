@@ -1,0 +1,39 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    Variant1: (felt252, felt252, ClassHash, NftId),
+    Variant2: Array<TokenAmount>,
+    Variant3: Span<ClassHash>,
+    Variant4: (ContractAddress, TokenAmount),
+    Variant5: Array<ContractAddress>,
+    Variant6: (),
+    #[snip12(kind: "(timestamp, shortstring)")]
+    Variant7: (u128, felt252),
+    Variant8: (ContractAddress,),
+    Variant9: (TokenAmount, (felt252, ClassHash), NftId),
+    Variant10: (Array<TokenAmount>, Array<ContractAddress>),
+    Variant11: Array<(TokenAmount, ContractAddress, Array<felt252>)>,
+    Variant12: Array<Array<(Array<TokenAmount>, Array<ContractAddress>, Array<felt252>)>>,
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"MyEnum\"(\"Variant1\"(\"felt\",\"felt\",\"ClassHash\",\"NftId\"),\"Variant2\"(\"TokenAmount*\"),\"Variant3\"(\"ClassHash*\"),\"Variant4\"(\"ContractAddress\",\"TokenAmount\"),\"Variant5\"(\"ContractAddress*\"),\"Variant6\"(),\"Variant7\"(\"timestamp\",\"shortstring\"),\"Variant8\"(\"ContractAddress\"),\"Variant9\"(\"TokenAmount\",\"(felt,ClassHash)\",\"NftId\"),\"Variant10\"(\"TokenAmount*\",\"ContractAddress*\"),\"Variant11\"(\"(TokenAmount,ContractAddress,felt*)*\"),\"Variant12\"(\"(TokenAmount*,ContractAddress*,felt*)**\"))\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x2742c7f55008032421a13981949f9e62f25c85bd7b853c2b5a5cebfe4b78cfa;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

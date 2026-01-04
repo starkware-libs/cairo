@@ -1,0 +1,216 @@
+
+= `++type_hash++`
+
+:SNIP-12: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-12.md[SNIP-12]
+
+This macro generates a {SNIP-12}-compatible type hash for a given struct or enum.
+
+NOTE: This macro is fully compatible with the {SNIP-12} standard revision 1.
+
+[#type_hash-usage]
+== Usage
+
+```cairo
+/// name and debug are optional arguments
+#[type_hash(name: "My Struct", debug: true)]
+struct MyStruct {
+    #[snip12(name: "My Field")]
+    my_field: felt252,
+}
+```
+
+This will generate a type hash for the struct.
+
+```cairo
+// Encoded type: "My Struct"("My Field":"felt")
+pub const MY_STRUCT_TYPE_HASH: felt252 = 0x1735aa9819941b96c651b740b792a96c854565eaff089b7e293d996828b88a8;
+```
+
+And because of the `debug` argument, it will generate the following code:
+
+```cairo
+pub fn __MY_STRUCT_encoded_type() {
+    println!("\"My Struct\"(\"My Field\":\"felt\")");
+}
+```
+
+[#type_hash-basic-types]
+== Basic types
+
+The list of supported basic types as defined in the {SNIP-12} standard is:
+
+- felt252
+- shortstring
+- ClassHash
+- ContractAddress
+- timestamp
+- selector
+- merkletree
+- u128
+- i128
+
+[#type_hash-basic-types-examples]
+=== Examples
+
+Struct with basic types and custom names and kinds:
+
+```cairo
+#[type_hash(name: "My Struct", debug: true)]
+pub struct MyStruct {
+    #[snip12(name: "Simple Felt")] // Optional custom name
+    pub simple_felt: felt252,
+    #[snip12(name: "Class Hash")]
+    pub class_hash: ClassHash,
+    #[snip12(name: "Target Token")]
+    pub target: ContractAddress,
+    #[snip12(name: "Timestamp", kind: "timestamp")]
+    pub timestamp: u128,
+    #[snip12(name: "Selector", kind: "selector")]
+    pub selector: felt252,
+}
+
+// Encoded type: "My Struct"("Simple Felt":"felt","Class Hash":"ClassHash",
+// "Target Token":"ContractAddress","Timestamp":"timestamp","Selector":"selector")
+pub const MY_STRUCT_TYPE_HASH: felt252
+    = 0x522e0c3dc5e13b0978f4645760a436b1e119fd335842523fee8fbae6057b8c;
+
+```
+
+Enum with basic types and custom names and kinds:
+
+```cairo
+#[type_hash(name: "My Enum", debug: true)]
+pub enum MyEnum {
+    #[snip12(name: "Simple Felt")]
+    SimpleFelt: felt252,
+    #[snip12(name: "Class Hash")]
+    ClassHash: ClassHash,
+    #[snip12(name: "Target Token")]
+    ContractAddress: ContractAddress,
+    #[snip12(name: "Timestamp", kind: "timestamp")]
+    Timestamp: u128,
+    #[snip12(name: "Selector", kind: "selector")]
+    Selector: felt252,
+}
+
+// Encoded type: "My Enum"("Simple Felt"("felt"),"Class Hash"("ClassHash"),
+// "Target Token"("ContractAddress"),"Timestamp"("timestamp"),"Selector"("selector"))
+pub const MY_ENUM_TYPE_HASH: felt252
+    = 0x3f30aaa6cda9f699d4131940b10602b78b986feb88f28a19f3b48567cb4b566;
+```
+
+[#type_hash-collection-types]
+== Collection types
+
+The list of supported collection types as defined in the {SNIP-12} standard is:
+
+- Array
+- Tuple **(Only supported for enums)**
+- Span **(Treated as an array)**
+
+NOTE: While Span is not directly supported by the {SNIP-12} standard, it is treated as an array for the purposes of this macro, since
+it is sometimes helpful to use `Span<felt252>` instead of `Array<felt252>` in order to save on gas.
+
+[#type_hash-collection-types-examples]
+=== Examples
+
+Struct with collection types:
+
+```cairo
+#[type_hash(name: "My Struct", debug: true)]
+pub struct MyStruct {
+    #[snip12(name: "Member 1")]
+    pub member1: Array<felt252>,
+    #[snip12(name: "Member 2")]
+    pub member2: Span<u128>,
+    #[snip12(name: "Timestamps", kind: "Array<timestamp>")]
+    pub timestamps: Array<u128>,
+}
+
+// Encoded type: "My Struct"("Member 1":"felt*","Member 2":"u128*",
+// "Timestamps":"timestamp*")
+pub const MY_STRUCT_TYPE_HASH: felt252
+    = 0x369cdec45d8c55e70986aed44da0e330375171ba6e25b58e741c0ce02fa8ac;
+```
+
+Enum with collection types:
+
+```cairo
+#[type_hash(name: "My Enum", debug: true)]
+pub enum MyEnum {
+    #[snip12(name: "Member 1")]
+    Member1: Array<felt252>,
+    #[snip12(name: "Member 2")]
+    Member2: Span<u128>,
+    #[snip12(name: "Timestamps", kind: "Array<timestamp>")]
+    Timestamps: Array<u128>,
+    #[snip12(name: "Name and Last Name", kind: "(shortstring, shortstring)")]
+    NameAndLastName: (felt252, felt252),
+}
+
+// Encoded type: "My Enum"("Member 1"("felt*"),"Member 2"("u128*"),
+// "Timestamps"("timestamp*"),"Name and Last Name"("shortstring","shortstring"))
+pub const MY_ENUM_TYPE_HASH: felt252
+    = 0x9e3e1ebad4448a8344b3318f9cfda5df237588fd8328e1c2968635f09c735d;
+```
+
+[#type_hash-preset-types]
+== Preset types
+
+The list of supported preset types as defined in the {SNIP-12} standard is:
+
+- TokenAmount
+- NftId
+- u256
+
+[#type_hash-preset-types-examples]
+=== Examples
+
+Struct with preset types:
+
+```cairo
+#[type_hash(name: "My Struct", debug: true)]
+pub struct MyStruct {
+    #[snip12(name: "Token Amount")]
+    pub token_amount: TokenAmount,
+    #[snip12(name: "NFT ID")]
+    pub nft_id: NftId,
+    #[snip12(name: "Number")]
+    pub number: u256,
+}
+
+// Encoded type: "My Struct"("Token Amount":"TokenAmount","NFT ID":"NftId","Number":"u256")"NftId"
+// ("collection_address":"ContractAddress","token_id":"u256")"TokenAmount"
+// ("token_address":"ContractAddress","amount":"u256")
+// "u256"("low":"u128","high":"u128")
+pub const MY_STRUCT_TYPE_HASH: felt252
+    = 0x19f63528d68c4f44b7d9003a5a6b7793f5bb6ffc8a22bdec82b413ddf4f9412;
+```
+
+Enum with preset types:
+
+```cairo
+#[type_hash(name: "My Enum", debug: true)]
+pub enum MyEnum {
+    #[snip12(name: "Token Amount")]
+    TokenAmount: TokenAmount,
+    #[snip12(name: "NFT ID")]
+    NftId: NftId,
+    #[snip12(name: "Number")]
+    Number: u256,
+}
+
+// Encoded type: "My Enum"("Token Amount"("TokenAmount"),"NFT ID"("NftId"),"Number"("u256"))"NftId"
+// ("collection_address":"ContractAddress","token_id":"u256")"TokenAmount"
+// ("token_address":"ContractAddress","amount":"u256")
+// "u256"("low":"u128","high":"u128")
+pub const MY_ENUM_TYPE_HASH: felt252
+    = 0x39dd19c7e5c5f89e084b78a26200b712c6ae3265f2bae774471c588858421b7;
+```
+
+[#type_hash-user-defined-types]
+== User-defined types
+
+User-defined types are currently **NOT SUPPORTED** since the macro doesn't have access to scope outside of the
+target struct/enum. In the future it may be supported by extending the syntax to explicitly declare the custom type
+definition.

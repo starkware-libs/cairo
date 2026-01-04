@@ -1,0 +1,37 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    pub name: felt252,
+    #[snip12(kind: "shortstring")]
+    pub version: felt252,
+    pub class_hash: ClassHash,
+    pub contract_address: ContractAddress,
+    #[snip12(kind: "timestamp")]
+    pub timestamp: u128,
+    #[snip12(kind: "selector")]
+    pub selector: felt252,
+    pub u128_member: u128,
+    pub i128_member: i128,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"name\":\"felt\",\"version\":\"shortstring\",\"class_hash\":\"ClassHash\",\"contract_address\":\"ContractAddress\",\"timestamp\":\"timestamp\",\"selector\":\"selector\",\"u128_member\":\"u128\",\"i128_member\":\"i128\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0xee6e17b4685e207c84ad4d6c7f7f2bb2897be771a1c515223d9b565268fc67;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

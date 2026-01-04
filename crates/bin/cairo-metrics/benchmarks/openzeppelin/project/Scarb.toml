@@ -1,0 +1,88 @@
+[workspace]
+members = [
+    "packages/access",
+    "packages/account",
+    "packages/finance",
+    "packages/governance",
+    "packages/introspection",
+    "packages/macros",
+    "packages/merkle_tree",
+    "packages/presets",
+    "packages/security",
+    "packages/token",
+    "packages/upgrades",
+    "packages/utils",
+    "packages/testing",
+    "packages/test_common",
+]
+
+[package]
+name = "openzeppelin"
+readme = "README.md"
+version.workspace = true
+keywords.workspace = true
+edition.workspace = true
+
+[workspace.package]
+version = "2.0.0"
+edition = "2024_07"
+cairo-version = "2.11.4"
+scarb-version = "2.11.4"
+authors = ["OpenZeppelin Community <maintainers@openzeppelin.org>"]
+description = "OpenZeppelin Contracts written in Cairo for Starknet, a decentralized ZK Rollup"
+documentation = "https://docs.openzeppelin.com/contracts-cairo"
+repository = "https://github.com/OpenZeppelin/cairo-contracts"
+license-file = "LICENSE"
+keywords = [
+    "openzeppelin",
+    "starknet",
+    "contracts",
+    "security",
+    "standards"
+]
+
+[workspace.dependencies]
+assert_macros = "2.11.4"
+starknet = "2.11.4"
+snforge_std = "0.44.0"
+
+[dependencies]
+starknet.workspace = true
+openzeppelin_access = { path = "packages/access" }
+openzeppelin_account = { path = "packages/account" }
+openzeppelin_finance = { path = "packages/finance" }
+openzeppelin_governance = { path = "packages/governance" }
+openzeppelin_introspection = { path = "packages/introspection" }
+openzeppelin_merkle_tree = { path = "packages/merkle_tree" }
+openzeppelin_presets = { path = "packages/presets" }
+openzeppelin_security = { path = "packages/security" }
+openzeppelin_token = { path = "packages/token" }
+openzeppelin_upgrades = { path = "packages/upgrades" }
+openzeppelin_utils = { path = "packages/utils" }
+
+[dev-dependencies]
+snforge_std.workspace = true
+openzeppelin_test_common = { path = "packages/test_common" }
+openzeppelin_testing = { path = "packages/testing" }
+
+[lib]
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
+sierra = true
+casm = false
+
+[workspace.tool.fmt]
+sort-module-level-items = true
+
+[workspace.tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[profile.dev.cairo]
+unstable-add-statements-functions-debug-info = true
+unstable-add-statements-code-locations-debug-info = true
+inlining-strategy = "avoid"

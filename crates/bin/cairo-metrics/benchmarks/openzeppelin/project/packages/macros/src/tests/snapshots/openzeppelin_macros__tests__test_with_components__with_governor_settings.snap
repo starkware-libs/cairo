@@ -1,0 +1,49 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    pub const VOTING_DELAY: u64 = 86400; // 1 day
+    pub const VOTING_PERIOD: u64 = 604800; // 1 week
+    pub const PROPOSAL_THRESHOLD: u256 = 10;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor_settings: GovernorSettingsComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.governor_settings.initializer(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD);
+    }
+    use openzeppelin_governance::governor::extensions::GovernorSettingsComponent;
+
+    component!(
+        path: GovernorSettingsComponent, storage: governor_settings, event: GovernorSettingsEvent,
+    );
+
+    impl GovernorSettingsInternalImpl = GovernorSettingsComponent::InternalImpl<ContractState>;
+    impl GovernorSettingsGovernorSettings =
+        GovernorSettingsComponent::GovernorSettings<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorSettingsEvent: GovernorSettingsComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

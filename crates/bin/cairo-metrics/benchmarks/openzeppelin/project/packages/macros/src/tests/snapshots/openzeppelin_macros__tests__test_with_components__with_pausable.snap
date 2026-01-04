@@ -1,0 +1,50 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub pausable: PausableComponent::Storage,
+    }
+
+    #[generate_trait]
+    #[abi(per_item)]
+    impl ExternalImpl of ExternalTrait {
+        #[external(v0)]
+        fn pause(ref self: ContractState) {
+            self.pausable.pause();
+        }
+
+        #[external(v0)]
+        fn unpause(ref self: ContractState) {
+            self.pausable.unpause();
+        }
+    }
+    use openzeppelin_security::PausableComponent;
+
+    component!(path: PausableComponent, storage: pausable, event: PausableEvent);
+
+    impl PausableInternalImpl = PausableComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        PausableEvent: PausableComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

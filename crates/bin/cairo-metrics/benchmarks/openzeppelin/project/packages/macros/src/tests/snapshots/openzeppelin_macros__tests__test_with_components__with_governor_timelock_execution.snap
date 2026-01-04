@@ -1,0 +1,50 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor_timelock_execution: GovernorTimelockExecutionComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, timelock_controller: ContractAddress) {
+        self.governor_timelock_execution.initializer(timelock_controller);
+    }
+    use openzeppelin_governance::governor::extensions::GovernorTimelockExecutionComponent;
+
+    component!(
+        path: GovernorTimelockExecutionComponent,
+        storage: governor_timelock_execution,
+        event: GovernorTimelockExecutionEvent,
+    );
+
+    impl GovernorTimelockExecutionInternalImpl =
+        GovernorTimelockExecutionComponent::InternalImpl<ContractState>;
+    impl GovernorTimelockExecutionGovernorExecution =
+        GovernorTimelockExecutionComponent::GovernorExecution<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorTimelockExecutionEvent: GovernorTimelockExecutionComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

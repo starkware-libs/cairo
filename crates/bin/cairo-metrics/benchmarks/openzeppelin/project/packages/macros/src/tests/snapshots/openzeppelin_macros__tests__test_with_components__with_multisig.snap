@@ -1,0 +1,43 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub multisig: MultisigComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, quorum: u32, signers: Span<ContractAddress>) {
+        self.multisig.initializer(quorum, signers);
+    }
+    use openzeppelin_governance::multisig::MultisigComponent;
+
+    component!(path: MultisigComponent, storage: multisig, event: MultisigEvent);
+
+    impl MultisigInternalImpl = MultisigComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        MultisigEvent: MultisigComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

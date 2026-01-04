@@ -1,0 +1,1473 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+:eip20: https://eips.ethereum.org/EIPS/eip-20[EIP-20]
+:erc20-guide: xref:erc20.adoc[ERC20 guide]
+:casing-discussion: https://github.com/OpenZeppelin/cairo-contracts/discussions/34[here]
+:custom-decimals: xref:/erc20.adoc#customizing_decimals[Customizing decimals]
+:snip-12: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-12.md[SNIP12]
+:snip12-metadata: xref:api/utilities.adoc#snip12[SNIP12Metadata]
+:eip-2612: https://eips.ethereum.org/EIPS/eip-2612[EIP-2612]
+:eip4626: https://eips.ethereum.org/EIPS/eip-4626[EIP-4626]
+
+
+= ERC20
+
+include::../utils/_common.adoc[]
+
+This module provides interfaces, presets, and utilities related to ERC20 contracts.
+
+TIP: For an overview of ERC20, read our {erc20-guide}.
+
+== Core
+
+[.contract]
+[[IERC20]]
+=== `++IERC20++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc20/interface.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc20::interface::IERC20;
+```
+
+Interface of the IERC20 standard as defined in {eip20}.
+
+[.contract-index]
+.Functions
+--
+* xref:#IERC20-total_supply[`++total_supply()++`]
+* xref:#IERC20-balance_of[`++balance_of()++`]
+* xref:#IERC20-allowance[`++allowance(owner, spender)++`]
+* xref:#IERC20-transfer[`++transfer(recipient, amount)++`]
+* xref:#IERC20-transfer_from[`++transfer_from(sender, recipient, amount)++`]
+* xref:#IERC20-approve[`++approve(spender, amount)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#IERC20-Transfer[`++Transfer(from, to, value)++`]
+* xref:#IERC20-Approval[`++Approval(owner, spender, value)++`]
+--
+
+[#IERC20-Functions]
+==== Functions
+
+[.contract-item]
+[[IERC20-total_supply]]
+==== `[.contract-item-name]#++total_supply++#++() → u256++` [.item-kind]#external#
+
+Returns the amount of tokens in existence.
+
+[.contract-item]
+[[IERC20-balance_of]]
+==== `[.contract-item-name]#++balance_of++#++(account: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the amount of tokens owned by `account`.
+
+[.contract-item]
+[[IERC20-allowance]]
+==== `[.contract-item-name]#++allowance++#++(owner: ContractAddress, spender: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the remaining number of tokens that `spender` is allowed to spend on behalf of `owner` through <<transfer_from,transfer_from>>. This is zero by default.
+
+This value changes when <<IERC20-approve,approve>> or <<IERC20-transfer_from,transfer_from>> are called.
+
+[.contract-item]
+[[IERC20-transfer]]
+==== `[.contract-item-name]#++transfer++#++(recipient: ContractAddress, amount: u256) → bool++` [.item-kind]#external#
+
+Moves `amount` tokens from the caller's token balance to `to`.
+Returns `true` on success, reverts otherwise.
+
+Emits a <<IERC20-Transfer,Transfer>> event.
+
+[.contract-item]
+[[IERC20-transfer_from]]
+==== `[.contract-item-name]#++transfer_from++#++(sender: ContractAddress, recipient: ContractAddress, amount: u256) → bool++` [.item-kind]#external#
+
+Moves `amount` tokens from `sender` to `recipient` using the allowance mechanism.
+`amount` is then deducted from the caller's allowance.
+Returns `true` on success, reverts otherwise.
+
+Emits a <<IERC20-Transfer,Transfer>> event.
+
+[.contract-item]
+[[IERC20-approve]]
+==== `[.contract-item-name]#++approve++#++(spender: ContractAddress, amount: u256) → bool++` [.item-kind]#external#
+
+Sets `amount` as the allowance of `spender` over the caller's tokens.
+Returns `true` on success, reverts otherwise.
+
+Emits an <<ERC20-Approval,Approval>> event.
+
+[#IERC20-Events]
+==== Events
+
+[.contract-item]
+[[IERC20-Transfer]]
+==== `[.contract-item-name]#++Transfer++#++(from: ContractAddress, to: ContractAddress, value: u256)++` [.item-kind]#event#
+
+Emitted when `value` tokens are moved from one address (`from`) to another (`to`).
+
+Note that `value` may be zero.
+
+[.contract-item]
+[[IERC20-Approval]]
+==== `[.contract-item-name]#++Approval++#++(owner: ContractAddress, spender: ContractAddress, value: u256)++` [.item-kind]#event#
+
+Emitted when the allowance of a `spender` for an `owner` is set.
+`value` is the new allowance.
+
+[.contract]
+[[IERC20Metadata]]
+=== `++IERC20Metadata++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc20/interface.cairo#L19[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc20::interface::IERC20Metadata;
+```
+
+Interface for the optional metadata functions in {eip20}.
+
+[.contract-index]
+.Functions
+--
+* xref:#IERC20Metadata-name[`++name()++`]
+* xref:#IERC20Metadata-symbol[`++symbol()++`]
+* xref:#IERC20Metadata-decimals[`++decimals()++`]
+--
+
+[#IERC20Metadata-Functions]
+==== Functions
+
+[.contract-item]
+[[IERC20Metadata-name]]
+==== `[.contract-item-name]#++name++#++() → ByteArray++` [.item-kind]#external#
+
+Returns the name of the token.
+
+[.contract-item]
+[[IERC20Metadata-symbol]]
+==== `[.contract-item-name]#++symbol++#++() → ByteArray++` [.item-kind]#external#
+
+Returns the ticker symbol of the token.
+
+[.contract-item]
+[[IERC20Metadata-decimals]]
+==== `[.contract-item-name]#++decimals++#++() → u8++` [.item-kind]#external#
+
+Returns the number of decimals the token uses - e.g. `8` means to divide the token amount by `100000000` to get its user-readable representation.
+
+For example, if `decimals` equals `2`, a balance of `505` tokens should be displayed to a user as `5.05` (`505 / 10 ** 2`).
+
+Tokens usually opt for a value of `18`, imitating the relationship between Ether and Wei.
+This is the default value returned by this function.
+To create a custom decimals implementation, see {custom-decimals}.
+
+NOTE: This information is only used for _display_ purposes: it in no way affects any of the arithmetic of the contract.
+
+[.contract]
+[[ERC20Component]]
+=== `++ERC20Component++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc20/erc20.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc20::ERC20Component;
+```
+ERC20 component extending <<IERC20,IERC20>> and <<IERC20Metadata,IERC20Metadata>>.
+
+NOTE: See xref:#ERC20Component-Hooks[Hooks] to understand how are hooks used.
+
+[.contract-index]
+.Hooks
+--
+[.sub-index#ERC20Component-ERC20HooksTrait]
+.ERC20HooksTrait
+* xref:#ERC20Component-before_update[`++before_update(self, from, recipient, amount)++`]
+* xref:#ERC20Component-after_update[`++after_update(self, from, recipient, amount)++`]
+--
+
+[.contract-index#ERC20Component-Embeddable-Mixin-Impl]
+.{mixin-impls}
+--
+.ERC20MixinImpl
+* xref:#ERC20Component-Embeddable-Impls-ERC20Impl[`++ERC20Impl++`]
+* xref:#ERC20Component-Embeddable-Impls-ERC20MetadataImpl[`++ERC20MetadataImpl++`]
+* xref:#ERC20Component-Embeddable-Impls-ERC20CamelOnlyImpl[`++ERC20CamelOnlyImpl++`]
+--
+
+[.contract-index#ERC20Component-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#ERC20Component-Embeddable-Impls-ERC20Impl]
+.ERC20Impl
+* xref:#ERC20Component-total_supply[`++total_supply(self)++`]
+* xref:#ERC20Component-balance_of[`++balance_of(self, account)++`]
+* xref:#ERC20Component-allowance[`++allowance(self, owner, spender)++`]
+* xref:#ERC20Component-transfer[`++transfer(self, recipient, amount)++`]
+* xref:#ERC20Component-transfer_from[`++transfer_from(self, sender, recipient, amount)++`]
+* xref:#ERC20Component-approve[`++approve(self, spender, amount)++`]
+
+[.sub-index#ERC20Component-Embeddable-Impls-ERC20MetadataImpl]
+.ERC20MetadataImpl
+* xref:#ERC20Component-name[`++name(self)++`]
+* xref:#ERC20Component-symbol[`++symbol(self)++`]
+* xref:#ERC20Component-decimals[`++decimals(self)++`]
+
+[.sub-index#ERC20Component-Embeddable-Impls-ERC20CamelOnlyImpl]
+.ERC20CamelOnlyImpl
+* xref:#ERC20Component-totalSupply[`++totalSupply(self)++`]
+* xref:#ERC20Component-balanceOf[`++balanceOf(self, account)++`]
+* xref:#ERC20Component-transferFrom[`++transferFrom(self, sender, recipient, amount)++`]
+
+[.sub-index#ERC20Component-Embeddable-Impls-ERC20PermitImpl]
+.ERC20PermitImpl
+* xref:#ERC20Component-permit[`++permit(self, owner, spender, amount, deadline, signature)++`]
+* xref:#ERC20Component-nonces[`++nonces(self, owner)++`]
+* xref:#ERC20Component-DOMAIN_SEPARATOR[`++DOMAIN_SEPARATOR(self)++`]
+
+[.sub-index#ERC20Component-Embeddable-Impls-SNIP12MetadataExternalImpl]
+.SNIP12MetadataExternalImpl
+* xref:#ERC20Component-snip12_metadata[`++snip12_metadata(self)++`]
+--
+
+[.contract-index]
+.Internal implementations
+--
+.InternalImpl
+* xref:#ERC20Component-initializer[`++initializer(self, name, symbol)++`]
+* xref:#ERC20Component-mint[`++mint(self, recipient, amount)++`]
+* xref:#ERC20Component-burn[`++burn(self, account, amount)++`]
+* xref:#ERC20Component-update[`++update(self, from, to, amount)++`]
+* xref:#ERC20Component-_transfer[`++_transfer(self, sender, recipient, amount)++`]
+* xref:#ERC20Component-_approve[`++_approve(self, owner, spender, amount)++`]
+* xref:#ERC20Component-_spend_allowance[`++_spend_allowance(self, owner, spender, amount)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#ERC20Component-Transfer[`++Transfer(from, to, value)++`]
+* xref:#ERC20Component-Approval[`++Approval(owner, spender, value)++`]
+--
+
+[#ERC20Component-Hooks]
+==== Hooks
+
+Hooks are functions which implementations can extend the functionality of the component source code. Every contract
+using ERC20Component is expected to provide an implementation of the ERC20HooksTrait. For basic token contracts, an
+empty implementation with no logic must be provided.
+
+TIP: You can use `openzeppelin_token::erc20::ERC20HooksEmptyImpl` which is already available as part of the library
+for this purpose.
+
+[.contract-item]
+[[ERC20Component-before_update]]
+==== `[.contract-item-name]#++before_update++#++(ref self: ContractState, from: ContractAddress, recipient: ContractAddress, amount: u256)++` [.item-kind]#hook#
+
+Function executed at the beginning of the xref:#ERC20Component-update[update] function prior to any other logic.
+
+[.contract-item]
+[[ERC20Component-after_update]]
+==== `[.contract-item-name]#++after_update++#++(ref self: ContractState, from: ContractAddress, recipient: ContractAddress, amount: u256)++` [.item-kind]#hook#
+
+Function executed at the end of the xref:#ERC20Component-update[update] function.
+
+[#ERC20Component-Embeddable-functions]
+==== Embeddable functions
+
+[.contract-item]
+[[ERC20Component-total_supply]]
+==== `[.contract-item-name]#++total_supply++#++(@self: ContractState) → u256++` [.item-kind]#external#
+
+See <<IERC20-total_supply,IERC20::total_supply>>.
+
+[.contract-item]
+[[ERC20Component-balance_of]]
+==== `[.contract-item-name]#++balance_of++#++(@self: ContractState, account: ContractAddress) → u256++` [.item-kind]#external#
+
+See <<IERC20-balance_of,IERC20::balance_of>>.
+
+[.contract-item]
+[[ERC20Component-allowance]]
+==== `[.contract-item-name]#++allowance++#++(@self: ContractState, owner: ContractAddress, spender: ContractAddress) → u256++` [.item-kind]#external#
+
+See <<IERC20-allowance,IERC20::allowance>>.
+
+[.contract-item]
+[[ERC20Component-transfer]]
+==== `[.contract-item-name]#++transfer++#++(ref self: ContractState, recipient: ContractAddress, amount: u256) → bool++` [.item-kind]#external#
+
+See <<IERC20-transfer,IERC20::transfer>>.
+
+Requirements:
+
+- `recipient` cannot be the zero address.
+- The caller must have a balance of at least `amount`.
+
+[.contract-item]
+[[ERC20Component-transfer_from]]
+==== `[.contract-item-name]#++transfer_from++#++(ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256) → bool++` [.item-kind]#external#
+
+See <<IERC20-transfer_from,IERC20::transfer_from>>.
+
+Requirements:
+
+- `sender` cannot be the zero address.
+- `sender` must have a balance of at least `amount`.
+- `recipient` cannot be the zero address.
+- The caller must have allowance for ``sender``'s tokens of at least `amount`.
+
+[.contract-item]
+[[ERC20Component-approve]]
+==== `[.contract-item-name]#++approve++#++(ref self: ContractState, spender: ContractAddress, amount: u256) → bool++` [.item-kind]#external#
+
+See <<IERC20-approve,IERC20::approve>>.
+
+Requirements:
+
+- `spender` cannot be the zero address.
+
+[.contract-item]
+[[ERC20Component-name]]
+==== `[.contract-item-name]#++name++#++() → ByteArray++` [.item-kind]#external#
+
+See <<IERC20Metadata-name,IERC20Metadata::name>>.
+
+[.contract-item]
+[[ERC20Component-symbol]]
+==== `[.contract-item-name]#++symbol++#++() → ByteArray++` [.item-kind]#external#
+
+See <<IERC20Metadata-symbol,IERC20Metadata::symbol>>.
+
+[.contract-item]
+[[ERC20Component-decimals]]
+==== `[.contract-item-name]#++decimals++#++() → u8++` [.item-kind]#external#
+
+See <<IERC20Metadata-decimals,IERC20Metadata::decimals>>.
+
+[.contract-item]
+[[ERC20Component-totalSupply]]
+==== `[.contract-item-name]#++totalSupply++#++(self: @ContractState) → u256++` [.item-kind]#external#
+
+See <<IERC20-total_supply,IERC20::total_supply>>.
+
+Supports the Cairo v0 convention of writing external methods in camelCase as discussed {casing-discussion}.
+
+[.contract-item]
+[[ERC20Component-balanceOf]]
+==== `[.contract-item-name]#++balanceOf++#++(self: @ContractState, account: ContractAddress) → u256++` [.item-kind]#external#
+
+See <<IERC20-balance_of,IERC20::balance_of>>.
+
+Supports the Cairo v0 convention of writing external methods in camelCase as discussed {casing-discussion}.
+
+[.contract-item]
+[[ERC20Component-transferFrom]]
+==== `[.contract-item-name]#++transferFrom++#++(ref self: ContractState, sender: ContractAddress, recipient: ContractAddress) → bool++` [.item-kind]#external#
+
+See <<IERC20-transfer_from,IERC20::transfer_from>>.
+
+Supports the Cairo v0 convention of writing external methods in camelCase as discussed {casing-discussion}.
+
+[.contract-item]
+[[ERC20Component-permit]]
+==== `[.contract-item-name]#++permit++#++(ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256, deadline: u64, signature: Span<felt252>) → bool++` [.item-kind]#external#
+
+Sets `amount` as the allowance of `spender` over ``owner``'s tokens after validating the
+signature.
+
+Requirements:
+
+- `owner` is a deployed account contract.
+- `spender` is not the zero address.
+- `deadline` is not a timestamp in the past.
+- `signature` is a valid signature that can be validated with a call to `owner` account.
+- `signature` must use the current nonce of the `owner`.
+
+Emits an <<ERC20-Approval,Approval>> event.
+Every successful call increases `owner`'s nonce by one.
+
+[.contract-item]
+[[ERC20Component-nonces]]
+==== `[.contract-item-name]#++nonces++#++(self: @ContractState, owner: ContractAddress) → felt252++` [.item-kind]#external#
+
+Returns the current nonce of `owner`. A nonce value must be included 
+whenever a signature for `permit` call is generated.
+
+[.contract-item]
+[[ERC20Component-DOMAIN_SEPARATOR]]
+==== `[.contract-item-name]#++DOMAIN_SEPARATOR++#++(self: @ContractState) → felt252++` [.item-kind]#external#
+
+Returns the domain separator used in generating a message hash for `permit` signature. 
+The domain hashing logic follows the {snip-12} standard.
+
+[.contract-item]
+[[ERC20Component-snip12_metadata]]
+==== `[.contract-item-name]#++snip12_metadata++#++(self: @ContractState) → (felt252, felt252)++` [.item-kind]#external#
+
+Returns the domain name and version used to generate the message hash for permit signature.
+
+The returned tuple contains:
+
+- `t.0`: The name used in the {snip12-metadata} implementation.
+- `t.1`: The version used in the {snip12-metadata} implementation.
+
+[#ERC20Component-Internal-functions]
+==== Internal functions
+
+[.contract-item]
+[[ERC20Component-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ContractState, name: ByteArray, symbol: ByteArray)++` [.item-kind]#internal#
+
+Initializes the contract by setting the token name and symbol.
+This should be used inside of the contract's constructor.
+
+[.contract-item]
+[[ERC20Component-mint]]
+==== `[.contract-item-name]#++mint++#++(ref self: ContractState, recipient: ContractAddress, amount: u256)++` [.item-kind]#internal#
+
+Creates an `amount` number of tokens and assigns them to `recipient`.
+
+Emits a <<ERC20Component-Transfer,Transfer>> event with `from` being the zero address.
+
+Requirements:
+
+- `recipient` cannot be the zero address.
+
+[.contract-item]
+[[ERC20Component-burn]]
+==== `[.contract-item-name]#++burn++#++(ref self: ContractState, account: ContractAddress, amount: u256)++` [.item-kind]#internal#
+
+Destroys `amount` number of tokens from `account`.
+
+Emits a <<ERC20Component-Transfer,Transfer>> event with `to` set to the zero address.
+
+Requirements:
+
+- `account` cannot be the zero address.
+
+[.contract-item]
+[[ERC20Component-update]]
+==== `[.contract-item-name]#++update++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256)++` [.item-kind]#internal#
+
+Transfers an `amount` of tokens from `from` to `to`, or alternatively mints (or burns) if `from` (or `to`) is
+the zero address.
+
+NOTE: This function can be extended using the xref:ERC20Component-ERC20HooksTrait[ERC20HooksTrait], to add
+functionality before and/or after the transfer, mint, or burn.
+
+Emits a <<ERC20Component-Transfer,Transfer>> event.
+
+[.contract-item]
+[[ERC20Component-_transfer]]
+==== `[.contract-item-name]#++_transfer++#++(ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256)++` [.item-kind]#internal#
+
+Moves `amount` of tokens from `from` to `to`.
+
+This internal function does not check for access permissions but can be useful as a building block, for example to implement automatic token fees, slashing mechanisms, etc.
+
+Emits a <<ERC20Component-Transfer,Transfer>> event.
+
+Requirements:
+
+- `from` cannot be the zero address.
+- `to` cannot be the zero address.
+- `from` must have a balance of at least `amount`.
+
+[.contract-item]
+[[ERC20Component-_approve]]
+==== `[.contract-item-name]#++_approve++#++(ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256)++` [.item-kind]#internal#
+
+Sets `amount` as the allowance of `spender` over ``owner``'s tokens.
+
+This internal function does not check for access permissions but can be useful as a building block, for example to implement automatic allowances on behalf of other addresses.
+
+Emits an <<ERC20Component-Approval,Approval>> event.
+
+Requirements:
+
+- `owner` cannot be the zero address.
+- `spender` cannot be the zero address.
+
+[.contract-item]
+[[ERC20Component-_spend_allowance]]
+==== `[.contract-item-name]#++_spend_allowance++#++(ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256)++` [.item-kind]#internal#
+
+Updates ``owner``'s allowance for `spender` based on spent `amount`.
+
+This internal function does not update the allowance value in the case of infinite allowance.
+
+Possibly emits an <<ERC20Component-Approval,Approval>> event.
+
+[#ERC20Component-Events]
+==== Events
+
+[.contract-item]
+[[ERC20Component-Transfer]]
+==== `[.contract-item-name]#++Transfer++#++(from: ContractAddress, to: ContractAddress, value: u256)++` [.item-kind]#event#
+
+See <<IERC20-Transfer,IERC20::Transfer>>.
+
+[.contract-item]
+[[ERC20Component-Approval]]
+==== `[.contract-item-name]#++Approval++#++(owner: ContractAddress, spender: ContractAddress, value: u256)++` [.item-kind]#event#
+
+See <<IERC20-Approval,IERC20::Approval>>.
+
+== Extensions
+
+[.contract]
+[[IERC20Permit]]
+=== `++IERC20Permit++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc20/interface.cairo#L19[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc20::interface::IERC20Permit;
+```
+
+Interface of the ERC20Permit standard to support gasless token approvals as defined in {eip-2612}.
+
+[.contract-index]
+.Functions
+--
+* xref:#IERC20Permit-permit[`++permit(owner, spender, amount, deadline, signature)++`]
+* xref:#IERC20Permit-nonces[`++nonces(owner)++`]
+* xref:#IERC20Permit-DOMAIN_SEPARATOR[`++DOMAIN_SEPARATOR()++`]
+--
+
+[#IERC20Permit-Functions]
+==== Functions
+
+[.contract-item]
+[[IERC20Permit-permit]]
+==== `[.contract-item-name]#++permit++#++(owner: ContractAddress, spender: ContractAddress, amount: u256, deadline: u64, signature: Span<felt252>)++` [.item-kind]#external#
+
+Sets `amount` as the allowance of `spender` over ``owner``'s tokens after validating the signature.
+
+[.contract-item]
+[[IERC20Permit-nonces]]
+==== `[.contract-item-name]#++nonces++#++(owner: ContractAddress) → felt252++` [.item-kind]#external#
+
+Returns the current nonce of `owner`. A nonce value must be included 
+whenever a signature for `permit` call is generated.
+
+[.contract-item]
+[[IERC20Permit-DOMAIN_SEPARATOR]]
+==== `[.contract-item-name]#++DOMAIN_SEPARATOR++#++() → felt252++` [.item-kind]#external#
+
+Returns the domain separator used in generating a message hash for `permit` signature.
+The domain hashing logic follows the {snip-12} standard.
+
+[.contract]
+[[IERC4626]]
+=== `++IERC4626++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc20/extensions/erc4626/interface.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc20::extensions::erc4626::interface::IERC4626;
+```
+
+Interface of the IERC4626 standard as defined in {eip4626}.
+
+[.contract-index]
+.Functions
+--
+* xref:#IERC4626-asset[`++asset()++`]
+* xref:#IERC4626-total_assets[`++total_assets()++`]
+* xref:#IERC4626-convert_to_shares[`++convert_to_shares(assets)++`]
+* xref:#IERC4626-convert_to_assets[`++convert_to_assets(shares)++`]
+* xref:#IERC4626-max_deposit[`++max_deposit(receiver)++`]
+* xref:#IERC4626-preview_deposit[`++preview_deposit(assets)++`]
+* xref:#IERC4626-deposit[`++deposit(assets, receiver)++`]
+* xref:#IERC4626-max_mint[`++max_mint(receiver)++`]
+* xref:#IERC4626-preview_mint[`++preview_mint(shares)++`]
+* xref:#IERC4626-mint[`++mint(shares, receiver)++`]
+* xref:#IERC4626-max_withdraw[`++max_withdraw(owner)++`]
+* xref:#IERC4626-preview_withdraw[`++preview_withdraw(assets)++`]
+* xref:#IERC4626-withdraw[`++withdraw(assets, receiver, owner)++`]
+* xref:#IERC4626-max_redeem[`++max_redeem(owner)++`]
+* xref:#IERC4626-preview_redeem[`++preview_redeem(shares)++`]
+* xref:#IERC4626-redeem[`++redeem(shares, receiver, owner)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#IERC4626-Deposit[`++Deposit(sender, owner, assets, shares)++`]
+* xref:#IERC4626-Withdraw[`++Withdraw(sender, receiver, owner, assets, shares)++`]
+--
+
+[#IERC4626-Functions]
+==== Functions
+
+[.contract-item]
+[[IERC4626-asset]]
+==== `[.contract-item-name]#++asset++#++() → ContractAddress++` [.item-kind]#external#
+
+Returns the address of the underlying token used for the Vault for accounting, depositing,
+and withdrawing.
+
+Requirements:
+
+- MUST be an ERC20 token contract.
+- MUST NOT panic.
+
+[.contract-item]
+[[IERC4626-total_assets]]
+==== `[.contract-item-name]#++total_assets++#++() → u256++` [.item-kind]#external#
+
+Returns the total amount of the underlying asset that is “managed” by Vault.
+
+Requirements:
+
+- SHOULD include any compounding that occurs from yield.
+- MUST be inclusive of any fees that are charged against assets in the Vault.
+- MUST NOT panic.
+
+[.contract-item]
+[[IERC4626-convert_to_shares]]
+==== `[.contract-item-name]#++convert_to_shares++#++(assets: u256) → u256++` [.item-kind]#external#
+
+Returns the amount of shares that the Vault would exchange for the amount of `assets`
+provided irrespective of slippage or fees.
+
+Requirements:
+
+- MUST NOT be inclusive of any fees that are charged against assets in the Vault.
+- MUST NOT show any variations depending on the caller.
+- MUST NOT reflect slippage or other on-chain conditions, when performing the actual exchange.
+- MUST NOT panic unless due to integer overflow caused by an unreasonably large input.
+- MUST round down towards 0.
+
+NOTE: This calculation MAY NOT reflect the "per-user" price-per-share, and instead should
+reflect the "average-user's" price-per-share, meaning what the average user should expect to
+see when exchanging to and from.
+
+[.contract-item]
+[[IERC4626-convert_to_assets]]
+==== `[.contract-item-name]#++convert_to_assets++#++(shares: u256) → u256++` [.item-kind]#external#
+
+Returns the amount of assets that the Vault would exchange for the amount of `shares`
+provided irrespective of slippage or fees.
+
+Requirements:
+
+- MUST NOT be inclusive of any fees that are charged against assets in the Vault.
+- MUST NOT show any variations depending on the caller.
+- MUST NOT reflect slippage or other on-chain conditions, when performing the actual exchange.
+- MUST NOT panic unless due to integer overflow caused by an unreasonably large input.
+- MUST round down towards 0.
+
+NOTE: This calculation MAY NOT reflect the “per-user” price-per-share, and instead
+should reflect the “average-user’s” price-per-share, meaning what the average user
+should expect to see when exchanging to and from.
+
+[.contract-item]
+[[IERC4626-max_deposit]]
+==== `[.contract-item-name]#++max_deposit++#++(receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of the underlying asset that can be deposited into the Vault for
+`receiver`, through a deposit call.
+
+Requirements:
+
+- MUST return a limited value if receiver is subject to some deposit limit.
+- MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of assets that may be
+  deposited.
+- MUST NOT panic.
+
+[.contract-item]
+[[IERC4626-preview_deposit]]
+==== `[.contract-item-name]#++preview_deposit++#++(assets: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their deposit at the current
+block, given current on-chain conditions.
+
+Requirements:
+
+- MUST return as close to and no more than the exact amount of Vault shares that would be
+  minted in a deposit call in the same transaction i.e. <<IERC4626-deposit,IERC4626::deposit>> should return the same or more
+  shares as `preview_deposit` if called in the same transaction.
+- MUST NOT account for deposit limits like those returned from <<IERC4626-max_deposit,IERC4626::max_deposit>> and should always
+  act as though the deposit would be accepted, regardless if the user has enough tokens
+  approved, etc.
+- MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit
+  fees.
+- MUST NOT panic.
+
+NOTE: Any unfavorable discrepancy between <<IERC4626-convert_to_shares,IERC4626::convert_to_shares>> and `preview_deposit`
+SHOULD be considered slippage in share price or some other type of condition, meaning the
+depositor will lose assets by depositing.
+
+[.contract-item]
+[[IERC4626-deposit]]
+==== `[.contract-item-name]#++deposit++#++(assets: u256, receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Mints Vault shares to `receiver` by depositing exactly amount of `assets`.
+
+Requirements:
+
+- MUST emit the <<IERC4626-Deposit,IERC4626::Deposit>> event.
+- MAY support an additional flow in which the underlying tokens are owned by the Vault
+  contract before the deposit execution, and are accounted for during deposit.
+- MUST panic if all of assets cannot be deposited (due to deposit limit being reached,
+  slippage, the user not approving enough underlying tokens to the Vault contract, etc).
+
+NOTE: Most implementations will require pre-approval of the Vault with the Vault’s
+underlying asset token.
+
+[.contract-item]
+[[IERC4626-max_mint]]
+==== `[.contract-item-name]#++max_mint++#++(receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of the Vault shares that can be minted for the receiver, through
+a mint call.
+
+Requirements:
+
+- MUST return a limited value if receiver is subject to some mint limit.
+- MUST return 2 ** 256 - 1 if there is no limit on the maximum amount of shares that may be
+  minted.
+- MUST NOT panic.
+
+[.contract-item]
+[[IERC4626-preview_mint]]
+==== `[.contract-item-name]#++preview_mint++#++(shares: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their mint at the current
+block, given current on-chain conditions.
+
+Requirements:
+
+- MUST return as close to and no fewer than the exact amount of assets that would be deposited
+  in a `mint` call in the same transaction. I.e. <<IERC4626-mint,IERC4626::mint>> should return the same or fewer assets
+  as `preview_mint` if called in the same transaction.
+- MUST NOT account for mint limits like those returned from <<IERC4626-max_mint,IERC4626::max_mint>> and should always act
+  as though the mint would be accepted, regardless if the user has enough tokens approved,
+  etc.
+- MUST be inclusive of deposit fees. Integrators should be aware of the existence of deposit
+  fees.
+- MUST NOT panic.
+
+NOTE: Any unfavorable discrepancy between <<IERC4626-convert_to_assets,IERC4626::convert_to_assets>> and
+`preview_mint` SHOULD be considered slippage in share price or some other type of condition,
+meaning the depositor will lose assets by minting.
+
+[.contract-item]
+[[IERC4626-mint]]
+==== `[.contract-item-name]#++mint++#++(shares: u256, receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Mints exactly shares Vault shares to receiver by depositing amount of underlying tokens.
+
+Requirements:
+
+- MUST emit the <<IERC4626-Deposit,IERC4626::Deposit>> event.
+- MAY support an additional flow in which the underlying tokens are owned by the Vault
+  contract before the mint execution, and are accounted for during mint.
+- MUST panic if all of shares cannot be minted (due to deposit limit being reached, slippage,
+  the user not approving enough underlying tokens to the Vault contract, etc).
+
+NOTE: Most implementations will require pre-approval of the Vault with the Vault’s
+underlying asset token.
+
+[.contract-item]
+[[IERC4626-max_withdraw]]
+==== `[.contract-item-name]#++max_withdraw++#++(owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of the underlying asset that can be withdrawn from the owner
+balance in the Vault, through a withdraw call.
+
+Requirements:
+
+- MUST return a limited value if owner is subject to some withdrawal limit or timelock.
+- MUST NOT panic.
+
+[.contract-item]
+[[IERC4626-preview_withdraw]]
+==== `[.contract-item-name]#++preview_withdraw++#++(assets: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their withdrawal at the
+current block, given current on-chain conditions.
+
+Requirements:
+
+- MUST return as close to and no fewer than the exact amount of Vault shares that would be
+  burned in a withdraw call in the same transaction i.e. <<IERC4626-withdraw,IERC4626::withdraw>> should return the same or
+  fewer shares as `preview_withdraw` if called in the same transaction.
+- MUST NOT account for withdrawal limits like those returned from <<IERC4626-max_withdraw,IERC4626::max_withdraw>> and should
+  always act as though the withdrawal would be accepted, regardless if the user has enough
+  shares, etc.
+- MUST be inclusive of withdrawal fees. Integrators should be aware of the existence of
+  withdrawal fees.
+- MUST NOT panic.
+
+NOTE: Any unfavorable discrepancy between <<IERC4626-convert_to_shares,IERC4626::convert_to_shares>> and `preview_withdraw`
+SHOULD be considered slippage in share price or some other type of condition, meaning the
+depositor will lose assets by depositing.
+
+[.contract-item]
+[[IERC4626-withdraw]]
+==== `[.contract-item-name]#++withdraw++#++(assets: u256, receiver: ContractAddress, owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Burns shares from owner and sends exactly assets of underlying tokens to receiver.
+
+Requirements:
+
+- MUST emit the <<IERC4626-Withdraw,IERC4626::Withdraw>> event.
+- MAY support an additional flow in which the underlying tokens are owned by the Vault
+  contract before the withdraw execution, and are accounted for during withdraw.
+- MUST revert if all of assets cannot be withdrawn (due to withdrawal limit being reached,
+  slippage, the owner not having enough shares, etc).
+
+NOTE: Some implementations will require pre-requesting to the Vault before a withdrawal
+may be performed.
+Those methods should be performed separately.
+
+[.contract-item]
+[[IERC4626-max_redeem]]
+==== `[.contract-item-name]#++max_redeem++#++(owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of Vault shares that can be redeemed from the owner balance in
+the Vault, through a redeem call.
+
+Requirements:
+
+- MUST return a limited value if owner is subject to some withdrawal limit or timelock.
+- MUST return `ERC20::balance_of(owner)` if `owner` is not subject to any withdrawal limit or
+  timelock.
+- MUST NOT panic.
+
+[.contract-item]
+[[IERC4626-preview_redeem]]
+==== `[.contract-item-name]#++preview_redeem++#++(shares: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their redeemption at the
+current block, given current on-chain conditions.
+
+Requirements:
+
+- MUST return as close to and no more than the exact amount of assets that would be withdrawn
+  in a redeem call in the same transaction i.e. <<IERC4626-redeem,IERC4626::redeem>> should return the same or more assets
+  as preview_redeem if called in the same transaction.
+- MUST NOT account for redemption limits like those returned from <<IERC4626-max_redeem,IERC4626::max_redeem>> and should always
+  act as though the redemption would be accepted, regardless if the user has enough shares,
+  etc.
+- MUST be inclusive of withdrawal fees. Integrators should be aware of the existence of
+  withdrawal fees.
+- MUST NOT panic.
+
+NOTE: Any unfavorable discrepancy between <<IERC4626-convert_to_assets,IERC4626::convert_to_assets>> and `preview_redeem` SHOULD be
+considered slippage in share price or some other type of condition, meaning the depositor
+will lose assets by redeeming.
+
+[.contract-item]
+[[IERC4626-redeem]]
+==== `[.contract-item-name]#++redeem++#++(shares: u256, receiver: ContractAddress, owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Burns exactly shares from owner and sends assets of underlying tokens to receiver.
+
+Requirements:
+
+- MUST emit the <<IERC4626-Withdraw,IERC4626::Withdraw>> event.
+- MAY support an additional flow in which the underlying tokens are owned by the Vault
+  contract before the redeem execution, and are accounted for during redeem.
+- MUST revert if all of shares cannot be redeemed (due to withdrawal limit being reached,
+  slippage, the owner not having enough shares, etc).
+
+NOTE: Some implementations will require pre-requesting to the Vault before a withdrawal may be performed.
+Those methods should be performed separately.
+
+[#IERC4626-Events]
+==== Events
+
+[.contract-item]
+[[IERC4626-Deposit]]
+==== `[.contract-item-name]#++Deposit++#++(sender: ContractAddress, owner: ContractAddress, assets: u256, shares: u256)++` [.item-kind]#event#
+
+Emitted when `sender` exchanges `assets` for `shares` and transfers those
+`shares` to `owner`.
+
+[.contract-item]
+[[IERC4626-Withdraw]]
+==== `[.contract-item-name]#++Withdraw++#++(sender: ContractAddress, receiver: ContractAddress, owner: ContractAddress, assets: u256, shares: u256)++` [.item-kind]#event#
+
+Emitted when `sender` exchanges `shares`, owned by `owner`, for `assets` and transfers
+those `assets` to `receiver`.
+
+[.contract]
+[[ERC4626Component]]
+=== `++ERC4626Component++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc20/extensions/erc4626/interface.cairo#L19[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc20::extensions::erc4626::ERC4626Component;
+```
+
+Extension of ERC20 that implements the <<IERC4626,IERC4626>> interface which allows the minting and burning of "shares" in exchange for an underlying "asset."
+The component leverages traits to configure fees, limits, and decimals.
+
+CAUTION: Note on hooks. Special care must be taken when calling external contracts from them. In
+that case, consider implementing reentrancy protections. For example, in the
+`withdraw` flow, the `withdraw_limit` is checked *before* the `before_withdraw` hook
+is invoked. If this hook performs a reentrant call that invokes `withdraw` again, the
+subsequent check on `withdraw_limit` will be done before the first withdrawal’s core logic
+(e.g., burning shares and transferring assets) is executed. This could
+lead to bypassing withdrawal constraints or draining funds.
+
+[.contract-index]
+.{immutable-config}
+--
+.constants
+* xref:#ERC4626Component-IC-UNDERLYING_DECIMALS[`++UNDERLYING_DECIMALS++`]
+* xref:#ERC4626Component-IC-DECIMALS_OFFSET[`++DECIMALS_OFFSET++`]
+
+.functions
+* xref:#ERC4626Component-IC-validate[`++validate()++`]
+--
+
+[.contract-index]
+.Hooks
+--
+[.sub-index#ERC4626Component-FeeConfigTrait]
+.FeeConfigTrait
+* xref:#ERC4626Component-adjust_deposit[`++adjust_deposit(self, assets)++`]
+* xref:#ERC4626Component-adjust_mint[`++adjust_mint(self, assets)++`]
+* xref:#ERC4626Component-adjust_withdraw[`++adjust_withdraw(self, assets)++`]
+* xref:#ERC4626Component-adjust_redeem[`++adjust_redeem(self, assets)++`]
+
+[.sub-index#ERC4626Component-LimitConfigTrait]
+.LimitConfigTrait
+* xref:#ERC4626Component-deposit_limit[`++deposit_limit(self, receiver)++`]
+* xref:#ERC4626Component-mint_limit[`++mint_limit(self, receiver)++`]
+* xref:#ERC4626Component-withdraw_limit[`++withdraw_limit(self, owner)++`]
+* xref:#ERC4626Component-redeem_limit[`++redeem_limit(self, owner)++`]
+
+[.sub-index#ERC4626Component-ERC4626HooksTrait]
+.ERC4626HooksTrait
+* xref:#ERC4626Component-before_withdraw[`++before_withdraw(self, assets, shares)++`]
+* xref:#ERC4626Component-after_deposit[`++after_deposit(self, assets, shares)++`]
+--
+
+[.contract-index#ERC4626Component-Embeddable-Impls]
+.Embeddable Implementations
+--
+
+.ERC4626Impl
+* xref:#ERC4626Component-asset[`++asset(self)++`]
+* xref:#ERC4626Component-total_assets[`++total_assets(self)++`]
+* xref:#ERC4626Component-convert_to_shares[`++convert_to_shares(self, assets)++`]
+* xref:#ERC4626Component-convert_to_assets[`++convert_to_assets(self, shares)++`]
+* xref:#ERC4626Component-max_deposit[`++max_deposit(self, receiver)++`]
+* xref:#ERC4626Component-preview_deposit[`++preview_deposit(self, assets)++`]
+* xref:#ERC4626Component-deposit[`++deposit(self, assets, receiver)++`]
+* xref:#ERC4626Component-max_mint[`++max_mint(self, receiver)++`]
+* xref:#ERC4626Component-preview_mint[`++preview_mint(self, shares)++`]
+* xref:#ERC4626Component-mint[`++mint(self, shares, receiver)++`]
+* xref:#ERC4626Component-max_withdraw[`++max_withdraw(self, owner)++`]
+* xref:#ERC4626Component-preview_withdraw[`++preview_withdraw(self, assets)++`]
+* xref:#ERC4626Component-withdraw[`++withdraw(self, assets, receiver, owner)++`]
+* xref:#ERC4626Component-max_redeem[`++max_redeem(self, owner)++`]
+* xref:#ERC4626Component-preview_redeem[`++preview_redeem(self, shares)++`]
+* xref:#ERC4626Component-redeem[`++redeem(self, shares, receiver, owner)++`]
+
+.ERC20Impl
+* xref:#ERC20Component-total_supply[`++total_supply(self)++`]
+* xref:#ERC20Component-balance_of[`++balance_of(self, account)++`]
+* xref:#ERC20Component-allowance[`++allowance(self, owner, spender)++`]
+* xref:#ERC20Component-transfer[`++transfer(self, recipient, amount)++`]
+* xref:#ERC20Component-transfer_from[`++transfer_from(self, sender, recipient, amount)++`]
+* xref:#ERC20Component-approve[`++approve(self, spender, amount)++`]
+
+.ERC4626MetadataImpl
+* xref:#ERC4626Component-name[`++name(self)++`]
+* xref:#ERC4626Component-symbol[`++symbol(self)++`]
+* xref:#ERC4626Component-decimals[`++decimals(self)++`]
+
+--
+
+[.contract-index]
+.Internal functions
+--
+.InternalImpl
+* xref:#ERC4626Component-initializer[`++initializer(self, asset_address)++`]
+* xref:#ERC4626Component-_deposit[`++_deposit(self, caller, receiver, assets, shares)++`]
+* xref:#ERC4626Component-_withdraw[`++_withdraw(self, caller, receiver, owner, assets, shares)++`]
+* xref:#ERC4626Component-_convert_to_shares[`++_convert_to_shares(self, assets, rounding)++`]
+* xref:#ERC4626Component-_convert_to_assets[`++_convert_to_assets(self, shares, rounding)++`]
+--
+
+[#ERC4626Component-Immutable-Config]
+==== Immutable Config
+
+[.contract-item]
+[[ERC4626Component-IC-UNDERLYING_DECIMALS]]
+==== `[.contract-item-name]#++UNDERLYING_DECIMALS:++#++ u128++` [.item-kind]#constant#
+
+Should match the underlying asset's decimals.
+The default value is `18`.
+
+[.contract-item]
+[[ERC4626Component-IC-DECIMALS_OFFSET]]
+==== `[.contract-item-name]#++DECIMALS_OFFSET:++#++ u128++` [.item-kind]#constant#
+
+Corresponds to the representational offset between `UNDERLYING_DECIMALS` and the vault decimals.
+The greater the offset, the more expensive it is for attackers to execute an inflation attack.
+
+[.contract-item]
+[[ERC4626Component-IC-validate]]
+==== `[.contract-item-name]#++validate++#++()++` [.item-kind]#internal#
+
+Validates the given implementation of the contract's configuration.
+
+Requirements:
+
+- `UNDERLYING_DECIMALS`  + `DECIMALS_OFFSET` cannot exceed 255 (max u8).
+
+NOTE: This function is called by the contract's initializer.
+
+[#ERC4626Component-Hooks]
+==== Hooks
+
+Hooks are functions which implementations can extend the functionality of the component source code.
+Every contract using ERC4626Component is expected to provide an implementation of the ERC4626HooksTrait.
+For basic token contracts, an empty implementation with no logic must be provided.
+
+TIP: You can use `openzeppelin_token::erc20::extensions::erc4626::ERC4626HooksEmptyImpl` which is already available as part of the library for this purpose.
+
+==== FeeConfigTrait
+
+:mock-ex: https://github.com/OpenZeppelin/cairo-contracts/tree/main/packages/test_common/src/mocks/erc4626.cairo[ERC4626FeesMock example]
+
+Adjustments for fees expected to be defined at the contract level.
+Defaults to no entry or exit fees.
+
+NOTE: The FeeConfigTrait hooks directly into the preview methods of the ERC4626 component.
+The preview methods must return as close to the exact amount of shares or assets as possible if the actual (previewed) operation occurred in the same transaction (according to {eip4626} spec).
+All operations use their corresponding preview method as the value of assets or shares being moved.
+Therefore, adjusting an operation's assets in FeeConfigTrait consequently adjusts the assets (or assets to be converted into shares) in both the preview operation and the actual operation.
+
+NOTE: To transfer fees, this trait needs to be coordinated with `ERC4626Component::ERC4626Hooks`.
+See the {mock-ex}.
+
+[.contract-item]
+[[ERC4626Component-adjust_deposit]]
+==== `[.contract-item-name]#++adjust_deposit++#++(ref self: ContractState, assets: u256, shares: u256)++` [.item-kind]#hook#
+
+Adjusts deposits within <<ERC4626Component-preview_deposit,preview_deposit>> to account for entry fees.
+Entry fees should be transferred in the <<ERC4626Component-after_deposit,after_deposit>> hook.
+
+[.contract-item]
+[[ERC4626Component-adjust_mint]]
+==== `[.contract-item-name]#++adjust_mint++#++(ref self: ContractState, assets: u256, shares: u256)++` [.item-kind]#hook#
+
+Adjusts deposits within <<ERC4626Component-preview_mint,preview_mint>> to account for entry fees.
+Entry fees should be transferred in the <<ERC4626Component-after_deposit,after_deposit>> hook.
+
+[.contract-item]
+[[ERC4626Component-adjust_withdraw]]
+==== `[.contract-item-name]#++adjust_withdraw++#++(ref self: ContractState, assets: u256, shares: u256)++` [.item-kind]#hook#
+
+Adjusts withdraws within <<ERC4626Component-preview_withdraw,preview_withdraw>> to account for exit fees.
+Exit fees should be transferred in the <<ERC4626Component-before_withdraw,before_withdraw>> hook.
+
+[.contract-item]
+[[ERC4626Component-adjust_redeem]]
+==== `[.contract-item-name]#++adjust_redeem++#++(ref self: ContractState, assets: u256, shares: u256)++` [.item-kind]#hook#
+
+Adjusts withdraws within <<ERC4626Component-preview_redeem,preview_redeem>> to account for exit fees.
+Exit fees should be transferred in the <<ERC4626Component-before_withdraw,before_withdraw>> hook.
+
+==== LimitConfigTrait
+
+Sets limits to the target exchange type and is expected to be defined at the contract
+level. These limits correspond directly to the `max_<OPERATION>` i.e. `deposit_limit` -> `max_deposit`.
+
+NOTE: The {eip4626} spec states that the `max_<OPERATION>` methods must take into account all
+global and user-specific limits.
+If an operation is disabled (even temporarily), the corresponding limit MUST be `0`
+and MUST NOT panic.
+
+[.contract-item]
+[[ERC4626Component-deposit_limit]]
+==== `[.contract-item-name]#++deposit_limit++#++(ref self: ContractState, receiver: ContractAddress) -> Option<u256>++` [.item-kind]#hook#
+
+The max deposit allowed.
+
+Defaults (`Option::None`) to 2 ** 256 - 1.
+
+[.contract-item]
+[[ERC4626Component-mint_limit]]
+==== `[.contract-item-name]#++mint_limit++#++(ref self: ContractState, receiver: ContractAddress) -> Option<u256>++` [.item-kind]#hook#
+
+The max mint allowed.
+
+Defaults (`Option::None`) to 2 ** 256 - 1.
+
+[.contract-item]
+[[ERC4626Component-withdraw_limit]]
+==== `[.contract-item-name]#++withdraw_limit++#++(ref self: ContractState, owner: ContractAddress) -> Option<u256>++` [.item-kind]#hook#
+
+The max withdraw allowed.
+
+Defaults (`Option::None`) to the full asset balance of `owner` converted from shares.
+
+[.contract-item]
+[[ERC4626Component-redeem_limit]]
+==== `[.contract-item-name]#++redeem_limit++#++(ref self: ContractState, owner: ContractAddress) -> Option<u256>++` [.item-kind]#hook#
+
+The max redeem allowed.
+
+Defaults (`Option::None`) to the full asset balance of `owner`.
+
+==== ERC4626HooksTrait
+
+Allows contracts to hook logic into deposit and withdraw transactions.
+This is where contracts can transfer fees.
+
+NOTE: ERC4626 preview methods must be inclusive of any entry or exit fees.
+The `AdjustFeesTrait` will adjust these values accordingly; therefore,
+fees must be set in the `AdjustFeesTrait` if the using contract enforces entry or exit fees.
+See the {mock-ex}.
+
+[.contract-item]
+[[ERC4626Component-before_withdraw]]
+==== `[.contract-item-name]#++before_withdraw++#++(ref self: ContractState, assets: u256, shares: u256)++` [.item-kind]#hook#
+
+Hooks into xref:#ERC4626Component-_withdraw[_withdraw].
+
+Executes logic before burning shares and transferring assets.
+
+[.contract-item]
+[[ERC4626Component-after_deposit]]
+==== `[.contract-item-name]#++after_deposit++#++(ref self: ContractState, assets: u256, shares: u256)++` [.item-kind]#hook#
+
+Hooks into xref:#ERC4626Component-_deposit[_deposit].
+
+Executes logic after transferring assets and minting shares.
+
+==== Embeddable functions
+
+[.contract-item]
+[[ERC4626Component-asset]]
+==== `[.contract-item-name]#++asset++#++(self: @ContractState) → ContractAddress++` [.item-kind]#external#
+
+Returns the address of the underlying token used for the Vault for accounting, depositing, and withdrawing.
+
+[.contract-item]
+[[ERC4626Component-total_assets]]
+==== `[.contract-item-name]#++total_assets++#++(self: @ContractState) → u256++` [.item-kind]#external#
+
+Returns the total amount of the underlying asset that is “managed” by Vault.
+
+[.contract-item]
+[[ERC4626Component-convert_to_shares]]
+==== `[.contract-item-name]#++convert_to_shares++#++(self: @ContractState, assets: u256) → u256++` [.item-kind]#external#
+
+Returns the amount of shares that the Vault would exchange for the amount of assets provided irrespective of slippage or fees.
+
+NOTE: As per the {eip4626} spec, this may panic _only_ if there's an overflow from an unreasonably large input.
+
+[.contract-item]
+[[ERC4626Component-convert_to_assets]]
+==== `[.contract-item-name]#++convert_to_assets++#++(self: @ContractState, shares: u256) → u256++` [.item-kind]#external#
+
+Returns the amount of assets that the Vault would exchange for the amount of shares provided irrespective of slippage or fees.
+
+NOTE: As per the {eip4626} spec, this may panic _only_ if there's an overflow from an unreasonably large input.
+
+[.contract-item]
+[[ERC4626Component-max_deposit]]
+==== `[.contract-item-name]#++max_deposit++#++(self: @ContractState, receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of the underlying asset that can be deposited into the Vault for the `receiver`, through a <<ERC4626Component-deposit,deposit>> call.
+
+The default max deposit value is 2 ** 256 - 1.
+
+This can be changed in the implementing contract by defining custom logic in
+<<ERC4626Component-deposit_limit,LimitConfigTrait::deposit_limit>>.
+
+[.contract-item]
+[[ERC4626Component-preview_deposit]]
+==== `[.contract-item-name]#++preview_deposit++#++(self: @ContractState, assets: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their deposit at the
+current block, given current on-chain conditions.
+
+The default deposit preview value is the full amount of shares.
+This can be changed to account for fees, for example, in the implementing contract by
+defining custom logic in <<ERC4626Component-adjust_deposit,LimitConfigTrait::adjust_deposit>>.
+
+NOTE: This method must be inclusive of entry fees to be compliant with the {eip4626} spec.
+
+[.contract-item]
+[[ERC4626Component-deposit]]
+==== `[.contract-item-name]#++deposit++#++(ref self: ContractState, assets: u256, receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Mints Vault shares to `receiver` by depositing exactly `assets` of underlying tokens.
+Returns the amount of newly-minted shares.
+
+Requirements:
+
+- `assets` is less than or equal to the max deposit amount for `receiver`.
+
+Emits a <<IERC4626-Deposit,Deposit>> event.
+
+[.contract-item]
+[[ERC4626Component-max_mint]]
+==== `[.contract-item-name]#++max_mint++#++(self: @ContractState, receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of the Vault shares that can be minted for `receiver` through
+a <<ERC4626Component-mint,mint>> call.
+
+The default max mint value is 2 ** 256 - 1.
+
+This can be changed in the implementing contract by defining custom logic in <<ERC4626Component-mint_limit,LimitConfigTrait::mint_limit>>.
+
+[.contract-item]
+[[ERC4626Component-preview_mint]]
+==== `[.contract-item-name]#++preview_mint++#++(self: @ContractState, shares: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their mint at the
+current block, given current on-chain conditions.
+
+The default mint preview value is the full amount of assets.
+This can be changed to account for fees, for example, in the implementing contract by
+defining custom logic in <<ERC4626Component-adjust_mint,LimitConfigTrait::adjust_mint>>.
+
+NOTE: This method must be inclusive of entry fees to be compliant with the {eip4626} spec.
+
+[.contract-item]
+[[ERC4626Component-mint]]
+==== `[.contract-item-name]#++mint++#++(self: @ContractState, shares: u256, receiver: ContractAddress) → u256++` [.item-kind]#external#
+
+Mints exactly Vault `shares` to `receiver` by depositing amount of underlying tokens.
+Returns the amount deposited assets.
+
+Requirements:
+
+- `shares` is less than or equal to the max shares amount for `receiver`.
+
+Emits a <<IERC4626-Deposit,Deposit>> event.
+
+[.contract-item]
+[[ERC4626Component-max_withdraw]]
+==== `[.contract-item-name]#++max_withdraw++#++(self: @ContractState, owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of the underlying asset that can be withdrawn from the owner
+balance in the Vault, through a <<ERC4626Component-withdraw,withdraw>> call.
+
+The default max withdraw value is the full balance of assets for `owner` (converted from shares).
+This can be changed in the implementing contract by defining custom logic in <<ERC4626Component-withdraw_limit,LimitConfigTrait::withdraw_limit>>.
+
+NOTE: With customized limits, the maximum withdraw amount will either be the custom limit itself
+or ``owner``'s total asset balance, whichever value is less.
+
+[.contract-item]
+[[ERC4626Component-preview_withdraw]]
+==== `[.contract-item-name]#++preview_withdraw++#++(self: @ContractState, assets: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their withdrawal at the
+current block, given current on-chain conditions.
+
+The default withdraw preview value is the full amount of shares.
+This can be changed to account for fees, for example, in the implementing contract by defining custom logic in <<ERC4626Component-adjust_withdraw,LimitConfigTrait::adjust_withdraw>>.
+
+NOTE: This method must be inclusive of exit fees to be compliant with the {eip4626} spec.
+
+[.contract-item]
+[[ERC4626Component-withdraw]]
+==== `[.contract-item-name]#++withdraw++#++(self: @ContractState, assets: u256, receiver: ContractAddress, owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Burns shares from `owner` and sends exactly `assets` of underlying tokens to `receiver`.
+
+Requirements:
+
+- `assets` is less than or equal to the max withdraw amount of `owner`.
+
+Emits a <<IERC4626-Withdraw,Withdraw>> event.
+
+[.contract-item]
+[[ERC4626Component-max_redeem]]
+==== `[.contract-item-name]#++max_redeem++#++(self: @ContractState, owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Returns the maximum amount of Vault shares that can be redeemed from the owner balance
+in the Vault, through a <<ERC4626Component-redeem,redeem>> call.
+
+The default max redeem value is the full balance of assets for `owner`.
+This can be changed in the implementing contract by defining custom logic in <<ERC4626Component-redeem_limit,LimitConfigTrait::redeem_limit>>.
+
+NOTE: With customized limits, the maximum redeem amount will either be the custom limit itself
+or ``owner``'s total asset balance, whichever value is less.
+
+[.contract-item]
+[[ERC4626Component-preview_redeem]]
+==== `[.contract-item-name]#++preview_redeem++#++(self: @ContractState, shares: u256) → u256++` [.item-kind]#external#
+
+Allows an on-chain or off-chain user to simulate the effects of their redeemption at the
+current block, given current on-chain conditions.
+
+The default redeem preview value is the full amount of assets.
+This can be changed to account for fees, for example, in the implementing contract by defining custom logic in <<ERC4626Component-adjust_redeem,LimitConfigTrait::adjust_redeem>>.
+
+NOTE: This method must be inclusive of exit fees to be compliant with the {eip4626} spec.
+
+[.contract-item]
+[[ERC4626Component-redeem]]
+==== `[.contract-item-name]#++redeem++#++(self: @ContractState, shares: u256, receiver: ContractAddress, owner: ContractAddress) → u256++` [.item-kind]#external#
+
+Burns exactly `shares` from `owner` and sends assets of underlying tokens to `receiver`.
+
+Requirements:
+
+- `shares` is less than or equal to the max redeem amount of `owner`.
+
+Emits a <<IERC4626-Withdraw,Withdraw>> event.
+
+[.contract-item]
+[[ERC4626Component-name]]
+==== `[.contract-item-name]#++name++#++(self: @ContractState) → ByteArray++` [.item-kind]#external#
+
+Returns the name of the token.
+
+[.contract-item]
+[[ERC4626Component-symbol]]
+==== `[.contract-item-name]#++symbol++#++(self: @ContractState) → ByteArray++` [.item-kind]#external#
+
+Returns the ticker symbol of the token, usually a shorter version of the name.
+
+[.contract-item]
+[[ERC4626Component-decimals]]
+==== `[.contract-item-name]#++decimals++#++(self: @ContractState) → u8++` [.item-kind]#external#
+
+Returns the cumulative number of decimals which includes both `UNDERLYING_DECIMALS` and `OFFSET_DECIMALS`.
+Both of which must be defined in the <<ERC4626Component-Immutable-Config,ImmutableConfig>> inside the implementing contract.
+
+==== Internal functions
+
+[.contract-item]
+[[ERC4626Component-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ContractState, asset_address: ContractAddress)++` [.item-kind]#internal#
+
+Validates the <<ERC4626Component-Immutable-Config,ImmutableConfig>> constants and sets the `asset_address` to the vault.
+This should be set in the contract's constructor.
+
+Requirements:
+
+- `asset_address` cannot be the zero address.
+
+[.contract-item]
+[[ERC4626Component-_deposit]]
+==== `[.contract-item-name]#++_deposit++#++(ref self: ContractState, caller: ContractAddress, receiver: ContractAddress, assets: u256, shares: u256)++` [.item-kind]#internal#
+
+Internal logic for <<ERC4626Component-deposit,deposit>> and <<ERC4626Component-mint,mint>>.
+
+Transfers `assets` from `caller` to the Vault contract then mints `shares` to
+`receiver`.
+Fees can be transferred in the `ERC4626Hooks::after_deposit` hook which is executed
+after assets are transferred and shares are minted.
+
+Requirements:
+
+- <<ERC20Component-transfer_from,ERC20::transfer_from>> must return true.
+
+Emits two <<ERC20Component-Transfer,ERC20::Transfer>> events (`ERC20::mint` and `ERC20::transfer_from`).
+
+Emits a <<IERC4626-Deposit,Deposit>> event.
+
+[.contract-item]
+[[ERC4626Component-_withdraw]]
+==== `[.contract-item-name]#++_withdraw++#++(ref self: ContractState, caller: ContractAddress, receiver: ContractAddress, owner: ContractAddress, assets: u256, shares: u256)++` [.item-kind]#internal#
+
+Internal logic for <<ERC4626Component-withdraw, withdraw>> and <<ERC4626Component-redeem, redeem>>.
+
+Burns `shares` from `owner` and then transfers `assets` to `receiver`.
+Fees can be transferred in the `ERC4626Hooks::before_withdraw` hook which is executed
+before shares are burned and assets are transferred.
+
+Requirements:
+
+- <<ERC20Component-transfer,ERC20::transfer>> must return true.
+
+Emits two <<ERC20Component-Transfer,ERC20::Transfer>> events (`ERC20::burn` and `ERC20::transfer`).
+
+Emits a <<IERC4626-Withdraw,Withdraw>> event.
+
+[.contract-item]
+[[ERC4626Component-_convert_to_shares]]
+==== `[.contract-item-name]#++_convert_to_shares++#++(self: @ContractState, assets: u256, rounding: Rounding) -> u256++` [.item-kind]#internal#
+
+Internal conversion function (from assets to shares) with support for `rounding` direction.
+
+[.contract-item]
+[[ERC4626Component-_convert_to_assets]]
+==== `[.contract-item-name]#++_convert_to_assets++#++(self: @ContractState, shares: u256, rounding: Rounding) -> u256++` [.item-kind]#internal#
+
+Internal conversion function (from shares to assets) with support for `rounding` direction.
+
+== Presets
+
+[.contract]
+[[ERC20Upgradeable]]
+=== `++ERC20Upgradeable++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/presets/src/erc20.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_presets::ERC20Upgradeable;
+```
+
+Upgradeable ERC20 contract leveraging xref:#ERC20Component[ERC20Component] with a fixed-supply mechanism for token distribution.
+
+include::../utils/_class_hashes.adoc[]
+
+[.contract-index]
+.{presets-page}
+--
+{ERC20Upgradeable-class-hash}
+--
+
+[.contract-index]
+.Constructor
+--
+* xref:#ERC20Upgradeable-constructor[`++constructor(self, name, symbol, fixed_supply, recipient, owner)++`]
+--
+
+[.contract-index]
+.Embedded Implementations
+--
+.ERC20MixinImpl
+
+* xref:#ERC20Component-Embeddable-Mixin-Impl[`++ERC20MixinImpl++`]
+
+.OwnableMixinImpl
+
+* xref:/api/access.adoc#OwnableComponent-Mixin-Impl[`++OwnableMixinImpl++`]
+--
+
+[.contract-index]
+.External Functions
+--
+* xref:#ERC20Upgradeable-upgrade[`++upgrade(self, new_class_hash)++`]
+--
+
+[#ERC20Upgradeable-constructor-section]
+==== Constructor
+
+[.contract-item]
+[[ERC20Upgradeable-constructor]]
+==== `[.contract-item-name]#++constructor++#++(ref self: ContractState, name: ByteArray, symbol: ByteArray, fixed_supply: u256, recipient: ContractAddress, owner: ContractAddress)++` [.item-kind]#constructor#
+
+Sets the `name` and `symbol` and mints `fixed_supply` tokens to `recipient`.
+Assigns `owner` as the contract owner with permissions to upgrade.
+
+[#ERC20Upgradeable-external-functions]
+==== External functions
+
+[.contract-item]
+[[ERC20Upgradeable-upgrade]]
+==== `[.contract-item-name]#++upgrade++#++(ref self: ContractState, new_class_hash: ClassHash)++` [.item-kind]#external#
+
+Upgrades the contract to a new implementation given by `new_class_hash`.
+
+Requirements:
+
+- The caller is the contract owner.
+- `new_class_hash` cannot be zero.

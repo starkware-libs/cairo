@@ -1,0 +1,36 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyStruct {
+    #[snip12(name: "Simple Felt")] // Optional custom name
+    pub simple_felt: felt252,
+    #[snip12(name: "Class Hash")]
+    pub class_hash: ClassHash,
+    #[snip12(name: "Target Token")]
+    pub target: ContractAddress,
+    #[snip12(name: "Timestamp", kind: "timestamp")]
+    pub timestamp: u128,
+    #[snip12(name: "Selector", kind: "selector")]
+    pub selector: felt252,
+}
+pub fn __MY_STRUCT_encoded_type() {
+    println!(
+        "\"My Struct\"(\"Simple Felt\":\"felt\",\"Class Hash\":\"ClassHash\",\"Target Token\":\"ContractAddress\",\"Timestamp\":\"timestamp\",\"Selector\":\"selector\")",
+    );
+}
+pub const MY_STRUCT_TYPE_HASH: felt252 =
+    0x522e0c3dc5e13b0978f4645760a436b1e119fd335842523fee8fbae6057b8c;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

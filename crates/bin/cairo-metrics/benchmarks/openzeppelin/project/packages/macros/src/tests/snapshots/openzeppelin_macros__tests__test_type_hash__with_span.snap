@@ -1,0 +1,32 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    pub member1: Span<felt252>,
+    pub member2: Span<TokenAmount>,
+    pub member3: Span<ClassHash>,
+    pub member4: Span<ContractAddress>,
+    pub member5: Span<u128>,
+    pub member6: Span<i128>,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"member1\":\"felt*\",\"member2\":\"TokenAmount*\",\"member3\":\"ClassHash*\",\"member4\":\"ContractAddress*\",\"member5\":\"u128*\",\"member6\":\"i128*\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x30fa88806049cfd082251e0819a2409264b2897bf51b151884cbfa52cafcb7c;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

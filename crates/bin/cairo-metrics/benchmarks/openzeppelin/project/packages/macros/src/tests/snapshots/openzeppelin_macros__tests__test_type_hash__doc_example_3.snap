@@ -1,0 +1,36 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    #[snip12(name: "Simple Felt")]
+    SimpleFelt: felt252,
+    #[snip12(name: "Class Hash")]
+    ClassHash: ClassHash,
+    #[snip12(name: "Target Token")]
+    ContractAddress: ContractAddress,
+    #[snip12(name: "Timestamp", kind: "timestamp")]
+    Timestamp: u128,
+    #[snip12(name: "Selector", kind: "selector")]
+    Selector: felt252,
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"My Enum\"(\"Simple Felt\"(\"felt\"),\"Class Hash\"(\"ClassHash\"),\"Target Token\"(\"ContractAddress\"),\"Timestamp\"(\"timestamp\"),\"Selector\"(\"selector\"))",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x3f30aaa6cda9f699d4131940b10602b78b986feb88f28a19f3b48567cb4b566;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

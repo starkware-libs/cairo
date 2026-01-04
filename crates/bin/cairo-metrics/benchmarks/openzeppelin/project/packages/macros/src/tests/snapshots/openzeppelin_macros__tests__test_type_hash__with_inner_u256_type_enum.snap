@@ -1,0 +1,29 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    // TokenAmount type contains u256, which should be resolved
+    // and appended to the final type hash.
+    Variant1: TokenAmount,
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"MyEnum\"(\"Variant1\"(\"TokenAmount\"))\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x201d3284c9c6ce70ed7004c44aca1428c630a2cf4f9994f3fceb11e48fdba66;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

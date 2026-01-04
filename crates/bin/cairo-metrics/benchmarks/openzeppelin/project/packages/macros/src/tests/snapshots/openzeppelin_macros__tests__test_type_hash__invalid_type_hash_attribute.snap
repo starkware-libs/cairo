@@ -1,0 +1,18 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+None
+
+Diagnostics:
+
+====
+Error: Invalid format for the type_hash attribute. The only valid arguments are: name, debug.
+====
+
+AuxData:
+
+None

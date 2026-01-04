@@ -1,0 +1,46 @@
+
+[package]
+name = "openzeppelin_upgrades"
+readme = "README.md"
+keywords = [
+    "openzeppelin",
+    "starknet",
+    "contracts",
+    "upgrades"
+]
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[dependencies]
+starknet.workspace = true
+
+[dev-dependencies]
+assert_macros.workspace = true
+snforge_std.workspace = true
+openzeppelin_testing = { path = "../testing" }
+openzeppelin_test_common = { path = "../test_common" }
+
+[lib]
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
+sierra = true
+casm = false
+
+[[test]]
+name = "openzeppelin_upgrades_unittest"
+build-external-contracts = [
+    "openzeppelin_test_common::mocks::upgrades::UpgradesV1",
+    "openzeppelin_test_common::mocks::upgrades::UpgradesV2",
+]

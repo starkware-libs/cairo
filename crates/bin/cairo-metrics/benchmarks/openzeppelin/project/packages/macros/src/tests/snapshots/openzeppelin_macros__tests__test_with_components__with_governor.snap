@@ -1,0 +1,43 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use openzeppelin_governance::governor::DefaultConfig;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor: GovernorComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.governor.initializer();
+    }
+    use openzeppelin_governance::governor::GovernorComponent;
+
+    component!(path: GovernorComponent, storage: governor, event: GovernorEvent);
+
+    impl GovernorInternalImpl = GovernorComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorEvent: GovernorComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

@@ -1,0 +1,25 @@
+[package]
+name = "sncast_scripts"
+version = "0.1.0"
+
+[dependencies]
+starknet = "2.8.2"
+sncast_std = "0.30.0"
+openzeppelin_presets = { path = "../" }
+openzeppelin_testing = { path = "../" }
+
+[lib]
+sierra = true
+casm = true
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+build-external-contracts = [
+    "openzeppelin_presets::account::AccountUpgradeable",
+    "openzeppelin_presets::erc20::ERC20Upgradeable",
+    "openzeppelin_presets::erc721::ERC721Upgradeable",
+    "openzeppelin_presets::erc1155::ERC1155Upgradeable",
+    "openzeppelin_presets::eth_account::EthAccountUpgradeable",
+    "openzeppelin_presets::vesting::VestingWallet",
+]

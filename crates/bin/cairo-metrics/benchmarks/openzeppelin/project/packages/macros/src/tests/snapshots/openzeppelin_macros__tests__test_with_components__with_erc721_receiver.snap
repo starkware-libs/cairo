@@ -1,0 +1,41 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub erc721_receiver: ERC721ReceiverComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.erc721_receiver.initializer();
+    }
+    use openzeppelin_token::erc721::ERC721ReceiverComponent;
+
+    component!(path: ERC721ReceiverComponent, storage: erc721_receiver, event: ERC721ReceiverEvent);
+
+    impl ERC721ReceiverInternalImpl = ERC721ReceiverComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC721ReceiverEvent: ERC721ReceiverComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

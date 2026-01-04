@@ -1,0 +1,47 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub timelock_controller: TimelockControllerComponent::Storage,
+    }
+    use openzeppelin_governance::timelock::TimelockControllerComponent;
+
+    component!(
+        path: TimelockControllerComponent,
+        storage: timelock_controller,
+        event: TimelockControllerEvent,
+    );
+
+    impl TimelockControllerInternalImpl = TimelockControllerComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        TimelockControllerEvent: TimelockControllerComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: It looks like the initializers for the following components are missing:
+
+TimelockController
+
+This may lead to unexpected behavior.
+We recommend adding the corresponding initializer calls to the constructor.
+====
+
+AuxData:
+
+None

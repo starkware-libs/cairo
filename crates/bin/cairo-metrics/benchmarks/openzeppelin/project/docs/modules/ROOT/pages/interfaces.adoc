@@ -1,0 +1,151 @@
+:great-interface-migration: link:https://community.starknet.io/t/the-great-interface-migration/92107[Great Interface Migration]
+
+= Interfaces and Dispatchers
+
+This section describes the interfaces OpenZeppelin Contracts for Cairo offer, and explains the design choices behind them.
+
+Interfaces can be found in the module tree under the `interface` submodule, such as `token::erc20::interface`. For example:
+
+```cairo
+use openzeppelin_token::erc20::interface::IERC20;
+```
+
+or
+
+```cairo
+use openzeppelin_token::erc20::interface::ERC20ABI;
+```
+
+NOTE: For simplicity, we'll use ERC20 as example but the same concepts apply to other modules.
+
+== Interface traits
+
+The library offers three types of traits to implement or interact with contracts:
+
+=== Standard traits
+
+These are associated with a predefined interface such as a standard.
+This includes only the functions defined in the interface, and is the standard way to interact with a compliant contract.
+
+```cairo
+#[starknet::interface]
+pub trait IERC20<TState> {
+    fn total_supply(self: @TState) -> u256;
+    fn balance_of(self: @TState, account: ContractAddress) -> u256;
+    fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(ref self: TState, recipient: ContractAddress, amount: u256) -> bool;
+    fn transfer_from(
+        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+    fn approve(ref self: TState, spender: ContractAddress, amount: u256) -> bool;
+}
+```
+
+=== ABI traits
+
+They describe a contract's complete interface. This is useful to interface with a preset contract offered by this library, such as the ERC20 preset that includes functions from different traits such as `IERC20` and `IERC20Camel`.
+
+NOTE: The library offers an ABI trait for most components, providing all external function signatures
+even when most of the time all of them don't need to be implemented at the same time. This can be helpful when interacting with a contract implementing the component, instead of defining a new dispatcher.
+
+```cairo
+#[starknet::interface]
+pub trait ERC20ABI<TState> {
+    // IERC20
+    fn total_supply(self: @TState) -> u256;
+    fn balance_of(self: @TState, account: ContractAddress) -> u256;
+    fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(ref self: TState, recipient: ContractAddress, amount: u256) -> bool;
+    fn transfer_from(
+        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+    fn approve(ref self: TState, spender: ContractAddress, amount: u256) -> bool;
+
+    // IERC20Metadata
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
+    fn decimals(self: @TState) -> u8;
+
+    // IERC20CamelOnly
+    fn totalSupply(self: @TState) -> u256;
+    fn balanceOf(self: @TState, account: ContractAddress) -> u256;
+    fn transferFrom(
+        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+}
+```
+
+=== Dispatcher traits
+
+:interacting-with-another-contract: https://book.cairo-lang.org/ch15-02-interacting-with-another-contract.html[Interacting with another contract]
+
+Traits annotated with `#[starknet::interface]` automatically generate a dispatcher that can be used to interact with contracts that implement the given interface. They can be imported by appending the `Dispatcher` and `DispatcherTrait` suffixes to the trait name, like this:
+
+```cairo
+use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+```
+
+Other types of dispatchers are also auto-generated from the annotated trait. See the
+{interacting-with-another-contract} section of the Cairo book for more information.
+
+NOTE: In the example, the `IERC20Dispatcher` is the one used to interact with contracts, but the
+`IERC20DispatcherTrait` needs to be in scope for the functions to be available.
+
+== Dual interfaces
+
+WARNING: `camelCase` functions are deprecated and maintained only for Backwards Compatibility.
+It's recommended to only use `snake_case` interfaces with contracts and components. The `camelCase` functions will be removed in
+future versions.
+
+Following the {great-interface-migration} plan, we added `snake_case` functions to all of our preexisting `camelCase` contracts with the goal of eventually dropping support for the latter.
+
+In short, the library offers two types of interfaces and utilities to handle them:
+
+1. `camelCase` interfaces, which are the ones we've been using so far.
+2. `snake_case` interfaces, which are the ones we're migrating to.
+
+This means that currently most of our contracts implement _dual interfaces_. For example, the ERC20 preset contract exposes `transferFrom`, `transfer_from`, `balanceOf`, `balance_of`, etc.
+
+NOTE: Dual interfaces are available for all external functions present in previous versions of OpenZeppelin Contracts for Cairo (https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.6.1[v0.6.1] and below).
+
+=== `IERC20`
+
+The default version of the ERC20 interface trait exposes `snake_case` functions:
+
+```cairo
+#[starknet::interface]
+pub trait IERC20<TState> {
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
+    fn decimals(self: @TState) -> u8;
+    fn total_supply(self: @TState) -> u256;
+    fn balance_of(self: @TState, account: ContractAddress) -> u256;
+    fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(ref self: TState, recipient: ContractAddress, amount: u256) -> bool;
+    fn transfer_from(
+        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+    fn approve(ref self: TState, spender: ContractAddress, amount: u256) -> bool;
+}
+```
+
+=== `IERC20Camel`
+
+On top of that, the library also offers a `camelCase` version of the same interface:
+
+```cairo
+#[starknet::interface]
+pub trait IERC20Camel<TState> {
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
+    fn decimals(self: @TState) -> u8;
+    fn totalSupply(self: @TState) -> u256;
+    fn balanceOf(self: @TState, account: ContractAddress) -> u256;
+    fn allowance(self: @TState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(ref self: TState, recipient: ContractAddress, amount: u256) -> bool;
+    fn transferFrom(
+        ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+    fn approve(ref self: TState, spender: ContractAddress, amount: u256) -> bool;
+}
+```

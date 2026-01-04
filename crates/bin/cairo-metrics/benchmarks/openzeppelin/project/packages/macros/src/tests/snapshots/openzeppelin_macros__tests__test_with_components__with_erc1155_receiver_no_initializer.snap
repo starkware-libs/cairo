@@ -1,0 +1,45 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub erc1155_receiver: ERC1155ReceiverComponent::Storage,
+    }
+    use openzeppelin_token::erc1155::ERC1155ReceiverComponent;
+
+    component!(
+        path: ERC1155ReceiverComponent, storage: erc1155_receiver, event: ERC1155ReceiverEvent,
+    );
+
+    impl ERC1155ReceiverInternalImpl = ERC1155ReceiverComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC1155ReceiverEvent: ERC1155ReceiverComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: It looks like the initializers for the following components are missing:
+
+ERC1155Receiver
+
+This may lead to unexpected behavior.
+We recommend adding the corresponding initializer calls to the constructor.
+====
+
+AuxData:
+
+None

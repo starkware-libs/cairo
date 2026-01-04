@@ -1,0 +1,150 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod GovernorTimelockedMock {
+    use openzeppelin_governance::governor::DefaultConfig;
+    use openzeppelin_utils::cryptography::snip12::SNIP12Metadata;
+    use starknet::ContractAddress;
+
+    pub const VOTING_DELAY: u64 = 86400; // 1 day
+    pub const VOTING_PERIOD: u64 = 604800; // 1 week
+    pub const PROPOSAL_THRESHOLD: u256 = 10;
+    pub const QUORUM: u256 = 100_000_000;
+
+    // Governor
+    #[abi(embed_v0)]
+    impl GovernorImpl = GovernorComponent::GovernorImpl<ContractState>;
+
+    // Extensions external
+    #[abi(embed_v0)]
+    impl VotesTokenImpl = GovernorVotesComponent::VotesTokenImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl GovernorSettingsAdminImpl =
+        GovernorSettingsComponent::GovernorSettingsAdminImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl TimelockedImpl =
+        GovernorTimelockExecutionComponent::TimelockedImpl<ContractState>;
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        pub governor: GovernorComponent::Storage,
+        #[substorage(v0)]
+        pub governor_votes: GovernorVotesComponent::Storage,
+        #[substorage(v0)]
+        pub governor_settings: GovernorSettingsComponent::Storage,
+        #[substorage(v0)]
+        pub governor_counting_simple: GovernorCountingSimpleComponent::Storage,
+        #[substorage(v0)]
+        pub governor_timelock_execution: GovernorTimelockExecutionComponent::Storage,
+        #[substorage(v0)]
+        pub src5: SRC5Component::Storage,
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState, votes_token: ContractAddress, timelock_controller: ContractAddress,
+    ) {
+        self.governor.initializer();
+        self.governor_votes.initializer(votes_token);
+        self.governor_settings.initializer(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD);
+        self.governor_timelock_execution.initializer(timelock_controller);
+    }
+
+    //
+    // SNIP12 Metadata
+    //
+
+    pub impl SNIP12MetadataImpl of SNIP12Metadata {
+        fn name() -> felt252 {
+            'DAPP_NAME'
+        }
+
+        fn version() -> felt252 {
+            'DAPP_VERSION'
+        }
+    }
+
+    //
+    // Locally implemented extensions
+    //
+
+    impl GovernorQuorum of GovernorComponent::GovernorQuorumTrait<ContractState> {
+        /// See `GovernorComponent::GovernorQuorumTrait::quorum`.
+        fn quorum(self: @GovernorComponent::ComponentState<ContractState>, timepoint: u64) -> u256 {
+            QUORUM
+        }
+    }
+    use openzeppelin_governance::governor::GovernorComponent;
+    use openzeppelin_governance::governor::extensions::{
+        GovernorCountingSimpleComponent, GovernorSettingsComponent,
+        GovernorTimelockExecutionComponent, GovernorVotesComponent,
+    };
+    use openzeppelin_introspection::src5::SRC5Component;
+
+    component!(path: GovernorComponent, storage: governor, event: GovernorEvent);
+    component!(path: GovernorVotesComponent, storage: governor_votes, event: GovernorVotesEvent);
+    component!(
+        path: GovernorSettingsComponent, storage: governor_settings, event: GovernorSettingsEvent,
+    );
+    component!(
+        path: GovernorCountingSimpleComponent,
+        storage: governor_counting_simple,
+        event: GovernorCountingSimpleEvent,
+    );
+    component!(
+        path: GovernorTimelockExecutionComponent,
+        storage: governor_timelock_execution,
+        event: GovernorTimelockExecutionEvent,
+    );
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    impl GovernorInternalImpl = GovernorComponent::InternalImpl<ContractState>;
+    impl GovernorVotesInternalImpl = GovernorVotesComponent::InternalImpl<ContractState>;
+    impl GovernorVotesGovernorVotes = GovernorVotesComponent::GovernorVotes<ContractState>;
+    impl GovernorSettingsInternalImpl = GovernorSettingsComponent::InternalImpl<ContractState>;
+    impl GovernorSettingsGovernorSettings =
+        GovernorSettingsComponent::GovernorSettings<ContractState>;
+    impl GovernorCountingSimpleGovernorCounting =
+        GovernorCountingSimpleComponent::GovernorCounting<ContractState>;
+    impl GovernorTimelockExecutionInternalImpl =
+        GovernorTimelockExecutionComponent::InternalImpl<ContractState>;
+    impl GovernorTimelockExecutionGovernorExecution =
+        GovernorTimelockExecutionComponent::GovernorExecution<ContractState>;
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorEvent: GovernorComponent::Event,
+        #[flat]
+        GovernorVotesEvent: GovernorVotesComponent::Event,
+        #[flat]
+        GovernorSettingsEvent: GovernorSettingsComponent::Event,
+        #[flat]
+        GovernorCountingSimpleEvent: GovernorCountingSimpleComponent::Event,
+        #[flat]
+        GovernorTimelockExecutionEvent: GovernorTimelockExecutionComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

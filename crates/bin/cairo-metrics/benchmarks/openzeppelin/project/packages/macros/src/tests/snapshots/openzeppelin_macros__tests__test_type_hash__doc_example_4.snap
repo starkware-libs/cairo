@@ -1,0 +1,32 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyStruct {
+    #[snip12(name: "Member 1")]
+    pub member1: Array<felt252>,
+    #[snip12(name: "Member 2")]
+    pub member2: Span<u128>,
+    #[snip12(name: "Timestamps", kind: "Array<timestamp>")]
+    pub timestamps: Array<u128>,
+}
+pub fn __MY_STRUCT_encoded_type() {
+    println!(
+        "\"My Struct\"(\"Member 1\":\"felt*\",\"Member 2\":\"u128*\",\"Timestamps\":\"timestamp*\")",
+    );
+}
+pub const MY_STRUCT_TYPE_HASH: felt252 =
+    0x369cdec45d8c55e70986aed44da0e330375171ba6e25b58e741c0ce02fa8ac;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

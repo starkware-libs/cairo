@@ -1,0 +1,36 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub src5: SRC5Component::Storage,
+    }
+    use openzeppelin_introspection::src5::SRC5Component;
+
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

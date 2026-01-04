@@ -1,0 +1,87 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+
+= Universal Deployer
+
+Reference of the Universal Deployer Contract (UDC) interface and preset.
+
+== Core
+
+[.contract]
+[[IUniversalDeployer]]
+=== `++IUniversalDeployer++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/utils/src/deployments/interface.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_utils::interfaces::IUniversalDeployer;
+```
+
+[.contract-index]
+.Functions
+--
+* xref:#IUniversalDeployer-deploy_contract[`++deploy_contract(class_hash, salt, from_zero, calldata)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#IUniversalDeployer-ContractDeployed[`++ContractDeployed(address, deployer, from_zero, class_hash, calldata, salt)++`]
+--
+
+[#IUniversalDeployer-Functions]
+==== Functions
+
+[.contract-item]
+[[IUniversalDeployer-deploy_contract]]
+==== `[.contract-item-name]#++deploy_contract++#++(class_hash: ClassHash, salt: felt252, from_zero: bool, calldata: Span<felt252>) → ContractAddress++` [.item-kind]#external#
+
+Deploys a contract through the Universal Deployer Contract.
+
+[#IUniversalDeployer-Events]
+==== Events
+
+[.contract-item]
+[[IUniversalDeployer-ContractDeployed]]
+==== `[.contract-item-name]#++ContractDeployed++#++(address: ContractAddress, deployer: ContractAddress, from_zero: bool, class_hash: ClassHash, calldata: Span<felt252>, salt: felt252)++` [.item-kind]#event#
+
+Emitted when `deployer` deploys a contract through the Universal Deployer Contract.
+
+== Presets
+
+:origin-dependent: xref:/udc.adoc#origin_dependent[origin-dependent]
+:origin-independent: xref:/udc.adoc#origin_independent[origin-independent]
+
+[.contract]
+[[UniversalDeployer]]
+=== `++UniversalDeployer++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/presets/src/universal_deployer.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_presets::UniversalDeployer;
+```
+
+The standard Universal Deployer Contract.
+
+include::../utils/_class_hashes.adoc[]
+
+[.contract-index]
+.{presets-page}
+--
+{UniversalDeployer-class-hash}
+--
+
+[.contract-index]
+.Embedded Implementations
+--
+.UniversalDeployerImpl
+* xref:#UniversalDeployer-deploy_contract[`++deploy_contract(self, address, deployer, from_zero, class_hash, calldata, salt)++`]
+--
+
+[.contract-item]
+[[UniversalDeployer-deploy_contract]]
+==== `[.contract-item-name]#++deploy_contract++#++(ref self: ContractState, address: ContractAddress, deployer: ContractAddress, from_zero: bool, class_hash: ClassHash, calldata: Span<felt252>, salt: felt252) -> ContractAddress++` [.item-kind]#external#
+
+Deploys a contract through the Universal Deployer Contract.
+
+When `from_zero` is `false`, `salt` is hashed with the caller address and the modified salt is passed to the inner `deploy_syscall`. This type of deployment is {origin-dependent}.
+
+When `from_zero` is `true`, the deployment type is {origin-independent}.
+
+Emits an <<IUniversalDeployer-ContractDeployed,ContractDeployed>> event.

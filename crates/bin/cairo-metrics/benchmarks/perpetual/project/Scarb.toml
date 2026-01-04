@@ -1,0 +1,25 @@
+[workspace]
+members = ["workspace/apps/perpetuals/contracts", "workspace/vault/", "workspace/fulfillment"]
+
+[workspace.dependencies]
+starknet = "2.12.2"
+assert_macros = "2.12.2"
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts", rev = "0e51722f231c0913915945d3df89e43cbb5cfc38" }
+snforge_std = "0.49.0"
+starkware_utils = { git = "https://github.com/starkware-libs/starkware-starknet-utils", branch = "oz-3.0.0-alpha.2" }
+starkware_utils_testing = { git = "https://github.com/starkware-libs/starkware-starknet-utils", branch = "oz-3.0.0-alpha.2" }
+
+[scripts]
+test = "snforge test --run-native"
+
+[profile.dev.cairo]
+unstable-add-statements-code-locations-debug-info = true
+unstable-add-statements-functions-debug-info = true
+inlining-strategy = "avoid"
+panic-backtrace = true
+
+[profile.release.cairo]
+inlining-strategy = 30
+
+[workspace.tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]

@@ -1,0 +1,151 @@
+= Creating ERC20 Supply
+
+:eip-20: https://eips.ethereum.org/EIPS/eip-20[EIP20]
+
+The standard interface implemented by tokens built on Starknet comes from the popular token standard on Ethereum called ERC20.
+{eip-20}, from which ERC20 contracts are derived, does not specify how tokens are created.
+This guide will go over strategies for creating both a fixed and dynamic token supply.
+
+== Fixed Supply
+
+Let's say we want to create a token named `MyToken` with a fixed token supply.
+We can achieve this by setting the token supply in the constructor which will execute upon deployment.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyToken {
+    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    use starknet::ContractAddress;
+
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+
+    // ERC20 Mixin
+    #[abi(embed_v0)]
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc20: ERC20Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC20Event: ERC20Component::Event
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        fixed_supply: u256,
+        recipient: ContractAddress
+    ) {
+        let name = "MyToken";
+        let symbol = "MTK";
+
+        self.erc20.initializer(name, symbol);
+        self.erc20.mint(recipient, fixed_supply);
+    }
+}
+----
+
+In the constructor, we're first calling the ERC20 initializer to set the token name and symbol.
+Next, we're calling the internal `mint` function which creates `fixed_supply` of tokens and allocates them to `recipient`.
+Since the internal `mint` is not exposed in our contract, it will not be possible to create any more tokens.
+In other words, we've implemented a fixed token supply!
+
+== Dynamic Supply
+
+:access-control: xref:/access.adoc[Access Control]
+
+ERC20 contracts with a dynamic supply include a mechanism for creating or destroying tokens.
+Let's make a few changes to the almighty `MyToken` contract and create a minting mechanism.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyToken {
+    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    use starknet::ContractAddress;
+
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+
+   // ERC20 Mixin
+    #[abi(embed_v0)]
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc20: ERC20Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC20Event: ERC20Component::Event
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        let name = "MyToken";
+        let symbol = "MTK";
+
+        self.erc20.initializer(name, symbol);
+    }
+
+    #[external(v0)]
+    fn mint(
+        ref self: ContractState,
+        recipient: ContractAddress,
+        amount: u256
+    ) {
+        // This function is NOT protected which means
+        // ANYONE can mint tokens
+        self.erc20.mint(recipient, amount);
+    }
+}
+----
+
+The exposed `mint` above will create `amount` tokens and allocate them to `recipient`.
+We now have our minting mechanism!
+
+There is, however, a big problem.
+`mint` does not include any restrictions on who can call this function.
+For the sake of good practices, let's implement a simple permissioning mechanism with `Ownable`.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyToken {
+
+    (...)
+
+    // Integrate Ownable
+
+    #[external(v0)]
+    fn mint(
+        ref self: ContractState,
+        recipient: ContractAddress,
+        amount: u256
+    ) {
+        // Set permissions with Ownable
+        self.ownable.assert_only_owner();
+
+        // Mint tokens if called by the contract owner
+        self.erc20.mint(recipient, amount);
+    }
+}
+----
+
+In the constructor, we pass the owner address to set the owner of the `MyToken` contract.
+The `mint` function includes `assert_only_owner` which will ensure that only the contract owner can call this function.
+Now, we have a protected ERC20 minting mechanism to create a dynamic token supply.
+
+TIP: For a more thorough explanation of permission mechanisms, see {access-control}.

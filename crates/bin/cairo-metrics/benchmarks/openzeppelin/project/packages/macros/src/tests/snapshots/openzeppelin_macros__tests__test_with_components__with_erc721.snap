@@ -1,0 +1,43 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use openzeppelin_token::erc721::ERC721HooksEmptyImpl;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub erc721: ERC721Component::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.erc721.initializer("MyToken", "MTK", "");
+    }
+    use openzeppelin_token::erc721::ERC721Component;
+
+    component!(path: ERC721Component, storage: erc721, event: ERC721Event);
+
+    impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC721Event: ERC721Component::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

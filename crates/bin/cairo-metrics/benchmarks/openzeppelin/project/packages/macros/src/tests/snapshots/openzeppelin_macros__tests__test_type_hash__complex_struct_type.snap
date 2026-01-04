@@ -1,0 +1,39 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    pub token_amount: TokenAmount,
+    pub token_amount_2: TokenAmount,
+    pub number: u256,
+    #[snip12(kind: "shortstring")]
+    pub version: felt252,
+    pub class_hash: ClassHash,
+    pub contract_address: ContractAddress,
+    #[snip12(kind: "timestamp")]
+    pub timestamp: u128,
+    #[snip12(kind: "selector")]
+    pub selector: felt252,
+    pub u128_member: u128,
+    pub i128_member: i128,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"token_amount\":\"TokenAmount\",\"token_amount_2\":\"TokenAmount\",\"number\":\"u256\",\"version\":\"shortstring\",\"class_hash\":\"ClassHash\",\"contract_address\":\"ContractAddress\",\"timestamp\":\"timestamp\",\"selector\":\"selector\",\"u128_member\":\"u128\",\"i128_member\":\"i128\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x3152572ea631eda02fb9ff20c153757fef5c39aba06c26629ba901c715df71;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

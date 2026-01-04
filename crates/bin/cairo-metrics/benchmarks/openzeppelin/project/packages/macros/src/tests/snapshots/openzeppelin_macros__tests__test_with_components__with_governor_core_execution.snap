@@ -1,0 +1,41 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor_core_execution: GovernorCoreExecutionComponent::Storage,
+    }
+    use openzeppelin_governance::governor::extensions::GovernorCoreExecutionComponent;
+
+    component!(
+        path: GovernorCoreExecutionComponent,
+        storage: governor_core_execution,
+        event: GovernorCoreExecutionEvent,
+    );
+
+    impl GovernorCoreExecutionGovernorExecution =
+        GovernorCoreExecutionComponent::GovernorExecution<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorCoreExecutionEvent: GovernorCoreExecutionComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

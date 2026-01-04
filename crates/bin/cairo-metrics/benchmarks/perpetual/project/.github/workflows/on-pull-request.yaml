@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  cairo_tests:
+    runs-on: namespace-profile-2xlarge-ubuntu-24-04-amd64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/setup-snfoundry@v3
+        with:
+          starknet-foundry-version: "0.49.0"
+
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.12.2"
+
+      - name: Build Contracts
+        run: scarb build
+
+      - name: Install cairo-coverage
+        run: |
+          curl -L https://raw.githubusercontent.com/software-mansion/cairo-coverage/main/scripts/install.sh | sh
+
+      - name: Run test and coverage
+        run: scarb test -w --coverage
+
+      - name: Check formatting
+        run: scarb fmt -w --check
+  python_tests:
+    runs-on: namespace-profile-2xlarge-ubuntu-24-04-amd64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install asdf
+        run: scripts/install_asdf.sh
+
+      - name: Install starknet-devnet
+        run: |
+          asdf plugin add starknet-devnet
+          asdf install starknet-devnet 0.6.1
+          asdf global starknet-devnet 0.6.1
+
+      - uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.12.2"
+
+      - name: Build Contracts
+        run: scarb --release build
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - run: pip install -r requirements.txt
+
+      - name: Run Python Tests
+        id: run_tests
+        run: scripts/python_tests.sh

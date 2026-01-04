@@ -1,0 +1,28 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    Variant1: TokenAmount,
+    Variant2: (),
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"MyEnum\"(\"Variant1\"(\"TokenAmount\"),\"Variant2\"())\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x2c99e0ed586af347aabc3d1db03bf4fbb670934be05f0565c8a588a2997af9d;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

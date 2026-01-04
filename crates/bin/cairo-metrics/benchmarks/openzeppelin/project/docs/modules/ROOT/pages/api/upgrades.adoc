@@ -1,0 +1,137 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+:class_hash: https://docs.starknet.io/architecture-and-concepts/smart-contracts/class-hash/[class hash]
+
+= Upgrades
+
+This crate provides interfaces and utilities related to upgradeability.
+
+== Core
+
+[.contract]
+[[IUpgradeable]]
+=== `++IUpgradeable++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/upgrades/src/interface.cairo[{github-icon},role=heading-link]
+
+:Upgraded: xref:UpgradeableComponent-Upgraded[Upgraded]
+
+```cairo
+use openzeppelin_upgrades::interface::IUpgradeable;
+```
+
+Interface of an upgradeable contract.
+
+[.contract-index]
+.Functions
+--
+* xref:#IUpgradeable-upgrade[`++upgrade(new_class_hash)++`]
+--
+
+[#IUpgradeable-Functions]
+==== Functions
+
+[.contract-item]
+[[IUpgradeable-upgrade]]
+==== `[.contract-item-name]#++upgrade++#++(new_class_hash: ClassHash)++` [.item-kind]#external#
+
+Upgrades the contract code by updating its {class_hash}.
+
+NOTE: This function is usually protected by an xref:access.adoc[Access Control] mechanism.
+
+[.contract]
+[[IUpgradeAndCall]]
+=== `++IUpgradeAndCall++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/upgrades/src/interface.cairo[{github-icon},role=heading-link]
+
+:Upgraded: xref:UpgradeableComponent-Upgraded[Upgraded]
+
+```cairo
+use openzeppelin::upgrades::interface::IUpgradeAndCall;
+```
+
+Interface for an upgradeable contract that couples an upgrade with a function call in the upgraded context.
+
+[.contract-index]
+.Functions
+--
+* xref:#IUpgradeAndCall-upgrade_and_call[`++upgrade_and_call(new_class_hash, selector, calldata)++`]
+--
+
+[#IUpgradeAndCall-Functions]
+==== Functions
+
+[.contract-item]
+[[IUpgradeAndCall-upgrade_and_call]]
+==== `[.contract-item-name]#++upgrade_and_call++#++(new_class_hash: ClassHash, selector: felt252, calldata: Span<felt252>) → Span<felt252>++` [.item-kind]#external#
+
+Upgrades the contract code by updating its {class_hash} and calls `selector` with the upgraded context.
+
+NOTE: This function is usually protected by an xref:access.adoc[Access Control] mechanism.
+
+[.contract]
+[[UpgradeableComponent]]
+=== `++UpgradeableComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/upgrades/src/upgradeable.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_upgrades::upgradeable::UpgradeableComponent;
+```
+
+Upgradeable component.
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#UpgradeableComponent-upgrade[`++upgrade(self, new_class_hash)++`]
+* xref:#UpgradeableComponent-upgrade_and_call[`++upgrade_and_call(self, new_class_hash, selector, calldata)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#UpgradeableComponent-Upgraded[`++Upgraded(class_hash)++`]
+--
+
+[#UpgradeableComponent-Internal-Functions]
+==== Internal Functions
+
+:snip6: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-6.md[SNIP-6]
+
+[.contract-item]
+[[UpgradeableComponent-upgrade]]
+==== `[.contract-item-name]#++upgrade++#++(ref self: ContractState, new_class_hash: ClassHash)++` [.item-kind]#internal#
+
+Upgrades the contract by updating the contract {class_hash}.
+
+Requirements:
+
+- `new_class_hash` must be different from zero.
+
+Emits an {Upgraded} event.
+
+[.contract-item]
+[[UpgradeableComponent-upgrade_and_call]]
+==== `[.contract-item-name]#++upgrade_and_call++#++(ref self: ContractState, new_class_hash: ClassHash, selector: felt252, calldata: Span<felt252>) → Span<felt252>++` [.item-kind]#internal#
+
+Replaces the contract's class hash with `new_class_hash` and then calls `selector`
+from the upgraded context.
+This function returns the unwrapped `call_contract_syscall` return value(s), if available, of the `selector` call.
+
+Requirements:
+
+- `new_class_hash` must be different from zero.
+
+NOTE: The function call comes from the upgraded contract itself and not the account.
+
+NOTE: A similar behavior to `upgrade_and_call` can also be achieved with a list of calls from an account since the {snip6} account standard supports multicall.
+An account can execute a list of calls with xref:IUpgradeable-upgrade[upgrade] being the first element in the list and the extra function call as the second.
+With this approach, the calls will execute from the account's context and can't be front-ran.
+
+Emits an {Upgraded} event.
+
+[#UpgradeableComponent-Events]
+==== Events
+
+[.contract-item]
+[[UpgradeableComponent-Upgraded]]
+==== `[.contract-item-name]#++Upgraded++#++(class_hash: ClassHash)++` [.item-kind]#event#
+
+Emitted when the {class_hash} is upgraded.

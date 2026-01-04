@@ -1,0 +1,54 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod Owned {
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub ownable: OwnableComponent::Storage,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        Transfer: Transfer,
+    }
+
+    /// Emitted when tokens are moved from address `from` to address `to`.
+    #[derive(Drop, starknet::Event)]
+    pub struct Transfer {
+        #[key]
+        pub from: ContractAddress,
+        #[key]
+        pub to: ContractAddress,
+        pub value: u256,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, owner: ContractAddress) {
+        self.ownable.initializer(owner);
+    }
+    use openzeppelin_access::ownable::OwnableComponent;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

@@ -1,0 +1,11 @@
+diff --git a/packages/security/src/pausable.cairo b/packages/security/src/pausable.cairo
+--- a/packages/security/src/pausable.cairo
++++ b/packages/security/src/pausable.cairo
+@@ -47,6 +47,7 @@
+     > of IPausable<ComponentState<TContractState>> {
+         /// Returns true if the contract is paused, and false otherwise.
+         fn is_paused(self: @ComponentState<TContractState>) -> bool {
++            println!("bench1");
+             self.Pausable_paused.read()
+         }
+     }

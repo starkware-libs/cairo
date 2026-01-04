@@ -1,0 +1,125 @@
+:contract_classes: https://docs.starknet.io/architecture-and-concepts/smart-contracts/contract-classes/[Contract Classes]
+:class_hash: https://docs.starknet.io/architecture-and-concepts/smart-contracts/class-hash/[class hash]
+:replace_class_syscall: https://docs.starknet.io/architecture-and-concepts/smart-contracts/system-calls-cairo1/#replace_class[replace_class]
+:upgradeable: https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/upgrades/src/upgradeable.cairo[Upgradeable]
+:ownable: xref:access.adoc#ownership_and_ownable[Ownable]
+:i_upgradeable: xref:api/upgrades.adoc#IUpgradeable[IUpgradeable]
+:library_calls: https://docs.starknet.io/architecture-and-concepts/smart-contracts/system-calls-cairo1/#library_call[library calls]
+
+= Upgrades
+
+In different blockchains, multiple patterns have been developed for making a contract upgradeable including the widely adopted proxy patterns.
+
+Starknet has native upgradeability through a syscall that updates the contract source code, removing xref:#proxies_in_starknet[the need for proxies].
+
+WARNING: Make sure you follow xref:#security[our security recommendations] before upgrading.
+
+== Replacing contract classes
+
+To better comprehend how upgradeability works in Starknet, it's important to understand the difference between a contract and its contract class.
+
+{contract_classes} represent the source code of a program. All contracts are associated to a class, and many contracts can be instances of the same one. Classes are usually represented by a {class_hash}, and before a contract of a class can be deployed, the class hash needs to be declared.
+
+=== `replace_class_syscall`
+
+The `{replace_class_syscall}` syscall allows a contract to update its source code by replacing its class hash once deployed.
+
+
+[,cairo]
+----
+/// Upgrades the contract source code to the new contract class.
+fn upgrade(new_class_hash: ClassHash) {
+    assert(!new_class_hash.is_zero(), 'Class hash cannot be zero');
+    starknet::replace_class_syscall(new_class_hash).unwrap_syscall();
+}
+----
+
+NOTE: If a contract is deployed without this mechanism, its class hash can still be replaced through {library_calls}.
+
+== `Upgradeable` component
+
+OpenZeppelin Contracts for Cairo provides {upgradeable} to add upgradeability support to your contracts.
+
+=== Usage
+
+Upgrades are often very sensitive operations, and some form of access control is usually required to
+avoid unauthorized upgrades. The {ownable} module is used in this example.
+
+NOTE: We will be using the following module to implement the {i_upgradeable} interface described in the API Reference section.
+
+[,cairo]
+----
+#[starknet::contract]
+mod UpgradeableContract {
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_upgrades::UpgradeableComponent;
+    use openzeppelin_upgrades::interface::IUpgradeable;
+    use starknet::ClassHash;
+    use starknet::ContractAddress;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
+
+    // Ownable Mixin
+    #[abi(embed_v0)]
+    impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    // Upgradeable
+    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, owner: ContractAddress) {
+        self.ownable.initializer(owner);
+    }
+
+    #[abi(embed_v0)]
+    impl UpgradeableImpl of IUpgradeable<ContractState> {
+        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
+            // This function can only be called by the owner
+            self.ownable.assert_only_owner();
+
+            // Replace the class hash upgrading the contract
+            self.upgradeable.upgrade(new_class_hash);
+        }
+    }
+}
+----
+
+== Security
+
+Upgrades can be very sensitive operations, and security should always be top of mind while performing one. Please make sure you thoroughly review the changes and their consequences before upgrading. Some aspects to consider are:
+
+- API changes that might affect integration. For example, changing an external function's arguments might break existing contracts or offchain systems calling your contract.
+- Storage changes that might result in lost data (e.g. changing a storage slot name, making existing storage inaccessible).
+- Collisions (e.g. mistakenly reusing the same storage slot from another component) are also possible, although less likely if best practices are followed, for example prepending storage variables with the component's name (e.g. `ERC20_balances`).
+- Always check for xref:backwards-compatibility.adoc[backwards compatibility] before upgrading between versions of OpenZeppelin Contracts.
+
+== Proxies in Starknet
+
+Proxies enable different patterns such as upgrades and clones. But since Starknet achieves the same in different ways is that there's no support to implement them.
+
+In the case of contract upgrades, it is achieved by simply changing the contract's class hash. As of clones, contracts already are like clones of the class they implement.
+
+Implementing a proxy pattern in Starknet has an important limitation: there is no fallback mechanism to be used
+for redirecting every potential function call to the implementation. This means that a generic proxy contract
+can't be implemented. Instead, a limited proxy contract can implement specific functions that forward
+their execution to another contract class.
+This can still be useful for example to upgrade the logic of some functions.

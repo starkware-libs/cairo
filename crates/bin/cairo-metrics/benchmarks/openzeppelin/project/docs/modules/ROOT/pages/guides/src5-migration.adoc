@@ -1,0 +1,138 @@
+= Migrating ERC165 to SRC5
+
+:eip165: https://eips.ethereum.org/EIPS/eip-165[EIP-165]
+:snip5: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-5.md[SNIP-5]
+:dual-interface-discussion: https://github.com/OpenZeppelin/cairo-contracts/discussions/640[Dual Introspection Detection]
+:shamans-proposal: https://community.starknet.io/t/starknet-standard-interface-detection/92664[Starknet Shamans proposal]
+
+In the smart contract ecosystem, having the ability to query if a contract supports a given interface is an extremely important feature.
+The initial introspection design for Contracts for Cairo before version v0.7.0 followed Ethereum's {eip165}.
+Since the Cairo language evolved introducing native types, we needed an introspection solution tailored to the Cairo ecosystem: the {snip5} standard.
+SNIP-5 allows interface ID calculations to use Cairo types and the Starknet keccak (`sn_keccak`) function.
+For more information on the decision, see the {shamans-proposal} or the {dual-interface-discussion} discussion.
+
+== How to migrate
+
+Migrating from ERC165 to SRC5 involves four major steps:
+
+1. Integrate SRC5 into the contract.
+2. Register SRC5 IDs.
+3. Add a `migrate` function to apply introspection changes.
+4. Upgrade the contract and call `migrate`.
+
+The following guide will go through the steps with examples.
+
+=== Component integration
+
+:src5-component: xref:/api/introspection.adoc#SRC5Component[SRC5Component]
+:initializable-component: xref:/api/security.adoc#InitializableComponent[InitializableComponent]
+
+The first step is to integrate the necessary components into the new contract.
+The contract should include the new introspection mechanism, {src5-component}.
+It should also include the {initializable-component} which will be used in the `migrate` function.
+Here's the setup:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MigratingContract {
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_security::initializable::InitializableComponent;
+
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
+    // Initializable
+    impl InitializableInternalImpl = InitializableComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        src5: SRC5Component::Storage,
+        #[substorage(v0)]
+        initializable: InitializableComponent::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+        #[flat]
+        InitializableEvent: InitializableComponent::Event
+    }
+}
+----
+
+=== Interface registration
+
+:ierc721: xref:/api/erc721.adoc#IERC721[IERC721]
+:ierc721-metadata: xref:/api/erc721.adoc#IERC721Metadata[IERC721Metadata]
+:register_interface: xref:/api/introspection.adoc#SRC5Component-register_interface[register_interface]
+
+To successfully migrate ERC165 to SRC5, the contract needs to register the interface IDs that the contract supports with SRC5.
+
+For this example, let's say that this contract supports the {ierc721} and {ierc721-metadata} interfaces.
+The contract should implement an `InternalImpl` and add a function to register those interfaces like this:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MigratingContract {
+    use openzeppelin_token::erc721::interface::{IERC721_ID, IERC721_METADATA_ID};
+
+    (...)
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        // Register SRC5 interfaces
+        fn register_src5_interfaces(ref self: ContractState) {
+            self.src5.register_interface(IERC721_ID);
+            self.src5.register_interface(IERC721_METADATA_ID);
+        }
+    }
+}
+----
+
+Since the new contract integrates `SRC5Component`, it can leverage SRC5's {register_interface} function to register the supported interfaces.
+
+=== Migration initializer
+
+:access-control: xref:/access.adoc[Access Control]
+
+Next, the contract should define and expose a migration function that will invoke the `register_src5_interfaces` function.
+Since the `migrate` function will be publicly callable, it should include some sort of {access-control} so that only permitted addresses can execute the migration.
+Finally, `migrate` should include a reinitialization check to ensure that it cannot be called more than once.
+
+WARNING: If the original contract implemented `Initializable` at any point and called the `initialize` method, the `InitializableComponent` will not be usable at this time.
+Instead, the contract can take inspiration from `InitializableComponent` and create its own initialization mechanism.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MigratingContract {
+    (...)
+
+    #[external(v0)]
+    fn migrate(ref self: ContractState) {
+        // WARNING: Missing Access Control mechanism. Make sure to add one
+
+        // WARNING: If the contract ever implemented `Initializable` in the past,
+        // this will not work. Make sure to create a new initialization mechanism
+        self.initializable.initialize();
+
+        // Register SRC5 interfaces
+        self.register_src5_interfaces();
+    }
+}
+----
+
+=== Execute migration
+
+Once the new contract is prepared for migration and *rigorously tested*, all that's left is to migrate!
+Simply upgrade the contract and then call `migrate`.

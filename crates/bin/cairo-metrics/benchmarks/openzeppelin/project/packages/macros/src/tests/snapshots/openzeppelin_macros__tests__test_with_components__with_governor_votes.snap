@@ -1,0 +1,44 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor_votes: GovernorVotesComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, votes_token: ContractAddress) {
+        self.governor_votes.initializer(votes_token);
+    }
+    use openzeppelin_governance::governor::extensions::GovernorVotesComponent;
+
+    component!(path: GovernorVotesComponent, storage: governor_votes, event: GovernorVotesEvent);
+
+    impl GovernorVotesInternalImpl = GovernorVotesComponent::InternalImpl<ContractState>;
+    impl GovernorVotesGovernorVotes = GovernorVotesComponent::GovernorVotes<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorVotesEvent: GovernorVotesComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

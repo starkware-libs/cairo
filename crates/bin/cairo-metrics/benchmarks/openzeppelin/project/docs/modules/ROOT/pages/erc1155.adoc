@@ -1,0 +1,264 @@
+:eip-1155: https://eips.ethereum.org/EIPS/eip-1155[EIP-1155]
+:fungibility-agnostic: https://docs.openzeppelin.com/contracts/5.x/tokens#different-kinds-of-tokens[fungibility-agnostic]
+
+= ERC1155
+
+The ERC1155 multi token standard is a specification for {fungibility-agnostic} token contracts.
+The ERC1155 library implements an approximation of {eip-1155} in Cairo for StarkNet.
+
+== Multi Token Standard
+
+:balance_of-api: xref:api/erc1155.adoc#IERC1155-balance_of[balance_of]
+:erc721-balance_of-api: xref:api/erc721.adoc#IERC721-balance_of[balance_of]
+
+The distinctive feature of ERC1155 is that it uses a single smart contract to represent multiple tokens at once. This
+is why its {balance_of-api} function differs from ERC20’s and ERC777’s: it has an additional ID argument for the
+identifier of the token that you want to query the balance of.
+
+This is similar to how ERC721 does things, but in that standard a token ID has no concept of balance: each token is
+non-fungible and exists or doesn’t. The ERC721 {erc721-balance_of-api} function refers to how many different tokens an account
+has, not how many of each. On the other hand, in ERC1155 accounts have a distinct balance for each token ID, and
+non-fungible tokens are implemented by simply minting a single one of them.
+
+This approach leads to massive gas savings for projects that require multiple tokens. Instead of deploying a new
+contract for each token type, a single ERC1155 token contract can hold the entire system state, reducing deployment
+costs and complexity.
+
+== Usage
+
+Using Contracts for Cairo, constructing an ERC1155 contract requires integrating both `ERC1155Component` and `SRC5Component`.
+The contract should also set up the constructor to initialize the token's URI and interface support.
+Here's an example of a basic contract:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyERC1155 {
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_token::erc1155::{ERC1155Component, ERC1155HooksEmptyImpl};
+    use starknet::ContractAddress;
+
+    component!(path: ERC1155Component, storage: erc1155, event: ERC1155Event);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // ERC1155 Mixin
+    #[abi(embed_v0)]
+    impl ERC1155MixinImpl = ERC1155Component::ERC1155MixinImpl<ContractState>;
+    impl ERC1155InternalImpl = ERC1155Component::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc1155: ERC1155Component::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC1155Event: ERC1155Component::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        token_uri: ByteArray,
+        recipient: ContractAddress,
+        token_ids: Span<u256>,
+        values: Span<u256>
+    ) {
+        self.erc1155.initializer(token_uri);
+        self
+            .erc1155
+            .batch_mint_with_acceptance_check(recipient, token_ids, values, array![].span());
+    }
+}
+----
+
+== Interface
+
+:compatibility: xref:/erc1155.adoc#erc1155_compatibility[ERC1155 Compatibility]
+:isrc5-interface: xref:/api/introspection.adoc#ISRC5[ISRC5]
+:ierc1155-interface: xref:/api/erc1155.adoc#IERC1155[IERC1155]
+:ierc1155metadata-interface: xref:/api/erc1155.adoc#IERC1155MetadataURI[IERC1155MetadataURI]
+:erc1155-component: xref:/api/erc1155.adoc#ERC1155Component[ERC1155Component]
+:dual-interfaces: xref:interfaces.adoc#dual_interfaces[Dual interfaces]
+
+The following interface represents the full ABI of the Contracts for Cairo {erc1155-component}.
+The interface includes the {ierc1155-interface} standard interface and the optional {ierc1155metadata-interface} interface together with {isrc5-interface}.
+
+To support older token deployments, as mentioned in {dual-interfaces}, the component also includes implementations of the interface written in camelCase.
+
+[,cairo]
+----
+#[starknet::interface]
+pub trait ERC1155ABI {
+    // IERC1155
+    fn balance_of(account: ContractAddress, token_id: u256) -> u256;
+    fn balance_of_batch(
+        accounts: Span<ContractAddress>, token_ids: Span<u256>
+    ) -> Span<u256>;
+    fn safe_transfer_from(
+        from: ContractAddress,
+        to: ContractAddress,
+        token_id: u256,
+        value: u256,
+        data: Span<felt252>
+    );
+    fn safe_batch_transfer_from(
+        from: ContractAddress,
+        to: ContractAddress,
+        token_ids: Span<u256>,
+        values: Span<u256>,
+        data: Span<felt252>
+    );
+    fn is_approved_for_all(
+        owner: ContractAddress, operator: ContractAddress
+    ) -> bool;
+    fn set_approval_for_all(operator: ContractAddress, approved: bool);
+
+    // IERC1155MetadataURI
+    fn uri(token_id: u256) -> ByteArray;
+
+    // ISRC5
+    fn supports_interface(interface_id: felt252) -> bool;
+
+    // IERC1155Camel
+    fn balanceOf(account: ContractAddress, tokenId: u256) -> u256;
+    fn balanceOfBatch(
+        accounts: Span<ContractAddress>, tokenIds: Span<u256>
+    ) -> Span<u256>;
+    fn safeTransferFrom(
+        from: ContractAddress,
+        to: ContractAddress,
+        tokenId: u256,
+        value: u256,
+        data: Span<felt252>
+    );
+    fn safeBatchTransferFrom(
+        from: ContractAddress,
+        to: ContractAddress,
+        tokenIds: Span<u256>,
+        values: Span<u256>,
+        data: Span<felt252>
+    );
+    fn isApprovedForAll(owner: ContractAddress, operator: ContractAddress) -> bool;
+    fn setApprovalForAll(operator: ContractAddress, approved: bool);
+}
+----
+
+== ERC1155 Compatibility
+
+Although Starknet is not EVM compatible, this implementation aims to be as close as possible to the ERC1155 standard but some differences can still be found, such as:
+
+* The optional `data` argument in both `safe_transfer_from` and `safe_batch_transfer_from` is implemented as `Span<felt252>`.
+* `IERC1155Receiver` compliant contracts must implement SRC5 and register the `IERC1155Receiver` interface ID.
+* `IERC1155Receiver::on_erc1155_received` must return that interface ID on success.
+
+== Batch operations
+
+:safe_transfer_from: xref:/api/erc1155.adoc#IERC1155-safe_transfer_from[safe_transfer_from]
+:balance_of_batch: xref:/api/erc1155.adoc#IERC1155-balance_of_batch[balance_of_batch]
+:safe_batch_transfer_from: xref:/api/erc1155.adoc#IERC1155-safe_batch_transfer_from[safe_batch_transfer_from]
+:batch_mint_with_acceptance_check: xref:/api/erc1155.adoc#ERC1155Component-batch_mint_with_acceptance_check[batch_mint_with_acceptance_check]
+
+Because all state is held in a single contract, it is possible to operate over multiple tokens in a single transaction very efficiently. The standard provides two functions, {balance_of_batch} and {safe_batch_transfer_from}, that make querying multiple balances and transferring multiple tokens simpler and less gas-intensive. We also have {safe_transfer_from} for non-batch operations.
+
+In the spirit of the standard, we’ve also included batch operations in the non-standard functions, such as
+{batch_mint_with_acceptance_check}.
+
+WARNING: While {safe_transfer_from} and {safe_batch_transfer_from} prevent loss by checking the receiver can handle the
+tokens, this yields execution to the receiver which can result in a xref:security.adoc#reentrancy_guard[reentrant call].
+
+== Receiving tokens
+
+:src5: xref:introspection.adoc#src5[SRC5]
+:on_erc1155_received: xref:/api/erc1155.adoc#IERC1155Receiver-on_erc1155_received[on_erc1155_received]
+:on_erc1155_batch_received: xref:/api/erc1155.adoc#IERC1155Receiver-on_erc1155_batch_received[on_erc1155_batch_received]
+:computing-interface-id: xref:introspection.adoc#computing_the_interface_id[Computing the interface ID]
+
+In order to be sure a non-account contract can safely accept ERC1155 tokens, said contract must implement the `IERC1155Receiver` interface.
+The recipient contract must also implement the {src5} interface which supports interface introspection.
+
+=== IERC1155Receiver
+
+:receiver-id: xref:/api/erc1155.adoc#IERC1155Receiver[IERC1155Receiver interface ID]
+
+[,cairo]
+----
+#[starknet::interface]
+pub trait IERC1155Receiver {
+    fn on_erc1155_received(
+        operator: ContractAddress,
+        from: ContractAddress,
+        token_id: u256,
+        value: u256,
+        data: Span<felt252>
+    ) -> felt252;
+    fn on_erc1155_batch_received(
+        operator: ContractAddress,
+        from: ContractAddress,
+        token_ids: Span<u256>,
+        values: Span<u256>,
+        data: Span<felt252>
+    ) -> felt252;
+}
+----
+
+Implementing the `IERC1155Receiver` interface exposes the {on_erc1155_received} and {on_erc1155_batch_received} methods.
+When {safe_transfer_from} and {safe_batch_transfer_from} are called, they invoke the recipient contract's `on_erc1155_received` or `on_erc1155_batch_received` methods respectively which *must* return the {receiver-id}.
+Otherwise, the transaction will fail.
+
+TIP: For information on how to calculate interface IDs, see {computing-interface-id}.
+
+=== Creating a token receiver contract
+
+:ERC1155ReceiverComponent: xref:/api/erc1155.adoc#ERC1155ReceiverComponent[ERC1155ReceiverComponent]
+
+The Contracts for Cairo {ERC1155ReceiverComponent} already returns the correct interface ID for safe token transfers.
+To integrate the `IERC1155Receiver` interface into a contract, simply include the ABI embed directive to the implementations and add the `initializer` in the contract's constructor.
+Here's an example of a simple token receiver contract:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyTokenReceiver {
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_token::erc1155::ERC1155ReceiverComponent;
+    use starknet::ContractAddress;
+
+    component!(path: ERC1155ReceiverComponent, storage: erc1155_receiver, event: ERC1155ReceiverEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // ERC1155Receiver Mixin
+    #[abi(embed_v0)]
+    impl ERC1155ReceiverMixinImpl = ERC1155ReceiverComponent::ERC1155ReceiverMixinImpl<ContractState>;
+    impl ERC1155ReceiverInternalImpl = ERC1155ReceiverComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc1155_receiver: ERC1155ReceiverComponent::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC1155ReceiverEvent: ERC1155ReceiverComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.erc1155_receiver.initializer();
+    }
+}
+----

@@ -1,0 +1,450 @@
+= Governor
+
+:votes-component: xref:api/governance.adoc#VotesComponent[VotesComponent]
+:governor-component: xref:api/governance.adoc#GovernorComponent[GovernorComponent]
+:access-control: xref:access.adoc#role_based_accesscontrol[AccessControl]
+:timelock-controller: xref:governance/timelock.adoc[TimelockController]
+:ivotes: xref:api/governance.adoc#IVotes[IVotes]
+
+include::../utils/_common.adoc[]
+
+Decentralized protocols are in constant evolution from the moment they are publicly released. Often,
+the initial team retains control of this evolution in the first stages, but eventually delegates it
+to a community of stakeholders. The process by which this community makes decisions is called
+on-chain governance, and it has become a central component of decentralized protocols, fueling
+varied decisions such as parameter tweaking, smart contract upgrades, integrations with other
+protocols, treasury management, grants, etc.
+
+This governance protocol is generally implemented in a special-purpose contract called “Governor”. In
+OpenZeppelin Contracts for Cairo, we set out to build a modular system of Governor components where different
+requirements can be accommodated by implementing specific traits. You will find the most common requirements out of the box,
+but writing additional ones is simple, and we will be adding new features as requested by the community in future releases.
+
+== Usage and setup
+
+=== Token
+
+The voting power of each account in our governance setup will be determined by an ERC20 or an ERC721 token. The token has
+to implement the {votes-component} extension. This extension will keep track of historical balances so that voting power
+is retrieved from past snapshots rather than current balance, which is an important protection that prevents double voting.
+
+If your project already has a live token that does not include Votes and is not upgradeable, you can wrap it in a
+governance token by using a wrapper. This will allow token holders to participate in governance by wrapping their tokens 1-to-1.
+
+NOTE: The library currently does not include a wrapper for tokens, but it will be added in a future release.
+
+NOTE: Currently, the clock mode is fixed to block timestamps, since the Votes component uses the block timestamp to track
+checkpoints. We plan to add support for more flexible clock modes in Votes in a future release, allowing to use, for example,
+block numbers instead.
+
+=== Governor
+
+We will initially build a Governor without a timelock. The core logic is given by the {governor-component}, but we
+still need to choose:
+
+1) how voting power is determined,
+
+2) how many votes are needed for quorum,
+
+3) what options people have when casting a vote and how those votes are counted, and
+
+4) the execution mechanism that should be used.
+
+Each of these aspects is customizable by writing your own extensions,
+or more easily choosing one from the library.
+
+:GovernorVotes: xref:api/governance.adoc#GovernorVotesComponent[GovernorVotes]
+:GovernorVotesQuorumFraction: xref:api/governance.adoc#GovernorVotesQuorumFractionComponent[GovernorVotesQuorumFraction]
+:GovernorCountingSimple: xref:api/governance.adoc#GovernorCountingSimpleComponent[GovernorCountingSimple]
+:GovernorCoreExecution: xref:api/governance.adoc#GovernorCoreExecutionComponent[GovernorCoreExecution]
+:GovernorSettings: xref:api/governance.adoc#GovernorSettingsComponent[GovernorSettings]
+:GovernorTimelockExecution: xref:api/governance.adoc#GovernorTimelockExecutionComponent[GovernorTimelockExecution]
+:GovernorSettingsTrait: xref:api/governance.adoc#GovernorComponent[GovernorSettingsTrait]
+
+**For 1)** we will use the {GovernorVotes} extension, which hooks to an {ivotes} instance to determine the voting power
+of an account based on the token balance they hold when a proposal becomes active.
+This module requires the address of the token to be passed as an argument to the initializer.
+
+**For 2)** we will use {GovernorVotesQuorumFraction}. This works together with the {ivotes} instance to define the quorum as a
+percentage of the total supply at the block when a proposal’s voting power is retrieved. This requires an initializer
+parameter to set the percentage besides the votes token address. Most Governors nowadays use 4%. Since the quorum denominator
+is 1000 for precision, we initialize the module with a numerator of 40, resulting in a 4% quorum (40/1000 = 0.04 or 4%).
+
+**For 3)** we will use {GovernorCountingSimple}, an extension that offers 3 options to voters: For, Against, and Abstain,
+and where only For and Abstain votes are counted towards quorum.
+
+**For 4)** we will use {GovernorCoreExecution}, an extension that allows proposal execution directly through the governor.
+
+NOTE: Another option is {GovernorTimelockExecution}. An example can be found in the next section.
+
+Besides these, we also need an implementation for the {GovernorSettingsTrait} defining the voting delay, voting period,
+and proposal threshold. While we can use the {GovernorSettings} extension which allows to set these parameters by the
+governor itself, we will implement the trait locally in the contract and set the voting delay, voting period,
+and proposal threshold as constant values.
+
+__voting_delay__: How long after a proposal is created should voting power be fixed. A large voting delay gives
+users time to unstake tokens if necessary.
+
+__voting_period__: How long does a proposal remain open to votes.
+
+NOTE: These parameters are specified in the unit defined in the token’s clock, which is for now always timestamps.
+
+__proposal_threshold__: This restricts proposal creation to accounts who have enough voting power.
+
+An implementation of `GovernorComponent::ImmutableConfig` is also required. For the example below, we have used
+the `DefaultConfig`. Check the {immutable-config} guide for more details.
+
+The last missing step is to add an `SNIP12Metadata` implementation used to retrieve the name and version of the governor.
+
+[, cairo]
+----
+#[starknet::contract]
+mod MyGovernor {
+    use openzeppelin_governance::governor::GovernorComponent::InternalTrait as GovernorInternalTrait;
+    use openzeppelin_governance::governor::extensions::GovernorVotesQuorumFractionComponent::InternalTrait;
+    use openzeppelin_governance::governor::extensions::{
+        GovernorVotesQuorumFractionComponent, GovernorCountingSimpleComponent,
+        GovernorCoreExecutionComponent,
+    };
+    use openzeppelin_governance::governor::{GovernorComponent, DefaultConfig};
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_utils::cryptography::snip12::SNIP12Metadata;
+    use starknet::ContractAddress;
+
+    pub const VOTING_DELAY: u64 = 86400; // 1 day
+    pub const VOTING_PERIOD: u64 = 604800; // 1 week
+    pub const PROPOSAL_THRESHOLD: u256 = 10;
+    pub const QUORUM_NUMERATOR: u256 = 40; // 4%
+
+    component!(path: GovernorComponent, storage: governor, event: GovernorEvent);
+    component!(
+        path: GovernorVotesQuorumFractionComponent,
+        storage: governor_votes,
+        event: GovernorVotesEvent
+    );
+    component!(
+        path: GovernorCountingSimpleComponent,
+        storage: governor_counting_simple,
+        event: GovernorCountingSimpleEvent
+    );
+    component!(
+        path: GovernorCoreExecutionComponent,
+        storage: governor_core_execution,
+        event: GovernorCoreExecutionEvent
+    );
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // Governor
+    #[abi(embed_v0)]
+    impl GovernorImpl = GovernorComponent::GovernorImpl<ContractState>;
+
+    // Extensions external
+    #[abi(embed_v0)]
+    impl QuorumFractionImpl =
+        GovernorVotesQuorumFractionComponent::QuorumFractionImpl<ContractState>;
+
+    // Extensions internal
+    impl GovernorQuorumImpl = GovernorVotesQuorumFractionComponent::GovernorQuorum<ContractState>;
+    impl GovernorVotesImpl = GovernorVotesQuorumFractionComponent::GovernorVotes<ContractState>;
+    impl GovernorCountingSimpleImpl =
+        GovernorCountingSimpleComponent::GovernorCounting<ContractState>;
+    impl GovernorCoreExecutionImpl =
+        GovernorCoreExecutionComponent::GovernorExecution<ContractState>;
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        pub governor: GovernorComponent::Storage,
+        #[substorage(v0)]
+        pub governor_votes: GovernorVotesQuorumFractionComponent::Storage,
+        #[substorage(v0)]
+        pub governor_counting_simple: GovernorCountingSimpleComponent::Storage,
+        #[substorage(v0)]
+        pub governor_core_execution: GovernorCoreExecutionComponent::Storage,
+        #[substorage(v0)]
+        pub src5: SRC5Component::Storage,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorEvent: GovernorComponent::Event,
+        #[flat]
+        GovernorVotesEvent: GovernorVotesQuorumFractionComponent::Event,
+        #[flat]
+        GovernorCountingSimpleEvent: GovernorCountingSimpleComponent::Event,
+        #[flat]
+        GovernorCoreExecutionEvent: GovernorCoreExecutionComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, votes_token: ContractAddress) {
+        self.governor.initializer();
+        self.governor_votes.initializer(votes_token, QUORUM_NUMERATOR);
+    }
+
+    //
+    // SNIP12 Metadata
+    //
+
+    pub impl SNIP12MetadataImpl of SNIP12Metadata {
+        fn name() -> felt252 {
+            'DAPP_NAME'
+        }
+
+        fn version() -> felt252 {
+            'DAPP_VERSION'
+        }
+    }
+
+    //
+    // Locally implemented extensions
+    //
+
+    pub impl GovernorSettings of GovernorComponent::GovernorSettingsTrait<ContractState> {
+        /// See `GovernorComponent::GovernorSettingsTrait::voting_delay`.
+        fn voting_delay(self: @GovernorComponent::ComponentState<ContractState>) -> u64 {
+            VOTING_DELAY
+        }
+
+        /// See `GovernorComponent::GovernorSettingsTrait::voting_period`.
+        fn voting_period(self: @GovernorComponent::ComponentState<ContractState>) -> u64 {
+            VOTING_PERIOD
+        }
+
+        /// See `GovernorComponent::GovernorSettingsTrait::proposal_threshold`.
+        fn proposal_threshold(self: @GovernorComponent::ComponentState<ContractState>) -> u256 {
+            PROPOSAL_THRESHOLD
+        }
+    }
+}
+----
+
+=== Timelock
+
+It is good practice to add a timelock to governance decisions. This allows users to exit the system if they disagree
+with a decision before it is executed. We will use OpenZeppelin’s {timelock-controller} in combination with the
+GovernorTimelockExecution extension.
+
+IMPORTANT: When using a timelock, it is the timelock that will execute proposals and thus the timelock that should
+hold any funds, ownership, and access control roles.
+
+TimelockController uses an {access-control} setup that we need to understand in order to set up roles.
+
+The Proposer role is in charge of queueing operations: this is the role the Governor instance must be granted,
+and it MUST be the only proposer (and canceller) in the system.
+
+The Executor role is in charge of executing already available operations: we can assign this role to the special
+zero address to allow anyone to execute (if operations can be particularly time sensitive, the Governor should be made Executor instead).
+
+The Canceller role is in charge of canceling operations: the Governor instance must be granted this role,
+and it MUST be the only canceller in the system.
+
+Lastly, there is the Admin role, which can grant and revoke the two previous roles: this is a very sensitive role that will be granted automatically to the timelock itself, and optionally to a second account, which can be used for ease of setup but should promptly renounce the role.
+
+The following example uses the GovernorTimelockExecution extension, together with GovernorSettings, and uses a
+fixed quorum value instead of a percentage:
+
+[, cairo]
+----
+#[starknet::contract]
+pub mod MyTimelockedGovernor {
+    use openzeppelin_governance::governor::GovernorComponent::InternalTrait as GovernorInternalTrait;
+    use openzeppelin_governance::governor::extensions::GovernorSettingsComponent::InternalTrait as GovernorSettingsInternalTrait;
+    use openzeppelin_governance::governor::extensions::GovernorTimelockExecutionComponent::InternalTrait as GovernorTimelockExecutionInternalTrait;
+    use openzeppelin_governance::governor::extensions::GovernorVotesComponent::InternalTrait as GovernorVotesInternalTrait;
+    use openzeppelin_governance::governor::extensions::{
+        GovernorVotesComponent, GovernorSettingsComponent, GovernorCountingSimpleComponent,
+        GovernorTimelockExecutionComponent
+    };
+    use openzeppelin_governance::governor::{GovernorComponent, DefaultConfig};
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_utils::cryptography::snip12::SNIP12Metadata;
+    use starknet::ContractAddress;
+
+    pub const VOTING_DELAY: u64 = 86400; // 1 day
+    pub const VOTING_PERIOD: u64 = 604800; // 1 week
+    pub const PROPOSAL_THRESHOLD: u256 = 10;
+    pub const QUORUM: u256 = 100_000_000;
+
+    component!(path: GovernorComponent, storage: governor, event: GovernorEvent);
+    component!(path: GovernorVotesComponent, storage: governor_votes, event: GovernorVotesEvent);
+    component!(
+        path: GovernorSettingsComponent, storage: governor_settings, event: GovernorSettingsEvent
+    );
+    component!(
+        path: GovernorCountingSimpleComponent,
+        storage: governor_counting_simple,
+        event: GovernorCountingSimpleEvent
+    );
+    component!(
+        path: GovernorTimelockExecutionComponent,
+        storage: governor_timelock_execution,
+        event: GovernorTimelockExecutionEvent
+    );
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // Governor
+    #[abi(embed_v0)]
+    impl GovernorImpl = GovernorComponent::GovernorImpl<ContractState>;
+
+    // Extensions external
+    #[abi(embed_v0)]
+    impl VotesTokenImpl = GovernorVotesComponent::VotesTokenImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl GovernorSettingsAdminImpl =
+        GovernorSettingsComponent::GovernorSettingsAdminImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl TimelockedImpl =
+        GovernorTimelockExecutionComponent::TimelockedImpl<ContractState>;
+
+    // Extensions internal
+    impl GovernorVotesImpl = GovernorVotesComponent::GovernorVotes<ContractState>;
+    impl GovernorSettingsImpl = GovernorSettingsComponent::GovernorSettings<ContractState>;
+    impl GovernorCountingSimpleImpl =
+        GovernorCountingSimpleComponent::GovernorCounting<ContractState>;
+    impl GovernorTimelockExecutionImpl =
+        GovernorTimelockExecutionComponent::GovernorExecution<ContractState>;
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        pub governor: GovernorComponent::Storage,
+        #[substorage(v0)]
+        pub governor_votes: GovernorVotesComponent::Storage,
+        #[substorage(v0)]
+        pub governor_settings: GovernorSettingsComponent::Storage,
+        #[substorage(v0)]
+        pub governor_counting_simple: GovernorCountingSimpleComponent::Storage,
+        #[substorage(v0)]
+        pub governor_timelock_execution: GovernorTimelockExecutionComponent::Storage,
+        #[substorage(v0)]
+        pub src5: SRC5Component::Storage,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorEvent: GovernorComponent::Event,
+        #[flat]
+        GovernorVotesEvent: GovernorVotesComponent::Event,
+        #[flat]
+        GovernorSettingsEvent: GovernorSettingsComponent::Event,
+        #[flat]
+        GovernorCountingSimpleEvent: GovernorCountingSimpleComponent::Event,
+        #[flat]
+        GovernorTimelockExecutionEvent: GovernorTimelockExecutionComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState, votes_token: ContractAddress, timelock_controller: ContractAddress
+    ) {
+        self.governor.initializer();
+        self.governor_votes.initializer(votes_token);
+        self.governor_settings.initializer(VOTING_DELAY, VOTING_PERIOD, PROPOSAL_THRESHOLD);
+        self.governor_timelock_execution.initializer(timelock_controller);
+    }
+
+    //
+    // SNIP12 Metadata
+    //
+
+    pub impl SNIP12MetadataImpl of SNIP12Metadata {
+        fn name() -> felt252 {
+            'DAPP_NAME'
+        }
+
+        fn version() -> felt252 {
+            'DAPP_VERSION'
+        }
+    }
+
+    //
+    // Locally implemented extensions
+    //
+
+    impl GovernorQuorum of GovernorComponent::GovernorQuorumTrait<ContractState> {
+        /// See `GovernorComponent::GovernorQuorumTrait::quorum`.
+        fn quorum(self: @GovernorComponent::ComponentState<ContractState>, timepoint: u64) -> u256 {
+            QUORUM
+        }
+    }
+}
+----
+
+== Interface
+
+This is the full interface of the `Governor` implementation:
+[source,cairo]
+----
+#[starknet::interface]
+pub trait IGovernor<TState> {
+    fn name(self: @TState) -> felt252;
+    fn version(self: @TState) -> felt252;
+    fn COUNTING_MODE(self: @TState) -> ByteArray;
+    fn hash_proposal(self: @TState, calls: Span<Call>, description_hash: felt252) -> felt252;
+    fn state(self: @TState, proposal_id: felt252) -> ProposalState;
+    fn proposal_threshold(self: @TState) -> u256;
+    fn proposal_snapshot(self: @TState, proposal_id: felt252) -> u64;
+    fn proposal_deadline(self: @TState, proposal_id: felt252) -> u64;
+    fn proposal_proposer(self: @TState, proposal_id: felt252) -> ContractAddress;
+    fn proposal_eta(self: @TState, proposal_id: felt252) -> u64;
+    fn proposal_needs_queuing(self: @TState, proposal_id: felt252) -> bool;
+    fn voting_delay(self: @TState) -> u64;
+    fn voting_period(self: @TState) -> u64;
+    fn quorum(self: @TState, timepoint: u64) -> u256;
+    fn get_votes(self: @TState, account: ContractAddress, timepoint: u64) -> u256;
+    fn get_votes_with_params(
+        self: @TState, account: ContractAddress, timepoint: u64, params: Span<felt252>
+    ) -> u256;
+    fn has_voted(self: @TState, proposal_id: felt252, account: ContractAddress) -> bool;
+    fn propose(ref self: TState, calls: Span<Call>, description: ByteArray) -> felt252;
+    fn queue(ref self: TState, calls: Span<Call>, description_hash: felt252) -> felt252;
+    fn execute(ref self: TState, calls: Span<Call>, description_hash: felt252) -> felt252;
+    fn cancel(ref self: TState, calls: Span<Call>, description_hash: felt252) -> felt252;
+    fn cast_vote(ref self: TState, proposal_id: felt252, support: u8) -> u256;
+    fn cast_vote_with_reason(
+        ref self: TState, proposal_id: felt252, support: u8, reason: ByteArray
+    ) -> u256;
+    fn cast_vote_with_reason_and_params(
+        ref self: TState,
+        proposal_id: felt252,
+        support: u8,
+        reason: ByteArray,
+        params: Span<felt252>
+    ) -> u256;
+    fn cast_vote_by_sig(
+        ref self: TState,
+        proposal_id: felt252,
+        support: u8,
+        voter: ContractAddress,
+        signature: Span<felt252>
+    ) -> u256;
+    fn cast_vote_with_reason_and_params_by_sig(
+        ref self: TState,
+        proposal_id: felt252,
+        support: u8,
+        voter: ContractAddress,
+        reason: ByteArray,
+        params: Span<felt252>,
+        signature: Span<felt252>
+    ) -> u256;
+    fn nonces(self: @TState, voter: ContractAddress) -> felt252;
+    fn relay(ref self: TState, call: Call);
+}
+----

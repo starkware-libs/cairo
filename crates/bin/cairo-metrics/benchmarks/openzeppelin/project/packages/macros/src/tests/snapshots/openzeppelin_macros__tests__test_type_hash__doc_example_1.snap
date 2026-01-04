@@ -1,0 +1,26 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+struct MyStruct {
+    #[snip12(name: "My Field")]
+    my_field: felt252,
+}
+pub fn __MY_STRUCT_encoded_type() {
+    println!("\"My Struct\"(\"My Field\":\"felt\")");
+}
+pub const MY_STRUCT_TYPE_HASH: felt252 =
+    0x1735aa9819941b96c651b740b792a96c854565eaff089b7e293d996828b88a8;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

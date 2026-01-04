@@ -1,0 +1,41 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor_counting_simple: GovernorCountingSimpleComponent::Storage,
+    }
+    use openzeppelin_governance::governor::extensions::GovernorCountingSimpleComponent;
+
+    component!(
+        path: GovernorCountingSimpleComponent,
+        storage: governor_counting_simple,
+        event: GovernorCountingSimpleEvent,
+    );
+
+    impl GovernorCountingSimpleGovernorCounting =
+        GovernorCountingSimpleComponent::GovernorCounting<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorCountingSimpleEvent: GovernorCountingSimpleComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

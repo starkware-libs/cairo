@@ -1,0 +1,837 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+:AccessControl: xref:AccessControlComponent[AccessControl]
+:Ownable: xref:OwnableComponent[Ownable]
+:src5: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-5.md[SRC5]
+:inner-src5: xref:api/introspection.adoc#ISRC5[SRC5 ID]
+:set_role_admin: xref:#AccessControlComponent-set_role_admin[set_role_admin]
+:_grant_role: xref:#AccessControlComponent-_grant_role[_grant_role]
+:_grant_role_with_delay: xref:#AccessControlComponent-_grant_role_with_delay[_grant_role_with_delay]
+
+= Access Control
+
+include::../utils/_common.adoc[]
+
+This crate provides ways to restrict who can access the functions of a contract or when they can do it.
+
+- {Ownable} is a simple mechanism with a single "owner" role that can be assigned to a single account.
+This mechanism can be useful in simple scenarios, but fine grained access needs are likely to outgrow it.
+- {AccessControl} provides a general role based access control mechanism. Multiple hierarchical roles can be created and
+assigned each to multiple accounts.
+
+== Authorization
+
+[.contract]
+[[OwnableComponent]]
+=== `++OwnableComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/access/src/ownable/ownable.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_access::ownable::OwnableComponent;
+```
+
+`Ownable` provides a basic access control mechanism where an account
+ (an owner) can be granted exclusive access to specific functions.
+
+This module includes the internal `assert_only_owner` to restrict a function to be used only by the owner.
+
+[.contract-index#OwnableComponent-Mixin-Impl]
+.{mixin-impls}
+
+--
+.OwnableMixinImpl
+
+* xref:#OwnableComponent-Embeddable-Impls-OwnableImpl[`++OwnableImpl++`]
+* xref:#OwnableComponent-Embeddable-Impls-OwnableCamelOnlyImpl[`++OwnableCamelOnlyImpl++`]
+
+.OwnableTwoStepMixinImpl
+
+* xref:#OwnableComponent-Embeddable-Impls-OwnableTwoStepImpl[`++OwnableTwoStepImpl++`]
+* xref:#OwnableComponent-Embeddable-Impls-OwnableTwoStepCamelOnlyImpl[`++OwnableTwoStepCamelOnlyImpl++`]
+--
+
+[.contract-index#OwnableComponent-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#OwnableComponent-Embeddable-Impls-OwnableImpl]
+.OwnableImpl
+
+* xref:OwnableComponent-owner[`++owner(self)++`]
+* xref:OwnableComponent-transfer_ownership[`++transfer_ownership(self, new_owner)++`]
+* xref:OwnableComponent-renounce_ownership[`++renounce_ownership(self)++`]
+
+[.sub-index#OwnableComponent-Embeddable-Impls-OwnableTwoStepImpl]
+.OwnableTwoStepImpl
+
+* xref:OwnableComponent-two-step-owner[`++owner(self)++`]
+* xref:OwnableComponent-two-step-pending_owner[`++pending_owner(self)++`]
+* xref:OwnableComponent-two-step-accept_ownership[`++accept_ownership(self)++`]
+* xref:OwnableComponent-two-step-transfer_ownership[`++transfer_ownership(self, new_owner)++`]
+* xref:OwnableComponent-two-step-renounce_ownership[`++renounce_ownership(self)++`]
+
+[.sub-index#OwnableComponent-Embeddable-Impls-OwnableCamelOnlyImpl]
+.OwnableCamelOnlyImpl
+
+* xref:OwnableComponent-transferOwnership[`++transferOwnership(self, newOwner)++`]
+* xref:OwnableComponent-renounceOwnership[`++renounceOwnership(self)++`]
+
+[.sub-index#OwnableComponent-Embeddable-Impls-OwnableTwoStepCamelOnlyImpl]
+.OwnableTwoStepCamelOnlyImpl
+
+* xref:OwnableComponent-two-step-pendingOwner[`++pendingOwner(self)++`]
+* xref:OwnableComponent-two-step-acceptOwnership[`++acceptOwnership(self)++`]
+* xref:OwnableComponent-two-step-transferOwnership[`++transferOwnership(self, new_owner)++`]
+* xref:OwnableComponent-two-step-renounceOwnership[`++renounceOwnership(self)++`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:OwnableComponent-initializer[`++initializer(self, owner)++`]
+* xref:OwnableComponent-assert_only_owner[`++assert_only_owner(self)++`]
+* xref:OwnableComponent-_transfer_ownership[`++_transfer_ownership(self, new_owner)++`]
+* xref:OwnableComponent-_propose_owner[`++_propose_owner(self, new_owner)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:OwnableComponent-OwnershipTransferStarted[`++OwnershipTransferStarted(previous_owner, new_owner)++`]
+* xref:OwnableComponent-OwnershipTransferred[`++OwnershipTransferred(previous_owner, new_owner)++`]
+--
+
+[#OwnableComponent-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[OwnableComponent-owner]]
+==== `[.contract-item-name]#++owner++#++(self: @ContractState) → ContractAddress++` [.item-kind]#external#
+// tag::owner[]
+Returns the address of the current owner.
+// end::owner[]
+
+[.contract-item]
+[[OwnableComponent-transfer_ownership]]
+==== `[.contract-item-name]#++transfer_ownership++#++(ref self: ContractState, new_owner: ContractAddress)++` [.item-kind]#external#
+
+Transfers ownership of the contract to a new account (`new_owner`).
+Can only be called by the current owner.
+
+Emits an xref:OwnableComponent-OwnershipTransferred[OwnershipTransferred] event.
+
+[.contract-item]
+[[OwnableComponent-renounce_ownership]]
+==== `[.contract-item-name]#++renounce_ownership++#++(ref self: ContractState)++` [.item-kind]#external#
+// tag::renounce_ownership[]
+Leaves the contract without owner. It will not be possible to call
+`assert_only_owner` functions anymore. Can only be called by the current owner.
+
+NOTE: Renouncing ownership will leave the contract without an owner,
+thereby removing any functionality that is only available to the owner.
+//end::renounce_ownership[]
+
+[#OwnableComponent-Embeddable-Functions-Two-Step]
+==== Embeddable functions (two step transfer)
+
+[.contract-item]
+[[OwnableComponent-two-step-owner]]
+==== `[.contract-item-name]#++owner++#++(self: @ContractState) → ContractAddress++` [.item-kind]#external#
+include::./access.adoc[tag=owner]
+
+[.contract-item]
+[[OwnableComponent-two-step-pending_owner]]
+==== `[.contract-item-name]#++pending_owner++#++(self: @ContractState) → ContractAddress++` [.item-kind]#external#
+
+Returns the address of the pending owner.
+
+[.contract-item]
+[[OwnableComponent-two-step-accept_ownership]]
+==== `[.contract-item-name]#++accept_ownership++#++(ref self: ContractState)++` [.item-kind]#external#
+
+Transfers ownership of the contract to the pending owner.
+Can only be called by the pending owner.
+Resets pending owner to zero address.
+
+Emits an xref:OwnableComponent-OwnershipTransferred[OwnershipTransferred] event.
+
+[.contract-item]
+[[OwnableComponent-two-step-transfer_ownership]]
+==== `[.contract-item-name]#++transfer_ownership++#++(ref self: ContractState, new_owner: ContractAddress)++` [.item-kind]#external#
+
+Starts the two step ownership transfer process, by setting the pending owner. Setting `new_owner` to the zero address is allowed, this can be used to cancel an initiated ownership transfer.
+
+Can only be called by the current owner.
+
+Emits an xref:OwnableComponent-OwnershipTransferStarted[OwnershipTransferStarted] event.
+
+[.contract-item]
+[[OwnableComponent-two-step-renounce_ownership]]
+==== `[.contract-item-name]#++renounce_ownership++#++(ref self: ContractState)++` [.item-kind]#external#
+include::./access.adoc[tag=renounce_ownership]
+
+[.contract-item]
+[[OwnableComponent-transferOwnership]]
+==== `[.contract-item-name]#++transferOwnership++#++(ref self: ContractState, newOwner: ContractAddress)++` [.item-kind]#external#
+
+See xref:OwnableComponent-transfer_ownership[transfer_ownership].
+
+[.contract-item]
+[[OwnableComponent-renounceOwnership]]
+==== `[.contract-item-name]#++renounceOwnership++#++(ref self: ContractState)++` [.item-kind]#external#
+
+See xref:OwnableComponent-renounce_ownership[renounce_ownership].
+
+[.contract-item]
+[[OwnableComponent-two-step-pendingOwner]]
+==== `[.contract-item-name]#++pendingOwner++#++(self: @ContractState)++` [.item-kind]#external#
+
+See xref:OwnableComponent-two-step-pending_owner[pending_owner].
+
+[.contract-item]
+[[OwnableComponent-two-step-acceptOwnership]]
+==== `[.contract-item-name]#++acceptOwnership++#++(self: @ContractState)++` [.item-kind]#external#
+
+See xref:OwnableComponent-two-step-accept_ownership[accept_ownership].
+
+[.contract-item]
+[[OwnableComponent-two-step-transferOwnership]]
+==== `[.contract-item-name]#++transferOwnership++#++(self: @ContractState)++` [.item-kind]#external#
+
+See xref:OwnableComponent-two-step-transfer_ownership[transfer_ownership].
+
+[.contract-item]
+[[OwnableComponent-two-step-renounceOwnership]]
+==== `[.contract-item-name]#++renounceOwnership++#++(self: @ContractState)++` [.item-kind]#external#
+
+See xref:OwnableComponent-two-step-renounce_ownership[renounce_ownership].
+
+[#OwnableComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[OwnableComponent-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ContractState, owner: ContractAddress)++` [.item-kind]#internal#
+
+Initializes the contract and sets `owner` as the initial owner.
+
+Requirements:
+
+- `owner` cannot be the zero address.
+
+Emits an xref:OwnableComponent-OwnershipTransferred[OwnershipTransferred] event.
+
+[.contract-item]
+[[OwnableComponent-assert_only_owner]]
+==== `[.contract-item-name]#++assert_only_owner++#++(self: @ContractState)++` [.item-kind]#internal#
+
+Panics if called by any account other than the owner.
+
+[.contract-item]
+[[OwnableComponent-_transfer_ownership]]
+==== `[.contract-item-name]#++_transfer_ownership++#++(ref self: ContractState, new_owner: ContractAddress)++` [.item-kind]#internal#
+
+Transfers ownership of the contract to a new account (`new_owner`).
+Internal function without access restriction.
+
+Emits an xref:OwnableComponent-OwnershipTransferred[OwnershipTransferred] event.
+
+[.contract-item]
+[[OwnableComponent-_propose_owner]]
+==== `[.contract-item-name]#++_propose_owner++#++(ref self: ContractState, new_owner: ContractAddress)++` [.item-kind]#internal#
+
+Sets a new pending owner in a two step transfer.
+
+Internal function without access restriction.
+
+Emits an xref:OwnableComponent-OwnershipTransferStarted[OwnershipTransferStarted] event.
+
+[#OwnableComponent-Events]
+==== Events
+
+[.contract-item]
+[[OwnableComponent-OwnershipTransferStarted]]
+==== `[.contract-item-name]#++OwnershipTransferStarted++#++(previous_owner: ContractAddress, new_owner: ContractAddress)++` [.item-kind]#event#
+
+Emitted when the pending owner is updated.
+
+[.contract-item]
+[[OwnableComponent-OwnershipTransferred]]
+==== `[.contract-item-name]#++OwnershipTransferred++#++(previous_owner: ContractAddress, new_owner: ContractAddress)++` [.item-kind]#event#
+
+Emitted when the ownership is transferred.
+
+[.contract]
+[[IAccessControl]]
+=== `++IAccessControl++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/access/src/accesscontrol/interface.cairo[{github-icon},role=heading-link]
+
+:grant_role: xref:#IAccessControl-grant_role[grant_role]
+:revoke_role: xref:#IAccessControl-revoke_role[revoke_role]
+:RoleGranted: xref:#IAccessControl-RoleGranted[RoleGranted]
+:RoleRevoked: xref:#IAccessControl-RoleRevoked[RoleRevoked]
+:RoleAdminChanged: xref:#IAccessControl-RoleAdminChanged[RoleAdminChanged]
+
+```cairo
+use openzeppelin_access::accesscontrol::interface::IAccessControl;
+```
+
+External interface of AccessControl.
+
+[.contract-index]
+.{inner-src5}
+--
+0x23700be02858dbe2ac4dc9c9f66d0b6b0ed81ec7f970ca6844500a56ff61751
+--
+
+[.contract-index]
+.Functions
+--
+* xref:IAccessControl-has_role[`++has_role(role, account)++`]
+* xref:IAccessControl-get_role_admin[`++get_role_admin(role)++`]
+* xref:IAccessControl-grant_role[`++grant_role(role, account)++`]
+* xref:IAccessControl-revoke_role[`++revoke_role(role, account)++`]
+* xref:IAccessControl-renounce_role[`++renounce_role(role, account)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:IAccessControl-RoleAdminChanged[`++RoleAdminChanged(role, previous_admin_role, new_admin_role)++`]
+* xref:IAccessControl-RoleGranted[`++RoleGranted(role, account, sender)++`]
+* xref:IAccessControl-RoleRevoked[`++RoleRevoked(role, account, sender)++`]
+
+--
+
+[#IAccessControl-Functions]
+==== Functions
+
+[.contract-item]
+[[IAccessControl-has_role]]
+==== `[.contract-item-name]#++has_role++#++(role: felt252, account: ContractAddress) → bool++` [.item-kind]#external#
+
+Returns whether `account` can act as `role`.
+
+[.contract-item]
+[[IAccessControl-get_role_admin]]
+==== `[.contract-item-name]#++get_role_admin++#++(role: felt252) → felt252++` [.item-kind]#external#
+
+Returns the admin role that controls `role`. See {grant_role} and
+{revoke_role}.
+
+To change a role's admin, use {set_role_admin}.
+
+[.contract-item]
+[[IAccessControl-grant_role]]
+==== `[.contract-item-name]#++grant_role++#++(role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+Grants `role` to `account`.
+
+If `account` had not been already granted `role`, emits a {RoleGranted}
+event.
+
+Requirements:
+
+- the caller must have ``role``'s admin role.
+
+[.contract-item]
+[[IAccessControl-revoke_role]]
+==== `[.contract-item-name]#++revoke_role++#++(role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+Revokes `role` from `account`.
+
+If `account` had been granted `role`, emits a {RoleRevoked} event.
+
+Requirements:
+
+- the caller must have ``role``'s admin role.
+
+[.contract-item]
+[[IAccessControl-renounce_role]]
+==== `[.contract-item-name]#++renounce_role++#++(role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+Revokes `role` from the calling account.
+
+Roles are often managed via {grant_role} and {revoke_role}. This function's
+purpose is to provide a mechanism for accounts to lose their privileges
+if they are compromised (such as when a trusted device is misplaced).
+
+If the calling account had been granted `role`, emits a {RoleRevoked}
+event.
+
+Requirements:
+
+- the caller must be `account`.
+
+[#IAccessControl-Events]
+==== Events
+
+[.contract-item]
+[[IAccessControl-RoleAdminChanged]]
+==== `[.contract-item-name]#++RoleAdminChanged++#++(role: felt252, previous_admin_role: ContractAddress, new_admin_role: ContractAddress)++` [.item-kind]#event#
+
+Emitted when `new_admin_role` is set as ``role``'s admin role, replacing `previous_admin_role`
+
+`DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite
+{RoleAdminChanged} not being emitted signaling this.
+
+[.contract-item]
+[[IAccessControl-RoleGranted]]
+==== `[.contract-item-name]#++RoleGranted++#++(role: felt252, account: ContractAddress, sender: ContractAddress)++` [.item-kind]#event#
+
+Emitted when `account` is granted `role`.
+
+`sender` is the account that originated the contract call, an account with the admin role
+or the deployer address if `_grant_role` is called from the constructor.
+
+[.contract-item]
+[[IAccessControl-RoleRevoked]]
+==== `[.contract-item-name]#++RoleRevoked++#++(role: felt252, account: ContractAddress, sender: ContractAddress)++` [.item-kind]#event#
+
+Emitted when `account` is revoked `role`.
+
+`sender` is the account that originated the contract call:
+
+- if using `revoke_role`, it is the admin role bearer.
+- if using `renounce_role`, it is the role bearer (i.e. `account`).
+
+[.contract]
+[[IAccessControlWithDelay]]
+=== `++IAccessControlWithDelay++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/access/src/accesscontrol/interface.cairo[{github-icon},role=heading-link]
+
+:grant_role_with_delay: xref:#IAccessControlWithDelay-grant_role_with_delay[grant_role_with_delay]
+:RoleGrantedWithDelay: xref:#IAccessControlWithDelay-RoleGrantedWithDelay[RoleGrantedWithDelay]
+
+```cairo
+use openzeppelin_access::accesscontrol::interface::IAccessControlWithDelay;
+```
+
+External interface for the extended `AccessControlWithDelay` functionality.
+
+[.contract-index]
+.Functions
+--
+* xref:IAccessControlWithDelay-get_role_status[`++get_role_status(role, account)++`]
+* xref:IAccessControlWithDelay-grant_role_with_delay[`++grant_role_with_delay(role, account, delay)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:IAccessControlWithDelay-RoleGrantedWithDelay[`++RoleGrantedWithDelay(role, account, sender, delay)++`]
+
+--
+
+[#IAccessControlWithDelay-Functions]
+==== Functions
+
+[.contract-item]
+[[IAccessControlWithDelay-get_role_status]]
+==== `[.contract-item-name]#++get_role_status++#++(role: felt252, account: ContractAddress) → RoleStatus++` [.item-kind]#external#
+
+Returns the account's status for the given role.
+The possible statuses are:
+
+- `NotGranted`: the role has not been granted to the account.
+- `Delayed`: The role has been granted to the account but is not yet active due to a
+time delay.
+- `Effective`: the role has been granted to the account and is currently active.
+
+[.contract-item]
+[[IAccessControlWithDelay-grant_role_with_delay]]
+==== `[.contract-item-name]#++grant_role_with_delay++#++(role: felt252, account: ContractAddress, delay: u64)++` [.item-kind]#external#
+
+Attempts to grant `role` to `account` with the specified activation delay.
+
+Requirements:
+
+- The caller must have ``role``'s admin role.
+- delay must be greater than 0.
+- the `role` must not be already effective for `account`.
+
+May emit a {RoleGrantedWithDelay} event.
+
+[#IAccessControlWithDelay-Events]
+==== Events
+
+[.contract-item]
+[[IAccessControlWithDelay-RoleGrantedWithDelay]]
+==== `[.contract-item-name]#++RoleGrantedWithDelay++#++(role: felt252, account: ContractAddress, sender: ContractAddress, delay: u64)++` [.item-kind]#event#
+
+Emitted when `account` is granted `role` with a delay.
+
+`sender` is the account that originated the contract call, an account with the admin role
+or the deployer address if {_grant_role_with_delay} is called from the constructor.
+
+[.contract]
+[[AccessControlComponent]]
+=== `++AccessControlComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/access/src/accesscontrol/accesscontrol.cairo[{github-icon},role=heading-link]
+
+:assert_only_role: xref:#AccessControlComponent-assert_only_role
+:grant_role: xref:#AccessControlComponent-grant_role[grant_role]
+:revoke_role: xref:#AccessControlComponent-revoke_role[revoke_role]
+
+```cairo
+use openzeppelin_access::accesscontrol::AccessControlComponent;
+```
+
+Component that allows contracts to implement role-based access control mechanisms.
+Roles are referred to by their `felt252` identifier:
+
+```cairo
+const MY_ROLE: felt252 = selector!("MY_ROLE");
+```
+
+Roles can be used to represent a set of permissions. To restrict access to a
+function call, use {assert_only_role}[`assert_only_role`]:
+
+```cairo
+(...)
+
+#[external(v0)]
+fn foo(ref self: ContractState) {
+    self.accesscontrol.assert_only_role(MY_ROLE);
+
+    // Do something
+}
+```
+
+Roles can be granted and revoked dynamically via the {grant_role}, {grant_role_with_delay} and
+{revoke_role} functions. Each role has an associated admin role, and only
+accounts that have a role's admin role can call {grant_role}, {grant_role_with_delay} and {revoke_role}.
+
+By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means
+that only accounts with this role will be able to grant or revoke other
+roles. More complex role relationships can be created by using
+{set_role_admin}.
+
+WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to
+grant and revoke this role. Extra precautions should be taken to secure
+accounts that have been granted it.
+
+[.contract-index#AccessControl-Mixin-Impl]
+.{mixin-impls}
+
+--
+.AccessControlMixinImpl
+
+* xref:#AccessControlComponent-Embeddable-Impls-AccessControlImpl[`++AccessControlImpl++`]
+* xref:#AccessControlComponent-Embeddable-Impls-AccessControlCamelImpl[`++AccessControlCamelImpl++`]
+* xref:#AccessControlComponent-Embeddable-Impls-AccessControlWithDelayImpl[`++AccessControlWithDelayImpl++`]
+* xref:api/introspection.adoc#SRC5Component-Embeddable-Impls[`++SRC5Impl++`]
+--
+
+[.contract-index#AccessControlComponent-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#AccessControlComponent-Embeddable-Impls-AccessControlImpl]
+.AccessControlImpl
+
+* xref:#AccessControlComponent-has_role[`++has_role(self, role, account)++`]
+* xref:#AccessControlComponent-get_role_admin[`++get_role_admin(self, role)++`]
+* xref:#AccessControlComponent-grant_role[`++grant_role(self, role, account)++`]
+* xref:#AccessControlComponent-revoke_role[`++revoke_role(self, role, account)++`]
+* xref:#AccessControlComponent-renounce_role[`++renounce_role(self, role, account)++`]
+
+[.sub-index#AccessControlComponent-Embeddable-Impls-AccessControlCamelImpl]
+.AccessControlCamelImpl
+
+* xref:#AccessControlComponent-hasRole[`++hasRole(self, role, account)++`]
+* xref:#AccessControlComponent-getRoleAdmin[`++getRoleAdmin(self, role)++`]
+* xref:#AccessControlComponent-grantRole[`++grantRole(self, role, account)++`]
+* xref:#AccessControlComponent-revokeRole[`++revokeRole(self, role, account)++`]
+* xref:#AccessControlComponent-renounceRole[`++renounceRole(self, role, account)++`]
+
+[.sub-index#AccessControlComponent-Embeddable-Impls-AccessControlWithDelayImpl]
+.AccessControlWithDelayImpl
+
+* xref:#AccessControlComponent-get_role_status[`++get_role_status(self, role, account)++`]
+* xref:#AccessControlComponent-grant_role_with_delay[`++grant_role_with_delay(self, role, account, delay)++`]
+
+.SRC5Impl
+* xref:api/introspection.adoc#ISRC5-supports_interface[`supports_interface(self, interface_id: felt252)`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#AccessControlComponent-initializer[`++initializer(self)++`]
+* xref:#AccessControlComponent-assert_only_role[`++assert_only_role(self, role)++`]
+* xref:#AccessControlComponent-is_role_effective[`++is_role_effective(self, role, account)++`]
+* xref:#AccessControlComponent-resolve_role_status[`++resolve_role_status(self, role, account)++`]
+* xref:#AccessControlComponent-is_role_granted[`++is_role_granted(self, role, account)++`]
+* xref:#AccessControlComponent-set_role_admin[`++set_role_admin(self, role, admin_role)++`]
+* xref:#AccessControlComponent-_grant_role[`++_grant_role(self, role, account)++`]
+* xref:#AccessControlComponent-_grant_role_with_delay[`++_grant_role_with_delay(self, role, account, delay)++`]
+* xref:#AccessControlComponent-_revoke_role[`++_revoke_role(self, role, account)++`]
+--
+
+[.contract-index]
+.Events
+--
+.IAccessControl
+* xref:#AccessControlComponent-RoleAdminChanged[`++RoleAdminChanged(role, previous_admin_role, new_admin_role)++`]
+* xref:#AccessControlComponent-RoleGranted[`++RoleGranted(role, account, sender)++`]
+* xref:#AccessControlComponent-RoleRevoked[`++RoleRevoked(role, account, sender)++`]
+
+.IAccessControlWithDelay
+* xref:#AccessControlComponent-RoleGrantedWithDelay[`++RoleGrantedWithDelay(role, account, sender, delay)++`]
+--
+
+[#AccessControlComponent-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[AccessControlComponent-has_role]]
+==== `[.contract-item-name]#++has_role++#++(self: @ContractState, role: felt252, account: ContractAddress) → bool++` [.item-kind]#external#
+
+Returns whether `account` can act as `role`.
+
+[.contract-item]
+[[AccessControlComponent-get_role_admin]]
+==== `[.contract-item-name]#++get_role_admin++#++(self: @ContractState, role: felt252) → felt252++` [.item-kind]#external#
+
+Returns the admin role that controls `role`. See {grant_role} and
+{revoke_role}.
+
+To change a role's admin, use {set_role_admin}.
+
+[.contract-item]
+[[AccessControlComponent-get_role_status]]
+==== `[.contract-item-name]#++get_role_status++#++(self: @ContractState, role: felt252, account: ContractAddress) → RoleStatus++` [.item-kind]#external#
+
+Returns the account's status for the given role.
+
+The possible statuses are:
+
+- `NotGranted`: the role has not been granted to the account.
+- `Delayed`: The role has been granted to the account but is not yet active due to a
+time delay.
+- `Effective`: the role has been granted to the account and is currently active.
+
+[.contract-item]
+[[AccessControlComponent-grant_role]]
+==== `[.contract-item-name]#++grant_role++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+Grants `role` to `account`.
+
+If `account` had not been already granted `role`, emits a {RoleGranted}
+event.
+
+Requirements:
+
+- the caller must have ``role``'s admin role.
+
+May emit a {RoleGranted} event.
+
+[.contract-item]
+[[AccessControlComponent-grant_role_with_delay]]
+==== `[.contract-item-name]#++grant_role_with_delay++#++(ref self: ContractState, role: felt252, account: ContractAddress, delay: u64)++` [.item-kind]#external#
+
+Attempts to grant `role` to `account` with the specified activation delay.
+
+Requirements:
+
+- The caller must have `role`'s admin role.
+- delay must be greater than 0.
+- the `role` must not be already effective for `account`.
+
+May emit a {RoleGrantedWithDelay} event.
+
+[.contract-item]
+[[AccessControlComponent-revoke_role]]
+==== `[.contract-item-name]#++revoke_role++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+Revokes `role` from `account`.
+
+If `account` had been granted `role`, emits a {RoleRevoked} event.
+
+Requirements:
+
+- the caller must have ``role``'s admin role.
+
+May emit a {RoleRevoked} event.
+
+[.contract-item]
+[[AccessControlComponent-renounce_role]]
+==== `[.contract-item-name]#++renounce_role++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+Revokes `role` from the calling account.
+
+Roles are often managed via {grant_role} and {revoke_role}. This function's
+purpose is to provide a mechanism for accounts to lose their privileges
+if they are compromised (such as when a trusted device is misplaced).
+
+If the calling account had been revoked `role`, emits a {RoleRevoked}
+event.
+
+Requirements:
+
+- the caller must be `account`.
+
+May emit a {RoleRevoked} event.
+
+[.contract-item]
+[[AccessControlComponent-supports_interface]]
+==== `[.contract-item-name]#++supports_interface++#++(self: @ContractState, interface_id: felt252) → bool++` [.item-kind]#external#
+
+See xref:api/introspection.adoc#ISRC5-supports_interface[ISRC5::supports_interface].
+
+[.contract-item]
+[[AccessControlComponent-hasRole]]
+==== `[.contract-item-name]#++hasRole++#++(self: @ContractState, role: felt252, account: ContractAddress) → bool++` [.item-kind]#external#
+
+See xref:AccessControlComponent-has_role[has_role].
+
+[.contract-item]
+[[AccessControlComponent-getRoleAdmin]]
+==== `[.contract-item-name]#++getRoleAdmin++#++(self: @ContractState, role: felt252) → felt252++` [.item-kind]#external#
+
+See xref:AccessControlComponent-get_role_admin[get_role_admin].
+
+[.contract-item]
+[[AccessControlComponent-grantRole]]
+==== `[.contract-item-name]#++grantRole++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+See xref:AccessControlComponent-grant_role[grant_role].
+
+[.contract-item]
+[[AccessControlComponent-revokeRole]]
+==== `[.contract-item-name]#++revokeRole++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+See xref:AccessControlComponent-revoke_role[revoke_role].
+
+[.contract-item]
+[[AccessControlComponent-renounceRole]]
+==== `[.contract-item-name]#++renounceRole++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#external#
+
+See xref:AccessControlComponent-renounce_role[renounce_role].
+
+[#AccessControlComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[AccessControlComponent-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ContractState)++` [.item-kind]#internal#
+
+Initializes the contract by registering the xref:#IAccessControl[IAccessControl] interface ID.
+
+[.contract-item]
+[[AccessControlComponent-assert_only_role]]
+==== `[.contract-item-name]#++assert_only_role++#++(self: @ContractState, role: felt252)++` [.item-kind]#internal#
+
+Validates that the caller can act as the given role. Otherwise it panics.
+
+[.contract-item]
+[[AccessControlComponent-is_role_effective]]
+==== `[.contract-item-name]#++is_role_effective++#++(self: @ContractState, role: felt252, account: ContractAddress) → bool++` [.item-kind]#internal#
+
+Returns whether the account can act as the given role.
+
+The account can act as the role if it is active and the `effective_from` time is before
+or equal to the current time.
+
+NOTE: If the `effective_from` timepoint is 0, the role is effective immediately.
+This is backwards compatible with implementations that didn't use delays but
+a single boolean flag.
+
+[.contract-item]
+[[AccessControlComponent-resolve_role_status]]
+==== `[.contract-item-name]#++resolve_role_status++#++(self: @ContractState, role: felt252, account: ContractAddress) → RoleStatus++` [.item-kind]#internal#
+
+Returns the account's status for the given role.
+
+The possible statuses are:
+
+- `NotGranted`: the role has not been granted to the account.
+- `Delayed`: The role has been granted to the account but is not yet active due to a
+time delay.
+- `Effective`: the role has been granted to the account and is currently active.
+
+[.contract-item]
+[[AccessControlComponent-is_role_granted]]
+==== `[.contract-item-name]#++is_role_granted++#++(self: @ContractState, role: felt252, account: ContractAddress) → bool++` [.item-kind]#internal#
+
+Returns whether the account has the given role granted.
+
+NOTE: The account may not be able to act as the role yet, if a delay was set and has not
+passed yet. Use `is_role_effective` to check if the account can act as the role.
+
+[.contract-item]
+[[AccessControlComponent-set_role_admin]]
+==== `[.contract-item-name]#++set_role_admin++#++(ref self: ContractState, role: felt252, admin_role: felt252)++` [.item-kind]#internal#
+
+Sets `admin_role` as ``role``'s admin role.
+
+Internal function without access restriction.
+
+Emits a {RoleAdminChanged} event.
+
+[.contract-item]
+[[AccessControlComponent-_grant_role]]
+==== `[.contract-item-name]#++_grant_role++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#internal#
+
+Attempts to grant `role` to `account`. The function does nothing if `role` is already
+effective for `account`. If `role` has been granted to `account`, but is not yet active
+due to a time delay, the delay is removed and `role` becomes effective immediately.
+
+Internal function without access restriction.
+
+May emit a {RoleGranted} event.
+
+[.contract-item]
+[[AccessControlComponent-_grant_role_with_delay]]
+==== `[.contract-item-name]#++_grant_role_with_delay++#++(ref self: ContractState, role: felt252, account: ContractAddress, delay: u64)++` [.item-kind]#internal#
+
+Attempts to grant `role` to `account` with the specified activation delay.
+
+The role will become effective after the given delay has passed. If the role is already
+active (`Effective`) for the account, the function will panic. If the role has been
+granted but is not yet active (being in the `Delayed` state), the existing delay will be
+overwritten with the new `delay`.
+
+Internal function without access restriction.
+
+Requirements:
+
+- delay must be greater than 0.
+- the `role` must not be already effective for `account`.
+
+May emit a {RoleGrantedWithDelay} event.
+
+[.contract-item]
+[[AccessControlComponent-_revoke_role]]
+==== `[.contract-item-name]#++_revoke_role++#++(ref self: ContractState, role: felt252, account: ContractAddress)++` [.item-kind]#internal#
+
+Revokes `role` from `account`.
+
+Internal function without access restriction.
+
+May emit a {RoleRevoked} event.
+
+[#AccessControlComponent-Events]
+==== Events
+
+[.contract-item]
+[[AccessControlComponent-RoleAdminChanged]]
+==== `[.contract-item-name]#++RoleAdminChanged++#++(role: felt252, previous_admin_role: ContractAddress, new_admin_role: ContractAddress)++` [.item-kind]#event#
+
+See xref:IAccessControl-RoleAdminChanged[IAccessControl::RoleAdminChanged].
+
+[.contract-item]
+[[AccessControlComponent-RoleGranted]]
+==== `[.contract-item-name]#++RoleGranted++#++(role: felt252, account: ContractAddress, sender: ContractAddress)++` [.item-kind]#event#
+
+See xref:IAccessControl-RoleGranted[IAccessControl::RoleGranted].
+
+[.contract-item]
+[[AccessControlComponent-RoleGrantedWithDelay]]
+==== `[.contract-item-name]#++RoleGrantedWithDelay++#++(role: felt252, account: ContractAddress, sender: ContractAddress, delay: u64)++` [.item-kind]#event#
+
+See xref:IAccessControlWithDelay-RoleGrantedWithDelay[IAccessControlWithDelay::RoleGrantedWithDelay].
+
+[.contract-item]
+[[AccessControlComponent-RoleRevoked]]
+==== `[.contract-item-name]#++RoleRevoked++#++(role: felt252, account: ContractAddress, sender: ContractAddress)++` [.item-kind]#event#
+
+See xref:IAccessControl-RoleRevoked[IAccessControl::RoleRevoked].

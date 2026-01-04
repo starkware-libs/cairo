@@ -1,0 +1,26 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    #[snip12()]
+    pub name: felt252,
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!("\"MyType\"(\"name\":\"felt\")");
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x1c4049af415d731aa5a71e9e2807b93cc65416ba2097d6c03522132966fcfd7;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

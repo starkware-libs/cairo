@@ -1,0 +1,29 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    Variant1: (felt252, felt252, ClassHash, NftId),
+    Variant2: TokenAmount,
+    Variant3: (ContractAddress,),
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"MyEnum\"(\"Variant1\"(\"felt\",\"felt\",\"ClassHash\",\"NftId\"),\"Variant2\"(\"TokenAmount\"),\"Variant3\"(\"ContractAddress\"))\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x3ee411b33d3a414d1256c0804501e31291dd678ee15b25127994dc5dd5a4dd7;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

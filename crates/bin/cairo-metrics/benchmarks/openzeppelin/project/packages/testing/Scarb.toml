@@ -1,0 +1,27 @@
+[package]
+name = "openzeppelin_testing"
+readme = "README.md"
+keywords = [
+    "openzeppelin",
+    "starknet",
+    "testing",
+    "utils"
+]
+version = "4.1.0"
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation = "https://github.com/openzeppelin/cairo-contracts/blob/openzeppelin_testing-v4.1.0/packages/testing/docs/openzeppelin_testing.md"
+repository.workspace = true
+license-file.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[dependencies]
+assert_macros.workspace = true
+starknet.workspace = true
+snforge_std.workspace = true

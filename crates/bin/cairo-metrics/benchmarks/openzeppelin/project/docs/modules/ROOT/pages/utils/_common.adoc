@@ -1,0 +1,6 @@
+// Notes
+:src5-component-required-note: Implementing xref:api/introspection.adoc#SRC5Component[SRC5Component] is a requirement for this component to be implemented.
+
+// Links
+:mixin-impls: xref:components.adoc#mixins[Embeddable Mixin Implementations]
+:immutable-config: xref:components.adoc#immutable_config[Immutable Component Config]

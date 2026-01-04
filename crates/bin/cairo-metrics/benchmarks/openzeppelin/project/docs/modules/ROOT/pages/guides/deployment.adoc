@@ -1,0 +1,42 @@
+:foundry: https://foundry-rs.github.io/starknet-foundry/starknet/account.html[Starknet Foundry]
+:starkli: https://book.starkli.rs/accounts#account-deployment[Starkli]
+
+= Counterfactual deployments
+
+A counterfactual contract is a contract we can interact with even before actually deploying it on-chain.
+For example, we can send funds or assign privileges to a contract that doesn't yet exist.
+Why? Because deployments in Starknet are deterministic, allowing us to predict the address where our contract will be deployed.
+We can leverage this property to make a contract pay for its own deployment by simply sending funds in advance. We call this a counterfactual deployment.
+
+This process can be described with the following steps:
+
+TIP: For testing this flow you can check the {foundry} or the {starkli} guides for deploying accounts.
+
+1. Deterministically precompute the `contract_address` given a `class_hash`, `salt`, and constructor `calldata`.
+Note that the `class_hash` must be previously declared for the deployment to succeed.
+
+2. Send funds to the `contract_address`. Usually you will estimate the fee of the transaction first. Existing
+tools usually do this for you.
+
+3. Send a `DeployAccount` type transaction to the network.
+
+4. The protocol will then validate the transaction with the `\\__validate_deploy__` entrypoint of the contract to be deployed.
+
+5. If the validation succeeds, the protocol will charge the fee and then register the contract as deployed.
+
+NOTE: Although this method is very popular to deploy accounts, this works for any kind of contract.
+
+== Deployment validation
+
+To be counterfactually deployed, the deploying contract must implement the `\\__validate_deploy__` entrypoint,
+called by the protocol when a `DeployAccount` transaction is sent to the network.
+
+[,cairo]
+----
+trait IDeployable {
+    /// Must return 'VALID' when the validation is successful.
+    fn __validate_deploy__(
+        class_hash: felt252, contract_address_salt: felt252, public_key: felt252
+    ) -> felt252;
+}
+----

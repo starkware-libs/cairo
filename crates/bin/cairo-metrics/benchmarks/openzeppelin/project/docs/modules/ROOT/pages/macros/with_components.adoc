@@ -1,0 +1,131 @@
+= `++with_components++`
+
+This macro simplifies the syntax for adding a set of components to a contract. It:
+
+- _Imports the corresponding components into the contract._
+- _Adds the corresponding `component!` macro entries._
+- _Adds the storage entries for each component to the Storage struct._
+- _Adds the event entries for each component to the Event struct, or creates the struct if it is missing._
+- _Brings the corresponding internal implementations into scope._
+- _Provides some diagnostics for each specific component to help the developer avoid common mistakes._
+
+CAUTION: Since the macro does not expose any external implementations, developers must make sure to specify explicitly
+the ones required by the contract.
+
+[#with_components-security]
+== Security considerations
+
+The macro was designed to be simple and effective while still being very hard to misuse. For this reason, the features
+that it provides are limited, and things that might make the contract behave in unexpected ways must be
+explicitly specified by the developer. It does not specify external implementations, so contracts won't find
+themselves in a situation where external functions are exposed without the developer's knowledge. It brings
+the internal implementations into scope so these functions are available by default, but if they are not used,
+they won't have any effect on the contract's behavior.
+
+[#with_components-usage]
+== Usage
+
+This is how a contract with multiple components looks when using the macro.
+
+```cairo
+#[with_components(Account, SRC5, SRC9, Upgradeable)]
+#[starknet::contract(account)]
+mod OutsideExecutionAccountUpgradeable {
+    use openzeppelin_upgrades::interface::IUpgradeable;
+    use starknet::{ClassHash, ContractAddress};
+
+    // External
+    #[abi(embed_v0)]
+    impl AccountMixinImpl = AccountComponent::AccountMixinImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl OutsideExecutionV2Impl =
+        SRC9Component::OutsideExecutionV2Impl<ContractState>;
+
+    #[storage]
+    struct Storage {}
+
+    #[constructor]
+    fn constructor(ref self: ContractState, public_key: felt252) {
+        self.account.initializer(public_key);
+        self.src9.initializer();
+    }
+
+    #[abi(embed_v0)]
+    impl UpgradeableImpl of IUpgradeable<ContractState> {
+        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
+            self.account.assert_only_self();
+            self.upgradeable.upgrade(new_class_hash);
+        }
+    }
+}
+```
+
+This is how the same contract looks using regular syntax.
+
+```cairo
+#[starknet::contract(account)]
+mod OutsideExecutionAccountUpgradeable {
+    use openzeppelin::account::AccountComponent;
+    use openzeppelin::account::extensions::SRC9Component;
+    use openzeppelin::introspection::src5::SRC5Component;
+    use openzeppelin::upgrades::UpgradeableComponent;
+    use openzeppelin::upgrades::interface::IUpgradeable;
+    use starknet::ClassHash;
+
+    component!(path: AccountComponent, storage: account, event: AccountEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+    component!(path: SRC9Component, storage: src9, event: SRC9Event);
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
+
+    // External
+    #[abi(embed_v0)]
+    impl AccountMixinImpl = AccountComponent::AccountMixinImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl OutsideExecutionV2Impl =
+        SRC9Component::OutsideExecutionV2Impl<ContractState>;
+
+    // Internal
+    impl AccountInternalImpl = AccountComponent::InternalImpl<ContractState>;
+    impl OutsideExecutionInternalImpl = SRC9Component::InternalImpl<ContractState>;
+    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        account: AccountComponent::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage,
+        #[substorage(v0)]
+        src9: SRC9Component::Storage,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        AccountEvent: AccountComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+        #[flat]
+        SRC9Event: SRC9Component::Event,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, public_key: felt252) {
+        self.account.initializer(public_key);
+        self.src9.initializer();
+    }
+
+    #[abi(embed_v0)]
+    impl UpgradeableImpl of IUpgradeable<ContractState> {
+        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
+            self.account.assert_only_self();
+            self.upgradeable.upgrade(new_class_hash);
+        }
+    }
+}
+```

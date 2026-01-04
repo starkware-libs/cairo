@@ -1,0 +1,36 @@
+name: Auto Update Workflow
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  autoupdate:
+    name: autoupdate
+    runs-on: ubuntu-22.04
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: docker://chinthakagodawita/autoupdate-action:v1
+        env:
+          PR_FILTER: "labelled"
+          PR_LABELS: "autoupdate"
+          PR_READY_STATE: "ready_for_review"
+          MERGE_CONFLICT_ACTION: "ignore"
+          MERGE_MSG: "Branch was auto-updated."
+          EXCLUDED_LABELS: "autoupdate-rebase"
+  autoupdate-rebase:
+    name: autoupdate-rebase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: peter-evans/rebase@v3
+        with:
+          base: dev
+          include-labels: |
+            autoupdate-rebase
+          exclude-labels: |
+            autoupdate
+          exclude-drafts: true

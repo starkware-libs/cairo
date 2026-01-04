@@ -1,0 +1,23 @@
+[package]
+name = "openzeppelin_macros"
+version = "2.0.0"
+edition = "2021"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+cairo-lang-macro = "0.1"
+cairo-lang-parser = "2.11"
+cairo-lang-plugins = "2.11"
+cairo-lang-syntax = "2.11"
+cairo-lang-defs = "2.11"
+cairo-lang-formatter = "2.11"
+cairo-lang-starknet-classes = "2.11"
+indoc = "2.0.5"
+regex = "1.11.1"
+insta = "1.42.0"
+convert_case = "0.8.0"
+fancy-regex = "0.14.0"

@@ -1,0 +1,41 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract(src9)]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub src9: SRC9Component::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.src9.initializer();
+    }
+    use openzeppelin_account::extensions::SRC9Component;
+
+    component!(path: SRC9Component, storage: src9, event: SRC9Event);
+
+    impl SRC9InternalImpl = SRC9Component::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        SRC9Event: SRC9Component::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

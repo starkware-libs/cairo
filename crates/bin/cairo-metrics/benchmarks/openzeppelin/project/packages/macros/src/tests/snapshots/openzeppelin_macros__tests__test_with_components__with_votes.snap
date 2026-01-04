@@ -1,0 +1,48 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use openzeppelin_utils::cryptography::snip12::SNIP12Metadata;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub votes: VotesComponent::Storage,
+    }
+
+    /// Required for hash computation.
+    pub impl SNIP12MetadataImpl of SNIP12Metadata {
+        fn name() -> felt252 {
+            'DAPP_NAME'
+        }
+        fn version() -> felt252 {
+            'DAPP_VERSION'
+        }
+    }
+    use openzeppelin_governance::votes::VotesComponent;
+
+    component!(path: VotesComponent, storage: votes, event: VotesEvent);
+
+    impl VotesInternalImpl = VotesComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        VotesEvent: VotesComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

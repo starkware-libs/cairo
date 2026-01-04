@@ -1,0 +1,64 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod VestingWallet {
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub vesting: VestingComponent::Storage,
+        #[substorage(v0)]
+        pub ownable: OwnableComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        beneficiary: ContractAddress,
+        start: u64,
+        duration: u64,
+        cliff_duration: u64,
+    ) {
+        self.ownable.initializer(beneficiary);
+        self.vesting.initializer(start, duration, cliff_duration);
+    }
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_finance::vesting::VestingComponent;
+
+    component!(path: VestingComponent, storage: vesting, event: VestingEvent);
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+
+    impl VestingInternalImpl = VestingComponent::InternalImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        VestingEvent: VestingComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: The Vesting component requires an implementation of the VestingScheduleTrait in scope and
+it looks like it is missing.
+
+You can use the LinearVestingSchedule implementation by importing it:
+
+`use openzeppelin_finance::vesting::LinearVestingSchedule;`
+====
+
+AuxData:
+
+None

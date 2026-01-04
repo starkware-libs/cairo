@@ -1,0 +1,691 @@
+= Components
+
+The following documentation provides reasoning and examples on how to use Contracts for Cairo components.
+
+:shamans-post: https://community.starknet.io/t/cairo-components/101136#components-1[Starknet Shamans post]
+:cairo-book: https://book.cairo-lang.org/ch103-02-00-composability-and-components.html[Cairo book]
+
+Starknet components are separate modules that contain storage, events, and implementations that can be integrated into a contract.
+Components themselves cannot be declared or deployed.
+Another way to think of components is that they are abstract modules that must be instantiated.
+
+TIP: For more information on the construction and design of Starknet components, see the {shamans-post} and the {cairo-book}.
+
+== Building a contract
+
+=== Setup
+
+:initializable-component: xref:/security.adoc#initializable[InitializableComponent]
+:accessing-storage: xref:accessing_component_storage[Accessing component storage]
+
+The contract should first import the component and declare it with the `component!` macro:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    // Import the component
+    use openzeppelin_security::InitializableComponent;
+
+    // Declare the component
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
+}
+----
+
+The `path` argument should be the imported component itself (in this case, {initializable-component}).
+The `storage` and `event` arguments are the variable names that will be set in the `Storage` struct and `Event` enum, respectively.
+Note that even if the component doesn't define any events, the compiler will still create an empty event enum inside the component module.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_security::InitializableComponent;
+
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        initializable: InitializableComponent::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        InitializableEvent: InitializableComponent::Event
+    }
+}
+----
+
+The `#[substorage(v0)]` attribute must be included for each component in the `Storage` trait.
+This allows the contract to have indirect access to the component's storage.
+See {accessing-storage} for more on this.
+
+The `#[flat]` attribute for events in the `Event` enum, however, is not required.
+For component events, the first key in the event log is the component ID.
+Flattening the component event removes it, leaving the event ID as the first key.
+
+=== Implementations
+
+:erc20-component: xref:/api/erc20.adoc#ERC20Component[ERC20Component]
+:mixin: xref:/components.adoc#mixins[mixin]
+
+Components come with granular implementations of different interfaces.
+This allows contracts to integrate only the implementations that they'll use and avoid unnecessary bloat.
+Integrating an implementation looks like this:
+
+[,cairo]
+----
+mod MyContract {
+    use openzeppelin_security::InitializableComponent;
+
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
+
+    (...)
+
+    // Gives the contract access to the implementation methods
+    impl InitializableImpl =
+        InitializableComponent::InitializableImpl<ContractState>;
+}
+----
+
+Defining an `impl` gives the contract access to the methods within the implementation from the component.
+For example, `is_initialized` is defined in the `InitializableImpl`.
+A function on the contract level can expose it like this:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_security::InitializableComponent;
+
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
+
+    (...)
+
+    impl InitializableImpl =
+        InitializableComponent::InitializableImpl<ContractState>;
+
+    #[external(v0)]
+    fn is_initialized(ref self: ContractState) -> bool {
+        self.initializable.is_initialized()
+    }
+}
+----
+
+While there's nothing wrong with manually exposing methods like in the previous example, this process can be tedious for implementations with many methods.
+Fortunately, a contract can embed implementations which will expose all of the methods of the implementation.
+To embed an implementation, add the `#[abi(embed_v0)]` attribute above the `impl`:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    (...)
+
+    // This attribute exposes the methods of the `impl`
+    #[abi(embed_v0)]
+    impl InitializableImpl =
+        InitializableComponent::InitializableImpl<ContractState>;
+}
+----
+
+`InitializableImpl` defines the `is_initialized` method in the component.
+By adding the embed attribute, `is_initialized` becomes a contract entrypoint for `MyContract`.
+
+[TIP]
+====
+Embeddable implementations, when available in this library's components, are segregated from the internal component implementation which makes it easier to safely expose.
+Components also separate granular implementations from {mixin} implementations.
+The API documentation design reflects these groupings.
+See {erc20-component} as an example which includes:
+
+- *Embeddable Mixin Implementation*
+- *Embeddable Implementations*
+- *Internal Implementations*
+- *Events*
+====
+
+=== Mixins
+
+Mixins are impls made of a combination of smaller, more specific impls.
+While separating components into granular implementations offers flexibility,
+integrating components with many implementations can appear crowded especially if the contract uses all of them.
+Mixins simplify this by allowing contracts to embed groups of implementations with a single directive.
+
+Compare the following code blocks to see the benefit of using a mixin when creating an account contract.
+
+==== Account without mixin
+
+[,cairo]
+----
+component!(path: AccountComponent, storage: account, event: AccountEvent);
+component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+#[abi(embed_v0)]
+impl SRC6Impl = AccountComponent::SRC6Impl<ContractState>;
+#[abi(embed_v0)]
+impl DeclarerImpl = AccountComponent::DeclarerImpl<ContractState>;
+#[abi(embed_v0)]
+impl DeployableImpl = AccountComponent::DeployableImpl<ContractState>;
+#[abi(embed_v0)]
+impl PublicKeyImpl = AccountComponent::PublicKeyImpl<ContractState>;
+#[abi(embed_v0)]
+impl SRC6CamelOnlyImpl = AccountComponent::SRC6CamelOnlyImpl<ContractState>;
+#[abi(embed_v0)]
+impl PublicKeyCamelImpl = AccountComponent::PublicKeyCamelImpl<ContractState>;
+impl AccountInternalImpl = AccountComponent::InternalImpl<ContractState>;
+
+#[abi(embed_v0)]
+impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+----
+
+==== Account with mixin
+
+[,cairo]
+----
+component!(path: AccountComponent, storage: account, event: AccountEvent);
+component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+#[abi(embed_v0)]
+impl AccountMixinImpl = AccountComponent::AccountMixinImpl<ContractState>;
+impl AccountInternalImpl = AccountComponent::InternalImpl<ContractState>;
+----
+
+The rest of the setup for the contract, however, does not change.
+This means that component dependencies must still be included in the `Storage` struct and `Event` enum.
+Here's a full example of an account contract that embeds the `AccountMixinImpl`:
+
+[,cairo]
+----
+#[starknet::contract]
+mod Account {
+    use openzeppelin_account::AccountComponent;
+    use openzeppelin_introspection::src5::SRC5Component;
+
+    component!(path: AccountComponent, storage: account, event: AccountEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // This embeds all of the methods from the many AccountComponent implementations
+    // and also includes `supports_interface` from `SRC5Impl`
+    #[abi(embed_v0)]
+    impl AccountMixinImpl = AccountComponent::AccountMixinImpl<ContractState>;
+    impl AccountInternalImpl = AccountComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        account: AccountComponent::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        AccountEvent: AccountComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, public_key: felt252) {
+        self.account.initializer(public_key);
+    }
+}
+----
+
+=== Initializers
+
+:ownable-component: xref:/api/access.adoc#OwnableComponent[OwnableComponent]
+
+WARNING: Failing to use a component's `initializer` can result in irreparable contract deployments.
+Always read the API documentation for each integrated component.
+
+Some components require some sort of setup upon construction.
+Usually, this would be a job for a constructor; however, components themselves cannot implement constructors.
+Components instead offer ``initializer``s within their `InternalImpl` to call from the contract's constructor.
+Let's look at how a contract would integrate {ownable-component}:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_access::ownable::OwnableComponent;
+    use starknet::ContractAddress;
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+
+    // Instantiate `InternalImpl` to give the contract access to the `initializer`
+    impl InternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        OwnableEvent: OwnableComponent::Event
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, owner: ContractAddress) {
+        // Invoke ownable's `initializer`
+        self.ownable.initializer(owner);
+    }
+}
+----
+
+=== Immutable Config
+
+:erc2981-component: xref:/api/token_common.adoc#ERC2981Component[ERC2981Component]
+:SRC-107: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-107.md[SRC-107]
+
+While initializers help set up the component's initial state, some require configuration that may be defined
+as constants, saving gas by avoiding the necessity of reading from storage each time the variable needs to be used. The
+Immutable Component Config pattern helps with this matter by allowing the implementing contract to define a set of
+constants declared in the component, customizing its functionality.
+
+NOTE: The Immutable Component Config standard is defined in the {SRC-107}.
+
+Here's an example of how to use the Immutable Component Config pattern with the {erc2981-component}:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_introspection::src5::SRC5Component;
+    use openzeppelin_token::common::erc2981::ERC2981Component;
+    use starknet::contract_address_const;
+
+    component!(path: ERC2981Component, storage: erc2981, event: ERC2981Event);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+
+    // Instantiate `InternalImpl` to give the contract access to the `initializer`
+    impl InternalImpl = ERC2981Component::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        erc2981: ERC2981Component::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC2981Event: ERC2981Component::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event
+    }
+
+    // Define the immutable config
+    pub impl ERC2981ImmutableConfig of ERC2981Component::ImmutableConfig {
+        const FEE_DENOMINATOR: u128 = 10_000;
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        let default_receiver = contract_address_const::<'RECEIVER'>();
+        let default_royalty_fraction = 1000;
+        // Invoke erc2981's `initializer`
+        self.erc2981.initializer(default_receiver, default_royalty_fraction);
+    }
+}
+----
+
+==== Default config
+
+Sometimes, components implementing the Immutable Component Config pattern provide a default configuration that can be
+directly used without implementing the `ImmutableConfig` trait locally. When provided, this implementation will be named
+`DefaultConfig` and will be available in the same module containing the component, as a sibling.
+
+In the following example, the `DefaultConfig` trait is used to define the `FEE_DENOMINATOR` config constant.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_introspection::src5::SRC5Component;
+    // Bring the DefaultConfig trait into scope
+    use openzeppelin_token::common::erc2981::{ERC2981Component, DefaultConfig};
+    use starknet::contract_address_const;
+
+    component!(path: ERC2981Component, storage: erc2981, event: ERC2981Event);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+
+    // Instantiate `InternalImpl` to give the contract access to the `initializer`
+    impl InternalImpl = ERC2981Component::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        (...)
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        (...)
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        let default_receiver = contract_address_const::<'RECEIVER'>();
+        let default_royalty_fraction = 1000;
+        // Invoke erc2981's `initializer`
+        self.erc2981.initializer(default_receiver, default_royalty_fraction);
+    }
+}
+----
+
+==== `validate` function
+
+:validate-section: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-107.md#validate-function[validate section of the SRC-107]
+
+The `ImmutableConfig` trait may also include a `validate` function with a default implementation, which
+asserts that the configuration is correct, and must not be overridden by the implementing contract. For more information
+on how to use this function, refer to the {validate-section}.
+
+=== Dependencies
+
+:access-component: xref:/api/access.adoc#AccessControlComponent[AccessControlComponent]
+:src5-component: xref:/api/introspection.adoc#SRC5Component[SRC5Component]
+
+Some components include dependencies of other components.
+Contracts that integrate components with dependencies must also include the component dependency.
+For instance, {access-component} depends on {src5-component}.
+Creating a contract with `AccessControlComponent` should look like this:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_access::accesscontrol::AccessControlComponent;
+    use openzeppelin_introspection::src5::SRC5Component;
+
+    component!(path: AccessControlComponent, storage: accesscontrol, event: AccessControlEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+
+    // AccessControl
+    #[abi(embed_v0)]
+    impl AccessControlImpl =
+        AccessControlComponent::AccessControlImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl AccessControlCamelImpl =
+        AccessControlComponent::AccessControlCamelImpl<ContractState>;
+    impl AccessControlInternalImpl = AccessControlComponent::InternalImpl<ContractState>;
+
+    // SRC5
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        accesscontrol: AccessControlComponent::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        AccessControlEvent: AccessControlComponent::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event
+    }
+
+    (...)
+}
+----
+
+== Customization
+
+:security: xref:security[Security]
+
+WARNING: Customizing implementations and accessing component storage can potentially corrupt the state, bypass security checks, and undermine the component logic.
+*Exercise extreme caution*. See {security}.
+
+=== Hooks
+
+:hooks-post: https://fleming-andrew.medium.com/extending-cairo-contracts-with-hooks-c3ca21d1d6b8[Extending Cairo Contracts with Hooks]
+
+Hooks are entrypoints to the business logic of a token component that are accessible at the contract level.
+This allows contracts to insert additional behaviors before and/or after token transfers (including mints and burns).
+Prior to hooks, extending functionality required contracts to create <<custom_implementations, custom implementations>>.
+
+All token components include a generic hooks trait that include empty default functions.
+When creating a token contract, the using contract must create an implementation of the hooks trait.
+Suppose an ERC20 contract wanted to include Pausable functionality on token transfers.
+The following snippet leverages the `before_update` hook to include this behavior.
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyToken {
+    use openzeppelin_security::pausable::PausableComponent::InternalTrait;
+    use openzeppelin_security::pausable::PausableComponent;
+    use openzeppelin_token::erc20::{ERC20Component, DefaultConfig};
+    use starknet::ContractAddress;
+
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+    component!(path: PausableComponent, storage: pausable, event: PausableEvent);
+
+    // ERC20 Mixin
+    #[abi(embed_v0)]
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl PausableImpl = PausableComponent::PausableImpl<ContractState>;
+    impl PausableInternalImpl = PausableComponent::InternalImpl<ContractState>;
+
+    // Create the hooks implementation
+    impl ERC20HooksImpl of ERC20Component::ERC20HooksTrait<ContractState> {
+        // Occurs before token transfers
+        fn before_update(
+            ref self: ERC20Component::ComponentState<ContractState>,
+            from: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) {
+            // Access local state from component state
+            let contract_state = self.get_contract();
+            // Call function from integrated component
+            contract_state.pausable.assert_not_paused();
+        }
+
+        // Omitting the `after_update` hook because the default behavior
+        // is already implemented in the trait
+    }
+
+    (...)
+}
+----
+
+Notice that the `self` parameter expects a component state type.
+Instead of passing the component state, the using contract's state can be passed which simplifies the syntax.
+The hook then moves the scope up with the Cairo-generated `get_contract` through the `HasComponent` trait (as illustrated with ERC20Component in this example).
+From here, the hook can access the using contract's integrated components, storage, and implementations.
+
+Be advised that even if a token contract does not require hooks, the hooks trait must still be implemented.
+The using contract may instantiate an empty impl of the trait;
+however, the Contracts for Cairo library already provides the instantiated impl to abstract this away from contracts.
+The using contract just needs to bring the implementation into scope like this:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyToken {
+    use openzeppelin_token::erc20::{ERC20Component, DefaultConfig};
+    use openzeppelin_token::erc20::ERC20HooksEmptyImpl;
+
+    (...)
+}
+----
+
+TIP: For a more in-depth guide on hooks, see {hooks-post}.
+
+=== Custom implementations
+
+:erc20-component: xref:/api/erc20.adoc#ERC20Component[ERC20Component]
+:custom-decimals: xref:/erc20.adoc#customizing_decimals[Customizing decimals]
+
+There are instances where a contract requires different or amended behaviors from a component implementation.
+In these scenarios, a contract must create a custom implementation of the interface.
+Let's break down a pausable ERC20 contract to see what that looks like.
+Here's the setup:
+
+[,cairo]
+----
+#[starknet::contract]
+mod ERC20Pausable {
+    use openzeppelin_security::pausable::PausableComponent;
+    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl, DefaultConfig};
+    // Import the ERC20 interfaces to create custom implementations
+    use openzeppelin_token::erc20::interface::{IERC20, IERC20CamelOnly};
+    use starknet::ContractAddress;
+
+    component!(path: PausableComponent, storage: pausable, event: PausableEvent);
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+
+    #[abi(embed_v0)]
+    impl PausableImpl = PausableComponent::PausableImpl<ContractState>;
+    impl PausableInternalImpl = PausableComponent::InternalImpl<ContractState>;
+
+    // `ERC20MetadataImpl` can keep the embed directive because the implementation
+    // will not change
+    #[abi(embed_v0)]
+    impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
+    // Do not add the embed directive to these implementations because
+    // these will be customized
+    impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
+    impl ERC20CamelOnlyImpl = ERC20Component::ERC20CamelOnlyImpl<ContractState>;
+
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    (...)
+}
+----
+
+The first thing to notice is that the contract imports the interfaces of the implementations that will be customized.
+These will be used in the next code example.
+
+Next, the contract includes the {erc20-component} implementations; however, `ERC20Impl` and `ERC20CamelOnlyImplt` are *not* embedded.
+Instead, we want to expose our custom implementation of an interface.
+The following example shows the pausable logic integrated into the ERC20 implementations:
+
+[,cairo]
+----
+#[starknet::contract]
+mod ERC20Pausable {
+    (...)
+
+    // Custom ERC20 implementation
+    #[abi(embed_v0)]
+    impl CustomERC20Impl of IERC20<ContractState> {
+        fn transfer(
+            ref self: ContractState, recipient: ContractAddress, amount: u256
+        ) -> bool {
+            // Add the custom logic
+            self.pausable.assert_not_paused();
+            // Add the original implementation method from `IERC20Impl`
+            self.erc20.transfer(recipient, amount)
+        }
+
+        fn total_supply(self: @ContractState) -> u256 {
+            // This method's behavior does not change from the component
+            // implementation, but this method must still be defined.
+            // Simply add the original implementation method from `IERC20Impl`
+            self.erc20.total_supply()
+        }
+
+        (...)
+    }
+
+    // Custom ERC20CamelOnly implementation
+    #[abi(embed_v0)]
+    impl CustomERC20CamelOnlyImpl of IERC20CamelOnly<ContractState> {
+        fn totalSupply(self: @ContractState) -> u256 {
+            self.erc20.total_supply()
+        }
+
+        fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
+            self.erc20.balance_of(account)
+        }
+
+        fn transferFrom(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) -> bool {
+            self.pausable.assert_not_paused();
+            self.erc20.transfer_from(sender, recipient, amount)
+        }
+    }
+}
+----
+
+Notice that in the `CustomERC20Impl`, the `transfer` method integrates `pausable.assert_not_paused` as well as `erc20.transfer` from `PausableImpl` and `ERC20Impl` respectively.
+This is why the contract defined the `ERC20Impl` from the component in the previous example.
+
+Creating a custom implementation of an interface must define *all* methods from that interface.
+This is true even if the behavior of a method does not change from the component implementation (as `total_supply` exemplifies in this example).
+
+=== Accessing component storage
+
+There may be cases where the contract must read or write to an integrated component's storage.
+To do so, use the same syntax as calling an implementation method except replace the name of the method with the storage variable like this:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MyContract {
+    use openzeppelin_security::InitializableComponent;
+
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        initializable: InitializableComponent::Storage
+    }
+
+    (...)
+
+    fn write_to_comp_storage(ref self: ContractState) {
+        self.initializable.Initializable_initialized.write(true);
+    }
+
+    fn read_from_comp_storage(self: @ContractState) -> bool {
+        self.initializable.Initializable_initialized.read()
+    }
+}
+----
+
+== Security
+
+The maintainers of OpenZeppelin Contracts for Cairo are mainly concerned with the correctness and security of the code as published in the library.
+
+Customizing implementations and manipulating the component state may break some important assumptions and introduce vulnerabilities.
+While we try to ensure the components remain secure in the face of a wide range of potential customizations, this is done in a best-effort manner.
+Any and all customizations to the component logic should be carefully reviewed and checked against the source code of the component they are customizing so as to fully understand their impact and guarantee their security. 

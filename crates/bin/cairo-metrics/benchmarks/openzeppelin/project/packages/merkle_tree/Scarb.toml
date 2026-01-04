@@ -1,0 +1,27 @@
+[package]
+name = "openzeppelin_merkle_tree"
+readme = "README.md"
+keywords = [
+    "openzeppelin",
+    "cairo",
+    "merkle_tree",
+]
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[dev-dependencies]
+assert_macros.workspace = true
+starknet.workspace = true
+snforge_std.workspace = true
+openzeppelin_testing = { path = "../testing" }

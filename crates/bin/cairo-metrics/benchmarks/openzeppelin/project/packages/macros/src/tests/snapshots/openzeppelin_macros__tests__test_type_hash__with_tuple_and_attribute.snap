@@ -1,0 +1,28 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    #[snip12(kind: "(shortstring, felt252, ClassHash, NftId)")]
+    pub member: (felt252, felt252, ClassHash, NftId),
+}
+pub fn __MY_TYPE_encoded_type() {
+    println!(
+        "\"MyType\"(\"member\":\"(shortstring,felt,ClassHash,NftId)\")\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_TYPE_TYPE_HASH: felt252 =
+    0x1f21a98e964603cd3fc7965e01b244816345e1b5bc757218fa49c62e436b12b;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

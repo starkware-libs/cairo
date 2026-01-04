@@ -1,0 +1,209 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+:strk-merkle-tree: https://github.com/ericnordelo/strk-merkle-tree[JavaScript library]
+:verify: xref:#merkle_proof-verify[verify]
+:verify_pedersen: xref:#merkle_proof-verify_pedersen[verify_pedersen]
+:verify_poseidon: xref:#merkle_proof-verify_poseidon[verify_poseidon]
+:verify_multi_proof: xref:#merkle_proof-verify_multi_proof[verify_multi_proof]
+:process_multi_proof: xref:#merkle_proof-process_multi_proof[process_multi_proof]
+
+= Merkle Tree
+
+This crate provides a set of utilities for verifying Merkle Tree proofs on-chain. The tree and the proofs can be
+generated using this {strk-merkle-tree}.
+
+This module provides:
+
+- `{verify}` - can prove that some value is part of a Merkle tree.
+
+- `{verify_multi_proof}` - can prove multiple values are part of a Merkle tree.
+
+NOTE: `openzeppelin_merkle_tree` doesn't have dependencies outside of `corelib`, and can be used in projects that are not Starknet-related.
+
+[TIP]
+====
+To use it as a standalone package, you can add it in your `Scarb.toml` as follows:
+
+`openzeppelin_merkle_tree = "2.0.0"`
+====
+
+== Modules
+
+[.contract]
+[[merkle_proof]]
+=== `++merkle_proof++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/merkle_tree/src/merkle_proof.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_merkle_tree::merkle_proof;
+```
+
+These functions deal with verification of Merkle Tree proofs.
+
+The tree and the proofs can be generated using this {strk-merkle-tree}. You will find a quickstart guide in the readme.
+
+WARNING: You should avoid using leaf values that are two felt252 values long prior to hashing, or use a hash function
+other than the one used to hash internal nodes for hashing leaves. This is because the concatenation of a sorted pair
+of internal nodes in the Merkle tree could be reinterpreted as a leaf value. The JavaScript library generates Merkle
+trees that are safe against this attack out of the box.
+
+[.contract-index]
+.Functions
+--
+* xref:#merkle_proof-verify[`++verify<Hasher>(proof, root, leaf)++`]
+* xref:#merkle_proof-verify_pedersen[`++verify_pedersen(proof, root, leaf)++`]
+* xref:#merkle_proof-verify_poseidon[`++verify_poseidon(proof, root, leaf)++`]
+* xref:#merkle_proof-process_proof[`++process_proof<Hasher>(proof, leaf)++`]
+* xref:#merkle_proof-verify_multi_proof[`++verify_multi_proof<Hasher>(proof, proof_flags, root, leaves)++`]
+* xref:#merkle_proof-process_multi_proof[`++process_multi_proof<Hasher>(proof, proof_flags, leaf)++`]
+--
+
+[#merkle_proof-Functions]
+==== Functions
+
+[.contract-item]
+[[merkle_proof-verify]]
+==== `[.contract-item-name]#++verify<+CommutativeHasher>++#++(proof: Span<felt252>, root: felt252, leaf: felt252) → bool++` [.item-kind]#public#
+
+Returns true if a `leaf` can be proved to be a part of a Merkle tree defined by `root`.
+
+For this, a `proof` must be provided, containing sibling hashes on the branch from the leaf to the root of the tree.
+
+Each pair of leaves and each pair of pre-images are assumed to be sorted.
+
+[NOTE]
+====
+This function expects a `CommutativeHasher` implementation. See xref:#hashes-CommutativeHasher[hashes::CommutativeHasher] for more information.
+
+`{verify_pedersen}` and `{verify_poseidon}` already include the corresponding `Hasher` implementations.
+====
+
+[.contract-item]
+[[merkle_proof-verify_pedersen]]
+==== `[.contract-item-name]#++verify_pedersen++#++(proof: Span<felt252>, root: felt252, leaf: felt252) → bool++` [.item-kind]#public#
+
+Version of `{verify}` using Pedersen as the hashing function.
+
+[.contract-item]
+[[merkle_proof-verify_poseidon]]
+==== `[.contract-item-name]#++verify_poseidon++#++(proof: Span<felt252>, root: felt252, leaf: felt252) → bool++` [.item-kind]#public#
+
+Version of `{verify}` using Poseidon as the hashing function.
+
+[.contract-item]
+[[merkle_proof-process_proof]]
+==== `[.contract-item-name]#++process_proof<+CommutativeHasher>++#++(proof: Span<felt252>, leaf: felt252) → felt252++` [.item-kind]#public#
+
+Returns the rebuilt hash obtained by traversing a Merkle tree up from `leaf` using `proof`.
+
+A `proof` is valid if and only if the rebuilt hash matches the root of the tree.
+
+When processing the proof, the pairs of leaves & pre-images are assumed to be sorted.
+
+NOTE: This function expects a `CommutativeHasher` implementation. See xref:#hashes-CommutativeHasher[hashes::CommutativeHasher] for more information.
+
+[.contract-item]
+[[merkle_proof-verify_multi_proof]]
+==== `[.contract-item-name]#++verify_multi_proof<+CommutativeHasher>++#++(proof: Span<felt252>, proof_flags: Span<bool>, root: felt252, leaves: Span<felt252>) → bool++` [.item-kind]#public#
+
+Returns true if the `leaves` can be simultaneously proven to be a part of a Merkle tree defined
+by `root`, according to `proof` and `proof_flags` as described in `{process_multi_proof}`.
+
+The `leaves` must be validated independently.
+
+CAUTION: Not all Merkle trees admit multiproofs. See `{process_multi_proof}` for details.
+
+NOTE: Consider the case where `root == proof.at(0) && leaves.len() == 0` as it will return `true`.
+
+NOTE: This function expects a `CommutativeHasher` implementation. See xref:#hashes-CommutativeHasher[hashes::CommutativeHasher] for more information.
+
+[.contract-item]
+[[merkle_proof-process_multi_proof]]
+==== `[.contract-item-name]#++process_multi_proof<+CommutativeHasher>++#++(proof: Span<felt252>, proof_flags: Span<bool>, leaves: Span<felt252>) → felt252++` [.item-kind]#public#
+
+Returns the root of a tree reconstructed from `leaves` and sibling nodes in `proof`.
+
+The reconstruction proceeds by incrementally reconstructing all inner nodes by combining a
+leaf/inner node with either another leaf/inner node or a proof sibling node, depending on
+whether each `proof_flags` item is true or false respectively.
+
+[CAUTION]
+====
+Not all Merkle trees admit multiproofs.
+To use multiproofs, it is sufficient to ensure that:
+
+1. The tree is complete (but not necessarily perfect).
+2. The leaves to be proven are in the opposite order than they are in the tree.
+(i.e., as seen from right to left starting at the deepest layer and continuing at the next layer).
+====
+
+NOTE: The _empty set_ (i.e. the case where `proof.len() == 1 && leaves.len() == 0`) is
+considered a no-op, and therefore a valid multiproof (i.e. it returns `proof.at(0)`). Consider
+disallowing this case if you're not validating the leaves elsewhere.
+
+NOTE: This function expects a `CommutativeHasher` implementation. See xref:#hashes-CommutativeHasher[hashes::CommutativeHasher] for more information.
+
+
+[.contract]
+[[hashes]]
+=== `++hashes++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/merkle_tree/src/hashes.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_merkle_tree::hashes;
+```
+
+:pedersen-hasher: xref:#hashes-PedersenCHasher[PedersenCHasher]
+:poseidon-hasher: xref:#hashes-PoseidonCHasher[PoseidonCHasher]
+
+Module providing the trait and default implementations for the commutative hash functions used in
+xref:#merkle_proof[`merkle_proof`].
+
+NOTE: The `{pedersen-hasher}` implementation matches the default node hashing function used in the {strk-merkle-tree}.
+
+[.contract-index]
+.Traits
+--
+* xref:#hashes-CommutativeHasher[`++CommutativeHasher++`]
+--
+
+[.contract-index]
+.Impls
+--
+* xref:#hashes-PedersenCHasher[`++PedersenCHasher++`]
+* xref:#hashes-PoseidonCHasher[`++PoseidonCHasher++`]
+--
+
+[#hashes-Traits]
+==== Traits
+
+[.contract-item]
+[[hashes-CommutativeHasher]]
+==== `[.contract-item-name]#++CommutativeHasher++#` [.item-kind]#trait#
+
+Declares a commutative hash function with the following signature:
+
+`commutative_hash(a: felt252, b: felt252) -> felt252;`
+
+which computes a commutative hash of a sorted pair of felt252 values.
+
+This is usually implemented as an extension of a non-commutative hash function, like
+Pedersen or Poseidon, returning the hash of the concatenation of the two values by first
+sorting them.
+
+Frequently used when working with merkle proofs.
+
+NOTE: The `commutative_hash` function MUST follow the invariant that `commutative_hash(a, b) == commutative_hash(b, a)`.
+
+[#hashes-Impls]
+==== Impls
+
+[.contract-item]
+[[hashes-PedersenCHasher]]
+==== `[.contract-item-name]#++PedersenCHasher++#` [.item-kind]#impl#
+
+Implementation of the `CommutativeHasher` trait which computes the Pedersen hash of chaining the two input values
+with the len (2), sorting the pair first.
+
+[.contract-item]
+[[hashes-PoseidonCHasher]]
+==== `[.contract-item-name]#++PoseidonCHasher++#` [.item-kind]#impl#
+
+Implementation of the `CommutativeHasher` trait which computes the Poseidon hash of the concatenation of two values, sorting the pair first.

@@ -1,0 +1,4 @@
+[build]
+base = "docs/"
+command = "npm run docs"
+publish = "build/site"

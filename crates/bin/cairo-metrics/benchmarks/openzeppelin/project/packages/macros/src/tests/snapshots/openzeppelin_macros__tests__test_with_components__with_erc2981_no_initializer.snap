@@ -1,0 +1,45 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use openzeppelin_token::common::erc2981::DefaultConfig;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub erc2981: ERC2981Component::Storage,
+    }
+    use openzeppelin_token::common::erc2981::ERC2981Component;
+
+    component!(path: ERC2981Component, storage: erc2981, event: ERC2981Event);
+
+    impl ERC2981InternalImpl = ERC2981Component::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC2981Event: ERC2981Component::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: It looks like the initializers for the following components are missing:
+
+ERC2981
+
+This may lead to unexpected behavior.
+We recommend adding the corresponding initializer calls to the constructor.
+====
+
+AuxData:
+
+None

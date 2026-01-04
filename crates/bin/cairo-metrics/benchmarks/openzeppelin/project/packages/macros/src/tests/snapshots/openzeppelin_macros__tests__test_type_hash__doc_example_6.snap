@@ -1,0 +1,32 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyStruct {
+    #[snip12(name: "Token Amount")]
+    pub token_amount: TokenAmount,
+    #[snip12(name: "NFT ID")]
+    pub nft_id: NftId,
+    #[snip12(name: "Number")]
+    pub number: u256,
+}
+pub fn __MY_STRUCT_encoded_type() {
+    println!(
+        "\"My Struct\"(\"Token Amount\":\"TokenAmount\",\"NFT ID\":\"NftId\",\"Number\":\"u256\")\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_STRUCT_TYPE_HASH: felt252 =
+    0x19f63528d68c4f44b7d9003a5a6b7793f5bb6ffc8a22bdec82b413ddf4f9412;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

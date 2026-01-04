@@ -1,0 +1,51 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyToken {
+    use openzeppelin_token::erc20::ERC20HooksEmptyImpl;
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub erc20: ERC20Component::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        self.erc20.initializer("MyToken", "MTK");
+    }
+    use openzeppelin_token::erc20::ERC20Component;
+
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        ERC20Event: ERC20Component::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: The ERC20 component requires an ImmutableConfig implementation in scope and
+it looks like it is missing.
+
+You can use the default implementation by importing it:
+
+`use openzeppelin_token::erc20::DefaultConfig;`
+====
+
+AuxData:
+
+None

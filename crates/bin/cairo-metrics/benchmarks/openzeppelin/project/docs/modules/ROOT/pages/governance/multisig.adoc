@@ -1,0 +1,154 @@
+= Multisig
+
+:multisig-component: xref:api/governance.adoc#MultisigComponent[MultisigComponent]
+:snip12-metadata: xref:api/utilities.adoc#snip12[SNIP12Metadata]
+
+The Multisig component implements a multi-signature mechanism to enhance the security and 
+governance of smart contract transactions. It ensures that no single signer can unilaterally 
+execute critical actions, requiring multiple registered signers to approve and collectively 
+execute transactions.
+
+This component is designed to secure operations such as fund management or protocol governance, 
+where collective decision-making is essential. The Multisig Component is self-administered, 
+meaning that changes to signers or quorum must be approved through the multisig process itself.
+
+== Key features
+
+- *Multi-Signature Security*: transactions must be approved by multiple signers, ensuring 
+distributed governance.
+
+- *Quorum Enforcement*: defines the minimum number of approvals required for transaction execution.
+
+- *Self-Administration*: all modifications to the component (e.g., adding or removing signers) 
+must pass through the multisig process.
+
+- *Event Logging*: provides comprehensive event logging for transparency and auditability.
+
+== Signer management
+
+The Multisig component introduces the concept of signers and quorum:
+
+- *Signers*: only registered signers can submit, confirm, revoke, or execute transactions. The Multisig 
+Component supports adding, removing, or replacing signers.
+- *Quorum*: the quorum defines the minimum number of confirmations required to approve a transaction. 
+
+NOTE: To prevent unauthorized modifications, only the contract itself can add, remove, or replace signers or change the quorum. 
+This ensures that all modifications pass through the multisig approval process.
+
+== Transaction lifecycle
+
+The state of a transaction is represented by the `TransactionState` enum and can be retrieved 
+by calling the `get_transaction_state` function with the transaction's identifier.
+
+The identifier of a multisig transaction is a `felt252` value, computed as the Pedersen hash 
+of the transaction's calls and salt. It can be computed by invoking the implementing contract's 
+`hash_transaction` method for single-call transactions or `hash_transaction_batch` for multi-call 
+transactions. Submitting a transaction with identical calls and the same salt value a second time 
+will fail, as transaction identifiers must be unique. To resolve this, use a different salt value 
+to generate a unique identifier.
+
+A transaction in the Multisig component follows a specific lifecycle:
+
+`NotFound` → `Pending` → `Confirmed` → `Executed`
+
+- *NotFound*: the transaction does not exist.
+- *Pending*: the transaction exists but has not reached the required confirmations.
+- *Confirmed*: the transaction has reached the quorum but has not yet been executed.
+- *Executed*: the transaction has been successfully executed.
+
+== Usage
+
+Integrating the Multisig functionality into a contract requires implementing {multisig-component}.
+The contract's constructor should initialize the component with a quorum value and a list of initial signers.
+
+Here's an example of a simple wallet contract featuring the Multisig functionality:
+
+[,cairo]
+----
+#[starknet::contract]
+mod MultisigWallet {
+    use openzeppelin_governance::multisig::MultisigComponent;
+    use starknet::ContractAddress;
+
+    component!(path: MultisigComponent, storage: multisig, event: MultisigEvent);
+
+    #[abi(embed_v0)]
+    impl MultisigImpl = MultisigComponent::MultisigImpl<ContractState>;
+    impl MultisigInternalImpl = MultisigComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        multisig: MultisigComponent::Storage,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        MultisigEvent: MultisigComponent::Event,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, quorum: u32, signers: Span<ContractAddress>) {
+        self.multisig.initializer(quorum, signers);
+    }
+}
+----
+
+== Interface
+
+This is the interface of a contract implementing the {multisig-component}:
+
+[,cairo]
+----
+#[starknet::interface]
+pub trait MultisigABI<TState> {
+    // Read functions
+    fn get_quorum(self: @TState) -> u32;
+    fn is_signer(self: @TState, signer: ContractAddress) -> bool;
+    fn get_signers(self: @TState) -> Span<ContractAddress>;
+    fn is_confirmed(self: @TState, id: TransactionID) -> bool;
+    fn is_confirmed_by(self: @TState, id: TransactionID, signer: ContractAddress) -> bool;
+    fn is_executed(self: @TState, id: TransactionID) -> bool;
+    fn get_submitted_block(self: @TState, id: TransactionID) -> u64;
+    fn get_transaction_state(self: @TState, id: TransactionID) -> TransactionState;
+    fn get_transaction_confirmations(self: @TState, id: TransactionID) -> u32;
+    fn hash_transaction(
+        self: @TState,
+        to: ContractAddress,
+        selector: felt252,
+        calldata: Span<felt252>,
+        salt: felt252,
+    ) -> TransactionID;
+    fn hash_transaction_batch(self: @TState, calls: Span<Call>, salt: felt252) -> TransactionID;
+
+    // Write functions
+    fn add_signers(ref self: TState, new_quorum: u32, signers_to_add: Span<ContractAddress>);
+    fn remove_signers(ref self: TState, new_quorum: u32, signers_to_remove: Span<ContractAddress>);
+    fn replace_signer(
+        ref self: TState, signer_to_remove: ContractAddress, signer_to_add: ContractAddress,
+    );
+    fn change_quorum(ref self: TState, new_quorum: u32);
+    fn submit_transaction(
+        ref self: TState,
+        to: ContractAddress,
+        selector: felt252,
+        calldata: Span<felt252>,
+        salt: felt252,
+    ) -> TransactionID;
+    fn submit_transaction_batch(
+        ref self: TState, calls: Span<Call>, salt: felt252,
+    ) -> TransactionID;
+    fn confirm_transaction(ref self: TState, id: TransactionID);
+    fn revoke_confirmation(ref self: TState, id: TransactionID);
+    fn execute_transaction(
+        ref self: TState,
+        to: ContractAddress,
+        selector: felt252,
+        calldata: Span<felt252>,
+        salt: felt252,
+    );
+    fn execute_transaction_batch(ref self: TState, calls: Span<Call>, salt: felt252);
+}
+----

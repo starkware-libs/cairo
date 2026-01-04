@@ -1,0 +1,18 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+        
+
+Diagnostics:
+
+====
+Error: No valid type found in the input.
+====
+
+AuxData:
+
+None

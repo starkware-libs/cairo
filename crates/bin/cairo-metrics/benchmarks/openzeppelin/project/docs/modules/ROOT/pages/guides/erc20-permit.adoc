@@ -1,0 +1,67 @@
+= ERC20Permit
+
+:permit-fn: xref:/api/erc20.adoc#ERC20Component-permit[permit]
+:approve-fn: xref:/api/erc20.adoc#ERC20Component-approve[approve]
+:snip-12: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-12.md[SNIP12]
+:snip-12-guide: xref:/guides/snip12.adoc[SNIP12 guide]
+:snip12-metadata: xref:api/utilities.adoc#snip12[SNIP12Metadata]
+:eip-2612: https://eips.ethereum.org/EIPS/eip-2612[EIP-2612]
+:erc20-component: xref:/api/erc20.adoc#ERC20Component[ERC20Component]
+:erc20-permit-trait: xref:/api/erc20.adoc#ERC20Component-Embeddable-Impls-ERC20PermitImpl[ERC20Permit]
+:nonces-component: xref:/api/utilities.adoc#NoncesComponent[NoncesComponent]
+:permit-solidity-impl: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/extensions/ERC20Permit.sol[Solidity implementation]
+
+The {eip-2612} standard, commonly referred to as ERC20Permit, is designed to support gasless token approvals. This is achieved with an off-chain 
+signature following the {snip-12} standard, rather than with an on-chain transaction. The {permit-fn} function verifies the signature and sets 
+the spender's allowance if the signature is valid. This approach improves user experience and reduces gas costs.
+
+== Differences from Solidity
+
+Although this extension is mostly similar to the {permit-solidity-impl} of {eip-2612}, there are some notable differences in the parameters of the {permit-fn} function:
+
+- The `deadline` parameter is represented by `u64` rather than `u256`.
+- The `signature` parameter is represented by a span of felts rather than `v`, `r`, and `s` values.
+
+NOTE: Unlike Solidity, there is no enforced format for signatures on Starknet. A signature is represented by an array or span of felts, 
+and there is no universal method for validating signatures of unknown formats. Consequently, a signature provided to the {permit-fn} function 
+is validated through an external `is_valid_signature` call to the contract at the `owner` address.
+
+== Usage
+
+The functionality is provided as an embeddable {erc20-permit-trait} trait of the {erc20-component}.
+
+```cairo
+#[abi(embed_v0)]
+impl ERC20PermitImpl = ERC20Component::ERC20PermitImpl<ContractState>;
+```
+
+A contract must meet the following requirements to be able to use the {erc20-permit-trait} trait:
+
+- Implement {erc20-component}.
+- Implement {nonces-component}.
+- Implement {snip12-metadata} trait (used in signature generation).
+
+== Typed message
+
+To safeguard against replay attacks and ensure the uniqueness of each approval via {permit-fn}, the data signed includes:
+
+- The address of the `owner`.
+- The parameters specified in the {approve-fn} function (`spender` and `amount`)
+- The address of the `token` contract itself.
+- A `nonce`, which must be unique for each operation.
+- The `chain_id`, which protects against cross-chain replay attacks.
+
+The format of the `Permit` structure in a signed permit message is as follows:
+```cairo
+struct Permit {
+    token: ContractAddress,
+    spender: ContractAddress,
+    amount: u256,
+    nonce: felt252,
+    deadline: u64,
+}
+```
+
+NOTE: The owner of the tokens is also part of the signed message. It is used as the `signer` parameter in the `get_message_hash` call.
+
+Further details on preparing and signing a typed message can be found in the {snip-12-guide}.

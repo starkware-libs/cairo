@@ -1,0 +1,46 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod Contract {
+    use openzeppelin_access::accesscontrol::DEFAULT_ADMIN_ROLE;
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub access_control: AccessControlComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, default_admin: ContractAddress) {
+        self.access_control.initializer();
+
+        self.access_control._grant_role(DEFAULT_ADMIN_ROLE, default_admin);
+    }
+    use openzeppelin_access::accesscontrol::AccessControlComponent;
+
+    component!(path: AccessControlComponent, storage: access_control, event: AccessControlEvent);
+
+    impl AccessControlInternalImpl = AccessControlComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        AccessControlEvent: AccessControlComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

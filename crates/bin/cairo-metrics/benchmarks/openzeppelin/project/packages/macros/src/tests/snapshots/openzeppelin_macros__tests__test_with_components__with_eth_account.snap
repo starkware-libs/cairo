@@ -1,0 +1,43 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract(account)]
+pub mod MyContract {
+    use openzeppelin_account::interface::EthPublicKey;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub eth_account: EthAccountComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, public_key: EthPublicKey) {
+        self.eth_account.initializer(public_key);
+    }
+    use openzeppelin_account::EthAccountComponent;
+
+    component!(path: EthAccountComponent, storage: eth_account, event: EthAccountEvent);
+
+    impl EthAccountInternalImpl = EthAccountComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        EthAccountEvent: EthAccountComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

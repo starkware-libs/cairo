@@ -1,0 +1,6 @@
+= Testing
+
+NOTE: The `openzeppelin_testing` package version is now decoupled from the `cairo-contracts` version.
+
+You can find the documentation for the `openzeppelin_testing` package in the README for the corresponding version in the
+https://scarbs.xyz/packages/openzeppelin_testing[scarb registry].

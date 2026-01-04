@@ -1,0 +1,39 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub pausable: PausableComponent::Storage,
+    }
+    use openzeppelin_security::PausableComponent;
+
+    component!(path: PausableComponent, storage: pausable, event: PausableEvent);
+
+    impl PausableInternalImpl = PausableComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        PausableEvent: PausableComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: It looks like the `self.pausable.pause()` and `self.pausable.unpause()` functions are not used in the contract. If
+this is intentional, you may consider removing the Pausable component.
+====
+
+AuxData:
+
+None

@@ -1,0 +1,39 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub votes: VotesComponent::Storage,
+    }
+    use openzeppelin_governance::votes::VotesComponent;
+
+    component!(path: VotesComponent, storage: votes, event: VotesEvent);
+
+    impl VotesInternalImpl = VotesComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        VotesEvent: VotesComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: The Votes component requires an implementation of the SNIP12Metadata trait in scope and
+it looks like it is missing.
+====
+
+AuxData:
+
+None

@@ -1,0 +1,32 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    #[snip12(name: "Token Amount")]
+    TokenAmount: TokenAmount,
+    #[snip12(name: "NFT ID")]
+    NftId: NftId,
+    #[snip12(name: "Number")]
+    Number: u256,
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!(
+        "\"My Enum\"(\"Token Amount\"(\"TokenAmount\"),\"NFT ID\"(\"NftId\"),\"Number\"(\"u256\"))\"NftId\"(\"collection_address\":\"ContractAddress\",\"token_id\":\"u256\")\"TokenAmount\"(\"token_address\":\"ContractAddress\",\"amount\":\"u256\")\"u256\"(\"low\":\"u128\",\"high\":\"u128\")",
+    );
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x39dd19c7e5c5f89e084b78a26200b712c6ae3265f2bae774471c588858421b7;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

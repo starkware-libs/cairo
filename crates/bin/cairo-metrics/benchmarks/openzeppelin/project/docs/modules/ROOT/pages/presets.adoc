@@ -1,0 +1,166 @@
+:account-upgradeable: xref:/api/account.adoc#AccountUpgradeable[AccountUpgradeable]
+:erc20-upgradeable: xref:/api/erc20.adoc#ERC20Upgradeable[ERC20Upgradeable]
+:erc721-upgradeable: xref:/api/erc721.adoc#ERC721Upgradeable[ERC721Upgradeable]
+:erc1155-upgradeable: xref:/api/erc1155.adoc#ERC1155Upgradeable[ERC1155Upgradeable]
+:eth-account-upgradeable: xref:/api/account.adoc#EthAccountUpgradeable[EthAccountUpgradeable]
+:udc: xref:/api/udc.adoc#UniversalDeployer[UniversalDeployer]
+:vesting-wallet: xref:/api/finance.adoc#VestingWallet[VestingWallet]
+:sierra-class-hashes: https://docs.starknet.io/architecture-and-concepts/smart-contracts/class-hash/[Sierra class hashes]
+:starkli: https://book.starkli.rs/introduction[starkli]
+:wizard: https://wizard.openzeppelin.com[Wizard for Cairo]
+
+
+= Presets
+
+include::utils/_class_hashes.adoc[]
+
+Presets are ready-to-deploy contracts provided by the library. Since presets are intended to be very simple
+and as generic as possible, there's no support for custom or complex contracts such as `ERC20Pausable` or `ERC721Mintable`.
+
+TIP: For contract customization and combination of modules you can use {wizard}, our code-generation tool.
+
+
+== Available presets
+
+List of available presets and their corresponding {sierra-class-hashes}. Like Contracts for Cairo,
+use of preset contracts are subject to the terms of the
+https://github.com/OpenZeppelin/cairo-contracts?tab=MIT-1-ov-file#readme[MIT License].
+
+NOTE: Class hashes were computed using {class-hash-cairo-version}.
+
+|===
+| Name | Sierra Class Hash
+
+| `{account-upgradeable}`
+| `{AccountUpgradeable-class-hash}`
+
+| `{erc20-upgradeable}`
+| `{ERC20Upgradeable-class-hash}`
+
+| `{erc721-upgradeable}`
+| `{ERC721Upgradeable-class-hash}`
+
+| `{erc1155-upgradeable}`
+| `{ERC1155Upgradeable-class-hash}`
+
+| `{eth-account-upgradeable}`
+| `{EthAccountUpgradeable-class-hash}`
+
+| `{udc}`
+| `{UniversalDeployer-class-hash}`
+
+| `{vesting-wallet}`
+| `{VestingWallet-class-hash}`
+|===
+
+TIP: {starkli} class-hash command can be used to compute the class hash from a Sierra artifact.
+
+== Usage
+
+:setup_project: xref:index.adoc#set_up_your_project[setting up a project]
+:install_lib: xref:index.adoc#install_the_library[installing the Contracts for Cairo library]
+:presets_dir: link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/presets/src[presets directory]
+
+These preset contracts are ready-to-deploy which means they should already be declared on the Sepolia network.
+Simply deploy the preset class hash and add the appropriate constructor arguments.
+Deploying the ERC20Upgradeable preset with {starkli}, for example, will look like this:
+
+[,bash, subs="verbatim,attributes"]
+----
+starkli deploy {ERC20Upgradeable-class-hash} \
+  <CONSTRUCTOR_ARGS> \
+  --network="sepolia"
+----
+
+If a class hash has yet to be declared, copy/paste the preset contract code and declare it locally.
+Start by {setup_project} and {install_lib}.
+Copy the target preset contract from the {presets_dir} and paste it in the new project's `src/lib.cairo` like this:
+
+[,cairo]
+----
+// src/lib.cairo
+
+#[starknet::contract]
+mod ERC20Upgradeable {
+    use openzeppelin_access::ownable::OwnableComponent;
+    use openzeppelin_token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
+    use openzeppelin_upgrades::UpgradeableComponent;
+    use openzeppelin_upgrades::interface::IUpgradeable;
+    use starknet::{ContractAddress, ClassHash};
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
+
+    // Ownable Mixin
+    #[abi(embed_v0)]
+    impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    // ERC20 Mixin
+    #[abi(embed_v0)]
+    impl ERC20MixinImpl = ERC20Component::ERC20MixinImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    // Upgradeable
+    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        erc20: ERC20Component::Storage,
+        #[substorage(v0)]
+        upgradeable: UpgradeableComponent::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        ERC20Event: ERC20Component::Event,
+        #[flat]
+        UpgradeableEvent: UpgradeableComponent::Event
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        name: ByteArray,
+        symbol: ByteArray,
+        fixed_supply: u256,
+        recipient: ContractAddress,
+        owner: ContractAddress
+    ) {
+        self.ownable.initializer(owner);
+        self.erc20.initializer(name, symbol);
+        self.erc20.mint(recipient, fixed_supply);
+    }
+
+    #[abi(embed_v0)]
+    impl UpgradeableImpl of IUpgradeable<ContractState> {
+        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
+            self.ownable.assert_only_owner();
+            self.upgradeable.upgrade(new_class_hash);
+        }
+    }
+}
+----
+
+Next, compile the contract.
+
+[,bash]
+----
+scarb build
+----
+
+Finally, declare the preset.
+
+[,bash]
+----
+starkli declare target/dev/my_project_ERC20Upgradeable.contract_class.json \
+  --network="sepolia"
+----

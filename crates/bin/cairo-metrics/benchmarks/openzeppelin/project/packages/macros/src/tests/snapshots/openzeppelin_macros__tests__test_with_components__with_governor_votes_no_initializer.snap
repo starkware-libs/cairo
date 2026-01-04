@@ -1,0 +1,44 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub governor_votes: GovernorVotesComponent::Storage,
+    }
+    use openzeppelin_governance::governor::extensions::GovernorVotesComponent;
+
+    component!(path: GovernorVotesComponent, storage: governor_votes, event: GovernorVotesEvent);
+
+    impl GovernorVotesInternalImpl = GovernorVotesComponent::InternalImpl<ContractState>;
+    impl GovernorVotesGovernorVotes = GovernorVotesComponent::GovernorVotes<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        GovernorVotesEvent: GovernorVotesComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+====
+Warning: It looks like the initializers for the following components are missing:
+
+GovernorVotes
+
+This may lead to unexpected behavior.
+We recommend adding the corresponding initializer calls to the constructor.
+====
+
+AuxData:
+
+None

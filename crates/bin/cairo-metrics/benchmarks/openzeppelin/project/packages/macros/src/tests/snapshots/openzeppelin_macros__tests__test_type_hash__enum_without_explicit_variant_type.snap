@@ -1,0 +1,26 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub enum MyEnum {
+    Variant1,
+    Variant2,
+}
+pub fn __MY_ENUM_encoded_type() {
+    println!("\"MyEnum\"(\"Variant1\"(),\"Variant2\"())");
+}
+pub const MY_ENUM_TYPE_HASH: felt252 =
+    0x36c48631c34b2494d85a853680b75cdba63491190aaec1cac404f77998d799d;
+
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None

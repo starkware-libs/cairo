@@ -1,0 +1,121 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+
+jobs:
+  # Run cairo-metrics and post a non-blocking comment on the PR if spotted regressions.
+  benchmark:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: '0'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Get SHAs
+        id: shas
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})
+          else
+            BASE_SHA=$(git rev-parse HEAD~1 || echo "")
+          fi
+          echo "base_sha=$BASE_SHA" >> $GITHUB_OUTPUT
+          echo "pr_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Restore cached baseline
+        if: steps.shas.outputs.base_sha != ''
+        id: cache-baseline
+        uses: actions/cache/restore@v4
+        with:
+          path: results.db
+          key: benchmark-${{ steps.shas.outputs.base_sha }}
+
+      - name: Build cairo-metrics
+        run: cargo build --profile=ci-dev -p cairo-metrics
+
+      - name: Benchmark baseline
+        if: steps.shas.outputs.base_sha != '' && steps.cache-baseline.outputs.cache-hit != 'true'
+        run: |
+          git checkout ${{ steps.shas.outputs.base_sha }}
+          ./target/ci-dev/cairo-metrics run ${{ steps.shas.outputs.base_sha }}
+          git checkout -
+
+      - name: Cache baseline results
+        if: steps.shas.outputs.base_sha != '' && steps.cache-baseline.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: results.db
+          key: benchmark-${{ steps.shas.outputs.base_sha }}
+
+      - name: Benchmark current
+        run: ./target/ci-dev/cairo-metrics run
+
+      - name: Cache current results (current can be base of stacked PR)
+        uses: actions/cache/save@v4
+        with:
+          path: results.db
+          key: benchmark-${{ steps.shas.outputs.pr_sha }}
+
+      - name: Compare
+        if: github.event_name == 'pull_request' && steps.shas.outputs.base_sha != ''
+        id: compare
+        run: |
+          ./target/ci-dev/cairo-metrics compare \
+            ${{ steps.shas.outputs.base_sha }} \
+            ${{ steps.shas.outputs.pr_sha }} \
+            > comparison.txt 2>&1 || true
+          cat comparison.txt
+
+      - name: Post comparison comment
+        if: github.event_name == 'pull_request' && steps.shas.outputs.base_sha != ''
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let output = '';
+            try {
+              output = fs.readFileSync('comparison.txt', 'utf8');
+            } catch (e) { return; }
+
+            const body = `## Benchmark Comparison
+
+            \`\`\`
+            ${output}
+            \`\`\`
+            `;
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.data.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Benchmark Comparison')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }

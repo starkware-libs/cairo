@@ -1,0 +1,748 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+:eip1155: https://eips.ethereum.org/EIPS/eip-1155[EIP1155]
+:eip1155-metadata: https://eips.ethereum.org/EIPS/eip-1155#metadata
+:receiving-tokens: xref:/erc1155.adoc#receiving_tokens[Receiving tokens]
+:inner-src5: xref:api/introspection.adoc#ISRC5[SRC5 ID]
+
+= ERC1155
+
+include::../utils/_common.adoc[]
+
+This module provides interfaces, presets, and utilities related to ERC1155 contracts.
+
+TIP: For an overview of ERC1155, read our xref:erc1155.adoc[ERC1155 guide].
+
+== Core
+
+[.contract]
+[[IERC1155]]
+=== `++IERC1155++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc1155/interface.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc1155::interface::IERC1155;
+```
+Interface of the IERC1155 standard as defined in {eip1155}.
+
+[.contract-index]
+.{inner-src5}
+--
+0x6114a8f75559e1b39fcba08ce02961a1aa082d9256a158dd3e64964e4b1b52
+--
+
+[.contract-index]
+.Functions
+--
+* xref:#IERC1155-balance_of[`++balance_of(account, token_id)++`]
+* xref:#IERC1155-balance_of_batch[`++balance_of_batch(accounts, token_ids)++`]
+* xref:#IERC1155-safe_transfer_from[`++safe_transfer_from(from, to, token_id, value, data)++`]
+* xref:#IERC1155-safe_batch_transfer_from[`++safe_batch_transfer_from(from, to, token_ids, values, data)++`]
+* xref:#IERC1155-set_approval_for_all[`++set_approval_for_all(operator, approved)++`]
+* xref:#IERC1155-is_approved_for_all[`++is_approved_for_all(owner, operator)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#IERC1155-TransferSingle[`++TransferSingle(operator, from, to, id, value)++`]
+* xref:#IERC1155-TransferBatch[`++TransferBatch(operator, from, to, ids, values)++`]
+* xref:#IERC1155-ApprovalForAll[`++ApprovalForAll(owner, operator, approved)++`]
+* xref:#IERC1155-URI[`++URI(value, id)++`]
+--
+
+==== Functions
+
+[.contract-item]
+[[IERC1155-balance_of]]
+==== `[.contract-item-name]#++balance_of++#++(account: ContractAddress, token_id: u256) → u256++` [.item-kind]#external#
+
+Returns the amount of `token_id` tokens owned by `account`.
+
+[.contract-item]
+[[IERC1155-balance_of_batch]]
+==== `[.contract-item-name]#++balance_of_batch++#++(accounts: Span<ContractAddress>, token_ids: Span<u256>) → Span<u256>++` [.item-kind]#external#
+
+Returns a list of balances derived from the `accounts` and `token_ids` pairs.
+
+[.contract-item]
+[[IERC1155-safe_transfer_from]]
+==== `[.contract-item-name]#++safe_transfer_from++#++(from: ContractAddress, to: ContractAddress, token_id: u256,  value: u256, data: Span<felt252>)++` [.item-kind]#external#
+
+Transfers ownership of `value` amount of `token_id` from `from` if `to` is either `IERC1155Receiver` or an account.
+
+`data` is additional data, it has no specified format and it is passed to `to`.
+
+Emits a <<IERC1155-TransferSingle,TransferSingle>> event.
+
+[.contract-item]
+[[IERC1155-safe_batch_transfer_from]]
+==== `[.contract-item-name]#++safe_batch_transfer_from++#++(from: ContractAddress, to: ContractAddress, token_ids: Span<u256>, values: Span<u256>, data: Span<felt252>)++` [.item-kind]#external#
+
+Transfers ownership of `token_ids` and `values` pairs from `from` if `to` is either `IERC1155Receiver` or an account.
+
+`data` is additional data, it has no specified format and it is passed to `to`.
+
+Emits a <<IERC1155-TransferBatch,TransferBatch>> event.
+
+[.contract-item]
+[[IERC1155-set_approval_for_all]]
+==== `[.contract-item-name]#++set_approval_for_all++#++(operator: ContractAddress, approved: bool)++` [.item-kind]#external#
+
+Enables or disables approval for `operator` to manage all of the caller's assets.
+
+Emits an <<IERC1155-ApprovalForAll,ApprovalForAll>> event.
+
+[.contract-item]
+[[IERC1155-is_approved_for_all]]
+==== `[.contract-item-name]#++is_approved_for_all++#++(owner: ContractAddress, operator: ContractAddress) -> bool++` [.item-kind]#external#
+
+Queries if `operator` is an authorized operator for `owner`.
+
+==== Events
+
+[.contract-item]
+[[IERC1155-TransferSingle]]
+==== `[.contract-item-name]#++TransferSingle++#++(operator: ContractAddress, from: ContractAddress, to: ContractAddress, id: u256, value: u256)++` [.item-kind]#event#
+
+Emitted when `value` amount of `id` token is transferred from `from` to `to` through `operator`.
+
+[.contract-item]
+[[IERC1155-TransferBatch]]
+==== `[.contract-item-name]#++TransferBatch++#++(operator: ContractAddress, from: ContractAddress, to: ContractAddress, ids: Span<u256>, values: Span<u256>)++` [.item-kind]#event#
+
+Emitted when a batch of `values` amount of `ids` tokens are transferred from `from` to `to` through `operator`.
+
+[.contract-item]
+[[IERC1155-ApprovalForAll]]
+==== `[.contract-item-name]#++ApprovalForAll++#++(owner: ContractAddress, operator: ContractAddress, approved: bool)++` [.item-kind]#event#
+
+Emitted when `owner` enables or disables `operator` to manage all of the owner's assets.
+
+[.contract-item]
+[[IERC1155-URI]]
+==== `[.contract-item-name]#++URI++#++(value: ByteArray, id: u256)++` [.item-kind]#event#
+
+Emitted when the token URI is updated to `value` for the `id` token.
+
+[.contract]
+[[IERC1155MetadataURI]]
+=== `++IERC1155MetadataURI++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc1155/interface.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc1155::interface::IERC1155MetadataURI;
+```
+Interface for the optional metadata function in {eip1155-metadata}[EIP1155].
+
+[.contract-index]
+.{inner-src5}
+--
+0xcabe2400d5fe509e1735ba9bad205ba5f3ca6e062da406f72f113feb889ef7
+--
+
+[.contract-index]
+.Functions
+--
+* xref:#IERC1155MetadataURI-uri[`++uri(token_id)++`]
+--
+
+==== Functions
+
+[.contract-item]
+[[IERC1155MetadataURI-uri]]
+==== `[.contract-item-name]#++uri++#++(token_id: u256) -> ByteArray++` [.item-kind]#external#
+
+Returns the Uniform Resource Identifier (URI) for the `token_id` token.
+
+[.contract]
+[[ERC1155Component]]
+=== `++ERC1155Component++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc1155/erc1155.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc1155::ERC1155Component;
+```
+
+ERC1155 component implementing <<IERC1155,IERC1155>> and <<IERC1155MetadataURI,IERC1155MetadataURI>>.
+
+NOTE: {src5-component-required-note}
+
+NOTE: See xref:#ERC1155Component-Hooks[Hooks] to understand how are hooks used.
+
+[.contract-index]
+.Hooks
+--
+[.sub-index#ERC1155Component-ERC1155HooksTrait]
+.ERC1155HooksTrait
+* xref:#ERC1155Component-before_update[`++before_update(self, from, to, token_ids, values)++`]
+* xref:#ERC1155Component-after_update[`++after_update(self, from, to, token_ids, values)++`]
+--
+
+[.contract-index#ERC1155Component-Embeddable-Mixin-Impl]
+.{mixin-impls}
+
+--
+.ERC1155MixinImpl
+* xref:#ERC1155Component-Embeddable-Impls-ERC1155Impl[`++ERC1155Impl++`]
+* xref:#ERC1155Component-Embeddable-Impls-ERC1155MetadataURIImpl[`++ERC1155MetadataURIImpl++`]
+* xref:#ERC1155Component-Embeddable-Impls-ERC1155CamelImpl[`++ERC1155CamelImpl++`]
+* xref:api/introspection.adoc#SRC5Component-Embeddable-Impls-SRC5Impl[`++SRC5Impl++`]
+--
+
+[.contract-index#ERC1155Component-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#ERC1155Component-Embeddable-Impls-ERC1155Impl]
+.ERC1155Impl
+* xref:#ERC1155Component-balance_of[`++balance_of(self, account, token_id)++`]
+* xref:#ERC1155Component-balance_of_batch[`++balance_of_batch(self, accounts, token_ids)++`]
+* xref:#ERC1155Component-safe_transfer_from[`++safe_transfer_from(self, from, to, token_id, value, data)++`]
+* xref:#ERC1155Component-safe_batch_transfer_from[`++safe_batch_transfer_from(self, from, to, token_ids, values, data)++`]
+* xref:#ERC1155Component-set_approval_for_all[`++set_approval_for_all(self, operator, approved)++`]
+* xref:#ERC1155Component-is_approved_for_all[`++is_approved_for_all(self, owner, operator)++`]
+
+[.sub-index#ERC1155Component-Embeddable-Impls-ERC1155MetadataURIImpl]
+.ERC1155MetadataURIImpl
+* xref:#ERC1155Component-uri[`++uri(self, token_id)++`]
+
+[.sub-index#ERC1155Component-Embeddable-Impls-ERC1155CamelImpl]
+.ERC1155CamelImpl
+* xref:#ERC1155Component-balanceOf[`++balanceOf(self, account, tokenId)++`]
+* xref:#ERC1155Component-balanceOfBatch[`++balanceOfBatch(self, accounts, tokenIds)++`]
+* xref:#ERC1155Component-safeTransferFrom[`++safeTransferFrom(self, from, to, tokenId, value, data)++`]
+* xref:#ERC1155Component-safeBatchTransferFrom[`++safeBatchTransferFrom(self, from, to, tokenIds, values, data)++`]
+* xref:#ERC1155Component-setApprovalForAll[`++setApprovalForAll(self, operator, approved)++`]
+* xref:#ERC1155Component-isApprovedForAll[`++isApprovedForAll(self, owner, operator)++`]
+--
+
+[.contract-index]
+.Internal Functions
+--
+.InternalImpl
+* xref:#ERC1155Component-initializer[`++initializer(self, base_uri)++`]
+* xref:#ERC1155Component-initializer_no_metadata[`++initializer_no_metadata(self)++`]
+* xref:#ERC1155Component-mint_with_acceptance_check[`++mint_with_acceptance_check(self, to, token_id, value, data)++`]
+* xref:#ERC1155Component-batch_mint_with_acceptance_check[`++batch_mint_with_acceptance_check(self, to, token_ids, values, data)++`]
+* xref:#ERC1155Component-burn[`++burn(self, from, token_id, value)++`]
+* xref:#ERC1155Component-batch_burn[`++batch_burn(self, from, token_ids, values)++`]
+* xref:#ERC1155Component-update_with_acceptance_check[`++update_with_acceptance_check(self, from, to, token_ids, values, data)++`]
+* xref:#ERC1155Component-update[`++update(self, from, to, token_ids, values)++`]
+* xref:#ERC1155Component-_set_base_uri[`++_set_base_uri(self, base_uri)++`]
+--
+
+[.contract-index]
+.Events
+--
+.IERC1155
+* xref:#ERC1155Component-TransferSingle[`++TransferSingle(operator, from, to, id, value)++`]
+* xref:#ERC1155Component-TransferBatch[`++TransferBatch(operator, from, to, ids, values)++`]
+* xref:#ERC1155Component-ApprovalForAll[`++ApprovalForAll(owner, operator, approved)++`]
+* xref:#ERC1155Component-URI[`++URI(value, id)++`]
+--
+
+[#ERC1155Component-Hooks]
+==== Hooks
+
+Hooks are functions which implementations can extend the functionality of the component source code. Every contract
+using ERC1155Component is expected to provide an implementation of the ERC1155HooksTrait. For basic token contracts, an
+empty implementation with no logic must be provided.
+
+TIP: You can use `openzeppelin_token::erc1155::ERC1155HooksEmptyImpl` which is already available as part of the library
+for this purpose.
+
+[.contract-item]
+[[ERC1155Component-before_update]]
+==== `[.contract-item-name]#++before_update++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, token_ids: Span<u256>, values: Span<u256>)++` [.item-kind]#hook#
+
+Function executed at the beginning of the xref:#ERC1155Component-update[update] function prior to any other logic.
+
+[.contract-item]
+[[ERC1155Component-after_update]]
+==== `[.contract-item-name]#++after_update++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, token_ids: Span<u256>, values: Span<u256>)++` [.item-kind]#hook#
+
+Function executed at the end of the xref:#ERC1155Component-update[update] function.
+
+==== Embeddable functions
+
+[.contract-item]
+[[ERC1155Component-balance_of]]
+==== `[.contract-item-name]#++balance_of++#++(self: @ContractState, account: ContractAddress, token_id: u256) → u256++` [.item-kind]#external#
+
+Returns the amount of `token_id` tokens owned by `account`.
+
+[.contract-item]
+[[ERC1155Component-balance_of_batch]]
+==== `[.contract-item-name]#++balance_of_batch++#++(self: @ContractState, accounts: Span<ContractAddress>, token_ids: Span<u256>) → Span<u256>++` [.item-kind]#external#
+
+Returns a list of balances derived from the `accounts` and `token_ids` pairs.
+
+Requirements:
+
+- `token_ids` and `accounts` must have the same length.
+
+[.contract-item]
+[[ERC1155Component-safe_transfer_from]]
+==== `[.contract-item-name]#++safe_transfer_from++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, token_id: u256,  value: u256, data: Span<felt252>)++` [.item-kind]#external#
+
+Transfers ownership of `value` amount of `token_id` from `from` if `to` is either an account or `IERC1155Receiver`.
+
+`data` is additional data, it has no specified format and it is passed to `to`.
+
+WARNING: This function can potentially allow a reentrancy attack when transferring tokens
+to an untrusted contract, when invoking `on_ERC1155_received` on the receiver.
+Ensure to follow the checks-effects-interactions pattern and consider employing
+reentrancy guards when interacting with untrusted contracts.
+
+Requirements:
+
+- Caller is either approved or the `token_id` owner.
+- `from` is not the zero address.
+- `to` is not the zero address.
+- If `to` refers to a non-account contract, it must implement `IERC1155Receiver::on_ERC1155_received`
+  and return the required magic value.
+
+Emits a <<ERC1155Component-TransferSingle,TransferSingle>> event.
+
+[.contract-item]
+[[ERC1155Component-safe_batch_transfer_from]]
+==== `[.contract-item-name]#++safe_batch_transfer_from++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, token_ids: Span<u256>, values: Span<u256>, data: Span<felt252>)++` [.item-kind]#external#
+
+Transfers ownership of `values` and `token_ids` pairs from `from` if `to` is either an account or `IERC1155Receiver`.
+
+`data` is additional data, it has no specified format and it is passed to `to`.
+
+WARNING: This function can potentially allow a reentrancy attack when transferring tokens
+to an untrusted contract, when invoking `on_ERC1155_batch_received` on the receiver.
+Ensure to follow the checks-effects-interactions pattern and consider employing
+reentrancy guards when interacting with untrusted contracts.
+
+Requirements:
+
+- Caller is either approved or the `token_id` owner.
+- `from` is not the zero address.
+- `to` is not the zero address.
+- `token_ids` and `values` must have the same length.
+- If `to` refers to a non-account contract, it must implement `IERC1155Receiver::on_ERC1155_batch_received`
+  and return the acceptance magic value.
+
+Emits a <<ERC1155Component-TransferSingle,TransferSingle>> event if the arrays contain one element,
+and <<ERC1155Component-TransferBatch,TransferBatch>> otherwise.
+
+[.contract-item]
+[[ERC1155Component-set_approval_for_all]]
+==== `[.contract-item-name]#++set_approval_for_all++#++(ref self: ContractState, operator: ContractAddress, approved: bool)++` [.item-kind]#external#
+
+Enables or disables approval for `operator` to manage all of the callers assets.
+
+Requirements:
+
+- `operator` cannot be the caller.
+
+Emits an <<ERC1155Component-ApprovalForAll,ApprovalForAll>> event.
+
+[.contract-item]
+[[ERC1155Component-is_approved_for_all]]
+==== `[.contract-item-name]#++is_approved_for_all++#++(self: @ContractState, owner: ContractAddress, operator: ContractAddress) -> bool++` [.item-kind]#external#
+
+Queries if `operator` is an authorized operator for `owner`.
+
+[.contract-item]
+[[ERC1155Component-uri]]
+==== `[.contract-item-name]#++uri++#++(self: @ContractState, token_id: u256) -> ByteArray++` [.item-kind]#external#
+
+This implementation returns the same URI for *all* token types. It relies
+on the token type ID substitution mechanism
+{eip1155-metadata}[specified in the EIP].
+
+Clients calling this function must replace the `\{id\}` substring with the
+actual token type ID.
+
+[.contract-item]
+[[ERC1155Component-balanceOf]]
+==== `[.contract-item-name]#++balanceOf++#++(self: @ContractState, account: ContractAddress, tokenId: u256) → u256++` [.item-kind]#external#
+
+See <<ERC1155Component-balance_of,ERC1155Component::balance_of>>.
+
+[.contract-item]
+[[ERC1155Component-balanceOfBatch]]
+==== `[.contract-item-name]#++balanceOfBatch++#++(self: @ContractState, accounts: Span<ContractAddress>, tokenIds: Span<u256>) → Span<u256>++` [.item-kind]#external#
+
+See <<ERC1155Component-balance_of_batch,ERC1155Component::balance_of_batch>>.
+
+[.contract-item]
+[[ERC1155Component-safeTransferFrom]]
+==== `[.contract-item-name]#++safeTransferFrom++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, tokenId: u256,  value: u256, data: Span<felt252>)++` [.item-kind]#external#
+
+See <<ERC1155Component-safe_transfer_from,ERC1155Component::safe_transfer_from>>.
+
+[.contract-item]
+[[ERC1155Component-safeBatchTransferFrom]]
+==== `[.contract-item-name]#++safeBatchTransferFrom++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, tokenIds: Span<u256>, values: Span<u256>, data: Span<felt252>)++` [.item-kind]#external#
+
+See <<ERC1155Component-safe_batch_transfer_from,ERC1155Component::safe_batch_transfer_from>>.
+
+[.contract-item]
+[[ERC1155Component-setApprovalForAll]]
+==== `[.contract-item-name]#++setApprovalForAll++#++(ref self: ContractState, operator: ContractAddress, approved: bool)++` [.item-kind]#external#
+
+See <<ERC1155Component-set_approval_for_all,ERC1155Component::set_approval_for_all>>.
+
+[.contract-item]
+[[ERC1155Component-isApprovedForAll]]
+==== `[.contract-item-name]#++isApprovedForAll++#++(self: @ContractState, owner: ContractAddress, operator: ContractAddress) -> bool++` [.item-kind]#external#
+
+See <<ERC1155Component-is_approved_for_all,ERC1155Component::is_approved_for_all>>.
+
+==== Internal functions
+
+[.contract-item]
+[[ERC1155Component-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ContractState, base_uri: ByteArray)++` [.item-kind]#internal#
+
+Initializes the contract by setting the token's base URI as `base_uri`, and registering the supported interfaces.
+This should only be used inside the contract's constructor.
+
+WARNING: Most ERC1155 contracts expose the <<IERC1155MetadataURI,IERC1155MetadataURI>> interface which is what this initializer is meant to support.
+If the contract DOES NOT expose the <<IERC1155MetadataURI,IERC1155MetadataURI>> interface, meaning tokens do not have a URI,
+the contract must instead use <<ERC1155Component-initializer_no_metadata,initializer_no_metadata>> in the constructor.
+Failure to abide by these instructions can lead to unexpected issues especially with UIs.
+
+[.contract-item]
+[[ERC1155Component-initializer_no_metadata]]
+==== `[.contract-item-name]#++initializer_no_metadata++#++(ref self: ContractState)++` [.item-kind]#internal#
+
+Initializes the contract with no metadata by registering only the IERC1155 interface.
+
+WARNING: This initializer should ONLY be used during construction in the very
+specific instance when the contract does NOT expose the <<IERC1155MetadataURI,IERC1155MetadataURI>> interface.
+Initializing a contract with this initializer means that tokens will not have a URI.
+
+[.contract-item]
+[[ERC1155Component-mint_with_acceptance_check]]
+==== `[.contract-item-name]#++mint_with_acceptance_check++#++(ref self: ContractState, to: ContractAddress, token_id: u256, value: u256, data: Span<felt252>)++` [.item-kind]#internal#
+
+Creates a `value` amount of tokens of type `token_id`, and assigns them to `to`.
+
+Requirements:
+
+- `to` cannot be the zero address.
+- If `to` refers to a smart contract, it must implement `IERC1155Receiver::on_ERC1155_received`
+and return the acceptance magic value.
+
+Emits a <<ERC1155Component-TransferSingle,TransferSingle>> event.
+
+[.contract-item]
+[[ERC1155Component-batch_mint_with_acceptance_check]]
+==== `[.contract-item-name]#++batch_mint_with_acceptance_check++#++(ref self: ContractState, to: ContractAddress, token_ids: Span<u256>, values: Span<u256>, data: Span<felt252>)++` [.item-kind]#internal#
+
+Batched version of <<ERC1155Component-mint_with_acceptance_check,mint_with_acceptance_check>>.
+
+Requirements:
+
+- `to` cannot be the zero address.
+- `token_ids` and `values` must have the same length.
+- If `to` refers to a smart contract, it must implement `IERC1155Receiver::on_ERC1155_batch_received`
+and return the acceptance magic value.
+
+Emits a <<ERC1155Component-TransferBatch,TransferBatch>> event.
+
+[.contract-item]
+[[ERC1155Component-burn]]
+==== `[.contract-item-name]#++burn++#++(ref self: ContractState, from: ContractAddress, token_id: u256, value: u256)++` [.item-kind]#internal#
+
+Destroys a `value` amount of tokens of type `token_id` from `from`.
+
+Requirements:
+
+- `from` cannot be the zero address.
+- `from` must have at least `value` amount of tokens of type `token_id`.
+
+Emits a <<ERC1155Component-TransferSingle,TransferSingle>> event.
+
+[.contract-item]
+[[ERC1155Component-batch_burn]]
+==== `[.contract-item-name]#++batch_burn++#++(ref self: ContractState, from: ContractAddress, token_ids: Span<u256>, values: Span<u256>)++` [.item-kind]#internal#
+
+Batched version of <<ERC1155Component-burn,burn>>.
+
+Requirements:
+
+- `from` cannot be the zero address.
+- `from` must have at least `value` amount of tokens of type `token_id`.
+- `token_ids` and `values` must have the same length.
+
+Emits a <<ERC1155Component-TransferBatch,TransferBatch>> event.
+
+[.contract-item]
+[[ERC1155Component-update_with_acceptance_check]]
+==== `[.contract-item-name]#++update_with_acceptance_check++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, token_ids: Span<u256>, values: Span<u256>, data: Span<felt252>)++` [.item-kind]#internal#
+
+Version of `update` that performs the token acceptance check by calling
+`onERC1155Received` or `onERC1155BatchReceived` in the receiver if
+it implements `IERC1155Receiver`, otherwise by checking if it is an account.
+
+Requirements:
+
+- `to` is either an account contract or supports the `IERC1155Receiver` interface.
+- `token_ids` and `values` must have the same length.
+
+Emits a <<ERC1155Component-TransferSingle,TransferSingle>> event if the arrays contain one element,
+and <<ERC1155Component-TransferBatch,TransferBatch>> otherwise.
+
+[.contract-item]
+[[ERC1155Component-update]]
+==== `[.contract-item-name]#++update++#++(ref self: ContractState, from: ContractAddress, to: ContractAddress, token_ids: Span<u256>, values: Span<u256>)++` [.item-kind]#internal#
+
+Transfers a `value` amount of tokens of type `id` from `from` to `to`.
+Will mint (or burn) if `from` (or `to`) is the zero address.
+
+Requirements:
+
+- `token_ids` and `values` must have the same length.
+
+Emits a <<ERC1155Component-TransferSingle,TransferSingle>> event if the arrays contain one element,
+and <<ERC1155Component-TransferBatch,TransferBatch>> otherwise.
+
+NOTE: This function can be extended using the xref:ERC1155Component-ERC1155HooksTrait[ERC1155HooksTrait], to add
+functionality before and/or after the transfer, mint, or burn.
+
+NOTE: The ERC1155 acceptance check is not performed in this function.
+See <<ERC1155Component-update_with_acceptance_check,update_with_acceptance_check>> instead.
+
+[.contract-item]
+[[ERC1155Component-_set_base_uri]]
+==== `[.contract-item-name]#++_set_base_uri++#++(ref self: ContractState, base_uri: ByteArray)++` [.item-kind]#internal#
+
+Sets a new URI for all token types, by relying on the token type ID
+substitution mechanism
+{eip1155-metadata}[specified in the EIP].
+
+By this mechanism, any occurrence of the `\{id\}` substring in either the
+URI or any of the values in the JSON file at said URI will be replaced by
+clients with the token type ID.
+
+For example, the pass:[<code>https://token-cdn-domain/\{id\}.json</code>] URI would be
+interpreted by clients as
+pass:[<code>https://token-cdn-domain/000000000000...000000000000004cce0.json</code>]
+for token type ID `0x4cce0`.
+
+Because these URIs cannot be meaningfully represented by the `URI` event,
+this function emits no events.
+
+==== Events
+
+[.contract-item]
+[[ERC1155Component-TransferSingle]]
+==== `[.contract-item-name]#++TransferSingle++#++(operator: ContractAddress, from: ContractAddress, to: ContractAddress, id: u256, value: u256)++` [.item-kind]#event#
+
+See <<IERC1155-TransferSingle,IERC1155::TransferSingle>>.
+
+[.contract-item]
+[[ERC1155Component-TransferBatch]]
+==== `[.contract-item-name]#++TransferBatch++#++(operator: ContractAddress, from: ContractAddress, to: ContractAddress, ids: Span<u256>, values: Span<u256>)++` [.item-kind]#event#
+
+See <<IERC1155-TransferBatch,IERC1155::TransferBatch>>.
+
+[.contract-item]
+[[ERC1155Component-ApprovalForAll]]
+==== `[.contract-item-name]#++ApprovalForAll++#++(owner: ContractAddress, operator: ContractAddress, approved: bool)++` [.item-kind]#event#
+
+See <<IERC1155-ApprovalForAll,IERC1155::ApprovalForAll>>.
+
+[.contract-item]
+[[ERC1155Component-URI]]
+==== `[.contract-item-name]#++URI++#++(value: ByteArray, id: u256)++` [.item-kind]#event#
+
+See <<IERC1155-URI,IERC1155::URI>>.
+
+== Receiver
+
+[.contract]
+[[IERC1155Receiver]]
+=== `++IERC1155Receiver++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc1155/interface.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc1155::interface::IERC1155Receiver;
+```
+
+Interface for contracts that support receiving token transfers from `ERC1155` contracts.
+
+[.contract-index]
+.{inner-src5}
+--
+0x15e8665b5af20040c3af1670509df02eb916375cdf7d8cbaf7bd553a257515e
+--
+
+[.contract-index]
+.Functions
+--
+* xref:#IERC1155Receiver-on_erc1155_received[`++on_erc1155_received(operator, from, token_id, value, data)++`]
+* xref:#IERC1155Receiver-on_erc1155_batch_received[`++on_erc1155_batch_received(operator, from, token_ids, values, data)++`]
+--
+
+==== Functions
+
+[.contract-item]
+[[IERC1155Receiver-on_erc1155_received]]
+==== `[.contract-item-name]#++on_erc1155_received++#++(operator: ContractAddress, from: ContractAddress, token_id: u256, value: u256, data Span<felt252>) -> felt252++` [.item-kind]#external#
+
+This function is called whenever an ERC1155 `token_id` token is transferred to this `IERC1155Receiver` implementer
+via <<IERC1155-safe_transfer_from,IERC1155::safe_transfer_from>> by `operator` from `from`.
+
+[.contract-item]
+[[IERC1155Receiver-on_erc1155_batch_received]]
+==== `[.contract-item-name]#++on_erc1155_batch_received++#++(operator: ContractAddress, from: ContractAddress, token_ids: Span<u256>, values: Span<u256>, data Span<felt252>) -> felt252++` [.item-kind]#external#
+
+This function is called whenever multiple ERC1155 `token_ids` tokens are transferred to this `IERC1155Receiver` implementer
+via <<IERC1155-safe_batch_transfer_from,IERC1155::safe_batch_transfer_from>> by `operator` from `from`.
+
+[.contract]
+[[ERC1155ReceiverComponent]]
+=== `++ERC1155ReceiverComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/token/src/erc1155/erc1155_receiver.cairo[{github-icon},role=heading-link]
+
+[.hljs-theme-dark]
+```cairo
+use openzeppelin_token::erc1155::ERC1155ReceiverComponent;
+```
+
+ERC1155Receiver component implementing <<IERC1155Receiver,IERC1155Receiver>>.
+
+NOTE: {src5-component-required-note}
+
+[.contract-index#ERC1155ReceiverComponent-Embeddable-Mixin-Impl]
+.{mixin-impls}
+--
+.ERC1155MixinImpl
+* xref:#ERC1155ReceiverComponent-Embeddable-Impls-ERC1155ReceiverImpl[`++ERC1155ReceiverImpl++`]
+* xref:#ERC1155ReceiverComponent-Embeddable-Impls-ERC1155ReceiverCamelImpl[`++ERC1155ReceiverCamelImpl++`]
+* xref:api/introspection.adoc#SRC5Component-Embeddable-Impls-SRC5Impl[`++SRC5Impl++`]
+--
+
+[.contract-index#ERC1155ReceiverComponent-Embeddable-Impls]
+.Embeddable Implementations
+--
+.ERC1155ReceiverImpl
+* xref:#ERC1155ReceiverComponent-on_erc1155_received[`++on_erc1155_received(self, operator, from, token_id, value, data)++`]
+* xref:#ERC1155ReceiverComponent-on_erc1155_batch_received[`++on_erc1155_batch_received(self, operator, from, token_ids, values, data)++`]
+
+.ERC1155ReceiverCamelImpl
+* xref:#ERC1155ReceiverComponent-onERC1155Received[`++onERC1155Received(self, operator, from, tokenId, value, data)++`]
+* xref:#ERC1155ReceiverComponent-onERC1155BatchReceived[`++onERC1155BatchReceived(self, operator, from, tokenIds, values, data)++`]
+--
+
+[.contract-index]
+.Internal Functions
+--
+.InternalImpl
+* xref:#ERC1155ReceiverComponent-initializer[`++initializer(self)++`]
+--
+
+==== Embeddable functions
+
+[.contract-item]
+[[ERC1155ReceiverComponent-on_erc1155_received]]
+==== `[.contract-item-name]#++on_erc1155_received++#++(self: @ContractState, operator: ContractAddress, from: ContractAddress, token_id: u256, value: u256, data Span<felt252>) -> felt252++` [.item-kind]#external#
+
+Returns the `IERC1155Receiver` interface ID.
+
+[.contract-item]
+[[ERC1155ReceiverComponent-on_erc1155_batch_received]]
+==== `[.contract-item-name]#++on_erc1155_batch_received++#++(self: @ContractState, operator: ContractAddress, from: ContractAddress, token_ids: Span<u256>, values: Span<u256>, data Span<felt252>) -> felt252++` [.item-kind]#external#
+
+Returns the `IERC1155Receiver` interface ID.
+
+[.contract-item]
+[[ERC1155ReceiverComponent-onERC1155Received]]
+==== `[.contract-item-name]#++onERC1155Received++#++(self: @ContractState, operator: ContractAddress, from: ContractAddress, tokenId: u256, value: u256, data Span<felt252>) -> felt252++` [.item-kind]#external#
+
+See <<ERC1155ReceiverComponent-on_erc1155_received,ERC1155ReceiverComponent::on_erc1155_received>>.
+
+[.contract-item]
+[[ERC1155ReceiverComponent-onERC1155BatchReceived]]
+==== `[.contract-item-name]#++onERC1155BatchReceived++#++(self: @ContractState, operator: ContractAddress, from: ContractAddress, tokenIds: Span<u256>, values: Span<u256>, data Span<felt252>) -> felt252++` [.item-kind]#external#
+
+See <<ERC1155ReceiverComponent-on_erc1155_batch_received,ERC1155ReceiverComponent::on_erc1155_batch_received>>.
+
+==== Internal functions
+
+[.contract-item]
+[[ERC1155ReceiverComponent-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ContractState)++` [.item-kind]#internal#
+
+Registers the `IERC1155Receiver` interface ID as supported through introspection.
+
+== Presets
+
+[.contract]
+[[ERC1155Upgradeable]]
+=== `++ERC1155Upgradeable++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/presets/src/erc1155.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_presets::ERC1155;
+```
+
+Upgradeable ERC1155 contract leveraging xref:#ERC1155Component[ERC1155Component].
+
+include::../utils/_class_hashes.adoc[]
+
+[.contract-index]
+.{presets-page}
+--
+{ERC1155Upgradeable-class-hash}
+--
+
+[.contract-index]
+.Constructor
+--
+* xref:#ERC1155Upgradeable-constructor[`++constructor(self, base_uri, recipient, token_ids, values, owner)++`]
+--
+
+[.contract-index]
+.Embedded Implementations
+--
+.ERC1155Component
+
+* xref:#ERC1155Component-Embeddable-Mixin-Impl[`++ERC1155MixinImpl++`]
+
+.OwnableMixinImpl
+
+* xref:/api/access.adoc#OwnableComponent-Mixin-Impl[`++OwnableMixinImpl++`]
+--
+
+[.contract-index]
+.External Functions
+--
+* xref:#ERC1155Upgradeable-upgrade[`++upgrade(self, new_class_hash)++`]
+--
+
+[#ERC1155Upgradeable-constructor-section]
+==== Constructor
+
+[.contract-item]
+[[ERC1155Upgradeable-constructor]]
+==== `[.contract-item-name]#++constructor++#++(ref self: ContractState, base_uri: ByteArray, recipient: ContractAddress, token_ids: Span<u256>, values: Span<u256>, owner: ContractAddress)++` [.item-kind]#constructor#
+
+Sets the `base_uri` for all tokens and registers the supported interfaces.
+Mints the `values` for `token_ids` tokens to `recipient`.
+Assigns `owner` as the contract owner with permissions to upgrade.
+
+Requirements:
+
+- `to` is either an account contract (supporting ISRC6) or
+   supports the `IERC1155Receiver` interface.
+- `token_ids` and `values` must have the same length.
+
+[#ERC1155Upgradeable-external-functions]
+==== External Functions
+
+[.contract-item]
+[[ERC1155Upgradeable-upgrade]]
+==== `[.contract-item-name]#++upgrade++#++(ref self: ContractState, new_class_hash: ClassHash)++` [.item-kind]#external#
+
+Upgrades the contract to a new implementation given by `new_class_hash`.
+
+Requirements:
+
+- The caller is the contract owner.
+- `new_class_hash` cannot be zero.

@@ -1,0 +1,25 @@
+---
+source: src/tests/test_type_hash.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+pub struct MyType {
+    pub name: felt252,
+    pub version: felt252,
+    pub chain_id: felt252,
+    pub revision: felt252,
+    pub member: InnerCustomType,
+}
+
+
+Diagnostics:
+
+====
+Error: Inner custom types are not supported yet.
+====
+
+AuxData:
+
+None

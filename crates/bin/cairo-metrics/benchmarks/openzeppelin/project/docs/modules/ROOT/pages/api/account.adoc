@@ -1,0 +1,825 @@
+:github-icon: pass:[<svg class="icon"><use href="#github-icon"/></svg>]
+:snip6: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-6.md[SNIP-6]
+:snip9: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-9.md[SNIP-9]
+:snip12: https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-12.md[SNIP-12]
+:inner-src5: xref:api/introspection.adoc#ISRC5[SRC5 ID]
+
+= Account
+
+This crate provides components to implement account contracts that can be used for interacting with the network.
+
+== Core
+
+include::../utils/_common.adoc[]
+
+[.contract]
+[[ISRC6]]
+=== `++ISRC6++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/account/src/interface.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_account::interface::ISRC6;
+```
+
+Interface of the SRC6 Standard Account as defined in the {snip6}.
+
+[.contract-index]
+.{inner-src5}
+--
+0x2ceccef7f994940b3962a6c67e0ba4fcd37df7d131417c604f91e03caecc1cd
+--
+
+[.contract-index]
+.Functions
+--
+* xref:#ISRC6-\\__execute__[`++__execute__(calls)++`]
+* xref:#ISRC6-\\__validate__[`++__validate__(calls)++`]
+* xref:#ISRC6-is_valid_signature[`++is_valid_signature(hash, signature)++`]
+--
+
+[#ISRC6-Functions]
+==== Functions
+
+[.contract-item]
+[[ISRC6-__execute__]]
+==== `[.contract-item-name]#++__execute__++#++(calls: Array<Call>)++` [.item-kind]#external#
+
+Executes the list of calls as a transaction after validation.
+
+NOTE: The `Call` struct is defined in https://github.com/starkware-libs/cairo/blob/main/corelib/src/starknet/account.cairo#L3[corelib].
+
+[.contract-item]
+[[ISRC6-__validate__]]
+==== `[.contract-item-name]#++__validate__++#++(calls: Array<Call>) → felt252++` [.item-kind]#external#
+
+Validates a transaction before execution.
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract-item]
+[[ISRC6-is_valid_signature]]
+==== `[.contract-item-name]#++is_valid_signature++#++(hash: felt252, signature: Array<felt252>) → felt252++` [.item-kind]#external#
+
+Validates whether a signature is valid or not for the given message hash.
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract]
+[[AccountComponent]]
+=== `++AccountComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/account/src/account.cairo[{github-icon},role=heading-link]
+
+:OwnerAdded: xref:AccountComponent-OwnerAdded[OwnerAdded]
+:OwnerRemoved: xref:AccountComponent-OwnerRemoved[OwnerRemoved]
+:starknet-curve: https://docs.starknet.io/architecture-and-concepts/cryptography/#stark-curve[Starknet curve]
+
+```cairo
+use openzeppelin_account::AccountComponent;
+```
+Account component implementing xref:ISRC6[`ISRC6`] for signatures over the {starknet-curve}.
+
+NOTE: {src5-component-required-note}
+
+[.contract-index#AccountComponent-Embeddable-Mixin-Impl]
+.{mixin-impls}
+
+--
+.AccountMixinImpl
+
+* xref:#AccountComponent-Embeddable-Impls-SRC6Impl[`++SRC6Impl++`]
+* xref:#AccountComponent-Embeddable-Impls-DeclarerImpl[`++DeclarerImpl++`]
+* xref:#AccountComponent-Embeddable-Impls-DeployableImpl[`++DeployableImpl++`]
+* xref:#AccountComponent-Embeddable-Impls-PublicKeyImpl[`++PublicKeyImpl++`]
+* xref:#AccountComponent-Embeddable-Impls-SRC6CamelOnlyImpl[`++SRC6CamelOnlyImpl++`]
+* xref:#AccountComponent-Embeddable-Impls-PublicKeyCamelImpl[`++PublicKeyCamelImpl++`]
+* xref:api/introspection.adoc#SRC5Component-Embeddable-Impls[`++SRC5Impl++`]
+--
+
+[.contract-index#AccountComponent-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#AccountComponent-Embeddable-Impls-SRC6Impl]
+.SRC6Impl
+
+* xref:#AccountComponent-\\__execute__[`++__execute__(self, calls)++`]
+* xref:#AccountComponent-\\__validate__[`++__validate__(self, calls)++`]
+* xref:#AccountComponent-is_valid_signature[`++is_valid_signature(self, hash, signature)++`]
+
+[.sub-index#AccountComponent-Embeddable-Impls-DeclarerImpl]
+.DeclarerImpl
+
+* xref:#AccountComponent-\\__validate_declare__[`++__validate_declare__(self, class_hash)++`]
+
+[.sub-index#AccountComponent-Embeddable-Impls-DeployableImpl]
+.DeployableImpl
+
+* xref:#AccountComponent-\\__validate_deploy__[`++__validate_deploy__(self, hash, signature)++`]
+
+[.sub-index#AccountComponent-Embeddable-Impls-PublicKeyImpl]
+.PublicKeyImpl
+
+* xref:#AccountComponent-get_public_key[`++get_public_key(self)++`]
+* xref:#AccountComponent-set_public_key[`++set_public_key(self, new_public_key, signature)++`]
+
+[.sub-index#AccountComponent-Embeddable-Impls-SRC6CamelOnlyImpl]
+.SRC6CamelOnlyImpl
+
+* xref:#AccountComponent-isValidSignature[`++isValidSignature(self, hash, signature)++`]
+
+[.sub-index#AccountComponent-Embeddable-Impls-PublicKeyCamelImpl]
+.PublicKeyCamelImpl
+
+* xref:#AccountComponent-getPublicKey[`++getPublicKey(self)++`]
+* xref:#AccountComponent-setPublicKey[`++setPublicKey(self, newPublicKey, signature)++`]
+
+.SRC5Impl
+* xref:api/introspection.adoc#ISRC5-supports_interface[`supports_interface(self, interface_id: felt252)`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#AccountComponent-initializer[`++initializer(self, public_key)++`]
+* xref:#AccountComponent-assert_only_self[`++assert_only_self(self)++`]
+* xref:#AccountComponent-assert_valid_new_owner[`++assert_valid_new_owner(self, current_owner, new_owner, signature)++`]
+* xref:#AccountComponent-validate_transaction[`++validate_transaction(self)++`]
+* xref:#AccountComponent-_set_public_key[`++_set_public_key(self, new_public_key)++`]
+* xref:#AccountComponent-_is_valid_signature[`++_is_valid_signature(self, hash, signature)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#AccountComponent-OwnerAdded[`++OwnerAdded(new_owner_guid)++`]
+* xref:#AccountComponent-OwnerRemoved[`++OwnerRemoved(removed_owner_guid)++`]
+--
+
+[#AccountComponent-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[AccountComponent-__execute__]]
+==== `[.contract-item-name]#++__execute__++#++(self: @ContractState, calls: Array<Call>)++` [.item-kind]#external#
+
+See xref:ISRC6-\\__execute__[ISRC6::\\__execute__].
+
+[.contract-item]
+[[AccountComponent-__validate__]]
+==== `[.contract-item-name]#++__validate__++#++(self: @ContractState, calls: Array<Call>) → felt252++` [.item-kind]#external#
+
+See xref:ISRC6-\\__validate__[ISRC6::\\__validate__].
+
+[.contract-item]
+[[AccountComponent-is_valid_signature]]
+==== `[.contract-item-name]#++is_valid_signature++#++(self: @ContractState, hash: felt252, signature: Array<felt252>) → felt252++` [.item-kind]#external#
+
+See xref:ISRC6-is_valid_signature[ISRC6::is_valid_signature].
+
+[.contract-item]
+[[AccountComponent-__validate_declare__]]
+==== `[.contract-item-name]#++__validate_declare__++#++(self: @ContractState, class_hash: felt252) → felt252++` [.item-kind]#external#
+
+Validates a https://docs.starknet.io/architecture-and-concepts/network-architecture/transactions/#declare-transaction[`Declare` transaction].
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract-item]
+[[AccountComponent-__validate_deploy__]]
+==== `[.contract-item-name]#++__validate_deploy__++#++(self: @ContractState, class_hash: felt252, contract_address_salt: felt252, public_key: felt252) → felt252++` [.item-kind]#external#
+
+Validates a https://docs.starknet.io/architecture-and-concepts/network-architecture/transactions/#deploy_account_transaction[`DeployAccount` transaction].
+See xref:/guides/deployment.adoc[Counterfactual Deployments].
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract-item]
+[[AccountComponent-get_public_key]]
+==== `[.contract-item-name]#++get_public_key++#++(self: @ContractState)++ → felt252` [.item-kind]#external#
+
+Returns the current public key of the account.
+
+[.contract-item]
+[[AccountComponent-set_public_key]]
+==== `[.contract-item-name]#++set_public_key++#++(ref self: ContractState, new_public_key: felt252, signature: Span<felt252>)++` [.item-kind]#external#
+
+Sets a new public key for the account. Only accessible by the account calling itself through `\\__execute__`.
+
+Requirements:
+
+- The caller must be the contract itself.
+- The signature must be valid for the new owner.
+
+Emits both an {OwnerRemoved} and an {OwnerAdded} event.
+
+[NOTE]
+====
+The message to be signed is computed in Cairo as follows:
+
+```javascript
+let message_hash = PoseidonTrait::new()
+        .update_with('StarkNet Message')
+        .update_with('accept_ownership')
+        .update_with(get_contract_address())
+        .update_with(current_owner)
+        .finalize();
+```
+====
+
+[.contract-item]
+[[AccountComponent-isValidSignature]]
+==== `[.contract-item-name]#++isValidSignature++#++(self: @ContractState, hash: felt252, signature: Array<felt252>) → felt252++` [.item-kind]#external#
+
+See xref:ISRC6-is_valid_signature[ISRC6::is_valid_signature].
+
+[.contract-item]
+[[AccountComponent-getPublicKey]]
+==== `[.contract-item-name]#++getPublicKey++#++(self: @ContractState)++ → felt252` [.item-kind]#external#
+
+See xref:AccountComponent-get_public_key[get_public_key].
+
+[.contract-item]
+[[AccountComponent-setPublicKey]]
+==== `[.contract-item-name]#++setPublicKey++#++(ref self: ContractState, newPublicKey: felt252, signature: Span<felt252>)++` [.item-kind]#external#
+
+See xref:AccountComponent-set_public_key[set_public_key].
+
+[#AccountComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[AccountComponent-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ComponentState, public_key: felt252)++` [.item-kind]#internal#
+
+Initializes the account with the given public key, and registers the `ISRC6` interface ID.
+
+Emits an {OwnerAdded} event.
+
+[.contract-item]
+[[AccountComponent-assert_only_self]]
+==== `[.contract-item-name]#++assert_only_self++#++(self: @ComponentState)++` [.item-kind]#internal#
+
+Validates that the caller is the account itself. Otherwise it reverts.
+
+[.contract-item]
+[[AccountComponent-assert_valid_new_owner]]
+==== `[.contract-item-name]#++assert_valid_new_owner++#++(self: @ComponentState, current_owner: felt252, new_owner: felt252, signature: Span<felt252>)++` [.item-kind]#internal#
+
+Validates that `new_owner` accepted the ownership of the contract through a signature.
+
+Requirements:
+
+- `signature` must be valid for the new owner.
+
+WARNING: This function assumes that `current_owner` is the current owner of the contract, and
+does not validate this assumption.
+
+[.contract-item]
+[[AccountComponent-validate_transaction]]
+==== `[.contract-item-name]#++validate_transaction++#++(self: @ComponentState)++ → felt252` [.item-kind]#internal#
+
+Validates a transaction signature from the
+https://github.com/starkware-libs/cairo/blob/main/corelib/src/starknet/info.cairo#L61[global context].
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract-item]
+[[AccountComponent-_set_public_key]]
+==== `[.contract-item-name]#++_set_public_key++#++(ref self: ComponentState, new_public_key: felt252)++` [.item-kind]#internal#
+
+Set the public key without validating the caller.
+
+Emits an {OwnerAdded} event.
+
+CAUTION: The usage of this method outside the `set_public_key` function is discouraged.
+
+[.contract-item]
+[[AccountComponent-_is_valid_signature]]
+==== `[.contract-item-name]#++_is_valid_signature++#++(self: @ComponentState, hash: felt252, signature: Span<felt252>)++ → bool` [.item-kind]#internal#
+
+Validates the provided `signature` for the `hash`, using the account's current public key.
+
+[#AccountComponent-Events]
+==== Events
+
+[.contract-item]
+[[AccountComponent-OwnerAdded]]
+==== `[.contract-item-name]#++OwnerAdded++#++(new_owner_guid: felt252)++` [.item-kind]#event#
+
+Emitted when a `public_key` is added.
+
+[.contract-item]
+[[AccountComponent-OwnerRemoved]]
+==== `[.contract-item-name]#++OwnerRemoved++#++(removed_owner_guid: felt252)++` [.item-kind]#event#
+
+Emitted when a `public_key` is removed.
+
+[.contract]
+[[EthAccountComponent]]
+=== `++EthAccountComponent++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/account/src/eth_account.cairo[{github-icon},role=heading-link]
+
+:OwnerAdded: xref:EthAccountComponent-OwnerAdded[OwnerAdded]
+:OwnerRemoved: xref:EthAccountComponent-OwnerRemoved[OwnerRemoved]
+:secp256k1-curve: https://en.bitcoin.it/wiki/Secp256k1[Secp256k1 curve]
+
+```cairo
+use openzeppelin_account::eth_account::EthAccountComponent;
+```
+Account component implementing xref:ISRC6[`ISRC6`] for signatures over the {secp256k1-curve}.
+
+NOTE: {src5-component-required-note}
+
+NOTE: The `EthPublicKey` type is an alias for `starknet::secp256k1::Secp256k1Point`.
+
+[.contract-index#EthAccountComponent-Embeddable-Mixin-Impl]
+.{mixin-impls}
+
+--
+.EthAccountMixinImpl
+
+* xref:#EthAccountComponent-Embeddable-Impls-SRC6Impl[`++SRC6Impl++`]
+* xref:#EthAccountComponent-Embeddable-Impls-DeclarerImpl[`++DeclarerImpl++`]
+* xref:#EthAccountComponent-Embeddable-Impls-DeployableImpl[`++DeployableImpl++`]
+* xref:#EthAccountComponent-Embeddable-Impls-PublicKeyImpl[`++PublicKeyImpl++`]
+* xref:#EthAccountComponent-Embeddable-Impls-SRC6CamelOnlyImpl[`++SRC6CamelOnlyImpl++`]
+* xref:#EthAccountComponent-Embeddable-Impls-PublicKeyCamelImpl[`++PublicKeyCamelImpl++`]
+* xref:api/introspection.adoc#SRC5Component-Embeddable-Impls[`++SRC5Impl++`]
+--
+
+[.contract-index#EthAccountComponent-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#EthAccountComponent-Embeddable-Impls-SRC6Impl]
+.SRC6Impl
+
+* xref:#EthAccountComponent-\\__execute__[`++__execute__(self, calls)++`]
+* xref:#EthAccountComponent-\\__validate__[`++__validate__(self, calls)++`]
+* xref:#EthAccountComponent-is_valid_signature[`++is_valid_signature(self, hash, signature)++`]
+
+[.sub-index#EthAccountComponent-Embeddable-Impls-DeclarerImpl]
+.DeclarerImpl
+
+* xref:#EthAccountComponent-\\__validate_declare__[`++__validate_declare__(self, class_hash)++`]
+
+[.sub-index#EthAccountComponent-Embeddable-Impls-DeployableImpl]
+.DeployableImpl
+
+* xref:#EthAccountComponent-\\__validate_deploy__[`++__validate_deploy__(self, hash, signature)++`]
+
+[.sub-index#EthAccountComponent-Embeddable-Impls-PublicKeyImpl]
+.PublicKeyImpl
+
+* xref:#EthAccountComponent-get_public_key[`++get_public_key(self)++`]
+* xref:#EthAccountComponent-set_public_key[`++set_public_key(self, new_public_key, signature)++`]
+
+[.sub-index#EthAccountComponent-Embeddable-Impls-SRC6CamelOnlyImpl]
+.SRC6CamelOnlyImpl
+
+* xref:#EthAccountComponent-isValidSignature[`++isValidSignature(self, hash, signature)++`]
+
+[.sub-index#EthAccountComponent-Embeddable-Impls-PublicKeyCamelImpl]
+.PublicKeyCamelImpl
+
+* xref:#EthAccountComponent-getPublicKey[`++getPublicKey(self)++`]
+* xref:#EthAccountComponent-setPublicKey[`++setPublicKey(self, newPublicKey, signature)++`]
+
+.SRC5Impl
+* xref:api/introspection.adoc#ISRC5-supports_interface[`supports_interface(self, interface_id: felt252)`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#EthAccountComponent-initializer[`++initializer(self, public_key)++`]
+* xref:#EthAccountComponent-assert_only_self[`++assert_only_self(self)++`]
+* xref:#EthAccountComponent-assert_valid_new_owner[`++assert_valid_new_owner(self, current_owner, new_owner, signature)++`]
+* xref:#EthAccountComponent-validate_transaction[`++validate_transaction(self)++`]
+* xref:#EthAccountComponent-_set_public_key[`++_set_public_key(self, new_public_key)++`]
+* xref:#EthAccountComponent-_is_valid_signature[`++_is_valid_signature(self, hash, signature)++`]
+--
+
+[.contract-index]
+.Events
+--
+* xref:#EthAccountComponent-OwnerAdded[`++OwnerAdded(new_owner_guid)++`]
+* xref:#EthAccountComponent-OwnerRemoved[`++OwnerRemoved(removed_owner_guid)++`]
+--
+
+[#EthAccountComponent-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[EthAccountComponent-__execute__]]
+==== `[.contract-item-name]#++__execute__++#++(self: @ContractState, calls: Array<Call>)++` [.item-kind]#external#
+
+See xref:ISRC6-\\__execute__[ISRC6::\\__execute__].
+
+[.contract-item]
+[[EthAccountComponent-__validate__]]
+==== `[.contract-item-name]#++__validate__++#++(self: @ContractState, calls: Array<Call>) → felt252++` [.item-kind]#external#
+
+See xref:ISRC6-\\__validate__[ISRC6::\\__validate__].
+
+[.contract-item]
+[[EthAccountComponent-is_valid_signature]]
+==== `[.contract-item-name]#++is_valid_signature++#++(self: @ContractState, hash: felt252, signature: Array<felt252>) → felt252++` [.item-kind]#external#
+
+See xref:ISRC6-is_valid_signature[ISRC6::is_valid_signature].
+
+[.contract-item]
+[[EthAccountComponent-__validate_declare__]]
+==== `[.contract-item-name]#++__validate_declare__++#++(self: @ContractState, class_hash: felt252) → felt252++` [.item-kind]#external#
+
+Validates a https://docs.starknet.io/architecture-and-concepts/network-architecture/transactions/#declare-transaction[`Declare` transaction].
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract-item]
+[[EthAccountComponent-__validate_deploy__]]
+==== `[.contract-item-name]#++__validate_deploy__++#++(self: @ContractState, class_hash: felt252, contract_address_salt: felt252, public_key: EthPublicKey) → felt252++` [.item-kind]#external#
+
+Validates a https://docs.starknet.io/architecture-and-concepts/network-architecture/transactions/#deploy_account_transaction[`DeployAccount` transaction].
+See xref:/guides/deployment.adoc[Counterfactual Deployments].
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract-item]
+[[EthAccountComponent-get_public_key]]
+==== `[.contract-item-name]#++get_public_key++#++(self: @ContractState)++ → EthPublicKey` [.item-kind]#external#
+
+Returns the current public key of the account.
+
+[.contract-item]
+[[EthAccountComponent-set_public_key]]
+==== `[.contract-item-name]#++set_public_key++#++(ref self: ContractState, new_public_key: EthPublicKey, signature: Span<felt252>)++` [.item-kind]#external#
+
+Sets a new public key for the account. Only accessible by the account calling itself through `\\__execute__`.
+
+Requirements:
+
+- The caller must be the contract itself.
+- The signature must be valid for the new owner.
+
+Emits both an {OwnerRemoved} and an {OwnerAdded} event.
+
+[NOTE]
+====
+The message to be signed is computed in Cairo as follows:
+```javascript
+let message_hash = PoseidonTrait::new()
+        .update_with('StarkNet Message')
+        .update_with('accept_ownership')
+        .update_with(get_contract_address())
+        .update_with(current_owner.get_coordinates().unwrap_syscall())
+        .finalize();
+```
+====
+
+[.contract-item]
+[[EthAccountComponent-isValidSignature]]
+==== `[.contract-item-name]#++isValidSignature++#++(self: @ContractState, hash: felt252, signature: Array<felt252>) → felt252++` [.item-kind]#external#
+
+See xref:ISRC6-is_valid_signature[ISRC6::is_valid_signature].
+
+[.contract-item]
+[[EthAccountComponent-getPublicKey]]
+==== `[.contract-item-name]#++getPublicKey++#++(self: @ContractState)++ → EthPublicKey` [.item-kind]#external#
+
+See xref:EthAccountComponent-get_public_key[get_public_key].
+
+[.contract-item]
+[[EthAccountComponent-setPublicKey]]
+==== `[.contract-item-name]#++setPublicKey++#++(ref self: ContractState, newPublicKey: EthPublicKey, signature: Span<felt252>)++` [.item-kind]#external#
+
+See xref:EthAccountComponent-set_public_key[set_public_key].
+
+[#EthAccountComponent-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[EthAccountComponent-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ComponentState, public_key: EthPublicKey)++` [.item-kind]#internal#
+
+Initializes the account with the given public key, and registers the `ISRC6` interface ID.
+
+Emits an {OwnerAdded} event.
+
+[.contract-item]
+[[EthAccountComponent-assert_only_self]]
+==== `[.contract-item-name]#++assert_only_self++#++(self: @ComponentState)++` [.item-kind]#internal#
+
+Validates that the caller is the account itself. Otherwise it reverts.
+
+[.contract-item]
+[[EthAccountComponent-assert_valid_new_owner]]
+==== `[.contract-item-name]#++assert_valid_new_owner++#++(self: @ComponentState, current_owner: EthPublicKey, new_owner: EthPublicKey, signature: Span<felt252>)++` [.item-kind]#internal#
+
+Validates that `new_owner` accepted the ownership of the contract through a signature.
+
+Requirements:
+
+- The signature must be valid for the `new_owner`.
+
+WARNING: This function assumes that `current_owner` is the current owner of the contract, and
+does not validate this assumption.
+
+[.contract-item]
+[[EthAccountComponent-validate_transaction]]
+==== `[.contract-item-name]#++validate_transaction++#++(self: @ComponentState)++ → felt252` [.item-kind]#internal#
+
+Validates a transaction signature from the
+https://github.com/starkware-libs/cairo/blob/main/corelib/src/starknet/info.cairo#L61[global context].
+
+Returns the short string `'VALID'` if valid, otherwise it reverts.
+
+[.contract-item]
+[[EthAccountComponent-_set_public_key]]
+==== `[.contract-item-name]#++_set_public_key++#++(ref self: ComponentState, new_public_key: EthPublicKey)++` [.item-kind]#internal#
+
+Set the public key without validating the caller.
+
+Emits an {OwnerAdded} event.
+
+CAUTION: The usage of this method outside the `set_public_key` function is discouraged.
+
+[.contract-item]
+[[EthAccountComponent-_is_valid_signature]]
+==== `[.contract-item-name]#++_is_valid_signature++#++(self: @ComponentState, hash: felt252, signature: Span<felt252>)++ → bool` [.item-kind]#internal#
+
+Validates the provided `signature` for the `hash`, using the account's current public key.
+
+[#EthAccountComponent-Events]
+==== Events
+
+NOTE: The `guid` is computed as the hash of the public key, using the poseidon hash function.
+
+[.contract-item]
+[[EthAccountComponent-OwnerAdded]]
+==== `[.contract-item-name]#++OwnerAdded++#++(new_owner_guid: felt252)++` [.item-kind]#event#
+
+Emitted when a `public_key` is added.
+
+[.contract-item]
+[[EthAccountComponent-OwnerRemoved]]
+==== `[.contract-item-name]#++OwnerRemoved++#++(removed_owner_guid: felt252)++` [.item-kind]#event#
+
+Emitted when a `public_key` is removed.
+
+== Extensions
+
+[.contract]
+[[ISRC9_V2]]
+=== `++ISRC9_V2++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/account/src/extensions/src9/interface.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_account::extensions::src9::ISRC9_V2;
+```
+
+Interface of the SRC9 Standard as defined in the {snip9}.
+
+[.contract-index]
+.{inner-src5}
+--
+0x1d1144bb2138366ff28d8e9ab57456b1d332ac42196230c3a602003c89872
+--
+
+[.contract-index]
+.Functions
+--
+* xref:#ISRC9_V2-execute_from_outside_v2[`++execute_from_outside_v2(outside_execution, signature)++`]
+* xref:#ISRC9_V2-is_valid_outside_execution_nonce[`++is_valid_outside_execution_nonce(nonce)++`]
+--
+
+[#ISRC9_V2-Functions]
+==== Functions
+
+[.contract-item]
+[[ISRC9_V2-execute_from_outside_v2]]
+==== `[.contract-item-name]#++execute_from_outside_v2++#++(outside_execution: OutsideExecution, signature: Span<felt252>,) → Array<Span<felt252>>++` [.item-kind]#external#
+
+Allows anyone to submit a transaction on behalf of the account as long as they have the relevant signatures.
+
+This method allows reentrancy. A call to `\\__execute__` or `execute_from_outside_v2` can trigger
+another nested transaction to `execute_from_outside_v2` thus the implementation MUST verify
+that the provided `signature` matches the hash of `outside_execution` and that `nonce` was
+not already used.
+
+The implementation should expect version to be set to 2 in the domain separator.
+
+Arguments:
+
+- `outside_execution` - The parameters of the transaction to execute.
+- `signature` - A valid signature on the {snip12} message encoding of `outside_execution`.
+
+[.contract-item]
+[[ISRC9_V2-is_valid_outside_execution_nonce]]
+==== `[.contract-item-name]#++is_valid_outside_execution_nonce++#++(nonce: felt252) → bool++` [.item-kind]#external#
+
+Get the status of a given nonce. `true` if the nonce is available to use.
+
+[.contract]
+[[SRC9Component]]
+=== `++SRC9Component++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/account/src/extensions/src9/src9.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_account::extensions::SRC9Component;
+```
+
+OutsideExecution component implementing xref:ISRC9_V2[`ISRC9_V2`].
+
+NOTE: This component is signature-agnostic, meaning it can be integrated into any account contract, as long as the
+account implements the ISRC6 interface.
+
+[.contract-index#SRC9Component-Embeddable-Impls]
+.Embeddable Implementations
+--
+[.sub-index#SRC9Component-Embeddable-Impls-OutsideExecutionV2Impl]
+.OutsideExecutionV2Impl
+
+* xref:#SRC9Component-execute_from_outside_v2[`++execute_from_outside_v2(self, outside_execution, signature)++`]
+* xref:#SRC9Component-is_valid_outside_execution_nonce[`++is_valid_outside_execution_nonce(self, nonce)++`]
+--
+
+[.contract-index]
+.Internal Implementations
+--
+.InternalImpl
+
+* xref:#SRC9Component-initializer[`++initializer(self)++`]
+--
+
+[#SRC9Component-Embeddable-Functions]
+==== Embeddable functions
+
+[.contract-item]
+[[SRC9Component-execute_from_outside_v2]]
+==== `[.contract-item-name]#++execute_from_outside_v2++#++(ref self: ContractState, outside_execution: OutsideExecution, signature: Span<felt252>) → Array<Span<felt252>>++` [.item-kind]#external#
+
+Allows anyone to submit a transaction on behalf of the account as long as they
+have the relevant signatures.
+
+This method allows reentrancy. A call to `\\__execute__` or `execute_from_outside_v2` can
+trigger another nested transaction to `execute_from_outside_v2`. This implementation
+verifies that the provided `signature` matches the hash of `outside_execution` and that
+`nonce` was not already used.
+
+Arguments:
+
+- `outside_execution` - The parameters of the transaction to execute.
+- `signature` - A valid signature on the {snip12} message encoding of
+`outside_execution`.
+
+Requirements:
+
+- The caller must be the `outside_execution.caller` unless 'ANY_CALLER' is used.
+- The current time must be within the `outside_execution.execute_after` and `outside_execution.execute_before` span.
+- The `outside_execution.nonce` must not be used before.
+- The `signature` must be valid.
+
+[.contract-item]
+[[SRC9Component-is_valid_outside_execution_nonce]]
+==== `[.contract-item-name]#++is_valid_outside_execution_nonce++#++(self: @ContractState, nonce: felt252) → bool++` [.item-kind]#external#
+
+Returns the status of a given nonce. `true` if the nonce is available to use.
+
+[#SRC9Component-Internal-Functions]
+==== Internal functions
+
+[.contract-item]
+[[SRC9Component-initializer]]
+==== `[.contract-item-name]#++initializer++#++(ref self: ComponentState)++` [.item-kind]#internal#
+
+Initializes the account by registering the `ISRC9_V2` interface ID.
+
+== Presets
+
+[.contract]
+[[AccountUpgradeable]]
+=== `++AccountUpgradeable++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/presets/src/account.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_presets::AccountUpgradeable;
+```
+
+Upgradeable account which can change its public key and declare, deploy, or call
+contracts. Supports outside execution by implementing xref:#SRC9Component[SRC9].
+
+include::../utils/_class_hashes.adoc[]
+
+[.contract-index]
+.{presets-page}
+--
+{AccountUpgradeable-class-hash}
+--
+
+[.contract-index]
+.Constructor
+--
+* xref:#AccountUpgradeable-constructor[`++constructor(self, public_key)++`]
+--
+
+[.contract-index]
+.Embedded Implementations
+--
+.AccountComponent
+* xref:#AccountComponent-Embeddable-Mixin-Impl[`++AccountMixinImpl++`]
+
+.SRC9Component
+* xref:#SRC9Component-Embeddable-Impls-OutsideExecutionV2Impl[`++OutsideExecutionV2Impl++`]
+--
+
+[.contract-index]
+.External Functions
+--
+* xref:#AccountUpgradeable-upgrade[`++upgrade(self, new_class_hash)++`]
+--
+
+[#AccountUpgradeable-constructor-section]
+==== Constructor
+
+[.contract-item]
+[[AccountUpgradeable-constructor]]
+==== `[.contract-item-name]#++constructor++#++(ref self: ContractState, public_key: felt252)++` [.item-kind]#constructor#
+
+Sets the account `public_key` and registers the interfaces the contract supports.
+
+[#AccountUpgradeable-external-functions]
+==== External functions
+
+[.contract-item]
+[[AccountUpgradeable-upgrade]]
+==== `[.contract-item-name]#++upgrade++#++(ref self: ContractState, new_class_hash: ClassHash)++` [.item-kind]#external#
+
+Upgrades the contract to a new implementation given by `new_class_hash`.
+
+Requirements:
+
+- The caller is the account contract itself.
+- `new_class_hash` cannot be zero.
+
+[.contract]
+[[EthAccountUpgradeable]]
+=== `++EthAccountUpgradeable++` link:https://github.com/OpenZeppelin/cairo-contracts/blob/release-v2.0.0/packages/presets/src/eth_account.cairo[{github-icon},role=heading-link]
+
+```cairo
+use openzeppelin_presets::EthAccountUpgradeable;
+```
+
+Upgradeable account which can change its public key and declare, deploy, or call contracts, using Ethereum
+signing keys. Supports outside execution by implementing xref:#SRC9Component[SRC9].
+
+NOTE: The `EthPublicKey` type is an alias for `starknet::secp256k1::Secp256k1Point`.
+
+include::../utils/_class_hashes.adoc[]
+
+[.contract-index]
+.{presets-page}
+--
+{EthAccountUpgradeable-class-hash}
+--
+
+[.contract-index]
+.Constructor
+--
+* xref:#EthAccountUpgradeable-constructor[`++constructor(self, public_key)++`]
+--
+
+[.contract-index]
+.Embedded Implementations
+--
+.EthAccountComponent
+* xref:#EthAccountComponent-Embeddable-Mixin-Impl[`++EthAccountMixinImpl++`]
+
+.SRC9Component
+* xref:#SRC9Component-Embeddable-Impls-OutsideExecutionV2Impl[`++OutsideExecutionV2Impl++`]
+--
+
+[.contract-index]
+.External Functions
+--
+* xref:#EthAccountUpgradeable-upgrade[`++upgrade(self, new_class_hash)++`]
+--
+
+[#EthAccountUpgradeable-constructor-section]
+==== Constructor
+
+[.contract-item]
+[[EthAccountUpgradeable-constructor]]
+==== `[.contract-item-name]#++constructor++#++(ref self: ContractState, public_key: EthPublicKey)++` [.item-kind]#constructor#
+
+Sets the account `public_key` and registers the interfaces the contract supports.
+
+[#EthAccountUpgradeable-external-functions]
+==== External functions
+
+[.contract-item]
+[[EthAccountUpgradeable-upgrade]]
+==== `[.contract-item-name]#++upgrade++#++(ref self: ContractState, new_class_hash: ClassHash)++` [.item-kind]#external#
+
+Upgrades the contract to a new implementation given by `new_class_hash`.
+
+Requirements:
+
+- The caller is the account contract itself.
+- `new_class_hash` cannot be zero.

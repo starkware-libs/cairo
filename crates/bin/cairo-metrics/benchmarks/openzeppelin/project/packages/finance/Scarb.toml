@@ -1,0 +1,50 @@
+[package]
+name = "openzeppelin_finance"
+readme = "README.md"
+keywords = [
+    "openzeppelin",
+    "starknet",
+    "contracts",
+    "finance",
+    "vesting"
+]
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[dependencies]
+starknet.workspace = true
+openzeppelin_access = { path = "../access" }
+openzeppelin_token = { path = "../token" }
+
+[dev-dependencies]
+assert_macros.workspace = true
+snforge_std.workspace = true
+openzeppelin_testing = { path = "../testing" }
+openzeppelin_test_common = { path = "../test_common" }
+openzeppelin_utils = { path = "../utils" }
+
+[lib]
+
+[[target.starknet-contract]]
+allowed-libfuncs-list.name = "experimental"
+sierra = true
+casm = false
+
+[[test]]
+name = "openzeppelin_finance_unittest"
+build-external-contracts = [
+    "openzeppelin_test_common::mocks::vesting::LinearVestingMock",
+    "openzeppelin_test_common::mocks::vesting::StepsVestingMock",
+    "openzeppelin_test_common::mocks::vesting::ERC20OptionalTransferPanicMock",
+]

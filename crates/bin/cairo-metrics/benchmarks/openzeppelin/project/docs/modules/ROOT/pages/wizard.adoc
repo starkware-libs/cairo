@@ -1,0 +1,14 @@
+= Wizard for Cairo
+:page-notoc:
+
+Not sure where to start? Use the interactive generator below to bootstrap your
+contract and learn about the components offered in OpenZeppelin Contracts for Cairo.
+
+
+NOTE: We strongly recommend checking the xref:components.adoc[Components] section to understand how to extend from our library.
+
+++++
+<script async src="https://wizard.openzeppelin.com/build/embed.js"></script>
+
+<oz-wizard style="display: block; min-height: 40rem;" data-lang="cairo" version="2.0.0"></oz-wizard>
+++++

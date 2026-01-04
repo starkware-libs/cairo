@@ -1,0 +1,53 @@
+---
+source: src/tests/test_with_components.rs
+expression: result
+snapshot_kind: text
+---
+TokenStream:
+
+#[starknet::contract]
+pub mod MyContract {
+    use starknet::ContractAddress;
+
+    #[storage]
+    pub struct Storage {
+        #[substorage(v0)]
+        pub timelock_controller: TimelockControllerComponent::Storage,
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState,
+        min_delay: u64,
+        proposers: Span<ContractAddress>,
+        executors: Span<ContractAddress>,
+        admin: ContractAddress,
+    ) {
+        self.timelock_controller.initializer(min_delay, proposers, executors, admin);
+    }
+    use openzeppelin_governance::timelock::TimelockControllerComponent;
+
+    component!(
+        path: TimelockControllerComponent,
+        storage: timelock_controller,
+        event: TimelockControllerEvent,
+    );
+
+    impl TimelockControllerInternalImpl = TimelockControllerComponent::InternalImpl<ContractState>;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        TimelockControllerEvent: TimelockControllerComponent::Event,
+    }
+}
+
+
+Diagnostics:
+
+None
+
+AuxData:
+
+None
