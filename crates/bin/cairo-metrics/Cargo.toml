@@ -10,6 +10,9 @@ description = "Walltime benchmark harness for the Cairo compiler."
 anyhow.workspace = true
 cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.15.0" }
 cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "=2.15.0" }
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "=2.15.0" }
+cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "=2.15.0" }
+cairo-lang-sierra-type-size = { path = "../../cairo-lang-sierra-type-size", version = "=2.15.0" }
 cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.15.0", features = ["tracing"] }
 clap.workspace = true
 crossterm.workspace = true

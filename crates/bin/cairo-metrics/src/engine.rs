@@ -4,8 +4,16 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
+use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::{CompilerConfig, compile_cairo_project_at_path};
+use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
+use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra_to_casm::compiler::SierraToCasmConfig;
+use cairo_lang_sierra_to_casm::metadata::calc_metadata;
+use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use time::OffsetDateTime;
 use tracing::info;
 
@@ -136,7 +144,7 @@ pub fn get_git_head() -> String {
 }
 
 /// Runs a single clean-build benchmark using the selected engine.
-/// Returns None if the benchmark should be skipped.
+/// Returns None if the benchmark should be skipped (e.g., Casm for library projects).
 fn run_single(
     config: &MetricsConfig,
     bench: &Benchmark,
@@ -161,7 +169,7 @@ fn run_single(
 }
 
 /// Runs a single incremental-build benchmark using the selected engine.
-/// Returns None if the benchmark should be skipped.
+/// Returns None if the benchmark should be skipped (e.g., Casm for library projects).
 fn run_single_patched(
     config: &MetricsConfig,
     bench: &Benchmark,
@@ -331,25 +339,30 @@ impl BuiltinBench {
         )
     }
 
-    /// Copies source to temp dir and runs the compilation.
+    /// Copies source to temp dir and runs the phase-appropriate compilation.
+    /// Returns None if the phase should be skipped.
     fn run_in_temp(&self) -> Result<Option<Duration>> {
         let temp_dir_handle = TempDir::new(&self.benchmark)?;
         copy_dir(&self.path, temp_dir_handle.path())?;
 
         match self.phase {
+            Phase::Diagnostics => self.run_diagnostics(temp_dir_handle.path()).map(Some),
+            Phase::Sierra => self.run_sierra(temp_dir_handle.path()).map(Some),
+            Phase::Casm => self.run_casm(temp_dir_handle.path()),
             Phase::Full => self.run_full(temp_dir_handle.path()).map(Some),
         }
     }
 
     /// Simulates incremental compilation: copy source, build to populate cache, apply patch,
     /// then time the rebuild. Only the final rebuild is timed.
+    /// Returns None if the phase should be skipped (e.g., Casm for library projects).
     fn run_in_temp_with_patch(&self, patch: &Patch) -> Result<Option<Duration>> {
         let temp_dir_handle = TempDir::new(&self.benchmark)?;
         copy_dir(&self.path, temp_dir_handle.path())?;
         let temp_path = temp_dir_handle.path();
 
         match self.phase {
-            Phase::Full => {
+            Phase::Diagnostics | Phase::Sierra | Phase::Casm | Phase::Full => {
                 // Initial build to populate cache.
                 compile_cairo_project_at_path(
                     temp_path,
@@ -366,14 +379,84 @@ impl BuiltinBench {
         }
     }
 
-    /// Runs full compilation: source to Sierra via library call.
-    fn run_full(&self, temp_path: &Path) -> Result<Duration> {
+    /// Runs diagnostics only: parse, semantic analysis, lowering diagnostics.
+    /// Does NOT generate Sierra IR.
+    fn run_diagnostics(&self, temp_path: &Path) -> Result<Duration> {
+        let start = Instant::now();
+
+        let mut db = RootDatabase::builder()
+            .with_optimizations(Optimizations::enabled_with_default_movable_functions(
+                InliningStrategy::Default,
+            ))
+            .detect_corelib()
+            .build()?;
+
+        setup_project(&mut db, temp_path)?;
+
+        let mut reporter = DiagnosticsReporter::stderr();
+        reporter.ensure(&db)?;
+
+        Ok(start.elapsed())
+    }
+
+    /// Runs Sierra compilation: Cairo source to Sierra IR.
+    fn run_sierra(&self, temp_path: &Path) -> Result<Duration> {
         let start = Instant::now();
         compile_cairo_project_at_path(
             temp_path,
             CompilerConfig::default(),
             InliningStrategy::Default,
         )?;
+        Ok(start.elapsed())
+    }
+
+    /// Runs CASM phase: compile Sierra first (untimed), then convert to CASM (timed).
+    /// Returns None if no Sierra program was produced.
+    fn run_casm(&self, temp_path: &Path) -> Result<Option<Duration>> {
+        // Compile to Sierra (untimed).
+        let sierra_program = compile_cairo_project_at_path(
+            temp_path,
+            CompilerConfig::default(),
+            InliningStrategy::Default,
+        )?;
+
+        // Convert Sierra to CASM (timed).
+        let duration = self.compile_sierra_to_casm(&sierra_program)?;
+        Ok(Some(duration))
+    }
+
+    /// Runs full pipeline: Cairo source to Sierra to CASM, all timed together.
+    fn run_full(&self, temp_path: &Path) -> Result<Duration> {
+        let start = Instant::now();
+
+        // Cairo to Sierra.
+        let sierra_program = compile_cairo_project_at_path(
+            temp_path,
+            CompilerConfig::default(),
+            InliningStrategy::Default,
+        )?;
+
+        // Sierra to CASM.
+        self.compile_sierra_to_casm(&sierra_program)?;
+
+        Ok(start.elapsed())
+    }
+
+    /// Compiles a Sierra program to CASM and returns the time taken.
+    fn compile_sierra_to_casm(&self, sierra_program: &Program) -> Result<Duration> {
+        let start = Instant::now();
+
+        let program_info = ProgramRegistryInfo::new(sierra_program)?;
+
+        let metadata = calc_metadata(sierra_program, &program_info, Default::default())?;
+
+        cairo_lang_sierra_to_casm::compiler::compile(
+            sierra_program,
+            &program_info,
+            &metadata,
+            SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX },
+        )?;
+
         Ok(start.elapsed())
     }
 

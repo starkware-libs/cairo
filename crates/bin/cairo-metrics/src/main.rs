@@ -247,8 +247,14 @@ impl Metric {
 /// Compilation phase to measure.
 #[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq, Hash)]
 pub enum Phase {
-    /// Full compilation pipeline: source to Sierra (cairo-compile).
+    /// Diagnostics validation (currently same as Sierra with library calls).
+    Diagnostics,
+    /// Cairo to Sierra IR generation.
     #[default]
+    Sierra,
+    /// Sierra to CASM code generation.
+    Casm,
+    /// Full compilation pipeline: source to Sierra to CASM.
     Full,
 }
 
@@ -256,8 +262,16 @@ impl Phase {
     /// Returns the phase name as a string.
     pub fn as_str(&self) -> &str {
         match self {
+            Phase::Diagnostics => "diagnostics",
+            Phase::Sierra => "sierra",
+            Phase::Casm => "casm",
             Phase::Full => "full",
         }
+    }
+
+    /// Returns all available phases.
+    pub fn all() -> Vec<Phase> {
+        vec![Phase::Diagnostics, Phase::Sierra, Phase::Casm, Phase::Full]
     }
 }
 
@@ -299,8 +313,8 @@ enum Commands {
         #[arg(long, value_enum, value_delimiter = ',', default_values_t = Scenario::defaults())]
         scenarios: Vec<Scenario>,
 
-        /// Compilation phases to measure.
-        #[arg(long, value_enum, value_delimiter = ',', default_value = "full")]
+        /// Compilation phases to measure: diagnostics, sierra, casm, or full.
+        #[arg(long, value_enum, value_delimiter = ',', default_values_t = Phase::all())]
         phases: Vec<Phase>,
 
         /// Metrics to measure.
