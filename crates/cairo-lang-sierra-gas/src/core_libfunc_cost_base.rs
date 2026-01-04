@@ -370,9 +370,7 @@ pub fn core_libfunc_cost(
                     std::cmp::max(1, info_provider.type_size(&libfunc.ty).try_into().unwrap());
                 vec![ConstCost::steps(n_steps).into()]
             }
-            BoxConcreteLibfunc::LocalInto(_) => {
-                vec![ConstCost::steps(3).into()]
-            }
+            BoxConcreteLibfunc::LocalInto(_) => vec![ConstCost::steps(2).into()],
             BoxConcreteLibfunc::Unbox(_) | BoxConcreteLibfunc::ForwardSnapshot(_) => {
                 vec![ConstCost::default().into()]
             }
