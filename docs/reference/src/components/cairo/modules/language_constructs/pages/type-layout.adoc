@@ -1,6 +1,33 @@
 = Type layout
 
-This section is a work in progress.
+Type layout describes how values of a given type are represented in memory.
+It does not define new behavior, but specifies how a type is laid out at the
+memory level.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+Type layout is useful for:
+
+* Understanding memory usage and performance characteristics.
+* Interacting with low-level constructs and external systems.
+* Ensuring compatibility across language or ABI boundaries.
+* Implementing serialization and deserialization logic.
+
+== Layout properties
+
+A type layout defines the following properties:
+
+* Size of the type in memory.
+* Alignment requirements of the type.
+* Ordering of fields for composite types.
+* Padding inserted to satisfy alignment constraints.
+
+== Composite types
+
+For composite types, the layout is derived from the layouts of their fields.
+Field ordering and alignment rules may introduce padding between fields.
+
+== Notes
+
+Type layout is a semantic property of types and does not affect high-level
+program logic. Most users do not need to reason about type layout unless they
+work close to the memory model or external interfaces.
+
