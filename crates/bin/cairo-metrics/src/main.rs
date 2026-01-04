@@ -221,7 +221,7 @@ impl Scenario {
         }
     }
 
-    /// Returns default scenarios (clean only; incremental requires cairo support).
+    /// Returns default scenarios (clean only; incremental requires cairo compiler support).
     pub fn defaults() -> Vec<Scenario> {
         vec![Scenario::Clean]
     }

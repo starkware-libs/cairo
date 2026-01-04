@@ -87,8 +87,8 @@ impl SqliteDatabase {
             );
 
             CREATE INDEX IF NOT EXISTS idx_runs_timestamp ON runs(timestamp);
-            CREATE INDEX IF NOT EXISTS idx_benchmark_results_benchmark ON \
-                 benchmark_results(benchmark);
+            CREATE INDEX IF NOT EXISTS idx_benchmark_results_benchmark ON
+                benchmark_results(benchmark);
             CREATE INDEX IF NOT EXISTS idx_benchmark_results_phase ON benchmark_results(phase);
             ",
             )
@@ -215,8 +215,8 @@ impl Database for SqliteDatabase {
              FROM runs r
              JOIN benchmark_results b ON r.id = b.run_id
              WHERE CASE
-                 WHEN b.patch != '' THEN b.benchmark || '-patched-' || b.patch || '-' || b.phase \
-             || '-' || b.metric
+                 WHEN b.patch != '' THEN b.benchmark || '-patched-' || b.patch || '-' || b.phase
+                     || '-' || b.metric
                  ELSE b.benchmark || '-' || b.scenario || '-' || b.phase || '-' || b.metric
              END = ?1
              ORDER BY r.timestamp DESC

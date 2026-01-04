@@ -78,5 +78,5 @@ Results stored in SQLite include:
 
 ## Future Work
 
-- Incremental compilation benchmarks (requires cairo compiler support)
+- Incremental compilation benchmarks (patch logic implemented, awaiting cairo compiler support)
 - Additional metrics beyond walltime

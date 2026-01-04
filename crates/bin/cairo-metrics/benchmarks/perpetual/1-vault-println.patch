@@ -1,0 +1,10 @@
+diff --git a/workspace/vault/src/protocol_vault.cairo b/workspace/vault/src/protocol_vault.cairo
+--- a/workspace/vault/src/protocol_vault.cairo
++++ b/workspace/vault/src/protocol_vault.cairo
+@@ -108,6 +108,7 @@ pub mod ProtocolVault {
+         recipient: ContractAddress,
+         initial_price: u64,
+     ) -> u256 {
++        let _bench1: felt252 = 1;
+         self.roles.initialize(:governance_admin);
+         self.replaceability.initialize(:upgrade_delay);

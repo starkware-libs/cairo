@@ -9,7 +9,7 @@ use cairo_lang_lowering::utils::InliningStrategy;
 use time::OffsetDateTime;
 use tracing::info;
 
-use crate::config::{Benchmark, MetricsConfig};
+use crate::config::{Benchmark, MetricsConfig, Patch};
 use crate::format::log_timing_stats;
 use crate::model::{BenchmarkResult, RunMeta, RunResult, TimingStats, format_display_name};
 use crate::runner::{TempDir, copy_dir};
@@ -70,22 +70,44 @@ pub fn run_all(
 
             for &phase in phases {
                 for &metric in metrics {
-                    let key = cache_key(&bench.name, scenario, phase, metric);
-                    if cached.contains(&key) {
-                        skipped_count += 1;
-                        continue;
-                    }
-                    bench_count += 1;
-                    if let Some(result) = run_single(
-                        &config,
-                        bench,
-                        scenario,
-                        phase,
-                        metric,
-                        use_hyperfine,
-                        bench_count,
-                    )? {
-                        benchmark_results.push(result);
+                    if is_incremental {
+                        for patch in &bench.patches {
+                            let key = patched_cache_key(&bench.name, &patch.name, phase, metric);
+                            if cached.contains(&key) {
+                                skipped_count += 1;
+                                continue;
+                            }
+                            bench_count += 1;
+                            if let Some(result) = run_single_patched(
+                                &config,
+                                bench,
+                                patch,
+                                phase,
+                                metric,
+                                use_hyperfine,
+                                bench_count,
+                            )? {
+                                benchmark_results.push(result);
+                            }
+                        }
+                    } else {
+                        let key = cache_key(&bench.name, scenario, phase, metric);
+                        if cached.contains(&key) {
+                            skipped_count += 1;
+                            continue;
+                        }
+                        bench_count += 1;
+                        if let Some(result) = run_single(
+                            &config,
+                            bench,
+                            scenario,
+                            phase,
+                            metric,
+                            use_hyperfine,
+                            bench_count,
+                        )? {
+                            benchmark_results.push(result);
+                        }
                     }
                 }
             }
@@ -138,8 +160,38 @@ fn run_single(
     }
 }
 
+/// Runs a single incremental-build benchmark using the selected engine.
+/// Returns None if the benchmark should be skipped.
+fn run_single_patched(
+    config: &MetricsConfig,
+    bench: &Benchmark,
+    patch: &Patch,
+    phase: Phase,
+    metric: Metric,
+    use_hyperfine: bool,
+    bench_count: usize,
+) -> Result<Option<BenchmarkResult>> {
+    match metric {
+        Metric::Walltime => {
+            if use_hyperfine {
+                // Hyperfine doesn't support skip detection, so always returns Some.
+                hyperfine::Bench::new_patched(config, bench, &patch.name, phase, metric)
+                    .run_patched(patch, bench_count)
+                    .map(Some)
+            } else {
+                BuiltinBench::new_patched(config, bench, &patch.name, phase, metric)
+                    .run_patched(patch, bench_count)
+            }
+        }
+    }
+}
+
 fn cache_key(bench_name: &str, scenario: Scenario, phase: Phase, metric: Metric) -> String {
     format!("{}-{}-{}-{}", bench_name, scenario.as_str(), phase.as_str(), metric.as_str())
+}
+
+fn patched_cache_key(bench_name: &str, patch_name: &str, phase: Phase, metric: Metric) -> String {
+    format!("{}-patched-{}-{}-{}", bench_name, patch_name, phase.as_str(), metric.as_str())
 }
 
 /// Builtin benchmark runner using temp directories.
@@ -180,6 +232,26 @@ impl BuiltinBench {
         }
     }
 
+    /// Creates a benchmark runner for incremental (patched) builds.
+    fn new_patched(
+        config: &MetricsConfig,
+        bench: &Benchmark,
+        patch_name: &str,
+        phase: Phase,
+        metric: Metric,
+    ) -> Self {
+        Self {
+            runs: config.defaults.runs,
+            warmup: config.defaults.warmup,
+            path: bench.path().to_path_buf(),
+            benchmark: bench.name.clone(),
+            scenario: "incremental".to_string(),
+            phase,
+            metric: metric.as_str().to_string(),
+            patch: patch_name.to_string(),
+        }
+    }
+
     /// Runs a clean build benchmark.
     /// Returns None if the benchmark should be skipped (e.g., Casm for library projects).
     fn run_clean(&self, bench_count: usize) -> Result<Option<BenchmarkResult>> {
@@ -214,6 +286,40 @@ impl BuiltinBench {
         self.compute_result(times).map(Some)
     }
 
+    /// Runs an incremental build benchmark by applying a patch to a warm cache.
+    /// Returns None if the benchmark should be skipped (e.g., Casm for library projects).
+    fn run_patched(&self, patch: &Patch, bench_count: usize) -> Result<Option<BenchmarkResult>> {
+        info!("Benchmark {}: {}", bench_count, self.display_name());
+
+        // Warm up OS/CPU caches to increase accuracy of timing.
+        for i in 0..self.warmup {
+            info!("  warmup {}/{}", i + 1, self.warmup);
+            match self.run_in_temp_with_patch(patch) {
+                Ok(Some(_)) => {}
+                Ok(None) => {
+                    info!("  skipped: no contracts to compile");
+                    return Ok(None);
+                }
+                Err(e) => return Ok(Some(self.failed_result(&e))),
+            }
+        }
+
+        let mut times = Vec::with_capacity(self.runs);
+        for i in 0..self.runs {
+            info!("  run {}/{}", i + 1, self.runs);
+            match self.run_in_temp_with_patch(patch) {
+                Ok(Some(wall_time)) => times.push(wall_time.as_nanos().try_into().unwrap()),
+                Ok(None) => {
+                    info!("  skipped: no contracts to compile");
+                    return Ok(None);
+                }
+                Err(e) => return Ok(Some(self.failed_result(&e))),
+            }
+        }
+
+        self.compute_result(times).map(Some)
+    }
+
     /// Returns the display name for logging.
     fn display_name(&self) -> String {
         format_display_name(
@@ -227,14 +333,36 @@ impl BuiltinBench {
 
     /// Copies source to temp dir and runs the compilation.
     fn run_in_temp(&self) -> Result<Option<Duration>> {
-        // If this gets too slow, only do it for the first iteration and for subsequent iterations
-        // remove the target directory when running a clean build. For incremental
-        // mode, revert the patch after the first run then rebuild (incrementally).
         let temp_dir_handle = TempDir::new(&self.benchmark)?;
         copy_dir(&self.path, temp_dir_handle.path())?;
 
         match self.phase {
             Phase::Full => self.run_full(temp_dir_handle.path()).map(Some),
+        }
+    }
+
+    /// Simulates incremental compilation: copy source, build to populate cache, apply patch,
+    /// then time the rebuild. Only the final rebuild is timed.
+    fn run_in_temp_with_patch(&self, patch: &Patch) -> Result<Option<Duration>> {
+        let temp_dir_handle = TempDir::new(&self.benchmark)?;
+        copy_dir(&self.path, temp_dir_handle.path())?;
+        let temp_path = temp_dir_handle.path();
+
+        match self.phase {
+            Phase::Full => {
+                // Initial build to populate cache.
+                compile_cairo_project_at_path(
+                    temp_path,
+                    CompilerConfig::default(),
+                    InliningStrategy::Default,
+                )?;
+
+                patch.apply(temp_path)?;
+
+                // TODO(gilad): Replace with incremental compilation when cairo compiler supports
+                // it.
+                todo!()
+            }
         }
     }
 

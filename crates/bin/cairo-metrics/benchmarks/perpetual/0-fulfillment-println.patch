@@ -1,0 +1,11 @@
+diff --git a/workspace/fulfillment/src/fulfillment.cairo b/workspace/fulfillment/src/fulfillment.cairo
+--- a/workspace/fulfillment/src/fulfillment.cairo
++++ b/workspace/fulfillment/src/fulfillment.cairo
+@@ -28,6 +28,7 @@ pub mod Fulfillment {
+     pub fn constructor(
+         ref self: ContractState, owner: ContractAddress, expiration_time: Timestamp,
+     ) {
++        let _bench0: felt252 = 0;
+         self.expiration_time.write(expiration_time);
+         self.owner.write(owner);
+     }

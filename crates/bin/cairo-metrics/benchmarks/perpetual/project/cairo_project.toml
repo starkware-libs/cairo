@@ -1,0 +1,19 @@
+# VENDORED STUB, UNTESTED.
+#
+# Cairo project configuration for direct compilation via cairo-compile.
+#
+# NOTE: This project has external dependencies (openzeppelin, starkware_utils)
+# that are not vendored. To compile this project, you need to either:
+# 1. Vendor the external dependencies into this directory
+# 2. Use scarb build instead of cairo-compile
+#
+# The paths below assume dependencies would be vendored to ./deps/
+
+[crate_roots]
+vault = "workspace/vault/src"
+fulfillment = "workspace/fulfillment/src"
+perpetuals = "workspace/apps/perpetuals/contracts/src"
+# External dependencies (must be vendored):
+# openzeppelin = "deps/openzeppelin/src"
+# starkware_utils = "deps/starkware_utils/src"
+# starknet = "deps/starknet/src"
