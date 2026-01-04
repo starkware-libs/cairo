@@ -27,7 +27,7 @@ fn main() {
 
     let box_u32 = Box::<u32> { value: 5_u32 };
     let box_u128 = Box::<u128> { value: 1_u128 };
-    let box_box_u32 = Box::<Box::<u32>> { value: 100_u32 };
+    let box_box_u32 = Box::<Box::<u32>> { value: Box::<u32> { value: 100_u32 } };
 }
 ----
 
