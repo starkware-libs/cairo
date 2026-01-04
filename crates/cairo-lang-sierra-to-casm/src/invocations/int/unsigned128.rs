@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::utils::Range;
 use num_bigint::BigInt;
 use num_traits::{Num, One};
 
-use super::{bounded, build_128bit_diff, build_const, u128_bound};
+use super::{bounded, build_const, build_small_diff, u128_bound};
 use crate::invocations::{
     BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
     InvocationError, add_input_variables, bitwise, get_non_fallthrough_statement_id, misc,
@@ -21,7 +21,7 @@ pub fn build(
     match libfunc {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => build_u128_overflowing_add(builder),
-            IntOperator::OverflowingSub => build_128bit_diff(builder),
+            IntOperator::OverflowingSub => build_small_diff(builder, u128_bound().clone()),
         },
         Uint128Concrete::Divmod(_) => bounded::build_div_rem(
             builder,
