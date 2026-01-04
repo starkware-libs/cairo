@@ -470,8 +470,8 @@ call rel 34;
 [ap + 0] = 0, ap++;
 %{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
-[fp + 0] = [ap + -7];
-[fp + 1] = [ap + -2];
+[fp + 0] = [ap + -2];
+[fp + 1] = [ap + -7];
 [ap + 0] = [[ap + -6] + -2], ap++;
 [ap + 0] = [[ap + -7] + -1], ap++;
 [ap + -2] = [ap + -1];
@@ -488,8 +488,8 @@ jmp rel 12;
 [ap + 0] = [ap + -4] + 3, ap++;
 [ap + -4] = [ap + 0] + 1, ap++;
 jmp rel -12;
-[ap + 0] = [fp + 1], ap++;
 [ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + 1], ap++;
 ret;
 // sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
