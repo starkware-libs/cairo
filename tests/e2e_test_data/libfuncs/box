@@ -746,7 +746,7 @@ call rel 5;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -781,7 +781,7 @@ call rel 4;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -833,7 +833,7 @@ return([1]);
 test::foo@F0() -> (Box<Unit>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > ==========================================================================
 
@@ -854,7 +854,7 @@ call rel 5;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -904,7 +904,7 @@ ret;
 
 //! > function_costs
 test::bar: SmallOrderedMap({Const: 100})
-test::foo: SmallOrderedMap({Const: 900})
+test::foo: SmallOrderedMap({Const: 800})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -966,7 +966,7 @@ call rel 5;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
