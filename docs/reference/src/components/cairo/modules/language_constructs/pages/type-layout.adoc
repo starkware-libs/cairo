@@ -1,33 +1,20 @@
 = Type layout
 
-Type layout describes how values of a given type are represented in memory.
-It does not define new behavior, but specifies how a type is laid out at the
-memory level.
+Type layout defines the in-memory representation of values of a given type.
+It specifies how a value is mapped to memory locations at runtime.
 
-Type layout is useful for:
+A type layout determines:
 
-* Understanding memory usage and performance characteristics.
-* Interacting with low-level constructs and external systems.
-* Ensuring compatibility across language or ABI boundaries.
-* Implementing serialization and deserialization logic.
+* The size of the type in memory.
+* The alignment requirements of the type.
+* The ordering of fields for composite types.
+* Any padding inserted to satisfy alignment constraints.
 
-== Layout properties
+Type layout is derived from the structure of a type and, for composite types,
+from the layouts of the types it contains.
 
-A type layout defines the following properties:
+Type layout is independent of program semantics and does not affect control
+flow or type checking. It becomes relevant when interacting with low-level
+mechanisms such as serialization, ABI boundaries, or external systems.
 
-* Size of the type in memory.
-* Alignment requirements of the type.
-* Ordering of fields for composite types.
-* Padding inserted to satisfy alignment constraints.
-
-== Composite types
-
-For composite types, the layout is derived from the layouts of their fields.
-Field ordering and alignment rules may introduce padding between fields.
-
-== Notes
-
-Type layout is a semantic property of types and does not affect high-level
-program logic. Most users do not need to reason about type layout unless they
-work close to the memory model or external interfaces.
 
