@@ -1,3 +1,5 @@
+use starknet_types_core::felt::Felt as Felt252;
+
 use super::felt252::Felt252Type;
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
@@ -26,6 +28,25 @@ impl NoGenericArgsGenericType for EcOpType {
 /// An EC point is a pair (x,y) on the curve.
 #[derive(Default)]
 pub struct EcPointType {}
+impl EcPointType {
+    /// The beta parameter of the curve.
+    const BETA: Felt252 = Felt252::from_hex_unchecked(
+        "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
+    );
+    /// Returns the left hand side of the curve equation.
+    pub fn calc_lhs(x: Felt252) -> Felt252 {
+        x * x * x + x + Self::BETA
+    }
+    /// Returns the right hand side of the curve equation.
+    fn calc_rhs(y: Felt252) -> Felt252 {
+        y * y
+    }
+    /// Checks if a point is on the curve.
+    pub fn is_on_curve(x: Felt252, y: Felt252) -> bool {
+        Self::calc_lhs(x) == Self::calc_rhs(y)
+    }
+}
+
 impl NoGenericArgsGenericType for EcPointType {
     const ID: GenericTypeId = GenericTypeId::new_inline("EcPoint");
     const STORABLE: bool = true;
