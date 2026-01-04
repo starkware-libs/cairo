@@ -11,7 +11,7 @@ use super::value::CoreValue;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc;
-use crate::extensions::ec::EcConcreteLibfunc;
+use crate::extensions::ec::{EcConcreteLibfunc, EcPointType};
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt252::{
     Felt252BinaryOpConcreteLibfunc, Felt252BinaryOperationConcrete, Felt252BinaryOperator,
@@ -70,12 +70,8 @@ pub fn simulate<
             match libfunc {
                 EcConcreteLibfunc::TryNew(_) => {
                     take_inputs!(let [CoreValue::Felt252(x), CoreValue::Felt252(y)] = inputs);
-                    const BETA: Felt252 = Felt252::from_hex_unchecked(
-                        "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
-                    );
-                    // If the point is on the curve use the fallthrough branch and return the
-                    // point.
-                    if y * y == x * x * x + x + BETA {
+                    // If the point is on the curve use the fallthrough branch and return the point.
+                    if EcPointType::is_on_curve(x, y) {
                         (vec![CoreValue::EcPoint(x, y)], 0)
                     } else {
                         (vec![], 1)

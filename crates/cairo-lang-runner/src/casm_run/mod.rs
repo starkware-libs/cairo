@@ -10,6 +10,7 @@ use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, ExternalHint, Hint, Stark
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
+use cairo_lang_sierra::extensions::ec::EcPointType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::byte_array::{BYTE_ARRAY_MAGIC, BYTES_IN_WORD};
@@ -1819,12 +1820,7 @@ pub fn random_ec_point<R: rand::RngCore>(
         // TODO(orizi): Use `Felt252` random implementation when exists.
         let x_bytes: [u8; 31] = rng.random();
         let random_x = Felt252::from_bytes_be_slice(&x_bytes);
-        /// The Beta value of the Starkware elliptic curve.
-        pub const BETA: Felt252 = Felt252::from_hex_unchecked(
-            "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
-        );
-        let random_y_squared = random_x * random_x * random_x + random_x + BETA;
-        if let Some(random_y) = random_y_squared.sqrt() {
+        if let Some(random_y) = EcPointType::calc_lhs(random_x).sqrt() {
             break (random_x, random_y);
         }
     };
