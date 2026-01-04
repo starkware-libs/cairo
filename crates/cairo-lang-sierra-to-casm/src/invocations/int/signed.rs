@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::utils::Range;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use num_bigint::BigInt;
 
-use super::{add_input_variables, build_const, build_small_diff, build_small_wide_mul};
+use super::{add_input_variables, build_const, build_small_diff, build_small_wide_mul, u128_bound};
 use crate::invocations::range_reduction::build_felt252_range_reduction;
 use crate::invocations::{
     BuiltinInfo, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
@@ -77,7 +77,7 @@ pub fn build_sint_overflowing_operation(
         // Bound for addition or subtraction of any 2 numbers in [i128::MIN, i128::MAX].
         // max(2 * i128::MAX, i128::MAX - i128::MIN) + 1
         // ==> max(2*(2**127 - 1), 2**127 - 1 -(-2**127)) + 1 ==> 2**128
-        const above_bound = BigInt::from(u128::MAX) + BigInt::from(1);
+        const above_bound = u128_bound().clone();
         hint TestLessThan {lhs: value, rhs: above_bound} into {dst: is_above};
         jump IsAbove if is_above != 0;
         // Below range case.

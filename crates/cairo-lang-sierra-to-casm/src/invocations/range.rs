@@ -2,9 +2,9 @@ use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::range::IntRangeConcreteLibfunc;
-use num_bigint::BigInt;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::int::u128_bound;
 use crate::invocations::{
     BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
@@ -39,7 +39,7 @@ fn build_try_new(
         let orig_range_check = range_check;
 
         tempvar diff = end - start;
-        const bound = BigInt::from(u128::MAX) + BigInt::from(1);
+        const bound = u128_bound().clone();
         tempvar is_valid_range;
         hint TestLessThan {lhs: diff, rhs: bound} into {dst: is_valid_range};
         jump Valid if is_valid_range != 0;
