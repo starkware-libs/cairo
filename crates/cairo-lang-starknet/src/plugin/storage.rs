@@ -1,6 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{MacroPluginMetadata, PluginDiagnostic};
-use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
 use itertools::zip_eq;
@@ -9,10 +9,9 @@ use salsa::Database;
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::{StarknetModuleKind, backwards_compatible_storage};
 use super::storage_interfaces::{
-    StorageMemberConfig, StorageMemberKind, handle_storage_interface_struct,
-    struct_members_storage_configs,
+    StorageMemberKind, handle_storage_interface_struct, struct_members_storage_configs,
 };
-use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, FLAT_ATTR, STORAGE_STRUCT_NAME};
+use super::{CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
 use crate::plugin::SUBSTORAGE_ATTR;
 
 /// Generate getters and setters for the members of the storage struct.
@@ -210,7 +209,10 @@ fn get_simple_member_code<'db>(
             ("attributes".to_string(), RewriteNode::from_ast(&member.attributes(db))),
             ("member_visibility".to_string(), member_visibility),
             ("member_name".to_string(), member_name),
-            ("member_type".to_string(), RewriteNode::from_ast_trimmed(&member.type_clause(db).ty(db))),
+            (
+                "member_type".to_string(),
+                RewriteNode::from_ast_trimmed(&member.type_clause(db).ty(db)),
+            ),
         ]
         .into(),
     )
