@@ -1,0 +1,3 @@
+path = "corelib/"
+# Corelib is a library project: no incremental benchmarks, no casm phase.
+library = true
