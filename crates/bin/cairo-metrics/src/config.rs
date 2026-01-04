@@ -52,6 +52,14 @@ impl Benchmark {
     pub fn path(&self) -> &Path {
         &self.config.path
     }
+
+    /// Check if this benchmark supports incremental compilation testing.
+    /// Library projects are single-package and don't benefit from incremental caching.
+    // Unused until cairo compiler adds incremental compilation support.
+    #[allow(dead_code)]
+    pub fn supports_incremental(&self) -> bool {
+        !self.config.library
+    }
 }
 
 impl PartialOrd for Benchmark {
@@ -72,6 +80,7 @@ pub struct BenchmarkConfig {
     /// Path to the Cairo project to benchmark (relative to repo root).
     pub path: PathBuf,
     /// Whether this benchmark is a library project (like corelib).
+    /// Library projects: skip incremental benchmarks (single-package, no caching benefit).
     #[serde(default)]
     pub library: bool,
 }
@@ -120,8 +129,6 @@ impl Patch {
     }
 
     /// Apply this patch to a benchmark project sourcecode using `patch -p1`.
-    // Unused until cairo compiler adds incremental compilation support.
-    #[allow(dead_code)]
     pub fn apply(&self, dir: &Path) -> Result<()> {
         let status = Command::new("patch")
             .arg("-p1")

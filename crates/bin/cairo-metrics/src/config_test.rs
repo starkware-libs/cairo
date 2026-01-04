@@ -55,3 +55,31 @@ fn test_patch_from_path_invalid() {
     assert!(Patch::from_path(PathBuf::from("/tmp/invalid.patch")).is_none());
     assert!(Patch::from_path(PathBuf::from("/tmp/notapatch.txt")).is_none());
 }
+
+#[test]
+fn test_supports_incremental_false() {
+    let temp_dir = std::env::temp_dir().join("cairo-metrics-test-no-incr");
+    let _ = std::fs::remove_dir_all(&temp_dir);
+    std::fs::create_dir_all(&temp_dir).unwrap();
+
+    let config = BenchmarkConfig { path: PathBuf::from("corelib"), library: true };
+    let benchmark = config.into_benchmark(&temp_dir).unwrap();
+
+    assert!(!benchmark.supports_incremental());
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}
+
+#[test]
+fn test_supports_incremental_true() {
+    let temp_dir = std::env::temp_dir().join("cairo-metrics-test-incr");
+    let _ = std::fs::remove_dir_all(&temp_dir);
+    std::fs::create_dir_all(&temp_dir).unwrap();
+
+    let config = BenchmarkConfig { path: PathBuf::from("test"), library: false };
+    let benchmark = config.into_benchmark(&temp_dir).unwrap();
+
+    assert!(benchmark.supports_incremental());
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}

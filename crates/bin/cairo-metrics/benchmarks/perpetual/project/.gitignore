@@ -1,0 +1,72 @@
+	# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+node_modules
+dist
+.pnp
+.pnp.js
+
+# testing
+coverage
+
+# next.js
+.next/
+out/
+build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# turbo
+.turbo
+
+# IDE
+.idea
+.vscode
+.cursorignore
+
+.history
+
+# Vite
+**/vite.config.ts.timestamp-*
+
+# run-rs
+data
+
+# mocha
+coverage/
+.nyc_output/
+
+# building tests as part of build
+.mocharc.buildtests.js
+tsconfig.buildtests.json
+
+# autoenv
+.in
+.out
+
+#scarb
+target
+
+#foundry
+.snfoundry_cache
+.snfoundry_versioned_programs
+snfoundry_trace
+coverage_report
+
+#python
+venv/
+__pycache__

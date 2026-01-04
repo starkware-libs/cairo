@@ -1,0 +1,48 @@
+[package]
+name = "perpetuals"
+version = "0.2.0"
+edition = "2024_07"
+
+[dependencies]
+starknet.workspace = true
+starkware_utils.workspace = true
+openzeppelin.workspace = true
+vault = { path = "../../../vault" }
+
+[dev-dependencies]
+assert_macros.workspace = true
+snforge_std.workspace = true
+starkware_utils_testing.workspace = true
+
+[[target.starknet-contract]]
+sierra = true
+casm = true
+
+[scripts]
+test = "SNFORGE_BACKTRACE=1 snforge test -- --run-native"
+
+[tool.fmt]
+sort-module-level-items = true
+
+[tool]
+scarb.workspace = true
+
+[profile.dev.cairo]
+unstable-add-statements-code-locations-debug-info = true
+unstable-add-statements-functions-debug-info = true
+inlining-strategy = "avoid"
+panic-backtrace = true
+
+[profile.release.cairo]
+inlining-strategy = 30
+casm = true
+
+[[test]]
+name = "perpetuals_unittest"
+build-external-contracts = [
+    "starkware_utils::erc20::erc20_mocks::DualCaseERC20Mock",
+    "openzeppelin_presets::account::AccountUpgradeable",
+    "vault::protocol_vault::ProtocolVault",
+]
+
+[lib]

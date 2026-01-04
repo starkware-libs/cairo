@@ -11,7 +11,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use tracing::info;
 
-use crate::config::{Benchmark, MetricsConfig};
+use crate::config::{Benchmark, MetricsConfig, Patch};
 use crate::format::log_timing_stats;
 use crate::model::{BenchmarkResult, TimingStats, format_display_name};
 use crate::runner::cairo_compile_path;
@@ -61,6 +61,28 @@ impl Bench {
         }
     }
 
+    /// Creates a benchmark runner for incremental (patched) builds.
+    pub fn new_patched(
+        config: &MetricsConfig,
+        bench: &Benchmark,
+        patch_name: &str,
+        phase: Phase,
+        metric: Metric,
+    ) -> Self {
+        let temp_dir = env::temp_dir().join(format!("cairo-metrics-{}", bench.name));
+        Self {
+            runs: config.defaults.runs,
+            warmup: config.defaults.warmup,
+            path: bench.path().to_path_buf(),
+            temp_dir,
+            benchmark: bench.name.clone(),
+            scenario: "incremental".to_string(),
+            phase,
+            metric: metric.as_str().to_string(),
+            patch: patch_name.to_string(),
+        }
+    }
+
     /// Returns the display name for logging.
     fn display_name(&self) -> String {
         format_display_name(
@@ -77,6 +99,14 @@ impl Bench {
         info!("Benchmark {}: {}", bench_count, self.display_name());
 
         let hyperfine_config = self.build_clean_config();
+        self.run(&hyperfine_config)
+    }
+
+    /// Runs an incremental build benchmark with a patch applied.
+    pub fn run_patched(&self, patch: &Patch, bench_count: usize) -> Result<BenchmarkResult> {
+        info!("Benchmark {}: {}", bench_count, self.display_name());
+
+        let hyperfine_config = self.build_patched_config(patch);
         self.run(&hyperfine_config)
     }
 
@@ -133,6 +163,25 @@ impl Bench {
         let setup = format!("mkdir -p {0} && cp -r {1}/* {0}/", temp, src);
         // Remove any previous output before each run.
         let prepare = format!("rm -rf {0}/*.sierra", temp);
+        let command = self.phase_command();
+
+        Config { runs: self.runs, warmup: self.warmup, setup, prepare, command }
+    }
+
+    fn build_patched_config(&self, patch: &Patch) -> Config {
+        let temp = self.temp_dir.display();
+        let src = self.path.display();
+        let patch_path = patch.path.display();
+
+        let setup = format!("mkdir -p {0}", temp);
+
+        let initial_build = self.cairo_compile_cmd();
+        let prepare = format!(
+            // TODO(gilad): Add increment compilation command here when supported.
+            "rsync -a --delete {1}/ {0}/ && {2} && patch -p1 -d {0} -i {3}",
+            temp, src, initial_build, patch_path
+        );
+
         let command = self.phase_command();
 
         Config { runs: self.runs, warmup: self.warmup, setup, prepare, command }
