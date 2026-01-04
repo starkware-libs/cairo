@@ -84,16 +84,14 @@ impl Lexer {
     fn match_trivium_whitespace<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
         let span = self.consume_text_span();
-        let text = span.take(&self.text);
-        TokenWhitespace::new_green(db, SmolStrId::from(db, text)).into()
+        TokenWhitespace::new_green(db, SmolStrId::from(db, span.take(&self.text))).into()
     }
 
     /// Assumes the next character is '\n'.
     fn match_trivium_newline<'a>(&mut self, db: &'a dyn Database) -> TriviumGreen<'a> {
         self.take();
         let span = self.consume_text_span();
-        let text = span.take(&self.text);
-        TokenNewline::new_green(db, SmolStrId::from(db, text)).into()
+        TokenNewline::new_green(db, SmolStrId::from(db, span.take(&self.text))).into()
     }
 
     /// Assumes the next 2 characters are "//".
@@ -102,20 +100,17 @@ impl Lexer {
             Some('/') => {
                 self.take_while(|c| c != '\n');
                 let span = self.consume_text_span();
-                let text = span.take(&self.text);
-                TokenSingleLineDocComment::new_green(db, SmolStrId::from(db, text)).into()
+                TokenSingleLineDocComment::new_green(db, SmolStrId::from(db, span.take(&self.text))).into()
             }
             Some('!') => {
                 self.take_while(|c| c != '\n');
                 let span = self.consume_text_span();
-                let text = span.take(&self.text);
-                TokenSingleLineInnerComment::new_green(db, SmolStrId::from(db, text)).into()
+                TokenSingleLineInnerComment::new_green(db, SmolStrId::from(db, span.take(&self.text))).into()
             }
             _ => {
                 self.take_while(|c| c != '\n');
                 let span = self.consume_text_span();
-                let text = span.take(&self.text);
-                TokenSingleLineComment::new_green(db, SmolStrId::from(db, text)).into()
+                TokenSingleLineComment::new_green(db, SmolStrId::from(db, span.take(&self.text))).into()
             }
         }
     }
