@@ -1,30 +1,7 @@
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
 use std::{env, fs};
 
 use anyhow::{Context, Result};
-
-static CAIRO_COMPILE_PATH: OnceLock<PathBuf> = OnceLock::new();
-
-/// Returns the path to cairo-compile binary.
-/// First checks for sibling binary (same dir as cairo-metrics), then falls back to PATH.
-pub fn cairo_compile_path() -> &'static Path {
-    CAIRO_COMPILE_PATH.get_or_init(|| {
-        // Try sibling binary first (for local development).
-        if let Ok(exe) = env::current_exe()
-            && let Some(dir) = exe.parent()
-        {
-            let sibling = dir.join("cairo-compile");
-            if sibling.exists() {
-                tracing::debug!("Using sibling cairo-compile: {}", sibling.display());
-                return sibling;
-            }
-        }
-        // Fall back to PATH lookup.
-        tracing::debug!("Using cairo-compile from PATH");
-        PathBuf::from("cairo-compile")
-    })
-}
 
 /// Temporary directory with automatic cleanup.
 pub struct TempDir(PathBuf);

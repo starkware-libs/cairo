@@ -4,7 +4,7 @@ A benchmark harness for the Cairo compiler.
 
 ## Features
 
-- Walltime benchmarks using `cairo-compile`
+- Multi-phase compilation benchmarks (diagnostics, sierra, casm, full)
 - Robust statistics (median, MAD) for noisy CI environments
 - SQLite storage for historical tracking
 - Baseline comparison with TUI
@@ -19,6 +19,9 @@ cargo run -p cairo-metrics -- run
 # Run specific benchmarks
 cargo run -p cairo-metrics -- run --include corelib
 
+# Run specific phases (default: all)
+cargo run -p cairo-metrics -- run --phases sierra,casm
+
 # Force builtin engine (for CI without hyperfine)
 cargo run -p cairo-metrics -- run --engine builtin
 
@@ -29,7 +32,7 @@ cargo run -p cairo-metrics -- compare baseline-sha current-sha
 cargo run -p cairo-metrics -- list
 
 # Show history for a benchmark
-cargo run -p cairo-metrics -- history corelib-clean-full-walltime
+cargo run -p cairo-metrics -- history corelib-clean-sierra-walltime
 ```
 
 ## Adding Benchmarks
@@ -58,6 +61,19 @@ library = true
 | --------- | -------- | ---------------------------------- |
 | `path`    | yes      | Path to Cairo project directory    |
 | `library` | no       | Mark as library project (optional) |
+
+## Compilation Phases
+
+The `--phases` flag controls which compilation phases to benchmark:
+
+| Phase         | Description                                       |
+| ------------- | ------------------------------------------------- |
+| `diagnostics` | Parse + semantic analysis + lowering (no codegen) |
+| `sierra`      | Cairo to Sierra IR generation                     |
+| `casm`        | Sierra to CASM (sierra compilation untimed)       |
+| `full`        | Full pipeline: Cairo to Sierra to CASM            |
+
+All phases are run by default.
 
 ## Timing Engines
 

@@ -14,7 +14,6 @@ use tracing::info;
 use crate::config::{Benchmark, MetricsConfig, Patch};
 use crate::format::log_timing_stats;
 use crate::model::{BenchmarkResult, TimingStats, format_display_name};
-use crate::runner::cairo_compile_path;
 use crate::stats::compute_mad;
 use crate::{Metric, Phase, Scenario};
 
@@ -143,15 +142,50 @@ impl Bench {
         })
     }
 
-    /// Returns the cairo-compile command string.
+    /// Returns the cairo-compile command that outputs to stdout.
     fn cairo_compile_cmd(&self) -> String {
-        format!("{} {}", cairo_compile_path().display(), self.temp_dir.display())
+        format!(
+            // TODO: Figure out how to use cargo run -p here without incurring cargo overhead.
+            "target/debug/cairo-compile {}",
+            self.temp_dir.display()
+        )
     }
 
-    /// Returns the timed command for full compilation.
+    /// Returns the cairo-compile command that outputs Sierra to a file.
+    fn cairo_compile_to_file_cmd(&self) -> String {
+        format!(
+            // TODO: Figure out how to use cargo run -p here without incurring cargo overhead.
+            "target/debug/cairo-compile {} {}",
+            self.temp_dir.display(),
+            self.sierra_output_path().display()
+        )
+    }
+
+    /// Returns the sierra-compile command using pre-built binary.
+    fn sierra_compile_cmd(&self) -> String {
+        format!(
+            // TODO: Figure out how to use cargo run -p here without incurring cargo overhead.
+            "target/debug/sierra-compile {} {}",
+            self.sierra_output_path().display(),
+            self.casm_output_path().display()
+        )
+    }
+
+    fn sierra_output_path(&self) -> PathBuf {
+        self.temp_dir.join("output.sierra")
+    }
+
+    fn casm_output_path(&self) -> PathBuf {
+        self.temp_dir.join("output.casm")
+    }
+
+    /// Returns the timed command for the given phase.
     fn phase_command(&self) -> String {
         match self.phase {
-            Phase::Full => self.cairo_compile_cmd(),
+            Phase::Diagnostics => todo!("diagnostics-only not supported via shell"),
+            Phase::Sierra => self.cairo_compile_cmd(),
+            Phase::Casm => self.sierra_compile_cmd(),
+            Phase::Full => format!("{} && {}", self.cairo_compile_to_file_cmd(), self.sierra_compile_cmd()),
         }
     }
 
@@ -159,10 +193,25 @@ impl Bench {
         let temp = self.temp_dir.display();
         let src = self.path.display();
 
-        // Copy source to temp directory.
-        let setup = format!("mkdir -p {0} && cp -r {1}/* {0}/", temp, src);
-        // Remove any previous output before each run.
-        let prepare = format!("rm -rf {0}/*.sierra", temp);
+        // Build required binaries in setup.
+        let setup = match self.phase {
+            Phase::Diagnostics => todo!("diagnostics-only not supported via shell"),
+            Phase::Sierra => format!(
+                "cargo build --bin cairo-compile && mkdir -p {0} && cp -r {1}/* {0}/",
+                temp, src
+            ),
+            Phase::Casm | Phase::Full => format!(
+                "cargo build --bin cairo-compile --bin sierra-compile && mkdir -p {0} && cp -r {1}/* {0}/",
+                temp, src
+            ),
+        };
+
+        // For Casm phase: prepare generates Sierra (untimed), command times sierra-compile.
+        let prepare = match self.phase {
+            Phase::Casm => self.cairo_compile_to_file_cmd(),
+            _ => "true".to_string(),
+        };
+
         let command = self.phase_command();
 
         Config { runs: self.runs, warmup: self.warmup, setup, prepare, command }
