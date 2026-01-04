@@ -2,8 +2,7 @@ use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 use num_bigint::BigInt;
 use num_traits::{ToPrimitive, Zero};
-use starknet_types_core::curve::AffinePoint;
-use starknet_types_core::felt::{CAIRO_PRIME_BIGINT, Felt as Felt252};
+use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 
 use super::boxing::box_ty;
 use super::consts::ConstGenLibfunc;
@@ -84,7 +83,7 @@ fn validate_const_data(
     } else if *inner_generic_id == NonZeroType::ID {
         return validate_const_nz_data(context, &inner_type_info, inner_data);
     } else if *inner_generic_id == EcPointType::ID {
-        return validate_const_ec_data(context, inner_data);
+        return validate_const_ec_data(inner_data);
     }
     let type_range = if *inner_generic_id == ContractAddressType::id() {
         Range::half_open(0, ContractAddressConstLibfuncWrapped::bound())
@@ -223,25 +222,22 @@ fn validate_const_nz_data(
     if is_non_zero { Ok(()) } else { Err(SpecializationError::UnsupportedGenericArg) }
 }
 
-/// Given a
-fn validate_const_ec_data(
-    _context: &dyn TypeSpecializationContext,
-    inner_data: &[GenericArg],
-) -> Result<(), SpecializationError> {
+/// Given the `inner_data` of a const `EcPoint`, validates that it is a valid point on the curve.
+fn validate_const_ec_data(inner_data: &[GenericArg]) -> Result<(), SpecializationError> {
     // Assert that the inner data is the `x` and `y` values of the point on the `ec` curve.
     let [GenericArg::Value(x), GenericArg::Value(y)] = inner_data else {
         return Err(SpecializationError::UnsupportedGenericArg);
     };
+    // If the point is the identity element, it is valid.
     if x.is_zero() && y.is_zero() {
         return Ok(());
     }
-    let prime: &BigInt = &CAIRO_PRIME_BIGINT;
-    if x < &BigInt::ZERO || x >= prime || y < &BigInt::ZERO || y >= prime {
-        return Err(SpecializationError::UnsupportedGenericArg);
-    }
-    match AffinePoint::new(Felt252::from(x), Felt252::from(y)) {
-        Ok(_) => Ok(()),
-        Err(_) => Err(SpecializationError::UnsupportedGenericArg),
+    // Validating the point is canonical, and on the curve.
+    let range = (&BigInt::ZERO)..(&*CAIRO_PRIME_BIGINT);
+    if range.contains(&x) && range.contains(&y) && EcPointType::is_on_curve(x.into(), y.into()) {
+        Ok(())
+    } else {
+        Err(SpecializationError::UnsupportedGenericArg)
     }
 }
 
