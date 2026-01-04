@@ -1,6 +1,648 @@
 = Full Grammar
 
-This section is a work in progress.
+This appendix provides a complete formal grammar specification for the Cairo language. The grammar
+is presented in an extended Backus-Naur Form (EBNF) notation.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Notation
+
+The following notation is used throughout this grammar:
+
+- `ITEM` - A terminal token or keyword
+- `Item` - A non-terminal syntax rule
+- `item?` - Optional (zero or one occurrence)
+- `item*` - Zero or more occurrences
+- `item+` - One or more occurrences
+- `item1 | item2` - Alternative (either item1 or item2)
+- `(item)` - Grouping
+- `[item]` - Optional grouping
+
+== Lexical Structure
+
+=== Keywords
+
+**Strict Keywords:**
+[source,ebnf]
+----
+keyword ::=
+    "as" | "break" | "const" | "continue" | "else" | "enum"
+  | "extern" | "false" | "fn" | "if" | "impl" | "implicits"
+  | "let" | "loop" | "match" | "mod" | "mut" | "nopanic"
+  | "of" | "pub" | "ref" | "return" | "struct" | "trait"
+  | "true" | "type" | "use" | "while" | "for" | "macro"
+----
+
+**Reserved Keywords:**
+[source,ebnf]
+----
+reserved ::=
+    "Self" | "assert" | "do" | "dyn" | "hint" | "in" | "move"
+  | "self" | "static" | "static_assert" | "super" | "try"
+  | "typeof" | "unsafe" | "where" | "with" | "yield"
+----
+
+=== Operators and Punctuation
+
+[source,ebnf]
+----
+operator ::=
+    "+" | "-" | "*" | "/" | "%" | "+=" | "-=" | "*=" | "/=" | "%="
+  | "==" | "!=" | "<" | ">" | "<=" | ">="
+  | "&&" | "||" | "!" | "&" | "|" | "^" | "~"
+  | "@" | "." | ".." | "..="
+  | "=" | "->" | "=>" | "?" | "::" | ":"
+
+delimiter ::= "(" | ")" | "{" | "}" | "[" | "]"
+
+punctuation ::= "," | ";" | "#" | "$" | "_"
+----
+
+=== Literals
+
+[source,ebnf]
+----
+literal ::=
+    integer_literal
+  | short_string_literal
+  | string_literal
+  | boolean_literal
+
+integer_literal ::=
+    decimal_digits ("_" type_suffix)?
+  | "0x" hex_digits ("_" type_suffix)?
+  | "0o" octal_digits ("_" type_suffix)?
+  | "0b" binary_digits ("_" type_suffix)?
+
+type_suffix ::=
+    "u8" | "u16" | "u32" | "u64" | "u128" | "u256"
+  | "i8" | "i16" | "i32" | "i64" | "i128"
+  | "usize" | "felt252"
+
+short_string_literal ::= "'" (char | escape_sequence)* "'"
+
+string_literal ::= '"' (char | escape_sequence)* '"'
+
+boolean_literal ::= "true" | "false"
+----
+
+== Expressions
+
+[source,ebnf]
+----
+expr ::=
+    literal_expr
+  | path_expr
+  | paren_expr
+  | tuple_expr
+  | struct_ctor_expr
+  | block_expr
+  | if_expr
+  | match_expr
+  | loop_expr
+  | while_expr
+  | for_expr
+  | closure_expr
+  | unary_expr
+  | binary_expr
+  | function_call_expr
+  | indexed_expr
+  | field_access_expr
+  | field_init_shorthand
+  | array_expr
+  | macro_expr
+  | underscore_expr
+  | error_propagate_expr
+----
+
+=== Primary Expressions
+
+[source,ebnf]
+----
+literal_expr ::= literal
+
+path_expr ::= "::"? path_segment ("::" path_segment)*
+
+path_segment ::= identifier generic_args?
+
+field_init_shorthand ::= identifier
+
+paren_expr ::= "(" expr ")"
+
+tuple_expr ::= "(" (expr ("," expr)* ","?)? ")"
+
+array_expr ::= "[" (expr ("," expr)* ","?)? "]"
+
+underscore_expr ::= "_"
+----
+
+=== Struct Constructor
+
+[source,ebnf]
+----
+struct_ctor_expr ::= path "{" struct_ctor_args "}"
+
+struct_ctor_args ::=
+    (struct_arg_single ("," struct_arg_single)* ","?)?
+    (struct_arg_tail)?
+
+struct_arg_single ::=
+    identifier (":" expr)?
+
+struct_arg_tail ::= ".." expr
+----
+
+=== Block and Control Flow
+
+[source,ebnf]
+----
+block_expr ::= "{" statement* expr? "}"
+
+if_expr ::= "if" condition ("&&" condition)* block_expr
+    ("else" (if_expr | block_expr))?
+
+condition ::= ("let" pattern ("|" pattern)* "=")? expr
+
+match_expr ::= "match" expr "{" match_arm* "}"
+
+match_arm ::= pattern ("|" pattern)* "=>" expr ","?
+
+loop_expr ::= "loop" block_expr
+
+while_expr ::= "while" condition ("&&" condition)* block_expr
+
+for_expr ::= "for" pattern "in" expr block_expr
+----
+
+=== Operator Expressions
+
+[source,ebnf]
+----
+unary_expr ::= unary_op expr
+
+unary_op ::= "-" | "!" | "~" | "@" | "*" | "&"
+
+binary_expr ::= expr binary_op expr
+
+binary_op ::=
+    "*" | "/" | "%" | "+" | "-"
+  | "&" | "^" | "|"
+  | "==" | "!=" | "<" | ">" | "<=" | ">="
+  | "&&" | "||"
+  | ".." | "..="
+  | "=" | "+=" | "-=" | "*=" | "/=" | "%="
+
+function_call_expr ::= expr arg_list
+
+arg_list ::= "(" (arg_clause ("," arg_clause)* ","?)? ")"
+
+arg_clause ::=
+    identifier ":" expr
+  | ":" identifier
+  | expr
+
+indexed_expr ::= expr "[" expr "]"
+
+field_access_expr ::= expr "." identifier
+
+error_propagate_expr ::= expr "?"
+----
+
+=== Closures
+
+[source,ebnf]
+----
+closure_expr ::= "|" param_list? "|" return_type_clause? "nopanic"? expr
+
+param_list ::= param ("," param)*
+----
+
+=== Macros
+
+[source,ebnf]
+----
+macro_expr ::= path "!" token_tree
+----
+
+== Patterns
+
+[source,ebnf]
+----
+pattern ::=
+    literal_pattern
+  | identifier_pattern
+  | path_pattern
+  | struct_pattern
+  | tuple_pattern
+  | enum_pattern
+  | array_pattern
+  | underscore_pattern
+
+literal_pattern ::= literal
+
+identifier_pattern ::= "ref"? "mut"? identifier
+
+path_pattern ::= path
+
+struct_pattern ::=
+    path "{" (struct_pattern_param ("," struct_pattern_param)* ","?)? "}"
+
+struct_pattern_param ::=
+    "ref"? "mut"? identifier (":" pattern)?
+  | ".."
+
+tuple_pattern ::= "(" (pattern ("," pattern)* ","?)? ")"
+
+enum_pattern ::= path ("(" pattern ")")?
+
+array_pattern ::= "[" (pattern ("," pattern)* ","?)? "]"
+
+underscore_pattern ::= "_"
+----
+
+== Statements
+
+[source,ebnf]
+----
+statement ::=
+    let_statement
+  | expr_statement
+  | item_statement
+  | continue_statement
+  | return_statement
+  | break_statement
+
+let_statement ::=
+    attributes? "let" pattern (":" type_expr)? "=" expr
+    ("else" block_expr)? ";"
+
+expr_statement ::= attributes? expr ";"?
+
+item_statement ::= item
+
+continue_statement ::= attributes? "continue" ";"
+
+return_statement ::= attributes? "return" expr? ";"
+
+break_statement ::= attributes? "break" expr? ";"
+----
+
+== Items
+
+[source,ebnf]
+----
+item ::=
+    visibility? item_kind
+
+item_kind ::=
+    function
+  | extern_function
+  | extern_type
+  | struct_item
+  | enum_item
+  | trait_item
+  | impl_item
+  | impl_alias
+  | type_alias
+  | constant
+  | module
+  | use_item
+  | macro_item
+----
+
+=== Functions
+
+[source,ebnf]
+----
+function ::=
+    attributes? visibility? "const"? "fn" identifier generic_params?
+    "(" function_params? ")" return_type_clause?
+    implicits_clause? "nopanic"?
+    (block_expr | ";")
+
+function_params ::= param ("," param)* ","?
+
+param ::= "ref"? "mut"? identifier ":" type_expr
+
+return_type_clause ::= "->" type_expr
+
+implicits_clause ::= "implicits" "(" path_list ")"
+
+path_list ::= path ("," path)* ","?
+
+extern_function ::=
+    attributes? visibility? "extern" function_declaration ";"
+
+function_declaration ::=
+    "fn" identifier generic_params?
+    "(" function_params? ")" return_type_clause?
+----
+
+=== Structs and Enums
+
+[source,ebnf]
+----
+struct_item ::=
+    attributes? visibility? "struct" identifier generic_params?
+    "{" (member ("," member)* ","?)? "}"
+
+member ::= attributes? visibility? identifier ":" type_expr
+
+enum_item ::=
+    attributes? visibility? "enum" identifier generic_params?
+    "{" (variant ("," variant)* ","?)? "}"
+
+variant ::= attributes? identifier (":" type_expr)?
+----
+
+=== Traits and Implementations
+
+[source,ebnf]
+----
+trait_item ::=
+    attributes? visibility? "trait" identifier generic_params?
+    ("{" trait_item_list* "}" | ";")
+
+trait_item_list ::=
+    trait_function
+  | trait_type
+  | trait_constant
+  | trait_impl
+
+trait_function ::=
+    attributes? function_declaration (block_expr | ";")
+
+trait_type ::=
+    attributes? "type" identifier generic_params? ";"
+
+trait_constant ::=
+    attributes? "const" identifier ":" type_expr ";"
+
+trait_impl ::=
+    attributes? "impl" identifier ":" trait_path ";"
+
+impl_item ::=
+    attributes? visibility? "impl" identifier generic_params?
+    "of" path ("{" impl_item_list* "}" | ";")
+
+impl_item_list ::=
+    function
+  | type_alias
+  | constant
+  | impl_item
+
+impl_alias ::=
+    attributes? "impl" identifier generic_params? "=" impl_path ";"
+
+impl_path ::= path
+----
+
+=== Other Items
+
+[source,ebnf]
+----
+type_alias ::=
+    attributes? visibility? "type" identifier generic_params?
+    "=" type_expr ";"
+
+constant ::=
+    attributes? visibility? "const" identifier ":" type_expr
+    "=" expr ";"
+
+module ::=
+    attributes? visibility? "mod" identifier
+    ("{" item* "}" | ";")
+
+use_item ::=
+    attributes? visibility? "use" "$"? use_path ";"
+
+use_path ::=
+    path_segment ("::" use_path)?
+  | "{" use_path_list "}"
+  | "*"
+
+use_path_list ::= use_path ("," use_path)* ","?
+
+alias_clause ::= "as" identifier
+
+extern_type ::=
+    attributes? visibility? "extern" "type" identifier generic_params? ";"
+----
+
+=== Macros
+
+[source,ebnf]
+----
+macro_item ::=
+    attributes? visibility? "macro" identifier "{" macro_rule+ "}"
+
+macro_rule ::= wrapped_macro "=>" braced_macro ";"
+
+wrapped_macro ::=
+    "(" macro_elements ")"
+  | "{" macro_elements "}"
+  | "[" macro_elements "]"
+
+braced_macro ::= "{" macro_elements "}"
+
+macro_elements ::= macro_element*
+
+macro_element ::=
+    token
+  | macro_param
+  | macro_wrapper
+  | macro_repetition
+
+macro_param ::= "$" identifier (":" param_kind)?
+
+param_kind ::= "ident" | "expr"
+
+macro_wrapper ::= wrapped_macro
+
+macro_repetition ::= "$" "(" macro_elements ")" separator? repetition_op
+
+separator ::= ","
+
+repetition_op ::= "?" | "+" | "*"
+
+token_tree ::=
+    token
+  | "(" token_tree* ")"
+  | "{" token_tree* "}"
+  | "[" token_tree* "]"
+----
+
+== Types
+
+In Cairo's syntax, types are represented as expressions:
+
+[source,ebnf]
+----
+type_expr ::= expr
+----
+
+Common type patterns:
+[source,ebnf]
+----
+simple_type ::= path generic_args?
+
+tuple_type ::= "(" (type_expr ("," type_expr)* ","?)? ")"
+
+array_type ::= "[" type_expr ";" integer_literal "]"
+
+snapshot_type ::= "@" type_expr
+
+reference_type ::= "&" "mut"? type_expr
+----
+
+== Generics
+
+[source,ebnf]
+----
+generic_params ::= "<" (generic_param ("," generic_param)* ","?)? ">"
+
+generic_param ::=
+    identifier (":" generic_param_constraint)?
+  | "const" identifier ":" type_expr
+  | "impl" identifier ":" trait_path
+  | "+" trait_path
+  | "-" trait_path
+
+generic_param_constraint ::=
+    trait_path ("+" trait_path)*
+
+generic_args ::= "<" (generic_arg ("," generic_arg)* ","?)? ">"
+
+generic_arg ::=
+    expr
+  | identifier ":" expr
+----
+
+== Attributes
+
+[source,ebnf]
+----
+attributes ::= attribute+
+
+attribute ::= "#" "[" attr_path attr_args? "]"
+
+attr_path ::= path
+
+attr_args ::= "(" token_tree* ")"
+----
+
+== Visibility
+
+[source,ebnf]
+----
+visibility ::= "pub" ("(" visibility_arg ")")?
+
+visibility_arg ::= "crate" | path
+----
+
+== Identifiers and Paths
+
+[source,ebnf]
+----
+identifier ::= XID_Start XID_Continue* | "_" XID_Continue+
+
+path ::= "::"? path_segment ("::" path_segment)*
+----
+
+== Comments
+
+[source,ebnf]
+----
+line_comment ::= "//" (^"\n")* "\n"
+
+doc_comment ::= "///" (^"\n")* "\n"
+
+inner_doc_comment ::= "//!" (^"\n")* "\n"
+----
+
+== Whitespace
+
+[source,ebnf]
+----
+whitespace ::= " " | "\t" | "\r" | "\n"
+----
+
+== Operator Precedence
+
+From highest to lowest precedence:
+
+|===
+| Precedence | Operators | Associativity
+
+| 1 | `.` (field access) | Left
+| 2 | Function calls `()`, indexing `[]`, `?` | Left
+| 3 | Unary: `-`, `!`, `~`, `@`, `*`, `&` | Right
+| 4 | `*`, `/`, `%` | Left
+| 5 | `+`, `-` | Left
+| 6 | `&` | Left
+| 7 | `^` | Left
+| 8 | `\|` | Left
+| 9 | `==`, `!=`, `<`, `>`, `<=`, `>=` | Left
+| 10 | `&&` | Left
+| 11 | `\|\|` | Left
+| 12 | `..`, `..=` | Left
+| 13 | `=`, `+=`, `-=`, `*=`, `/=`, `%=` | Right
+|===
+
+== Module System
+
+[source,ebnf]
+----
+crate ::= item*
+
+module_tree ::= module_item*
+
+module_item ::=
+    attributes? visibility? "mod" identifier module_body
+
+module_body ::= "{" item* "}" | ";"
+----
+
+== Complete Example
+
+A minimal Cairo program:
+
+[source,cairo]
+----
+// Function definition
+fn main() -> felt252 {
+    let x: felt252 = 42;
+    x + 1
+}
+
+// Struct definition
+struct Point {
+    x: felt252,
+    y: felt252,
+}
+
+// Implementation
+impl PointImpl of PointTrait {
+    fn new(x: felt252, y: felt252) -> Point {
+        Point { x, y }
+    }
+}
+----
+
+== Notes
+
+NOTE: This grammar is derived from Cairo's authoritative implementation in
+`crates/cairo-lang-syntax-codegen/src/cairo_spec.rs`.
+
+NOTE: Some syntax elements like macros use token trees, which allow arbitrary token sequences
+within delimiters.
+
+NOTE: Type expressions use the same syntax as value expressions, allowing for flexible type-level
+programming.
+
+NOTE: The grammar allows for trailing commas in most comma-separated lists.
+
+== Related
+
+- xref:notation.adoc[Notation conventions]
+- xref:lexical-structure.adoc[Lexical structure]
+- xref:keywords.adoc[Keywords]
+- xref:expressions.adoc[Expressions]
