@@ -1,6 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
+use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -63,25 +63,17 @@ fn build_local_into_box(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [operand] = builder.try_get_refs()?;
 
-    let cell = CellRef { register: Register::AP, offset: -2 };
-    let addr = match operand.cells.as_slice() {
-        [] | [CellExpression::Deref(CellRef { register: Register::FP, offset: 0 }), ..] => {
-            CellExpression::Deref(cell)
-        }
-        [CellExpression::Deref(CellRef { register: Register::FP, offset }), ..] => {
-            CellExpression::BinOp {
-                op: CellOperator::Add,
-                a: cell,
-                b: DerefOrImmediate::Immediate((*offset).into()),
-            }
-        }
-
+    let fp_val = CellRef { register: Register::AP, offset: -2 };
+    let offset = match operand.cells.as_slice() {
+        [] => 0,
+        [CellExpression::Deref(CellRef { register: Register::FP, offset }), ..] => *offset,
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
+    let ptr = CellExpression::add_with_const(fp_val, offset);
     Ok(builder.build(
         casm!(call rel 0;).instructions,
         vec![RelocationEntry { instruction_idx: 0, relocation: Relocation::EndOfProgram }],
-        [[ReferenceExpression::from_cell(addr)].into_iter()].into_iter(),
+        [[ReferenceExpression::from_cell(ptr)].into_iter()].into_iter(),
     ))
 }
 
