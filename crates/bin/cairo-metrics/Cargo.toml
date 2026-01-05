@@ -1,0 +1,22 @@
+[package]
+name = "cairo-metrics"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Walltime benchmark harness for the Cairo compiler."
+
+[dependencies]
+anyhow.workspace = true
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "=2.15.0" }
+cairo-lang-lowering = { path = "../../cairo-lang-lowering", version = "=2.15.0" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "=2.15.0", features = ["tracing"] }
+clap.workspace = true
+crossterm.workspace = true
+ratatui.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+time.workspace = true
+toml.workspace = true
+tracing.workspace = true
