@@ -72,17 +72,40 @@ integer_literal ::=
   | "0o" octal_digits ("_" type_suffix)?
   | "0b" binary_digits ("_" type_suffix)?
 
+decimal_digits ::= DIGIT+
+
+hex_digits ::= HEX_DIGIT+
+
+octal_digits ::= OCTAL_DIGIT+
+
+binary_digits ::= BINARY_DIGIT+
+
 type_suffix ::=
     "u8" | "u16" | "u32" | "u64" | "u128" | "u256"
   | "i8" | "i16" | "i32" | "i64" | "i128"
   | "usize" | "felt252"
 
-short_string_literal ::= "'" (char | escape_sequence)* "'"
+short_string_literal ::= "'" string_content "'"
 
-string_literal ::= '"' (char | escape_sequence)* '"'
+string_literal ::= '"' string_content '"'
+
+string_content ::= (char | escape_sequence)*
+
+char ::= any Unicode character except '"', "'", "\", newline
+
+escape_sequence ::=
+    "\\" | "\'" | "\"" | "\n" | "\r" | "\t"
+  | "\x" HEX_DIGIT HEX_DIGIT
+  | "\u{" HEX_DIGIT+ "}"
 
 boolean_literal ::= "true" | "false"
 ----
+
+Where:
+- `DIGIT` is any Unicode decimal digit (0-9)
+- `HEX_DIGIT` is any hexadecimal digit (0-9, a-f, A-F)
+- `OCTAL_DIGIT` is any octal digit (0-7)
+- `BINARY_DIGIT` is either 0 or 1
 
 == Expressions
 
@@ -415,7 +438,8 @@ use_item ::=
     attributes? visibility? "use" "$"? use_path ";"
 
 use_path ::=
-    path_segment ("::" use_path)?
+    path_segment alias_clause?
+  | path_segment "::" use_path
   | "{" use_path_list "}"
   | "*"
 
@@ -450,6 +474,8 @@ macro_element ::=
   | macro_param
   | macro_wrapper
   | macro_repetition
+
+token ::= any single lexical token (keyword, identifier, literal, operator, etc.)
 
 macro_param ::= "$" identifier (":" param_kind)?
 
@@ -509,6 +535,8 @@ generic_param ::=
 generic_param_constraint ::=
     trait_path ("+" trait_path)*
 
+trait_path ::= path
+
 generic_args ::= "<" (generic_arg ("," generic_arg)* ","?)? ">"
 
 generic_arg ::=
@@ -542,10 +570,14 @@ visibility_arg ::= "crate" | path
 
 [source,ebnf]
 ----
-identifier ::= XID_Start XID_Continue* | "_" XID_Continue+
+identifier ::= (LETTER | "_") (LETTER | DIGIT | "_")*
 
 path ::= "::"? path_segment ("::" path_segment)*
 ----
+
+Where:
+- `LETTER` matches any Unicode letter character (Unicode categories Lu, Ll, Lt, Lm, Lo, Nl)
+- `DIGIT` matches any Unicode decimal digit (Unicode category Nd)
 
 == Comments
 
@@ -639,10 +671,3 @@ NOTE: Type expressions use the same syntax as value expressions, allowing for fl
 programming.
 
 NOTE: The grammar allows for trailing commas in most comma-separated lists.
-
-== Related
-
-- xref:notation.adoc[Notation conventions]
-- xref:lexical-structure.adoc[Lexical structure]
-- xref:keywords.adoc[Keywords]
-- xref:expressions.adoc[Expressions]
