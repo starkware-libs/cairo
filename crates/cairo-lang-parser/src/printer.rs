@@ -150,8 +150,9 @@ impl<'a> Printer<'a> {
         kind: SyntaxKind,
         under_top_level: bool,
     ) {
+        let kind_name = format!("{kind:?}");
         let current_is_top_level =
-            !under_top_level && self.top_level_kind == Some(format!("{kind:?}"));
+            !under_top_level && self.top_level_kind.as_deref() == Some(kind_name.as_str());
         // Update under_top_level and indent as needed.
         let (under_top_level, indent) =
             if current_is_top_level { (true, "") } else { (under_top_level, indent) };
@@ -171,7 +172,8 @@ impl<'a> Printer<'a> {
 
         let children = syntax_node.get_children(self.db);
         let num_children = children.len();
-        let suffix = if self.ignored_kinds.contains(&format!("{kind:?}")) {
+        let is_ignored_kind = self.ignored_kinds.iter().any(|k| k == &kind_name);
+        let suffix = if is_ignored_kind {
             " <ignored>".to_string()
         } else if num_children == 0 {
             self.bright_purple(" []".into()).to_string()
@@ -194,7 +196,7 @@ impl<'a> Printer<'a> {
             }
         }
 
-        if under_top_level && self.ignored_kinds.contains(&format!("{kind:?}")) {
+        if under_top_level && is_ignored_kind {
             return;
         }
 
