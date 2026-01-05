@@ -17,17 +17,17 @@ immediately following the item's name.
 If an item doesn't require generic parameters, the whole `<...>` clause can be omitted.
 Each generic parameter has a name that is used to refer to it in the item's body.
 
-For example, the generic struct `Box` below defines a type that can hold any type of data:
+For example, the generic struct `MyBox` below defines a type that can hold any type of data:
 [source,cairo]
 ----
-fn main() {
-    struct Box<T> {
-        value: T,
-    }
+struct MyBox<T> {
+    value: T,
+}
 
-    let box_u32 = Box::<u32> { value: 5_u32 };
-    let box_u128 = Box::<u128> { value: 1_u128 };
-    let box_box_u32 = Box::<Box::<u32>> { value: Box::<u32> { value: 100_u32 } };
+fn main() {
+    let box_u32 = MyBox::<u32> { value: 5_u32 };
+    let box_u128 = MyBox::<u128> { value: 1_u128 };
+    let box_box_u32 = MyBox::<MyBox::<u32>> { value: MyBox::<u32> { value: 100_u32 } };
 }
 ----
 
@@ -38,9 +38,9 @@ Multiple concrete items can be formed from the same "recipe".
 The concrete values that substitute the generic parameters are called generic arguments.
 
 In the above example, `u32` and `u128` are generic arguments.
-In the last statement, `u32` is a generic argument to create the concrete type `Box::<u32>`
-(a `Box` that holds `u32`) and `Box::<u32>` is then used as a generic argument to create another
-concrete type: `Box::<Box::<u32>>` (a `Box` that holds a `Box` that holds `u32`).
+In the last statement, `u32` is a generic argument to create the concrete type `MyBox::<u32>`
+(a `MyBox` that holds `u32`) and `MyBox::<u32>` is then used as a generic argument to create another
+concrete type: `MyBox::<MyBox::<u32>>` (a `MyBox` that holds a `MyBox` that holds `u32`).
 
 == Types of Generic Parameters
 
@@ -51,7 +51,7 @@ Cairo supports several types of generic parameters:
 Type generic parameters are used to define generic types.
 This is the default type of a generic parameter, thus to add such a generic parameter,
 you should simply specify a name for it.
-For example, the generic struct `Box` above has a type generic parameter with the name `T`.
+For example, the generic struct `MyBox` above has a type generic parameter with the name `T`.
 
 === Impl Generic Parameters
 
