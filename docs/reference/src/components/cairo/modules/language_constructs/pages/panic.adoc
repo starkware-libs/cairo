@@ -38,10 +38,10 @@ If a trait function is not marked with `nopanic`, all implementations of that tr
 with `nopanic` or not.
 An example for such a function is `Add` trait `add` function, which is _nopanic_ for `felt252` addition, but isn't so for integer addition.
 
-== `panic_with` macro
+== `panic_with` attribute
 
-A function returning an `Option` or `Result` may be marked with the `panic_with` macro.
-This macro takes two arguments: the data that is passed as the panic reason as well as the
+A function returning an `Option` or `Result` may be marked with the `panic_with` attribute.
+This attribute takes two arguments: the data that is passed as the panic reason as well as the
 name for a wrapping function.
 If the function returns `None` or `Err`, _panic_ function will be called with the given data.
 
