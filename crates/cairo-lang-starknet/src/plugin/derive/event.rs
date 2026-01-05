@@ -12,6 +12,32 @@ use crate::plugin::consts::{
 };
 use crate::plugin::events::EventData;
 
+/// Reserved parameter names in generated Event trait implementations.
+const RESERVED_PARAM_KEYS: &str = "keys";
+const RESERVED_PARAM_DATA: &str = "data";
+
+/// Validates that a field/variant name doesn't collide with reserved parameter names.
+/// Returns None if validation fails (error already added to diagnostics).
+fn validate_field_name<'db>(
+    db: &'db dyn Database,
+    diagnostics: &mut Vec<PluginDiagnostic<'db>>,
+    name_node: &ast::TerminalIdentifier<'db>,
+    name_text: &cairo_lang_syntax::node::Terminal<'db>,
+) -> Option<()> {
+    let name_str = name_text.long(db);
+    if name_str == RESERVED_PARAM_KEYS || name_str == RESERVED_PARAM_DATA {
+        diagnostics.push(PluginDiagnostic::error(
+            name_node.stable_ptr(db),
+            format!(
+                "Field name `{name_str}` conflicts with generated function parameters. Please use \
+                 a different name."
+            ),
+        ));
+        return None;
+    }
+    Some(())
+}
+
 /// Returns the relevant information for the `#[derive(starknet::Event)]` attribute.
 pub fn handle_event_derive<'db>(
     db: &'db dyn Database,
@@ -25,7 +51,6 @@ pub fn handle_event_derive<'db>(
     }
 }
 
-// TODO(spapini): Avoid names collisions with `keys` and `data`.
 /// Derives the `Event` trait for structs annotated with `derive(starknet::Event)`.
 fn handle_struct<'db>(
     db: &'db dyn Database,
@@ -48,10 +73,16 @@ fn handle_struct<'db>(
     let mut ctor = vec![];
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
-        let member_name = RewriteNode::from_ast_trimmed(&member.name(db));
+        let member_name_node = member.name(db);
+        let member_name_text = member_name_node.text(db);
+
+        // Check for name collisions with function parameters.
+        validate_field_name(db, diagnostics, &member_name_node, member_name_text)?;
+
+        let member_name = RewriteNode::from_ast_trimmed(&member_name_node);
         let member_kind =
             get_field_kind_for_member(db, diagnostics, &member, EventFieldKind::DataSerde);
-        members.push((member.name(db).text(db), member_kind));
+        members.push((member_name_text, member_kind));
 
         let member_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
@@ -213,11 +244,16 @@ fn handle_enum<'db>(
             "
                 core::array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));"
         };
-        let variant_name = RewriteNode::from_ast_trimmed(&variant.name(db));
-        let name = variant.name(db).text(db);
+        let variant_name_node = variant.name(db);
+        let variant_name_text = variant_name_node.text(db);
+
+        // Check for name collisions with function parameters.
+        validate_field_name(db, diagnostics, &variant_name_node, variant_name_text)?;
+
+        let variant_name = RewriteNode::from_ast_trimmed(&variant_name_node);
         let member_kind =
             get_field_kind_for_variant(db, diagnostics, &variant, EventFieldKind::Nested);
-        variants.push((name, member_kind));
+        variants.push((variant_name_text, member_kind));
 
         let append_member = append_field(member_kind, RewriteNode::text("val"));
         let append_variant = RewriteNode::interpolate_patched(
