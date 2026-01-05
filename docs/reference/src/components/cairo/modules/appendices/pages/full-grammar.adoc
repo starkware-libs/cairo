@@ -576,8 +576,8 @@ path ::= "::"? path_segment ("::" path_segment)*
 ----
 
 Where:
-- `LETTER` matches any Unicode letter character (Unicode categories Lu, Ll, Lt, Lm, Lo, Nl)
-- `DIGIT` matches any Unicode decimal digit (Unicode category Nd)
+- `LETTER` matches any ASCII letter (a-z, A-Z)
+- `DIGIT` matches any ASCII decimal digit (0-9)
 
 == Comments
 
