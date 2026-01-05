@@ -21,6 +21,7 @@ use cairo_lang_sierra_generator::executables::find_executable_function_ids;
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::{CloneableDatabase, write_comma_separated};
+use cairo_vm::types::builtin_name::BuiltinName;
 use itertools::Itertools;
 use salsa::Database;
 
@@ -63,6 +64,10 @@ pub struct ExecutableConfig {
     /// Replace the panic flow with an unprovable opcode, this reduces code size but might make it
     /// more difficult to debug.
     pub unsafe_panic: bool,
+
+    /// An optional list of builtins to use in the entry code (if its none the builtins will be
+    /// inferred from the param_types)
+    pub builtin_list: Option<Vec<BuiltinName>>,
 }
 
 /// Represents the output of compiling an executable.
@@ -243,8 +248,10 @@ pub fn compile_executable_function_in_prepared_db<'db>(
 
     // If syscalls are allowed it means we allow for unsound programs.
     let allow_unsound = config.allow_syscalls;
-    let wrapper = builder
-        .create_wrapper_info(&executable_func, EntryCodeConfig::executable(allow_unsound))?;
+    let wrapper = builder.create_wrapper_info(
+        &executable_func,
+        EntryCodeConfig::executable(allow_unsound, config.builtin_list),
+    )?;
     let compiled_function = CompiledFunction { program: builder.casm_program().clone(), wrapper };
     Ok(CompileExecutableResult { compiled_function, builder, debug_info: debug_info.clone() })
 }

@@ -30,6 +30,7 @@ use cairo_lang_sierra_to_casm::metadata::{
 use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_vm::types::builtin_name::BuiltinName;
 use thiserror::Error;
@@ -257,6 +258,10 @@ pub struct EntryCodeConfig {
     /// Whether to allow unsound operations in the program.
     /// Currently relevant for supporting emulated builtins.
     pub allow_unsound: bool,
+
+    /// An optional list of builtins to use in the entry code (if its none the builtins will be
+    /// inferred from the param_types)
+    pub builtin_list: Option<Vec<BuiltinName>>,
 }
 impl EntryCodeConfig {
     /// Returns a configuration for testing purposes.
@@ -264,12 +269,12 @@ impl EntryCodeConfig {
     /// This configuration will not finalize the segment arena after calling the function, to
     /// prevent failure in case of functions returning values.
     pub fn testing() -> Self {
-        Self { testing: true, allow_unsound: true }
+        Self { testing: true, allow_unsound: true, builtin_list: None }
     }
 
     /// Returns a configuration for execution purposes.
-    pub fn executable(allow_unsound: bool) -> Self {
-        Self { testing: false, allow_unsound }
+    pub fn executable(allow_unsound: bool, builtin_list: Option<Vec<BuiltinName>>) -> Self {
+        Self { testing: false, allow_unsound, builtin_list }
     }
 }
 
@@ -304,8 +309,19 @@ pub fn create_entry_code_from_params(
     config: EntryCodeConfig,
 ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), BuildError> {
     let mut helper = EntryCodeHelper::new(config);
-
-    helper.process_builtins(param_types);
+    if let Some(builtin_list) = &helper.config.builtin_list {
+        helper.builtins = builtin_list.clone();
+        let mut builtin_offset = 3;
+        for builtin_name in helper.builtins.iter().rev() {
+            helper.builtin_vars.insert(
+                *builtin_name,
+                helper.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
+            );
+            builtin_offset += 1;
+        }
+    } else {
+        helper.process_builtins(param_types);
+    }
     helper.process_params(param_types);
     casm_build_extend!(helper.ctx, let () = call FUNCTION;);
     helper.process_output(return_types);
@@ -329,14 +345,15 @@ pub fn create_entry_code_from_params(
 struct EntryCodeHelper {
     ctx: CasmBuilder,
     config: EntryCodeConfig,
-    input_builtin_vars: OrderedHashMap<BuiltinName, Var>,
     builtin_ty_to_vm_name: OrderedHashMap<GenericTypeId, BuiltinName>,
     builtins: Vec<BuiltinName>,
     got_segment_arena: bool,
     has_post_calculation_loop: bool,
-    // Local expressions for the output builtin vars.
+    /// Maps each builtin name to the variable that stores it.
+    builtin_vars: UnorderedHashMap<BuiltinName, Var>,
+    /// Maps each builtin name to the local cell expression that stores it.
+    /// This is needed because variables in `builtin_vars` might be invalidated.
     local_exprs: OrderedHashMap<BuiltinName, CellExpression>,
-    output_builtin_vars: OrderedHashMap<BuiltinName, Var>,
     emulated_builtins: UnorderedHashSet<GenericTypeId>,
 }
 
@@ -346,7 +363,6 @@ impl EntryCodeHelper {
         Self {
             ctx: CasmBuilder::default(),
             config,
-            input_builtin_vars: OrderedHashMap::default(),
             builtin_ty_to_vm_name: OrderedHashMap::from_iter([
                 (PedersenType::ID, BuiltinName::pedersen),
                 (RangeCheckType::ID, BuiltinName::range_check),
@@ -361,8 +377,8 @@ impl EntryCodeHelper {
             builtins: vec![],
             got_segment_arena: false,
             has_post_calculation_loop: false,
+            builtin_vars: UnorderedHashMap::default(),
             local_exprs: OrderedHashMap::default(),
-            output_builtin_vars: OrderedHashMap::default(),
             emulated_builtins: UnorderedHashSet::<_>::from_iter([SystemType::ID]),
         }
     }
@@ -374,7 +390,7 @@ impl EntryCodeHelper {
         // Process all builtins except the segment arena in reverse order.
         for (builtin_ty, builtin_name) in self.builtin_ty_to_vm_name.iter().rev().skip(1) {
             if param_types.iter().any(|(ty, _)| ty == builtin_ty) {
-                self.input_builtin_vars.insert(
+                self.builtin_vars.insert(
                     *builtin_name,
                     self.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
                 );
@@ -385,7 +401,7 @@ impl EntryCodeHelper {
         if !self.config.testing {
             let output_builtin_var =
                 self.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset])));
-            self.input_builtin_vars.insert(BuiltinName::output, output_builtin_var);
+            self.builtin_vars.insert(BuiltinName::output, output_builtin_var);
             self.builtins.push(BuiltinName::output);
         }
         self.builtins.reverse();
@@ -397,16 +413,26 @@ impl EntryCodeHelper {
         self.has_post_calculation_loop = self.got_segment_arena && !self.config.testing;
 
         if self.has_post_calculation_loop {
-            for name in self.input_builtin_vars.keys() {
-                if name != &BuiltinName::segment_arena {
+            if !self.config.testing {
+                // Add a local variable for the output builtin
+                casm_build_extend!(self.ctx, localvar local;);
+                self.local_exprs.insert(BuiltinName::output, self.ctx.get_value(local, false));
+            }
+
+            for (generic_ty, _ty_size) in param_types {
+                if let Some(name) = self.builtin_ty_to_vm_name.get(generic_ty)
+                    && name != &BuiltinName::segment_arena
+                {
                     casm_build_extend!(self.ctx, localvar local;);
                     self.local_exprs.insert(*name, self.ctx.get_value(local, false));
                 }
             }
+
             if !self.local_exprs.is_empty() {
                 casm_build_extend!(self.ctx, ap += self.local_exprs.len(););
             }
         }
+
         if self.got_segment_arena {
             casm_build_extend! {self.ctx,
                 tempvar segment_arena;
@@ -421,7 +447,7 @@ impl EntryCodeHelper {
                 assert zero = *(segment_arena++);
             }
             // Adding the segment arena to the builtins var map.
-            self.input_builtin_vars.insert(BuiltinName::segment_arena, segment_arena);
+            self.builtin_vars.insert(BuiltinName::segment_arena, segment_arena);
         }
         let mut unallocated_count = 0;
         let mut param_index = 0;
@@ -432,7 +458,7 @@ impl EntryCodeHelper {
             if self.config.testing { param_types } else { &param_types[..(param_types.len() - 2)] };
         for (generic_ty, ty_size) in non_proof_signature_params {
             if let Some(name) = self.builtin_ty_to_vm_name.get(generic_ty).cloned() {
-                let var = self.input_builtin_vars[&name];
+                let var = self.builtin_vars[&name];
                 casm_build_extend!(self.ctx, tempvar _builtin = var;);
             } else if self.emulated_builtins.contains(generic_ty) {
                 assert!(
@@ -467,7 +493,7 @@ impl EntryCodeHelper {
             }
         }
         if !self.config.testing {
-            let output_ptr = self.input_builtin_vars[&BuiltinName::output];
+            let output_ptr = self.builtin_vars[&BuiltinName::output];
             casm_build_extend! { self.ctx,
                 tempvar input_start;
                 tempvar _input_end;
@@ -499,9 +525,10 @@ impl EntryCodeHelper {
         } else {
             &return_types[..(return_types.len() - 1)]
         };
+        let mut new_builtin_vars = UnorderedHashMap::<BuiltinName, Var>::default();
         for (ret_ty, size) in non_proof_return_types {
             if let Some(name) = self.builtin_ty_to_vm_name.get(ret_ty) {
-                self.output_builtin_vars.insert(*name, self.ctx.add_var(next_unprocessed_deref()));
+                new_builtin_vars.insert(*name, self.ctx.add_var(next_unprocessed_deref()));
             } else if self.config.testing {
                 for _ in 0..*size {
                     next_unprocessed_deref();
@@ -538,28 +565,42 @@ impl EntryCodeHelper {
                     assert zero = panic_indicator;
                 };
             }
-            self.output_builtin_vars.insert(BuiltinName::output, ptr_end);
+            new_builtin_vars.insert(BuiltinName::output, ptr_end);
         }
         assert_eq!(unprocessed_return_size, 0);
-        assert_eq!(self.input_builtin_vars.len(), self.output_builtin_vars.len());
         if self.has_post_calculation_loop {
-            // Store output builtin vars that were assigned local variables, as they are going to be
-            // invalidated by loop. Note that the output builtin vars map is not updated with the
-            // new locals, since they will be invalidated by the rescoping performed in
-            // `validate_segment_arena`.
+            // Store the new builtin vars that were assigned local variables, as they are going to
+            // be invalidated by loop. Note that the builtin vars map is not updated
+            // with the new locals, since they will be invalidated by the rescoping
+            // performed in `validate_segment_arena`.
             for (name, local_expr) in self.local_exprs.iter() {
-                let output_builtin_var = self.output_builtin_vars[name];
+                let builtin_var = new_builtin_vars[name];
                 let local_expr = local_expr.clone();
                 let local_var = self.ctx.add_var(local_expr.clone());
-                casm_build_extend!(self.ctx, assert local_var = output_builtin_var;);
+                casm_build_extend!(self.ctx, assert local_var = builtin_var;);
             }
         }
+
+        // All the builtins not in in return_types should be copied from self.builtin_vars to
+        // new_builtin_vars and local_exprs.
+        for name in &self.builtins {
+            new_builtin_vars.entry(*name).or_insert_with(|| {
+                assert!(
+                    self.config.builtin_list.is_some(),
+                    "if builtin_list is not some, output builtins should cover all input builtins"
+                );
+
+                let var = self.builtin_vars[name];
+                self.local_exprs.insert(*name, self.ctx.get_value(var, false));
+                var
+            });
+        }
+        self.builtin_vars = new_builtin_vars;
     }
 
     /// Handles `SegmentArena` validation.
     fn validate_segment_arena(&mut self) {
-        let segment_arena =
-            self.output_builtin_vars.swap_remove(&BuiltinName::segment_arena).unwrap();
+        let segment_arena = self.builtin_vars.remove(&BuiltinName::segment_arena).unwrap();
         casm_build_extend! {self.ctx,
             tempvar n_segments = segment_arena[-2];
             tempvar n_finalized = segment_arena[-1];
@@ -596,7 +637,7 @@ impl EntryCodeHelper {
     /// Processes the output builtins for the end of a run.
     fn process_builtins_output(&mut self) {
         for name in &self.builtins {
-            if let Some(mut var) = self.output_builtin_vars.swap_remove(name) {
+            if let Some(mut var) = self.builtin_vars.remove(name) {
                 if let Some(local_expr) = self.local_exprs.get(name) {
                     // If the builtin was stored in a local variable, use it instead of the output
                     // builtin var.
@@ -605,7 +646,7 @@ impl EntryCodeHelper {
                 casm_build_extend!(self.ctx, tempvar cell = var;);
             }
         }
-        assert!(self.output_builtin_vars.is_empty());
+        assert!(self.builtin_vars.is_empty());
     }
 }
 

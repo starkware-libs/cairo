@@ -3,6 +3,9 @@
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
 
+//! > standalone_mode
+false
+
 //! > cairo_code
 #[executable]
 fn main() {}
@@ -54,6 +57,9 @@ ret;
 
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > standalone_mode
+false
 
 //! > cairo_code
 #[executable]
@@ -140,6 +146,9 @@ ret;
 
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > standalone_mode
+false
 
 //! > cairo_code
 #[executable]
@@ -354,6 +363,9 @@ ret;
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
 
+//! > standalone_mode
+false
+
 //! > cairo_code
 #[executable_raw]
 fn main(mut _input: Span<felt252>, ref _output: Array<felt252>) {}
@@ -383,6 +395,9 @@ ret;
 
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > standalone_mode
+false
 
 //! > cairo_code
 #[executable]
@@ -443,6 +458,9 @@ ret;
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
 
+//! > standalone_mode
+false
+
 //! > cairo_code
 #[executable]
 fn use_dict() {
@@ -470,8 +488,8 @@ call rel 34;
 [ap + 0] = 0, ap++;
 %{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
 [ap + -1] = [ap + -4];
-[fp + 0] = [ap + -7];
-[fp + 1] = [ap + -2];
+[fp + 0] = [ap + -2];
+[fp + 1] = [ap + -7];
 [ap + 0] = [[ap + -6] + -2], ap++;
 [ap + 0] = [[ap + -7] + -1], ap++;
 [ap + -2] = [ap + -1];
@@ -488,8 +506,8 @@ jmp rel 12;
 [ap + 0] = [ap + -4] + 3, ap++;
 [ap + -4] = [ap + 0] + 1, ap++;
 jmp rel -12;
-[ap + 0] = [fp + 1], ap++;
 [ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + 1], ap++;
 ret;
 // sierra based code
 [fp + -5] = [ap + 0] + [fp + -6], ap++;
@@ -774,6 +792,9 @@ ret;
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
 
+//! > standalone_mode
+false
+
 //! > cairo_code
 #[executable]
 fn use_system() {
@@ -792,6 +813,9 @@ The function is using libfunc `keccak_syscall`. Syscalls are not supported in `#
 //! > test_runner_name
 CompileExecutableTestRunner(expect_diagnostics: false)
 
+//! > standalone_mode
+false
+
 //! > cairo_code
 #[executable]
 fn use_system() {
@@ -800,5 +824,189 @@ fn use_system() {
 
 //! > result
 The function is using libfunc `sha256_process_block_syscall`. Syscalls are not supported in `#[executable]`.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Basic executable standalone_mode no segment arena.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > standalone_mode
+true
+
+//! > cairo_code
+#[executable]
+#[inline(never)]
+fn main() implicits(RangeCheck, Bitwise) {}
+
+//! > result
+// builtins: output, pedersen, range_check, ecdsa, bitwise, ec_op, keccak, poseidon, range_check96, add_mod, mul_mod
+// header
+[ap + 0] = [fp + -11], ap++;
+[ap + 0] = [fp + -9], ap++;
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -13], ap++;
+[ap + 2] = [fp + -13], ap++;
+ap += 2;
+call rel 17;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [fp + -12], ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [fp + -10], ap++;
+[ap + 0] = [ap + -9], ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+// sierra based code
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 11;
+call rel 20;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+ret;
+ap += 4;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+call rel 12;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 6;
+ret;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+// footer
+ret;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Basic executable standalone_mode with segment arena.
+
+//! > test_runner_name
+CompileExecutableTestRunner(expect_diagnostics: false)
+
+//! > standalone_mode
+true
+
+//! > cairo_code
+#[executable]
+#[inline(never)]
+fn main() implicits(RangeCheck, Bitwise, SegmentArena) {}
+
+//! > result
+// builtins: output, pedersen, range_check, ecdsa, bitwise, ec_op, keccak, poseidon, range_check96, add_mod, mul_mod
+// header
+ap += 3;
+%{ memory[ap + 0] = segments.add() %}
+%{ memory[ap + 1] = segments.add() %}
+[ap + 2] = 0, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + -1] = [[ap + -3] + 2];
+[ap + 0] = [fp + -11], ap++;
+[ap + 0] = [fp + -9], ap++;
+[ap + 0] = [ap + -5] + 3, ap++;
+%{ WriteRunParam { dst: [ap + 0], index: 0 } %}
+[ap + 2] = [fp + -13], ap++;
+[ap + 2] = [fp + -13], ap++;
+ap += 2;
+call rel 44;
+[ap + 0] = 0, ap++;
+%{ AddMarker { start: memory[ap + -3], end: memory[ap + -2] } %}
+[ap + -1] = [ap + -4];
+[fp + 0] = [ap + -2];
+[fp + 1] = [ap + -7];
+[fp + 2] = [ap + -6];
+[ap + 0] = [[ap + -5] + -2], ap++;
+[ap + 0] = [[ap + -6] + -1], ap++;
+[ap + -2] = [ap + -1];
+jmp rel 4 if [ap + -2] != 0;
+jmp rel 19;
+[ap + 0] = [[ap + -7] + -3], ap++;
+[ap + -3] = [ap + 0] + 1, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 12;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + 0] = [[ap + -3] + 3], ap++;
+%{ memory.add_relocation_rule(src_ptr=memory[ap + -1], dest_ptr=memory[ap + -2] + 1) %}
+[ap + -1] = [ap + -2] + 1;
+[ap + 0] = [ap + -4] + 3, ap++;
+[ap + -4] = [ap + 0] + 1, ap++;
+jmp rel -12;
+[ap + 0] = [fp + 0], ap++;
+[ap + 0] = [fp + -12], ap++;
+[ap + 0] = [fp + 1], ap++;
+[ap + 0] = [fp + -10], ap++;
+[ap + 0] = [fp + 2], ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+// sierra based code
+[fp + -5] = [ap + 0] + [fp + -6], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 12;
+call rel 23;
+[ap + 0] = [fp + -9], ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+[ap + 0] = [fp + -9], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [fp + -8], ap++;
+call rel 15;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+[ap + 0] = 117999715903629884655797335944760714204113152088920212735095598, ap++;
+call rel 7;
+ret;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+// footer
+ret;
 
 //! > expected_diagnostics

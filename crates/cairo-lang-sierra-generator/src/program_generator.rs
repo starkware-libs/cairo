@@ -250,7 +250,7 @@ impl<'db> DebugWithDb<'db> for SierraProgramWithDebug<'db> {
                     &self.debug_info.statements_locations.locations.get(&StatementIdx(i))
                 {
                     let loc = get_location_marks(db, &loc.first().unwrap().span_in_file(db), true);
-                    println!("{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"));
+                    writeln!(f, "{}", loc.split('\n').map(|l| format!("// {l}")).join("\n"))?;
                 }
             }
         }
