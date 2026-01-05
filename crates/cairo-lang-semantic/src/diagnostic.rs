@@ -1196,8 +1196,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
                 "Consider using `return`, `continue`, ..."
             )
             .into(),
-            SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => {
-                "Negative impls may only use type or const generic parameters.".into()
+            SemanticDiagnosticKind::OnlyTypeParamsInNegImpl => {
+                "Negative impls may only use type generic parameters.".into()
             }
         }
     }
@@ -1461,7 +1461,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(_) => error_code!(E2193),
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => error_code!(E2194),
             SemanticDiagnosticKind::NonNeverLetElseType => error_code!(E2195),
-            SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
+            SemanticDiagnosticKind::OnlyTypeParamsInNegImpl => error_code!(E2196),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1880,7 +1880,7 @@ pub enum SemanticDiagnosticKind<'db> {
     UndefinedMacroPlaceholder(SmolStrId<'db>),
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
-    OnlyTypeOrConstParamsInNegImpl,
+    OnlyTypeParamsInNegImpl,
 }
 
 /// The kind of an expression with multiple possible return types.

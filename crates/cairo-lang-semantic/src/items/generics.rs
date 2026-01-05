@@ -662,12 +662,12 @@ fn semantic_from_generic_param_ast<'db>(
             let neg_impl =
                 impl_generic_param_semantic(db, resolver, diagnostics, &path_syntax, None, id);
             for param in db.trait_generic_params(neg_impl.concrete_trait?.trait_id(db))? {
-                if matches!(param, GenericParam::Type(_) | GenericParam::Const(_)) {
+                if matches!(param, GenericParam::Type(_)) {
                     continue;
                 }
                 diagnostics.report(
                     param.stable_ptr(db),
-                    SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl,
+                    SemanticDiagnosticKind::OnlyTypeParamsInNegImpl,
                 );
             }
 

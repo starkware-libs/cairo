@@ -290,7 +290,7 @@ pub impl ImplBad<T, -NegImpl<_>> of Bad<T> {
 }
 
 //! > expected_diagnostics
-error[E2196]: Negative impls may only use type or const generic parameters.
+error[E2196]: Negative impls may only use type generic parameters.
  --> lib.cairo:1:19
 pub trait NegImpl<+Drop<u32>> {}
                   ^^^^^^^^^^
