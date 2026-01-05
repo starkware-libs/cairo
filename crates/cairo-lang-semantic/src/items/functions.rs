@@ -66,7 +66,7 @@ impl<'db> ImplGenericFunctionId<'db> {
         }
     }
     pub fn format(&self, db: &dyn Database) -> String {
-        format!("{}::{}", self.impl_id.name(db), self.function.name(db).long(db))
+        format!("{}::{}", self.impl_id.format(db), self.function.name(db).long(db))
     }
 }
 impl<'db> DebugWithDb<'db> for ImplGenericFunctionId<'db> {
@@ -116,9 +116,7 @@ impl<'db> GenericFunctionId<'db> {
         match self {
             GenericFunctionId::Free(id) => id.full_path(db),
             GenericFunctionId::Extern(id) => id.full_path(db),
-            GenericFunctionId::Impl(id) => {
-                format!("{:?}::{}", id.impl_id.debug(db), id.function.name(db).long(db))
-            }
+            GenericFunctionId::Impl(id) => id.format(db),
         }
     }
     pub fn generic_signature(&self, db: &'db dyn Database) -> Maybe<&'db Signature<'db>> {
