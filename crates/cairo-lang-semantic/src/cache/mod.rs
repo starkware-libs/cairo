@@ -85,14 +85,13 @@ pub fn load_cached_crate_modules_semantic<'db>(
 
     let content = &content[semantic_start + 8..semantic_start + 8 + semantic_size];
 
-    let ((module_data, semantic_lookups), _): (SemanticCache<'_>, _) =
-        bincode::serde::borrow_decode_from_slice(content, bincode::config::standard())
-            .unwrap_or_else(|e| {
-                panic!(
-                    "failed to deserialize modules cache for crate `{}`: {e}",
-                    crate_id.long(db).name().long(db),
-                )
-            });
+    let (module_data, semantic_lookups): SemanticCache<'_> = postcard::from_bytes(content)
+        .unwrap_or_else(|e| {
+            panic!(
+                "failed to deserialize modules cache for crate `{}`: {e}",
+                crate_id.long(db).name().long(db),
+            )
+        });
 
     let mut ctx = SemanticCacheLoadingContext::new(db, semantic_lookups, def_loading_data);
     Some(ModuleSemanticDataCacheAndLoadingData {

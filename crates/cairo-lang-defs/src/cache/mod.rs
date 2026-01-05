@@ -98,14 +98,13 @@ pub fn load_cached_crate_modules<'db>(
 
     let content = &content[8..size + 8];
 
-    let ((metadata, module_data, defs_lookups), _): (DefCache<'_>, _) =
-        bincode::serde::borrow_decode_from_slice(content, bincode::config::standard())
-            .unwrap_or_else(|e| {
-                panic!(
-                    "failed to deserialize modules cache for crate `{}`: {e}",
-                    crate_id.long(db).name().long(db),
-                )
-            });
+    let (metadata, module_data, defs_lookups): DefCache<'_> = postcard::from_bytes(content)
+        .unwrap_or_else(|e| {
+            panic!(
+                "failed to deserialize modules cache for crate `{}`: {e}",
+                crate_id.long(db).name().long(db),
+            )
+        });
 
     validate_metadata(crate_id, &metadata, db);
 
