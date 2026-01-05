@@ -27,11 +27,14 @@ array's contents. Unlike arrays, spans cannot modify the underlying data.
 | Ownership | Owns data | References data via snapshot
 | Traits | Requires `Drop<T>` for element type | Always `Copy` and `Drop`
 | Memory | Allocates and owns memory | Zero-cost reference
-| Operations | `append()` modifies array | `pop_front()` advances view position
+| Operations | `append()` modifies array | `pop_front()` and `pop_back()` advance view position
 |===
 
 Key insight: When you call `pop_front()` on a span, you're advancing the view position, not
 modifying the underlying array.
+
+NOTE: Operations on the original array (like `append()`) do not affect existing spans created from
+that array. Spans capture a snapshot of the array at the time they were created.
 
 == Creating Slices
 
@@ -64,7 +67,7 @@ Spans support multiple ways to access elements:
 let span = array![10, 20, 30].span();
 
 // Indexing (returns snapshot of element)
-let second = span[1];           // Returns @20
+let second = span[1];           // Returns @20 (panics if out of bounds)
 let second = span.at(1);        // Returns @20 (panics if out of bounds)
 
 // Safe access with Option
