@@ -5,7 +5,6 @@ mod test;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-use bincode::error::EncodeError;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::cache::{
     CachedCrateMetadata, DefCacheLoadingData, DefCacheSavingContext, LanguageElementCached,
@@ -83,15 +82,12 @@ pub fn load_cached_crate_functions<'db>(
 
     let content = &content[lowering_start + 8..lowering_start + 8 + lowering_size];
 
-    let ((lookups, lowerings), _): (LookupCache, _) =
-        bincode::serde::decode_from_slice(content, bincode::config::standard()).unwrap_or_else(
-            |e| {
-                panic!(
-                    "failed to deserialize lookup cache for crate `{}`: {e}",
-                    crate_id.long(db).name().long(db),
-                )
-            },
-        );
+    let (lookups, lowerings): LookupCache = postcard::from_bytes(content).unwrap_or_else(|e| {
+        panic!(
+            "failed to deserialize lookup cache for crate `{}`: {e}",
+            crate_id.long(db).name().long(db),
+        )
+    });
 
     // TODO(tomer): Fail on version, cfg, and dependencies mismatch.
 
@@ -115,8 +111,8 @@ pub fn load_cached_crate_functions<'db>(
 pub enum CrateCacheError {
     #[error("Failed compilation of crate.")]
     CompilationFailed,
-    #[error("Cache encoding failed: {0}")]
-    EncodingError(#[from] EncodeError),
+    #[error("Cache encoding/decoding failed: {0}")]
+    CacheError(#[from] postcard::Error),
 }
 
 impl From<DiagnosticAdded> for CrateCacheError {
@@ -173,22 +169,19 @@ pub fn generate_crate_cache<'db>(
 
     let mut artifact = Vec::<u8>::new();
 
-    let def = bincode::serde::encode_to_vec(
-        &(CachedCrateMetadata::new(crate_id, db), def_cache, &ctx.semantic_ctx.defs_ctx.lookups),
-        bincode::config::standard(),
-    )?;
+    let def = postcard::to_allocvec(&(
+        CachedCrateMetadata::new(crate_id, db),
+        def_cache,
+        &ctx.semantic_ctx.defs_ctx.lookups,
+    ))?;
     artifact.extend(def.len().to_be_bytes());
     artifact.extend(def);
 
-    let semantic = bincode::serde::encode_to_vec(
-        &(semantic_cache, &ctx.semantic_ctx.lookups),
-        bincode::config::standard(),
-    )?;
+    let semantic = postcard::to_allocvec(&(semantic_cache, &ctx.semantic_ctx.lookups))?;
     artifact.extend(semantic.len().to_be_bytes());
     artifact.extend(semantic);
 
-    let lowered =
-        bincode::serde::encode_to_vec(&(&ctx.lookups, cached), bincode::config::standard())?;
+    let lowered = postcard::to_allocvec(&(&ctx.lookups, cached))?;
     artifact.extend(lowered.len().to_be_bytes());
     artifact.extend(lowered);
 
