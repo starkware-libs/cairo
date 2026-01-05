@@ -70,7 +70,17 @@ it also affects its value in the caller function. For example:
         y = x + 1;
     }
 ----
-`x` is a mutable parameter and `y` is a reference parameter. See an example of calling it below.
+`x` is a mutable parameter and `y` is a reference parameter.
+
+The key differences between `mut` and `ref` parameters:
+
+* **Changes in caller** — `mut` parameters: changes are local to the function and do not affect the caller's variable. `ref` parameters: changes affect the variable in the caller function.
+* **Call syntax** — `mut` parameters: passed as regular expressions. `ref` parameters: must be passed using the `ref` keyword with a mutable variable.
+* **Purpose** — `mut` parameters: provide local mutability within the function. `ref` parameters: enable input/output parameters that modify the caller's variable.
+
+Note that `ref` parameters are implicitly mutable and cannot be combined with the `mut` modifier on the same parameter.
+
+See an example of calling it below.
 
 === Return type
 
