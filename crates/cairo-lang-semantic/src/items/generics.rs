@@ -102,7 +102,7 @@ impl<'db> GenericArgumentId<'db> {
         if let GenericArgumentId::Type(ty) = self { ty.short_name(db) } else { self.format(db) }
     }
 
-    /// A utility function for extracting the generic parameters arguments from a generic parameter.
+    /// A utility function for extracting the generic parameters arguments from a GenericArgumentId.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
