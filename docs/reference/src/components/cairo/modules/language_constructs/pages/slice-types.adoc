@@ -1,6 +1,262 @@
 = Slice types
 
-This section is a work in progress.
+A slice is an immutable view into a contiguous sequence of elements. In Cairo, slices are
+represented by the `Span<T>` type, which provides read-only access to array data without taking
+ownership.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Overview
+
+The `Span<T>` type is defined as:
+
+[source,cairo]
+----
+pub struct Span<T> {
+    pub(crate) snapshot: @Array<T>,
+}
+----
+
+A span wraps a snapshot reference to an array, providing a lightweight, copyable view into the
+array's contents. Unlike arrays, spans cannot modify the underlying data.
+
+== Slices vs Arrays
+
+|===
+| Feature | Array<T> | Span<T>
+
+| Mutability | Mutable (can append elements) | Immutable (read-only view)
+| Ownership | Owns data | References data via snapshot
+| Traits | Requires `Drop<T>` for element type | Always `Copy` and `Drop`
+| Memory | Allocates and owns memory | Zero-cost reference
+| Operations | `append()` modifies array | `pop_front()` and `pop_back()` advance view position
+|===
+
+Key insight: When you call `pop_front()` on a span, you're advancing the view position, not
+modifying the underlying array.
+
+NOTE: Operations on the original array (like `append()`) do not affect existing spans created from
+that array. Spans capture a snapshot of the array at the time they were created.
+
+== Creating Slices
+
+There are several ways to create a span:
+
+[source,cairo]
+----
+// From an array using .span()
+let arr = array![1, 2, 3];
+let span = arr.span();
+
+// From an array snapshot
+let arr_snapshot = @array![4, 5, 6];
+let span = arr_snapshot.span();
+
+// From a fixed-size array
+let fixed = [7, 8, 9];
+let span = fixed.span();
+
+// Using Into trait
+let span: Span<u32> = array![10, 11, 12].into();
+----
+
+== Accessing Elements
+
+Spans support multiple ways to access elements:
+
+[source,cairo]
+----
+let span = array![10, 20, 30].span();
+
+// Indexing (returns snapshot of element)
+let second = span[1];           // Returns @20 (panics if out of bounds)
+let second = span.at(1);        // Returns @20 (panics if out of bounds)
+
+// Safe access with Option
+let opt = span.get(1);          // Returns Option<Box<@u32>>
+match opt {
+    Option::Some(val) => {
+        let v = val.unbox();    // @20
+    },
+    Option::None => {},
+}
+----
+
+All element access returns a snapshot (`@T`) of the element, ensuring immutability.
+
+NOTE: The `at()` method and index operator `[]` panic with "Index out of bounds" if the index is
+invalid. Use `get()` for safe access that returns `Option`.
+
+== Span Operations
+
+=== Length and Empty Checks
+
+[source,cairo]
+----
+let span = array![1, 2, 3].span();
+let len = span.len();           // Returns 3
+let empty = span.is_empty();    // Returns false
+
+let empty_span = array![].span();
+assert!(empty_span.is_empty());
+----
+
+=== Pop Operations
+
+Spans support popping elements from either end, which advances the view position:
+
+[source,cairo]
+----
+let mut span = array![1, 2, 3, 4].span();
+
+// Pop from front
+let first = span.pop_front();   // Returns Option::Some(@1)
+// span now views [2, 3, 4]
+
+// Pop from back
+let last = span.pop_back();     // Returns Option::Some(@4)
+// span now views [2, 3]
+----
+
+=== Multi-Element Pop Operations
+
+For efficiency, you can pop multiple elements at once:
+
+[source,cairo]
+----
+let mut span = array![1, 2, 3, 4, 5].span();
+
+// Pop 2 elements from front
+let first_two = span.multi_pop_front::<2>();
+// Returns Option::Some(@Box<[u32; 2]>) containing [1, 2]
+
+// Pop 2 elements from back
+let last_two = span.multi_pop_back::<2>();
+// Returns Option::Some(@Box<[u32; 2]>) containing [4, 5]
+----
+
+=== Slicing
+
+Create a sub-span from an existing span:
+
+[source,cairo]
+----
+let span = array![10, 20, 30, 40, 50].span();
+let sub = span.slice(1, 3);  // Returns Span containing [20, 30, 40]
+----
+
+The `slice(start, length)` method takes a starting index and a length.
+
+NOTE: The `slice()` method panics with "Index out of bounds" if the start index or length would
+exceed the span bounds. Ensure the range is valid before calling.
+
+== Iteration
+
+Spans can be iterated using for loops or the iterator pattern:
+
+[source,cairo]
+----
+// For loop iteration
+for x in array![1, 2, 3].span() {
+    // x is @T (snapshot of element)
+    // Dereference with * to use the value
+    let value = *x;
+}
+
+// Manual iteration
+let mut span = array![10, 20, 30].span();
+while let Option::Some(value) = span.pop_front() {
+    // value is @T, dereference with *value to use it
+}
+
+// Using iterator
+let mut iter = array![1, 2, 3].span().into_iter();
+while let Option::Some(value) = iter.next() {
+    // value is @T
+}
+----
+
+== Practical Examples
+
+=== Deserialization
+
+Spans are commonly used in deserialization:
+
+[source,cairo]
+----
+fn deserialize_point(ref data: Span<felt252>) -> Option<Point> {
+    let x = (*data.pop_front()?).try_into()?;
+    let y = (*data.pop_front()?).try_into()?;
+    Option::Some(Point { x, y })
+}
+----
+
+=== Processing Sequences
+
+[source,cairo]
+----
+fn sum_span(mut span: Span<u32>) -> u32 {
+    let mut total = 0;
+    while let Option::Some(val) = span.pop_front() {
+        total += *val;
+    }
+    total
+}
+----
+
+=== Converting Back to Array
+
+If elements implement `Clone`, you can convert a span back to an array:
+
+[source,cairo]
+----
+fn span_to_array(span: Span<u32>) -> Array<u32> {
+    let mut arr = array![];
+    for item in span {
+        arr.append((*item).clone());
+    }
+    arr
+}
+
+// Or using Into trait (requires Clone + Drop on element type)
+let arr: Array<u32> = span.into();
+----
+
+== Traits and Generics
+
+Spans work seamlessly with generic code:
+
+[source,cairo]
+----
+fn first_element<T>(span: Span<T>) -> Option<@T> {
+    span.get(0).map(|boxed| boxed.unbox())
+}
+
+// Works with any type
+let num = first_element(array![1, 2, 3].span());
+let str = first_element(array!["a", "b"].span());
+----
+
+Spans also support comparison and serialization:
+
+[source,cairo]
+----
+// Comparison (requires PartialEq on element type)
+let span1 = array![1, 2, 3].span();
+let span2 = array![1, 2, 3].span();
+assert_eq!(span1, span2);
+
+// Serialization (requires Serde on element type)
+let span = array![1_u32, 2, 3].span();
+let mut output = array![];
+span.serialize(ref output);
+----
+
+== Important Notes
+
+NOTE: Spans are always `Copy` and `Drop`, regardless of the element type. This makes them easy to
+pass around without worrying about ownership.
+
+NOTE: Element access through spans always returns snapshots (`@T`), never owned values. To use the
+value, you typically need to dereference it with `*`.
+
+NOTE: Unlike Rust slices, Cairo spans cannot be created with range syntax like `&arr[1..3]`.
+Instead, use the `slice()` method.
