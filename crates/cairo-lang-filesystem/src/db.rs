@@ -538,7 +538,7 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
 #[salsa::tracked(returns(ref))]
 fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<str>> {
     let overrides = db.file_overrides();
-    overrides.get(&file_id).map(|content| (**content).clone()).or_else(|| {
+    overrides.get(&file_id).cloned().or_else(|| {
         priv_raw_file_content(db, file_id).map(|content| content.long(db).clone().into())
     })
 }
