@@ -1,6 +1,324 @@
 = String types
 
-This section is a work in progress.
+Cairo provides two mechanisms for working with strings: the `ByteArray` type for dynamic strings of
+any length, and short strings encoded as numeric values for constants and identifiers.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Overview
+
+Cairo has two primary string representations:
+
+1. **ByteArray**: A full-featured dynamic string type for general use
+2. **Short strings**: Numeric encoding (felt252) for strings up to 31 characters
+
+== ByteArray Type
+
+`ByteArray` is Cairo's primary string type, capable of storing strings of any length. It is defined
+as:
+
+[source,cairo]
+----
+#[derive(Drop, Clone, PartialEq)]
+pub struct ByteArray {
+    data: Array<bytes31>,             // Array of full 31-byte words
+    pending_word: felt252,             // Partial word (< 31 bytes)
+    pending_word_len: BoundedInt<0, 30>,  // Length of pending word (0-30)
+}
+----
+
+This structure efficiently stores strings by packing bytes into 31-byte chunks, with any remaining
+bytes stored in the pending word. ByteArray implements `Drop`, `Clone`, and `PartialEq` traits.
+
+=== Creating ByteArray Strings
+
+ByteArray strings are created using double quotes:
+
+[source,cairo]
+----
+let s: ByteArray = "Hello, world!";
+let long: ByteArray = "This can be any length, even very long strings";
+let empty: ByteArray = "";
+----
+
+== Short Strings (felt252)
+
+Short strings are ASCII strings encoded as numeric values. They are created using single quotes:
+
+[source,cairo]
+----
+let short: felt252 = 'hello';
+let typed: u128 = 'short_string'_u128;
+let single: u8 = 'a'_u8;
+----
+
+**Limitations:**
+- Maximum 31 characters (248 bits)
+- ASCII encoding only
+- Big-endian encoding (first character is most significant byte)
+- Not a true string type - it's a numeric value with limited string operations
+
+== ByteArray vs Short Strings
+
+|===
+| Feature | ByteArray | felt252 Short String
+
+| Syntax | `"double quotes"` | `'single quotes'`
+| Max length | Unlimited | 31 characters
+| Type | Dedicated struct | Numeric type
+| Storage | Array of bytes31 | Single felt252 value
+| Operations | Rich API | Limited (numeric operations)
+| Use case | General string handling | Constants, identifiers
+|===
+
+== String Operations
+
+=== Length
+
+[source,cairo]
+----
+let s: ByteArray = "byte array";
+let len = s.len();  // Returns 10
+----
+
+=== Indexing and Access
+
+[source,cairo]
+----
+let s: ByteArray = "ABC";
+
+// Direct indexing
+let first = s[0];           // Returns 0x41 (byte value for 'A')
+
+// Safe access
+let first_byte = s.at(0);   // Returns Option<u8>: Some(0x41)
+----
+
+=== Concatenation
+
+ByteArray supports multiple concatenation methods:
+
+[source,cairo]
+----
+// Using + operator
+let s1 = "Hello";
+let s2 = " world!";
+let result = s1 + s2;       // "Hello world!"
+
+// Using += operator
+let mut s = "Hello";
+s += " world!";             // s is now "Hello world!"
+
+// Using append method
+let mut s = "1";
+s.append(@"2");             // s is now "12"
+
+// Using concat function
+let result = ByteArrayTrait::concat(@"1", @"2");  // "12"
+----
+
+=== Appending Individual Bytes
+
+[source,cairo]
+----
+let mut s = "";
+s.append_byte(0x41);        // Appends 'A'
+s.append_byte(0x42);        // Appends 'B'
+// s is now "AB"
+----
+
+=== Reversing
+
+[source,cairo]
+----
+let s: ByteArray = "123";
+let reversed = s.rev();     // "321"
+----
+
+=== Iteration
+
+ByteArray implements iterator traits for byte-by-byte iteration:
+
+[source,cairo]
+----
+let s: ByteArray = "hello";
+
+// For loop (consumes the ByteArray)
+for byte in s {
+    // Process each byte (byte is u8)
+}
+
+// For loop over span (non-consuming)
+for byte in s.span() {
+    // Process each byte
+}
+
+// Manual iteration
+let mut iter = s.into_iter();
+while let Option::Some(byte) = iter.next() {
+    // Process byte
+}
+----
+
+NOTE: Iterating directly over a ByteArray with `for byte in s` consumes (moves) the ByteArray.
+Use `for byte in s.span()` if you need to keep using the ByteArray afterward.
+
+=== Slicing with ByteSpan
+
+IMPORTANT: ByteSpan is an experimental feature behind the `byte-span` feature flag. Enable it to
+use range-based slicing.
+
+Use `span()` to create a ByteSpan view for slicing operations:
+
+[source,cairo]
+----
+let s: ByteArray = "Hello World";
+let span = s.span();
+
+// Range slicing (requires byte-span feature)
+let slice = span[0..5];     // Returns ByteSpan
+let slice2 = span[6..=10];  // Returns ByteSpan
+
+// Convert ByteSpan back to ByteArray if needed
+let hello: ByteArray = slice.to_byte_array();
+----
+
+== String Formatting
+
+Cairo provides powerful formatting capabilities through the `format!` macro:
+
+[source,cairo]
+----
+// Basic formatting
+let max_tps: u16 = 850;
+let s = format!("Starknet's max TPS is: {}", max_tps);
+
+// Multiple arguments
+let result = format!("{}{}", 12, 14);           // "1214"
+
+// Positional arguments
+let result = format!("{0}{0}", 12);             // "1212"
+
+// Debug formatting (adds quotes)
+let s = "hello";
+format!("{:?}", s);                             // "\"hello\""
+
+// Hex formatting
+format!("{:x}", 42);                            // "2a"
+----
+
+== Printing
+
+The `print!` and `println!` macros output strings to standard output:
+
+[source,cairo]
+----
+let s: ByteArray = "hello";
+println!("{}", s);                              // Prints: hello
+
+print!("The answer is: ");
+println!("{}", 42);                             // Prints: The answer is: 42
+----
+
+== String Comparison
+
+ByteArray implements `PartialEq` for string comparison:
+
+[source,cairo]
+----
+let s1: ByteArray = "hello";
+let s2: ByteArray = "hello";
+let s3: ByteArray = "world";
+
+assert_eq!(s1, s2);         // True - same content
+assert_ne!(s1, s3);         // True - different content
+
+if s1 == "hello" {
+    // Strings are equal
+}
+----
+
+== Traits and Conversions
+
+=== Display Trait
+
+Implement `Display` for custom formatting:
+
+[source,cairo]
+----
+use core::fmt::{Display, Formatter, Error};
+
+impl MyTypeDisplay of Display<MyType> {
+    fn fmt(self: @MyType, ref f: Formatter) -> Result<(), Error> {
+        write!(f, "MyType: {}", self.value)
+    }
+}
+----
+
+=== Iterator Support
+
+ByteArray can be constructed from iterators:
+
+[source,cairo]
+----
+let bytes = array![0x68, 0x65, 0x6c, 0x6c, 0x6f];  // "hello" in ASCII
+let s: ByteArray = bytes.into_iter().collect();
+----
+
+== Practical Examples
+
+=== Building Strings Dynamically
+
+[source,cairo]
+----
+fn build_message(name: ByteArray, score: u32) -> ByteArray {
+    let mut msg = "Player ";
+    msg += name;
+    msg += " scored ";
+    msg += format!("{}", score);
+    msg += " points!";
+    msg
+}
+
+let result = build_message("Alice", 100);
+// "Player Alice scored 100 points!"
+----
+
+=== Processing Text
+
+[source,cairo]
+----
+fn count_letter_a(text: ByteArray) -> u32 {
+    let mut count = 0;
+    for byte in text {
+        if byte == 0x61 {  // ASCII 'a'
+            count += 1;
+        }
+    }
+    count
+}
+----
+
+=== Serialization
+
+ByteArray can be serialized for storage or transmission:
+
+[source,cairo]
+----
+let s: ByteArray = "hello";
+let mut output = array![];
+s.serialize(ref output);
+// Output array contains serialized representation
+----
+
+== Important Notes
+
+NOTE: ByteArray strings use double quotes (`""`), while short strings use single quotes (`''`). This
+syntax distinction determines which string type is created.
+
+NOTE: Short strings are limited to 31 characters and are actually numeric values. For general string
+handling, use ByteArray.
+
+NOTE: String indexing returns individual bytes (u8), not characters. For multi-byte Unicode
+characters, additional handling is required.
+
+NOTE: ByteArray concatenation operations create new strings. For building large strings
+incrementally, consider using mutation (`+=` or `append`) for better performance.
