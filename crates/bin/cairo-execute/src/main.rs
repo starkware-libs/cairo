@@ -2,7 +2,6 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
-use bincode::enc::write::Writer;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_debug::debug::DebugWithDb;
@@ -21,11 +20,11 @@ use cairo_lang_runner::profiling::{
 use cairo_lang_runner::{Arg, CairoHintProcessor, ProfilingInfoCollectionConfig};
 use cairo_lang_sierra_generator::debug_info::SierraProgramDebugInfo;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_vm::cairo_run;
 use cairo_vm::cairo_run::{CairoRunConfig, cairo_run_program};
 use cairo_vm::types::layout::CairoLayoutParams;
 use cairo_vm::types::layout_name::LayoutName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use clap::Parser;
 use num_bigint::BigInt;
 use salsa::Database;
@@ -314,15 +313,11 @@ fn main() -> anyhow::Result<()> {
     if let Some(trace_path) = &args.run.proof_outputs.trace_file {
         let relocated_trace =
             runner.relocated_trace.as_ref().with_context(|| "Trace not relocated.")?;
-        let mut writer = FileWriter::new(3 * 1024 * 1024, trace_path)?;
-        cairo_run::write_encoded_trace(relocated_trace, &mut writer)?;
-        writer.flush()?;
+        write_relocated_trace(trace_path, relocated_trace)?;
     }
 
     if let Some(memory_path) = &args.run.proof_outputs.memory_file {
-        let mut writer = FileWriter::new(5 * 1024 * 1024, memory_path)?;
-        cairo_run::write_encoded_memory(&runner.relocated_memory, &mut writer)?;
-        writer.flush()?;
+        write_relocated_memory(memory_path, &runner.relocated_memory)?;
     }
 
     if let Some(file_path) = args.run.proof_outputs.air_public_input {
@@ -414,38 +409,48 @@ struct DebugData<'a> {
     header_len: usize,
 }
 
-/// Writer implementation for a file.
-struct FileWriter {
-    buf_writer: io::BufWriter<std::fs::File>,
-    bytes_written: usize,
+/// Writes the relocated trace into the given path.
+///
+/// Encodes the trace entry by entry as triplets of `u64`s.
+fn write_relocated_trace(
+    path: &PathBuf,
+    relocated_trace: &Vec<RelocatedTraceEntry>,
+) -> Result<(), io::Error> {
+    let mut writer = io::BufWriter::with_capacity(3 * 1024 * 1024, std::fs::File::create(path)?);
+    for entry in relocated_trace {
+        write_usize_as_u64(&mut writer, entry.ap)?;
+        write_usize_as_u64(&mut writer, entry.fp)?;
+        write_usize_as_u64(&mut writer, entry.pc)?;
+    }
+    writer.flush()
 }
 
-impl Writer for FileWriter {
-    fn write(&mut self, bytes: &[u8]) -> Result<(), bincode::error::EncodeError> {
-        self.buf_writer
-            .write_all(bytes)
-            .map_err(|e| bincode::error::EncodeError::Io { inner: e, index: self.bytes_written })?;
-
-        self.bytes_written += bytes.len();
-
-        Ok(())
+/// Writes the relocated memory into the given path.
+///
+/// The memory pairs (address, value) are encoded and concatenated:
+/// * address -> 8-byte encoded
+/// * value -> 32-byte encoded
+fn write_relocated_memory(
+    path: &PathBuf,
+    relocated_memory: &[Option<cairo_vm::Felt252>],
+) -> Result<(), io::Error> {
+    let mut writer = io::BufWriter::with_capacity(5 * 1024 * 1024, std::fs::File::create(path)?);
+    for (i, memory_cell) in relocated_memory.iter().enumerate() {
+        match memory_cell {
+            None => {}
+            Some(unwrapped_memory_cell) => {
+                write_usize_as_u64(&mut writer, i)?;
+                writer.write_all(&unwrapped_memory_cell.to_bytes_le())?;
+            }
+        }
     }
+    writer.flush()
 }
 
-impl FileWriter {
-    /// Creates a new instance of `FileWriter` with the given file path.
-    fn new(capacity: usize, path: &PathBuf) -> anyhow::Result<Self> {
-        Ok(Self {
-            buf_writer: io::BufWriter::with_capacity(capacity, std::fs::File::create(path)?),
-            bytes_written: 0,
-        })
-    }
-
-    /// Flush the writer.
-    ///
-    /// Would automatically be called when the writer is dropped, but errors are ignored in that
-    /// case.
-    fn flush(&mut self) -> io::Result<()> {
-        self.buf_writer.flush()
-    }
+/// Writes a u64 value to the given writer.
+fn write_usize_as_u64(
+    writer: &mut io::BufWriter<std::fs::File>,
+    value: usize,
+) -> Result<(), io::Error> {
+    writer.write_all(&(value as u64).to_le_bytes())
 }
