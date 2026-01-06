@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, define_short_id, extract_matches, require, try_extract_matches};
@@ -142,6 +143,38 @@ impl<'db> ConstValueId<'db> {
     /// Returns the type of the const.
     pub fn ty(&self, db: &'db dyn Database) -> Maybe<TypeId<'db>> {
         self.long(db).ty(db)
+    }
+
+    /// A utility function for extracting the generic parameters arguments from a ConstValueId.
+    pub fn extract_generic_params(
+        &self,
+        db: &'db dyn Database,
+        generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+    ) -> Maybe<()> {
+        match self.long(db) {
+            ConstValue::Int(_, type_id) | ConstValue::Struct(_, type_id) => {
+                type_id.long(db).extract_generic_params(db, generic_parameters)?
+            }
+            ConstValue::Enum(_, const_value_id) => {
+                const_value_id.ty(db)?.long(db).extract_generic_params(db, generic_parameters)?
+            }
+            ConstValue::NonZero(const_value_id) => {
+                const_value_id.extract_generic_params(db, generic_parameters)?
+            }
+            ConstValue::Generic(generic_param_id) => {
+                generic_parameters.insert(*generic_param_id);
+            }
+            ConstValue::ImplConstant(impl_constant_id) => {
+                for garg in impl_constant_id.impl_id().concrete_trait(db)?.generic_args(db) {
+                    garg.extract_generic_params(db, generic_parameters)?;
+                }
+            }
+            ConstValue::Var(_, type_id) => {
+                type_id.long(db).extract_generic_params(db, generic_parameters)?
+            }
+            ConstValue::Missing(diagnostic_added) => return Err(*diagnostic_added),
+        }
+        Ok(())
     }
 }
 
