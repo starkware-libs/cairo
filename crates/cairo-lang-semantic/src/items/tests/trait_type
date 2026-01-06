@@ -2408,7 +2408,7 @@ trait TraitWithInferredParams<T, +OtherTrait<T>> {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::OtherTrait::<_::ty>.
+error[E2311]: Trait has no implementation in context: test::OtherTrait::<+MyTrait::ty>.
  --> lib.cairo:19:6
     +TraitWithInferredParams<MyTrait::ty>,
      ^^^^^^^^^^^^^^^^^^^^^^^

@@ -214,22 +214,7 @@ impl<'db> ImplLongId<'db> {
         }
     }
     pub fn format(&self, db: &dyn Database) -> String {
-        match self {
-            ImplLongId::Concrete(concrete_impl) => {
-                format!("{:?}", concrete_impl.debug(db))
-            }
-            ImplLongId::GenericParameter(generic_param_impl) => {
-                generic_param_impl.format(db).to_string(db)
-            }
-            ImplLongId::ImplVar(var) => format!("{var:?}"),
-            ImplLongId::ImplImpl(impl_impl) => format!("{:?}", impl_impl.debug(db)),
-            ImplLongId::SelfImpl(concrete_trait_id) => {
-                format!("{:?}", concrete_trait_id.debug(db))
-            }
-            ImplLongId::GeneratedImpl(generated_impl) => {
-                format!("{:?}", generated_impl.debug(db))
-            }
-        }
+        format!("{:?}", self.debug(db))
     }
 
     /// Returns true if the `impl` does not depend on impl or type variables.
@@ -279,7 +264,7 @@ impl<'db> DebugWithDb<'db> for ImplLongId<'db> {
             ImplLongId::Concrete(concrete_impl_id) => {
                 write!(f, "{:?}", concrete_impl_id.debug(db))
             }
-            ImplLongId::GenericParameter(param) => write!(f, "{}", param.debug_name(db).long(db)),
+            ImplLongId::GenericParameter(param) => write!(f, "{}", param.format(db).long(db)),
             ImplLongId::ImplVar(var) => write!(f, "?{}", var.long(db).id.0),
             ImplLongId::ImplImpl(impl_impl) => write!(f, "{:?}", impl_impl.debug(db)),
             ImplLongId::SelfImpl(trait_impl) => write!(f, "{:?}", trait_impl.debug(db)),
