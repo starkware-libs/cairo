@@ -24,11 +24,9 @@ pub const EXECUTABLE_PREFIX: &str = "__executable_wrapper__";
 
 /// Returns a plugin suite with the `ExecutablePlugin` and `RawExecutableAnalyzer`.
 pub fn executable_plugin_suite() -> PluginSuite {
-    std::mem::take(
-        PluginSuite::default()
-            .add_plugin::<ExecutablePlugin>()
-            .add_analyzer_plugin::<RawExecutableAnalyzer>(),
-    )
+    let mut suite = PluginSuite::default();
+    suite.add_plugin::<ExecutablePlugin>().add_analyzer_plugin::<RawExecutableAnalyzer>();
+    suite
 }
 
 const IMPLICIT_PRECEDENCE: &[&str] = &[
