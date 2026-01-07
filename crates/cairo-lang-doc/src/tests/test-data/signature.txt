@@ -78,6 +78,12 @@ fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8] {
     return param;
 }
 
+trait TestTrait<T> {}
+
+trait TestTraitWithoutGenerics {}
+
+impl TestTraitImpl<T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T> {}
+
 macro count_idents {
     ($x:ident) => { 1 };
 
@@ -328,6 +334,27 @@ fn test_fixed_size_array(param: [u32; 8]) -> [u32; 8]
 //! > Item documentation tokens #29
 
 //! > Item signature #30
+trait TestTrait<T>
+
+//! > Item documentation #30
+
+//! > Item documentation tokens #30
+
+//! > Item signature #31
+trait TestTraitWithoutGenerics
+
+//! > Item documentation #31
+
+//! > Item documentation tokens #31
+
+//! > Item signature #32
+impl TestTraitImpl<T, impl metadata: TestTraitWithoutGenerics> of TestTrait<T>;
+
+//! > Item documentation #32
+
+//! > Item documentation tokens #32
+
+//! > Item signature #33
 macro count_idents {
     ($x:ident) => { ... };
     ($x:ident, $y:ident) => { ... };
@@ -337,24 +364,24 @@ macro count_idents {
     (abc {$x:ident, (abc $y:ident) }) => { ... };
 }
 
-//! > Item documentation #30
+//! > Item documentation #33
 
-//! > Item documentation tokens #30
+//! > Item documentation tokens #33
 
-//! > Item signature #31
+//! > Item signature #34
 macro matcher_star {
     ($($x:expr), *) => { ... };
 }
 
-//! > Item documentation #31
+//! > Item documentation #34
 
-//! > Item documentation tokens #31
+//! > Item documentation tokens #34
 
-//! > Item signature #32
+//! > Item signature #35
 macro square_brackets_redundant_whitespace {
     [$x:ident] => { ... };
 }
 
-//! > Item documentation #32
+//! > Item documentation #35
 
-//! > Item documentation tokens #32
+//! > Item documentation tokens #35

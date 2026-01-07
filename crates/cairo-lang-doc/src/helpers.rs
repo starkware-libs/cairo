@@ -208,16 +208,22 @@ pub fn format_resolver_generic_params<'db>(
                                     GenericParam::Impl(generic_param_impl) => {
                                         match generic_param_impl.concrete_trait {
                                             Ok(concrete_trait) => {
+                                                let generic_args = concrete_trait.generic_args(db);
                                                 format!(
-                                                    "impl {}: {}<{}>",
+                                                    "impl {}: {}{}",
                                                     param_formatted.long(db),
                                                     concrete_trait.name(db).long(db),
-                                                    concrete_trait
-                                                        .generic_args(db)
-                                                        .iter()
-                                                        .map(|arg| arg.format(db))
-                                                        .collect::<Vec<_>>()
-                                                        .join(", "),
+                                                    if generic_args.is_empty() {
+                                                        "".to_string()
+                                                    } else {
+                                                        format!(
+                                                            "<{}>",
+                                                            generic_args
+                                                                .iter()
+                                                                .map(|arg| arg.format(db))
+                                                                .join(", "),
+                                                        )
+                                                    }
                                                 )
                                             }
                                             Err(_) => param_formatted.long(db).to_string(),
