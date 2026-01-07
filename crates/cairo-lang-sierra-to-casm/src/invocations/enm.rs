@@ -133,7 +133,7 @@ fn build_enum_from_bounded_int(
     // handle which is `2 * (n - k) - 1`.
     // `2 * (n - k) - 1 = 2*n - 2*k - 1 = 2 * (2*n - 1) / 2 - 2*k = 2 * ((2*n - 1) / 2 - k)`
     // Define `(2*n - 1) / 2` as `m` - which is known in compilation time.
-    // Hence the variant selector is `2 * (m - k)` or  alternatively `-2 * (k - m)`
+    // Hence the variant selector is `2 * (m - k)` or alternatively `-2 * (k - m)`
 
     let m = (Felt252::from(n_variants * 2 - 1).field_div(&NonZeroFelt::TWO)).to_bigint();
     casm_build_extend! {casm_builder,

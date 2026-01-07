@@ -871,7 +871,7 @@ fn lower_tuple_like_pattern_helper<'db>(
 /// For example, if we have the code:
 /// foo(a + b)
 ///
-/// then `a + b` will be assigned  variable and a VarUsage object whose origin
+/// then `a + b` will be assigned a variable and a VarUsage object whose origin
 /// is the location of the `a + b` expression.
 fn lower_expr_to_var_usage<'db>(
     ctx: &mut LoweringContext<'db, '_>,

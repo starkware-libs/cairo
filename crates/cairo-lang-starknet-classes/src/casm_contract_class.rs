@@ -418,7 +418,7 @@ impl CasmContractClass {
         }
         let entrypoint_ids = entrypoint_function_indices.map(|idx| program.funcs[idx].id.clone());
         // TODO(lior): Remove this assert and condition once the equation solver is removed in major
-        //   version 2.
+        // version 2.
         assert_eq!(sierra_version.major, 1);
         const NO_EQ_SOLVER_VERSION: VersionId = VersionId { major: 1, minor: 4, patch: 0 };
         let no_eq_solver = sierra_version.supports(NO_EQ_SOLVER_VERSION);

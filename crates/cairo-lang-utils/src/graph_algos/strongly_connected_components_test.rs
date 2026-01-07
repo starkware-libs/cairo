@@ -85,7 +85,7 @@ fn test_list_with_back_edges() {
 fn test_root_points_to_cycle() {
     // 0 to 9 form a cycle.
     let mut graph: Vec<Vec<usize>> = (0..10).map(|id| vec![(id + 1) % 10]).collect();
-    // And 10 (the root) has and edge to 0.
+    // And 10 (the root) has an edge to 0.
     graph.push(/* 10: */ vec![0]);
 
     // Note 10 is used as a root.
