@@ -17,7 +17,7 @@ pub struct ValidationError {
 }
 impl ValidationError {
     /// Creates a validation error that includes the entire span.
-    fn full(kind: ParserDiagnosticKind) -> Self {
+    const fn full(kind: ParserDiagnosticKind) -> Self {
         ValidationError { kind, location: ValidationLocation::Full }
     }
 }
