@@ -1,4 +1,3 @@
-use std::fmt::Write;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
@@ -22,14 +21,13 @@ use syntax::attribute::consts::MUST_USE_ATTR;
 use syntax::node::TypedStablePtr;
 
 use super::attribute::SemanticQueryAttrs;
-use super::generics::{fmt_generic_args, generic_params_to_args};
+use super::generics::{displayable_concrete, generic_params_to_args};
 use super::imp::{ImplId, ImplLongId};
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::{CorelibSemantic, fn_traits, unit_ty};
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::Environment;
-use crate::expr::fmt::CountingWriter;
 use crate::items::extern_function::ExternFunctionSemantic;
 use crate::items::free_function::FreeFunctionSemantic;
 use crate::items::imp::ImplSemantic;
@@ -617,9 +615,11 @@ impl<'db> DebugWithDb<'db> for ConcreteFunctionWithBody<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        let f = &mut CountingWriter::new(f);
-        write!(f, "{}", self.generic_function.full_path(db))?;
-        fmt_generic_args(&self.generic_args, f, db)
+        write!(
+            f,
+            "{}",
+            displayable_concrete(db, &self.generic_function.full_path(db), &self.generic_args)
+        )
     }
 }
 
@@ -707,9 +707,11 @@ impl<'db> DebugWithDb<'db> for ConcreteFunction<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        let f = &mut CountingWriter::new(f);
-        write!(f, "{}", self.generic_function.format(db))?;
-        fmt_generic_args(&self.generic_args, f, db)
+        write!(
+            f,
+            "{}",
+            displayable_concrete(db, &self.generic_function.format(db), &self.generic_args)
+        )
     }
 }
 

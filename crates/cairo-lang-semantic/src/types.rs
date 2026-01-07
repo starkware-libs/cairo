@@ -1,5 +1,3 @@
-use std::fmt::Write;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -29,7 +27,6 @@ use crate::corelib::{
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, compute_expr_semantic};
-use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::canonic::{CanonicalTrait, ResultNoErrEx};
 use crate::expr::inference::solver::{SemanticSolver, SolutionSet, enrich_lookup_context};
 use crate::expr::inference::{InferenceData, InferenceError, InferenceId, TypeVar};
@@ -37,7 +34,7 @@ use crate::items::attribute::SemanticQueryAttrs;
 use crate::items::constant::{ConstValue, ConstValueId, resolve_const_expr_and_evaluate};
 use crate::items::enm::{EnumSemantic, SemanticEnumEx};
 use crate::items::extern_type::ExternTypeSemantic;
-use crate::items::generics::{GenericParamSemantic, fmt_generic_args};
+use crate::items::generics::{GenericParamSemantic, displayable_concrete};
 use crate::items::imp::{ImplId, ImplLookupContext, ImplLookupContextId, ImplSemantic};
 use crate::items::structure::StructSemantic;
 use crate::resolve::{ResolutionContext, ResolvedConcreteItem, ResolvedGenericItem, Resolver};
@@ -378,9 +375,11 @@ impl<'db> DebugWithDb<'db> for ConcreteTypeId<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        let f = &mut CountingWriter::new(f);
-        write!(f, "{}", self.generic_type(db).format(db))?;
-        fmt_generic_args(&self.generic_args(db), f, db)
+        write!(
+            f,
+            "{}",
+            displayable_concrete(db, &self.generic_type(db).format(db), &self.generic_args(db))
+        )
     }
 }
 

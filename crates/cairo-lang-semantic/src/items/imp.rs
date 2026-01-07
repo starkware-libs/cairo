@@ -1,5 +1,4 @@
 use std::collections::BTreeSet;
-use std::fmt::Write;
 use std::hash::Hash;
 use std::sync::Arc;
 use std::{mem, panic, vec};
@@ -50,7 +49,7 @@ use super::functions::{
     forbid_inline_always_with_impl_generic_param,
 };
 use super::generics::{
-    GenericArgumentHead, GenericParamImpl, GenericParamsData, fmt_generic_args,
+    GenericArgumentHead, GenericParamImpl, GenericParamsData, displayable_concrete,
     generic_params_to_args, semantic_generic_params,
 };
 use super::impl_alias::{
@@ -72,7 +71,6 @@ use crate::db::get_resolver_data_options;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 use crate::expr::compute::{ComputationContext, ContextFunction, Environment, compute_root_expr};
-use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
@@ -120,9 +118,11 @@ impl<'db> DebugWithDb<'db> for ConcreteImplLongId<'db> {
     type Db = dyn Database;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db dyn Database) -> std::fmt::Result {
-        let mut f = CountingWriter::new(f);
-        write!(f, "{}", self.impl_def_id.full_path(db))?;
-        fmt_generic_args(&self.generic_args, &mut f, db)
+        write!(
+            f,
+            "{}",
+            displayable_concrete(db, &self.impl_def_id.full_path(db), &self.generic_args)
+        )
     }
 }
 impl<'db> ConcreteImplId<'db> {
