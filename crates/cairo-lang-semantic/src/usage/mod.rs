@@ -3,7 +3,6 @@
 
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
@@ -316,9 +315,6 @@ impl<'db> Usages<'db> {
                 ty: _,
             }) => {
                 self.handle_expr(arenas, *expr_id, current);
-                current
-                    .introductions
-                    .insert(extract_matches!(into_iter_member_path, ExprVarMemberPath::Var).var);
                 let mut usage: Usage<'_> = Default::default();
                 usage.usage.insert(into_iter_member_path.into(), into_iter_member_path.clone());
                 usage.changes.insert(into_iter_member_path.into(), into_iter_member_path.clone());
