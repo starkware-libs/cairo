@@ -109,9 +109,7 @@ pub fn compile_executable<'db>(
     diagnostics_reporter: DiagnosticsReporter<'_>,
     config: ExecutableConfig,
 ) -> Result<CompileExecutableResult<'db>> {
-    // let mut db = prepare_db(&config)?;
-
-    let main_crate_inputs = setup_project(db, Path::new(&path))?;
+    let main_crate_inputs = setup_project(db, path)?;
     let diagnostics_reporter = diagnostics_reporter.with_crates(&main_crate_inputs);
     let main_crate_ids = CrateInput::into_crate_ids(db, main_crate_inputs);
 
