@@ -1,14 +1,10 @@
 = String types
 
-Cairo provides two mechanisms for working with strings: the `ByteArray` type for dynamic strings of
-any length, and short strings encoded as numeric values for constants and identifiers.
+Cairo's string type is `ByteArray`, which provides dynamic strings of any length.
 
-== Overview
-
-Cairo has two primary string representations:
-
-1. **ByteArray**: A full-featured dynamic string type for general use
-2. **Short strings**: Numeric encoding (felt252) for strings up to 31 characters
+NOTE: What are commonly called "short strings" (single-quoted literals like `'hello'`) are not
+string types at all. They are numeric types (`felt252`, `u128`, etc.) with ASCII encoding and have
+nothing to do with the string type system.
 
 == ByteArray Type
 
@@ -38,36 +34,6 @@ let s: ByteArray = "Hello, world!";
 let long: ByteArray = "This can be any length, even very long strings";
 let empty: ByteArray = "";
 ----
-
-== Short Strings (felt252)
-
-Short strings are ASCII strings encoded as numeric values. They are created using single quotes:
-
-[source,cairo]
-----
-let short: felt252 = 'hello';
-let typed: u128 = 'short_string'_u128;
-let single: u8 = 'a'_u8;
-----
-
-**Limitations:**
-- Maximum 31 characters (248 bits)
-- ASCII encoding only
-- Big-endian encoding (first character is most significant byte)
-- Not a true string type - it's a numeric value with limited string operations
-
-== ByteArray vs Short Strings
-
-|===
-| Feature | ByteArray | felt252 Short String
-
-| Syntax | `"double quotes"` | `'single quotes'`
-| Max length | Unlimited | 31 characters
-| Type | Dedicated struct | Numeric type
-| Storage | Array of bytes31 | Single felt252 value
-| Operations | Rich API | Limited (numeric operations)
-| Use case | General string handling | Constants, identifiers
-|===
 
 == String Operations
 
@@ -310,12 +276,6 @@ s.serialize(ref output);
 ----
 
 == Important Notes
-
-NOTE: ByteArray strings use double quotes (`""`), while short strings use single quotes (`''`). This
-syntax distinction determines which string type is created.
-
-NOTE: Short strings are limited to 31 characters and are actually numeric values. For general string
-handling, use ByteArray.
 
 NOTE: String indexing returns individual bytes (u8), not characters. For multi-byte Unicode
 characters, additional handling is required.
