@@ -208,26 +208,23 @@ pub fn format_resolver_generic_params<'db>(
                                     GenericParam::Impl(generic_param_impl) => {
                                         match generic_param_impl.concrete_trait {
                                             Ok(concrete_trait) => {
-                                                let trait_generic_args =
-                                                    concrete_trait.generic_args(db);
-                                                if trait_generic_args.is_empty() {
-                                                    format!(
-                                                        "impl {}: {}",
-                                                        param_formatted.long(db),
-                                                        concrete_trait.name(db).long(db),
-                                                    )
-                                                } else {
-                                                    format!(
-                                                        "impl {}: {}<{}>",
-                                                        param_formatted.long(db),
-                                                        concrete_trait.name(db).long(db),
-                                                        trait_generic_args
-                                                            .iter()
-                                                            .map(|arg| arg.format(db))
-                                                            .collect::<Vec<_>>()
-                                                            .join(", "),
-                                                    )
-                                                }
+                                                let generic_args = concrete_trait.generic_args(db);
+                                                format!(
+                                                    "impl {}: {}{}",
+                                                    param_formatted.long(db),
+                                                    concrete_trait.name(db).long(db),
+                                                    if generic_args.is_empty() {
+                                                        "".to_string()
+                                                    } else {
+                                                        format!(
+                                                            "<{}>",
+                                                            generic_args
+                                                                .iter()
+                                                                .map(|arg| arg.format(db))
+                                                                .join(", "),
+                                                        )
+                                                    }
+                                                )
                                             }
                                             Err(_) => param_formatted.long(db).to_string(),
                                         }
