@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::fmt::{Display, Write};
 use std::hash::Hash;
 use std::sync::Arc;
 
@@ -28,7 +28,6 @@ use crate::corelib::CorelibSemantic;
 use crate::diagnostic::{
     NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder,
 };
-use crate::expr::fmt::CountingWriter;
 use crate::expr::inference::InferenceId;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::items::imp::NegativeImplLongId;
@@ -746,31 +745,69 @@ fn impl_generic_param_semantic<'db>(
     GenericParamImpl { id, concrete_trait, type_constraints }
 }
 
-/// Formats a list of generic arguments.
-pub fn fmt_generic_args(
-    generic_args: &[GenericArgumentId<'_>],
-    f: &mut CountingWriter<'_, '_>,
-    db: &dyn Database,
-) -> std::fmt::Result {
-    let mut generic_args = generic_args.iter();
-    if let Some(first) = generic_args.next() {
-        // Soft limit for the number of chars in the formatted type.
-        const CHARS_BOUND: usize = 500;
-        write!(f, "::<")?;
-        write!(f, "{}", &first.format(db))?;
+/// A wrapper around std::fmt::Formatter that counts the number of characters written so far.
+struct CountingWriter<'a, 'b> {
+    inner: &'a mut std::fmt::Formatter<'b>,
+    count: usize,
+}
 
-        for arg in generic_args {
-            write!(f, ", ")?;
-            if f.count() > CHARS_BOUND {
-                // If the formatted type is becoming too long, add short version of arguments.
-                write!(f, "{}", &arg.short_name(db))?;
-            } else {
-                write!(f, "{}", &arg.format(db))?;
-            }
-        }
-        write!(f, ">")?;
+impl<'a, 'b> CountingWriter<'a, 'b> {
+    pub fn new(inner: &'a mut std::fmt::Formatter<'b>) -> Self {
+        Self { inner, count: 0 }
     }
-    Ok(())
+
+    pub fn count(&self) -> usize {
+        self.count
+    }
+}
+
+impl<'a, 'b> std::fmt::Write for CountingWriter<'a, 'b> {
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        self.count += s.len();
+        self.inner.write_str(s)
+    }
+}
+
+/// Returns a displayable structure for concrete id formatting.
+/// The display additionally limits the number of characters written during the process.
+pub fn displayable_concrete<'db, 'a: 'db, Name: Display>(
+    db: &'db dyn Database,
+    name: &'a Name,
+    generic_args: &'a [GenericArgumentId<'db>],
+) -> impl Display + 'a + 'db {
+    DisplayableConcrete { db, name, generic_args }
+}
+
+/// The helper struct for `with_generic_args_formatter`.
+struct DisplayableConcrete<'a, 'db, Name> {
+    db: &'db dyn Database,
+    name: &'a Name,
+    generic_args: &'a [GenericArgumentId<'db>],
+}
+impl<Name: Display> Display for DisplayableConcrete<'_, '_, Name> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut f = CountingWriter::new(f);
+        write!(f, "{}", &self.name)?;
+        let mut generic_args = self.generic_args.iter();
+        if let Some(first) = generic_args.next() {
+            // Soft limit for the number of chars in the formatted type.
+            const CHARS_BOUND: usize = 500;
+            write!(f, "::<")?;
+            write!(f, "{}", &first.format(self.db))?;
+
+            for arg in generic_args {
+                write!(f, ", ")?;
+                if f.count() > CHARS_BOUND {
+                    // If the formatted type is becoming too long, add short version of arguments.
+                    write!(f, "{}", &arg.short_name(self.db))?;
+                } else {
+                    write!(f, "{}", &arg.format(self.db))?;
+                }
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
+    }
 }
 
 /// Trait for generic param-related semantic queries.
