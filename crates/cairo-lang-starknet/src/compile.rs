@@ -53,7 +53,7 @@ pub fn compile_path(
         .with_default_plugin_suite(starknet_plugin_suite())
         .build()?;
 
-    let main_crate_inputs = setup_project(&mut db, Path::new(&path))?;
+    let main_crate_inputs = setup_project(&mut db, path)?;
     compiler_config.diagnostics_reporter =
         compiler_config.diagnostics_reporter.with_crates(&main_crate_inputs);
     let main_crate_ids = CrateInput::into_crate_ids(&db, main_crate_inputs);

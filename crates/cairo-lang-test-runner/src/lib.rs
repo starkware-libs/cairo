@@ -238,7 +238,7 @@ impl<'db> TestCompiler<'db> {
             b.build()?
         };
 
-        let main_crate_inputs = setup_project(&mut db, Path::new(&path))?;
+        let main_crate_inputs = setup_project(&mut db, path)?;
 
         Ok(Self {
             db: db.snapshot(),
