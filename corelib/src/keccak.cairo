@@ -27,7 +27,12 @@
 
 use starknet::SyscallResultTrait;
 use crate::array::{ArrayTrait, Span, SpanTrait};
+#[feature("byte-span")]
+use crate::byte_array::ToByteSpanTrait;
+#[feature("bounded-int-utils")]
+use crate::internal::bounded_int::upcast;
 use crate::num::traits::Split;
+
 
 const KECCAK_FULL_RATE_IN_U64S: NonZero<usize> = 17;
 
@@ -239,24 +244,114 @@ fn finalize_padding(ref input: Array<u64>, num_padding_words: u32) {
 /// assert!(hash == 0xabea1f2503529a21734e2077c8b584d7bee3f45550c2d2f12a198ea908e1d0ec);
 /// ```
 pub fn compute_keccak_byte_array(arr: @ByteArray) -> u256 {
-    let mut input = array![];
-    let mut i = 0;
-    let mut inner = 0;
-    let mut limb: u64 = 0;
-    let mut factor: u64 = 1;
-    while let Some(b) = arr.at(i) {
-        limb = limb + b.into() * factor;
-        i += 1;
-        inner += 1;
-        if inner == 8 {
-            input.append(limb);
-            inner = 0;
-            limb = 0;
-            factor = 1;
-        } else {
-            factor *= 0x100;
-        }
+    let mut iter = arr.span().into_iter();
+    let mut word_arr = array![];
+
+    let (last_word, last_word_len) = loop {
+        let Some(curr_word) = iter.next() else {
+            break (0, 0);
+        };
+        let Some(next_byte) = iter.next() else {
+            break (upcast(curr_word), 1);
+        };
+        let curr_word = conversions::prepend_byte(curr_word, next_byte, 0x100);
+        let Some(next_byte) = iter.next() else {
+            break (upcast(curr_word), 2);
+        };
+        let curr_word = conversions::prepend_byte(curr_word, next_byte, 0x10000);
+        let Some(next_byte) = iter.next() else {
+            break (upcast(curr_word), 3);
+        };
+        let curr_word = conversions::prepend_byte(curr_word, next_byte, 0x1000000);
+        let Some(next_byte) = iter.next() else {
+            break (upcast(curr_word), 4);
+        };
+        let curr_word = conversions::prepend_byte(curr_word, next_byte, 0x100000000);
+        let Some(next_byte) = iter.next() else {
+            break (upcast(curr_word), 5);
+        };
+        let curr_word = conversions::prepend_byte(curr_word, next_byte, 0x10000000000);
+        let Some(next_byte) = iter.next() else {
+            break (upcast(curr_word), 6);
+        };
+        let curr_word = conversions::prepend_byte(curr_word, next_byte, 0x1000000000000);
+        let Some(next_byte) = iter.next() else {
+            break (upcast(curr_word), 7);
+        };
+        let curr_word = conversions::prepend_byte(curr_word, next_byte, 0x100000000000000);
+        word_arr.append(upcast(curr_word));
+    };
+    add_padding(ref word_arr, last_word, last_word_len);
+    starknet::syscalls::keccak_syscall(word_arr.span()).unwrap_syscall()
+}
+
+mod conversions {
+    #[feature("bounded-int-utils")]
+    use core::internal::bounded_int::{self, AddHelper, BoundedInt, MulHelper, UnitInt};
+
+    impl U8Shift8 of MulHelper<u8, UnitInt<0x100>> {
+        type Result = BoundedInt<0, 0xFF00>;
     }
-    add_padding(ref input, limb, inner);
-    starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall()
+    impl U8Shift16 of MulHelper<u8, UnitInt<0x10000>> {
+        type Result = BoundedInt<0, 0xFF0000>;
+    }
+    impl U8Shift24 of MulHelper<u8, UnitInt<0x1000000>> {
+        type Result = BoundedInt<0, 0xFF000000>;
+    }
+    impl U8Shift32 of MulHelper<u8, UnitInt<0x100000000>> {
+        type Result = BoundedInt<0, 0xFF00000000>;
+    }
+    impl U8Shift40 of MulHelper<u8, UnitInt<0x10000000000>> {
+        type Result = BoundedInt<0, 0xFF0000000000>;
+    }
+    impl U8Shift48 of MulHelper<u8, UnitInt<0x1000000000000>> {
+        type Result = BoundedInt<0, 0xFF000000000000>;
+    }
+    impl U8Shift56 of MulHelper<u8, UnitInt<0x100000000000000>> {
+        type Result = BoundedInt<0, 0xFF00000000000000>;
+    }
+    impl U8ShiftAddU8 of AddHelper<u8, U8Shift8::Result> {
+        type Result = BoundedInt<0, 0xFFFF>;
+    }
+    impl U8ShiftAddU16 of AddHelper<U8ShiftAddU8::Result, U8Shift16::Result> {
+        type Result = BoundedInt<0, 0xFFFFFF>;
+    }
+    impl U8ShiftAddU24 of AddHelper<U8ShiftAddU16::Result, U8Shift24::Result> {
+        type Result = BoundedInt<0, 0xFFFFFFFF>;
+    }
+    impl U8ShiftAddU32 of AddHelper<U8ShiftAddU24::Result, U8Shift32::Result> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFF>;
+    }
+    impl U8ShiftAddU40 of AddHelper<U8ShiftAddU32::Result, U8Shift40::Result> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFF>;
+    }
+    impl U8ShiftAddU48 of AddHelper<U8ShiftAddU40::Result, U8Shift48::Result> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFFFF>;
+    }
+    impl U8ShiftAddU56 of AddHelper<U8ShiftAddU48::Result, U8Shift56::Result> {
+        type Result = BoundedInt<0, 0xFFFFFFFFFFFFFFFF>;
+    }
+
+    trait PrependByte<T, const C: felt252, MulResult> {
+        impl Mul: MulHelper<u8, UnitInt<C>>;
+        impl Add: AddHelper<T, MulResult>;
+    }
+
+    // Blanket implementation for any type with appropriate helpers.
+    impl PrependByteImpl<
+        T, const C: felt252, impl MH: MulHelper<u8, UnitInt<C>>, impl AH: AddHelper<T, MH::Result>,
+    > of PrependByte<T, C, MH::Result> {}
+
+    /// Shifts a byte to be the next byte of the word.
+    pub fn prepend_byte<
+        T,
+        const C: felt252,
+        MulResult,
+        impl PB: PrependByte<T, C, MulResult>,
+        +core::metaprogramming::TypeEqual<MulResult, PB::Mul::Result>,
+    >(
+        word: T, byte: u8, shift: UnitInt<C>,
+    ) -> PB::Add::Result {
+        bounded_int::add::<_, _, PB::Add>(word, bounded_int::mul::<_, _, PB::Mul>(byte, shift))
+    }
 }
