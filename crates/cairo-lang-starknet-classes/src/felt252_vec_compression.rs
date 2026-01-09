@@ -18,7 +18,8 @@ pub fn compress(values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>) {
     // starting at 256 (or 8 bits per code word).
     let padded_code_size = std::cmp::max(256, code.len()).next_power_of_two();
     result.extend([code.len(), padded_code_size - code.len()].map(BigUintAsHex::from));
-    result.extend(code.keys().copied().cloned());
+    // Keys are stored as references to the original values; clone the underlying items once.
+    result.extend(code.keys().map(|value| (*value).clone()));
     result.push(values.len().into());
     let words_per_felt = words_per_felt(padded_code_size);
     for values in values.chunks(words_per_felt) {
