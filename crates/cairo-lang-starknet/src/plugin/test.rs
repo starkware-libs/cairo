@@ -92,6 +92,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         with_component: "with_component",
         with_component_diagnostics: "with_component_diagnostics",
         interfaces: "interfaces",
+        event_field_name_collision: "event_field_name_collision",
     },
     ExpandContractTestRunner
 );
