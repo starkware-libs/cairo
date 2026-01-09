@@ -79,8 +79,7 @@ pub struct BigIntAsHex {
 fn big_int_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
     use schemars::JsonSchema;
 
-    #[allow(dead_code)]
-    #[allow(clippy::enum_variant_names)]
+    #[allow(dead_code, clippy::enum_variant_names)]
     #[derive(JsonSchema)]
     pub enum Sign {
         Minus,
