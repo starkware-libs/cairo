@@ -818,11 +818,7 @@ impl<'db> Inference<'db, '_> {
                 self.internal_ty_contains_var(*type_id, var)
             }
             TypeLongId::Closure(closure) => {
-                closure
-                    .param_tys
-                    .clone()
-                    .into_iter()
-                    .any(|ty| self.internal_ty_contains_var(ty, var))
+                closure.param_tys.iter().any(|ty| self.internal_ty_contains_var(*ty, var))
                     || self.internal_ty_contains_var(closure.ret_ty, var)
             }
         }
