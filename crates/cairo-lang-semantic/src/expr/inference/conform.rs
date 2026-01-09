@@ -820,9 +820,8 @@ impl<'db> Inference<'db, '_> {
             TypeLongId::Closure(closure) => {
                 closure
                     .param_tys
-                    .clone()
-                    .into_iter()
-                    .any(|ty| self.internal_ty_contains_var(ty, var))
+                    .iter()
+                    .any(|ty| self.internal_ty_contains_var(*ty, var))
                     || self.internal_ty_contains_var(closure.ret_ty, var)
             }
         }
