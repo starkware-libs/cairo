@@ -132,7 +132,7 @@ impl<'db> OptimizationStrategyId<'db> {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
-        for phase in self.long(db).0.clone() {
+        for phase in self.long(db).0.iter().cloned() {
             phase.apply(db, function, lowered)?;
         }
 
