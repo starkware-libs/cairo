@@ -6,7 +6,7 @@ use core::hash::Hash;
 /// by itself, without additional information.
 pub trait GraphNode: Sized + Clone {
     /// The type used to identify the nodes in the graph.
-    type NodeId: PartialEq + Eq + Hash + Clone;
+    type NodeId: Eq + Hash + Clone;
 
     /// Returns a list of the node's neighbors.
     /// Must be stable for the SCC result to be stable. i.e. if the output for a node here doesn't
