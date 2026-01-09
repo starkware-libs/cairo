@@ -198,7 +198,7 @@ impl SyscallGenericLibfunc for Sha256ProcessBlockLibfunc {
     }
 }
 
-/// Libfunc for converting a ContractAddress into a felt252.
+/// Libfunc for initializing a Sha256StateHandle from its inner state representation.
 #[derive(Default)]
 pub struct Sha256StateHandleInitLibfunc {}
 impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
@@ -221,7 +221,7 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
     }
 }
 
-/// Libfunc for converting a ContractAddress into a felt252.
+/// Libfunc for extracting the inner state representation from a Sha256StateHandle.
 #[derive(Default)]
 pub struct Sha256StateHandleDigestLibfunc {}
 impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
