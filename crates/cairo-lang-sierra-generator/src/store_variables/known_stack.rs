@@ -43,7 +43,7 @@ impl KnownStack {
 
     /// Returns the slot `idx` of the stack in which the given variable appears, or `None` if it is
     /// not on the known stack.
-    pub fn get(&mut self, var: &cairo_lang_sierra::ids::VarId) -> Option<isize> {
+    pub fn get(&self, var: &cairo_lang_sierra::ids::VarId) -> Option<isize> {        
         let ioffset: isize = self.offset.try_into().unwrap();
         let val: isize = (*self.variables_on_stack.get(var)?).try_into().unwrap();
         Some(val - ioffset)
