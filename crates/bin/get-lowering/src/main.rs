@@ -145,7 +145,7 @@ impl<'a> fmt::Display for PhasesDisplay<'a> {
             (db.baseline_optimization_strategy(), post_base_opts),
             (db.final_optimization_strategy(), final_state),
         ] {
-            for phase in strategy.long(db).0.clone() {
+            for phase in strategy.long(db).0.iter().cloned() {
                 let name = format!("{phase:?}").to_case(convert_case::Case::Snake);
                 phase.apply(db, function_id, &mut curr_state).unwrap();
                 add_stage_state(&name, &curr_state);
