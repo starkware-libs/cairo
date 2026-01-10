@@ -965,7 +965,7 @@ fn impl_semantic_definition_diagnostics<'db>(
     // Diagnostics for special traits.
     if diagnostics.error_count == 0 {
         let concrete_trait =
-            impl_declaration_data(db, impl_def_id).as_ref().unwrap().concrete_trait.unwrap();
+            impl_declaration_data(db, impl_def_id).maybe_as_ref().unwrap().concrete_trait.unwrap();
 
         let trait_id = concrete_trait.trait_id(db);
         if trait_id == db.core_info().deref_trt {
