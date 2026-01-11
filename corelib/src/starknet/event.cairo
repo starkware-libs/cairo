@@ -13,6 +13,12 @@
 /// This trait can easily be derived using the `#[derive(starknet::Event)]` attribute.
 /// Fields can be marked as keys using the `#[key]` attribute to serialize them as event keys.
 ///
+/// # Performance
+///
+/// Serialization and deserialization have O(n) complexity for structs, where n is the number of fields.
+/// For enums, deserialization has O(m) complexity, where m is the number of variants, as it may need
+/// to check multiple variants before finding a match.
+///
 /// # Examples
 ///
 /// ```
@@ -37,11 +43,27 @@ pub trait Event<T> {
 
     /// Deserializes events keys and data back into the original event structure.
     ///
-    /// Returns `None` if deserialization fails.
+    /// Returns `None` if deserialization fails. This can happen when:
+    /// - The keys or data arrays don't contain enough elements
+    /// - The event selector (first key) doesn't match the expected event type (for enums)
+    /// - Any field deserialization fails (e.g., invalid type conversion)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let (mut keys, mut data) = starknet::testing::pop_log_raw(contract_address)?;
+    /// match starknet::Event::deserialize(ref keys, ref data) {
+    ///     Option::Some(event) => { /* handle event */ },
+    ///     Option::None => { /* deserialization failed */ },
+    /// }
+    /// ```
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<T>;
 }
 
 /// A trait for emitting Starknet events.
+///
+/// The generic parameter `T` represents the contract state type (typically `ContractState`),
+/// and `TEvent` represents the event type (typically an enum named `Event`).
 ///
 /// # Examples
 ///
@@ -55,7 +77,17 @@ pub trait Event<T> {
 ///     self.emit(NewOwner { new_owner });
 /// }
 /// ```
+///
+/// The generic parameter `S` with bound `+Into<S, TEvent>` allows passing either
+/// the event type directly or any type that can be converted into it (e.g., enum variants).
 pub trait EventEmitter<T, TEvent> {
     /// Emits an event.
+    ///
+    /// The `S` parameter allows passing the event directly or any type convertible to `TEvent`
+    /// via the `Into` trait. This enables flexible usage patterns like emitting enum variants directly.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the underlying system call fails.
     fn emit<S, +Into<S, TEvent>>(ref self: T, event: S);
 }
