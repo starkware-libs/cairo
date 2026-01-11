@@ -385,12 +385,8 @@ pub mod qm31;
 pub mod serde;
 
 pub mod sha256;
-#[allow(unused_imports)]
-use pedersen::Pedersen;
 
 pub mod poseidon;
-#[allow(unused_imports)]
-use poseidon::Poseidon;
 
 pub mod debug;
 
