@@ -126,14 +126,8 @@ impl ReferenceExpression {
 }
 
 impl ApplyApChange for ReferenceExpression {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(ReferenceExpression {
-            cells: self
-                .cells
-                .into_iter()
-                .map(|cell_expr| cell_expr.apply_known_ap_change(ap_change))
-                .collect::<Option<Vec<_>>>()?,
-        })
+    fn apply_known_ap_change(&mut self, ap_change: usize) -> bool {
+        self.cells.iter_mut().all(|cell| cell.apply_known_ap_change(ap_change))
     }
 
     fn can_apply_unknown(&self) -> bool {

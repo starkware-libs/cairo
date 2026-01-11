@@ -102,21 +102,15 @@ impl CellExpression {
 }
 
 impl ApplyApChange for CellExpression {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(match self {
-            CellExpression::Deref(operand) => {
-                CellExpression::Deref(operand.apply_known_ap_change(ap_change)?)
+    fn apply_known_ap_change(&mut self, ap_change: usize) -> bool {
+        match self {
+            CellExpression::Deref(operand) => operand.apply_known_ap_change(ap_change),
+            CellExpression::DoubleDeref(operand, _) => operand.apply_known_ap_change(ap_change),
+            CellExpression::BinOp { op: _, a, b } => {
+                a.apply_known_ap_change(ap_change) && b.apply_known_ap_change(ap_change)
             }
-            CellExpression::DoubleDeref(operand, offset) => {
-                CellExpression::DoubleDeref(operand.apply_known_ap_change(ap_change)?, offset)
-            }
-            CellExpression::BinOp { op, a, b } => CellExpression::BinOp {
-                op,
-                a: a.apply_known_ap_change(ap_change)?,
-                b: b.apply_known_ap_change(ap_change)?,
-            },
-            expr @ CellExpression::Immediate(_) => expr,
-        })
+            CellExpression::Immediate(_) => true,
+        }
     }
 
     fn can_apply_unknown(&self) -> bool {
