@@ -725,7 +725,7 @@ impl<'db> Inference<'db, '_> {
     /// Helper function for getting an impl vars item ids.
     /// These ids are likely to be variables, but may have more specific information due to
     /// rewriting.
-    fn rewritten_impl_item<K: Hash + PartialEq + Eq, V: Copy>(
+    fn rewritten_impl_item<K: Hash + Eq, V: Copy>(
         &mut self,
         id: ImplVarId<'db>,
         key: K,
