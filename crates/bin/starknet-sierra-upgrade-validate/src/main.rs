@@ -345,6 +345,7 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
         sierra_class.sierra_program[1].value = override_version.minor.into();
         sierra_class.sierra_program[2].value = override_version.patch.into();
     }
+    let class_hash = sierra_class.class_hash.value;
     let contract_class = ContractClass {
         sierra_program: sierra_class.sierra_program,
         sierra_program_debug_info: None,
@@ -352,12 +353,18 @@ fn run_single(mut sierra_class: ContractClassInfo, config: &RunConfig) -> RunRes
         entry_points_by_type: sierra_class.entry_points_by_type,
         abi: None,
     };
-    let class_hash = sierra_class.class_hash.value;
-    if let Err(err) = contract_class.validate_version_compatible(config.list_selector.clone()) {
+    let Ok(decoded_program) = contract_class.extract_sierra_program(false) else {
+        return RunResult::ValidationFailure(ValidationFailure {
+            class_hash,
+            err: AllowedLibfuncsError::SierraProgramError,
+        });
+    };
+    if let Err(err) = decoded_program.validate_version_compatible(config.list_selector.clone()) {
         return RunResult::ValidationFailure(ValidationFailure { class_hash, err });
     };
     let compiled_contract_class = match CasmContractClass::from_contract_class(
         contract_class,
+        decoded_program,
         false,
         config.max_bytecode_size,
     ) {
