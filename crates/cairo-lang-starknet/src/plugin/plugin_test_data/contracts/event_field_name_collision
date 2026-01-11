@@ -1,0 +1,134 @@
+//! > Test that event structs can have fields named "keys" and "data"
+//! > without conflicts with generated function parameters.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[derive(starknet::Event, Drop)]
+struct EventWithKeysField {
+    keys: felt252,
+    value: u256,
+}
+
+#[derive(starknet::Event, Drop)]
+struct EventWithDataField {
+    data: felt252,
+    #[key]
+    id: u256,
+}
+
+#[derive(starknet::Event, Drop)]
+struct EventWithBothFields {
+    keys: felt252,
+    data: felt252,
+    other: u256,
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[derive(starknet::Event, Drop)]
+struct EventWithKeysField {
+    keys: felt252,
+    value: u256,
+}
+
+#[derive(starknet::Event, Drop)]
+struct EventWithDataField {
+    data: felt252,
+    #[key]
+    id: u256,
+}
+
+#[derive(starknet::Event, Drop)]
+struct EventWithBothFields {
+    keys: felt252,
+    data: felt252,
+    other: u256,
+}
+
+lib.cairo:1:1
+#[derive(starknet::Event, Drop)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventWithKeysFieldIsEvent of starknet::Event<EventWithKeysField> {
+    fn append_keys_and_data(
+        self: @EventWithKeysField, ref __keys__: Array<felt252>, ref __data__: Array<felt252>
+    ) {
+            core::serde::Serde::serialize(self.keys, ref __data__);
+            core::serde::Serde::serialize(self.value, ref __data__);
+    }
+    fn deserialize(
+        ref __keys__: Span<felt252>, ref __data__: Span<felt252>,
+    ) -> Option<EventWithKeysField> {
+                let keys = core::serde::Serde::deserialize(
+                    ref __data__
+                )?;
+                let value = core::serde::Serde::deserialize(
+                    ref __data__
+                )?;
+        Option::Some(EventWithKeysField {keys, value, })
+    }
+}
+impl EventWithKeysFieldDrop<> of core::traits::Drop::<EventWithKeysField>;
+
+lib.cairo:7:1
+#[derive(starknet::Event, Drop)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventWithDataFieldIsEvent of starknet::Event<EventWithDataField> {
+    fn append_keys_and_data(
+        self: @EventWithDataField, ref __keys__: Array<felt252>, ref __data__: Array<felt252>
+    ) {
+                core::serde::Serde::serialize(self.id, ref __keys__);
+            core::serde::Serde::serialize(self.data, ref __data__);
+    }
+    fn deserialize(
+        ref __keys__: Span<felt252>, ref __data__: Span<felt252>,
+    ) -> Option<EventWithDataField> {
+                let id = core::serde::Serde::deserialize(
+                    ref __keys__
+                )?;
+                let data = core::serde::Serde::deserialize(
+                    ref __data__
+                )?;
+        Option::Some(EventWithDataField {id, data, })
+    }
+}
+impl EventWithDataFieldDrop<> of core::traits::Drop::<EventWithDataField>;
+
+lib.cairo:13:1
+#[derive(starknet::Event, Drop)]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventWithBothFieldsIsEvent of starknet::Event<EventWithBothFields> {
+    fn append_keys_and_data(
+        self: @EventWithBothFields, ref __keys__: Array<felt252>, ref __data__: Array<felt252>
+    ) {
+            core::serde::Serde::serialize(self.keys, ref __data__);
+            core::serde::Serde::serialize(self.data, ref __data__);
+            core::serde::Serde::serialize(self.other, ref __data__);
+    }
+    fn deserialize(
+        ref __keys__: Span<felt252>, ref __data__: Span<felt252>,
+    ) -> Option<EventWithBothFields> {
+                let keys = core::serde::Serde::deserialize(
+                    ref __data__
+                )?;
+                let data = core::serde::Serde::deserialize(
+                    ref __data__
+                )?;
+                let other = core::serde::Serde::deserialize(
+                    ref __data__
+                )?;
+        Option::Some(EventWithBothFields {keys, data, other, })
+    }
+}
+impl EventWithBothFieldsDrop<> of core::traits::Drop::<EventWithBothFields>;
+
+//! > expected_diagnostics
+

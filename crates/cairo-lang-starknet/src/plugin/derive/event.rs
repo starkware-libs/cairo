@@ -12,6 +12,11 @@ use crate::plugin::consts::{
 };
 use crate::plugin::events::EventData;
 
+/// Parameter names used in generated Event trait implementations.
+/// These use double underscores to avoid collisions with field names.
+const PARAM_KEYS: &str = "__keys__";
+const PARAM_DATA: &str = "__data__";
+
 /// Returns the relevant information for the `#[derive(starknet::Event)]` attribute.
 pub fn handle_event_derive<'db>(
     db: &'db dyn Database,
@@ -25,7 +30,6 @@ pub fn handle_event_derive<'db>(
     }
 }
 
-// TODO(spapini): Avoid names collisions with `keys` and `data`.
 /// Derives the `Event` trait for structs annotated with `derive(starknet::Event)`.
 fn handle_struct<'db>(
     db: &'db dyn Database,
@@ -48,10 +52,13 @@ fn handle_struct<'db>(
     let mut ctor = vec![];
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
-        let member_name = RewriteNode::from_ast_trimmed(&member.name(db));
+        let member_name_node = member.name(db);
+        let member_name_text = member_name_node.text(db);
+
+        let member_name = RewriteNode::from_ast_trimmed(&member_name_node);
         let member_kind =
             get_field_kind_for_member(db, diagnostics, &member, EventFieldKind::DataSerde);
-        members.push((member.name(db).text(db), member_kind));
+        members.push((member_name_text, member_kind));
 
         let member_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
@@ -81,11 +88,12 @@ fn handle_struct<'db>(
             "
             impl $struct_name$IsEvent of {EVENT_TRAIT}<$struct_name$> {{
                 fn append_keys_and_data(
-                    self: @$struct_name$, ref keys: Array<felt252>, ref data: Array<felt252>
+                    self: @$struct_name$, ref {PARAM_KEYS}: Array<felt252>, ref {PARAM_DATA}: \
+             Array<felt252>
                 ) {{$append_members$
                 }}
                 fn deserialize(
-                    ref keys: Span<felt252>, ref data: Span<felt252>,
+                    ref {PARAM_KEYS}: Span<felt252>, ref {PARAM_DATA}: Span<felt252>,
                 ) -> Option<$struct_name$> {{$deserialize_members$
                     Option::Some($struct_name$ {{$ctor$}})
                 }}
@@ -208,24 +216,30 @@ fn handle_enum<'db>(
         };
 
         let maybe_add_variant_to_keys = if variant.has_attr(db, FLAT_ATTR) {
-            ""
+            String::new()
         } else {
-            "
-                core::array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));"
+            format!(
+                "
+                core::array::ArrayTrait::append(ref {PARAM_KEYS}, selector!(\"$variant_name$\"));"
+            )
         };
-        let variant_name = RewriteNode::from_ast_trimmed(&variant.name(db));
-        let name = variant.name(db).text(db);
+        let variant_name_node = variant.name(db);
+        let variant_name_text = variant_name_node.text(db);
+
+        let variant_name = RewriteNode::from_ast_trimmed(&variant_name_node);
         let member_kind =
             get_field_kind_for_variant(db, diagnostics, &variant, EventFieldKind::Nested);
-        variants.push((name, member_kind));
+        variants.push((variant_name_text, member_kind));
 
         let append_member = append_field(member_kind, RewriteNode::text("val"));
+        let append_variant_template = format!(
+            "
+            $enum_name$::$variant_name$(val) => {{{}$append_member$
+            }},",
+            maybe_add_variant_to_keys
+        );
         let append_variant = RewriteNode::interpolate_patched(
-            &format!(
-                "
-            $enum_name$::$variant_name$(val) => {{{maybe_add_variant_to_keys}$append_member$
-            }},"
-            ),
+            &append_variant_template,
             &[
                 ("enum_name".to_string(), enum_name.clone()),
                 ("variant_name".to_string(), variant_name.clone()),
@@ -236,17 +250,19 @@ fn handle_enum<'db>(
 
         if variant.has_attr(db, FLAT_ATTR) {
             let deserialize_variant = RewriteNode::interpolate_patched(
-                "{
-            let mut keys = keys;
-            let mut data = data;
-            match $try_deserialize_member$ {
-                Option::Some(val) => {
+                &format!(
+                    "{{
+            let mut keys = {PARAM_KEYS};
+            let mut data = {PARAM_DATA};
+            match $try_deserialize_member$ {{
+                Option::Some(val) => {{
                     return Option::Some($enum_name$::$variant_name$(val));
-                },
-                Option::None => {},
-            };
-        }
-        ",
+                }},
+                Option::None => {{}},
+            }};
+        }}
+        "
+                ),
                 &[
                     ("enum_name".to_string(), enum_name.clone()),
                     ("variant_name".to_string(), variant_name.clone()),
@@ -308,16 +324,17 @@ fn handle_enum<'db>(
             "
             impl $enum_name$IsEvent of {EVENT_TRAIT}<$enum_name$> {{
                 fn append_keys_and_data(
-                    self: @$enum_name$, ref keys: Array<felt252>, ref data: Array<felt252>
+                    self: @$enum_name$, ref {PARAM_KEYS}: Array<felt252>, ref {PARAM_DATA}: \
+             Array<felt252>
                 ) {{
                     match self {{$append_variants$
                     }}
                 }}
                 fn deserialize(
-                    ref keys: Span<felt252>, ref data: Span<felt252>,
+                    ref {PARAM_KEYS}: Span<felt252>, ref {PARAM_DATA}: Span<felt252>,
                 ) -> Option<$enum_name$> {{
                     $deserialize_flat_variants$let {SELECTOR} = \
-             *core::array::SpanTrait::pop_front(ref keys)?;
+             *core::array::SpanTrait::pop_front(ref {PARAM_KEYS})?;
                     $deserialize_nested_variants$Option::None
                 }}
             }}
@@ -347,19 +364,23 @@ fn append_field<'db>(member_kind: EventFieldKind, field: RewriteNode<'db>) -> Re
             &format!(
                 "
                 {EVENT_TRAIT}::append_keys_and_data(
-                    $field$, ref keys, ref data
+                    $field$, ref {PARAM_KEYS}, ref {PARAM_DATA}
                 );"
             ),
             &[("field".to_string(), field)].into(),
         ),
         EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
-            "
-                core::serde::Serde::serialize($field$, ref keys);",
+            &format!(
+                "
+                core::serde::Serde::serialize($field$, ref {PARAM_KEYS});"
+            ),
             &[("field".to_string(), field)].into(),
         ),
         EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
-            "
-            core::serde::Serde::serialize($field$, ref data);",
+            &format!(
+                "
+            core::serde::Serde::serialize($field$, ref {PARAM_DATA});"
+            ),
             &[("field".to_string(), field)].into(),
         ),
     }
@@ -369,37 +390,36 @@ fn deserialize_field<'db>(
     member_kind: EventFieldKind,
     member_name: RewriteNode<'db>,
 ) -> RewriteNode<'db> {
-    RewriteNode::interpolate_patched(
-        match member_kind {
-            EventFieldKind::Nested | EventFieldKind::Flat => {
-                "
+    let template = match member_kind {
+        EventFieldKind::Nested | EventFieldKind::Flat => format!(
+            "
                 let $member_name$ = starknet::Event::deserialize(
-                    ref keys, ref data
+                    ref {PARAM_KEYS}, ref {PARAM_DATA}
                 )?;"
-            }
-            EventFieldKind::KeySerde => {
-                "
+        ),
+        EventFieldKind::KeySerde => format!(
+            "
                 let $member_name$ = core::serde::Serde::deserialize(
-                    ref keys
+                    ref {PARAM_KEYS}
                 )?;"
-            }
-            EventFieldKind::DataSerde => {
-                "
+        ),
+        EventFieldKind::DataSerde => format!(
+            "
                 let $member_name$ = core::serde::Serde::deserialize(
-                    ref data
+                    ref {PARAM_DATA}
                 )?;"
-            }
-        },
-        &[("member_name".to_string(), member_name)].into(),
-    )
+        ),
+    };
+    RewriteNode::interpolate_patched(&template, &[("member_name".to_string(), member_name)].into())
 }
 
 fn try_deserialize_field<'db>(member_kind: EventFieldKind) -> RewriteNode<'db> {
-    RewriteNode::text(match member_kind {
+    let text = match member_kind {
         EventFieldKind::Nested | EventFieldKind::Flat => {
-            "starknet::Event::deserialize(ref keys, ref data)"
+            format!("starknet::Event::deserialize(ref {PARAM_KEYS}, ref {PARAM_DATA})")
         }
-        EventFieldKind::KeySerde => "core::serde::Serde::deserialize(ref keys)",
-        EventFieldKind::DataSerde => "core::serde::Serde::deserialize(ref data)",
-    })
+        EventFieldKind::KeySerde => format!("core::serde::Serde::deserialize(ref {PARAM_KEYS})"),
+        EventFieldKind::DataSerde => format!("core::serde::Serde::deserialize(ref {PARAM_DATA})"),
+    };
+    RewriteNode::text(&text)
 }
