@@ -19,13 +19,13 @@ fn test_res_operand_ap_change() {
     });
 
     assert_eq!(
-        operand.clone().apply_ap_change(ApChange::Known(5)).unwrap().to_string(),
+        apply_ap_change(operand.clone(), ApChange::Known(5)).unwrap().to_string(),
         "[fp + -3] * [ap + -2]"
     );
 
-    assert_eq!(operand.apply_ap_change(ApChange::Unknown), Err(ApChangeError::UnknownApChange));
+    assert_eq!(apply_ap_change(operand, ApChange::Unknown), Err(ApChangeError::UnknownApChange));
 
-    assert_eq!(fp_based_operand.apply_ap_change(ApChange::Unknown).unwrap(), fp_based_operand);
+    assert_eq!(apply_ap_change(fp_based_operand, ApChange::Unknown).unwrap(), fp_based_operand);
 }
 
 #[test]
@@ -33,7 +33,13 @@ fn test_overflow() {
     let ap_based_operand = CellRef { register: Register::AP, offset: i16::MIN };
 
     assert_eq!(
-        ap_based_operand.apply_ap_change(ApChange::Known(1)),
+        apply_ap_change(ap_based_operand, ApChange::Known(1)),
         Err(ApChangeError::OffsetOverflow)
     );
+}
+
+/// Helper function to apply an AP change to a value.
+fn apply_ap_change<T: ApplyApChange>(mut t: T, ap_change: ApChange) -> Result<T, ApChangeError> {
+    t.apply_ap_change(ap_change)?;
+    Ok(t)
 }

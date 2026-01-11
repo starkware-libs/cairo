@@ -1,5 +1,7 @@
 use core::fmt::Display;
 
+use num_traits::ToPrimitive;
+
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 
 #[cfg(test)]
@@ -41,41 +43,40 @@ impl std::error::Error for ApChangeError {}
 /// Trait for applying AP changes.
 pub trait ApplyApChange: Sized {
     /// Attempts to apply an AP change; fails only on overflow.
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self>;
+    fn apply_known_ap_change(&mut self, ap_change: usize) -> bool;
     /// Can unknown AP change be applied.
     fn can_apply_unknown(&self) -> bool;
 
     /// Attempts to apply an AP change.
-    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
+    fn apply_ap_change(&mut self, ap_change: ApChange) -> Result<(), ApChangeError> {
         match ap_change {
-            ApChange::Unknown if self.can_apply_unknown() => Ok(self),
+            ApChange::Unknown if self.can_apply_unknown() => Ok(()),
             ApChange::Unknown => Err(ApChangeError::UnknownApChange),
             ApChange::Known(ap_change) => {
-                self.apply_known_ap_change(ap_change).ok_or(ApChangeError::OffsetOverflow)
+                if self.apply_known_ap_change(ap_change) {
+                    Ok(())
+                } else {
+                    Err(ApChangeError::OffsetOverflow)
+                }
             }
         }
     }
 
     /// Same as [Self::apply_known_ap_change] but unchecked.
-    fn unchecked_apply_known_ap_change(self, ap_change: usize) -> Self {
-        self.apply_known_ap_change(ap_change).unwrap()
+    fn unchecked_apply_known_ap_change(mut self, ap_change: usize) -> Self {
+        assert!(self.apply_known_ap_change(ap_change));
+        self
     }
 }
 
 impl ApplyApChange for ResOperand {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(match self {
-            ResOperand::Deref(operand) => {
-                ResOperand::Deref(operand.apply_known_ap_change(ap_change)?)
-            }
-            ResOperand::DoubleDeref(operand, offset) => {
-                ResOperand::DoubleDeref(operand.apply_known_ap_change(ap_change)?, offset)
-            }
-            ResOperand::Immediate(value) => ResOperand::Immediate(value),
-            ResOperand::BinOp(operand) => {
-                ResOperand::BinOp(operand.apply_known_ap_change(ap_change)?)
-            }
-        })
+    fn apply_known_ap_change(&mut self, ap_change: usize) -> bool {
+        match self {
+            ResOperand::Deref(operand) => operand.apply_known_ap_change(ap_change),
+            ResOperand::DoubleDeref(operand, _) => operand.apply_known_ap_change(ap_change),
+            ResOperand::Immediate(_) => true,
+            ResOperand::BinOp(operand) => operand.apply_known_ap_change(ap_change),
+        }
     }
 
     fn can_apply_unknown(&self) -> bool {
@@ -89,14 +90,20 @@ impl ApplyApChange for ResOperand {
 }
 
 impl ApplyApChange for CellRef {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(match &self.register {
-            Register::AP => CellRef {
-                register: Register::AP,
-                offset: self.offset.checked_sub(ap_change.try_into().ok()?)?,
-            },
-            Register::FP => self,
-        })
+    fn apply_known_ap_change(&mut self, ap_change: usize) -> bool {
+        match &self.register {
+            Register::FP => true,
+            Register::AP => {
+                if let Some(offset) =
+                    ap_change.to_i16().and_then(|ap_change| self.offset.checked_sub(ap_change))
+                {
+                    self.offset = offset;
+                    true
+                } else {
+                    false
+                }
+            }
+        }
     }
 
     fn can_apply_unknown(&self) -> bool {
@@ -108,13 +115,11 @@ impl ApplyApChange for CellRef {
 }
 
 impl ApplyApChange for DerefOrImmediate {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(match self {
-            DerefOrImmediate::Deref(operand) => {
-                DerefOrImmediate::Deref(operand.apply_known_ap_change(ap_change)?)
-            }
-            DerefOrImmediate::Immediate(operand) => DerefOrImmediate::Immediate(operand),
-        })
+    fn apply_known_ap_change(&mut self, ap_change: usize) -> bool {
+        match self {
+            DerefOrImmediate::Deref(operand) => operand.apply_known_ap_change(ap_change),
+            DerefOrImmediate::Immediate(_) => true,
+        }
     }
 
     fn can_apply_unknown(&self) -> bool {
@@ -126,12 +131,8 @@ impl ApplyApChange for DerefOrImmediate {
 }
 
 impl ApplyApChange for BinOpOperand {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(BinOpOperand {
-            op: self.op,
-            a: self.a.apply_known_ap_change(ap_change)?,
-            b: self.b.apply_known_ap_change(ap_change)?,
-        })
+    fn apply_known_ap_change(&mut self, ap_change: usize) -> bool {
+        self.a.apply_known_ap_change(ap_change) && self.b.apply_known_ap_change(ap_change)
     }
 
     fn can_apply_unknown(&self) -> bool {
