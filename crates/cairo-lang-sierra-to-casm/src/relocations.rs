@@ -7,7 +7,7 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::StatementIdx;
 use cairo_lang_sierra_gas::objects::ConstCost;
 
-use crate::compiler::ConstsInfo;
+use crate::compiler::{ConstSegment, ConstsInfo, SierraStatementDebugInfo};
 
 pub type CodeOffset = usize;
 
@@ -31,38 +31,32 @@ impl Relocation {
     pub fn apply(
         &self,
         instruction_offset: CodeOffset,
-        statement_offsets: &[CodeOffset],
+        sierra_statement_info: &[SierraStatementDebugInfo],
         consts_info: &ConstsInfo,
         instruction: &mut Instruction,
     ) {
+        // The offset of the beginning of the const segments.
+        let const_segments_offset = || sierra_statement_info.last().unwrap().end_offset;
+        // The offset of the beginning of the given segment.
+        let segment_start_offset =
+            |segment: &ConstSegment| const_segments_offset() + segment.segment_offset;
+        // The offset of given const ty within the given segment.
+        let const_offset = |segment_idx: &u32, ty| {
+            let segment = consts_info.segments.get(segment_idx).expect("Segment not found.");
+            segment_start_offset(segment)
+                + segment.const_offset.get(ty).expect("Const type not found in const segments.")
+        };
         let target_pc = match self {
-            Relocation::RelativeStatementId(statement_idx) => statement_offsets[statement_idx.0],
-            Relocation::SegmentStart(segment_index) => {
-                let segment = consts_info.segments.get(segment_index).expect("Segment not found.");
-                *statement_offsets.last().unwrap() + segment.segment_offset
-            }
-            Relocation::ConstStart(segment_index, ty) => {
-                let segment = consts_info.segments.get(segment_index).expect("Segment not found.");
-                *statement_offsets.last().unwrap()
-                    + segment.segment_offset
-                    + segment.const_offset.get(ty).expect("Const type not found in const segments.")
-            }
-            Relocation::EndOfProgram => {
-                *statement_offsets.last().unwrap() + consts_info.total_segments_size
-            }
-            Relocation::CircuitStart(circ_ty) => {
-                let segment_index =
-                    consts_info.circuit_segments.get(circ_ty).expect("Circuit not found");
-
-                let segment = consts_info.segments.get(segment_index).expect("Segment not found.");
-
-                *statement_offsets.last().unwrap()
-                    + segment.segment_offset
-                    + segment
-                        .const_offset
-                        .get(circ_ty)
-                        .expect("Const type not found in const segments.")
-            }
+            Relocation::RelativeStatementId(idx) => sierra_statement_info[idx.0].start_offset,
+            Relocation::SegmentStart(segment_idx) => segment_start_offset(
+                consts_info.segments.get(segment_idx).expect("Segment not found."),
+            ),
+            Relocation::ConstStart(segment_idx, ty) => const_offset(segment_idx, ty),
+            Relocation::EndOfProgram => const_segments_offset() + consts_info.total_segments_size,
+            Relocation::CircuitStart(circ_ty) => const_offset(
+                consts_info.circuit_segments.get(circ_ty).expect("Circuit not found"),
+                circ_ty,
+            ),
         };
         match instruction {
             Instruction {
@@ -124,7 +118,7 @@ pub struct RelocationEntry {
 /// can be applied during that pass.
 pub fn relocate_instructions(
     relocations: &[RelocationEntry],
-    statement_offsets: &[usize],
+    sierra_statement_info: &[SierraStatementDebugInfo],
     consts_info: &ConstsInfo,
     instructions: &mut [Instruction],
 ) {
@@ -136,7 +130,7 @@ pub fn relocate_instructions(
             relocation_entry
         {
             if *relocation_idx == instruction_idx {
-                relocation.apply(program_offset, statement_offsets, consts_info, instruction);
+                relocation.apply(program_offset, sierra_statement_info, consts_info, instruction);
                 relocation_entry = relocations_iter.next();
             } else {
                 assert!(
@@ -149,8 +143,8 @@ pub fn relocate_instructions(
 
         program_offset += instruction.body.op_size();
     }
-    assert!(
-        relocation_entry.is_none(),
+    assert_eq!(
+        relocation_entry, None,
         "No relocations should be left when done with all instructions."
     );
 }
