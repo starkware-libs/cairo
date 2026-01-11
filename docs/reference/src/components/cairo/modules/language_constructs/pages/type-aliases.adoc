@@ -49,6 +49,44 @@ type BoxIntAlias = Box<i32>;
 type TupleAlias = (felt252, u128);
 ----
 
+== Usage
+
+Type aliases can be used anywhere the original type can be used:
+in variable declarations, function parameters, and return types.
+
+=== In function parameters and return types
+
+Type aliases can be used as parameter types and return types:
+
+[source,cairo]
+----
+fn process_struct(s: RenamedStruct) -> felt252 {
+    s.a
+}
+
+fn process_enum(e: RenamedEnum) -> felt252 {
+    match e {
+        MyEnum::f(v) => v,
+    }
+}
+
+fn process_tuple(t: TupleAlias) -> felt252 {
+    let (value, _) = t;
+    value
+}
+----
+
+=== In variable declarations
+
+Type aliases can be used when declaring variables:
+
+[source,cairo]
+----
+let x: IntAlias = 42;
+let boxed: BoxIntAlias = BoxTrait::new(10);
+let pair: TupleAlias = (5, 100);
+----
+
 == Generic type aliases
 
 Type aliases can themselves be generic.
@@ -59,6 +97,11 @@ while leaving others as parameters of the alias.
 ----
 type BoxOption<T> = Box<Option<T>>;
 type RenamedTuple<T> = (felt252, T);
+
+fn use_generic_alias(t: RenamedTuple<u128>) -> u128 {
+    let (_, value) = t;
+    value
+}
 ----
 
 == Chaining type aliases
@@ -71,6 +114,10 @@ underlying concrete type.
 ----
 type A<P4> = B<felt252, P4, u128>;
 type B<P1, P2, P3> = (P1, P3, P2);
+
+fn use_chained_alias(value: A<bool>) -> (felt252, u128, bool) {
+    value
+}
 ----
 
 == Errors and limitations
