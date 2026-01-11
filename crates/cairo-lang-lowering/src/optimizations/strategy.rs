@@ -67,7 +67,7 @@ impl<'db> OptimizationPhase<'db> {
     ///
     /// Assumes `lowered` is a lowering of `function`.
     pub fn apply(
-        self,
+        &self,
         db: &'db dyn Database,
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
@@ -76,7 +76,7 @@ impl<'db> OptimizationPhase<'db> {
 
         match self {
             OptimizationPhase::ApplyInlining { enable_const_folding } => {
-                apply_inlining(db, function, lowered, enable_const_folding)?
+                apply_inlining(db, function, lowered, *enable_const_folding)?
             }
             OptimizationPhase::BranchInversion => branch_inversion(db, lowered),
             OptimizationPhase::CancelOps => cancel_ops(lowered),
@@ -102,7 +102,7 @@ impl<'db> OptimizationPhase<'db> {
                 )
             }),
             OptimizationPhase::SubStrategy { strategy, iterations } => {
-                for _ in 1..iterations {
+                for _ in 1..*iterations {
                     let before = lowered.clone();
                     strategy.apply_strategy(db, function, lowered)?;
                     if *lowered == before {
@@ -132,7 +132,7 @@ impl<'db> OptimizationStrategyId<'db> {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
-        for phase in self.long(db).0.iter().cloned() {
+        for phase in &self.long(db).0 {
             phase.apply(db, function, lowered)?;
         }
 
