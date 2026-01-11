@@ -123,8 +123,9 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenWhitespace
         | SyntaxKind::TokenNewline
         | SyntaxKind::TokenEmpty => text.clear(),
-        // TODO(yuval): Can this be made exhaustive?
-        _ => panic!("Unexpected syntax kind: {kind:?}"),
+        // Fallback for unhandled token kinds (e.g., TokenAt, TokenDollar, TokenPub, etc.)
+        // Returns uncolored text to avoid panicking when new tokens are added.
+        _ => text.clear(),
     }
 }
 
