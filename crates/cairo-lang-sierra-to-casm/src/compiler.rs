@@ -448,8 +448,6 @@ pub fn compile(
     let mut relocations: Vec<RelocationEntry> = Vec::new();
 
     // Maps statement_idx to its debug info.
-    // The last value (for statement_idx=number-of-statements)
-    // contains the final offset (the size of the program code segment).
     let mut sierra_statement_info: Vec<SierraStatementDebugInfo> =
         Vec::with_capacity(program.statements.len());
 
@@ -587,11 +585,9 @@ pub fn compile(
                     ),
                 });
 
-                for entry in compiled_invocation.relocations {
-                    relocations.push(RelocationEntry {
-                        instruction_idx: instructions.len() + entry.instruction_idx,
-                        relocation: entry.relocation,
-                    });
+                for mut entry in compiled_invocation.relocations {
+                    entry.instruction_idx += instructions.len();
+                    relocations.push(entry);
                 }
                 instructions.extend(compiled_invocation.instructions);
 
@@ -638,10 +634,6 @@ pub fn compile(
         }
     }
 
-    let statement_offsets: Vec<usize> = std::iter::once(0)
-        .chain(sierra_statement_info.iter().map(|s: &SierraStatementDebugInfo| s.end_offset))
-        .collect();
-
     let const_segments_max_size = config
         .max_bytecode_size
         .checked_sub(program_offset)
@@ -652,7 +644,7 @@ pub fn compile(
         &circuits_info.circuits,
         const_segments_max_size,
     )?;
-    relocate_instructions(&relocations, &statement_offsets, &consts_info, &mut instructions);
+    relocate_instructions(&relocations, &sierra_statement_info, &consts_info, &mut instructions);
 
     Ok(CairoProgram {
         instructions,
