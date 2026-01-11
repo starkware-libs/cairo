@@ -69,9 +69,11 @@ fn main() -> anyhow::Result<()> {
         entry_points_by_type,
         abi: None,
     };
-    contract_class.validate_version_compatible(list_selector)?;
+    let extracted = contract_class.extract_sierra_program(false)?;
+    extracted.validate_version_compatible(list_selector)?;
     let casm_contract = CasmContractClass::from_contract_class(
         contract_class,
+        extracted,
         args.add_pythonic_hints,
         args.max_bytecode_size,
     )
