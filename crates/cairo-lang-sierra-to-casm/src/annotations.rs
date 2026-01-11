@@ -283,29 +283,17 @@ impl ProgramAnnotations {
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
-        let existing = self.per_statement_annotations[statement_idx.0]
-            .as_mut()
+        let mut entry = self.per_statement_annotations[statement_idx.0]
+            .take()
             .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
-        let mut updated = if self.backwards_jump_indices.contains(&statement_idx) {
-            existing.clone()
-        } else {
-            std::mem::replace(
-                existing,
-                StatementAnnotations {
-                    refs: Default::default(),
-                    function_id: existing.function_id.clone(),
-                    // Merging with this data is no longer allowed.
-                    convergence_allowed: false,
-                    environment: existing.environment.clone(),
-                },
-            )
-        };
-        let refs = std::mem::take(&mut updated.refs);
-        let (statement_refs, taken_refs) = take_args(refs, ref_ids).map_err(|error| {
+        if self.backwards_jump_indices.contains(&statement_idx) {
+            self.per_statement_annotations[statement_idx.0] = Some(entry.clone());
+        }
+        let (statement_refs, taken_refs) = take_args(entry.refs, ref_ids).map_err(|error| {
             AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
         })?;
-        updated.refs = statement_refs;
-        Ok((updated, taken_refs))
+        entry.refs = statement_refs;
+        Ok((entry, taken_refs))
     }
 
     /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
