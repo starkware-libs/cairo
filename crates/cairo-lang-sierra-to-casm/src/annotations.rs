@@ -321,16 +321,15 @@ impl ProgramAnnotations {
             if branch_changes.clear_old_stack {
                 ref_value.stack_idx = None;
             }
-            ref_value.expression =
-                std::mem::replace(&mut ref_value.expression, ReferenceExpression::zero_sized())
-                    .apply_ap_change(branch_changes.ap_change)
-                    .map_err(|error| AnnotationError::ApChangeError {
-                        var_id: var_id.clone(),
-                        source_statement_idx,
-                        destination_statement_idx,
-                        introduction_point: ref_value.introduction_point.clone(),
-                        error,
-                    })?;
+            ref_value.expression.apply_ap_change(branch_changes.ap_change).map_err(|error| {
+                AnnotationError::ApChangeError {
+                    var_id: var_id.clone(),
+                    source_statement_idx,
+                    destination_statement_idx,
+                    introduction_point: ref_value.introduction_point.clone(),
+                    error,
+                }
+            })?;
         }
         let mut refs = put_results(
             annotations.refs,
