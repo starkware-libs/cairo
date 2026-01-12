@@ -293,8 +293,8 @@ fn run_e2e_test(
         compiler::SierraToCasmConfig { gas_usage_check: true, max_bytecode_size: usize::MAX };
     // Compile to casm.
     let casm = compiler::compile(&sierra_program, &program_info, &metadata_with_linear, config)
-        .unwrap()
-        .to_string();
+        .map(|x| x.to_string())
+        .unwrap_or_else(|e| format!("failing with: `{e}`."));
 
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
