@@ -1,10 +1,10 @@
-use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::DerefOrImmediate;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::{
     ConcreteStructBoxedDeconstructLibfunc, StructConcreteLibfunc,
 };
-use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_sierra::ids::ConcreteTypeId;
+use cairo_lang_sierra_type_size::TypeSizeMap;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::ReferenceExpression;
@@ -58,28 +58,33 @@ fn build_struct_boxed_deconstruct(
     libfunc: &ConcreteStructBoxedDeconstructLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [cell] = builder.try_get_single_cells()?;
-    let Some((boxed_struct_addr, orig_offset)) = cell.to_deref_with_offset() else {
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
-    };
-    let mut next_member_box = cell.clone();
-    let mut outputs = vec![];
-    let mut current_offset = orig_offset.into_or_panic::<i16>();
-    for member_ty in &libfunc.members {
-        outputs.push(next_member_box);
-        let member_size = *builder
-            .program_info
-            .type_sizes
-            .get(member_ty)
+    let [input_ptr] = builder.try_get_single_cells()?;
+    let outputs =
+        boxed_members_cell_exprs(builder.program_info.type_sizes, &libfunc.members, input_ptr)
             .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-        current_offset += member_size;
-        next_member_box = CellExpression::BinOp {
-            op: CellOperator::Add,
-            a: boxed_struct_addr,
-            b: DerefOrImmediate::Immediate(current_offset.into()),
-        };
-    }
-
     Ok(builder
         .build_only_reference_changes(outputs.into_iter().map(ReferenceExpression::from_cell)))
+}
+
+/// Returns a vector of cell expressions representing the memory addresses of the unboxed members of
+/// a boxed struct.
+///
+/// Note: All failures returning `None` in this function should never actually occur assuming the
+/// original boxed type containing recursively all other types (through enums or structs), had an
+/// `orig_offset` offset of 0, as all internal offsets are bounded by the size of the struct itself,
+/// which is bounded by `i16::MAX`.
+fn boxed_members_cell_exprs(
+    type_sizes: &TypeSizeMap,
+    member_tys: &[ConcreteTypeId],
+    input_ptr: &CellExpression,
+) -> Option<Vec<CellExpression>> {
+    let (boxed_struct_ptr, orig_offset) = input_ptr.to_deref_with_offset()?;
+    let mut outputs = vec![];
+    let mut current_offset: i16 = orig_offset.try_into().ok()?;
+    for member_ty in member_tys {
+        outputs.push(CellExpression::add_with_const(boxed_struct_ptr, current_offset));
+        let member_size = *type_sizes.get(member_ty)?;
+        current_offset = current_offset.checked_add(member_size)?;
+    }
+    Some(outputs)
 }
