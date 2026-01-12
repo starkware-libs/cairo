@@ -134,7 +134,7 @@ pub fn compile_test_prepared_db<'db>(
     let test_crate_ids = CrateInput::into_crate_ids(db, test_crate_ids);
     let executable_functions = find_executable_function_ids(
         db,
-        tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone()),
+        tests_compilation_config.executable_crate_ids.unwrap_or(test_crate_ids.clone()),
     );
     let all_tests = find_all_tests(db, test_crate_ids);
 
