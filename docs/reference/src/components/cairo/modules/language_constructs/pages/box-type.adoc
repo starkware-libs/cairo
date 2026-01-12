@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Box type
 
 `Box<T>` is a pointer type that provides an indirection layer for values.
@@ -113,4 +115,4 @@ but not for implicit type conversion when passing arguments to functions.
 == See also
 
 * xref:../../language_semantics/pages/linear-types.adoc[Linear types system] — Move semantics and Copy/Drop
-* Implementation: `corelib/src/box.cairo`
+* link:{cairo-repo}/corelib/src/box.cairo[Implementation]
