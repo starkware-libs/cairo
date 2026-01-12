@@ -28,7 +28,7 @@ use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::require;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use num_bigint::{BigInt, BigUint, ToBigInt};
+use num_bigint::{BigInt, BigUint};
 use num_traits::{Signed, ToPrimitive};
 use smol_str::SmolStr;
 use thiserror::Error;
@@ -83,12 +83,14 @@ pub fn sierra_to_felt252s(
 /// Returns (sierra_version_id, compiler_version_id, remaining),
 /// where 'remaining' are all the felts other than the ones dedicated to the version, unprocessed.
 /// See [crate::compiler_version].
+// TODO(orizi): Validate that changing this function is ok, and make it iterator based as well.
 pub fn version_id_from_felt252s(
     sierra_program: &[BigUintAsHex],
 ) -> Result<(VersionId, VersionId, &[BigUintAsHex]), Felt252SerdeError> {
-    let (sierra_version_id, remaining) = VersionId::deserialize(sierra_program)?;
-    let (compiler_version_id, remaining) = VersionId::deserialize(remaining)?;
-    Ok((sierra_version_id, compiler_version_id, remaining))
+    let mut iter = sierra_program.iter().map(|v| &v.value);
+    let sierra_version_id = VersionId::deserialize(&mut iter)?;
+    let compiler_version_id = VersionId::deserialize(&mut iter)?;
+    Ok((sierra_version_id, compiler_version_id, &sierra_program[6..]))
 }
 
 /// Deserializes a Sierra program represented as a slice of felt252s.
@@ -100,16 +102,17 @@ pub fn sierra_from_felt252s(
 ) -> Result<(VersionId, VersionId, Program), Felt252SerdeError> {
     let (sierra_version_id, compiler_version_id, remaining) =
         version_id_from_felt252s(sierra_program)?;
-    let mut program_felts = vec![];
-    decompress(remaining, &mut program_felts)
-        .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-    Ok((sierra_version_id, compiler_version_id, Program::deserialize(&program_felts)?.0))
+    let mut iter =
+        decompress(remaining).ok_or(Felt252SerdeError::InvalidInputForDeserialization)?.into_iter();
+    Ok((sierra_version_id, compiler_version_id, Program::deserialize(&mut iter)?))
 }
 
 /// Trait for serializing and deserializing into a felt252 vector.
 trait Felt252Serde: Sized {
     fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError>;
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError>;
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError>;
 }
 
 // Impls for basic types.
@@ -120,12 +123,13 @@ impl Felt252Serde for usize {
         Ok(())
     }
 
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let head = input
-            .first()
-            .and_then(|size| size.value.to_usize())
-            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-        Ok((head, &input[1..]))
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        input
+            .next()
+            .and_then(|size| size.to_usize())
+            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)
     }
 }
 
@@ -135,12 +139,13 @@ impl Felt252Serde for u64 {
         Ok(())
     }
 
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let head = input
-            .first()
-            .and_then(|size| size.value.to_u64())
-            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-        Ok((head, &input[1..]))
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        input
+            .next()
+            .and_then(|size| size.to_u64())
+            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)
     }
 }
 
@@ -153,15 +158,15 @@ impl<T: Felt252Serde> Felt252Serde for Vec<T> {
         Ok(())
     }
 
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let (size, mut input) = usize::deserialize(input)?;
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        let size = usize::deserialize(input)?;
         let mut result = vec_with_bounded_capacity(size, input.len())?;
         for _ in 0..size {
-            let (value, next) = T::deserialize(input)?;
-            result.push(value);
-            input = next;
+            result.push(T::deserialize(input)?);
         }
-        Ok((result, input))
+        Ok(result)
     }
 }
 
@@ -172,13 +177,10 @@ impl Felt252Serde for BigInt {
         });
         Ok(())
     }
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let (first, rest) =
-            input.split_first().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-        Ok((
-            first.value.to_bigint().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?,
-            rest,
-        ))
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        Ok(input.next().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?.clone().into())
     }
 }
 
@@ -186,9 +188,10 @@ impl Felt252Serde for StatementIdx {
     fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
         self.0.serialize(output)
     }
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let (value, input) = usize::deserialize(input)?;
-        Ok((Self(value), input))
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        Ok(Self(usize::deserialize(input)?))
     }
 }
 
@@ -231,20 +234,17 @@ macro_rules! generic_id_serde {
                 });
                 Ok(())
             }
-            fn deserialize(
-                input: &[BigUintAsHex],
-            ) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-                let head = input
-                    .first()
+            fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+                input: &mut I,
+            ) -> Result<Self, Felt252SerdeError> {
+                input
+                    .next()
                     .and_then(|id| {
-                        LONG_NAME_FIX.get(&id.value).map(|s| Self(SmolStr::new(s))).or_else(|| {
-                            std::str::from_utf8(&id.value.to_bytes_be())
-                                .ok()
-                                .map(|s| Self(s.into()))
+                        LONG_NAME_FIX.get(&id).map(|s| Self(SmolStr::new(s))).or_else(|| {
+                            std::str::from_utf8(&id.to_bytes_be()).ok().map(|s| Self(s.into()))
                         })
                     })
-                    .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-                Ok((head, &input[1..]))
+                    .ok_or(Felt252SerdeError::InvalidInputForDeserialization)
             }
         }
     };
@@ -258,9 +258,11 @@ impl Felt252Serde for UserTypeId {
         output.push(BigUintAsHex { value: self.id.clone() });
         Ok(())
     }
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let first = input.first().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-        Ok((Self { id: first.value.clone(), debug_name: None }, &input[1..]))
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        let first = input.next().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
+        Ok(Self { id: first.clone(), debug_name: None })
     }
 }
 
@@ -272,11 +274,10 @@ macro_rules! id_serde {
             fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
                 self.id.serialize(output)
             }
-            fn deserialize(
-                input: &[BigUintAsHex],
-            ) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-                let (id, input) = u64::deserialize(input)?;
-                Ok((Self::new(id), input))
+            fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+                input: &mut I,
+            ) -> Result<Self, Felt252SerdeError> {
+                Ok(Self::new(u64::deserialize(input)?))
             }
         }
     };
@@ -302,11 +303,9 @@ macro_rules! struct_serialize_impl {
 
 macro_rules! struct_deserialize_impl {
     ($input:ident, { $($field_name:ident : $field_type:ty),* }) => {
-        let __input = $input;
         $(
-            let ($field_name, __input) = <$field_type>::deserialize(__input)?;
+            let $field_name = <$field_type>::deserialize($input)?;
         )*
-        $input = __input;
     };
 }
 
@@ -320,11 +319,11 @@ macro_rules! struct_serialize {
 
 macro_rules! struct_deserialize {
     ($Obj:ident { $($field_name:ident : $field_type:ty),* }) => {
-        fn deserialize(
-            mut input: &[BigUintAsHex],
-        ) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
+        fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+            input: &mut I,
+        ) -> Result<Self, Felt252SerdeError> {
             struct_deserialize_impl!(input, {$($field_name : $field_type),*});
-            Ok((Self {$($field_name),*}, input))
+            Ok(Self {$($field_name),*})
         }
     };
 }
@@ -378,51 +377,44 @@ impl Felt252Serde for Program {
         Ok(())
     }
 
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
         // Type declarations.
-        let (size, mut input) = usize::deserialize(input)?;
+        let size = usize::deserialize(input)?;
         let mut type_declarations = vec_with_bounded_capacity(size, input.len())?;
         for i in 0..size {
-            let (info, next) = ConcreteTypeInfo::deserialize(input)?;
+            let info = ConcreteTypeInfo::deserialize(input)?;
             type_declarations.push(TypeDeclaration {
                 id: ConcreteTypeId::new(i as u64),
                 long_id: info.long_id,
                 declared_type_info: info.declared_type_info,
             });
-            input = next;
         }
         // Libfunc declaration.
-        let (size, mut input) = usize::deserialize(input)?;
+        let size = usize::deserialize(input)?;
         let mut libfunc_declarations = vec_with_bounded_capacity(size, input.len())?;
         for i in 0..size {
-            let (long_id, next) = ConcreteLibfuncLongId::deserialize(input)?;
+            let long_id = ConcreteLibfuncLongId::deserialize(input)?;
             libfunc_declarations
                 .push(LibfuncDeclaration { id: ConcreteLibfuncId::new(i as u64), long_id });
-            input = next;
         }
         // Statements.
-        let (statements, input) = Felt252Serde::deserialize(input)?;
+        let statements = Felt252Serde::deserialize(input)?;
         // Function declaration.
-        let (size, mut input) = usize::deserialize(input)?;
+        let size = usize::deserialize(input)?;
         let mut funcs = vec_with_bounded_capacity(size, input.len())?;
         for i in 0..size {
-            let (signature, next) = FunctionSignature::deserialize(input)?;
-            input = next;
+            let signature = FunctionSignature::deserialize(input)?;
             let params = signature
                 .param_types
                 .iter()
-                .cloned()
-                .map(|ty| -> Result<Param, Felt252SerdeError> {
-                    let (id, next) = VarId::deserialize(input)?;
-                    input = next;
-                    Ok(Param { id, ty })
-                })
+                .map(|ty| Ok(Param { id: VarId::deserialize(input)?, ty: ty.clone() }))
                 .collect::<Result<Vec<_>, _>>()?;
-            let (entry_point, next) = StatementIdx::deserialize(input)?;
+            let entry_point = StatementIdx::deserialize(input)?;
             funcs.push(Function { id: FunctionId::new(i as u64), signature, params, entry_point });
-            input = next;
         }
-        Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
+        Ok(Self { type_declarations, libfunc_declarations, statements, funcs })
     }
 }
 
@@ -461,9 +453,11 @@ impl Felt252Serde for ConcreteTypeInfo {
         Ok(())
     }
 
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let (generic_id, input) = GenericTypeId::deserialize(input)?;
-        let (len_and_decl_ti_value, mut input) = BigInt::deserialize(input)?;
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        let generic_id = GenericTypeId::deserialize(input)?;
+        let len_and_decl_ti_value = BigInt::deserialize(input)?;
         let len = (len_and_decl_ti_value.clone() & BigInt::from(u128::MAX))
             .to_usize()
             .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
@@ -472,26 +466,21 @@ impl Felt252Serde for ConcreteTypeInfo {
             .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
         let mut generic_args = vec_with_bounded_capacity(len, input.len())?;
         for _ in 0..len {
-            let (arg, next) = GenericArg::deserialize(input)?;
-            generic_args.push(arg);
-            input = next;
+            generic_args.push(GenericArg::deserialize(input)?);
         }
-        Ok((
-            Self {
-                long_id: ConcreteTypeLongId { generic_id, generic_args },
-                declared_type_info: if decl_ti_value == 0 {
-                    None
-                } else {
-                    Some(DeclaredTypeInfo {
-                        storable: (decl_ti_value & TYPE_STORABLE) != 0,
-                        droppable: (decl_ti_value & TYPE_DROPPABLE) != 0,
-                        duplicatable: (decl_ti_value & TYPE_DUPLICATABLE) != 0,
-                        zero_sized: (decl_ti_value & TYPE_ZERO_SIZED) != 0,
-                    })
-                },
+        Ok(Self {
+            long_id: ConcreteTypeLongId { generic_id, generic_args },
+            declared_type_info: if decl_ti_value == 0 {
+                None
+            } else {
+                Some(DeclaredTypeInfo {
+                    storable: (decl_ti_value & TYPE_STORABLE) != 0,
+                    droppable: (decl_ti_value & TYPE_DROPPABLE) != 0,
+                    duplicatable: (decl_ti_value & TYPE_DUPLICATABLE) != 0,
+                    zero_sized: (decl_ti_value & TYPE_ZERO_SIZED) != 0,
+                })
             },
-            input,
-        ))
+        })
     }
 }
 
@@ -554,14 +543,12 @@ macro_rules! enum_serialize {
 
 macro_rules! enum_deserialize {
     ($($variant_name:ident ( $variant_type:ty ) = $variant_id:literal),*) => {
-        fn deserialize(
-            input: &[BigUintAsHex],
-        ) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-            let (id, input) = u64::deserialize(input)?;
-            match id {
+        fn deserialize<'a, I: ExactSizeIterator<Item=&'a BigUint>>(
+            input: &mut I
+        ) -> Result<Self, Felt252SerdeError> {
+            match u64::deserialize(input)? {
                 $($variant_id => {
-                    let (value, input) = <$variant_type>::deserialize(input)?;
-                    Ok((Self::$variant_name(value), input))
+                    Ok(Self::$variant_name(<$variant_type>::deserialize(input)?))
                 },)*
                 _ => Err(Felt252SerdeError::InvalidInputForDeserialization),
             }
@@ -616,35 +603,18 @@ impl Felt252Serde for GenericArg {
         }
     }
 
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let (idx, input) = usize::deserialize(input)?;
-        Ok(match idx {
-            0 => {
-                let (id, input) = UserTypeId::deserialize(input)?;
-                (Self::UserType(id), input)
-            }
-            1 => {
-                let (id, input) = ConcreteTypeId::deserialize(input)?;
-                (Self::Type(id), input)
-            }
-            2 => {
-                let (value, input) = BigInt::deserialize(input)?;
-                (Self::Value(value), input)
-            }
-            3 => {
-                let (id, input) = FunctionId::deserialize(input)?;
-                (Self::UserFunc(id), input)
-            }
-            4 => {
-                let (id, input) = ConcreteLibfuncId::deserialize(input)?;
-                (Self::Libfunc(id), input)
-            }
-            5 => {
-                let (value, input) = BigInt::deserialize(input)?;
-                (Self::Value(-value), input)
-            }
-            _ => return Err(Felt252SerdeError::InvalidInputForDeserialization),
-        })
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        match usize::deserialize(input)? {
+            0 => Ok(Self::UserType(UserTypeId::deserialize(input)?)),
+            1 => Ok(Self::Type(ConcreteTypeId::deserialize(input)?)),
+            2 => Ok(Self::Value(BigInt::deserialize(input)?)),
+            3 => Ok(Self::UserFunc(FunctionId::deserialize(input)?)),
+            4 => Ok(Self::Libfunc(ConcreteLibfuncId::deserialize(input)?)),
+            5 => Ok(Self::Value(-BigInt::deserialize(input)?)),
+            _ => Err(Felt252SerdeError::InvalidInputForDeserialization),
+        }
     }
 }
 
@@ -656,12 +626,11 @@ impl Felt252Serde for BranchTarget {
         }
     }
 
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let (idx, input) = usize::deserialize(input)?;
-        Ok((
-            if idx == usize::MAX { Self::Fallthrough } else { Self::Statement(StatementIdx(idx)) },
-            input,
-        ))
+    fn deserialize<'a, I: ExactSizeIterator<Item = &'a BigUint>>(
+        input: &mut I,
+    ) -> Result<Self, Felt252SerdeError> {
+        let idx = usize::deserialize(input)?;
+        Ok(if idx == usize::MAX { Self::Fallthrough } else { Self::Statement(StatementIdx(idx)) })
     }
 }
 
