@@ -151,4 +151,4 @@ fn main() {
 == References (source)
 
 - Operator precedence: link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs] (lines 9, 23-25)
-- Traits: `corelib/src/traits.cairo` (`BitAnd`, `BitOr`, `BitXor`, `BitNot`)
+- link:{cairo-repo}/corelib/src/traits.cairo[Traits] (`BitAnd`, `BitOr`, `BitXor`, `BitNot`)

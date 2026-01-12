@@ -1,3 +1,5 @@
+:cairo-repo: https://github.com/starkware-libs/cairo/blob/main
+
 = Error types
 
 Error handling in _Cairo_ is built around a small set of core types.
@@ -94,8 +96,8 @@ The core library defines:
 These are mostly used by low-level infrastructure and tooling. In
 application-level code, panics are typically triggered indirectly via:
 
-- `panic` / `panic_with_*` functions from `corelib/src/panics.cairo`
-  and `corelib/src/lib.cairo`.
+- `panic` / `panic_with_*` functions from link:{cairo-repo}/corelib/src/panics.cairo[corelib/src/panics.cairo]
+  and link:{cairo-repo}/corelib/src/lib.cairo[corelib/src/lib.cairo].
 - Methods like `unwrap` / `expect` on `Result` and `Option`, which
   convert a recoverable error into a panic when the error occurs.
 
@@ -137,13 +139,13 @@ type. See the dedicated page for detailed semantics and examples.
 
 Error type and methods:
 
-- `corelib/src/result.cairo` (`Result<T, E>`)
-- `corelib/src/option.cairo` (`Option<T>` helpers)
+- link:{cairo-repo}/corelib/src/result.cairo[corelib/src/result.cairo] (`Result<T, E>`)
+- link:{cairo-repo}/corelib/src/option.cairo[corelib/src/option.cairo] (`Option<T>` helpers)
 
 Panic infrastructure:
 
-- `corelib/src/panics.cairo` (`Panic`, `PanicResult<T>`, `panic`)
-- `corelib/src/lib.cairo` (`panic_with_felt252`, `assert`, etc.)
+- link:{cairo-repo}/corelib/src/panics.cairo[corelib/src/panics.cairo] (`Panic`, `PanicResult<T>`, `panic`)
+- link:{cairo-repo}/corelib/src/lib.cairo[corelib/src/lib.cairo] (`panic_with_felt252`, `assert`, etc.)
 
 Language features:
 

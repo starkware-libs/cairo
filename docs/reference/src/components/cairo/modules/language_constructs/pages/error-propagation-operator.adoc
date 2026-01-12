@@ -104,4 +104,4 @@ fn process_empty() -> Option<u8> {
 - Syntax tree: link:{cairo-repo}/crates/cairo-lang-syntax-codegen/src/cairo_spec.rs[crates/cairo-lang-syntax-codegen/src/cairo_spec.rs] (`ExprErrorPropagate`)
 - Operator precedence: link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs] (line 18)
 - Lexer token: link:{cairo-repo}/crates/cairo-lang-parser/src/lexer.rs[crates/cairo-lang-parser/src/lexer.rs] (`TerminalQuestionMark`)
-- Error types: `corelib/src/result.cairo` (`Result`), `corelib/src/option.cairo` (`Option`)
+- Error types: link:{cairo-repo}/corelib/src/result.cairo[Result], link:{cairo-repo}/corelib/src/option.cairo[Option]
