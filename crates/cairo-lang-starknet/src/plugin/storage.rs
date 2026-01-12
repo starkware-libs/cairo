@@ -28,9 +28,11 @@ pub fn handle_storage_struct<'db, 'a>(
     let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
 
+    let is_backwards_compatible = backwards_compatible_storage(metadata.edition);
+
     let mut substorage_members_struct_code = vec![];
     let mut substorage_members_init_code = vec![];
-    let mut storage_struct_members = vec![];
+    let mut storage_struct_members = if is_backwards_compatible { Some(Vec::new()) } else { None };
     let configs = struct_members_storage_configs(db, &struct_ast, diagnostics);
     for (member, config) in zip_eq(struct_ast.members(db).elements(db), &configs) {
         if config.kind == StorageMemberKind::SubStorage {
@@ -49,12 +51,14 @@ pub fn handle_storage_struct<'db, 'a>(
                 ));
             }
         }
-        storage_struct_members.push(get_simple_member_code(db, &member, metadata));
+        if let Some(storage_struct_members) = &mut storage_struct_members {
+            storage_struct_members.push(get_simple_member_code(db, &member, metadata));
+        }
     }
 
     let module_kind = starknet_module_kind.to_str_lower();
     let unsafe_new_function_name = format!("unsafe_new_{module_kind}_state");
-    let storage_struct_code = if backwards_compatible_storage(metadata.edition) {
+    let storage_struct_code = if is_backwards_compatible {
         formatdoc!(
             "
             #[phantom]
@@ -67,6 +71,8 @@ pub fn handle_storage_struct<'db, 'a>(
     };
     let storage_base_code =
         handle_storage_interface_struct(db, &struct_ast, &configs, metadata).into_rewrite_node();
+    let storage_struct_members_node =
+        storage_struct_members.map(RewriteNode::new_modified).unwrap_or_else(RewriteNode::empty);
     data.state_struct_code = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
@@ -108,10 +114,7 @@ pub fn handle_storage_struct<'db, 'a>(
         ),
         &[
             ("storage_base_code".to_string(), storage_base_code),
-            (
-                "storage_struct_members".to_string(),
-                RewriteNode::new_modified(storage_struct_members),
-            ),
+            ("storage_struct_members".to_string(), storage_struct_members_node),
             (
                 "substorage_members_struct_code".to_string(),
                 RewriteNode::new_modified(substorage_members_struct_code),
