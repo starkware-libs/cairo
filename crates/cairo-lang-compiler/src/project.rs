@@ -45,25 +45,24 @@ pub fn setup_single_file_project(
     let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
     if file_stem == "lib" {
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
-        let crate_id = CrateId::plain(db, SmolStrId::from(db, crate_name));
         set_crate_config!(
             db,
-            crate_id,
+            CrateId::plain(db, SmolStrId::from(db, crate_name)),
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf())))
         );
         let crate_id = CrateId::plain(db, SmolStrId::from(db, crate_name));
         Ok(crate_id.long(db).clone().into_crate_input(db))
     } else {
         // If file_stem is not lib, create a fake lib file.
-        let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
         set_crate_config!(
             db,
-            crate_id,
+            CrateId::plain(db, SmolStrId::from(db, file_stem)),
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf())))
         );
-        let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
-        let module_id = ModuleId::CrateRoot(crate_id);
-        let file_id = db.module_main_file(module_id).unwrap();
+        let file_id = {
+            let module_id = ModuleId::CrateRoot(CrateId::plain(db, SmolStrId::from(db, file_stem)));
+            db.module_main_file(module_id).unwrap()
+        };
         override_file_content!(db, file_id, Some(format!("mod {file_stem};").into()));
         let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
         Ok(crate_id.long(db).clone().into_crate_input(db))
