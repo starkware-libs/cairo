@@ -7,6 +7,7 @@ use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::lowering_group_input;
 use cairo_lang_lowering::optimizations::config::{OptimizationConfig, Optimizations};
+use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
@@ -24,6 +25,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
 use salsa::Setter;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
@@ -106,6 +108,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         u512: "u512",
         u64: "u64",
         u8: "u8",
+        casm_run_sanity: "casm_run_sanity",
     },
     SmallE2ETestRunner
 );
@@ -160,7 +163,24 @@ impl TestFileRunner for SmallE2ETestRunner {
         args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
         let future_sierra = args.get("future_sierra").is_some_and(|v| v == "true");
-        run_e2e_test(inputs, E2eTestParams { future_sierra, ..E2eTestParams::default() })
+        let skip_gas = args.get("skip_gas").is_some_and(|v| v == "true");
+
+        let test_data = match TestData::parse(args) {
+            Ok(td) => td,
+            Err(e) => {
+                return TestRunnerResult { outputs: OrderedHashMap::default(), error: Some(e) };
+            }
+        };
+
+        run_e2e_test(
+            inputs,
+            E2eTestParams {
+                future_sierra,
+                test_data,
+                add_withdraw_gas: !skip_gas,
+                ..E2eTestParams::default()
+            },
+        )
     }
 }
 
@@ -211,6 +231,37 @@ impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
     }
 }
 
+/// Represents test data for function execution: function_name(input)=output
+#[derive(Clone, Debug)]
+struct TestData {
+    function_name: String,
+    input: Felt252,
+    expected_output: Felt252,
+}
+
+impl TestData {
+    /// Parses test_data. Expects three args: test_data_function, test_data_input, test_data_output.
+    fn parse(args: &OrderedHashMap<String, String>) -> Result<Option<TestData>, String> {
+        let Some(function_name) = args.get("test_data_function").cloned() else {
+            return Ok(None);
+        };
+        let Some((input, output)) = args.get("test_data_input").zip(args.get("test_data_output"))
+        else {
+            return Err("Given test_data_function both test_data_input and test_data_output must \
+                        be present as well."
+                .to_string());
+        };
+
+        let input = Felt252::from_dec_str(input)
+            .map_err(|e| format!("Failed to parse input as a felt '{}': {}", input, e))?;
+        let expected_output = Felt252::from_dec_str(output).map_err(|e| {
+            format!("Failed to parse expected output as a felt '{}': {}", output, e)
+        })?;
+
+        Ok(Some(TestData { function_name, input, expected_output }))
+    }
+}
+
 /// Represents the parameters of `run_e2e_test`.
 struct E2eTestParams {
     /// Argument for `run_e2e_test` that controls whether to set the `add_withdraw_gas` flag
@@ -226,6 +277,9 @@ struct E2eTestParams {
 
     /// Argument for `run_e2e_test` that controls whether to enable the `future_sierra` flag.
     future_sierra: bool,
+
+    /// Test data for function execution validation.
+    test_data: Option<TestData>,
 }
 
 /// Implements default for `E2eTestParams`.
@@ -236,6 +290,7 @@ impl Default for E2eTestParams {
             metadata_computation: false,
             skip_optimization_passes: true,
             future_sierra: false,
+            test_data: None,
         }
     }
 }
@@ -321,7 +376,67 @@ fn run_e2e_test(
         res.insert("function_costs".into(), function_costs_str);
     }
 
+    // Handle test_data if specified.
+    // This runs AFTER sierra/casm generation, so compilation outputs are always verified first.
+    if let Some(test_data) = &params.test_data {
+        if let Err(e) =
+            run_and_validate_test_data(sierra_program, test_data, params.add_withdraw_gas)
+        {
+            return TestRunnerResult { outputs: res, error: Some(e) };
+        }
+    }
+
     TestRunnerResult::success(res)
+}
+
+/// Runs the specified function and validates its output against expected values.
+fn run_and_validate_test_data(
+    sierra_program: Program,
+    test_data: &TestData,
+    withdraw_gas: bool,
+) -> Result<(), String> {
+    let runner = SierraCasmRunner::new(
+        sierra_program,
+        withdraw_gas.then(Default::default),
+        Default::default(),
+        None,
+    )
+    .expect("Failed setting up runner for test_data.");
+
+    let func = runner
+        .find_function(&test_data.function_name)
+        .map_err(|e| format!("Function '{}' not found: {}", test_data.function_name, e))?;
+
+    let result = runner
+        .run_function_with_starknet_context(
+            func,
+            vec![Arg::Value(test_data.input)],
+            withdraw_gas.then_some(usize::MAX),
+            Default::default(),
+        )
+        .map_err(|e| format!("Failed running function '{}': {}", test_data.function_name, e))?;
+
+    match &result.value {
+        RunResultValue::Success(values) => {
+            let actual = values.first().ok_or_else(|| {
+                format!(
+                    "Function '{}' returned no values, expected {}",
+                    test_data.function_name, test_data.expected_output
+                )
+            })?;
+            if *actual != test_data.expected_output {
+                return Err(format!(
+                    "Function '{}' output mismatch: expected {}, got {}",
+                    test_data.function_name, test_data.expected_output, actual
+                ));
+            }
+            Ok(())
+        }
+        RunResultValue::Panic(panic_data) => Err(format!(
+            "Function '{}' panicked with data: {:?}",
+            test_data.function_name, panic_data
+        )),
+    }
 }
 
 /// Parses the `enforced_costs` test argument. It should consist of lines of the form
