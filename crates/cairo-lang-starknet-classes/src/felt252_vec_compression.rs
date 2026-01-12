@@ -32,7 +32,7 @@ pub fn compress(values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>) {
 }
 
 /// Decompresses `packed_values` created using `compress` into `result`.
-pub fn decompress(packed_values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>) -> Option<()> {
+pub fn decompress(packed_values: &[BigUintAsHex]) -> Option<Vec<&BigUint>> {
     let (packed_values, code_size) = pop_usize(packed_values)?;
     require(code_size < packed_values.len())?;
     let (packed_values, padding_size) = pop_usize(packed_values)?;
@@ -41,17 +41,19 @@ pub fn decompress(packed_values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>
     let padded_code_size = code_size.checked_add(padding_size)?;
     let words_per_felt = words_per_felt(padded_code_size);
     let padded_code_size = BigUint::from(padded_code_size);
+    require(remaining_unpacked_size <= packed_values.len() * words_per_felt)?;
+    let mut result = Vec::with_capacity(remaining_unpacked_size);
     for packed_value in packed_values {
         let curr_words = std::cmp::min(words_per_felt, remaining_unpacked_size);
         let mut v = packed_value.value.clone();
         for _ in 0..curr_words {
             let (remaining, code_word) = v.div_mod_floor(&padded_code_size);
-            result.push(code.get(code_word.to_usize()?)?.clone());
+            result.push(&code.get(code_word.to_usize()?)?.value);
             v = remaining;
         }
         remaining_unpacked_size -= curr_words;
     }
-    if remaining_unpacked_size == 0 { Some(()) } else { None }
+    if remaining_unpacked_size == 0 { Some(result) } else { None }
 }
 
 /// Pops a `usize` from the slice while making sure it is a valid `usize`.
