@@ -51,11 +51,11 @@ impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let c = args_as_single_value(args)?;
-        if c.is_negative() || c > (<T as ConstGenLibfunc>::bound()) {
+        if c.is_negative() || *c > (<T as ConstGenLibfunc>::bound()) {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         Ok(SignatureAndConstConcreteLibfunc {
-            c,
+            c: c.clone(),
             signature: <Self as NamedLibfunc>::specialize_signature(self, context, args)?,
         })
     }

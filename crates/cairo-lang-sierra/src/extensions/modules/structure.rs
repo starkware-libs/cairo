@@ -68,7 +68,7 @@ impl StructConcreteType {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
                 .clone();
-            let info = context.get_type_info(ty.clone())?;
+            let info = context.get_type_info(&ty)?;
             if !info.storable {
                 storable = false;
             }
@@ -113,7 +113,7 @@ impl StructConcreteType {
         context: &dyn SignatureSpecializationContext,
         ty: &ConcreteTypeId,
     ) -> Result<Self, SpecializationError> {
-        let long_id = context.get_type_info(ty.clone())?.long_id;
+        let long_id = context.get_type_info(ty)?.long_id;
         Self::try_from_long_id(context, &long_id)
     }
 }
@@ -144,12 +144,12 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
-        let type_info = context.get_type_info(struct_type.clone())?;
+        let type_info = context.get_type_info(struct_type)?;
         let member_types =
             StructConcreteType::try_from_long_id(context, &type_info.long_id)?.members;
 
         let mut opt_same_as_param_idx = None;
-        for (idx, ty) in member_types.iter().cloned().enumerate() {
+        for (idx, ty) in member_types.iter().enumerate() {
             if !context.get_type_info(ty)?.zero_sized {
                 if opt_same_as_param_idx.is_some() {
                     // There are multiple non-zero sized items, can't use the same param.
@@ -171,7 +171,7 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
                 })
                 .collect(),
             vec![OutputVarInfo {
-                ty: struct_type,
+                ty: struct_type.clone(),
                 ref_info: if type_info.zero_sized {
                     OutputVarReferenceInfo::ZeroSized
                 } else if let Some(param_idx) = opt_same_as_param_idx {
@@ -198,10 +198,10 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
         let member_types =
-            StructConcreteType::try_from_concrete_type(context, &struct_type)?.members;
+            StructConcreteType::try_from_concrete_type(context, struct_type)?.members;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
-                ty: struct_type,
+                ty: struct_type.clone(),
                 allow_deferred: true,
                 allow_add_const: false,
                 allow_const: true,
@@ -210,14 +210,14 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
                 .into_iter()
                 .map(|ty| {
                     Ok(OutputVarInfo {
-                        ty: ty.clone(),
-                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                        ref_info: if context.get_type_info(&ty)?.zero_sized {
                             OutputVarReferenceInfo::ZeroSized
                         } else {
                             // All memory of the deconstruction would have the same lifetime as the
                             // first param - as it is its deconstruction.
                             OutputVarReferenceInfo::PartialParam { param_idx: 0 }
                         },
+                        ty,
                     })
                 })
                 .collect::<Result<Vec<_>, _>>()?,
@@ -239,21 +239,21 @@ impl SignatureOnlyGenericLibfunc for StructSnapshotDeconstructLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
         let member_types =
-            StructConcreteType::try_from_concrete_type(context, &struct_type)?.members;
+            StructConcreteType::try_from_concrete_type(context, struct_type)?.members;
         Ok(LibfuncSignature::new_non_branch(
-            vec![snapshot_ty(context, struct_type)?],
+            vec![snapshot_ty(context, struct_type.clone())?],
             member_types
                 .into_iter()
                 .map(|ty| {
                     Ok(OutputVarInfo {
-                        ty: snapshot_ty(context, ty.clone())?,
-                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                        ref_info: if context.get_type_info(&ty)?.zero_sized {
                             OutputVarReferenceInfo::ZeroSized
                         } else {
                             // All memory of the deconstruction would have the same lifetime as the
                             // first param - as it is its deconstruction.
                             OutputVarReferenceInfo::PartialParam { param_idx: 0 }
                         },
+                        ty: snapshot_ty(context, ty)?,
                     })
                 })
                 .collect::<Result<Vec<_>, _>>()?,
@@ -293,14 +293,16 @@ impl StructBoxedDeconstructLibfunc {
     fn analyze_struct_type(
         &self,
         context: &dyn SignatureSpecializationContext,
-        mut ty: ConcreteTypeId,
+        ty: &ConcreteTypeId,
     ) -> Result<(Vec<ConcreteTypeId>, bool), SpecializationError> {
-        let arg_type_info = context.get_type_info(ty.clone())?;
+        let arg_type_info = context.get_type_info(ty)?;
         let is_snapshot = arg_type_info.long_id.generic_id == SnapshotType::id();
-        if is_snapshot {
-            ty = args_as_single_type(&arg_type_info.long_id.generic_args)?;
-        }
-        let struct_type = StructConcreteType::try_from_concrete_type(context, &ty)?;
+        let ty = if is_snapshot {
+            args_as_single_type(&arg_type_info.long_id.generic_args)?
+        } else {
+            ty
+        };
+        let struct_type = StructConcreteType::try_from_concrete_type(context, ty)?;
         Ok((struct_type.members, is_snapshot))
     }
 
@@ -332,7 +334,7 @@ impl StructBoxedDeconstructLibfunc {
                             param_idx: 0,
                         })
                     } else {
-                        is_shifted = !context.get_type_info(member_ty.clone())?.zero_sized;
+                        is_shifted = !context.get_type_info(&member_ty)?.zero_sized;
                         OutputVarReferenceInfo::SameAsParam { param_idx: 0 }
                     };
                     let inner_type =
@@ -356,8 +358,8 @@ impl NamedLibfunc for StructBoxedDeconstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        let (member_types, is_snapshot) = self.analyze_struct_type(context, ty.clone())?;
-        self.inner_specialize_signature(context, ty, member_types, is_snapshot)
+        let (member_types, is_snapshot) = self.analyze_struct_type(context, ty)?;
+        self.inner_specialize_signature(context, ty.clone(), member_types, is_snapshot)
     }
 
     fn specialize(
@@ -366,9 +368,13 @@ impl NamedLibfunc for StructBoxedDeconstructLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        let (members, is_snapshot) = self.analyze_struct_type(context, ty.clone())?;
-        let signature =
-            self.inner_specialize_signature(context, ty, members.iter().cloned(), is_snapshot)?;
+        let (members, is_snapshot) = self.analyze_struct_type(context, ty)?;
+        let signature = self.inner_specialize_signature(
+            context,
+            ty.clone(),
+            members.iter().cloned(),
+            is_snapshot,
+        )?;
         Ok(ConcreteStructBoxedDeconstructLibfunc { members, signature })
     }
 }

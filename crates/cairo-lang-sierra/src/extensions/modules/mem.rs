@@ -34,7 +34,7 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let type_info = context.get_type_info(ty.clone())?;
+        let type_info = context.get_type_info(&ty)?;
         if !type_info.storable {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -72,7 +72,7 @@ impl SignatureAndTypeGenericLibfunc for StoreLocalLibfuncWrapped {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let uninitialized_type =
             context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?;
-        let type_info = context.get_type_info(ty.clone())?;
+        let type_info = context.get_type_info(&ty)?;
         if !type_info.storable {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -129,7 +129,7 @@ impl SignatureAndTypeGenericLibfunc for AllocLocalLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let type_info = context.get_type_info(ty.clone())?;
+        let type_info = context.get_type_info(&ty)?;
         Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
@@ -158,6 +158,6 @@ impl SignatureOnlyGenericLibfunc for RenameLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(reinterpret_cast_signature(ty.clone(), ty))
+        Ok(reinterpret_cast_signature(ty.clone(), ty.clone()))
     }
 }

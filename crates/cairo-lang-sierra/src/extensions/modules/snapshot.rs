@@ -47,7 +47,7 @@ pub fn snapshot_ty(
     context: &dyn SignatureSpecializationContext,
     ty: ConcreteTypeId,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    if context.get_type_info(ty.clone())?.duplicatable {
+    if context.get_type_info(&ty)?.duplicatable {
         Ok(ty)
     } else {
         context.get_wrapped_concrete_type(SnapshotType::id(), ty)
@@ -79,7 +79,7 @@ impl SignatureOnlyGenericLibfunc for SnapshotTakeLibfunc {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
                 OutputVarInfo {
-                    ty: snapshot_ty(context, ty)?,
+                    ty: snapshot_ty(context, ty.clone())?,
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],

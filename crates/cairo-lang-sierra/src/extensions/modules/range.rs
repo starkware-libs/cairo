@@ -95,7 +95,7 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
         let range_ty = context.get_wrapped_concrete_type(IntRangeType::id(), ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
-        if !Range::from_type(context, ty.clone())?.is_small_range() {
+        if !Range::from_type(context, ty)?.is_small_range() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
@@ -103,7 +103,7 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
             param_signatures: vec![
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
-                ParamSignature::new(ty),
+                ParamSignature::new(ty.clone()),
             ],
             branch_signatures: vec![
                 // Success.
@@ -167,7 +167,7 @@ impl SignatureOnlyGenericLibfunc for IntRangePopFrontLibfunc {
                             ),
                         },
                         OutputVarInfo {
-                            ty,
+                            ty: ty.clone(),
                             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],

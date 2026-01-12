@@ -253,7 +253,7 @@ impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGen
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
-        self.0.specialize_signature(context, args_as_single_type(args)?)
+        self.0.specialize_signature(context, args_as_single_type(args)?.clone())
     }
 
     fn specialize(
@@ -264,7 +264,7 @@ impl<T: SignatureAndTypeGenericLibfunc> NamedLibfunc for WrapSignatureAndTypeGen
         let ty = args_as_single_type(args)?;
         Ok(SignatureAndTypeConcreteLibfunc {
             ty: ty.clone(),
-            signature: self.0.specialize_signature(context, ty)?,
+            signature: self.0.specialize_signature(context, ty.clone())?,
         })
     }
 }

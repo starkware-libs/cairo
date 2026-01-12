@@ -81,7 +81,7 @@ impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
         Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
+                ty: context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?,
                 ref_info: OutputVarReferenceInfo::SimpleDerefs,
             }],
             SierraApChange::Known { new_vars_only: false },
@@ -520,7 +520,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let popped_ty = args_as_single_type(args)?;
-        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
+        let ty = validate_tuple_and_fetch_ty(context, popped_ty)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
@@ -539,7 +539,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
+                            ty: snapshot_ty(context, box_ty(context, popped_ty.clone())?)?,
                             ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 1 },
                         },
                     ],
@@ -566,9 +566,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
-            popped_ty,
+            popped_ty: args_as_single_type(args)?.clone(),
             signature: self.specialize_signature(context, args)?,
         })
     }
@@ -588,7 +587,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let popped_ty = args_as_single_type(args)?;
-        let ty = validate_tuple_and_fetch_ty(context, &popped_ty)?;
+        let ty = validate_tuple_and_fetch_ty(context, popped_ty)?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
         let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
@@ -607,7 +606,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(context, box_ty(context, popped_ty)?)?,
+                            ty: snapshot_ty(context, box_ty(context, popped_ty.clone())?)?,
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
@@ -634,9 +633,8 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let popped_ty = args_as_single_type(args)?;
         Ok(ConcreteMultiPopLibfunc {
-            popped_ty,
+            popped_ty: args_as_single_type(args)?.clone(),
             signature: self.specialize_signature(context, args)?,
         })
     }

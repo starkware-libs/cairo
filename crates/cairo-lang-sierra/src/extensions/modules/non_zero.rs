@@ -54,9 +54,9 @@ impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         Ok(LibfuncSignature::new_non_branch(
-            vec![nonzero_ty(context, &ty)?],
+            vec![nonzero_ty(context, ty)?],
             vec![OutputVarInfo {
-                ty,
+                ty: ty.clone(),
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },

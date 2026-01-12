@@ -32,6 +32,6 @@ impl NamedLibfunc for TraceLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let flag = args_as_single_value(args)?;
-        Ok(Self::Concrete { signature: self.specialize_signature(context, args)?, c: flag })
+        Ok(Self::Concrete { signature: self.specialize_signature(context, args)?, c: flag.clone() })
     }
 }

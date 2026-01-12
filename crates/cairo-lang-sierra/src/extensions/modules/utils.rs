@@ -87,7 +87,7 @@ impl Range {
     /// Returns the Range bounds from the given type.
     pub fn from_type(
         context: &dyn SignatureSpecializationContext,
-        ty: ConcreteTypeId,
+        ty: &ConcreteTypeId,
     ) -> Result<Self, SpecializationError> {
         Self::from_type_info(&context.get_type_info(ty)?)
     }

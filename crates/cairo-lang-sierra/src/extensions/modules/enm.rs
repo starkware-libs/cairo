@@ -16,7 +16,6 @@
 //! ```
 
 use cairo_lang_utils::try_extract_matches;
-use num_bigint::ToBigInt;
 use num_traits::Signed;
 
 use super::snapshot::snapshot_ty;
@@ -75,7 +74,7 @@ impl EnumConcreteType {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
                 .clone();
-            let info = context.get_type_info(ty.clone())?;
+            let info = context.get_type_info(&ty)?;
             if !info.storable {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
@@ -107,7 +106,7 @@ impl EnumConcreteType {
         context: &dyn SignatureSpecializationContext,
         ty: &ConcreteTypeId,
     ) -> Result<Self, SpecializationError> {
-        let long_id = context.get_type_info(ty.clone())?.long_id;
+        let long_id = context.get_type_info(ty)?.long_id;
         if long_id.generic_id != EnumType::ID {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -154,16 +153,17 @@ impl EnumInitLibfunc {
         args: &[GenericArg],
     ) -> Result<EnumInitConcreteLibfunc, SpecializationError> {
         let (enum_type, index) = match args {
-            [GenericArg::Type(enum_type), GenericArg::Value(index)] => {
-                (enum_type.clone(), index.clone())
-            }
+            [GenericArg::Type(enum_type), GenericArg::Value(index)] => (enum_type, index),
             [_, _] => return Err(SpecializationError::UnsupportedGenericArg),
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
-        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, enum_type)?.variants;
         let n_variants = variant_types.len();
-        if index.is_negative() || index >= n_variants.to_bigint().unwrap() {
-            return Err(SpecializationError::IndexOutOfRange { index, range_size: n_variants });
+        if index.is_negative() || index >= &n_variants.into() {
+            return Err(SpecializationError::IndexOutOfRange {
+                index: index.clone(),
+                range_size: n_variants,
+            });
         }
         let index: usize = index.try_into().unwrap();
         let variant_type = variant_types[index].clone();
@@ -176,7 +176,7 @@ impl EnumInitLibfunc {
                     allow_const: true,
                 }],
                 vec![OutputVarInfo {
-                    ty: enum_type,
+                    ty: enum_type.clone(),
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 }],
                 SierraApChange::Known { new_vars_only: true },
@@ -232,14 +232,14 @@ impl EnumFromBoundedIntLibfunc {
         args: &[GenericArg],
     ) -> Result<EnumFromBoundedIntConcreteLibfunc, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
-        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, enum_type)?.variants;
         let n_variants = variant_types.len();
         if n_variants == 0 {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
         for v in variant_types {
-            let long_id = context.get_type_info(v)?.long_id;
+            let long_id = context.get_type_info(&v)?.long_id;
             // Only trivial empty structs are allowed as variant types.
             if !(long_id.generic_id == StructType::ID && long_id.generic_args.len() == 1) {
                 return Err(SpecializationError::UnsupportedGenericArg);
@@ -248,7 +248,7 @@ impl EnumFromBoundedIntLibfunc {
         let input_ty = bounded_int_ty(context, 0.into(), (n_variants - 1).into())?;
         if n_variants <= 2 {
             Ok(EnumFromBoundedIntConcreteLibfunc {
-                signature: reinterpret_cast_signature(input_ty, enum_type),
+                signature: reinterpret_cast_signature(input_ty, enum_type.clone()),
                 n_variants,
             })
         } else {
@@ -256,7 +256,7 @@ impl EnumFromBoundedIntLibfunc {
                 signature: LibfuncSignature::new_non_branch_ex(
                     vec![ParamSignature::new(input_ty)],
                     vec![OutputVarInfo {
-                        ty: enum_type,
+                        ty: enum_type.clone(),
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     }],
                     SierraApChange::Known { new_vars_only: false },
@@ -299,19 +299,19 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
-        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, enum_type)?.variants;
         let is_empty = variant_types.is_empty();
         let branch_signatures = variant_types
             .into_iter()
             .map(|ty| {
                 Ok(BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: ty.clone(),
-                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                        ref_info: if context.get_type_info(&ty)?.zero_sized {
                             OutputVarReferenceInfo::ZeroSized
                         } else {
                             OutputVarReferenceInfo::PartialParam { param_idx: 0 }
                         },
+                        ty,
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: true },
                 })
@@ -319,7 +319,7 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(LibfuncSignature {
-            param_signatures: vec![enum_type.into()],
+            param_signatures: vec![enum_type.clone().into()],
             branch_signatures,
             fallthrough: if is_empty { None } else { Some(0) },
         })
@@ -338,20 +338,20 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
-        let variant_types = EnumConcreteType::try_from_concrete_type(context, &enum_type)?.variants;
+        let variant_types = EnumConcreteType::try_from_concrete_type(context, enum_type)?.variants;
         let branch_signatures = variant_types
             .into_iter()
             .map(|ty| {
                 Ok(BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: snapshot_ty(context, ty.clone())?,
-                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                        ref_info: if context.get_type_info(&ty)?.zero_sized {
                             OutputVarReferenceInfo::ZeroSized
                         } else {
                             // All memory of the deconstruction would have the same lifetime as the
                             // first param - as it is its deconstruction.
                             OutputVarReferenceInfo::PartialParam { param_idx: 0 }
                         },
+                        ty: snapshot_ty(context, ty)?,
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: true },
                 })
@@ -359,7 +359,7 @@ impl SignatureOnlyGenericLibfunc for EnumSnapshotMatchLibfunc {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(LibfuncSignature {
-            param_signatures: vec![snapshot_ty(context, enum_type)?.into()],
+            param_signatures: vec![snapshot_ty(context, enum_type.clone())?.into()],
             branch_signatures,
             fallthrough: Some(0),
         })
