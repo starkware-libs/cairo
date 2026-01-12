@@ -15,9 +15,10 @@
 ///
 /// # Performance
 ///
-/// Serialization and deserialization have O(n) complexity for structs, where n is the number of fields.
-/// For enums, deserialization has O(m) complexity, where m is the number of variants, as it may need
-/// to check multiple variants before finding a match.
+/// Serialization and deserialization have O(n) complexity for structs, where n is the number of
+/// fields.
+/// For enums, deserialization has O(m) complexity, where m is the number of variants, as it may
+/// need to check multiple variants before finding a match.
 ///
 /// # Examples
 ///
@@ -84,7 +85,8 @@ pub trait EventEmitter<T, TEvent> {
     /// Emits an event.
     ///
     /// The `S` parameter allows passing the event directly or any type convertible to `TEvent`
-    /// via the `Into` trait. This enables flexible usage patterns like emitting enum variants directly.
+    /// via the `Into` trait. This enables flexible usage patterns like emitting enum variants
+    /// directly.
     ///
     /// # Panics
     ///
