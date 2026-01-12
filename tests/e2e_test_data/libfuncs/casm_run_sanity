@@ -1,0 +1,824 @@
+//! > simple addition - basic arithmetic
+
+//! > test_runner_name
+SmallE2ETestRunner(trace: true, test_data: add_three(5)=8)
+
+//! > cairo_code
+fn add_three(x: felt252) -> felt252 {
+    x + 3
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 3, ap++;
+ret;
+
+//! > function_costs
+test::add_three: SmallOrderedMap({Const: 100})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 3> = Const<felt252, 3> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 3>> = const_as_immediate<Const<felt252, 3>>;
+libfunc felt252_add = felt252_add;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+F0:
+const_as_immediate<Const<felt252, 3>>() -> ([1]);
+felt252_add([0], [1]) -> ([2]);
+store_temp<felt252>([2]) -> ([2]);
+return([2]);
+
+test::add_three@F0([0]: felt252) -> (felt252);
+
+//! > casm_trace
+| PC | AP | FP |
+| 1 | 13 | 13 |
+| 3 | 14 | 13 |
+| 6 | 16 | 16 |
+| 8 | 17 | 16 |
+| 5 | 17 | 13 |
+
+//! > memory
+[1] = 290341444919459839
+[2] = 1
+[3] = 1226245742482522112
+[4] = 3
+[5] = 2345108766317314046
+[6] = 5198983563776458752
+[7] = 3
+[8] = 2345108766317314046
+[9] = 2345108766317314046
+[10] = 17
+[11] = 17
+[12] = 17
+[13] = 5
+[14] = 13
+[15] = 5
+[16] = 8
+[17] = 4050
+[18] = 583
+[19] = 4085
+[20] = 491
+[21] = 230
+[22] = 604
+
+//! > ==========================================================================
+
+//! > box creation and unbox - simple box operations
+
+//! > test_runner_name
+SmallE2ETestRunner(trace: true, test_data: box_double(7)=14)
+
+//! > cairo_code
+fn box_double(x: felt252) -> felt252 {
+    let boxed = BoxTrait::new(x);
+    let val = boxed.unbox();
+    val + val
+}
+
+//! > casm
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 1
+%}
+[fp + -3] = [[ap + 0] + 0], ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [ap + -1] + [ap + -1], ap++;
+ret;
+
+//! > function_costs
+test::box_double: SmallOrderedMap({Const: 300})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc into_box<felt252> = into_box<felt252>;
+libfunc unbox<felt252> = unbox<felt252>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc dup<felt252> = dup<felt252>;
+libfunc felt252_add = felt252_add;
+
+F0:
+into_box<felt252>([0]) -> ([1]);
+unbox<felt252>([1]) -> ([2]);
+store_temp<felt252>([2]) -> ([2]);
+dup<felt252>([2]) -> ([2], [3]);
+felt252_add([3], [2]) -> ([4]);
+store_temp<felt252>([4]) -> ([4]);
+return([4]);
+
+test::box_double@F0([0]: felt252) -> (felt252);
+
+//! > casm_trace
+| PC | AP | FP |
+| 1 | 14 | 14 |
+| 3 | 15 | 14 |
+| 6 | 17 | 17 |
+| 7 | 18 | 17 |
+| 8 | 19 | 17 |
+| 9 | 20 | 17 |
+| 5 | 20 | 14 |
+
+//! > memory
+[1] = 290341444919459839
+[2] = 1
+[3] = 1226245742482522112
+[4] = 3
+[5] = 2345108766317314046
+[6] = 5188568985343393789
+[7] = 5188287510366617600
+[8] = 5201798304953761792
+[9] = 2345108766317314046
+[10] = 2345108766317314046
+[11] = 20
+[12] = 20
+[13] = 20
+[14] = 7
+[15] = 14
+[16] = 5
+[17] = 26
+[18] = 7
+[19] = 14
+[20] = 4050
+[21] = 583
+[22] = 4085
+[23] = 491
+[24] = 230
+[25] = 604
+[26] = 7
+
+//! > ==========================================================================
+
+//! > match control flow - returns different values based on input
+
+//! > test_runner_name
+SmallE2ETestRunner(trace: true, test_data: match_val(2)=20)
+
+//! > cairo_code
+fn match_val(x: felt252) -> felt252 {
+    if x == 0 {
+        0
+    } else if x == 1 {
+        10
+    } else {
+        20
+    }
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 0, ap++;
+jmp rel 7 if [ap + -1] != 0;
+ap += 1;
+[ap + 0] = 0, ap++;
+ret;
+[fp + -3] = [ap + 0] + 1, ap++;
+jmp rel 5 if [ap + -1] != 0;
+[ap + 0] = 10, ap++;
+ret;
+[ap + 0] = 20, ap++;
+ret;
+
+//! > function_costs
+test::match_val: SmallOrderedMap({Const: 500})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 20> = Const<felt252, 20> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 10> = Const<felt252, 10> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc dup<felt252> = dup<felt252>;
+libfunc felt252_sub = felt252_sub;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc branch_align = branch_align;
+libfunc drop<felt252> = drop<felt252>;
+libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
+libfunc const_as_immediate<Const<felt252, 10>> = const_as_immediate<Const<felt252, 10>>;
+libfunc const_as_immediate<Const<felt252, 20>> = const_as_immediate<Const<felt252, 20>>;
+
+F0:
+const_as_immediate<Const<felt252, 0>>() -> ([1]);
+dup<felt252>([0]) -> ([0], [2]);
+dup<felt252>([1]) -> ([1], [3]);
+felt252_sub([2], [3]) -> ([4]);
+store_temp<felt252>([4]) -> ([4]);
+felt252_is_zero([4]) { fallthrough() F0_B0([5]) };
+branch_align() -> ();
+drop<felt252>([0]) -> ();
+store_temp<felt252>([1]) -> ([1]);
+return([1]);
+F0_B0:
+branch_align() -> ();
+drop<NonZero<felt252>>([5]) -> ();
+drop<felt252>([1]) -> ();
+const_as_immediate<Const<felt252, 1>>() -> ([6]);
+felt252_sub([0], [6]) -> ([7]);
+store_temp<felt252>([7]) -> ([7]);
+felt252_is_zero([7]) { fallthrough() F0_B1([8]) };
+branch_align() -> ();
+const_as_immediate<Const<felt252, 10>>() -> ([9]);
+store_temp<felt252>([9]) -> ([9]);
+return([9]);
+F0_B1:
+branch_align() -> ();
+drop<NonZero<felt252>>([8]) -> ();
+const_as_immediate<Const<felt252, 20>>() -> ([10]);
+store_temp<felt252>([10]) -> ([10]);
+return([10]);
+
+test::match_val@F0([0]: felt252) -> (felt252);
+
+//! > casm_trace
+| PC | AP | FP |
+| 1 | 29 | 29 |
+| 3 | 30 | 29 |
+| 6 | 32 | 32 |
+| 8 | 33 | 32 |
+| 15 | 33 | 32 |
+| 17 | 34 | 32 |
+| 22 | 34 | 32 |
+| 24 | 35 | 32 |
+| 5 | 35 | 29 |
+
+//! > memory
+[1] = 290341444919459839
+[2] = 1
+[3] = 1226245742482522112
+[4] = 3
+[5] = 2345108766317314046
+[6] = 5198702088799944701
+[7] = 0
+[8] = 145944781866893311
+[9] = 7
+[10] = 290341444919459839
+[11] = 1
+[12] = 5189976364521848832
+[13] = 0
+[14] = 2345108766317314046
+[15] = 5198702088799944701
+[16] = 1
+[17] = 145944781866893311
+[18] = 5
+[19] = 5189976364521848832
+[20] = 10
+[21] = 2345108766317314046
+[22] = 5189976364521848832
+[23] = 20
+[24] = 2345108766317314046
+[25] = 2345108766317314046
+[26] = 35
+[27] = 35
+[28] = 35
+[29] = 2
+[30] = 29
+[31] = 5
+[32] = 2
+[33] = 1
+[34] = 20
+[35] = 4050
+[36] = 583
+[37] = 4085
+[38] = 491
+[39] = 230
+[40] = 604
+
+//! > ==========================================================================
+
+//! > fibonacci with loop - fib(n) using while loop (without gas tracking)
+
+//! > test_runner_name
+SmallE2ETestRunner(trace: true, skip_gas: false, test_data: fib(3)=2)
+
+//! > cairo_code
+fn fib(n: felt252) -> felt252 {
+    let mut a: felt252 = 0;
+    let mut b: felt252 = 1;
+    let mut i: felt252 = 0;
+    while i != n {
+        let temp = b;
+        b = a + b;
+        a = temp;
+        i = i + 1;
+    }
+    a
+}
+
+//! > casm
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel 19;
+jmp rel 10 if [ap + -4] != 0;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+ret;
+%{ memory[ap + 0] = 1570 <= memory[fp + -7] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -7] + 340282366920938463463374607431768209886, ap++;
+[ap + -1] = [[fp + -8] + 0];
+jmp rel 37;
+[fp + -7] = [ap + 0] + 1570, ap++;
+[ap + -1] = [[fp + -8] + 0];
+[fp + -4] = [ap + 0] + [fp + -3], ap++;
+jmp rel 16 if [ap + -1] != 0;
+[ap + 0] = 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -8] + 1, ap++;
+[ap + 0] = [ap + -5] + 2170, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+ret;
+[ap + 0] = 0, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [fp + -8] + 1, ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [fp + -5] + [fp + -6], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+call rel -39;
+ret;
+call rel 12;
+[ap + 0] = [fp + -8] + 1, ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -6], ap++;
+[ap + 0] = [ap + -6], ap++;
+ret;
+[ap + 0] = 375233589013918064796019, ap++;
+call rel 3;
+ret;
+%{ memory[ap + 0] = segments.add() %}
+ap += 1;
+[fp + -3] = [[ap + -1] + 0];
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -2] + 1, ap++;
+ret;
+
+//! > function_costs
+test::fib: SmallOrderedMap({Const: 3370})
+test::fib[116-219]: SmallOrderedMap({Const: 1970})
+core::panic_with_const_felt252::<375233589013918064796019>: SmallOrderedMap({Const: 700})
+core::panic_with_felt252: SmallOrderedMap({Const: 400})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Const<felt252, 375233589013918064796019> = Const<felt252, 375233589013918064796019> [storable: false, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252> = Struct<ut@Tuple, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::panics::PanicResult::<(core::felt252,)> = Enum<ut@core::panics::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<felt252, felt252, felt252, Unit> = Struct<ut@Tuple, felt252, felt252, felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())> = Enum<ut@core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>, Tuple<felt252, felt252, felt252, Unit>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 1> = Const<felt252, 1> [storable: false, drop: false, dup: false, zero_sized: false];
+type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
+libfunc const_as_immediate<Const<felt252, 1>> = const_as_immediate<Const<felt252, 1>>;
+libfunc snapshot_take<felt252> = snapshot_take<felt252>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc dup<felt252> = dup<felt252>;
+libfunc function_call<user@test::fib[116-219]> = function_call<user@test::fib[116-219]>;
+libfunc enum_match<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>> = enum_match<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>>;
+libfunc branch_align = branch_align;
+libfunc redeposit_gas = redeposit_gas;
+libfunc struct_deconstruct<Tuple<felt252, felt252, felt252, Unit>> = struct_deconstruct<Tuple<felt252, felt252, felt252, Unit>>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Tuple<felt252>> = struct_construct<Tuple<felt252>>;
+libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 0> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(core::felt252,)>> = store_temp<core::panics::PanicResult::<(core::felt252,)>>;
+libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 1> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>;
+libfunc withdraw_gas = withdraw_gas;
+libfunc rename<felt252> = rename<felt252>;
+libfunc felt252_sub = felt252_sub;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc dup<Unit> = dup<Unit>;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc bool_not_impl = bool_not_impl;
+libfunc drop<core::bool> = drop<core::bool>;
+libfunc struct_construct<Tuple<felt252, felt252, felt252, Unit>> = struct_construct<Tuple<felt252, felt252, felt252, Unit>>;
+libfunc enum_init<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>, 0> = enum_init<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>, 0>;
+libfunc store_temp<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>> = store_temp<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>>;
+libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc felt252_add = felt252_add;
+libfunc function_call<user@core::panic_with_const_felt252::<375233589013918064796019>> = function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>;
+libfunc enum_init<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>, 1> = enum_init<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>, 1>;
+libfunc const_as_immediate<Const<felt252, 375233589013918064796019>> = const_as_immediate<Const<felt252, 375233589013918064796019>>;
+libfunc function_call<user@core::panic_with_felt252> = function_call<user@core::panic_with_felt252>;
+libfunc array_new<felt252> = array_new<felt252>;
+libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc store_temp<Tuple<core::panics::Panic, Array<felt252>>> = store_temp<Tuple<core::panics::Panic, Array<felt252>>>;
+
+F0:
+disable_ap_tracking() -> ();
+const_as_immediate<Const<felt252, 0>>() -> ([3]);
+const_as_immediate<Const<felt252, 1>>() -> ([4]);
+snapshot_take<felt252>([2]) -> ([5], [6]);
+drop<felt252>([5]) -> ();
+store_temp<RangeCheck>([0]) -> ([0]);
+store_temp<GasBuiltin>([1]) -> ([1]);
+store_temp<felt252>([4]) -> ([4]);
+dup<felt252>([3]) -> ([3], [7]);
+store_temp<felt252>([7]) -> ([7]);
+store_temp<felt252>([3]) -> ([3]);
+store_temp<felt252>([6]) -> ([6]);
+function_call<user@test::fib[116-219]>([0], [1], [4], [7], [3], [6]) -> ([8], [9], [10]);
+enum_match<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>>([10]) { fallthrough([11]) F0_B0([12]) };
+branch_align() -> ();
+redeposit_gas([9]) -> ([13]);
+struct_deconstruct<Tuple<felt252, felt252, felt252, Unit>>([11]) -> ([14], [15], [16], [17]);
+drop<felt252>([14]) -> ();
+drop<felt252>([16]) -> ();
+drop<Unit>([17]) -> ();
+struct_construct<Tuple<felt252>>([15]) -> ([18]);
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([18]) -> ([19]);
+store_temp<RangeCheck>([8]) -> ([8]);
+store_temp<GasBuiltin>([13]) -> ([13]);
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([19]) -> ([19]);
+return([8], [13], [19]);
+F0_B0:
+branch_align() -> ();
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([12]) -> ([20]);
+store_temp<RangeCheck>([8]) -> ([8]);
+store_temp<GasBuiltin>([9]) -> ([9]);
+store_temp<core::panics::PanicResult::<(core::felt252,)>>([20]) -> ([20]);
+return([8], [9], [20]);
+F1:
+disable_ap_tracking() -> ();
+withdraw_gas([0], [1]) { fallthrough([6], [7]) F1_B1([8], [9]) };
+branch_align() -> ();
+dup<felt252>([5]) -> ([5], [10]);
+rename<felt252>([10]) -> ([11]);
+dup<felt252>([4]) -> ([4], [12]);
+felt252_sub([12], [11]) -> ([13]);
+store_temp<felt252>([13]) -> ([13]);
+felt252_is_zero([13]) { fallthrough() F1_B0([14]) };
+branch_align() -> ();
+drop<felt252>([5]) -> ();
+redeposit_gas([7]) -> ([15]);
+struct_construct<Unit>() -> ([16]);
+dup<Unit>([16]) -> ([16], [17]);
+enum_init<core::bool, 1>([17]) -> ([18]);
+store_temp<core::bool>([18]) -> ([18]);
+bool_not_impl([18]) -> ([19]);
+drop<core::bool>([19]) -> ();
+struct_construct<Tuple<felt252, felt252, felt252, Unit>>([2], [3], [4], [16]) -> ([20]);
+enum_init<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>, 0>([20]) -> ([21]);
+store_temp<RangeCheck>([6]) -> ([6]);
+store_temp<GasBuiltin>([15]) -> ([15]);
+store_temp<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>>([21]) -> ([21]);
+return([6], [15], [21]);
+F1_B0:
+branch_align() -> ();
+drop<NonZero<felt252>>([14]) -> ();
+redeposit_gas([7]) -> ([22]);
+struct_construct<Unit>() -> ([23]);
+enum_init<core::bool, 0>([23]) -> ([24]);
+store_temp<core::bool>([24]) -> ([24]);
+bool_not_impl([24]) -> ([25]);
+drop<core::bool>([25]) -> ();
+dup<felt252>([2]) -> ([2], [26]);
+felt252_add([3], [26]) -> ([27]);
+const_as_immediate<Const<felt252, 1>>() -> ([28]);
+felt252_add([4], [28]) -> ([29]);
+store_temp<RangeCheck>([6]) -> ([6]);
+store_temp<GasBuiltin>([22]) -> ([22]);
+store_temp<felt252>([27]) -> ([27]);
+store_temp<felt252>([2]) -> ([2]);
+store_temp<felt252>([29]) -> ([29]);
+store_temp<felt252>([5]) -> ([5]);
+function_call<user@test::fib[116-219]>([6], [22], [27], [2], [29], [5]) -> ([30], [31], [32]);
+return([30], [31], [32]);
+F1_B1:
+branch_align() -> ();
+drop<felt252>([5]) -> ();
+drop<felt252>([3]) -> ();
+drop<felt252>([2]) -> ();
+drop<felt252>([4]) -> ();
+function_call<user@core::panic_with_const_felt252::<375233589013918064796019>>() -> ([33]);
+enum_init<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>, 1>([33]) -> ([34]);
+store_temp<RangeCheck>([8]) -> ([8]);
+store_temp<GasBuiltin>([9]) -> ([9]);
+store_temp<core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>>([34]) -> ([34]);
+return([8], [9], [34]);
+F2:
+const_as_immediate<Const<felt252, 375233589013918064796019>>() -> ([0]);
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@core::panic_with_felt252>([0]) -> ([1]);
+return([1]);
+F3:
+array_new<felt252>() -> ([1]);
+array_append<felt252>([1], [0]) -> ([2]);
+struct_construct<core::panics::Panic>() -> ([3]);
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([3], [2]) -> ([4]);
+store_temp<Tuple<core::panics::Panic, Array<felt252>>>([4]) -> ([4]);
+return([4]);
+
+test::fib@F0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::felt252,)>);
+test::fib[116-219]@F1([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252, [3]: felt252, [4]: felt252, [5]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::felt252, core::felt252, core::felt252, ())>);
+core::panic_with_const_felt252::<375233589013918064796019>@F2() -> (Tuple<core::panics::Panic, Array<felt252>>);
+core::panic_with_felt252@F3([0]: felt252) -> (Tuple<core::panics::Panic, Array<felt252>>);
+
+//! > casm_trace
+| PC | AP | FP |
+| 1 | 106 | 106 |
+| 2 | 107 | 106 |
+| 4 | 109 | 106 |
+| 7 | 111 | 111 |
+| 8 | 112 | 111 |
+| 9 | 113 | 111 |
+| 11 | 114 | 111 |
+| 13 | 115 | 111 |
+| 15 | 116 | 111 |
+| 16 | 117 | 111 |
+| 35 | 119 | 119 |
+| 42 | 120 | 119 |
+| 44 | 121 | 119 |
+| 45 | 121 | 119 |
+| 46 | 122 | 119 |
+| 62 | 122 | 119 |
+| 64 | 123 | 119 |
+| 66 | 124 | 119 |
+| 68 | 125 | 119 |
+| 69 | 126 | 119 |
+| 70 | 127 | 119 |
+| 71 | 128 | 119 |
+| 73 | 129 | 119 |
+| 74 | 130 | 119 |
+| 35 | 132 | 132 |
+| 42 | 133 | 132 |
+| 44 | 134 | 132 |
+| 45 | 134 | 132 |
+| 46 | 135 | 132 |
+| 62 | 135 | 132 |
+| 64 | 136 | 132 |
+| 66 | 137 | 132 |
+| 68 | 138 | 132 |
+| 69 | 139 | 132 |
+| 70 | 140 | 132 |
+| 71 | 141 | 132 |
+| 73 | 142 | 132 |
+| 74 | 143 | 132 |
+| 35 | 145 | 145 |
+| 42 | 146 | 145 |
+| 44 | 147 | 145 |
+| 45 | 147 | 145 |
+| 46 | 148 | 145 |
+| 62 | 148 | 145 |
+| 64 | 149 | 145 |
+| 66 | 150 | 145 |
+| 68 | 151 | 145 |
+| 69 | 152 | 145 |
+| 70 | 153 | 145 |
+| 71 | 154 | 145 |
+| 73 | 155 | 145 |
+| 74 | 156 | 145 |
+| 35 | 158 | 158 |
+| 42 | 159 | 158 |
+| 44 | 160 | 158 |
+| 45 | 160 | 158 |
+| 46 | 161 | 158 |
+| 48 | 161 | 158 |
+| 50 | 162 | 158 |
+| 52 | 163 | 158 |
+| 54 | 164 | 158 |
+| 56 | 165 | 158 |
+| 58 | 166 | 158 |
+| 59 | 167 | 158 |
+| 60 | 168 | 158 |
+| 61 | 169 | 158 |
+| 76 | 169 | 145 |
+| 76 | 169 | 132 |
+| 76 | 169 | 119 |
+| 18 | 169 | 111 |
+| 20 | 169 | 111 |
+| 21 | 170 | 111 |
+| 22 | 171 | 111 |
+| 24 | 172 | 111 |
+| 26 | 173 | 111 |
+| 27 | 174 | 111 |
+| 6 | 174 | 106 |
+
+//! > memory
+[1] = 5191102247248822272
+[2] = 290341444919459839
+[3] = 2
+[4] = 1226245742482522112
+[5] = 3
+[6] = 2345108766317314046
+[7] = 5191102238658887680
+[8] = 5191102242953854976
+[9] = 5189976364521848832
+[10] = 1
+[11] = 5189976364521848832
+[12] = 0
+[13] = 5189976364521848832
+[14] = 0
+[15] = 5191102247248822272
+[16] = 1226245742482522112
+[17] = 19
+[18] = 145944781866893308
+[19] = 10
+[20] = 5193354034177605632
+[21] = 5193354034177605632
+[22] = 5189976364521848832
+[23] = 0
+[24] = 5189976364521848832
+[25] = 0
+[26] = 5193354034177605632
+[27] = 2345108766317314046
+[28] = 5193354034177605632
+[29] = 5193354034177605632
+[30] = 5189976364521848832
+[31] = 1
+[32] = 5193354038472572928
+[33] = 5193354038472572928
+[34] = 2345108766317314046
+[35] = 722405534170316800
+[36] = 7
+[37] = 5198983563776196608
+[38] = 340282366920938463463374607431768209886
+[39] = 4612389708016156671
+[40] = 74168662805676031
+[41] = 37
+[42] = 5198702088799944697
+[43] = 1570
+[44] = 4612389708016156671
+[45] = 5199827971526918140
+[46] = 145944781866893311
+[47] = 16
+[48] = 5189976364521848832
+[49] = 1
+[50] = 5189976364521848832
+[51] = 1
+[52] = 5198983563776131072
+[53] = 1
+[54] = 5198420613822906368
+[55] = 2170
+[56] = 5189976364521848832
+[57] = 0
+[58] = 5191102234363920384
+[59] = 5191102238658887680
+[60] = 5191102242953854976
+[61] = 2345108766317314046
+[62] = 5189976364521848832
+[63] = 0
+[64] = 5189976364521848832
+[65] = 1
+[66] = 5198983563776131072
+[67] = 1
+[68] = 5193354038472572928
+[69] = 5200109433618399232
+[70] = 5191102234363920384
+[71] = 5198983563776393216
+[72] = 1
+[73] = 5191102247248822272
+[74] = 1226245742482522112
+[75] = 3618502788666131213697322783095070105623107215331596699973092056135872020442
+[76] = 2345108766317314046
+[77] = 1226245742482522112
+[78] = 12
+[79] = 5198983563776131072
+[80] = 1
+[81] = 5191102230068953088
+[82] = 5189976364521848832
+[83] = 1
+[84] = 5189976364521848832
+[85] = 0
+[86] = 5193354034177605632
+[87] = 5193354034177605632
+[88] = 2345108766317314046
+[89] = 5189976364521848832
+[90] = 375233589013918064796019
+[91] = 1226245742482522112
+[92] = 3
+[93] = 2345108766317314046
+[94] = 290341444919459839
+[95] = 1
+[96] = 4612108233039904765
+[97] = 5193354055652442112
+[98] = 5198420613823102976
+[99] = 1
+[100] = 2345108766317314046
+[101] = 2345108766317314046
+[102] = 178
+[103] = 174
+[104] = 178
+[105] = 178
+[106] = 174
+[107] = 18446744073709548245
+[108] = 3
+[109] = 106
+[110] = 6
+[111] = 174
+[112] = 18446744073709548245
+[113] = 1
+[114] = 0
+[115] = 0
+[116] = 3
+[117] = 111
+[118] = 18
+[119] = 1
+[120] = 18446744073709546675
+[121] = 3618502788666131213697322783095070105623107215331596699973092056135872020478
+[122] = 0
+[123] = 1
+[124] = 175
+[125] = 18446744073709546675
+[126] = 1
+[127] = 1
+[128] = 1
+[129] = 3
+[130] = 119
+[131] = 76
+[132] = 1
+[133] = 18446744073709545105
+[134] = 3618502788666131213697322783095070105623107215331596699973092056135872020479
+[135] = 0
+[136] = 1
+[137] = 176
+[138] = 18446744073709545105
+[139] = 2
+[140] = 1
+[141] = 2
+[142] = 3
+[143] = 132
+[144] = 76
+[145] = 1
+[146] = 18446744073709543535
+[147] = 3618502788666131213697322783095070105623107215331596699973092056135872020480
+[148] = 0
+[149] = 1
+[150] = 177
+[151] = 18446744073709543535
+[152] = 3
+[153] = 2
+[154] = 3
+[155] = 3
+[156] = 145
+[157] = 76
+[158] = 1
+[159] = 18446744073709541965
+[160] = 0
+[161] = 1
+[162] = 1
+[163] = 178
+[164] = 18446744073709544135
+[165] = 0
+[166] = 3
+[167] = 2
+[168] = 3
+[169] = 178
+[170] = 18446744073709544135
+[171] = 0
+[172] = 0
+[173] = 2
+[174] = 18446744073709546675
+[175] = 18446744073709545105
+[176] = 18446744073709543535
+[177] = 18446744073709541965
+[178] = 4050
+[179] = 583
+[180] = 4085
+[181] = 491
+[182] = 230
+[183] = 604

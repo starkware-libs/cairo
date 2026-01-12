@@ -4007,6 +4007,7 @@ dependencies = [
  "log",
  "num-bigint",
  "pretty_assertions",
+ "regex",
  "rstest",
  "salsa",
  "starknet-types-core",

@@ -18,6 +18,7 @@ use cairo_vm::serde::deserialize_program::HintParams;
 use cairo_vm::types::builtin_name::BuiltinName;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::{ExecutionResources, RunResources};
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
@@ -60,6 +61,7 @@ pub struct RunResultStarknet {
     pub used_resources: StarknetExecutionResources,
     /// The profiling info of the run, if requested.
     pub profiling_info: Option<ProfilingInfo>,
+    pub trace: Option<Vec<RelocatedTraceEntry>>,
 }
 
 /// The full result of a run.
@@ -71,6 +73,7 @@ pub struct RunResult {
     pub used_resources: ExecutionResources,
     /// The profiling info of the run, if requested.
     pub profiling_info: Option<ProfilingInfo>,
+    pub trace: Option<Vec<RelocatedTraceEntry>>,
 }
 
 /// The execution resources in a run.
@@ -206,7 +209,26 @@ impl SierraCasmRunner {
     ) -> Result<RunResultStarknet, RunnerError> {
         let (mut hint_processor, ctx) =
             self.prepare_starknet_context(func, args, available_gas, starknet_state)?;
-        self.run_function_with_prepared_starknet_context(func, &mut hint_processor, ctx)
+        self.run_function_with_prepared_starknet_context(func, &mut hint_processor, ctx, false)
+    }
+
+    /// Runs the VM starting from a function in the context of a given Starknet state.
+    pub fn run_function_with_starknet_context_with_trace(
+        &self,
+        func: &Function,
+        args: Vec<Arg>,
+        available_gas: Option<usize>,
+        starknet_state: StarknetState,
+        return_trace: bool,
+    ) -> Result<RunResultStarknet, RunnerError> {
+        let (mut hint_processor, ctx) =
+            self.prepare_starknet_context(func, args, available_gas, starknet_state)?;
+        self.run_function_with_prepared_starknet_context(
+            func,
+            &mut hint_processor,
+            ctx,
+            return_trace,
+        )
     }
 
     /// Runs the VM starting from a function in the context of a given Starknet state and a
@@ -216,9 +238,17 @@ impl SierraCasmRunner {
         func: &Function,
         hint_processor: &mut dyn StarknetHintProcessor,
         PreparedStarknetContext { hints_dict, bytecode, builtins }: PreparedStarknetContext,
+        return_trace: bool,
     ) -> Result<RunResultStarknet, RunnerError> {
-        let RunResult { gas_counter, memory, value, used_resources, profiling_info } =
-            self.run_function(func, hint_processor, hints_dict, bytecode.iter(), builtins)?;
+        let RunResult { gas_counter, memory, value, used_resources, profiling_info, trace } = self
+            .run_function(
+                func,
+                hint_processor,
+                hints_dict,
+                bytecode.iter(),
+                builtins,
+                return_trace,
+            )?;
         let mut all_used_resources = hint_processor.take_syscalls_used_resources();
         all_used_resources.basic_resources += &used_resources;
         Ok(RunResultStarknet {
@@ -228,6 +258,7 @@ impl SierraCasmRunner {
             starknet_state: hint_processor.take_starknet_state(),
             used_resources: all_used_resources,
             profiling_info,
+            trace,
         })
     }
 
@@ -267,6 +298,7 @@ impl SierraCasmRunner {
         hints_dict: HashMap<usize, Vec<HintParams>>,
         bytecode: Bytecode,
         builtins: Vec<BuiltinName>,
+        return_trace: bool,
     ) -> Result<RunResult, RunnerError>
     where
         Bytecode: ExactSizeIterator<Item = &'a BigInt> + Clone,
@@ -314,7 +346,14 @@ impl SierraCasmRunner {
             ProfilingInfo::from_trace(builder, load_offset, config, &relocated_trace)
         });
 
-        Ok(RunResult { gas_counter, memory, value, used_resources, profiling_info })
+        Ok(RunResult {
+            gas_counter,
+            memory,
+            value,
+            used_resources,
+            profiling_info,
+            trace: if return_trace { Some(relocated_trace) } else { None },
+        })
     }
 
     /// Prepares context for running a function in the context of a given Starknet state.

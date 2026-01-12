@@ -444,8 +444,12 @@ fn run_single_test(
         None => Box::new(hint_processor),
     };
 
-    let result =
-        runner.run_function_with_prepared_starknet_context(func, &mut *hint_processor, ctx)?;
+    let result = runner.run_function_with_prepared_starknet_context(
+        func,
+        &mut *hint_processor,
+        ctx,
+        false,
+    )?;
 
     Ok(Some(TestResult {
         status: match &result.value {
