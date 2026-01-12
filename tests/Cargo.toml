@@ -32,6 +32,7 @@ itertools = { workspace = true, default-features = true }
 log.workspace = true
 num-bigint = { workspace = true, default-features = true }
 pretty_assertions.workspace = true
+regex = "1"
 rstest.workspace = true
 salsa.workspace = true
 starknet-types-core.workspace = true

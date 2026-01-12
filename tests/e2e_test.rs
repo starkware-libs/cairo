@@ -7,6 +7,7 @@ use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::lowering_group_input;
 use cairo_lang_lowering::optimizations::config::{OptimizationConfig, Optimizations};
+use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
@@ -23,7 +24,9 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
+use regex::Regex;
 use salsa::Setter;
+use starknet_types_core::felt::Felt as Felt252;
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
@@ -106,6 +109,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         u512: "u512",
         u64: "u64",
         u8: "u8",
+        casm_run_sanity: "casm_run_sanity",
     },
     SmallE2ETestRunner
 );
@@ -160,7 +164,28 @@ impl TestFileRunner for SmallE2ETestRunner {
         args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
         let future_sierra = args.get("future_sierra").is_some_and(|v| v == "true");
-        run_e2e_test(inputs, E2eTestParams { future_sierra, ..E2eTestParams::default() })
+        let skip_gas = args.get("skip_gas").is_some_and(|v| v == "true");
+
+        let test_data = if let Some(s) = args.get("test_data") {
+            match TestData::parse(s) {
+                Ok(td) => Some(td),
+                Err(e) => {
+                    return TestRunnerResult { outputs: OrderedHashMap::default(), error: Some(e) };
+                }
+            }
+        } else {
+            None
+        };
+
+        run_e2e_test(
+            inputs,
+            E2eTestParams {
+                future_sierra,
+                test_data,
+                add_withdraw_gas: !skip_gas,
+                ..E2eTestParams::default()
+            },
+        )
     }
 }
 
@@ -211,6 +236,54 @@ impl TestFileRunner for SmallE2ETestRunnerMetadataComputation {
     }
 }
 
+/// Represents test data for function execution: function_name(input)=output
+#[derive(Clone, Debug)]
+struct TestData {
+    function_name: String,
+    input: Felt252,
+    expected_output: Felt252,
+}
+
+impl TestData {
+    /// Parses test_data format: "function_name(input)=output"
+    /// Allows whitespace around all components.
+    fn parse(s: &str) -> Result<Self, String> {
+        // Regex pattern breakdown:
+        // ^\s*          - Start of string, optional leading whitespace
+        // (\w+)         - Capture group 1: function name (alphanumeric + underscore)
+        // \s*\(\s*      - Optional whitespace, opening parenthesis, optional whitespace
+        // (-?\d+)       - Capture group 2: input number (optional minus sign, then digits)
+        // \s*\)\s*      - Optional whitespace, closing parenthesis, optional whitespace
+        // =             - Equals sign
+        // \s*           - Optional whitespace after equals
+        // (-?\d+)       - Capture group 3: expected output number (optional minus, digits)
+        // \s*$          - Optional trailing whitespace, end of string
+        let re = Regex::new(r"^\s*(\w+)\s*\(\s*(-?\d+)\s*\)\s*=\s*(-?\d+)\s*$")
+            .expect("Invalid regex pattern");
+
+        let captures = re.captures(s).ok_or_else(|| {
+            format!(
+                "Invalid test_data format: '{}'. Expected format: 'function_name(input)=output' \
+                 where function_name contains only alphanumeric/underscore characters and both \
+                 input and output are valid Felt252 decimal values",
+                s
+            )
+        })?;
+
+        let function_name = captures.get(1).unwrap().as_str().to_string();
+        let input_str = captures.get(2).unwrap().as_str();
+        let output_str = captures.get(3).unwrap().as_str();
+
+        let input = Felt252::from_dec_str(input_str)
+            .map_err(|e| format!("Failed to parse input as a felt '{}': {}", input_str, e))?;
+        let expected_output = Felt252::from_dec_str(output_str).map_err(|e| {
+            format!("Failed to parse expected output as a felt '{}': {}", output_str, e)
+        })?;
+
+        Ok(TestData { function_name, input, expected_output })
+    }
+}
+
 /// Represents the parameters of `run_e2e_test`.
 struct E2eTestParams {
     /// Argument for `run_e2e_test` that controls whether to set the `add_withdraw_gas` flag
@@ -226,6 +299,9 @@ struct E2eTestParams {
 
     /// Argument for `run_e2e_test` that controls whether to enable the `future_sierra` flag.
     future_sierra: bool,
+
+    /// Test data for function execution validation.
+    test_data: Option<TestData>,
 }
 
 /// Implements default for `E2eTestParams`.
@@ -236,6 +312,7 @@ impl Default for E2eTestParams {
             metadata_computation: false,
             skip_optimization_passes: true,
             future_sierra: false,
+            test_data: None,
         }
     }
 }
@@ -319,6 +396,82 @@ fn run_e2e_test(
             .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
             .join("\n");
         res.insert("function_costs".into(), function_costs_str);
+    }
+
+    // Handle test_data if specified.
+    // This runs AFTER sierra/casm generation, so compilation outputs are always verified first.
+    if let Some(test_data) = &params.test_data {
+        let runner = SierraCasmRunner::new(
+            sierra_program.clone(),
+            if params.add_withdraw_gas { Some(Default::default()) } else { None },
+            Default::default(),
+            None,
+        )
+        .expect("Failed setting up runner for test_data.");
+
+        let func = match runner.find_function(&test_data.function_name) {
+            Ok(f) => f,
+            Err(e) => {
+                // Return outputs so sierra/casm can still be compared, but include the error.
+                return TestRunnerResult {
+                    outputs: res,
+                    error: Some(format!(
+                        "Function '{}' not found in the program: {}",
+                        test_data.function_name, e
+                    )),
+                };
+            }
+        };
+
+        let result = match runner.run_function_with_starknet_context(
+            func,
+            vec![Arg::Value(test_data.input)],
+            if params.add_withdraw_gas { Some(usize::MAX) } else { None },
+            Default::default(),
+        ) {
+            Ok(r) => r,
+            Err(e) => {
+                // Return outputs so sierra/casm can still be compared, but include the error.
+                return TestRunnerResult {
+                    outputs: res,
+                    error: Some(format!(
+                        "Failed running function '{}': {}",
+                        test_data.function_name, e
+                    )),
+                };
+            }
+        };
+
+        // Validate the output and record the result.
+        let validation_result = match &result.value {
+            RunResultValue::Success(values) => {
+                if values.is_empty() {
+                    Err(format!(
+                        "Function '{}' returned no values, expected {}",
+                        test_data.function_name, test_data.expected_output
+                    ))
+                } else {
+                    let actual_output = values[0];
+                    if actual_output != test_data.expected_output {
+                        Err(format!(
+                            "Function '{}' output mismatch: expected {}, got {}",
+                            test_data.function_name, test_data.expected_output, actual_output
+                        ))
+                    } else {
+                        Ok(())
+                    }
+                }
+            }
+            RunResultValue::Panic(panic_data) => Err(format!(
+                "Function '{}' panicked with data: {:?}",
+                test_data.function_name, panic_data
+            )),
+        };
+
+        // If validation failed, return outputs with error so sierra/casm comparison still happens.
+        if let Err(e) = validation_result {
+            return TestRunnerResult { outputs: res, error: Some(e) };
+        }
     }
 
     TestRunnerResult::success(res)
