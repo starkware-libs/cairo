@@ -177,25 +177,26 @@ fn validate_const_nz_data(
     if wrapped_ty_from_const != wrapped_ty_from_nz {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
+    let ty_info = context.get_type_info(wrapped_ty_from_nz)?;
     // Check the direct value cases.
-    match inner_const_data.as_slice() {
-        [GenericArg::Value(value)] if !value.is_zero() => {
-            // Validate that the inner type is a valid integer type, by calling `from_type_info`.
-            Range::from_type_info(&context.get_type_info(wrapped_ty_from_nz)?)?;
-            return Ok(());
-        }
-        [GenericArg::Value(_x), GenericArg::Value(y)] if !y.is_zero() => {
-            // Validate that the inner type is a valid ec point type.
-            if context.get_type_info(wrapped_ty_from_nz)?.long_id.generic_id == EcPointType::ID {
-                return Ok(());
-            } else {
-                return Err(SpecializationError::UnsupportedGenericArg);
-            }
-        }
-        _ => {}
+    if ty_info.long_id.generic_id == EcPointType::ID {
+        return if let [GenericArg::Value(_x), GenericArg::Value(y)] = inner_const_data.as_slice()
+            && !y.is_zero()
+        {
+            Ok(())
+        } else {
+            Err(SpecializationError::UnsupportedGenericArg)
+        };
+    } else if ty_info.long_id.generic_id != StructType::ID {
+        return if let [GenericArg::Value(value)] = inner_const_data.as_slice()
+            && !value.is_zero()
+        {
+            Range::from_type_info(&ty_info).map(|_| ())
+        } else {
+            Err(SpecializationError::UnsupportedGenericArg)
+        };
     }
-    let struct_generic_args =
-        extract_type_generic_args::<StructType>(context, &wrapped_ty_from_nz)?;
+    let struct_generic_args = ty_info.long_id.generic_args;
     if !matches!(
         struct_generic_args.first(),
         Some(GenericArg::UserType(ut))
