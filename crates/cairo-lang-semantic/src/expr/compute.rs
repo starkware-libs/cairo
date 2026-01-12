@@ -243,7 +243,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
         function_id: ContextFunction<'ctx>,
     ) -> Self {
         let cfg_set =
-            Arc::new(resolver.settings.cfg_set.as_ref().unwrap_or_else(|| db.cfg_set()).clone());
+            Arc::new(resolver.settings.cfg_set.as_ref().unwrap_or(db.cfg_set()).clone());
         let mut variable_tracker = VariableTracker::default();
         variable_tracker.extend_from_environment(&environment);
         Self {
