@@ -123,9 +123,13 @@ fn set_color(text: &str, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenWhitespace
         | SyntaxKind::TokenNewline
         | SyntaxKind::TokenEmpty => text.clear(),
-        // Fallback for unhandled token kinds (e.g., TokenAt, TokenDollar, TokenPub, etc.)
-        // Returns uncolored text to avoid panicking when new tokens are added.
-        _ => text.clear(),
+        _ => {
+            if kind.is_token() {
+                panic!("Unhandled token kind in colored printer: {:?}", kind);
+            }
+            // For non-token kinds, return uncolored text
+            text.clear()
+        }
     }
 }
 
