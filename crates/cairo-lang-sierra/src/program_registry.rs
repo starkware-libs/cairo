@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{chain, izip};
 use thiserror::Error;
 
@@ -72,12 +73,12 @@ pub enum ProgramRegistryError {
     TypeSizeOverflow(ConcreteTypeId),
 }
 
-type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
-type LibfuncMap<TLibfunc> = HashMap<ConcreteLibfuncId, TLibfunc>;
-type FunctionMap = HashMap<FunctionId, Function>;
+type TypeMap<TType> = UnorderedHashMap<u64, TType>;
+type LibfuncMap<TLibfunc> = UnorderedHashMap<u64, TLibfunc>;
+type FunctionMap = HashMap<u64, Function>;
 /// Mapping from the arguments for generating a concrete type (the generic-id and the arguments) to
 /// the concrete-id that points to it.
-type ConcreteTypeIdMap<'a> = HashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
+type ConcreteTypeIdMap<'a> = UnorderedHashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
@@ -114,7 +115,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         id: &FunctionId,
     ) -> Result<&'a Function, Box<ProgramRegistryError>> {
         self.functions
-            .get(id)
+            .get(&id.id)
             .ok_or_else(|| Box::new(ProgramRegistryError::MissingFunction(id.clone())))
     }
     /// Gets a type from the input program.
@@ -123,7 +124,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         id: &ConcreteTypeId,
     ) -> Result<&'a TType::Concrete, Box<ProgramRegistryError>> {
         self.concrete_types
-            .get(id)
+            .get(&id.id)
             .ok_or_else(|| Box::new(ProgramRegistryError::MissingType(id.clone())))
     }
     /// Gets a libfunc from the input program.
@@ -132,7 +133,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         id: &ConcreteLibfuncId,
     ) -> Result<&'a TLibfunc::Concrete, Box<ProgramRegistryError>> {
         self.concrete_libfuncs
-            .get(id)
+            .get(&id.id)
             .ok_or_else(|| Box::new(ProgramRegistryError::MissingLibfunc(id.clone())))
     }
 
@@ -142,7 +143,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
     fn validate(&self, program: &Program) -> Result<(), Box<ProgramRegistryError>> {
         // Check that all the parameter and return types are storable.
         for func in self.functions.values() {
-            for ty in chain!(func.signature.param_types.iter(), func.signature.ret_types.iter()) {
+            for ty in chain!(&func.signature.param_types, &func.signature.ret_types) {
                 if !self.get_type(ty)?.info().storable {
                     return Err(Box::new(ProgramRegistryError::FunctionWithUnstorableType {
                         func_id: func.id.clone(),
@@ -249,7 +250,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
 fn get_functions(program: &Program) -> Result<FunctionMap, Box<ProgramRegistryError>> {
     let mut functions = FunctionMap::new();
     for func in &program.funcs {
-        match functions.entry(func.id.clone()) {
+        match functions.entry(func.id.id) {
             Entry::Occupied(_) => {
                 Err(ProgramRegistryError::FunctionIdAlreadyExists(func.id.clone()))
             }
@@ -268,8 +269,8 @@ impl<TType: GenericType> TypeSpecializationContext
 {
     fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<TypeInfo> {
         self.declared_type_info
-            .get(id)
-            .or_else(|| self.concrete_types.get(id).map(|ty| ty.info()))
+            .get(&id.id)
+            .or_else(|| self.concrete_types.get(&id.id).map(|ty| ty.info()))
             .cloned()
     }
 }
@@ -279,8 +280,9 @@ impl<TType: GenericType> TypeSpecializationContext
 fn get_concrete_types_maps<TType: GenericType>(
     program: &Program,
 ) -> Result<(TypeMap<TType::Concrete>, ConcreteTypeIdMap<'_>), Box<ProgramRegistryError>> {
-    let mut concrete_types = HashMap::new();
-    let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
+    let mut concrete_types = Default::default();
+    let mut concrete_type_ids =
+        UnorderedHashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::default();
     let declared_type_info = program
         .type_declarations
         .iter()
@@ -289,7 +291,7 @@ fn get_concrete_types_maps<TType: GenericType>(
             let DeclaredTypeInfo { storable, droppable, duplicatable, zero_sized } =
                 declared_type_info.as_ref().cloned()?;
             Some((
-                id.clone(),
+                id.id,
                 TypeInfo {
                     long_id: long_id.clone(),
                     storable,
@@ -316,7 +318,7 @@ fn get_concrete_types_maps<TType: GenericType>(
             })
         })?;
         // Check that the info is consistent with declaration.
-        if let Some(declared_info) = declared_type_info.get(&declaration.id)
+        if let Some(declared_info) = declared_type_info.get(&declaration.id.id)
             && concrete_type.info() != declared_info
         {
             return Err(Box::new(ProgramRegistryError::TypeInfoDeclarationMismatch(
@@ -324,7 +326,7 @@ fn get_concrete_types_maps<TType: GenericType>(
             )));
         }
 
-        match concrete_types.entry(declaration.id.clone()) {
+        match concrete_types.entry(declaration.id.id) {
             Entry::Occupied(_) => Err(Box::new(ProgramRegistryError::TypeConcreteIdAlreadyExists(
                 declaration.id.clone(),
             ))),
@@ -350,7 +352,7 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<TypeInfo> {
-        self.concrete_types.get(id).map(|ty| ty.info().clone())
+        self.concrete_types.get(&id.id).map(|ty| ty.info().clone())
     }
 }
 impl<TType: GenericType> SignatureSpecializationContext
@@ -370,7 +372,7 @@ impl<TType: GenericType> SignatureSpecializationContext
 }
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_function(&self, function_id: &FunctionId) -> Option<Function> {
-        self.functions.get(function_id).cloned()
+        self.functions.get(&function_id.id).cloned()
     }
 }
 
@@ -379,7 +381,7 @@ fn get_concrete_libfuncs<TType: GenericType, TLibfunc: GenericLibfunc>(
     program: &Program,
     context: &SpecializationContextForRegistry<'_, TType>,
 ) -> Result<LibfuncMap<TLibfunc::Concrete>, Box<ProgramRegistryError>> {
-    let mut concrete_libfuncs = HashMap::new();
+    let mut concrete_libfuncs = LibfuncMap::<TLibfunc::Concrete>::default();
     for declaration in &program.libfunc_declarations {
         let concrete_libfunc = TLibfunc::specialize_by_id(
             context,
@@ -390,7 +392,7 @@ fn get_concrete_libfuncs<TType: GenericType, TLibfunc: GenericLibfunc>(
             concrete_id: declaration.id.clone(),
             error,
         })?;
-        match concrete_libfuncs.entry(declaration.id.clone()) {
+        match concrete_libfuncs.entry(declaration.id.id) {
             Entry::Occupied(_) => {
                 Err(ProgramRegistryError::LibfuncConcreteIdAlreadyExists(declaration.id.clone()))
             }
