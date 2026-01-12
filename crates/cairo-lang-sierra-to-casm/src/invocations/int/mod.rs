@@ -61,17 +61,29 @@ pub fn build_small_wide_mul(
 
 /// Helper struct for creating libfuncs that handle small integer diff operations.
 pub struct SmallDiffHelper<'a> {
+    /// The invocation builder for the current Sierra instruction.
     builder: CompiledInvocationBuilder<'a>,
+    /// The CASM builder.
     casm_builder: CasmBuilder,
+    /// Var for range check pointer before running the code.
     orig_range_check: Var,
+    /// Var for range check pointer during the code (the final value, after the code).
     pub range_check: Var,
+    /// Var for the LHS of the comparison.
     pub a: Var,
+    /// Var for the RHS of the comparison.
     pub b: Var,
+    /// Var for the diff result.
     pub a_minus_b: Var,
+    /// Var for the diff result, with a wraparound around `limit` if negative, or larger than
+    /// `limit`.
     pub wrapping_a_minus_b: Var,
 }
 impl<'a> SmallDiffHelper<'a> {
     /// Constructs the helper.
+    /// This assumes `|a - b| < limit`, and `limit <= 2^128`.
+    /// The diff itself may wrap around the felt252 prime, although there are currently no such
+    /// usages. Assumes nothing about the values of `a` and `b`.
     pub fn new(
         builder: CompiledInvocationBuilder<'a>,
         limit: BigInt,
