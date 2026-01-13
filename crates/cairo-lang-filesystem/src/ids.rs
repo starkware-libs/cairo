@@ -101,7 +101,49 @@ impl<'db> CrateLongId<'db> {
         CrateLongId::Real { name, discriminator: None }
     }
 }
-define_short_id!(CrateId, CrateLongId<'db>);
+#[cairo_lang_proc_macros::interned(revisions = usize::MAX)]
+pub struct CrateId<'db> {
+    #[returns(ref)]
+    pub long: CrateLongId<'db>,
+}
+
+impl<'db> std::fmt::Debug for CrateId<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "CrateId({:x})", self.as_intern_id().index())
+    }
+}
+
+impl<'db> cairo_lang_utils::Intern<'db, CrateId<'db>> for CrateLongId<'db> {
+    fn intern(self, db: &'db dyn salsa::Database) -> CrateId<'db> {
+        CrateId::new(db, self)
+    }
+}
+
+impl<'db> CrateId<'db> {
+    pub fn from_intern_id(intern_id: salsa::Id) -> Self {
+        use salsa::plumbing::FromId;
+        Self::from_id(intern_id)
+    }
+
+    pub fn as_intern_id(self) -> salsa::Id {
+        use salsa::plumbing::AsId;
+        self.as_id()
+    }
+}
+
+impl<'db> cairo_lang_debug::DebugWithDb<'db> for CrateId<'db> {
+    type Db = dyn salsa::Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        use cairo_lang_debug::helper::HelperDebug;
+        HelperDebug::<CrateLongId<'db>, dyn salsa::Database>::helper_debug(self.long(db), db).fmt(f)
+    }
+}
+
+impl<'db> cairo_lang_utils::HeapSize for CrateId<'db> {
+    fn heap_size(&self) -> usize {
+        0
+    }
+}
 impl<'db> CrateId<'db> {
     /// Gets the crate id for a real crate by name, without a discriminator.
     pub fn plain(db: &'db dyn Database, name: SmolStrId<'db>) -> Self {
@@ -130,7 +172,49 @@ impl UnstableSalsaId for CrateId<'_> {
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, HeapSize)]
 pub struct FlagLongId(pub String);
-define_short_id!(FlagId, FlagLongId);
+#[cairo_lang_proc_macros::interned(revisions = usize::MAX)]
+pub struct FlagId<'db> {
+    #[returns(ref)]
+    pub long: FlagLongId,
+}
+
+impl<'db> std::fmt::Debug for FlagId<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FlagId({:x})", self.as_intern_id().index())
+    }
+}
+
+impl<'db> cairo_lang_utils::Intern<'db, FlagId<'db>> for FlagLongId {
+    fn intern(self, db: &'db dyn salsa::Database) -> FlagId<'db> {
+        FlagId::new(db, self)
+    }
+}
+
+impl<'db> FlagId<'db> {
+    pub fn from_intern_id(intern_id: salsa::Id) -> Self {
+        use salsa::plumbing::FromId;
+        Self::from_id(intern_id)
+    }
+
+    pub fn as_intern_id(self) -> salsa::Id {
+        use salsa::plumbing::AsId;
+        self.as_id()
+    }
+}
+
+impl<'db> cairo_lang_debug::DebugWithDb<'db> for FlagId<'db> {
+    type Db = dyn salsa::Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        use cairo_lang_debug::helper::HelperDebug;
+        HelperDebug::<FlagLongId, dyn salsa::Database>::helper_debug(self.long(db), db).fmt(f)
+    }
+}
+
+impl<'db> cairo_lang_utils::HeapSize for FlagId<'db> {
+    fn heap_size(&self) -> usize {
+        0
+    }
+}
 
 /// Same as `FileLongId`, but without the interning inside virtual files.
 /// This is used to avoid the need to intern the file id inside salsa database inputs.
@@ -322,7 +406,49 @@ impl<'db> FileLongId<'db> {
     }
 }
 
-define_short_id!(FileId, FileLongId<'db>);
+#[cairo_lang_proc_macros::interned(revisions = usize::MAX)]
+pub struct FileId<'db> {
+    #[returns(ref)]
+    pub long: FileLongId<'db>,
+}
+
+impl<'db> std::fmt::Debug for FileId<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "FileId({:x})", self.as_intern_id().index())
+    }
+}
+
+impl<'db> cairo_lang_utils::Intern<'db, FileId<'db>> for FileLongId<'db> {
+    fn intern(self, db: &'db dyn salsa::Database) -> FileId<'db> {
+        FileId::new(db, self)
+    }
+}
+
+impl<'db> FileId<'db> {
+    pub fn from_intern_id(intern_id: salsa::Id) -> Self {
+        use salsa::plumbing::FromId;
+        Self::from_id(intern_id)
+    }
+
+    pub fn as_intern_id(self) -> salsa::Id {
+        use salsa::plumbing::AsId;
+        self.as_id()
+    }
+}
+
+impl<'db> cairo_lang_debug::DebugWithDb<'db> for FileId<'db> {
+    type Db = dyn salsa::Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        use cairo_lang_debug::helper::HelperDebug;
+        HelperDebug::<FileLongId<'db>, dyn salsa::Database>::helper_debug(self.long(db), db).fmt(f)
+    }
+}
+
+impl<'db> cairo_lang_utils::HeapSize for FileId<'db> {
+    fn heap_size(&self) -> usize {
+        0
+    }
+}
 impl<'db> FileId<'db> {
     pub fn new_on_disk(db: &'db dyn Database, path: PathBuf) -> FileId<'db> {
         FileLongId::OnDisk(path.clean()).intern(db)
@@ -415,7 +541,49 @@ unsafe impl salsa::Update for ArcStr {
     }
 }
 
-define_short_id!(SmolStrId, SmolStr);
+#[cairo_lang_proc_macros::interned(revisions = usize::MAX)]
+pub struct SmolStrId<'db> {
+    #[returns(ref)]
+    pub long: SmolStr,
+}
+
+impl<'db> std::fmt::Debug for SmolStrId<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SmolStrId({:x})", self.as_intern_id().index())
+    }
+}
+
+impl<'db> cairo_lang_utils::Intern<'db, SmolStrId<'db>> for SmolStr {
+    fn intern(self, db: &'db dyn salsa::Database) -> SmolStrId<'db> {
+        SmolStrId::new(db, self)
+    }
+}
+
+impl<'db> SmolStrId<'db> {
+    pub fn from_intern_id(intern_id: salsa::Id) -> Self {
+        use salsa::plumbing::FromId;
+        Self::from_id(intern_id)
+    }
+
+    pub fn as_intern_id(self) -> salsa::Id {
+        use salsa::plumbing::AsId;
+        self.as_id()
+    }
+}
+
+impl<'db> cairo_lang_debug::DebugWithDb<'db> for SmolStrId<'db> {
+    type Db = dyn salsa::Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        use cairo_lang_debug::helper::HelperDebug;
+        HelperDebug::<SmolStr, dyn salsa::Database>::helper_debug(self.long(db), db).fmt(f)
+    }
+}
+
+impl<'db> cairo_lang_utils::HeapSize for SmolStrId<'db> {
+    fn heap_size(&self) -> usize {
+        0
+    }
+}
 
 pub trait DbJoin {
     fn join(&self, db: &dyn Database, separator: &str) -> String;
@@ -511,7 +679,49 @@ impl BlobLongId {
     }
 }
 
-define_short_id!(BlobId, BlobLongId);
+#[cairo_lang_proc_macros::interned(revisions = usize::MAX)]
+pub struct BlobId<'db> {
+    #[returns(ref)]
+    pub long: BlobLongId,
+}
+
+impl<'db> std::fmt::Debug for BlobId<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "BlobId({:x})", self.as_intern_id().index())
+    }
+}
+
+impl<'db> cairo_lang_utils::Intern<'db, BlobId<'db>> for BlobLongId {
+    fn intern(self, db: &'db dyn salsa::Database) -> BlobId<'db> {
+        BlobId::new(db, self)
+    }
+}
+
+impl<'db> BlobId<'db> {
+    pub fn from_intern_id(intern_id: salsa::Id) -> Self {
+        use salsa::plumbing::FromId;
+        Self::from_id(intern_id)
+    }
+
+    pub fn as_intern_id(self) -> salsa::Id {
+        use salsa::plumbing::AsId;
+        self.as_id()
+    }
+}
+
+impl<'db> cairo_lang_debug::DebugWithDb<'db> for BlobId<'db> {
+    type Db = dyn salsa::Database;
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
+        use cairo_lang_debug::helper::HelperDebug;
+        HelperDebug::<BlobLongId, dyn salsa::Database>::helper_debug(self.long(db), db).fmt(f)
+    }
+}
+
+impl<'db> cairo_lang_utils::HeapSize for BlobId<'db> {
+    fn heap_size(&self) -> usize {
+        0
+    }
+}
 
 impl<'db> BlobId<'db> {
     pub fn new_on_disk(db: &'db (dyn salsa::Database + 'db), path: PathBuf) -> Self {
