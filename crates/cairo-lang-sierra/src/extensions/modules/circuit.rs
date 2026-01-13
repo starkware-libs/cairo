@@ -521,9 +521,7 @@ impl SignatureAndTypeGenericLibfunc for InitCircuitDataLibFuncWrapped {
             vec![
                 OutputVarInfo {
                     ty: range_check96_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
                 },
                 OutputVarInfo {
                     ty: circuit_input_accumulator_ty,
@@ -687,7 +685,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 // Success.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(add_mod_builtin_ty.clone(), 0),
+                        OutputVarInfo::new_builtin(add_mod_builtin_ty.clone()),
                         OutputVarInfo {
                             ty: mul_mod_builtin_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -706,7 +704,7 @@ impl SignatureAndTypeGenericLibfunc for EvalCircuitLibFuncWrapped {
                 // Failure (inverse of non-invertible).
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(add_mod_builtin_ty, 0),
+                        OutputVarInfo::new_builtin(add_mod_builtin_ty),
                         OutputVarInfo {
                             ty: mul_mod_builtin_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -775,7 +773,7 @@ impl NoGenericArgsGenericLibfunc for U96GuaranteeVerifyLibFunc {
                 ParamSignature::new(range_check96_type.clone()).with_allow_add_const(),
                 ParamSignature::new(guarantee_ty),
             ],
-            vec![OutputVarInfo::new_builtin(range_check96_type, 0)],
+            vec![OutputVarInfo::new_builtin(range_check96_type)],
             SierraApChange::Known { new_vars_only: true },
         ))
     }
@@ -862,8 +860,8 @@ impl NoGenericArgsGenericLibfunc for CircuitFailureGuaranteeVerifyLibFunc {
         Ok(LibfuncSignature::new_non_branch(
             vec![range_check96_type.clone(), mul_mod_builtin_ty.clone(), guarantee_ty, zero, one],
             vec![
-                OutputVarInfo::new_builtin(range_check96_type, 0),
-                OutputVarInfo::new_builtin(mul_mod_builtin_ty, 1),
+                OutputVarInfo::new_builtin(range_check96_type),
+                OutputVarInfo::new_builtin(mul_mod_builtin_ty),
                 OutputVarInfo {
                     ty: u384_less_than_guarantee_ty(context)?,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,

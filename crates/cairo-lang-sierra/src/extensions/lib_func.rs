@@ -378,12 +378,12 @@ pub enum OutputVarReferenceInfo {
 }
 
 /// The type of a deferred output.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum DeferredOutputKind {
     /// The output is a constant. For example, `7`.
     Const,
-    /// The output is the addition of a constant to one of the parameters. For example, `x + 3`.
-    AddConst { param_idx: usize },
+    /// The output is the addition of a constant to a deferred value. For example, `[ap - 5] + 4`.
+    AddConst,
     /// The output is not one of the above (e.g., `[ap] + [fp]`, `[ap + 1] * [fp - 3]`,
     /// `[ap] * 3`).
     Generic,
@@ -397,10 +397,10 @@ pub struct OutputVarInfo {
 }
 impl OutputVarInfo {
     /// Convenience function to get the common OutputVarInfo for builtins.
-    pub fn new_builtin(builtin: ConcreteTypeId, param_idx: usize) -> Self {
+    pub fn new_builtin(builtin: ConcreteTypeId) -> Self {
         Self {
             ty: builtin,
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst { param_idx }),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
         }
     }
 }

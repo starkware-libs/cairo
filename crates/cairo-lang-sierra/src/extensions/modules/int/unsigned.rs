@@ -87,7 +87,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
             | (IntOperator::OverflowingAdd, true) => OutputVarReferenceInfo::NewTempVar { idx: 0 },
         };
 
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone());
         let ty_param = ParamSignature::new(ty.clone());
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -151,7 +151,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                 ParamSignature::new(ty),
             ],
             vec![
-                OutputVarInfo::new_builtin(range_check_type, 0),
+                OutputVarInfo::new_builtin(range_check_type),
                 OutputVarInfo {
                     ty: sqrt_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -183,7 +183,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<
                 ParamSignature::new(nonzero_ty(context, &ty)?),
             ],
             vec![
-                OutputVarInfo::new_builtin(range_check_type, 0),
+                OutputVarInfo::new_builtin(range_check_type),
                 OutputVarInfo {
                     ty: ty.clone(),
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -222,7 +222,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintBitwiseLibfunc
                 ty_param,
             ],
             vec![
-                OutputVarInfo::new_builtin(bitwise_ty, 0),
+                OutputVarInfo::new_builtin(bitwise_ty),
                 deferred_ty_output_info.clone(),
                 deferred_ty_output_info.clone(),
                 deferred_ty_output_info,

@@ -330,9 +330,7 @@ impl StructBoxedDeconstructLibfunc {
                 .into_iter()
                 .map(|member_ty| {
                     let ref_info = if is_shifted {
-                        OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        })
+                        OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst)
                     } else {
                         is_shifted = !context.get_type_info(&member_ty)?.zero_sized;
                         OutputVarReferenceInfo::SameAsParam { param_idx: 0 }
