@@ -4,7 +4,7 @@ use core::hash::Hash;
 
 /// A trait for a node in a graph. Note that a GraphNode has to be able to provide its neighbors
 /// by itself, without additional information.
-pub trait GraphNode: Sized + Clone {
+pub trait GraphNode: Clone {
     /// The type used to identify the nodes in the graph.
     type NodeId: Eq + Hash + Clone;
 
