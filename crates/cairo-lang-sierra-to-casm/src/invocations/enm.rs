@@ -1,10 +1,14 @@
+use std::iter;
+
 use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::operand::CellRef;
+use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
 use cairo_lang_casm::{casm, casm_build_extend, casm_extend};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
-use cairo_lang_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
+use cairo_lang_sierra::extensions::enm::{
+    EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc, EnumInitConcreteLibfunc,
+};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use cairo_lang_utils::try_extract_matches;
@@ -34,6 +38,7 @@ pub fn build(
         EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
             build_enum_match(builder)
         }
+        EnumConcreteLibfunc::BoxedMatch(libfunc) => build_enum_boxed_match(libfunc, builder),
     }
 }
 
@@ -396,4 +401,82 @@ fn get_enum_size(
     concrete_enum_type: &ConcreteTypeId,
 ) -> Option<i16> {
     Some(program_info.type_sizes.get(concrete_enum_type)?.to_owned())
+}
+
+/// Generates CASM instructions for matching a boxed enum into individual boxed variants.
+///
+/// This function takes a boxed enum (stored in a single memory cell containing the address)
+/// and branches based on the variant selector, returning a box pointing to the appropriate variant.
+fn build_enum_boxed_match(
+    libfunc: &EnumBoxedMatchConcreteLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let num_branches = builder.invocation.branches.len();
+
+    // Handle zero variants case - no instructions needed for uninhabited type
+    if num_branches == 0 {
+        return Ok(builder.build(
+            vec![],
+            vec![],
+            iter::empty::<iter::Empty<ReferenceExpression>>(),
+        ));
+    }
+
+    let [cell] = builder.try_get_single_cells()?;
+    let cell_ref = cell.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+
+    // Calculate the size of each variant
+    let mut variant_sizes: Vec<i16> = Vec::new();
+    for variant_ty in &libfunc.variants {
+        let variant_size = *builder
+            .program_info
+            .type_sizes
+            .get(variant_ty)
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        variant_sizes.push(variant_size);
+    }
+
+    // The enum size is 1 (selector) + max(variant_sizes)
+    let max_variant_size = variant_sizes.iter().max().copied().unwrap_or(0);
+
+    // For each branch, we need to create a reference to Box<Variant>
+    // The variant data starts at offset 1 + padding to skip to the variant
+    let output_expressions_for_branches = variant_sizes.iter().map(|&variant_size| {
+        // Calculate padding: the variant is right-aligned in the enum's value space
+        let padding = max_variant_size - variant_size;
+        // The box should point to: base_addr + 1 (selector) + padding
+        let variant_offset = 1 + padding;
+        let variant_box = CellExpression::BinOp {
+            op: CellOperator::Add,
+            a: cell_ref,
+            b: DerefOrImmediate::Immediate(variant_offset.into()),
+        };
+
+        vec![ReferenceExpression::from_cell(variant_box)].into_iter()
+    });
+
+    // For single variant enums, no branching is needed - just return the variant box
+    if num_branches == 1 {
+        return Ok(builder.build(vec![], vec![], output_expressions_for_branches));
+    }
+
+    // Load the variant selector into a temporary - this is a double deref
+    let instructions = casm! { [ap] = [[&cell_ref]], ap++; }.instructions;
+    let variant_selector_cell = CellRef { register: Register::AP, offset: -1 };
+
+    if num_branches == 2 {
+        build_enum_match_short_ex(
+            builder,
+            variant_selector_cell,
+            output_expressions_for_branches.into_iter().map(|v| v.into_iter()),
+            instructions,
+        )
+    } else {
+        build_enum_match_long_ex(
+            builder,
+            variant_selector_cell,
+            output_expressions_for_branches.into_iter().map(|v| v.into_iter()),
+            instructions,
+        )
+    }
 }
