@@ -250,6 +250,8 @@ pub fn starknet_compile(
 ) -> Result<String> {
     let config = config.unwrap_or_default();
     let contract = compile_path(&crate_path, contract_path.as_deref(), config, inlining_strategy)?;
-    contract.validate_version_compatible(allowed_libfuncs_list.unwrap_or_default())?;
+    contract
+        .extract_sierra_program(false)?
+        .validate_version_compatible(allowed_libfuncs_list.unwrap_or_default())?;
     serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")
 }

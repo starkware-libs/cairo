@@ -43,11 +43,10 @@ use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::compiler_version::{VersionId, current_compiler_version_id, current_sierra_version_id};
-use crate::contract_class::{ContractClass, ContractEntryPoint};
+use crate::contract_class::{ContractClass, ContractEntryPoint, ExtractedSierraProgram};
 use crate::contract_segmentation::{
     NestedIntList, SegmentationError, compute_bytecode_segment_lengths,
 };
-use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::keccak::starknet_keccak;
 
 #[cfg(test)]
@@ -64,8 +63,6 @@ static CONSTRUCTOR_ENTRY_POINT_SELECTOR: LazyLock<BigUint> =
 pub enum StarknetSierraCompilationError {
     #[error(transparent)]
     CompilationError(#[from] Box<CompilationError>),
-    #[error(transparent)]
-    Felt252SerdeError(#[from] Felt252SerdeError),
     #[error(transparent)]
     MetadataError(#[from] MetadataError),
     #[error(transparent)]
@@ -90,8 +87,6 @@ pub enum StarknetSierraCompilationError {
     DuplicateEntryPointSelector { selector: BigUint },
     #[error("Duplicate entry point function index {index}.")]
     DuplicateEntryPointSierraFunction { index: usize },
-    #[error("Out of range value in serialization.")]
-    ValueOutOfRange,
     #[error(
         "Cannot compile Sierra version {version_in_contract} with the current compiler (sierra \
          version: {version_of_compiler})"
@@ -335,11 +330,13 @@ impl TypeResolver<'_> {
 impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
+        extracted_program: ExtractedSierraProgram,
         add_pythonic_hints: bool,
         max_bytecode_size: usize,
     ) -> Result<Self, StarknetSierraCompilationError> {
         Ok(Self::from_contract_class_with_debug_info(
             contract_class,
+            extracted_program,
             add_pythonic_hints,
             max_bytecode_size,
         )?
@@ -348,17 +345,12 @@ impl CasmContractClass {
 
     pub fn from_contract_class_with_debug_info(
         contract_class: ContractClass,
+        extracted_program: ExtractedSierraProgram,
         add_pythonic_hints: bool,
         max_bytecode_size: usize,
     ) -> Result<(Self, CairoProgramDebugInfo), StarknetSierraCompilationError> {
-        let prime = Felt252::prime();
-        for felt252 in &contract_class.sierra_program {
-            if felt252.value >= prime {
-                return Err(StarknetSierraCompilationError::ValueOutOfRange);
-            }
-        }
-
-        let (sierra_version, _, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
+        let sierra_version = extracted_program.sierra_version;
+        let program = extracted_program.program;
         let current_sierra_version = current_sierra_version_id();
         if !(sierra_version.major == current_sierra_version.major
             && sierra_version.minor <= current_sierra_version.minor)
@@ -445,6 +437,7 @@ impl CasmContractClass {
         )?;
 
         let AssembledCairoProgram { bytecode, hints } = cairo_program.assemble();
+        let prime = Felt252::prime();
         let bytecode = bytecode
             .iter()
             .map(|big_int| {

@@ -31,18 +31,17 @@ fn test_compile_path_from_contracts_crate(example_contract_path: &str) {
     );
     let example_file_name = example_contract_path.replace("::", "__");
     let list_selector = ListSelector::ListName("all".to_string());
-    contract.validate_version_compatible(list_selector).unwrap();
+    let extracted = contract.extract_sierra_program(true).unwrap();
+    extracted.validate_version_compatible(list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path(format!("{example_file_name}.contract_class.json").as_str()),
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
-    let sierra_program = contract.extract_sierra_program().unwrap();
-
     // There is a separate file for the sierra code as it is hard to review inside the json.
     compare_contents_or_fix_with_path(
         &get_example_file_path(format!("{example_file_name}.sierra").as_str()),
-        sierra_program.to_string(),
+        extracted.program.to_string(),
     );
 }

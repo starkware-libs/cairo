@@ -4,6 +4,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use starknet_types_core::felt::Felt as Felt252;
 use thiserror::Error;
 
 use crate::abi::Contract;
@@ -58,14 +59,24 @@ impl ContractClass {
         })
     }
 
-    /// Extracts Sierra program from the ContractClass and populates it with debug info if
-    /// available.
-    pub fn extract_sierra_program(&self) -> Result<sierra::program::Program, Felt252SerdeError> {
-        let (_, _, mut sierra_program) = sierra_from_felt252s(&self.sierra_program)?;
-        if let Some(info) = &self.sierra_program_debug_info {
-            info.populate(&mut sierra_program);
+    /// Extracts Sierra program from the ContractClass into `ExtractedSierraProgram` and populates
+    /// it with debug info if `populate_debug_info` is true, and the data is available.
+    pub fn extract_sierra_program(
+        &self,
+        populate_debug_info: bool,
+    ) -> Result<ExtractedSierraProgram, Felt252SerdeError> {
+        let prime = Felt252::prime();
+        for felt252 in &self.sierra_program {
+            if felt252.value >= prime {
+                return Err(Felt252SerdeError::InvalidInputForDeserialization);
+            }
         }
-        Ok(sierra_program)
+        let (sierra_version, compiler_version, mut program) =
+            sierra_from_felt252s(&self.sierra_program)?;
+        if populate_debug_info && let Some(info) = &self.sierra_program_debug_info {
+            info.populate(&mut program);
+        }
+        Ok(ExtractedSierraProgram { program, sierra_version, compiler_version })
     }
 
     /// Sanity checks the contract class.
@@ -79,26 +90,35 @@ impl ContractClass {
             );
         }
     }
+}
 
+/// The Sierra program extracted from a contract class.
+pub struct ExtractedSierraProgram {
+    /// The actual Sierra program.
+    pub program: sierra::program::Program,
+    /// The Sierra version used for the program.
+    pub sierra_version: VersionId,
+    /// The compiler version used for the program.
+    pub compiler_version: VersionId,
+}
+impl ExtractedSierraProgram {
     /// Checks that all the used libfuncs in the contract class are allowed in the contract class
     /// Sierra version.
     pub fn validate_version_compatible(
-        self: &ContractClass,
+        &self,
         list_selector: ListSelector,
     ) -> Result<(), AllowedLibfuncsError> {
         let list_name = list_selector.to_string();
         let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
-        let (class_version, _, sierra_program) = sierra_from_felt252s(&self.sierra_program)
-            .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
-        for libfunc in &sierra_program.libfunc_declarations {
+        for libfunc in &self.program.libfunc_declarations {
             match allowed_libfuncs.allowed_libfuncs.get(&libfunc.long_id.generic_id) {
                 Some(None) => {}
-                Some(Some(required_version)) if class_version.supports(*required_version) => {}
-                Some(Some(required_version)) => {
+                Some(Some(required)) if self.sierra_version.supports(*required) => {}
+                Some(Some(required)) => {
                     return Err(AllowedLibfuncsError::UnsupportedLibfuncAtVersion {
                         invalid_libfunc: libfunc.long_id.generic_id.to_string(),
-                        required_version: *required_version,
-                        class_version,
+                        required_version: *required,
+                        class_version: self.sierra_version,
                     });
                 }
                 None => {

@@ -27,8 +27,9 @@ fn main() -> anyhow::Result<()> {
     )
     .with_context(|| "deserialization Failed.")?;
     let sierra_program = contract_class
-        .extract_sierra_program()
-        .with_context(|| "Failed parsing felt252s stream into Sierra program.")?;
+        .extract_sierra_program(true)
+        .with_context(|| "Failed parsing felt252s stream into Sierra program.")?
+        .program;
     match args.output {
         Some(path) => fs::write(path, sierra_program.to_string())
             .with_context(|| "Failed to write Sierra program.")?,

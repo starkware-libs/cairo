@@ -13,9 +13,9 @@ use test_case::test_case;
 use crate::allowed_libfuncs::{
     BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector, lookup_allowed_libfuncs_list,
 };
-use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
+use crate::casm_contract_class::{BigUintAsHex, CasmContractClass};
 use crate::contract_class::ContractClass;
-use crate::felt252_serde::sierra_from_felt252s;
+use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::test_utils::get_example_file_path;
 
 #[test_case("test_contract__test_contract")]
@@ -25,11 +25,9 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
         std::fs::File::open(get_example_file_path(&format!("{name}.contract_class.json"))).unwrap();
     let mut contract_class: ContractClass = serde_json::from_reader(BufReader::new(f)).unwrap();
     contract_class.sierra_program[17] = BigUintAsHex { value: Felt252::prime() };
-
-    let add_pythonic_hints = false;
     assert_eq!(
-        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints, usize::MAX),
-        Err(StarknetSierraCompilationError::ValueOutOfRange)
+        contract_class.extract_sierra_program(false).err(),
+        Some(Felt252SerdeError::InvalidInputForDeserialization)
     );
 }
 
@@ -56,8 +54,10 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
         serde_json::from_reader(BufReader::new(std::fs::File::open(contract_path).unwrap()))
             .unwrap();
     let add_pythonic_hints = true;
+    let program = contract.extract_sierra_program(false).unwrap();
     let casm_contract =
-        CasmContractClass::from_contract_class(contract, add_pythonic_hints, usize::MAX).unwrap();
+        CasmContractClass::from_contract_class(contract, program, add_pythonic_hints, usize::MAX)
+            .unwrap();
     compare_contents_or_fix_with_path(
         &get_example_file_path(&format!("{name}.compiled_contract_class.json")),
         serde_json::to_string_pretty(&casm_contract).unwrap() + "\n",
