@@ -15,7 +15,7 @@ use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
-use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
+use cairo_lang_sierra::extensions::enm::{EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc};
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
@@ -32,6 +32,7 @@ use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
 use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
 use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
+use cairo_lang_sierra::extensions::lib_func::SignatureOnlyConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
@@ -293,8 +294,19 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 1 | 2 => vec![ApChange::Known(0)],
                 _ => vec![ApChange::Known(1)],
             },
-            EnumConcreteLibfunc::Match(libfunc) | EnumConcreteLibfunc::SnapshotMatch(libfunc) => {
-                vec![ApChange::Known(0); libfunc.signature.branch_signatures.len()]
+            EnumConcreteLibfunc::Match(SignatureOnlyConcreteLibfunc { signature, .. })
+            | EnumConcreteLibfunc::SnapshotMatch(SignatureOnlyConcreteLibfunc {
+                signature, ..
+            }) => {
+                vec![ApChange::Known(0); signature.branch_signatures.len()]
+            }
+            EnumConcreteLibfunc::BoxedMatch(EnumBoxedMatchConcreteLibfunc {
+                signature, ..
+            }) => {
+                // For zero or one variants, no instructions are generated (no branching needed)
+                // For other cases, we need 1 AP change for loading the variant selector
+                let n = signature.branch_signatures.len();
+                if n <= 1 { vec![ApChange::Known(0); n] } else { vec![ApChange::Known(1); n] }
             }
         },
         Struct(libfunc) => match libfunc {
