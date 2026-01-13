@@ -57,8 +57,8 @@ fn get_store_instructions<DstCells: Iterator<Item = CellRef>>(
     }
     let mut ctx = casm!();
     let mut ap_change = 0;
-    for (dst, cell_expr_orig) in zip_eq(dst_cells, &src_expr.cells) {
-        let cell_expr = cell_expr_orig.clone().apply_known_ap_change(ap_change as usize).unwrap();
+    for (dst, mut cell_expr) in zip_eq(dst_cells, src_expr.cells.iter().cloned()) {
+        assert!(cell_expr.apply_known_ap_change(ap_change));
         match cell_expr {
             CellExpression::Deref(operand) => add_instruction!(ctx, dst = operand),
             CellExpression::DoubleDeref(operand, offset) => {
