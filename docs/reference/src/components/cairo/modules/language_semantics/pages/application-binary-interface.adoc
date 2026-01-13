@@ -43,6 +43,20 @@ Function item:
 }
 ----
 
+Function item (with return value):
+[source,json]
+----
+{
+  "type": "function",
+  "name": "balance_of",
+  "inputs": [
+    { "name": "account", "type": "ContractAddress" }
+  ],
+  "outputs": [ { "type": "u256" } ],
+  "state_mutability": "view"
+}
+----
+
 Constructor item:
 [source,json]
 ----
