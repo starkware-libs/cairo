@@ -1,5 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::CellRef;
 use cairo_lang_casm::{casm, casm_build_extend, casm_extend};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
@@ -230,8 +231,20 @@ fn build_enum_match_short(
         Item = impl ExactSizeIterator<Item = ReferenceExpression>,
     >,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut instructions = Vec::new();
+    build_enum_match_short_ex(builder, variant_selector, output_expressions, vec![])
+}
+
+/// Extended version of `build_enum_match_short` that allows prepending instructions.
+fn build_enum_match_short_ex(
+    builder: CompiledInvocationBuilder<'_>,
+    variant_selector: CellRef,
+    output_expressions: impl ExactSizeIterator<
+        Item = impl ExactSizeIterator<Item = ReferenceExpression>,
+    >,
+    mut instructions: Vec<Instruction>,
+) -> Result<CompiledInvocation, InvocationError> {
     let mut relocations = Vec::new();
+    let relocation_offset = instructions.len();
 
     // First branch is fallthrough. If there is only one branch, this `match` statement is
     // translated to nothing in Casm.
@@ -245,7 +258,7 @@ fn build_enum_match_short(
 
         instructions.extend(casm! { jmp rel 0 if variant_selector != 0; }.instructions);
         relocations.push(RelocationEntry {
-            instruction_idx: 0,
+            instruction_idx: relocation_offset,
             relocation: Relocation::RelativeStatementId(statement_id),
         });
     }
@@ -285,10 +298,24 @@ fn build_enum_match_long(
         Item = impl ExactSizeIterator<Item = ReferenceExpression>,
     >,
 ) -> Result<CompiledInvocation, InvocationError> {
+    build_enum_match_long_ex(builder, variant_selector, output_expressions, vec![])
+}
+
+/// Extended version of `build_enum_match_long` that allows prepending instructions.
+fn build_enum_match_long_ex(
+    builder: CompiledInvocationBuilder<'_>,
+    variant_selector: CellRef,
+    output_expressions: impl ExactSizeIterator<
+        Item = impl ExactSizeIterator<Item = ReferenceExpression>,
+    >,
+    mut instructions: Vec<Instruction>,
+) -> Result<CompiledInvocation, InvocationError> {
     let target_statement_ids = builder.invocation.branches[1..].iter().map(|b| match b {
         BranchInfo { target: BranchTarget::Statement(stmnt_id), .. } => *stmnt_id,
         _ => panic!("malformed invocation"),
     });
+
+    let relocation_offset = instructions.len();
 
     // The first instruction is the jmp to the relevant index in the jmp table.
     let mut ctx = casm! { jmp rel variant_selector; };
@@ -300,12 +327,13 @@ fn build_enum_match_long(
         // Add the jump instruction to the relevant target.
         casm_extend!(ctx, jmp rel 0;);
         relocations.push(RelocationEntry {
-            instruction_idx: i + 1,
+            instruction_idx: relocation_offset + i + 1,
             relocation: Relocation::RelativeStatementId(stmnt_id),
         });
     }
 
-    Ok(builder.build(ctx.instructions, relocations, output_expressions))
+    instructions.extend(ctx.instructions);
+    Ok(builder.build(instructions, relocations, output_expressions))
 }
 
 /// A struct representing an actual enum value in the Sierra program.
