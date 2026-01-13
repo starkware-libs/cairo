@@ -8,7 +8,9 @@ mod test;
 
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::duplicate::DupLibfunc;
-use cairo_lang_sierra::extensions::lib_func::{LibfuncSignature, ParamSignature, SierraApChange};
+use cairo_lang_sierra::extensions::lib_func::{
+    DeferredOutputKind, LibfuncSignature, ParamSignature, SierraApChange,
+};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use cairo_lang_utils::extract_matches;
@@ -18,13 +20,12 @@ use itertools::zip_eq;
 use salsa::Database;
 use sierra::extensions::NamedLibfunc;
 use sierra::extensions::function_call::{CouponCallLibfunc, FunctionCallLibfunc};
-use state::{
-    DeferredVariableInfo, DeferredVariableKind, VarState, VariablesState, merge_optional_states,
-};
+use state::{VarState, VariablesState, merge_optional_states};
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::known_stack::KnownStack;
+use crate::store_variables::state::DeferredVariableInfo;
 use crate::utils::{
     dup_libfunc_id, rename_libfunc_id, simple_statement, store_local_libfunc_id,
     store_temp_libfunc_id,
@@ -249,7 +250,7 @@ impl<'db> AddStoreVariableStatements<'db> {
 
     /// Prepares the given `args` to be used as arguments for a libfunc.
     ///
-    /// Returns a map from arguments' [sierra::ids::VarId] to [DeferredVariableInfo] for arguments
+    /// Returns a map from arguments' [sierra::ids::VarId] to [DeferredOutputKind] for arguments
     /// that have a deferred value after the function (that is, they were not stored as
     /// temp/local by the function).
     fn prepare_libfunc_arguments(
@@ -294,7 +295,7 @@ impl<'db> AddStoreVariableStatements<'db> {
                     VarState::LocalVar
                 } else {
                     match deferred_info.kind {
-                        state::DeferredVariableKind::Const => {
+                        DeferredOutputKind::Const => {
                             if !allow_const {
                                 return self.store_deferred(
                                     &mut state.known_stack,
@@ -303,7 +304,7 @@ impl<'db> AddStoreVariableStatements<'db> {
                                 );
                             }
                         }
-                        state::DeferredVariableKind::AddConst => {
+                        DeferredOutputKind::AddConst => {
                             if !allow_add_const {
                                 return self.store_deferred(
                                     &mut state.known_stack,
@@ -312,7 +313,7 @@ impl<'db> AddStoreVariableStatements<'db> {
                                 );
                             }
                         }
-                        state::DeferredVariableKind::Generic => {
+                        DeferredOutputKind::Generic => {
                             if !allow_deferred {
                                 return self.store_deferred(
                                     &mut state.known_stack,
@@ -379,7 +380,7 @@ impl<'db> AddStoreVariableStatements<'db> {
         {
             let (is_on_stack, var_state) = match state.pop_var_state(var) {
                 VarState::Deferred { info: deferred_info } => {
-                    if let DeferredVariableKind::Const = deferred_info.kind {
+                    if let DeferredOutputKind::Const = deferred_info.kind {
                         // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
                         if *dup {
                             self.dup(var, var_on_stack, ty);
@@ -457,7 +458,7 @@ impl<'db> AddStoreVariableStatements<'db> {
         self.store_variables_as_locals(state);
         for (var, var_state) in state.variables.iter_mut() {
             if let VarState::Deferred { info } = var_state {
-                if info.kind != DeferredVariableKind::Const && self.duplicated_vars.contains(var) {
+                if info.kind != DeferredOutputKind::Const && self.duplicated_vars.contains(var) {
                     *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                 }
             }
