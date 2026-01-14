@@ -431,7 +431,6 @@ dependencies = [
  "cairo-lang-sierra-generator",
  "cairo-vm",
  "clap",
- "mimalloc",
  "num-bigint",
  "salsa",
  "serde_json",
