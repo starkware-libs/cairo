@@ -32,7 +32,7 @@ pub fn handle_storage_struct<'db, 'a>(
 
     let mut substorage_members_struct_code = vec![];
     let mut substorage_members_init_code = vec![];
-    let mut storage_struct_members = if is_backwards_compatible { Some(Vec::new()) } else { None };
+    let mut storage_struct_members = is_backwards_compatible.then_some(Vec::new);
     let configs = struct_members_storage_configs(db, &struct_ast, diagnostics);
     for (member, config) in zip_eq(struct_ast.members(db).elements(db), &configs) {
         if config.kind == StorageMemberKind::SubStorage {
