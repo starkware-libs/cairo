@@ -124,7 +124,7 @@ pub fn compute_costs<
 ) -> Result<GasInfo, CostError> {
     let mut context = CostContext {
         program,
-        branch_costs: Default::default(),
+        branch_costs: Vec::with_capacity(program.statements.len()),
         enforced_wallet_values,
         costs: Default::default(),
         target_values: Default::default(),
