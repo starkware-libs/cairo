@@ -31,6 +31,19 @@ pub enum FrameState {
     Finalized { allocated: usize },
 }
 
+/// Checks if AP tracking is enabled with base at function start.
+fn is_ap_tracking_from_function_start(ap_tracking: ApTracking) -> bool {
+    matches!(ap_tracking, ApTracking::Enabled { base: ApTrackingBase::FunctionStart, .. })
+}
+
+/// Returns the AP change if AP tracking is enabled with base at function start.
+fn get_ap_change_from_function_start(ap_tracking: ApTracking) -> Option<usize> {
+    match ap_tracking {
+        ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart } => Some(ap_change),
+        _ => None,
+    }
+}
+
 /// Returns the number of slots that were allocated for locals and the new frame state.
 pub fn handle_finalize_locals(
     frame_state: FrameState,
@@ -39,21 +52,14 @@ pub fn handle_finalize_locals(
     match frame_state {
         FrameState::BeforeAllocation => {
             // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
-            if matches!(
-                ap_tracking,
-                ApTracking::Enabled { ap_change: _, base: ApTrackingBase::FunctionStart }
-            ) {
+            if is_ap_tracking_from_function_start(ap_tracking) {
                 Ok((0, FrameState::Finalized { allocated: 0 }))
             } else {
                 Err(FrameStateError::InvalidFinalizeLocals(frame_state))
             }
         }
         FrameState::Allocating { allocated, locals_start_ap_offset } => {
-            if matches!(
-                ap_tracking,
-                ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
-                if ap_change == locals_start_ap_offset
-            ) {
+            if get_ap_change_from_function_start(ap_tracking) == Some(locals_start_ap_offset) {
                 Ok((allocated, FrameState::Finalized { allocated }))
             } else {
                 Err(FrameStateError::InvalidFinalizeLocals(frame_state))
@@ -71,9 +77,7 @@ pub fn handle_alloc_local(
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
         FrameState::BeforeAllocation => {
-            if let ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart } =
-                ap_tracking
-            {
+            if let Some(ap_change) = get_ap_change_from_function_start(ap_tracking) {
                 Ok((
                     ap_change,
                     FrameState::Allocating {
@@ -86,11 +90,7 @@ pub fn handle_alloc_local(
             }
         }
         FrameState::Allocating { allocated, locals_start_ap_offset } => {
-            if matches!(
-                ap_tracking,
-                ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
-                if ap_change == locals_start_ap_offset
-            ) {
+            if get_ap_change_from_function_start(ap_tracking) == Some(locals_start_ap_offset) {
                 Ok((
                     locals_start_ap_offset + allocated,
                     FrameState::Allocating {
