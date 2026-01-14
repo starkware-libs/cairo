@@ -80,7 +80,7 @@ fn specialize_with_dict_value_param(
                     let GenericArg::Type(ty) = arg else {
                         return false;
                     };
-                    let Ok(info) = context.get_type_info(ty) else {
+                    let Ok(info) = context.get_type_info(&ty) else {
                         return false;
                     };
                     info.zero_sized
@@ -127,7 +127,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
             vec![
                 OutputVarInfo::new_builtin(segment_arena_ty, 0),
                 OutputVarInfo {
-                    ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
+                    ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty.clone())?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
@@ -151,7 +151,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictSquashLibfunc {
         let dict_ty =
             context.get_wrapped_concrete_type(Felt252DictType::id(), generic_ty.clone())?;
         let squashed_dict_ty =
-            context.get_wrapped_concrete_type(SquashedFelt252DictType::id(), generic_ty)?;
+            context.get_wrapped_concrete_type(SquashedFelt252DictType::id(), generic_ty.clone())?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let segment_arena_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;

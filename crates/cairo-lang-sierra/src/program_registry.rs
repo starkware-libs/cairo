@@ -266,10 +266,10 @@ struct TypeSpecializationContextForRegistry<'a, TType: GenericType> {
 impl<TType: GenericType> TypeSpecializationContext
     for TypeSpecializationContextForRegistry<'_, TType>
 {
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+    fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<TypeInfo> {
         self.declared_type_info
-            .get(&id)
-            .or_else(|| self.concrete_types.get(&id).map(|ty| ty.info()))
+            .get(id)
+            .or_else(|| self.concrete_types.get(id).map(|ty| ty.info()))
             .cloned()
     }
 }
@@ -349,8 +349,8 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub concrete_types: &'a TypeMap<TType::Concrete>,
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        self.concrete_types.get(&id).map(|ty| ty.info().clone())
+    fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<TypeInfo> {
+        self.concrete_types.get(id).map(|ty| ty.info().clone())
     }
 }
 impl<TType: GenericType> SignatureSpecializationContext

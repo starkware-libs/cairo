@@ -97,7 +97,7 @@ fn is_circuit_component(
         return Err(SpecializationError::UnsupportedGenericArg);
     };
 
-    let long_id = context.get_type_info(ty.clone())?.long_id;
+    let long_id = context.get_type_info(ty)?.long_id;
     Ok(CIRCUIT_COMPONENTS.contains(&long_id.generic_id))
 }
 
@@ -229,7 +229,7 @@ impl NamedType for CircuitInputAccumulator {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
-        validate_is_circuit(context, circ_ty)?;
+        validate_is_circuit(context, circ_ty.clone())?;
         Ok(Self::Concrete {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
@@ -266,7 +266,7 @@ impl NamedType for CircuitData {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
-        validate_is_circuit(context, circ_ty)?;
+        validate_is_circuit(context, circ_ty.clone())?;
         Ok(Self::Concrete {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
@@ -292,7 +292,7 @@ impl NamedType for CircuitOutputs {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
-        validate_is_circuit(context, circ_ty)?;
+        validate_is_circuit(context, circ_ty.clone())?;
         Ok(Self::Concrete {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
@@ -319,7 +319,7 @@ impl NamedType for CircuitPartialOutputs {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
-        validate_is_circuit(context, circ_ty)?;
+        validate_is_circuit(context, circ_ty.clone())?;
         Ok(Self::Concrete {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
@@ -412,7 +412,7 @@ impl NamedType for CircuitDescriptor {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let circ_ty = args_as_single_type(args)?;
-        validate_is_circuit(context, circ_ty)?;
+        validate_is_circuit(context, circ_ty.clone())?;
         Ok(Self::Concrete {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId { generic_id: Self::ID, generic_args: args.to_vec() },
@@ -453,7 +453,7 @@ impl ConcreteCircuit {
     ) -> Result<Self, SpecializationError> {
         let output_tuple = args_as_single_type(args)?;
 
-        let circuit_info = get_circuit_info(context, &output_tuple)?;
+        let circuit_info = get_circuit_info(context, output_tuple)?;
         Ok(Self {
             info: TypeInfo {
                 long_id: ConcreteTypeLongId {
@@ -481,7 +481,7 @@ fn validate_is_circuit(
     context: &dyn TypeSpecializationContext,
     circ_ty: ConcreteTypeId,
 ) -> Result<(), SpecializationError> {
-    if context.get_type_info(circ_ty)?.long_id.generic_id != Circuit::ID {
+    if context.get_type_info(&circ_ty)?.long_id.generic_id != Circuit::ID {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
     Ok(())
@@ -746,7 +746,7 @@ impl SignatureAndTypeGenericLibfunc for IntoU96GuaranteeLibFuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let range = Range::from_type(context, ty.clone())?;
+        let range = Range::from_type(context, &ty)?;
         require(!range.lower.is_negative() && range.upper <= BigInt::one().shl(96))
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
 
@@ -799,8 +799,8 @@ impl NamedLibfunc for GetOutputLibFunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        let outputs_ty =
-            context.get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(circ_ty)])?;
+        let outputs_ty = context
+            .get_concrete_type(CircuitOutputs::id(), &[GenericArg::Type(circ_ty.clone())])?;
 
         let u384_ty = get_u384_type(context)?;
         let guarantee_ty = u384_less_than_guarantee_ty(context)?;
@@ -824,8 +824,8 @@ impl NamedLibfunc for GetOutputLibFunc {
         // TODO(ilya): Fail if `circuit_ty` does not contain output_ty.
         Ok(ConcreteGetOutputLibFunc {
             signature: self.specialize_signature(context, args)?,
-            circuit_ty,
-            output_ty,
+            circuit_ty: circuit_ty.clone(),
+            output_ty: output_ty.clone(),
         })
     }
 }
@@ -1066,7 +1066,7 @@ fn get_circuit_info(
         .collect();
 
     while let Some((ty, first_visit)) = stack.pop() {
-        let long_id = context.get_type_info(ty.clone())?.long_id;
+        let long_id = context.get_type_info(&ty)?.long_id;
         let generic_id = long_id.generic_id;
 
         if values.contains_key(&ty) {
@@ -1134,7 +1134,7 @@ fn parse_circuit_inputs<'a>(
             continue;
         }
 
-        let long_id = context.get_type_info(ty.clone())?.long_id;
+        let long_id = context.get_type_info(&ty)?.long_id;
         let generic_id = long_id.generic_id;
         if generic_id == CircuitInput::ID {
             let idx = args_as_single_value(&long_id.generic_args)?

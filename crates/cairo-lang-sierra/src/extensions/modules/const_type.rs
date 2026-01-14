@@ -74,7 +74,7 @@ fn validate_const_data(
     inner_ty: &ConcreteTypeId,
     inner_data: &[GenericArg],
 ) -> Result<(), SpecializationError> {
-    let inner_type_info = context.get_type_info(inner_ty.clone())?;
+    let inner_type_info = context.get_type_info(inner_ty)?;
     let inner_generic_id = &inner_type_info.long_id.generic_id;
     if *inner_generic_id == StructType::ID {
         return validate_const_struct_data(context, &inner_type_info, inner_data);
@@ -173,8 +173,8 @@ fn validate_const_nz_data(
     let wrapped_ty_from_nz = args_as_single_type(&inner_type_info.long_id.generic_args)?;
     let inner_const_type_id = args_as_single_type(inner_data)?;
     let (wrapped_ty_from_const, inner_const_data) =
-        extract_const_info(context, &inner_const_type_id)?;
-    if wrapped_ty_from_const != wrapped_ty_from_nz {
+        extract_const_info(context, inner_const_type_id)?;
+    if &wrapped_ty_from_const != wrapped_ty_from_nz {
         return Err(SpecializationError::UnsupportedGenericArg);
     }
     let ty_info = context.get_type_info(wrapped_ty_from_nz)?;
@@ -373,9 +373,9 @@ impl ConstAsImmediateLibfunc {
         args: &[GenericArg],
     ) -> Result<ConstAsImmediateConcreteLibfunc, SpecializationError> {
         let const_type = args_as_single_type(args)?;
-        let (ty, _) = extract_const_info(context, &const_type)?;
+        let (ty, _) = extract_const_info(context, const_type)?;
         Ok(ConstAsImmediateConcreteLibfunc {
-            const_type,
+            const_type: const_type.clone(),
             signature: LibfuncSignature::new_non_branch(
                 vec![],
                 vec![OutputVarInfo {

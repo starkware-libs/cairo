@@ -114,7 +114,7 @@ impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
             vec![box_ty(context, ty.clone())?],
             vec![OutputVarInfo {
                 ty: ty.clone(),
-                ref_info: if context.get_type_info(ty)?.zero_sized {
+                ref_info: if context.get_type_info(&ty)?.zero_sized {
                     OutputVarReferenceInfo::ZeroSized
                 } else {
                     OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)

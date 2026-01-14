@@ -49,26 +49,26 @@ impl SpecializationContext for MockSpecializationContext {
     }
 }
 impl TypeSpecializationContext for MockSpecializationContext {
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        if id == "u128".into() || id == "u64".into() || id == "NonZeroInt".into() {
+    fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<TypeInfo> {
+        if id == &"u128".into() || id == &"u64".into() || id == &"NonZeroInt".into() {
             Some(TypeInfo {
-                long_id: self.mapping.get_by_left(&id)?.clone(),
+                long_id: self.mapping.get_by_left(id)?.clone(),
                 storable: true,
                 droppable: true,
                 duplicatable: true,
                 zero_sized: false,
             })
-        } else if id == "UninitializedInt".into() {
+        } else if id == &"UninitializedInt".into() {
             Some(TypeInfo {
-                long_id: self.mapping.get_by_left(&id)?.clone(),
+                long_id: self.mapping.get_by_left(id)?.clone(),
                 storable: false,
                 droppable: true,
                 duplicatable: false,
                 zero_sized: true,
             })
-        } else if id == "ArrayU128".into() {
+        } else if id == &"ArrayU128".into() {
             Some(TypeInfo {
-                long_id: self.mapping.get_by_left(&id)?.clone(),
+                long_id: self.mapping.get_by_left(id)?.clone(),
                 storable: true,
                 droppable: true,
                 duplicatable: false,

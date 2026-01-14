@@ -84,7 +84,7 @@ impl SignatureOnlyGenericLibfunc for NullLibfunc {
         Ok(LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: nullable_ty(context, ty)?,
+                ty: nullable_ty(context, ty.clone())?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known { new_vars_only: true },

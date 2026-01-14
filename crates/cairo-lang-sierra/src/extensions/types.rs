@@ -140,8 +140,11 @@ impl<T: GenericTypeArgGenericType> NamedType for GenericTypeArgGenericTypeWrappe
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = args_as_single_type(args)?;
         let long_id = Self::concrete_type_long_id(args);
-        let wrapped_info = context.get_type_info(ty.clone())?;
-        Ok(Self::Concrete { info: self.0.calc_info(context, long_id, wrapped_info)?, ty })
+        let wrapped_info = context.get_type_info(ty)?;
+        Ok(Self::Concrete {
+            info: self.0.calc_info(context, long_id, wrapped_info)?,
+            ty: ty.clone(),
+        })
     }
 }
 
