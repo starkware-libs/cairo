@@ -55,6 +55,22 @@ Function item (with return value):
   "outputs": [ { "type": "u256" } ],
   "state_mutability": "view"
 }
+
+Function item (tuple return):
+[source,json]
+----
+{
+  "type": "function",
+  "name": "div_mod",
+  "inputs": [
+    { "name": "a", "type": "u8" },
+    { "name": "b", "type": "u8" }
+  ],
+  "outputs": [
+    { "type": "(u8, u8)" }
+  ],
+  "state_mutability": "view"
+}
 ----
 
 Constructor item:
@@ -76,6 +92,22 @@ L1 handler item:
   "type": "l1_handler",
   "name": "handle_deposit",
   "inputs": [ { "name": "from_address", "type": "felt252" } ],
+  "outputs": [],
+  "state_mutability": "external"
+}
+----
+
+L1 handler item (with payload):
+[source,json]
+----
+{
+  "type": "l1_handler",
+  "name": "handle_token_deposit",
+  "inputs": [
+    { "name": "from_address", "type": "felt252" },
+    { "name": "amount",       "type": "u256" },
+    { "name": "recipient",    "type": "ContractAddress" }
+  ],
   "outputs": [],
   "state_mutability": "external"
 }
