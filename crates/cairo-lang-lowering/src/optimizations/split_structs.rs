@@ -168,11 +168,9 @@ fn rebuild_blocks(lowered: &mut Lowered<'_>, split: SplitMapping) {
                     if let Some(output_split) =
                         split.get(&ctx.var_remapper.map_var_id(stmt.input.var_id))
                     {
-                        for (output, new_var) in
-                            zip_eq(stmt.outputs.iter(), output_split.vars.iter().cloned())
-                        {
+                        for (output, new_var) in zip_eq(&stmt.outputs, &output_split.vars) {
                             assert!(
-                                ctx.var_remapper.renamed_vars.insert(*output, new_var).is_none()
+                                ctx.var_remapper.renamed_vars.insert(*output, new_var.clone()).is_none()
                             )
                         }
                     } else {
