@@ -115,7 +115,7 @@ impl<Key: Eq, Value: Eq, BH> PartialEq for OrderedHashMap<Key, Value, BH> {
     }
 }
 
-impl<Key: Hash + Eq, Value: Eq, BH: BuildHasher> Eq for OrderedHashMap<Key, Value, BH> {}
+impl<Key: Hash + Eq, Value: Eq, BH> Eq for OrderedHashMap<Key, Value, BH> {}
 
 impl<Key: Hash, Value: Hash, BH> Hash for OrderedHashMap<Key, Value, BH> {
     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
