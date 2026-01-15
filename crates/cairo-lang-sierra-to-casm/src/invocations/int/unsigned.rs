@@ -22,7 +22,7 @@ fn build_small_uint_overflowing_add(
 ) -> Result<CompiledInvocation, InvocationError> {
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let [range_check, a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 4);
     add_input_variables! {casm_builder,
         buffer(0) range_check;
         deref a;
@@ -74,7 +74,7 @@ pub fn build_sqrt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 4);
     add_input_variables! {casm_builder,
         buffer(3) range_check;
         deref value;

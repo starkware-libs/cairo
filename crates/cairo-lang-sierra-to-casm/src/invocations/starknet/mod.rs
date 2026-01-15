@@ -110,7 +110,7 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
     }
     let [gas_builtin] = builder.refs[0].expression.try_unpack()?;
     let [system] = builder.refs[1].expression.try_unpack()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(32, 8);
     // +2 for Gas and Selector cells.
     let total_input_size = input_sizes.iter().sum::<i16>() + 2;
     let success_output_size = output_sizes.iter().sum::<i16>();

@@ -35,7 +35,7 @@ pub fn build_qm31_op(
     op: QM31BinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 2);
     add_input_variables! {casm_builder,
         deref a;
         deref_or_immediate b;
@@ -82,7 +82,7 @@ fn build_qm31_pack(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [w0, w1, w2, w3] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 2);
     add_input_variables! {casm_builder,
         deref w0;
         deref w1;
@@ -111,7 +111,7 @@ fn build_qm31_unpack(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, w3_w2_w1_w0] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 4);
     add_input_variables! {casm_builder,
         buffer(5) range_check;
         deref w3_w2_w1_w0;

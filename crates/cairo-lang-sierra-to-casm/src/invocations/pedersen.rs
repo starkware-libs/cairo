@@ -25,7 +25,7 @@ fn build_pedersen_hash(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [pedersen, x, y] = builder.try_get_single_cells()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(2, 0);
     add_input_variables! {casm_builder,
         deref x;
         deref y;
