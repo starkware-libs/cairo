@@ -7,7 +7,7 @@ use crate::invocations::CostValidationInfo;
 pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 0);
     casm_build_extend! {casm_builder,
         fail;
     }

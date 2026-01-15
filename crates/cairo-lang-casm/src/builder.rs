@@ -748,18 +748,28 @@ fn relocate_instruction(instruction: &mut Instruction, updated: i32) {
     }
 }
 
-impl Default for CasmBuilder {
-    fn default() -> Self {
+impl CasmBuilder {
+    /// Creates a new `CasmBuilder` with pre-allocated capacity for instructions and relocations.
+    ///
+    /// Use this when you know the approximate number of instructions and relocations
+    /// to avoid repeated allocations during building.
+    pub fn with_capacity(instructions: usize, relocations: usize) -> Self {
         Self {
             label_info: Default::default(),
             main_state: Default::default(),
-            instructions: Default::default(),
-            relocations: Default::default(),
+            instructions: Vec::with_capacity(instructions),
+            relocations: Vec::with_capacity(relocations),
             current_hints: Default::default(),
             var_count: Default::default(),
             reachable: true,
             next_instruction_offset: 0,
         }
+    }
+}
+
+impl Default for CasmBuilder {
+    fn default() -> Self {
+        Self::with_capacity(1, 0)
     }
 }
 

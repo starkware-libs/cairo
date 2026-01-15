@@ -35,7 +35,7 @@ pub fn build_downcast(
         return build_felt252_range_reduction(builder, &libfunc.to_range, true);
     }
     let [range_check, value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(32, 4);
     add_input_variables!(casm_builder,
         buffer(1) range_check;
         deref value;

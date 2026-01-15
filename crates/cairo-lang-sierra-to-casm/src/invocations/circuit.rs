@@ -64,7 +64,7 @@ fn build_init_circuit_data(
     let n_inputs = circ_info.n_inputs;
     let rc96_usage = circ_info.rc96_usage();
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
 
     add_input_variables! {casm_builder,
         buffer(1) rc96;
@@ -102,7 +102,7 @@ fn build_add_input(
     let [expr_handle, elem] = builder.try_get_refs()?;
     let [start, end] = expr_handle.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(elem.cells.len() + 3, 1);
     add_input_variables! {casm_builder,
         buffer(elem.cells.len() as i16) start;
         deref end;
@@ -191,7 +191,7 @@ fn build_circuit_eval(
 
     let zero = expr_zero.try_unpack_single()?;
     let one = expr_one.try_unpack_single()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(32, 1);
 
     let instance_size = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
     add_input_variables! {casm_builder,
@@ -312,7 +312,7 @@ fn build_try_into_circuit_modulus(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [l0, l1, l2, l3] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 7);
     add_input_variables!(casm_builder, deref l0; deref l1; deref l2; deref l3;);
     casm_build_extend! {casm_builder,
         const one = 1;
@@ -351,7 +351,7 @@ fn build_failure_guarantee_verify(
     let zero = expr_zero.try_unpack_single()?;
     let one = expr_one.try_unpack_single()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(40, 4);
     let rc_usage = (2 + VALUE_SIZE).into_or_panic();
 
     let instance_size = MOD_BUILTIN_INSTANCE_SIZE.into_or_panic();
@@ -473,7 +473,7 @@ fn build_get_output(
     let [expr_outputs] = builder.try_get_refs()?;
     let [values_ptr, modulus0, modulus1, modulus2, modulus3] = expr_outputs.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(5, 0);
 
     let CircuitInfo { values, .. } =
         builder.program_info.circuits_info.circuits.get(circuit_ty).unwrap();
@@ -524,7 +524,7 @@ fn build_u96_guarantee_verify(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [rc96, guarantee] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 0);
     add_input_variables! {casm_builder,
         buffer(0) rc96;
         deref guarantee;
@@ -555,7 +555,7 @@ fn build_u96_limbs_less_than_guarantee_verify(
     let [expr_guarantee] = builder.try_get_refs()?;
     let guarantee = &expr_guarantee.cells;
     assert_eq!(guarantee.len(), limb_count * 2);
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(2, 1);
     let lhs_high_limb_idx = limb_count - 1;
     let rhs_high_limb_idx = 2 * limb_count - 1;
     let lhs_high_limb = casm_builder.add_var(guarantee[lhs_high_limb_idx].clone());
@@ -585,7 +585,7 @@ fn build_u96_single_limb_less_than_guarantee_verify(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_guarantee] = builder.try_get_refs()?;
     let [lhs, rhs] = expr_guarantee.try_unpack()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref lhs;
         deref rhs;
