@@ -127,6 +127,16 @@ For example:
         pub value: u128,
     }
 
+    #[derive(Drop, starknet::Event)]
+    pub struct MyOtherEvent {
+        pub other_value: u128,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub enum MyAnotherEvent {
+        MyOtherEvent: MyOtherEvent,
+    }
+
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
