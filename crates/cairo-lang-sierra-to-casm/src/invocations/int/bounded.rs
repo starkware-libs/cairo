@@ -59,7 +59,7 @@ pub fn build_div_rem(
 
     let alg = BoundedIntDivRemAlgorithm::try_new(lhs, rhs).unwrap();
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 2);
     let rc_slack = match &alg {
         BoundedIntDivRemAlgorithm::KnownSmallRhs => 2,
         BoundedIntDivRemAlgorithm::KnownSmallQuotient { .. }
@@ -185,7 +185,7 @@ fn build_constrain(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(6, 2);
     add_input_variables! {casm_builder,
         buffer(1) range_check;
         deref value;
@@ -232,7 +232,7 @@ fn build_trim(
     trimmed_value: &BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(2, 1);
     add_input_variables!(casm_builder, deref value; );
     casm_build_extend! {casm_builder,
         const trimmed_value = trimmed_value.clone();

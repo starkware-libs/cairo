@@ -47,7 +47,7 @@ pub fn build_sint_overflowing_operation(
     else {
         panic!("malformed invocation");
     };
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(32, 8);
     add_input_variables! {casm_builder,
         buffer(1) range_check;
         deref lhs;

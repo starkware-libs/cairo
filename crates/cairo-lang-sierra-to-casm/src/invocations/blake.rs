@@ -24,7 +24,7 @@ fn build_compress(
     finalize: bool,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [state, byte_count, message] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref state;
         deref byte_count;

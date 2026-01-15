@@ -123,7 +123,7 @@ fn build_enum_from_bounded_int(
     }
 
     let [value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 0);
     add_input_variables! {casm_builder,
         deref value;
     };

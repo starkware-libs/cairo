@@ -11,7 +11,7 @@ pub fn build(
     libfunc: &<TraceLibfunc as GenericLibfunc>::Concrete,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 0);
     casm_build_extend! {casm_builder,
         const flag = libfunc.c.clone();
         hint ExternalHint::AddTrace { flag };
