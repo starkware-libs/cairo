@@ -28,7 +28,7 @@ fn build_u256_is_zero(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(2, 2);
     add_input_variables!(casm_builder, deref x; deref y; );
     casm_build_extend! {casm_builder,
         jump Target if x != 0;
@@ -52,7 +52,7 @@ fn build_u256_divmod(
     let [dividend0, dividend1] = dividend.try_unpack()?;
     let [divisor0, divisor1] = divisor.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(37, 8);
     add_input_variables! {casm_builder,
         buffer(5) range_check;
         deref dividend0;
@@ -193,7 +193,7 @@ fn build_u256_sqrt(
     let [range_check] = range_check.try_unpack()?;
     let [value_low, value_high] = value.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(32, 2);
     add_input_variables! {casm_builder,
         buffer(6) range_check;
         deref value_low;
@@ -333,7 +333,7 @@ fn build_u256_inv_mod_n(
     let [b0, b1] = b.try_unpack()?;
     let [n0, n1] = n.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(73, 13);
     add_input_variables! {casm_builder,
         buffer(6) range_check;
         deref b0;

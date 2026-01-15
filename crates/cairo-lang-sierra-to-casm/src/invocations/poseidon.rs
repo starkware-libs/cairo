@@ -21,7 +21,7 @@ fn build_poseidon_permutation(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [poseidon, s0, s1, s2] = builder.try_get_single_cells()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(3, 0);
     add_input_variables! {casm_builder,
         deref s0;
         deref s1;
