@@ -1,10 +1,7 @@
-use std::str::FromStr;
-
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
+use cairo_lang_sierra::extensions::ec::{EcConcreteLibfunc, EcPointType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
-use num_bigint::BigInt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -12,12 +9,6 @@ use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
-
-/// Returns the Beta value of the Starkware elliptic curve.
-fn get_beta() -> BigInt {
-    BigInt::from_str("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-        .unwrap()
-}
 
 /// Builds instructions for Sierra EC operations.
 pub fn build(
@@ -67,7 +58,7 @@ fn compute_rhs(
     computed_rhs: Var,
 ) {
     casm_build_extend! {casm_builder,
-        const beta = (get_beta());
+        const beta = EcPointType::BETA.to_bigint();
         assert x2 = x * x;
         assert x3 = x2 * x;
         assert alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
