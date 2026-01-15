@@ -162,6 +162,10 @@ impl TestFileRunner for SmallE2ETestRunner {
         let future_sierra = args.get("future_sierra").is_some_and(|v| v == "true");
         run_e2e_test(inputs, E2eTestParams { future_sierra, ..E2eTestParams::default() })
     }
+
+    fn allowed_arg(&self, arg: &str) -> bool {
+        arg == "future_sierra"
+    }
 }
 
 #[derive(Default)]

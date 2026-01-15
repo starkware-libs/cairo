@@ -10,7 +10,8 @@ cairo_lang_test_utils::test_file_test!(
     {
         tests: "tests",
     },
-    test_path_diagnostics
+    test_path_diagnostics,
+    ["expect_diagnostics"]
 );
 
 pub fn test_path_diagnostics(

@@ -179,6 +179,32 @@ pub trait TestFileRunner {
         inputs: &OrderedHashMap<String, String>,
         runner_args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult;
+
+    /// Verifies all arguments are allowed before running the test.
+    /// Returns an error if any argument is not permitted by `allowed_arg`.
+    fn verify_and_run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        runner_args: &OrderedHashMap<String, String>,
+    ) -> TestRunnerResult {
+        for arg in runner_args.keys() {
+            if !self.allowed_arg(arg) {
+                return TestRunnerResult {
+                    outputs: Default::default(),
+                    error: Some(format!(
+                        "Received argument {arg} which is not allowed in this TestRunner"
+                    )),
+                };
+            }
+        }
+        self.run(inputs, runner_args)
+    }
+
+    /// Returns true if the given argument is allowed for this test runner.
+    /// Override this in implementations to specify permitted arguments.
+    fn allowed_arg(&self, _arg: &str) -> bool {
+        false
+    }
 }
 
 /// Creates a test that reads test files for a given function.
@@ -262,6 +288,8 @@ type TestRunnerFunction = fn(
 /// Simple runner wrapping a test function.
 pub struct SimpleRunner {
     pub func: TestRunnerFunction,
+    /// List of argument names that are allowed for this runner.
+    pub allowed_args: Vec<&'static str>,
 }
 impl TestFileRunner for SimpleRunner {
     fn run(
@@ -270,6 +298,10 @@ impl TestFileRunner for SimpleRunner {
         runner_args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
         (self.func)(inputs, runner_args)
+    }
+
+    fn allowed_arg(&self, arg: &str) -> bool {
+        self.allowed_args.contains(&arg)
     }
 }
 
@@ -329,8 +361,15 @@ impl TestFileRunner for SimpleRunner {
 #[macro_export]
 macro_rules! test_file_test {
     ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $test_func:ident) => {
+        cairo_lang_test_utils::test_file_test!($suite, $base_dir, { $($test_name : $test_file),* }, $test_func, [,]);
+    };
+    ($suite:ident, $base_dir:expr, { $($test_name:ident : $test_file:expr),* $(,)? }, $test_func:ident, [$($allowed_arg:expr),* $(,)?]) => {
         mod $suite {
             use super::*;
+
+            fn allowed_args() -> Vec<&'static str> {
+                vec![$($allowed_arg),*]
+            }
         $(
             #[cairo_lang_test_utils::test]
             fn $test_name() -> Result<(), std::io::Error> {
@@ -338,7 +377,10 @@ macro_rules! test_file_test {
                 cairo_lang_test_utils::parse_test_file::run_test_file(
                     path.as_path(),
                     stringify!($test_func),
-                    &mut cairo_lang_test_utils::parse_test_file::SimpleRunner { func: $test_func },
+                    &mut cairo_lang_test_utils::parse_test_file::SimpleRunner {
+                        func: $test_func,
+                        allowed_args: allowed_args(),
+                    },
                 )
             }
         )*
@@ -412,7 +454,7 @@ pub fn run_test_file(
 
         // Run the test.
         log::debug!("Running test: {test_path}");
-        let result = runner.run(&test.attributes, &runner_args);
+        let result = runner.verify_and_run(&test.attributes, &runner_args);
 
         // Fix if in fix mode, unrelated to the result.
         if is_fix_mode {
