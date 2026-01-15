@@ -71,6 +71,10 @@ impl TestFileRunner for ExpandContractTestRunner {
             error,
         }
     }
+
+    fn allowed_arg(&self, arg: &String) -> bool {
+        arg == "expect_diagnostics"
+    }
 }
 
 cairo_lang_test_utils::test_file_test_with_runner!(
@@ -117,7 +121,7 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
-        _args: &OrderedHashMap<String, String>,
+        args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
         let db = SHARED_DB_WITH_CONTRACTS.lock().unwrap().snapshot();
         let contract_file_id =
@@ -130,7 +134,7 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
             .collect::<Vec<_>>()
             .join("\n");
         let joined_diagnostics = diagnostic_items.join("\n");
-        let error = verify_diagnostics_expectation(_args, &joined_diagnostics);
+        let error = verify_diagnostics_expectation(args, &joined_diagnostics);
         TestRunnerResult {
             outputs: OrderedHashMap::from([
                 ("generated_cairo_code".into(), result),
@@ -138,6 +142,10 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
             ]),
             error,
         }
+    }
+
+    fn allowed_arg(&self, arg: &String) -> bool {
+        arg == "expect_diagnostics"
     }
 }
 

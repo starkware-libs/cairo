@@ -31,7 +31,8 @@ cairo_lang_test_utils::test_file_test!(
         if_: "if",
         match_: "match",
     },
-    test_create_graph
+    test_create_graph,
+    ["expect_diagnostics", "skip_lowering"]
 );
 
 fn test_create_graph(

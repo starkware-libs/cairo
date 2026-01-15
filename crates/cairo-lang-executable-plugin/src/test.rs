@@ -28,6 +28,10 @@ pub static SHARED_DB: LazyLock<Mutex<RootDatabase>> = LazyLock::new(|| {
 struct ExpandExecutableTestRunner {}
 
 impl TestFileRunner for ExpandExecutableTestRunner {
+    fn allowed_arg(&self, arg: &String) -> bool {
+        arg == "expect_diagnostics"
+    }
+
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
