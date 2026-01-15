@@ -31,7 +31,7 @@ fn build_felt252_dict_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [segment_arena_ptr] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(10, 0);
     add_input_variables! {casm_builder, buffer(2) segment_arena_ptr; };
     casm_build_extend! {casm_builder,
         hint AllocFelt252Dict {segment_arena_ptr: segment_arena_ptr};
@@ -72,7 +72,7 @@ fn build_felt252_dict_squash(
     let mut unique_key_steps: i32 = 0;
     let mut repeated_access_steps: i32 = 0;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(256, 32);
     add_input_variables! {casm_builder,
         buffer(2) segment_arena_ptr;
         buffer(0) range_check_ptr;
@@ -728,7 +728,7 @@ fn build_felt252_dict_entry_get(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dict_ptr, key] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 2);
     add_input_variables! {casm_builder, buffer(2) dict_ptr; deref key; };
     casm_build_extend! {casm_builder,
         hint Felt252DictEntryInit { dict_ptr, key };
@@ -752,7 +752,7 @@ fn build_felt252_dict_entry_finalize(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dict_entry, new_value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 2);
     add_input_variables! {casm_builder, buffer(0) dict_entry; deref new_value; };
     casm_build_extend! {casm_builder,
         hint Felt252DictEntryUpdate { dict_ptr: dict_entry, value: new_value };

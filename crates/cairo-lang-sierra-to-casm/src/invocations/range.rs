@@ -29,7 +29,7 @@ fn build_try_new(
     let start = expr_start.try_unpack_single()?;
     let end = expr_end.try_unpack_single()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 4);
     add_input_variables! {casm_builder,
         deref start;
         deref end;
@@ -77,7 +77,7 @@ fn build_pop_front(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [start, end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 2);
     add_input_variables! {casm_builder,
         deref start;
         deref end;

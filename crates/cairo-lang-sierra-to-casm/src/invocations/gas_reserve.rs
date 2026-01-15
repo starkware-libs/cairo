@@ -33,7 +33,7 @@ fn build_gas_reserve_utilize(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [gas_counter, reserve] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref gas_counter;
         deref reserve;
