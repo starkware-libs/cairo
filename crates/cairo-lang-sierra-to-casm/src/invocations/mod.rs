@@ -118,8 +118,8 @@ pub struct BranchChanges {
     pub ap_change: ApChange,
     /// A change to the ap tracking status.
     pub ap_tracking_change: ApTrackingChange,
-    /// The change to the remaining gas value in the wallet.
-    pub gas_change: CostTokenMap<i64>,
+    /// The gas cost of the libfunc in this branch (subtracted from the wallet).
+    pub gas_cost: CostTokenMap<i64>,
     /// Should the stack be cleared due to a gap between stack items.
     pub clear_old_stack: bool,
     /// The expected size of the known stack after the change.
@@ -131,7 +131,7 @@ impl BranchChanges {
     fn new<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
         ap_change: ApChange,
         ap_tracking_change: ApTrackingChange,
-        gas_change: CostTokenMap<i64>,
+        gas_cost: CostTokenMap<i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
         prev_env: &Environment,
@@ -170,7 +170,7 @@ impl BranchChanges {
             })
             .collect();
         validate_stack_top(ap_change, branch_signature, &refs);
-        Self { refs, ap_change, ap_tracking_change, gas_change, clear_old_stack, new_stack_size }
+        Self { refs, ap_change, ap_tracking_change, gas_cost, clear_old_stack, new_stack_size }
     }
 }
 
@@ -465,7 +465,7 @@ impl CompiledInvocationBuilder<'_> {
                 BranchChanges::new(
                     ap_change,
                     ap_tracking_change,
-                    gas_change.iter().map(|(token_type, val)| (*token_type, -val)).collect(),
+                    gas_change,
                     expressions,
                     branch_signature,
                     &self.environment,
