@@ -1,10 +1,10 @@
-# Compiling and running cairo files
+# Compiling and running Cairo files
 
 ```
 cargo run --bin cairo-run -- --single-file /path/to/file.cairo
 ```
 
-If we want to run code that is gas tested:
+If we want to run code that is gas-tested:
 
 ```
 cargo run --bin cairo-run -- --single-file /path/to/file.cairo --available-gas 200
