@@ -543,12 +543,11 @@ pub fn compile(
                     .map_err(CompilationError::ProgramRegistryError)?;
                 check_basic_structure(statement_idx, invocation, libfunc)?;
 
-                let param_types: Vec<_> = libfunc
-                    .param_signatures()
-                    .iter()
-                    .map(|param_signature| param_signature.ty.clone())
-                    .collect();
-                check_types_match(&invoke_refs, &param_types).map_err(|error| {
+                check_types_match(
+                    &invoke_refs,
+                    libfunc.param_signatures().iter().map(|sig| &sig.ty),
+                )
+                .map_err(|error| {
                     Box::new(AnnotationError::ReferencesError { statement_idx, error }.into())
                 })?;
                 invoke_refs.iter().for_each(|r| r.validate(&program_info.type_sizes));
