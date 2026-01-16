@@ -1,10 +1,10 @@
-# Testing cairo files
+# Testing Cairo files
 
 ```
 cargo run --bin cairo-test -- --single-file /path/to/file.cairo
 ```
 
-We can use this command to run Cairo level tests.
+We can use this command to run Cairo-level tests.
 
 # Example
 
