@@ -5,7 +5,7 @@ use itertools::izip;
 use thiserror::Error;
 
 use self::value::CoreValue;
-use crate::edit_state::{EditStateError, put_results, take_args};
+use crate::edit_state::{EditState, EditStateError};
 use crate::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
@@ -93,10 +93,10 @@ impl SimulationContext<'_> {
                 .ok_or(SimulationError::StatementOutOfBounds(current_statement_id))?;
             match statement {
                 Statement::Return(ids) => {
-                    let (remaining, outputs) = take_args(state, ids.iter()).map_err(|error| {
+                    let outputs = state.take_vars(ids.iter()).map_err(|error| {
                         SimulationError::EditStateError(error, current_statement_id)
                     })?;
-                    return if remaining.is_empty() {
+                    return if state.is_empty() {
                         Ok(outputs)
                     } else {
                         Err(SimulationError::FunctionDidNotConsumeAllArgs(
@@ -106,10 +106,9 @@ impl SimulationContext<'_> {
                     };
                 }
                 Statement::Invocation(invocation) => {
-                    let (remaining, inputs) =
-                        take_args(state, invocation.args.iter()).map_err(|error| {
-                            SimulationError::EditStateError(error, current_statement_id)
-                        })?;
+                    let inputs = state.take_vars(invocation.args.iter()).map_err(|error| {
+                        SimulationError::EditStateError(error, current_statement_id)
+                    })?;
                     let libfunc = self.registry.get_libfunc(&invocation.libfunc_id)?;
                     let (outputs, chosen_branch) = self.simulate_libfunc(
                         &current_statement_id,
@@ -118,10 +117,9 @@ impl SimulationContext<'_> {
                         current_statement_id,
                     )?;
                     let branch_info = &invocation.branches[chosen_branch];
-                    state = put_results(remaining, izip!(branch_info.results.iter(), outputs))
-                        .map_err(|error| {
-                            SimulationError::EditStateError(error, current_statement_id)
-                        })?;
+                    state.put_vars(izip!(branch_info.results.iter(), outputs)).map_err(
+                        |error| SimulationError::EditStateError(error, current_statement_id),
+                    )?;
                     current_statement_id = current_statement_id.next(&branch_info.target);
                 }
             }
