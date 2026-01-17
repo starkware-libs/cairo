@@ -1,5 +1,5 @@
 use cairo_lang_casm::ap_change::{ApChangeError, ApplyApChange};
-use cairo_lang_sierra::edit_state::{put_results, take_args};
+use cairo_lang_sierra::edit_state::EditState;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
@@ -289,10 +289,9 @@ impl ProgramAnnotations {
         if self.backwards_jump_indices.contains(&statement_idx) {
             self.per_statement_annotations[statement_idx.0] = Some(entry.clone());
         }
-        let (statement_refs, taken_refs) = take_args(entry.refs, ref_ids).map_err(|error| {
+        let taken_refs = entry.refs.take_vars(ref_ids).map_err(|error| {
             AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
         })?;
-        entry.refs = statement_refs;
         Ok((entry, taken_refs))
     }
 
@@ -331,9 +330,9 @@ impl ProgramAnnotations {
                 }
             })?;
         }
-        let mut refs = put_results(
-            annotations.refs,
-            zip_eq(
+        annotations
+            .refs
+            .put_vars(zip_eq(
                 &branch_info.results,
                 branch_changes.refs.into_iter().map(|value| ReferenceValue {
                     expression: value.expression,
@@ -352,13 +351,12 @@ impl ProgramAnnotations {
                         }
                     },
                 }),
-            ),
-        )
-        .map_err(|error| AnnotationError::OverrideReferenceError {
-            source_statement_idx,
-            destination_statement_idx,
-            var_id: error.var_id(),
-        })?;
+            ))
+            .map_err(|error| AnnotationError::OverrideReferenceError {
+                source_statement_idx,
+                destination_statement_idx,
+                var_id: error.var_id(),
+            })?;
 
         let stack_size = if branch_changes.new_stack_size == 0 {
             0
@@ -367,7 +365,7 @@ impl ProgramAnnotations {
             // find the new stack size. This is done by searching from the bottom of the stack until
             // we find a missing variable.
             let mut available_stack_indices = vec![false; branch_changes.new_stack_size];
-            for r in refs.values() {
+            for r in annotations.refs.values() {
                 if let Some(i) = r.stack_idx {
                     available_stack_indices[i] = true;
                 }
@@ -375,7 +373,7 @@ impl ProgramAnnotations {
             if let Some(stack_size) = available_stack_indices.iter().rev().position(|v| !v) {
                 // The number of stack elements which were removed.
                 let index_fix = branch_changes.new_stack_size - stack_size;
-                for (_, r) in refs.iter_mut() {
+                for (_, r) in annotations.refs.iter_mut() {
                     // Subtract the number of stack elements removed. If the result is negative,
                     // `stack_idx` is set to `None` and the variable is removed from the stack.
                     r.stack_idx = r.stack_idx.and_then(|v| v.checked_sub(index_fix));
@@ -412,7 +410,7 @@ impl ProgramAnnotations {
         self.set_or_assert(
             destination_statement_idx,
             StatementAnnotations {
-                refs,
+                refs: annotations.refs,
                 function_id: annotations.function_id,
                 convergence_allowed: !must_set,
                 environment: Environment {
