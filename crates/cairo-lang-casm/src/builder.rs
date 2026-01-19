@@ -95,15 +95,14 @@ impl State {
     }
 }
 
-/// A statement added to the builder.
-enum Statement {
-    /// A final instruction, no need for further editing.
-    Final(Instruction),
-    /// A jump or call command, requires fixing the actual target label.
-    Jump(&'static str, Instruction),
-    /// A target label for jumps, additionally with an offset for defining the label in a position
-    /// relative to the current statement.
-    Label(&'static str, usize),
+/// Represents a relocation to a label.
+struct LabelRelocation {
+    /// The label to which the instruction should be relocated.
+    label: &'static str,
+    /// The index of the instruction that needs to be relocated.
+    instruction_index: usize,
+    /// The code offset of the instruction to be relocated.
+    instruction_offset: usize,
 }
 
 /// The builder result.
@@ -118,8 +117,19 @@ pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
 struct LabelInfo {
     /// The state at a point of jumping into the label.
     state: State,
-    /// Whether the label state is read-only.
-    read_only: bool,
+    /// The offset of the label. If not set means not yet reached (and not read-only).
+    offset: Offset,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct Offset(pub usize);
+impl Offset {
+    /// The value for an unset offset.
+    const UNSET: Offset = Offset(usize::MAX);
+    /// Check if the offset is set.
+    fn is_set(&self) -> bool {
+        self != &Self::UNSET
+    }
 }
 
 /// Builder to more easily write CASM code.
@@ -132,8 +142,10 @@ pub struct CasmBuilder {
     label_info: SmallOrderedMap<&'static str, LabelInfo>,
     /// The state at the last added statement.
     main_state: State,
-    /// The added statements.
-    statements: Vec<Statement>,
+    /// The added instructions.
+    instructions: Vec<Instruction>,
+    /// The relocations to be applied to the instructions.
+    relocations: Vec<LabelRelocation>,
     /// The current set of added hints.
     current_hints: Vec<Hint>,
     /// The number of vars created. Used to not reuse var names.
@@ -141,6 +153,8 @@ pub struct CasmBuilder {
     /// Is the current state reachable.
     /// Example for unreachable state is after an unconditional jump, before any label is stated.
     reachable: bool,
+    /// The size of the code until this point.
+    next_instruction_offset: usize,
 }
 impl CasmBuilder {
     /// Finalizes the builder, with the requested labels as the returning branches.
@@ -153,55 +167,29 @@ impl CasmBuilder {
             self.current_hints.is_empty(),
             "Build cannot be called with hints as the last addition."
         );
-        let label_offsets = self.compute_label_offsets();
-        if self.reachable {
-            self.label_info
-                .insert("Fallthrough", LabelInfo { state: self.main_state, read_only: false });
-        }
-        let mut instructions = vec![];
-        let mut branch_relocations: [Vec<usize>; BRANCH_COUNT] = core::array::from_fn(|_| vec![]);
-        let mut offset = 0;
-        for statement in self.statements {
-            match statement {
-                Statement::Final(inst) => {
-                    offset += inst.body.op_size();
-                    instructions.push(inst);
-                }
-                Statement::Jump(label, mut inst) => {
-                    match label_offsets.get(&label) {
-                        Some(label_offset) => match &mut inst.body {
-                            InstructionBody::Jnz(JnzInstruction {
-                                jump_offset: DerefOrImmediate::Immediate(value),
-                                ..
-                            })
-                            | InstructionBody::Jump(JumpInstruction {
-                                target: DerefOrImmediate::Immediate(value),
-                                ..
-                            })
-                            | InstructionBody::Call(CallInstruction {
-                                target: DerefOrImmediate::Immediate(value),
-                                ..
-                            }) => {
-                                // Updating the value, instead of assigning into it, to avoid
-                                // allocating a BigInt since it is already 0.
-                                value.value += *label_offset as i128 - offset as i128;
-                            }
-
-                            _ => unreachable!("Only jump or call statements should be here."),
-                        },
-                        None => {
-                            let idx = branch_names.iter().position(|name| name == &label).unwrap();
-                            branch_relocations[idx].push(instructions.len())
-                        }
-                    }
-                    offset += inst.body.op_size();
-                    instructions.push(inst);
-                }
-                Statement::Label(name, _) => {
-                    self.label_info.remove(&name);
-                }
+        let mut branch_relocations: [Vec<usize>; BRANCH_COUNT] =
+            core::array::from_fn(|_| Vec::new());
+        for LabelRelocation { label, instruction_index, instruction_offset } in self.relocations {
+            // Use cached offset if available (backward jump), otherwise lookup
+            let label_offset = self.label_info[&label].offset;
+            // Check if this is an internal label (offset set) or external branch
+            if label_offset.is_set() {
+                relocate_instruction(
+                    &mut self.instructions[instruction_index],
+                    label_offset.0 as i32 - instruction_offset as i32,
+                );
+            } else {
+                // External branch - find which branch index
+                let idx = branch_names.iter().position(|name| name == &label).unwrap();
+                branch_relocations[idx].push(instruction_index);
             }
         }
+        self.label_info.retain(|_, info| !info.offset.is_set());
+        if self.reachable {
+            self.label_info
+                .insert("Fallthrough", LabelInfo { state: self.main_state, offset: Offset::UNSET });
+        }
+
         let branches = core::array::from_fn(|i| {
             let label = branch_names[i];
             let info = self
@@ -212,30 +200,13 @@ impl CasmBuilder {
             (info.state, core::mem::take(&mut branch_relocations[i]))
         });
         assert!(self.label_info.is_empty(), "Did not use all branches.");
-        CasmBuildResult { instructions, branches }
+        CasmBuildResult { instructions: self.instructions, branches }
     }
 
     /// Returns the current ap change of the builder.
     /// Useful for manual ap change handling.
     pub fn curr_ap_change(&self) -> usize {
         self.main_state.ap_change
-    }
-
-    /// Computes the code offsets of all the labels.
-    fn compute_label_offsets(&self) -> SmallOrderedMap<&'static str, usize> {
-        let mut label_offsets = SmallOrderedMap::default();
-        let mut offset = 0;
-        for statement in &self.statements {
-            match statement {
-                Statement::Final(inst) | Statement::Jump(_, inst) => {
-                    offset += inst.body.op_size();
-                }
-                Statement::Label(name, extra_offset) => {
-                    label_offsets.insert(*name, offset + extra_offset);
-                }
-            }
-        }
-        label_offsets
     }
 
     /// Adds a variable pointing to `value`.
@@ -332,7 +303,7 @@ impl CasmBuilder {
             },
             true,
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
     }
 
     /// Writes and increments a buffer.
@@ -413,7 +384,7 @@ impl CasmBuilder {
             InstructionBody::AddAp(AddApInstruction { operand: BigInt::from(size).into() }),
             false,
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
         self.main_state.ap_change += size;
     }
 
@@ -457,33 +428,18 @@ impl CasmBuilder {
         self.add_var(CellExpression::DoubleDeref(cell, full_offset))
     }
 
-    /// Sets the label to have the set states, otherwise tests if the state matches the existing one
-    /// by merging.
-    fn set_or_test_label_state(&mut self, label: &'static str, state: State) {
-        match self.label_info.entry(label) {
-            Entry::Occupied(e) => {
-                let info = e.into_mut();
-                info.state.intersect(&state, info.read_only);
-            }
-            Entry::Vacant(e) => {
-                e.insert(LabelInfo { state, read_only: false });
-            }
-        }
-    }
-
     /// Adds a statement to jump to `label`.
     pub fn jump(&mut self, label: &'static str) {
-        let instruction = self.next_instruction(
+        self.push_labeled_instruction(
+            label,
             InstructionBody::Jump(JumpInstruction {
-                target: deref_or_immediate!(0),
+                target: deref_or_immediate!(BigInt::ZERO),
                 relative: true,
             }),
             true,
         );
-        self.statements.push(Statement::Jump(label, instruction));
-        let mut state = State::default();
-        core::mem::swap(&mut state, &mut self.main_state);
-        self.set_or_test_label_state(label, state);
+        let state = core::mem::take(&mut self.main_state);
+        self.set_or_test_label(label, state);
         self.reachable = false;
     }
 
@@ -491,15 +447,15 @@ impl CasmBuilder {
     /// `condition` must be a cell reference.
     pub fn jump_nz(&mut self, condition: Var, label: &'static str) {
         let cell = self.as_cell_ref(condition, true);
-        let instruction = self.next_instruction(
+        self.push_labeled_instruction(
+            label,
             InstructionBody::Jnz(JnzInstruction {
                 condition: cell,
-                jump_offset: deref_or_immediate!(0),
+                jump_offset: deref_or_immediate!(BigInt::ZERO),
             }),
             true,
         );
-        self.statements.push(Statement::Jump(label, instruction));
-        self.set_or_test_label_state(label, self.main_state.clone());
+        self.set_or_test_label(label, self.main_state.clone());
     }
 
     /// Adds a statement performing Blake2s compression.
@@ -525,28 +481,40 @@ impl CasmBuilder {
             self.main_state.allocated as usize, self.main_state.ap_change,
             "Output var must be top of stack"
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
     }
 
     /// Adds a label here named `name`.
     pub fn label(&mut self, name: &'static str) {
-        if self.reachable {
-            self.set_or_test_label_state(name, self.main_state.clone());
-        }
-        let info = self
-            .label_info
-            .get_mut(&name)
-            .unwrap_or_else(|| panic!("No known value for state on reaching {name}."));
-        info.read_only = true;
+        // Single lookup: merge state if reachable and set offset
+        let info = match self.label_info.entry(name) {
+            Entry::Occupied(e) => {
+                let info = e.into_mut();
+                if self.reachable {
+                    info.state.intersect(&self.main_state, false);
+                }
+                info
+            }
+            Entry::Vacant(e) => {
+                // Label defined before any jumps to it - use current state
+                if !self.reachable {
+                    panic!("No known value for state on reaching {name}.");
+                }
+                e.insert(LabelInfo { state: self.main_state.clone(), offset: Offset::UNSET })
+            }
+        };
+        info.offset = Offset(self.next_instruction_offset);
         self.main_state = info.state.clone();
-        self.statements.push(Statement::Label(name, 0));
         self.reachable = true;
     }
 
     /// Adds a label `name` in distance `offset` from the current point.
     /// Useful for calling code outside of the builder's context.
     pub fn future_label(&mut self, name: &'static str, offset: usize) {
-        self.statements.push(Statement::Label(name, offset));
+        self.label_info
+            .get_mut(&name)
+            .expect("This is always at the end of code, something must have built this.")
+            .offset = Offset(self.next_instruction_offset + offset);
     }
 
     /// Rescoping the values, while ignoring all vars not stated in `vars` and giving the vars on
@@ -614,28 +582,26 @@ impl CasmBuilder {
                 main_vars.insert(*var, value.clone());
             }
         }
-
-        let instruction = self.next_instruction(
+        self.push_labeled_instruction(
+            label,
             InstructionBody::Call(CallInstruction {
                 relative: true,
                 target: deref_or_immediate!(0),
             }),
             false,
         );
-        self.statements.push(Statement::Jump(label, instruction));
 
         self.main_state.vars = main_vars;
         self.main_state.allocated = 0;
         self.main_state.ap_change = 0;
-        let function_state = State { vars: function_vars, ..Default::default() };
-        self.set_or_test_label_state(label, function_state);
+        self.set_or_test_label(label, State { vars: function_vars, ..Default::default() });
     }
 
     /// A return statement in the code.
     pub fn ret(&mut self) {
         self.main_state.validate_finality();
         let instruction = self.next_instruction(InstructionBody::Ret(RetInstruction {}), false);
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
         self.reachable = false;
     }
 
@@ -663,7 +629,7 @@ impl CasmBuilder {
             }),
             false,
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
         self.mark_unreachable();
     }
 
@@ -726,9 +692,59 @@ impl CasmBuilder {
             self.main_state.ap_change += 1;
         }
         self.main_state.steps += 1;
-        let mut hints = vec![];
-        core::mem::swap(&mut hints, &mut self.current_hints);
-        Instruction { body, inc_ap, hints }
+        self.next_instruction_offset += body.op_size();
+        Instruction { body, inc_ap, hints: core::mem::take(&mut self.current_hints) }
+    }
+
+    /// Pushes a jump-style instruction to the builder.
+    /// Additionally pushes a label relocation for the instruction.
+    fn push_labeled_instruction(
+        &mut self,
+        label: &'static str,
+        body: InstructionBody,
+        inc_ap_supported: bool,
+    ) {
+        self.relocations.push(LabelRelocation {
+            instruction_index: self.instructions.len(),
+            instruction_offset: self.next_instruction_offset,
+            label,
+        });
+        let instruction = self.next_instruction(body, inc_ap_supported);
+        self.instructions.push(instruction);
+    }
+
+    /// Sets or tests a label's state.
+    fn set_or_test_label(&mut self, label: &'static str, state: State) {
+        match self.label_info.entry(label) {
+            Entry::Occupied(e) => {
+                let info = e.into_mut();
+                info.state.intersect(&state, info.offset.is_set());
+            }
+            Entry::Vacant(e) => {
+                e.insert(LabelInfo { state, offset: Offset::UNSET });
+            }
+        };
+    }
+}
+
+/// Relocates an instruction by updating its jump offset.
+fn relocate_instruction(instruction: &mut Instruction, updated: i32) {
+    match &mut instruction.body {
+        InstructionBody::Jnz(JnzInstruction {
+            jump_offset: DerefOrImmediate::Immediate(value),
+            ..
+        })
+        | InstructionBody::Jump(JumpInstruction {
+            target: DerefOrImmediate::Immediate(value),
+            ..
+        })
+        | InstructionBody::Call(CallInstruction {
+            target: DerefOrImmediate::Immediate(value),
+            ..
+        }) => {
+            value.value = BigInt::from(updated);
+        }
+        _ => unreachable!("Only jump or call statements should be here."),
     }
 }
 
@@ -737,10 +753,12 @@ impl Default for CasmBuilder {
         Self {
             label_info: Default::default(),
             main_state: Default::default(),
-            statements: Default::default(),
+            instructions: Default::default(),
+            relocations: Default::default(),
             current_hints: Default::default(),
             var_count: Default::default(),
             reachable: true,
+            next_instruction_offset: 0,
         }
     }
 }
