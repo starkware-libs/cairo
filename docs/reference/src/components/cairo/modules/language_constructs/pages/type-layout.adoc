@@ -1,6 +1,316 @@
 = Type layout
 
-This section is a work in progress.
+Type layout describes how Cairo represents types in memory. Understanding type layout is essential
+for optimizing memory usage and understanding how values are stored and manipulated at runtime.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== The Base Unit: felt252
+
+Cairo's memory model is built on **felt252** as the fundamental unit. A felt252 represents an
+element in a prime field and occupies exactly **1 memory cell**. All other types are composed of
+one or more felt252 cells.
+
+The prime modulus is: `P = 3618502788666131213697322783095070105623107215331596699973092056135872020481`
+
+== Type Sizes
+
+Type sizes are measured in **felt252 cells**. Here are the sizes of Cairo's built-in types:
+
+=== Zero-Sized Types
+
+- `()` (unit type) - size 0
+
+Zero-sized types exist at the type level but occupy no runtime memory.
+
+=== Single-Cell Types (Size 1)
+
+These types all fit in a single felt252:
+
+- `felt252` - the base field element
+- `u8`, `u16`, `u32`, `u64`, `u128` - unsigned integers
+- `i8`, `i16`, `i32`, `i64`, `i128` - signed integers
+- `bool` - boolean (0 or 1)
+- `bytes31` - packed 31-byte value
+- `Box<T>` - pointer to boxed value
+- `Nullable<T>` - optional pointer
+- Contract types: `ContractAddress`, `ClassHash`, `StorageAddress`
+- Builtin types: `RangeCheck`, `Pedersen`, `Poseidon`, etc.
+
+=== Multi-Cell Types
+
+|===
+| Type | Size | Layout
+
+| `u256` | 2 | `{ low: u128, high: u128 }`
+| `u512` | 4 | Four `u128` limbs
+| `Array<T>` | 2 | `(start_ptr, end_ptr)`
+| `Span<T>` | 2 | `(start_ptr, end_ptr)`
+| `EcPoint` | 2 | Elliptic curve point
+| `EcState` | 3 | Elliptic curve state
+|===
+
+== Struct Layout
+
+Structs are laid out sequentially in memory with **no padding or alignment**:
+
+[source,cairo]
+----
+struct Point {
+    x: u128,      // Offset 0, size 1
+    y: u128,      // Offset 1, size 1
+}
+// Total size: 2
+
+struct Mixed {
+    a: u8,        // Offset 0, size 1
+    b: bool,      // Offset 1, size 1
+    c: u256,      // Offset 2, size 2
+}
+// Total size: 4
+----
+
+**Key properties:**
+- Struct size = sum of all field sizes
+- Fields appear in declaration order
+- No padding between fields
+- No alignment requirements
+
+=== Example: u256 Layout
+
+[source,cairo]
+----
+pub struct u256 {
+    pub low: u128,    // Cell 0
+    pub high: u128,   // Cell 1
+}
+----
+
+A u256 value is stored across two cells. For example, the value `500` is stored as:
+- Cell 0 (low): `500`
+- Cell 1 (high): `0`
+
+For a full 256-bit value, you need a 64-digit hex number. The value
+`0x123456789ABCDEF0FEDCBA9876543210123456789ABCDEF0FEDCBA9876543210` is stored as:
+- Cell 0 (low): `0x123456789ABCDEF0FEDCBA9876543210` (lower 128 bits)
+- Cell 1 (high): `0x123456789ABCDEF0FEDCBA9876543210` (upper 128 bits)
+
+== Enum Layout
+
+Enums use a **variant selector** plus the largest variant's payload:
+
+[source,cairo]
+----
+enum Option<T> {
+    Some: T,
+    None,
+}
+----
+
+**Layout:** `[variant_selector, ...padded_payload...]`
+
+**Size:** `1 + max(variant_sizes)`
+
+For `Option<u256>`:
+- Size = 1 (selector) + 2 (u256) = 3 cells
+- `Some` variant: `[0, low, high]`
+- `None` variant: `[1, 0, 0]` (payload padded with zeros)
+
+=== Variant Selector Encoding
+
+- **1-2 variants:** Selector is the variant index (0 or 1)
+- **3+ variants:** Selector uses a jump table encoding
+
+Example with multiple variants:
+
+[source,cairo]
+----
+enum Color {
+    Red,          // Selector 0, payload size 0
+    Green,        // Selector 1, payload size 0
+    Rgb: (u8, u8, u8),  // Selector 2, payload size 3
+}
+// Total size: 1 + max(0, 0, 3) = 4
+----
+
+== Array and Tuple Layout
+
+=== Arrays
+
+Arrays are represented as **two pointers**:
+
+[source,cairo]
+----
+struct Array<T> {
+    start: felt252*,  // Cell 0: start pointer
+    end: felt252*,    // Cell 1: end pointer
+}
+----
+
+- Array size in memory: always 2 cells (just the pointers)
+- Element count: `(end - start) / element_size`
+- Elements stored contiguously in a separate memory segment
+
+=== Tuples
+
+Tuples are laid out like structs - sequentially with no padding:
+
+[source,cairo]
+----
+let t: (u128, bool, u256) = (10, true, 256);
+// Layout: [10, 1, 256_low, 256_high]
+// Size: 1 + 1 + 2 = 4 cells
+----
+
+== Special Types
+
+=== Box<T>
+
+A `Box<T>` always occupies **1 cell** (just a pointer), regardless of `T`:
+
+[source,cairo]
+----
+let small: Box<u8> = BoxTrait::new(42);      // Size: 1
+let large: Box<u512> = BoxTrait::new(value); // Size: 1
+----
+
+The actual value is stored in a separate memory segment.
+
+=== Snapshot<T>
+
+A snapshot has the **same size as T** - it's not a pointer:
+
+[source,cairo]
+----
+let x: u256 = 100;
+let snap: @u256 = @x;  // Size: 2 (same as u256)
+----
+
+Snapshots enable `Copy` semantics by storing the full value at a snapshot point in memory.
+
+=== Nullable<T>
+
+`Nullable<T>` is a **1-cell nullable pointer**:
+
+[source,cairo]
+----
+pub extern type Nullable<T>;  // Size: 1
+----
+
+Can be null or contain a `Box<T>`.
+
+== Memory Model
+
+=== No Padding or Alignment
+
+Unlike many languages, Cairo does **not use padding or alignment**. All types are packed tightly:
+
+[source,cairo]
+----
+struct Compact {
+    a: u8,     // 1 cell
+    b: u8,     // 1 cell (not padded to alignment)
+    c: bool,   // 1 cell
+}
+// Total: 3 cells (no wasted space)
+----
+
+=== Immutable Memory
+
+Cairo's memory is **immutable**. When you assign to a variable, you're rebinding the variable name,
+not mutating memory:
+
+[source,cairo]
+----
+let mut x = 10;
+x = 20;  // Creates new binding, doesn't mutate original cell
+----
+
+=== Memory Segments
+
+Cairo execution uses **relocatable memory** organized into segments:
+- **Execution segment**: Program code and intermediate values
+- **Builtin segments**: For builtin operations
+- **External segments**: For user-allocated data (Box, Array)
+
+== Practical Examples
+
+=== Calculating Struct Size
+
+[source,cairo]
+----
+struct Transaction {
+    from: ContractAddress,   // 1
+    to: ContractAddress,     // 1
+    amount: u256,            // 2
+    nonce: u64,              // 1
+}
+// Total size: 5 cells
+----
+
+=== Optimizing Memory Usage
+
+Reorder fields to make structs easier to reason about, knowing there's no padding:
+
+[source,cairo]
+----
+// These are equivalent in size
+struct V1 {
+    large: u256,    // 2
+    small: u8,      // 1
+}
+
+struct V2 {
+    small: u8,      // 1
+    large: u256,    // 2
+}
+// Both: 3 cells
+----
+
+=== Generic Type Sizes
+
+[source,cairo]
+----
+struct Pair<T, U> {
+    first: T,
+    second: U,
+}
+
+// Size depends on type parameters:
+// Pair<u128, u128> = 2 cells
+// Pair<u256, bool> = 3 cells
+// Pair<Box<u512>, u8> = 2 cells (Box is always 1)
+----
+
+== Size Summary Table
+
+|===
+| Type | Size (cells) | Notes
+
+| `felt252` | 1 | Base unit
+| `u8` - `u128` | 1 | All fit in one felt252
+| `u256` | 2 | Two u128 fields
+| `u512` | 4 | Four u128 limbs
+| `bool` | 1 | 0 or 1
+| `bytes31` | 1 | Packed bytes
+| `Box<T>` | 1 | Always 1 (pointer)
+| `Array<T>` | 2 | Two pointers
+| `Span<T>` | 2 | Two pointers
+| `@T` | same as T | Full value
+| `()` | 0 | Zero-sized
+| Struct | Σ(fields) | Sum of field sizes
+| Enum | 1 + max(variants) | Selector + largest variant
+| Tuple | Σ(elements) | Sum of element sizes
+|===
+
+== Important Notes
+
+NOTE: All integer types (u8, u16, u32, u64, u128) occupy exactly 1 cell, even though they represent
+different value ranges. Cairo does not use byte-level addressing.
+
+NOTE: There is no padding or alignment in Cairo's type layout. Structs and tuples are always packed
+tightly.
+
+NOTE: Box<T> is always 1 cell regardless of T's size, making it ideal for large values or recursive
+types.
+
+NOTE: Snapshot (@T) has the same size as T. It's not a pointer or reference - it's a full value at
+a specific memory location.
