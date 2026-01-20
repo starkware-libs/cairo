@@ -48,7 +48,7 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
                 felt252_param,
             ],
             vec![
-                OutputVarInfo::new_builtin(pedersen_ty, 0),
+                OutputVarInfo::new_builtin(pedersen_ty),
                 OutputVarInfo {
                     ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

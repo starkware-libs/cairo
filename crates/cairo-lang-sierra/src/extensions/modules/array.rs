@@ -109,9 +109,7 @@ impl SignatureAndTypeGenericLibfunc for SpanFromTupleLibfuncWrapped {
                     context,
                     context.get_wrapped_concrete_type(ArrayType::id(), member_type)?,
                 )?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                    param_idx: 0,
-                }),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
@@ -222,9 +220,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
             ],
             vec![OutputVarInfo {
                 ty: arr_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                    param_idx: 0,
-                }),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst),
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
@@ -253,7 +249,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {
@@ -299,7 +295,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontConsumeLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {
@@ -341,7 +337,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
             ParamSignature::new(snapshot_ty(context, arr_type)?),
             ParamSignature::new(index_type),
         ];
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type);
         let branch_signatures = vec![
             // First (success) branch returns rc, array and element; failure branch does not return
             // an element.
@@ -388,7 +384,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
             // Length
             ParamSignature::new(index_type),
         ];
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type);
         let branch_signatures = vec![
             // Success.
             BranchSignature {
@@ -435,7 +431,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {
@@ -481,7 +477,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopBackLibfuncWrapped {
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {
@@ -533,7 +529,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                 // Success.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
+                        OutputVarInfo::new_builtin(range_check_ty.clone()),
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
@@ -548,7 +544,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopFrontLibfunc {
                 // Failure.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(range_check_ty, 0),
+                        OutputVarInfo::new_builtin(range_check_ty),
                         OutputVarInfo {
                             ty: arr_snapshot_ty,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
@@ -600,7 +596,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
                 // Success.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(range_check_ty.clone(), 0),
+                        OutputVarInfo::new_builtin(range_check_ty.clone()),
                         OutputVarInfo {
                             ty: arr_snapshot_ty.clone(),
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
@@ -615,7 +611,7 @@ impl NamedLibfunc for ArraySnapshotMultiPopBackLibfunc {
                 // Failure.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(range_check_ty, 0),
+                        OutputVarInfo::new_builtin(range_check_ty),
                         OutputVarInfo {
                             ty: arr_snapshot_ty,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },

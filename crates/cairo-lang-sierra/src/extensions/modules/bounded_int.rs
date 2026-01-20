@@ -216,7 +216,7 @@ impl NamedLibfunc for BoundedIntDivRemLibfunc {
                 ParamSignature::new(nonzero_ty(context, rhs)?),
             ],
             vec![
-                OutputVarInfo::new_builtin(range_check_type, 0),
+                OutputVarInfo::new_builtin(range_check_type),
                 OutputVarInfo {
                     ty: bounded_int_ty(context, quotient_min, quotient_max)?,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,
@@ -344,7 +344,7 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             let res_ty = if is_nz { nonzero_ty(context, &inner_res_ty)? } else { inner_res_ty };
             Ok(BranchSignature {
                 vars: vec![
-                    OutputVarInfo::new_builtin(range_check_type.clone(), 0),
+                    OutputVarInfo::new_builtin(range_check_type.clone()),
                     OutputVarInfo {
                         ty: res_ty,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },

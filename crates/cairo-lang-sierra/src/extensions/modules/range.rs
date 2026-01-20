@@ -109,7 +109,7 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
                 // Success.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(range_check_type.clone(), 0),
+                        OutputVarInfo::new_builtin(range_check_type.clone()),
                         OutputVarInfo {
                             ty: range_ty.clone(),
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
@@ -120,7 +120,7 @@ impl SignatureOnlyGenericLibfunc for IntRangeTryNewLibfunc {
                 // Failure.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo::new_builtin(range_check_type, 0),
+                        OutputVarInfo::new_builtin(range_check_type),
                         OutputVarInfo {
                             ty: range_ty,
                             ref_info: OutputVarReferenceInfo::SimpleDerefs,
@@ -163,7 +163,7 @@ impl SignatureOnlyGenericLibfunc for IntRangePopFrontLibfunc {
                         OutputVarInfo {
                             ty: range_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
+                                DeferredOutputKind::AddConst,
                             ),
                         },
                         OutputVarInfo {

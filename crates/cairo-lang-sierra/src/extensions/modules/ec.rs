@@ -161,7 +161,7 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone());
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
@@ -407,7 +407,7 @@ impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
                 ParamSignature::new(nonzero_ecpoint_ty),
             ],
             vec![
-                OutputVarInfo::new_builtin(ec_builtin_ty, 0),
+                OutputVarInfo::new_builtin(ec_builtin_ty),
                 OutputVarInfo {
                     ty: ec_state_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
