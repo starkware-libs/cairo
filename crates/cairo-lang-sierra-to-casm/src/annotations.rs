@@ -360,25 +360,30 @@ impl ProgramAnnotations {
             var_id: error.var_id(),
         })?;
 
-        // Since some variables on the stack may have been consumed by the libfunc, we need to
-        // find the new stack size. This is done by searching from the bottom of the stack until we
-        // find a missing variable.
-        let available_stack_indices: UnorderedHashSet<_> =
-            refs.values().flat_map(|r| r.stack_idx).collect();
-        let new_stack_size_opt = (0..branch_changes.new_stack_size)
-            .find(|i| !available_stack_indices.contains(&(branch_changes.new_stack_size - 1 - i)));
-        let stack_size = if let Some(new_stack_size) = new_stack_size_opt {
-            // The number of stack elements which were removed.
-            let stack_removal = branch_changes.new_stack_size - new_stack_size;
-            for (_, r) in refs.iter_mut() {
-                // Subtract the number of stack elements removed. If the result is negative,
-                // `stack_idx` is set to `None` and the variable is removed from the stack.
-                r.stack_idx =
-                    r.stack_idx.and_then(|stack_idx| stack_idx.checked_sub(stack_removal));
-            }
-            new_stack_size
+        let stack_size = if branch_changes.new_stack_size == 0 {
+            0
         } else {
-            branch_changes.new_stack_size
+            // Since some variables on the stack may have been consumed by the libfunc, we need to
+            // find the new stack size. This is done by searching from the bottom of the stack until
+            // we find a missing variable.
+            let mut available_stack_indices = vec![false; branch_changes.new_stack_size];
+            for r in refs.values() {
+                if let Some(i) = r.stack_idx {
+                    available_stack_indices[i] = true;
+                }
+            }
+            if let Some(stack_size) = available_stack_indices.iter().rev().position(|v| !v) {
+                // The number of stack elements which were removed.
+                let index_fix = branch_changes.new_stack_size - stack_size;
+                for (_, r) in refs.iter_mut() {
+                    // Subtract the number of stack elements removed. If the result is negative,
+                    // `stack_idx` is set to `None` and the variable is removed from the stack.
+                    r.stack_idx = r.stack_idx.and_then(|v| v.checked_sub(index_fix));
+                }
+                stack_size
+            } else {
+                branch_changes.new_stack_size
+            }
         };
 
         let ap_tracking = match branch_changes.ap_tracking_change {
