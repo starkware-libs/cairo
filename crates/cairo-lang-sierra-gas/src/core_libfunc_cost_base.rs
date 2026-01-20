@@ -654,8 +654,10 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
-        // TODO(ilya): Add blake token to blake gas cost.
-        Blake(_) => vec![ConstCost::steps(1).into()],
+        Blake(_) => vec![BranchCost::Regular {
+            const_cost: ConstCost::steps(1),
+            pre_cost: PreCost::builtin(CostTokenType::Blake),
+        }],
         Trace(_) => vec![ConstCost::steps(1).into()],
         QM31(libfunc) => match libfunc {
             QM31Concrete::Const(_) => vec![ConstCost::default().into()],

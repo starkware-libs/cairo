@@ -201,6 +201,8 @@ pub enum CostTokenType {
     AddMod,
     // mul mod builtin.
     MulMod,
+    /// One invocation of the Blake hash function.
+    Blake,
 }
 impl CostTokenType {
     /// Iterates over the pre-cost token types.
@@ -212,6 +214,7 @@ impl CostTokenType {
             CostTokenType::EcOp,
             CostTokenType::AddMod,
             CostTokenType::MulMod,
+            CostTokenType::Blake,
         ]
         .iter()
     }
@@ -231,6 +234,7 @@ impl CostTokenType {
             CostTokenType::Hole => "hole",
             CostTokenType::RangeCheck => "range_check",
             CostTokenType::RangeCheck96 => "range_check96",
+            CostTokenType::Blake => "blake",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
@@ -262,6 +266,7 @@ impl CostTokenType {
             // TODO(ilya): Update the actual table.
             CostTokenType::AddMod => 4,
             CostTokenType::MulMod => 5,
+            CostTokenType::Blake => 6,
         }
     }
 }
