@@ -30,11 +30,11 @@ impl<Var> DemandReporter<Var> for EmptyDemandReporter {
 /// Demanded variables from a certain point in the flow until the end of the function.
 /// Needs to be updated in backwards order.
 #[derive(Clone)]
-pub struct Demand<Var: std::hash::Hash + Eq + Copy, UsePosition, Aux: Clone + Default = ()> {
+pub struct Demand<Var, UsePosition, Aux = ()> {
     pub vars: OrderedHashMap<Var, UsePosition>,
     pub aux: Aux,
 }
-impl<Var: std::hash::Hash + Eq + Copy, UsePosition, Aux: Clone + Default> Default
+impl<Var: std::hash::Hash + Eq, UsePosition, Aux: Default> Default
     for Demand<Var, UsePosition, Aux>
 {
     fn default() -> Self {
