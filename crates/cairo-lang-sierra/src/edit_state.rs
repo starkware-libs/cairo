@@ -26,9 +26,9 @@ impl EditStateError {
 /// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
 pub fn take_args<'a, V: 'a>(
     mut state: OrderedHashMap<VarId, V>,
-    ids: impl Iterator<Item = &'a VarId>,
+    ids: impl ExactSizeIterator<Item = &'a VarId>,
 ) -> Result<(OrderedHashMap<VarId, V>, Vec<V>), EditStateError> {
-    let mut vals = vec![];
+    let mut vals = Vec::with_capacity(ids.len());
     for id in ids {
         match state.swap_remove(id) {
             None => {
@@ -45,8 +45,9 @@ pub fn take_args<'a, V: 'a>(
 /// Adds the given pairs to map with var ids as keys, failing if some variable is overridden.
 pub fn put_results<'a, V>(
     mut state: OrderedHashMap<VarId, V>,
-    results: impl Iterator<Item = (&'a VarId, V)>,
+    results: impl ExactSizeIterator<Item = (&'a VarId, V)>,
 ) -> Result<OrderedHashMap<VarId, V>, EditStateError> {
+    state.reserve(results.len());
     for (id, v) in results {
         if state.insert(id.clone(), v).is_some() {
             return Err(EditStateError::VariableOverride(id.clone()));
