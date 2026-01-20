@@ -253,16 +253,24 @@ fn const_type_id(
     ))
 }
 
+/// Returns the appropriate libfunc ID for matching on an enum type.
+///
+/// Selects between `enum_match`, `enum_snapshot_match`, or `enum_boxed_match` based on
+/// whether the type is a snapshot or a boxed type.
 pub fn match_enum_libfunc_id(
     db: &dyn Database,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteLibfuncId> {
     let long_id = &db.get_type_info(ty.clone())?.long_id;
     let is_snapshot = long_id.generic_id == SnapshotType::id();
+    let is_box = long_id.generic_id == BoxType::id();
     Ok(if is_snapshot {
         let concrete_enum_type =
             extract_matches!(&long_id.generic_args[0], GenericArg::Type).clone();
         get_libfunc_id_with_generic_arg(db, "enum_snapshot_match", concrete_enum_type)
+    } else if is_box {
+        let inner_ty = extract_matches!(&long_id.generic_args[0], GenericArg::Type).clone();
+        get_libfunc_id_with_generic_arg(db, "enum_boxed_match", inner_ty)
     } else {
         get_libfunc_id_with_generic_arg(db, "enum_match", ty)
     })
