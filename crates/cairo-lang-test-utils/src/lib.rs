@@ -116,7 +116,7 @@ fn expect_diagnostics_input(input: &str) -> ExpectDiagnostics {
 
 /// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
 /// Ignores case.
-pub fn bool_input(input: &str) -> bool {
+pub fn bool_input(input: str) -> bool {
     match () {
         if input.eq_ignore_ascii_case("true") => true,
         if input.eq_ignore_ascii_case("true") {
