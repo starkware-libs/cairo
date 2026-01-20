@@ -118,10 +118,14 @@ fn expect_diagnostics_input(input: &str) -> ExpectDiagnostics {
 /// Ignores case.
 pub fn bool_input(input: &str) -> bool {
     match () {
-        _ if input.eq_ignore_ascii_case("true") => true,
-        _ if input.eq_ignore_ascii_case("false") => false,
-        _ => panic!("Expected 'true' or 'false', actual: {input}"),
-    }
+        if input.eq_ignore_ascii_case("true") => true,
+        if input.eq_ignore_ascii_case("true") {
+        true
+        } else if input.eq_ignore_ascii_case("false") {
+        false
+        } else {
+        panic!("Expected 'true' or 'false', actual: {input}")
+        }
 }
 
 /// Parses a test input that may be a file input. If the input starts with ">>> file: " it reads the
