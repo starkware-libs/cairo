@@ -238,7 +238,7 @@ pub fn validate_corelib(db: &(dyn salsa::Database + 'static)) -> Result<()> {
         cairo_lang_filesystem::ids::Directory::Real(path) => {
             format!(" for `{}`", path.to_string_lossy())
         }
-        cairo_lang_filesystem::ids::Directory::Virtual { .. } => "".to_string(),
+        cairo_lang_filesystem::ids::Directory::Virtual { .. } => String::new(),
     };
     bail!("Corelib version mismatch: expected `{expected}`, found `{found}`{path_part}.");
 }
