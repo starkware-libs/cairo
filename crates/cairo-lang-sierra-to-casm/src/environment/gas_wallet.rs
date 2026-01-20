@@ -1,16 +1,15 @@
 use std::fmt::Display;
 
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
-use cairo_lang_utils::collection_arithmetics::AddCollection;
+use cairo_lang_utils::collection_arithmetics::SubCollection;
 use thiserror::Error;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum GasWalletError {
     #[error(
-        "Ran out of gas ({token_type:?}) in the wallet, requested {request:?} while state is \
-         {state}."
+        "Ran out of gas ({token_type:?}) in the wallet, requested {cost:?} causing state {state}."
     )]
-    OutOfGas { state: GasWallet, request: Box<CostTokenMap<i64>>, token_type: CostTokenType },
+    OutOfGas { state: GasWallet, cost: CostTokenMap<i64>, token_type: CostTokenType },
 }
 
 /// Environment tracking the amount of gas available in a statement's context.
@@ -22,23 +21,17 @@ pub enum GasWallet {
     Disabled,
 }
 impl GasWallet {
-    /// Updates the value in the wallet by `request`. Can be both negative (for most libfuncs) and
-    /// positive (for gas acquisition libfuncs).
-    pub fn update(&self, request: CostTokenMap<i64>) -> Result<Self, GasWalletError> {
-        match &self {
+    /// Updates the value in the wallet by subtracting `cost`. Can be both positive (for most
+    /// libfuncs) and negative (for gas acquisition libfuncs).
+    pub fn update(self, cost: CostTokenMap<i64>) -> Result<Self, GasWalletError> {
+        match self {
             Self::Value(existing) => {
-                let new_value =
-                    existing.clone().add_collection(request.iter().map(|(k, v)| (*k, *v)));
-                for (token_type, val) in new_value.iter() {
-                    if *val < 0 {
-                        return Err(GasWalletError::OutOfGas {
-                            state: self.clone(),
-                            request: Box::new(request),
-                            token_type: *token_type,
-                        });
-                    }
+                let updated = existing.sub_collection(cost.iter().map(|(k, v)| (*k, *v)));
+                if let Some(token_type) = updated.iter().find_map(|(k, v)| (*v < 0).then_some(*k)) {
+                    let state = GasWallet::Value(updated);
+                    return Err(GasWalletError::OutOfGas { state, cost, token_type });
                 }
-                Ok(GasWallet::Value(new_value))
+                Ok(GasWallet::Value(updated))
             }
             Self::Disabled => Ok(Self::Disabled),
         }

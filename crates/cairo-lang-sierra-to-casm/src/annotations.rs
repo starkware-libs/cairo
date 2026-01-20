@@ -57,7 +57,7 @@ pub enum AnnotationError {
     GasWalletError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
-        error: GasWalletError,
+        error: Box<GasWalletError>,
     },
     #[error("#{statement_idx}: {error}")]
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
@@ -422,11 +422,11 @@ impl ProgramAnnotations {
                     gas_wallet: annotations
                         .environment
                         .gas_wallet
-                        .update(branch_changes.gas_change)
+                        .update(branch_changes.gas_cost)
                         .map_err(|error| AnnotationError::GasWalletError {
                             source_statement_idx,
                             destination_statement_idx,
-                            error,
+                            error: Box::new(error),
                         })?,
                 },
             },
