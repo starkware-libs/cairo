@@ -30,7 +30,7 @@ impl NoGenericArgsGenericType for EcOpType {
 pub struct EcPointType {}
 impl EcPointType {
     /// The beta parameter of the curve.
-    const BETA: Felt252 = Felt252::from_hex_unchecked(
+    pub const BETA: Felt252 = Felt252::from_hex_unchecked(
         "0x6f21413efbe40de150e596d72f7a8c5609ad26c15c915c1f4cdfcb99cee9e89",
     );
     /// Returns the left hand side of the curve equation.
