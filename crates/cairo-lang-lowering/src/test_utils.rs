@@ -4,6 +4,8 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
+use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use salsa::Database;
@@ -50,6 +52,17 @@ impl LoweringDatabaseForTesting {
 
 pub static SHARED_DB: LazyLock<Mutex<LoweringDatabaseForTesting>> =
     LazyLock::new(|| Mutex::new(LoweringDatabaseForTesting::new()));
+pub static SHARED_DB_FUTURE_SIERRA: LazyLock<Mutex<LoweringDatabaseForTesting>> =
+    LazyLock::new(|| {
+        let mut db = LoweringDatabaseForTesting::new();
+        db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
+        Mutex::new(db)
+    });
+impl LoweringDatabaseForTesting {
+    pub fn with_future_sierra() -> Self {
+        SHARED_DB_FUTURE_SIERRA.lock().unwrap().snapshot()
+    }
+}
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         SHARED_DB.lock().unwrap().snapshot()
