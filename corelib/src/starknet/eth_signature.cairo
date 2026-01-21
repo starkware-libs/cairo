@@ -16,8 +16,8 @@ use starknet::secp256k1::Secp256k1Point;
 use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 
 /// Asserts that an Ethereum signature is valid for a given message hash and Ethereum address.
-/// Also verifies that the `r` and `s` components of the signature are in the range `[1, N)`,
-/// where N is the size of the curve.
+/// Also verifies that the `r` component of the signature is in the range `[1, N)`,
+/// and the `s` component is in the range `[1, N/2]`, where N is the size of the curve.
 ///
 /// # Arguments
 ///
@@ -28,7 +28,8 @@ use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 /// # Panics
 ///
 /// Panics if:
-/// * The signature components are out of range (not in [1, N) where N is the curve order)
+/// * The `r` component is out of range (not in [1, N) where N is the curve order)
+/// * The `s` component is out of range (not in [1, N/2] where N is the curve order)
 /// * The recovered address doesn't match the provided address
 ///
 /// # Examples
@@ -56,8 +57,8 @@ pub fn verify_eth_signature(msg_hash: u256, signature: Signature, eth_address: E
 
 /// Validates an Ethereum signature against a message hash and Ethereum address.
 /// Similar to `verify_eth_signature` but returns a `Result` instead of panicking.
-/// Also verifies that `r` and `s` components of the signature are in the range `[1, N)`,
-/// where N is the size of the curve.
+/// Also verifies that the `r` component of the signature is in the range `[1, N)`,
+/// and the `s` component is in the range `[1, N/2]`, where N is the size of the curve.
 ///
 /// # Arguments
 ///
