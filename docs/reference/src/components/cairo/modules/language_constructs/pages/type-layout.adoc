@@ -9,7 +9,7 @@ Cairo's memory model is built on **felt252** as the fundamental unit. A felt252 
 element in a prime field and occupies exactly **1 memory cell**. All other types are composed of
 one or more felt252 cells.
 
-The prime modulus is: `P = 3618502788666131213697322783095070105623107215331596699973092056135872020481`
+The prime modulus is: `P = 2**251 + 17*2**192 + 1`
 
 == Type Sizes
 
