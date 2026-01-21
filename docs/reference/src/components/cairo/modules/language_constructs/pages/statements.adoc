@@ -13,9 +13,10 @@ The kinds of statements are:
 
 - xref:expression-statement.adoc[Expression statement].
 - xref:let-statement.adoc[Let statement].
+- xref:assignment-statement.adoc[Assignment statement].
 - xref:item-statement.adoc[Item statement].
 - Continue statement.
-- Return statement.
+- xref:return-expressions.adoc[Return statement].
 - Break statement.
 
 == Semicolons
