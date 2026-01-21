@@ -9,7 +9,7 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
-use lowering::borrow_check::analysis::StatementLocation;
+use lowering::analysis::StatementLocation;
 use lowering::{MatchArm, VarUsage};
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;

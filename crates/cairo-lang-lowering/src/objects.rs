@@ -28,7 +28,7 @@ use salsa::Database;
 use semantic::MatchArmSelector;
 
 use self::blocks::Blocks;
-use crate::borrow_check::analysis::StatementLocation;
+use crate::analysis::StatementLocation;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::fmt::LoweredFormatter;
 use crate::ids::{FunctionId, LocationId, Signature};

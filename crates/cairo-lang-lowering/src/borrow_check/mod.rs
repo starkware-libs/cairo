@@ -11,16 +11,14 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
-use self::analysis::{Analyzer, StatementLocation};
 pub use self::demand::Demand;
 use self::demand::{AuxCombine, DemandReporter};
-use crate::borrow_check::analysis::BackAnalysis;
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics, LoweringDiagnosticsBuilder};
 use crate::ids::{FunctionId, LocationId, SemanticFunctionIdEx};
 use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
-pub mod analysis;
 pub mod demand;
 
 pub type BorrowCheckerDemand<'db> = Demand<VariableId, LocationId<'db>, PanicState>;
