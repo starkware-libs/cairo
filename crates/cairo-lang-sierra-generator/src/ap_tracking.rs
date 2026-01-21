@@ -1,4 +1,4 @@
-use cairo_lang_lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use cairo_lang_lowering::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use cairo_lang_lowering::{
     BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
 };

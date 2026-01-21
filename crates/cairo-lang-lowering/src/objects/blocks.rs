@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::require;
 
-use crate::borrow_check::analysis::StatementLocation;
+use crate::analysis::StatementLocation;
 use crate::{Block, Statement};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
