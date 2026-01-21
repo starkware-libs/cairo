@@ -52,12 +52,12 @@ use super::inference::{Inference, InferenceData, InferenceError};
 use super::objects::*;
 use super::pattern::{
     Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternMissing,
-    PatternOtherwise, PatternTuple, PatternVariable,
+    PatternOtherwise, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::corelib::{
-    CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr,
-    get_usize_ty, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
-    unwrap_error_propagation_type, validate_literal,
+    self, CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator,
+    false_literal_expr, get_usize_ty, never_ty, true_literal_expr, try_extract_box_inner_type,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, validate_literal,
 };
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
@@ -2789,11 +2789,11 @@ fn maybe_compute_pattern_semantic<'db>(
             let concrete_variant = try_extract_matches!(item, ResolvedConcreteItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAVariant))?;
 
-            let n_snapshots =
+            let wrapping_info =
                 validate_pattern_type_and_args(ctx, pattern_syntax, ty, concrete_variant)?;
 
             // Compute inner pattern.
-            let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
+            let inner_ty = wrapping_info.wrap(ctx.db, concrete_variant.ty);
 
             let inner_pattern = match enum_pattern.pattern(db) {
                 ast::OptionPatternEnumInnerPattern::Empty(_) => None,
@@ -2834,7 +2834,7 @@ fn maybe_compute_pattern_semantic<'db>(
                     ResolutionContext::Statement(&mut ctx.environment),
                 );
                 if let Ok(ResolvedConcreteItem::Variant(concrete_variant)) = item {
-                    let _n_snapshots =
+                    let _ =
                         validate_pattern_type_and_args(ctx, pattern_syntax, ty, concrete_variant)?;
                     return Ok(Pattern::EnumVariant(PatternEnumVariant {
                         variant: concrete_variant,
@@ -2886,15 +2886,15 @@ fn maybe_compute_pattern_semantic<'db>(
                 ctx.diagnostics.report(pattern_struct.path(db).stable_ptr(db), NotAType)
             })?;
             let inference = &mut ctx.resolver.inference();
-            inference.conform_ty(pattern_ty, peel_snapshots(ctx.db, ty).1.intern(ctx.db)).map_err(
-                |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr),
-            )?;
+            let (inner_ty, _) = unwrap_pattern_type(ctx.db, ty);
+            inference.conform_ty(pattern_ty, inner_ty.intern(ctx.db)).map_err(|err_set| {
+                inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
+            })?;
             let ty = ctx.reduce_ty(ty);
-            // Peel all snapshot wrappers.
-            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+            let (inner_ty, wrapping_info) = unwrap_pattern_type(ctx.db, ty);
 
             // Check that type is a struct, and get the concrete struct from it.
-            let concrete_struct_id = try_extract_matches!(long_ty, TypeLongId::Concrete)
+            let concrete_struct_id = try_extract_matches!(inner_ty, TypeLongId::Concrete)
                 .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
                 .ok_or(())
                 .or_else(|_| {
@@ -2939,7 +2939,7 @@ fn maybe_compute_pattern_semantic<'db>(
                         else {
                             continue;
                         };
-                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+                        let ty = wrapping_info.wrap(ctx.db, member.ty);
                         let pattern = create_variable_pattern(
                             ctx,
                             name,
@@ -2957,7 +2957,7 @@ fn maybe_compute_pattern_semantic<'db>(
                         else {
                             continue;
                         };
-                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+                        let ty = wrapping_info.wrap(ctx.db, member.ty);
                         let pattern = compute_pattern_semantic(
                             ctx,
                             &with_expr.pattern(db),
@@ -2981,7 +2981,7 @@ fn maybe_compute_pattern_semantic<'db>(
                 concrete_struct_id,
                 field_patterns,
                 ty,
-                n_snapshots,
+                wrapping_info,
                 stable_ptr: pattern_struct.stable_ptr(db),
             })
         }
@@ -3059,10 +3059,13 @@ fn compute_tuple_like_pattern_semantic<'db>(
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
 ) -> Pattern<'db> {
     let db = ctx.db;
-    let (n_snapshots, mut long_ty) =
-        match finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax.stable_ptr(db)) {
+    let (wrapping_info, mut long_ty) =
+        match extract_tuple_like_from_pattern_and_validate(ctx, pattern_syntax, ty) {
             Ok(value) => value,
-            Err(diag_added) => (0, TypeLongId::Missing(diag_added)),
+            Err(diag_added) => (
+                PatternWrappingInfo { n_outer_snapshots: 0, is_boxed: false, n_inner_snapshots: 0 },
+                TypeLongId::Missing(diag_added),
+            ),
         };
     // Assert that the pattern is of the same type as the expr.
     match (pattern_syntax, &long_ty) {
@@ -3146,7 +3149,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
     }
     let subpatterns = zip_eq(patterns_syntax, inner_tys)
         .map(|(pattern_ast, ty)| {
-            let ty = wrap_in_snapshots(db, ty, n_snapshots);
+            let ty = wrapping_info.wrap(db, ty);
             compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map).id
         })
         .collect();
@@ -3165,21 +3168,22 @@ fn compute_tuple_like_pattern_semantic<'db>(
     }
 }
 
-/// Validates that the semantic type of an enum pattern is an enum, and returns the concrete enum.
+/// Validates that the semantic type of an enum pattern is an enum (or `Box<enum>`), and returns the
+/// concrete enum along with information about how it's wrapped.
 fn extract_concrete_enum_from_pattern_and_validate<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern: &ast::Pattern<'db>,
     ty: TypeId<'db>,
     concrete_enum_id: ConcreteEnumId<'db>,
-) -> Maybe<(ConcreteEnumId<'db>, usize)> {
+) -> Maybe<(ConcreteEnumId<'db>, PatternWrappingInfo)> {
     // Peel all snapshot wrappers.
-    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(ctx.db))?;
+    let (n_outer_snapshots, long_ty) =
+        finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(ctx.db))?;
 
     // Check that type is an enum, and get the concrete enum from it.
-    let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
-        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-        .ok_or(())
-        .or_else(|_| {
+    // Also support Box<Enum> types - if the type is a Box, extract the inner type.
+    let (concrete_enum, is_boxed, n_inner_snapshots) =
+        extract_enum_from_type(ctx.db, &long_ty).ok_or(()).or_else(|_| {
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
@@ -3193,21 +3197,84 @@ fn extract_concrete_enum_from_pattern_and_validate<'db>(
             WrongEnum { expected_enum: concrete_enum.enum_id(ctx.db), actual_enum: pattern_enum },
         ));
     }
-    Ok((concrete_enum, n_snapshots))
+    Ok((concrete_enum, PatternWrappingInfo { n_outer_snapshots, is_boxed, n_inner_snapshots }))
+}
+
+/// Extracts a concrete enum from a type, supporting both direct enums and `Box<Enum>` types.
+/// Returns the concrete enum, whether it was boxed, and the number of inner snapshots (for
+/// `Box<@Enum>`).
+fn extract_enum_from_type<'db>(
+    db: &'db dyn Database,
+    long_ty: &TypeLongId<'db>,
+) -> Option<(ConcreteEnumId<'db>, bool, usize)> {
+    // First, try to extract an enum directly.
+    if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum)) = long_ty {
+        return Some((*concrete_enum, false, 0));
+    }
+    // If not a direct enum, check if it's a Box<Enum>.
+    let inner_ty = try_extract_box_inner_type(db, long_ty)?;
+    // Peel any inner snapshots from the Box's content.
+    let (n_inner_snapshots, inner_long_ty) = peel_snapshots(db, inner_ty);
+    if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum)) = inner_long_ty {
+        return Some((concrete_enum, true, n_inner_snapshots));
+    }
+    None
+}
+
+/// Unwraps a pattern type, returning the inner type and the wrapping information.
+/// The wrapping information includes the number of outer snapshots, whether the type is boxed,
+/// and the number of inner snapshots in case it is boxed.
+pub fn unwrap_pattern_type<'db>(
+    db: &'db dyn Database,
+    ty: semantic::TypeId<'db>,
+) -> (TypeLongId<'db>, PatternWrappingInfo) {
+    let (n_outer_snapshots, long_ty) = peel_snapshots(db, ty);
+    if let Some(inner_ty) = corelib::try_extract_box_inner_type(db, &long_ty) {
+        let (n_inner_snapshots, most_inner_ty) = peel_snapshots(db, inner_ty);
+        (
+            most_inner_ty,
+            PatternWrappingInfo { n_outer_snapshots, is_boxed: true, n_inner_snapshots },
+        )
+    } else {
+        (long_ty, PatternWrappingInfo { n_outer_snapshots, is_boxed: false, n_inner_snapshots: 0 })
+    }
+}
+
+/// Validates that the semantic type of a tuple-like pattern is a tuple or a fixed size array
+/// (possibly boxed), and returns the unwrapped type along with information about how it's wrapped.
+fn extract_tuple_like_from_pattern_and_validate<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    pattern: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+) -> Maybe<(PatternWrappingInfo, TypeLongId<'db>)> {
+    // Peel all snapshot wrappers.
+    let (n_outer_snapshots, long_ty) =
+        finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(ctx.db))?;
+
+    if let Some(inner_ty) = try_extract_box_inner_type(ctx.db, &long_ty) {
+        let (n_inner_snapshots, inner_long_ty) = peel_snapshots(ctx.db, inner_ty);
+        let wrapping_info =
+            PatternWrappingInfo { n_outer_snapshots, is_boxed: true, n_inner_snapshots };
+        return Ok((wrapping_info, inner_long_ty));
+    }
+
+    let wrapping_info =
+        PatternWrappingInfo { n_outer_snapshots, is_boxed: false, n_inner_snapshots: 0 };
+    Ok((wrapping_info, long_ty))
 }
 
 /// Validates that the semantic type of an enum pattern is an enum.
 /// After that finds the concrete variant in the pattern, and verifies it has args if needed.
-/// Returns the number of snapshots.
+/// Returns information about how the enum type is wrapped.
 fn validate_pattern_type_and_args<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern: &ast::Pattern<'db>,
     ty: TypeId<'db>,
     concrete_variant: ConcreteVariant<'db>,
-) -> Maybe<usize> {
+) -> Maybe<PatternWrappingInfo> {
     let db = ctx.db;
 
-    let (concrete_enum, n_snapshots) = extract_concrete_enum_from_pattern_and_validate(
+    let (concrete_enum, type_info) = extract_concrete_enum_from_pattern_and_validate(
         ctx,
         pattern,
         ty,
@@ -3252,7 +3319,7 @@ fn validate_pattern_type_and_args<'db>(
         ctx.diagnostics.report(pattern.stable_ptr(db), PatternMissingArgs(path));
     }
 
-    Ok(n_snapshots)
+    Ok(type_info)
 }
 
 /// Creates a local variable pattern.

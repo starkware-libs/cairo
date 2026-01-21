@@ -10,7 +10,7 @@ use salsa::Database;
 pub use super::expr::objects::*;
 pub use crate::expr::pattern::{
     Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternOtherwise,
-    PatternStringLiteral, PatternStruct, PatternTuple, PatternVariable,
+    PatternStringLiteral, PatternStruct, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::items::constant::ConstValueId;
 pub use crate::items::enm::{ConcreteVariant, MatchArmSelector, ValueSelectorArm, Variant};

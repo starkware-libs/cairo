@@ -3,12 +3,13 @@ use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::corelib::{CorelibSemantic, validate_literal};
+use cairo_lang_semantic::expr::compute::unwrap_pattern_type;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::StructSemantic;
-use cairo_lang_semantic::types::{peel_snapshots, wrap_in_snapshots};
 use cairo_lang_semantic::{
     self as semantic, ConcreteEnumId, ConcreteStructId, ConcreteTypeId, ExprNumericLiteral,
-    PatternEnumVariant, PatternLiteral, PatternStruct, PatternTuple, TypeId, TypeLongId, corelib,
+    PatternEnumVariant, PatternLiteral, PatternStruct, PatternTuple, PatternWrappingInfo, TypeId,
+    TypeLongId, corelib,
 };
 use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ast::ExprPtr;
@@ -111,7 +112,7 @@ pub fn create_node_for_patterns<'db>(
     };
 
     let var_ty = graph.var_ty(input_var);
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, var_ty);
+    let (long_ty, wrapping_info) = unwrap_pattern_type(ctx.db, var_ty);
 
     let params = CreateNodeParams {
         ctx,
@@ -127,7 +128,7 @@ pub fn create_node_for_patterns<'db>(
         && let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty
         && ctx.db.concrete_enum_variants(concrete_enum_id).unwrap().is_empty()
     {
-        return create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots);
+        return create_node_for_enum(params, input_var, concrete_enum_id, wrapping_info);
     }
 
     // Find the first non-any pattern, if exists.
@@ -146,17 +147,19 @@ pub fn create_node_for_patterns<'db>(
 
     match long_ty {
         TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) => {
-            create_node_for_enum(params, input_var, concrete_enum_id, n_snapshots)
+            create_node_for_enum(params, input_var, concrete_enum_id, wrapping_info)
         }
         TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
-            create_node_for_struct(params, input_var, concrete_struct_id, n_snapshots)
+            create_node_for_struct(params, input_var, concrete_struct_id, wrapping_info)
         }
-        TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, n_snapshots),
+        TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, wrapping_info),
         _ => graph.report_with_missing_node(
             first_non_any_pattern.stable_ptr(),
             LoweringDiagnosticKind::MatchError(MatchError {
                 kind: graph.kind(),
-                error: MatchDiagnostic::UnsupportedMatchedType(long_ty.format(ctx.db)),
+                error: MatchDiagnostic::UnsupportedMatchedType(
+                    wrapping_info.wrap(ctx.db, TypeId::new(ctx.db, long_ty)).format(ctx.db),
+                ),
             }),
         ),
     }
@@ -178,11 +181,13 @@ struct VariantInfo<'a, 'db> {
 }
 
 /// Creates an [EnumMatch] node for the given `input_var` and `patterns`.
+///
+/// Wraps needed outer/inner snapshots and box around the variants.
 fn create_node_for_enum<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
     concrete_enum_id: ConcreteEnumId<'db>,
-    n_snapshots: usize,
+    wrapping_info: PatternWrappingInfo,
 ) -> NodeId {
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
     let concrete_variants = ctx.db.concrete_enum_variants(concrete_enum_id).unwrap();
@@ -247,10 +252,8 @@ fn create_node_for_enum<'db>(
                     )),
                 )
             });
-            let inner_var = graph.new_var(
-                wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots),
-                inner_var_location,
-            );
+            let inner_var =
+                graph.new_var(wrapping_info.wrap(ctx.db, concrete_variant.ty), inner_var_location);
             let node = create_node_for_patterns(
                 CreateNodeParams {
                     ctx,
@@ -295,12 +298,12 @@ fn create_node_for_tuple<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
     types: &Vec<TypeId<'db>>,
-    n_snapshots: usize,
+    wrapping_info: PatternWrappingInfo,
 ) -> NodeId {
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
     let inner_vars = types
         .iter()
-        .map(|ty| graph.new_var(wrap_in_snapshots(ctx.db, *ty, n_snapshots), location))
+        .map(|ty| graph.new_var(wrapping_info.wrap(ctx.db, *ty), location))
         .collect_vec();
 
     let node = create_node_for_tuple_inner(
@@ -332,7 +335,7 @@ fn create_node_for_struct<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
     concrete_struct_id: ConcreteStructId<'db>,
-    n_snapshots: usize,
+    wrapping_info: PatternWrappingInfo,
 ) -> NodeId {
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
 
@@ -344,7 +347,7 @@ fn create_node_for_struct<'db>(
     let types = members.iter().map(|(_, member)| member.ty).collect_vec();
     let inner_vars = types
         .iter()
-        .map(|ty| graph.new_var(wrap_in_snapshots(ctx.db, *ty, n_snapshots), location))
+        .map(|ty| graph.new_var(wrapping_info.wrap(ctx.db, *ty), location))
         .collect_vec();
 
     let node = create_node_for_tuple_inner(

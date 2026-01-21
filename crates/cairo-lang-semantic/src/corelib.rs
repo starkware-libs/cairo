@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    EnumId, ExternFunctionId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId,
+    EnumId, ExternFunctionId, GenericTypeId, ImplDefId, LanguageElementId, ModuleId, ModuleItemId,
     NamedLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToOption};
@@ -884,6 +884,20 @@ pub fn try_extract_nz_wrapped_type<'db>(
     let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.long(db);
     let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
     (extern_type_id.name(db).long(db) == "NonZero").then_some(inner)
+}
+
+/// Returns the inner type of a `Box<T>` type, if `ty` is a `Box`.
+pub fn try_extract_box_inner_type<'db>(
+    db: &'db dyn Database,
+    ty: &TypeLongId<'db>,
+) -> Option<TypeId<'db>> {
+    let concrete_ty = try_extract_matches!(ty, TypeLongId::Concrete)?;
+    let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.long(db);
+    let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
+    (extern_type_id.name(db).long(db) == "Box"
+        && extern_type_id.parent_module(db).name(db).long(db) == "box")
+        .then_some(inner)
 }
 
 /// Returns the ranges of a BoundedInt if it is a BoundedInt type.
