@@ -1,4 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
+use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::test_utils::setup_test_function_ex;
@@ -32,14 +34,17 @@ cairo_lang_test_utils::test_file_test!(
         match_: "match",
     },
     test_create_graph,
-    ["expect_diagnostics", "skip_lowering"]
+    ["expect_diagnostics", "skip_lowering", "future_sierra"]
 );
 
 fn test_create_graph(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
+    let db = &mut LoweringDatabaseForTesting::new();
+    if args.get("future_sierra").unwrap_or(&"false".into()) == "true" {
+        db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
+    }
     let (test_function, semantic_diagnostics) = setup_test_function_ex(
         db,
         inputs["function_code"].as_str(),
