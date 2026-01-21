@@ -19,7 +19,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::debug_info::StatementsLocations;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
-use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
+use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::{
     ContractDeclaration, ContractInfo, find_contracts, get_contract_abi_functions,
     get_contracts_info,
@@ -162,8 +162,7 @@ pub fn compile_test_prepared_db<'db>(
         .collect();
 
     let replacer = DebugReplacer { db };
-    let mut sierra_program = sierra_program.clone();
-    replacer.enrich_function_names(&mut sierra_program);
+    let sierra_program = replacer.apply(&mut sierra_program.clone());
 
     let mut annotations = Annotations::default();
     if tests_compilation_config.add_statements_functions {
