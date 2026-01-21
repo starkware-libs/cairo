@@ -90,11 +90,12 @@ impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default +
         + std::iter::ExactSizeIterator,
     ) {
         for (var, position) in vars.rev() {
-            if let Some(next_usage_position) = self.vars.insert((*var).into(), position) {
+            let var = (*var).into();
+            if let Some(next_usage_position) = self.vars.insert(var, position) {
                 // Variable already used. If it's not dup, that is an issue.
-                reporter.dup(position, (*var).into(), next_usage_position);
+                reporter.dup(position, var, next_usage_position);
             } else {
-                reporter.last_use(position, (*var).into());
+                reporter.last_use(position, var);
             }
         }
     }
