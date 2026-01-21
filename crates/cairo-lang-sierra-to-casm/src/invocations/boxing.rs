@@ -30,7 +30,7 @@ fn build_into_box(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [operand] = builder.try_get_refs()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(std::cmp::max(1, operand.cells.len()), 0);
     let addr = if operand.cells.is_empty() {
         // In cases of a zero-sized variable, we just simulate a non-zero address.
         casm_build_extend!(casm_builder,

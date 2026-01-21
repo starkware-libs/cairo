@@ -41,7 +41,7 @@ pub fn build_felt252_range_reduction(
     );
 
     let [range_check, value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(15, 2);
     add_input_variables! {casm_builder,
         buffer(0) range_check;
         deref value;

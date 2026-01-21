@@ -47,7 +47,7 @@ fn build_u128_overflowing_add(
 ) -> Result<CompiledInvocation, InvocationError> {
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let [range_check, a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(6, 2);
     add_input_variables! {casm_builder,
         buffer(0) range_check;
         deref a;
@@ -90,7 +90,7 @@ fn build_u128_guarantee_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 0);
     add_input_variables! {casm_builder,
         deref a;
         deref b;
@@ -119,7 +119,7 @@ fn build_u128_mul_guarantee_verify(
     let [range_check] = range_check_ref.try_unpack()?;
     let [a, b, res_high, res_low] = guarantee.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(23, 0);
     add_input_variables! {casm_builder,
         buffer(8) range_check;
         deref a;
@@ -243,7 +243,7 @@ fn build_u128_from_felt252(
     // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
     let max_x: i128 = 10633823966279327296825105735305134080;
     let max_y: i128 = 0;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(14, 4);
     add_input_variables! {casm_builder,
         buffer(3) range_check;
         deref value;
@@ -314,7 +314,7 @@ pub fn build_u128_byte_reverse(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [bitwise, input] = builder.try_get_single_cells()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(24, 0);
     add_input_variables! {casm_builder,
         deref input;
         buffer(20) bitwise;
