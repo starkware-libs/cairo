@@ -137,12 +137,10 @@ enum Color {
 
 Arrays are represented as **two pointers**:
 
-[source,cairo]
 ----
-struct Array<T> {
-    start: felt252*,  // Cell 0: start pointer
-    end: felt252*,    // Cell 1: end pointer
-}
+Internal representation (not valid Cairo code):
+  Cell 0: start pointer
+  Cell 1: end pointer
 ----
 
 - Array size in memory: always 2 cells (just the pointers)
