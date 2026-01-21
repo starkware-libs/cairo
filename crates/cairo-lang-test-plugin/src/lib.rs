@@ -19,7 +19,7 @@ use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::debug_info::StatementsLocations;
 use cairo_lang_sierra_generator::executables::{collect_executables, find_executable_function_ids};
 use cairo_lang_sierra_generator::program_generator::SierraProgramWithDebug;
-use cairo_lang_sierra_generator::replace_ids::DebugReplacer;
+use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_starknet::contract::{
     ContractDeclaration, ContractInfo, find_contracts, get_contract_abi_functions,
     get_contracts_info,
@@ -77,6 +77,9 @@ pub struct TestsCompilationConfig<'db> {
     /// Adds a mapping used by [cairo-debugger](https://github.com/software-mansion-labs/cairo-debugger)
     /// to [Annotations] in [DebugInfo] in the compiled tests.
     pub add_functions_debug_info: bool,
+
+    /// Replaces Sierra IDs with human-readable ones.
+    pub replace_ids: bool,
 }
 
 /// Runs Cairo compiler.
@@ -162,8 +165,14 @@ pub fn compile_test_prepared_db<'db>(
         .collect();
 
     let replacer = DebugReplacer { db };
-    let mut sierra_program = sierra_program.clone();
-    replacer.enrich_function_names(&mut sierra_program);
+
+    let sierra_program = if tests_compilation_config.replace_ids {
+        replacer.apply(sierra_program)
+    } else {
+        let mut sierra_program = sierra_program.clone();
+        replacer.enrich_function_names(&mut sierra_program);
+        sierra_program
+    };
 
     let mut annotations = Annotations::default();
     if tests_compilation_config.add_statements_functions {

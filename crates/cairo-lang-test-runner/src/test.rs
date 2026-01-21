@@ -25,6 +25,7 @@ fn test_compiled_serialization() {
             contract_declarations: None,
             contract_crate_ids: None,
             executable_crate_ids: None,
+            replace_ids: false,
         },
     )
     .unwrap();
