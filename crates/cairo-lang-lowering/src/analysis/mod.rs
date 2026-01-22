@@ -6,10 +6,9 @@
 pub mod backward;
 pub mod core;
 
-// Re-export commonly used types at the module level for convenience.
 pub use core::{DataflowAnalyzer, Direction};
 
-pub use backward::BackAnalysis;
+pub use backward::{BackAnalysis, DataflowBackAnalysis};
 
 use crate::{Block, BlockId, MatchInfo, Statement, VarRemapping, VarUsage};
 
