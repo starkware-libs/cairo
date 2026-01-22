@@ -184,6 +184,11 @@ impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
                         return Err(SpecializationError::UnsupportedGenericArg);
                     }
                     OutputVarReferenceInfo::NewTempVar { idx: 0 }
+                } else if matches!(
+                    self.operator,
+                    Felt252BinaryOperator::Add | Felt252BinaryOperator::Sub
+                ) {
+                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst)
                 } else {
                     OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
                 };
