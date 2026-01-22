@@ -147,7 +147,7 @@ mod impl_serde {
     #[cfg(not(feature = "std"))]
     use alloc::vec::Vec;
 
-    use itertools::Itertools;
+    use serde::ser::SerializeSeq;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     use super::*;
@@ -180,7 +180,11 @@ mod impl_serde {
         K: Serialize + Deserialize<'de> + Hash + Eq,
         V: Serialize + Deserialize<'de>,
     {
-        v.iter().collect_vec().serialize(serializer)
+        let mut seq = serializer.serialize_seq(Some(v.len()))?;
+        for (key, value) in v.iter() {
+            seq.serialize_element(&(key, value))?;
+        }
+        seq.end()
     }
 
     pub fn deserialize_ordered_hashmap_vec<'de, K, V, BH: BuildHasher + Default, D>(
