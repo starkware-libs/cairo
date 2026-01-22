@@ -22,12 +22,10 @@
 use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping};
 
 /// Location of a lowering statement inside a block.
-#[allow(dead_code)]
 pub type StatementLocation = (BlockId, usize);
 
 /// The direction of dataflow analysis.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
 pub enum Direction {
     Forward,
     Backward,
@@ -78,7 +76,6 @@ pub enum Direction {
 ///     }
 /// }
 /// ```
-#[allow(dead_code)]
 pub trait DataflowAnalyzer<'db, 'a> {
     /// The analysis state/info type.
     type Info: Clone;
