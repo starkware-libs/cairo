@@ -1,0 +1,95 @@
+//! > Documentation
+
+//! > test_runner_name
+documentation_comment_parser_links_runner
+
+//! > cairo_project.toml
+[crate_roots]
+hello = "src"
+
+//! > cairo_code
+/// See [one](path) and [two](path2).
+/// See [**bold** `code`](path).
+/// See [*em* `code`](path).
+/// See [![alt](img) label](path).
+/// See [super::ids].
+/// See [`super::ids`].
+/// See [` super::ids `].
+/// See [label](`super::ids`).
+/// See [**some_label** anything else i want](super::ids).
+/// Just a comment without links.
+/// See [broken(link.
+/// See [`  crate::Structure`]
+
+fn foo() {}
+
+//! > Doc comment #1
+/// See [one](path) and [two](path2).
+
+//! > Doc comment #1 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(8)), end: TextOffset(TextWidth(19)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(14)), end: TextOffset(TextWidth(18)) }), dest_text: Some("path") }
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(24)), end: TextOffset(TextWidth(36)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(30)), end: TextOffset(TextWidth(35)) }), dest_text: Some("path2") }
+
+//! > Doc comment #2
+/// See [**bold** `code`](path).
+
+//! > Doc comment #2 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(46)), end: TextOffset(TextWidth(69)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(64)), end: TextOffset(TextWidth(68)) }), dest_text: Some("path") }
+
+//! > Doc comment #3
+/// See [*em* `code`](path).
+
+//! > Doc comment #3 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(79)), end: TextOffset(TextWidth(98)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(93)), end: TextOffset(TextWidth(97)) }), dest_text: Some("path") }
+
+//! > Doc comment #4
+/// See [![alt](img) label](path).
+
+//! > Doc comment #4 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(108)), end: TextOffset(TextWidth(133)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(128)), end: TextOffset(TextWidth(132)) }), dest_text: Some("path") }
+
+//! > Doc comment #5
+/// See [super::ids].
+
+//! > Doc comment #5 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(143)), end: TextOffset(TextWidth(155)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(144)), end: TextOffset(TextWidth(154)) }), dest_text: Some("super::ids") }
+
+//! > Doc comment #6
+/// See [`super::ids`].
+
+//! > Doc comment #6 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(165)), end: TextOffset(TextWidth(179)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(167)), end: TextOffset(TextWidth(177)) }), dest_text: Some("super::ids") }
+
+//! > Doc comment #7
+/// See [` super::ids `].
+
+//! > Doc comment #7 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(189)), end: TextOffset(TextWidth(205)) }, dest_span: None, dest_text: None }
+
+//! > Doc comment #8
+/// See [label](`super::ids`).
+
+//! > Doc comment #8 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(215)), end: TextOffset(TextWidth(236)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(224)), end: TextOffset(TextWidth(234)) }), dest_text: Some("super::ids") }
+
+//! > Doc comment #9
+/// See [**some_label** anything else i want](super::ids).
+
+//! > Doc comment #9 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(246)), end: TextOffset(TextWidth(295)) }, dest_span: Some(TextSpan { start: TextOffset(TextWidth(284)), end: TextOffset(TextWidth(294)) }), dest_text: Some("super::ids") }
+
+//! > Doc comment #10
+/// Just a comment without links.
+
+//! > Doc comment #10 links
+
+//! > Doc comment #11
+/// See [broken(link.
+
+//! > Doc comment #11 links
+
+//! > Doc comment #12
+/// See [`  crate::Structure`]
+
+//! > Doc comment #12 links
+MarkdownLink { link_span: TextSpan { start: TextOffset(TextWidth(361)), end: TextOffset(TextWidth(383)) }, dest_span: None, dest_text: None }

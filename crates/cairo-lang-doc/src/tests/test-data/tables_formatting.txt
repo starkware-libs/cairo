@@ -82,7 +82,7 @@ Content("output")
 Content("|\n|---|---|---|---|")
 Content("\n")
 Content("|")
-CommentLinkToken { label: "`and`", path: None, resolved_item_name: None }
+CommentLinkToken { label: "`and`", path: None }
 Content("|")
 Content("`Err(e)`")
 Content("|")
@@ -92,7 +92,7 @@ Content("`Err(e)`")
 Content("|")
 Content("\n")
 Content("|")
-CommentLinkToken { label: "`and`", path: None, resolved_item_name: None }
+CommentLinkToken { label: "`and`", path: None }
 Content("|")
 Content("`Ok(x)`")
 Content("|")
@@ -102,7 +102,7 @@ Content("`Err(d)`")
 Content("|")
 Content("\n")
 Content("|")
-CommentLinkToken { label: "`and`", path: None, resolved_item_name: None }
+CommentLinkToken { label: "`and`", path: None }
 Content("|")
 Content("`Ok(x)`")
 Content("|")
@@ -112,7 +112,7 @@ Content("`Ok(y)`")
 Content("|")
 Content("\n")
 Content("|")
-CommentLinkToken { label: "`or`", path: None, resolved_item_name: None }
+CommentLinkToken { label: "`or`", path: None }
 Content("|")
 Content("`Err(e)`")
 Content("|")
@@ -122,7 +122,7 @@ Content("`Err(d)`")
 Content("|")
 Content("\n")
 Content("|")
-CommentLinkToken { label: "`or`", path: None, resolved_item_name: None }
+CommentLinkToken { label: "`or`", path: None }
 Content("|")
 Content("`Err(e)`")
 Content("|")
@@ -132,7 +132,7 @@ Content("`Ok(y)`")
 Content("|")
 Content("\n")
 Content("|")
-CommentLinkToken { label: "`or`", path: None, resolved_item_name: None }
+CommentLinkToken { label: "`or`", path: None }
 Content("|")
 Content("`Ok(x)`")
 Content("|")

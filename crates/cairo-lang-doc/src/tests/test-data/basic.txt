@@ -130,7 +130,7 @@ Below there is a [`TraitTest`] Main function comment inside.
 Content("Main function comment outside.")
 Content("\n")
 Content("Below there is a ")
-CommentLinkToken { label: "`TraitTest`", path: None, resolved_item_name: Some("TraitTest") }
+CommentLinkToken { label: "`TraitTest`", path: None }
 Content(" ")
 Content("Main function comment inside.")
 
@@ -142,7 +142,7 @@ Trait containing abc function. Below a [`main`] function
 
 //! > Item documentation tokens #3
 Content("Trait containing abc function. Below a ")
-CommentLinkToken { label: "`main`", path: None, resolved_item_name: Some("main") }
+CommentLinkToken { label: "`main`", path: None }
 Content(" function")
 
 //! > Item signature #4
@@ -167,7 +167,7 @@ Implementation of TraitTest's abc function. Implements [this](TraitTest) trait.
 
 //! > Item documentation tokens #5
 Content("Implementation of TraitTest's abc function. Implements ")
-CommentLinkToken { label: "this", path: Some("TraitTest"), resolved_item_name: Some("TraitTest") }
+CommentLinkToken { label: "this", path: Some("TraitTest") }
 Content(" trait.")
 
 //! > Item signature #6
@@ -191,7 +191,7 @@ there is [this](test_module::inner_test_module_function) function. Test module u
 Content("Test module used to check if the documentation is being attached to the nodes correctly. Inside")
 Content("\n")
 Content("there is ")
-CommentLinkToken { label: "this", path: Some("test_module::inner_test_module_function"), resolved_item_name: Some("inner_test_module_function") }
+CommentLinkToken { label: "this", path: Some("test_module::inner_test_module_function") }
 Content(" function.")
 Content(" ")
 Content("Test module used to check if the documentation is being attached to the nodes correctly.")
@@ -207,7 +207,7 @@ Above that module there is a [trait](super::TraitTest). Just a function inside t
 Content("Just a function outside the test_module.")
 Content("\n")
 Content("Above that module there is a ")
-CommentLinkToken { label: "trait", path: Some("super::TraitTest"), resolved_item_name: Some("TraitTest") }
+CommentLinkToken { label: "trait", path: Some("super::TraitTest") }
 Content(".")
 Content(" ")
 Content("Just a function inside the test_module.")
@@ -240,7 +240,7 @@ Content("```cairo\n")
 Content("  fn new_Point() {\n    Point {x: 12, y: 14}\n  }\n")
 Content("```\n")
 Content("\n")
-CommentLinkToken { label: "Point::bang", path: None, resolved_item_name: None }
+CommentLinkToken { label: "Point::bang", path: None }
 
 //! > Item signature #10
 pub x: u32
@@ -276,14 +276,14 @@ But [this](Answer::Yes) is an existing variant of Answer
 Content("Answer Enum representing an answer to a yes/no question.")
 Content("\n")
 Content("It will just refer in the docs to some wrong ")
-CommentLinkToken { label: "item_that_does_not_exist", path: None, resolved_item_name: None }
+CommentLinkToken { label: "item_that_does_not_exist", path: None }
 Content(" and also to")
 Content("\n")
-CommentLinkToken { label: "this", path: Some("another_not_existing_path"), resolved_item_name: None }
+CommentLinkToken { label: "this", path: Some("another_not_existing_path") }
 Content(".")
 Content("\n")
 Content("But ")
-CommentLinkToken { label: "this", path: Some("Answer::Yes"), resolved_item_name: Some("Yes") }
+CommentLinkToken { label: "this", path: Some("Answer::Yes") }
 Content(" is an existing variant of Answer")
 
 //! > Item signature #13
