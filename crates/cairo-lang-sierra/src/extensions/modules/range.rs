@@ -49,9 +49,9 @@ impl GenericTypeArgGenericType for IntRangeTypeWrapped {
         &self,
         _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        wrapped_info: &TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        check_inner_type(&wrapped_info)?;
+        check_inner_type(wrapped_info)?;
 
         // The following assert is a sanity check. It should follow from the fact that
         // `check_inner_type` passed.

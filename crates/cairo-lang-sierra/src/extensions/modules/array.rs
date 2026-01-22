@@ -31,13 +31,13 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
         &self,
         _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { storable, droppable, zero_sized, .. }: TypeInfo,
+        wrapped_info: &TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if storable && !zero_sized {
+        if wrapped_info.storable && !wrapped_info.zero_sized {
             Ok(TypeInfo {
                 long_id,
                 duplicatable: false,
-                droppable,
+                droppable: wrapped_info.droppable,
                 storable: true,
                 zero_sized: false,
             })

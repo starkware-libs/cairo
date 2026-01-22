@@ -37,7 +37,7 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
         &self,
         context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_type_info: TypeInfo,
+        wrapped_type_info: &TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         specialize_with_dict_value_param(context, long_id, wrapped_type_info)
     }
@@ -54,21 +54,21 @@ fn specialize_with_dict_value_param(
         droppable,
         duplicatable: _,
         zero_sized: _,
-    }: TypeInfo,
+    }: &TypeInfo,
 ) -> Result<TypeInfo, SpecializationError> {
     // Checking for specific types allowed as dictionary values.
     // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
     // have a 'where' equivalent).
     // TODO(Gil): Allow any type of size 1 which implement the 'Felt252DictValue' trait.
     let allowed = match generic_id {
-        id if id == Felt252Type::id() => generic_args.is_empty(),
-        id if id == Uint8Type::id() => generic_args.is_empty(),
-        id if id == Uint16Type::id() => generic_args.is_empty(),
-        id if id == Uint32Type::id() => generic_args.is_empty(),
-        id if id == Uint64Type::id() => generic_args.is_empty(),
-        id if id == Uint128Type::id() => generic_args.is_empty(),
-        id if id == NullableType::id() => generic_args.len() == 1,
-        id if id == EnumType::id() => {
+        id if *id == Felt252Type::id() => generic_args.is_empty(),
+        id if *id == Uint8Type::id() => generic_args.is_empty(),
+        id if *id == Uint16Type::id() => generic_args.is_empty(),
+        id if *id == Uint32Type::id() => generic_args.is_empty(),
+        id if *id == Uint64Type::id() => generic_args.is_empty(),
+        id if *id == Uint128Type::id() => generic_args.is_empty(),
+        id if *id == NullableType::id() => generic_args.len() == 1,
+        id if *id == EnumType::id() => {
             // Checking the enum type is valid.
             !generic_args.is_empty()
             // Zero is not a valid value for enums with 3 or more variants, so they cannot be
@@ -76,11 +76,11 @@ fn specialize_with_dict_value_param(
             // (the additional argument is the user type).
             && generic_args.len() <= 3
                 // All contained types must be 0-sized, so the total size will be exactly 1.
-                && generic_args.into_iter().skip(1).all(|arg| {
+                && generic_args.iter().skip(1).all(|arg| {
                     let GenericArg::Type(ty) = arg else {
                         return false;
                     };
-                    let Ok(info) = context.get_type_info(&ty) else {
+                    let Ok(info) = context.get_type_info(ty) else {
                         return false;
                     };
                     info.zero_sized
@@ -88,7 +88,7 @@ fn specialize_with_dict_value_param(
         }
         _ => false,
     };
-    if allowed && storable && droppable {
+    if allowed && *storable && *droppable {
         Ok(TypeInfo {
             long_id,
             duplicatable: false,
@@ -195,7 +195,7 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
         &self,
         context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        wrapped_type_info: TypeInfo,
+        wrapped_type_info: &TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         specialize_with_dict_value_param(context, long_id, wrapped_type_info)
     }

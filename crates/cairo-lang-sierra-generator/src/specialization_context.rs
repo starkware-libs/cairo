@@ -16,8 +16,8 @@ impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
     fn try_get_type_info(
         &self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
-    ) -> Option<cairo_lang_sierra::extensions::types::TypeInfo> {
-        self.0.get_type_info(id.clone()).cloned().to_option()
+    ) -> Option<&cairo_lang_sierra::extensions::types::TypeInfo> {
+        self.0.get_type_info(id.clone()).to_option()
     }
 }
 impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_> {

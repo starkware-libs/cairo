@@ -15,15 +15,15 @@ impl GenericTypeArgGenericType for UninitializedTypeWrapped {
         &self,
         _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { storable, zero_sized, .. }: TypeInfo,
+        wrapped_info: &TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if storable {
+        if wrapped_info.storable {
             Ok(TypeInfo {
                 long_id,
                 storable: false,
                 droppable: true,
                 duplicatable: false,
-                zero_sized,
+                zero_sized: wrapped_info.zero_sized,
             })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
