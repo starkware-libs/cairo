@@ -26,7 +26,6 @@ pub type StatementLocation = (BlockId, usize);
 
 /// The direction of dataflow analysis.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[expect(dead_code)]
 pub enum Direction {
     Forward,
     Backward,
@@ -77,7 +76,6 @@ pub enum Direction {
 ///     }
 /// }
 /// ```
-#[expect(dead_code)]
 pub trait DataflowAnalyzer<'db, 'a> {
     /// The analysis state/info type.
     type Info: Clone;
