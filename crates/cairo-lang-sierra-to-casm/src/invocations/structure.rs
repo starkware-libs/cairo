@@ -5,6 +5,7 @@ use cairo_lang_sierra::extensions::structure::{
 };
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra_type_size::TypeSizeMap;
+use itertools::Itertools;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::ReferenceExpression;
@@ -31,11 +32,12 @@ pub fn build(
             if cells.len() != builder.program_info.type_sizes[struct_type] as usize {
                 return Err(InvocationError::InvalidReferenceExpressionForArgument);
             }
-            let output_types = libfunc.output_types();
-            assert_eq!(output_types.len(), 1, "Wrong number of branches configured.");
+            let Ok(output_types) = libfunc.output_types().exactly_one() else {
+                panic!("Wrong number of branches configured.");
+            };
             let mut offset = 0_usize;
             let mut outputs = vec![];
-            for ty in &output_types[0] {
+            for ty in output_types {
                 let size = builder.program_info.type_sizes[ty] as usize;
                 outputs
                     .push(ReferenceExpression { cells: cells[offset..(offset + size)].to_vec() });
