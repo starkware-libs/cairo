@@ -4,12 +4,15 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{ImplItemId, LookupItemId, ModuleId, ModuleItemId, TraitItemId};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, FileId, Tracked};
+use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
+use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use itertools::{Itertools, intersperse};
 use salsa::Database;
 
 use crate::documentable_item::DocumentableItemId;
 use crate::location_links::LocationLink;
-use crate::parser::{DocumentationCommentParser, DocumentationCommentToken};
+use crate::parser::{DocumentationCommentToken, parse_documentation_comment};
 
 pub trait DocGroup: Database {
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
@@ -24,7 +27,7 @@ pub trait DocGroup: Database {
     fn get_item_documentation_as_tokens<'db>(
         &'db self,
         item_id: DocumentableItemId<'db>,
-    ) -> Option<Vec<DocumentationCommentToken<'db>>> {
+    ) -> Option<Vec<DocumentationCommentToken>> {
         get_item_documentation_as_tokens(self.as_dyn_database(), (), item_id)
     }
 
@@ -45,7 +48,15 @@ pub trait DocGroup: Database {
             item_id,
         )
     }
+
+    fn get_embedded_markdown_links<'db>(
+        &'db self,
+        node: SyntaxNode<'db>,
+    ) -> Option<Vec<MarkdownLink>> {
+        get_embedded_markdown_links(self.as_dyn_database(), (), node)
+    }
 }
+
 impl<T: Database + ?Sized> DocGroup for T {}
 
 #[salsa::tracked]
@@ -75,7 +86,7 @@ fn get_item_documentation_as_tokens<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     item_id: DocumentableItemId<'db>,
-) -> Option<Vec<DocumentationCommentToken<'db>>> {
+) -> Option<Vec<DocumentationCommentToken>> {
     let (outer_comment, inner_comment, module_level_comment) = match item_id {
         DocumentableItemId::Crate(crate_id) => {
             (None, None, get_crate_root_module_documentation(db, crate_id))
@@ -93,16 +104,14 @@ fn get_item_documentation_as_tokens<'db>(
         ),
     };
 
-    let doc_parser: DocumentationCommentParser<'db> = DocumentationCommentParser::new(db);
-
     let outer_comment_tokens =
-        outer_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
+        outer_comment.map(|comment| parse_documentation_comment(comment.as_str()));
     let inner_comment_tokens =
-        inner_comment.map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
-    let module_level_comment_tokens = module_level_comment
-        .map(|comment| doc_parser.parse_documentation_comment(item_id, comment));
+        inner_comment.map(|comment| parse_documentation_comment(comment.as_str()));
+    let module_level_comment_tokens =
+        module_level_comment.map(|comment| parse_documentation_comment(comment.as_str()));
 
-    let mut result: Vec<Vec<DocumentationCommentToken<'db>>> =
+    let mut result: Vec<Vec<DocumentationCommentToken>> =
         [module_level_comment_tokens, outer_comment_tokens, inner_comment_tokens]
             .into_iter()
             .flatten()
@@ -239,4 +248,59 @@ fn extract_comment_from_code_line(line: &str, comment_markers: &[&'static str]) 
 /// Checks whether the code line is a comment line.
 fn is_comment_line(line: &str) -> bool {
     line.trim_start().starts_with("//")
+}
+
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+pub struct MarkdownLink {
+    /// The span of the whole link, including the label, the destination URL and the delimiters.
+    pub link_span: TextSpan,
+    /// Where the link leads to. Not present when the label could not be resolved.
+    pub dest_span: Option<TextSpan>,
+    /// The underlying content of `dest_span`, if present.
+    pub dest_text: Option<String>,
+}
+
+#[salsa::tracked]
+fn get_embedded_markdown_links<'db>(
+    db: &'db dyn Database,
+    _tracked: Tracked,
+    node: SyntaxNode<'db>,
+) -> Option<Vec<MarkdownLink>> {
+    match node.kind(db) {
+        SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment => {
+            let content = node.get_text(db);
+            let base_span = node.span(db);
+            parse_embedded_markdown_links(content, base_span.start)
+        }
+        _ => None,
+    }
+}
+
+fn parse_embedded_markdown_links(
+    content: &str,
+    comment_node_offset: TextOffset,
+) -> Option<Vec<MarkdownLink>> {
+    let tokens = parse_documentation_comment(content);
+    let mut results = Vec::new();
+
+    for token in tokens {
+        let DocumentationCommentToken::Link(link) = token else { continue };
+        results.push(MarkdownLink {
+            link_span: shift_right_span(comment_node_offset, link.link_span),
+            dest_span: link.dest_span.map(|span| shift_right_span(comment_node_offset, span)),
+            dest_text: link.dest_text,
+        });
+    }
+
+    Some(results)
+}
+
+// When parsing a comment, we work with offset from the beginning of the comment node.
+// This function shifts the given span by the given offset so that it's relative to the beginning
+// of the file.
+fn shift_right_span(shift_offset: TextOffset, relative_span: TextSpan) -> TextSpan {
+    TextSpan::new(
+        shift_offset.add_width(TextWidth::new_for_testing(relative_span.start.as_u32())),
+        shift_offset.add_width(TextWidth::new_for_testing(relative_span.end.as_u32())),
+    )
 }
