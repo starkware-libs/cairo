@@ -13,7 +13,7 @@ use cairo_lang_sierra::extensions::enm::{
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use cairo_lang_utils::try_extract_matches;
-use itertools::{chain, repeat_n};
+use itertools::{Itertools, chain, repeat_n};
 use num_bigint::BigInt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
@@ -79,8 +79,12 @@ fn build_enum_init(
     if init_arg_cells.len() != variant_size as usize {
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
-    // Pad the variant to match the size of the largest variant
-    let concrete_enum_type = &builder.libfunc.output_types()[0][0];
+    // Pad the variant to match the size of the largest variant.
+    let Ok(Ok(concrete_enum_type)) =
+        builder.libfunc.output_types().exactly_one().map(|branch| branch.exactly_one())
+    else {
+        unreachable!("EnumInit has only a single branch with a single output type");
+    };
     let enum_size = get_enum_size(&builder.program_info, concrete_enum_type)
         .ok_or(InvocationError::UnknownTypeData)?;
     let num_padding = enum_size - 1 - variant_size;
@@ -172,9 +176,10 @@ fn build_enum_match(
             .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
     let mut branch_output_sizes: Vec<usize> = Vec::new();
-    for branch_outputs in &builder.libfunc.output_types() {
-        // Each branch has a single output.
-        let branch_output = &branch_outputs[0];
+    for branch_outputs in builder.libfunc.output_types() {
+        let Ok(branch_output) = branch_outputs.exactly_one() else {
+            unreachable!("EnumMatch branches only have a single output.");
+        };
         let branch_output_size = builder
             .program_info
             .type_sizes
