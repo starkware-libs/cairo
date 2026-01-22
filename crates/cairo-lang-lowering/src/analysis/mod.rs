@@ -4,16 +4,18 @@
 //! optimization passes and semantic checks.
 
 pub mod backward;
-pub mod core;
-
-pub use core::{DataflowAnalyzer, Direction, Edge};
-
 pub use backward::{BackAnalysis, DataflowBackAnalysis};
 
-use crate::{Block, BlockId, MatchInfo, Statement, VarRemapping, VarUsage};
+pub mod core;
+pub use core::{DataflowAnalyzer, Direction, Edge, StatementLocation};
 
-/// Location of a lowering statement inside a block.
-pub type StatementLocation = (BlockId, usize);
+pub mod forward;
+pub use forward::ForwardDataflowAnalysis;
+
+#[cfg(test)]
+mod test;
+
+use crate::{Block, BlockId, MatchInfo, Statement, VarRemapping, VarUsage};
 
 /// Analyzer trait to implement for each specific analysis.
 #[allow(unused_variables)]
