@@ -722,6 +722,7 @@ dependencies = [
  "pretty_assertions",
  "salsa",
  "serde",
+ "smallvec",
  "starknet-types-core",
  "thiserror 2.0.18",
  "tracing",

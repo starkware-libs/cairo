@@ -25,7 +25,6 @@ use crate::{
 pub type StatementLocation = (BlockId, usize);
 
 /// The direction of dataflow analysis.
-#[expect(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
     Forward,
@@ -37,7 +36,6 @@ pub enum Direction {
 /// Each variant captures the specific information needed for that edge type,
 /// enabling analyzers to handle variable introductions and remappings.
 #[derive(Debug)]
-#[expect(dead_code)]
 pub enum Edge<'db, 'a> {
     /// A goto edge with variable remapping.
     Goto { target: BlockId, remapping: &'a VarRemapping<'db> },
@@ -77,7 +75,6 @@ pub enum Edge<'db, 'a> {
 ///     }
 /// }
 /// ```
-#[expect(dead_code)]
 pub trait DataflowAnalyzer<'db, 'a> {
     /// The analysis state/info type.
     type Info: Clone;

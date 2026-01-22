@@ -3,10 +3,18 @@
 //! This module provides generic analysis frameworks that can be used by various
 //! optimization passes and semantic checks.
 
-mod backward;
-mod core;
+pub mod backward;
+pub mod core;
+pub mod forward;
+
+#[cfg(test)]
+mod test;
+
+// Re-export commonly used types at the module level for convenience.
+pub use core::{DataflowAnalyzer, Direction};
 
 pub use backward::BackAnalysis;
+pub use forward::ForwardDataflowAnalysis;
 
 use crate::{Block, BlockId, MatchInfo, Statement, VarRemapping, VarUsage};
 
