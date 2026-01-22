@@ -271,7 +271,7 @@ impl<'a> ResultDocBuilder<'a> {
         &mut self,
         documentation: Option<String>,
         signature: Option<String>,
-        documentation_as_tokens: Option<Vec<DocumentationCommentToken<'_>>>,
+        documentation_as_tokens: Option<Vec<DocumentationCommentToken>>,
     ) {
         if let Some(signature) = signature {
             self.output

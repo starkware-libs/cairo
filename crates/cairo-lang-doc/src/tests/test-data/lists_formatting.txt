@@ -95,7 +95,7 @@ Content("\n")
 Content("list with different item types")
 Content("\n")
 Content("1. ")
-CommentLinkToken { label: "link can be list item", path: Some("URL"), resolved_item_name: None }
+CommentLinkToken { label: "link can be list item", path: Some("URL"), dest_text: Some("URL"), dest_span: Some(TextSpan { start: TextOffset(TextWidth(91)), end: TextOffset(TextWidth(94)) }), link_span: TextSpan { start: TextOffset(TextWidth(67)), end: TextOffset(TextWidth(95)) } }
 Content("\n")
 Content("2. ")
 Content("`fn code_can_be_list_item()`")

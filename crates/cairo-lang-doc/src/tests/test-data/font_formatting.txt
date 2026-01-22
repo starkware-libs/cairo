@@ -157,7 +157,7 @@ Content("\n")
 Content("And this will be a new paragraph ")
 Content("_")
 Content("**")
-CommentLinkToken { label: "link can bold italic", path: Some("URL"), resolved_item_name: None }
+CommentLinkToken { label: "link can bold italic", path: Some("URL"), dest_text: Some("URL"), dest_span: Some(TextSpan { start: TextOffset(TextWidth(458)), end: TextOffset(TextWidth(461)) }), link_span: TextSpan { start: TextOffset(TextWidth(435)), end: TextOffset(TextWidth(462)) } }
 Content("**")
 Content("_")
 Content(".")

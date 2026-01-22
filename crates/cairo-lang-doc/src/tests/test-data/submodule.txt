@@ -96,7 +96,7 @@ Content("### ")
 Content("`fn code_can_be_heading()`")
 Content("\n")
 Content("#### ")
-CommentLinkToken { label: "link can be heading", path: Some("URL"), resolved_item_name: None }
+CommentLinkToken { label: "link can be heading", path: Some("URL"), dest_text: Some("URL"), dest_span: Some(TextSpan { start: TextOffset(TextWidth(322)), end: TextOffset(TextWidth(325)) }), link_span: TextSpan { start: TextOffset(TextWidth(300)), end: TextOffset(TextWidth(326)) } }
 
 //! > Item signature #2
 
@@ -132,7 +132,7 @@ Content("As mentioned above.")
 refers to the inner_sub_module
 
 //! > Item documentation tokens #3
-CommentLinkToken { label: "super::main", path: None, resolved_item_name: Some("main") }
+CommentLinkToken { label: "super::main", path: None, dest_text: Some("super::main"), dest_span: Some(TextSpan { start: TextOffset(TextWidth(1)), end: TextOffset(TextWidth(12)) }), link_span: TextSpan { start: TextOffset(TextWidth(0)), end: TextOffset(TextWidth(13)) } }
 Content(" ")
 Content("This comment just proves that it won't be considered as a file-module comment. It just")
 Content("\n")
@@ -160,7 +160,7 @@ Uses [cairo_submodule_code::inner_sub_module]. Empty code example.
 Content("Main function.")
 Content("\n")
 Content("Uses ")
-CommentLinkToken { label: "cairo_submodule_code::inner_sub_module", path: None, resolved_item_name: Some("inner_sub_module") }
+CommentLinkToken { label: "cairo_submodule_code::inner_sub_module", path: None, dest_text: Some("cairo_submodule_code::inner_sub_module"), dest_span: Some(TextSpan { start: TextOffset(TextWidth(21)), end: TextOffset(TextWidth(59)) }), link_span: TextSpan { start: TextOffset(TextWidth(20)), end: TextOffset(TextWidth(60)) } }
 Content(".")
 Content(" ")
 Content("Empty code example.")
