@@ -7,14 +7,12 @@ use std::collections::HashSet;
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
-use itertools::zip_eq;
 use salsa::Database;
 
-use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::core::StatementLocation;
+use crate::analysis::{DataflowAnalyzer, DataflowBackAnalysis, Direction};
 use crate::ids::{LocationId, SemanticFunctionIdEx};
-use crate::{
-    BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall, VarUsage,
-};
+use crate::{BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall};
 
 /// Adds an early unsafe_panic when we detect that `return` is unreachable from a certain point in
 /// the code. This step is needed to avoid issues with undroppable references in Sierra to CASM.
@@ -32,16 +30,17 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
         core.submodule("internal").extern_function_id("trace"),
     ]);
 
-    let ctx = UnsafePanicContext { db, fixes: vec![], libfuncs_with_sideffect };
-    let mut analysis = BackAnalysis::new(lowered, ctx);
-    let fixes = if let ReachableSideEffects::Unreachable(location) = analysis.get_root_info() {
-        vec![((BlockId::root(), 0), location)]
-    } else {
-        analysis.analyzer.fixes
-    };
+    let mut ctx = UnsafePanicContext { db, libfuncs_with_sideffect, fixes: Vec::new() };
+    let analysis = DataflowBackAnalysis::new(lowered, &mut ctx);
+    let result = analysis.run();
+
+    // If the entry point itself is unreachable, add a fix for it.
+    if let Reachability::Unreachable(location) = result {
+        ctx.fixes.push(((BlockId::root(), 0), location));
+    }
 
     let panic_func_id = core.submodule("panics").function_id("unsafe_panic", vec![]).lowered(db);
-    for ((block_id, statement_idx), location) in fixes {
+    for ((block_id, statement_idx), location) in ctx.fixes {
         let block = &mut lowered.blocks[block_id];
         block.statements.truncate(statement_idx);
 
@@ -59,11 +58,11 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
 pub struct UnsafePanicContext<'db> {
     db: &'db dyn Database,
 
-    /// The list of blocks where we can insert unsafe_panic.
-    fixes: Vec<(StatementLocation, LocationId<'db>)>,
-
     /// libfuncs with side effects that we need to ignore.
     libfuncs_with_sideffect: HashSet<ExternFunctionId<'db>>,
+
+    /// Locations where we need to insert unsafe_panic.
+    pub fixes: Vec<(StatementLocation, LocationId<'db>)>,
 }
 
 impl<'db> UnsafePanicContext<'db> {
@@ -83,58 +82,67 @@ impl<'db> UnsafePanicContext<'db> {
     }
 }
 
-/// Can this state lead to a return or a statement with side effect.
-#[derive(Clone, Default, PartialEq, Debug)]
-pub enum ReachableSideEffects<'db> {
+/// Reachability state for a point in the program.
+#[derive(Clone, Copy, Default, PartialEq, Debug)]
+pub enum Reachability<'db> {
     /// Some return statement or statement with side effect is reachable.
     #[default]
     Reachable,
     /// No return statement or statement with side effect is reachable.
-    /// holds the location of the closest match with no returning arms.
+    /// Holds the location of the closest match with no returning arms.
     Unreachable(LocationId<'db>),
 }
 
-impl<'db> Analyzer<'db, '_> for UnsafePanicContext<'db> {
-    type Info = ReachableSideEffects<'db>;
+impl<'db, 'a> DataflowAnalyzer<'db, 'a> for UnsafePanicContext<'db> {
+    type Info = Reachability<'db>;
+    const DIRECTION: Direction = Direction::Backward;
 
-    fn visit_stmt(
-        &mut self,
-        info: &mut Self::Info,
-        statement_location: StatementLocation,
-        stmt: &Statement<'db>,
-    ) {
-        if self.has_side_effects(stmt)
-            && let ReachableSideEffects::Unreachable(locations) = *info
-        {
-            self.fixes.push((statement_location, locations));
-            *info = ReachableSideEffects::Reachable
-        }
+    fn initial_info(&mut self, _block_id: BlockId, _block_end: &'a BlockEnd<'db>) -> Self::Info {
+        Reachability::default()
     }
 
-    fn merge_match(
+    fn merge(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &MatchInfo<'db>,
-        infos: impl Iterator<Item = Self::Info>,
+        location: &'a LocationId<'db>,
+        infos: impl Iterator<Item = (BlockId, Self::Info)>,
     ) -> Self::Info {
-        let mut res = ReachableSideEffects::Unreachable(*match_info.location());
-        for (arm, info) in zip_eq(match_info.arms(), infos) {
-            match info {
-                ReachableSideEffects::Reachable => {
-                    res = ReachableSideEffects::Reachable;
+        let mut result = Reachability::default();
+        let mut all_unreachable = true;
+
+        for (src, reachability) in infos {
+            match reachability {
+                Reachability::Reachable => {
+                    all_unreachable = false;
                 }
-                ReachableSideEffects::Unreachable(l) => self.fixes.push(((arm.block_id, 0), l)),
+                Reachability::Unreachable(loc) => {
+                    // Fix at the entry of this unreachable branch.
+                    self.fixes.push(((src, 0), loc));
+                }
             }
         }
 
-        if let ReachableSideEffects::Unreachable(location) = res {
-            self.fixes.push((statement_location, location));
+        // All branches are unreachable (or there are no branches, e.g., match on `never`).
+        // Use the match location as the source of unreachability.
+        if all_unreachable {
+            result = Reachability::Unreachable(*location);
+            self.fixes.push((statement_location, *location));
         }
 
-        res
+        result
     }
 
-    fn info_from_return(&mut self, _: StatementLocation, _vars: &[VarUsage<'db>]) -> Self::Info {
-        ReachableSideEffects::Reachable
+    fn transfer_stmt(
+        &mut self,
+        info: &mut Self::Info,
+        statement_location: StatementLocation,
+        stmt: &'a Statement<'db>,
+    ) {
+        if self.has_side_effects(stmt)
+            && let Reachability::Unreachable(loc) = *info
+        {
+            self.fixes.push((statement_location, loc));
+            *info = Reachability::Reachable;
+        }
     }
 }
