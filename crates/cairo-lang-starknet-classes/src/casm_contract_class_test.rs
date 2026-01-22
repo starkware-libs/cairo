@@ -14,6 +14,7 @@ use crate::allowed_libfuncs::{
     BUILTIN_AUDITED_LIBFUNCS_LIST, ListSelector, lookup_allowed_libfuncs_list,
 };
 use crate::casm_contract_class::{BigUintAsHex, CasmContractClass};
+use crate::compiler_version::current_sierra_version_id;
 use crate::contract_class::ContractClass;
 use crate::felt252_serde::{Felt252SerdeError, sierra_from_felt252s};
 use crate::test_utils::get_example_file_path;
@@ -68,12 +69,17 @@ fn test_casm_contract_from_contract_class_from_contracts_crate(name: &str) {
 /// Tests that the contract covers part of the libfuncs.
 #[test_case("libfuncs_coverage__libfuncs_coverage")]
 fn test_contract_libfuncs_coverage(name: &str) {
+    let current_version = current_sierra_version_id();
     let libfunc_to_cover: HashSet<GenericLibfuncId> = lookup_allowed_libfuncs_list(
         ListSelector::ListName(BUILTIN_AUDITED_LIBFUNCS_LIST.to_string()),
     )
     .unwrap()
     .allowed_libfuncs
-    .into_keys()
+    .into_iter()
+    .filter_map(|(libfunc, version)| match version {
+        Some(version) => current_version.supports(version).then_some(libfunc),
+        None => Some(libfunc),
+    })
     .collect();
 
     let contract_path = get_example_file_path(&format!("{name}.contract_class.json"));
