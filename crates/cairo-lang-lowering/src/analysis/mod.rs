@@ -4,8 +4,11 @@
 //! optimization passes and semantic checks.
 
 pub mod backward;
+pub mod core;
 
 // Re-export commonly used types at the module level for convenience.
+pub use core::{DataflowAnalyzer, Direction};
+
 pub use backward::BackAnalysis;
 
 use crate::{Block, BlockId, MatchInfo, Statement, VarRemapping, VarUsage};
