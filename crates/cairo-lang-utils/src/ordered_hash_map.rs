@@ -1,16 +1,24 @@
 use core::hash::{BuildHasher, Hash};
-#[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
 
 use indexmap::IndexMap;
 use itertools::zip_eq;
 
 #[cfg(feature = "std")]
-type BHImpl = RandomState;
+type BHImpl = std::collections::hash_map::RandomState;
 #[cfg(not(feature = "std"))]
 type BHImpl = hashbrown::DefaultHashBuilder;
 
 #[derive(Clone, Debug)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent),
+    serde(bound(
+        serialize = "Key: serde::Serialize, Value: serde::Serialize",
+        deserialize = "Key: serde::Deserialize<'de> + Hash + Eq, Value: serde::Deserialize<'de>, \
+                       BH: BuildHasher + Default"
+    ))
+)]
 pub struct OrderedHashMap<Key, Value, BH = BHImpl>(IndexMap<Key, Value, BH>);
 
 impl<Key, Value, BH> core::ops::Deref for OrderedHashMap<Key, Value, BH> {
@@ -28,8 +36,8 @@ impl<Key, Value, BH> core::ops::DerefMut for OrderedHashMap<Key, Value, BH> {
 }
 
 #[cfg(feature = "salsa")]
-unsafe impl<Key: salsa::Update + Eq + Hash, Value: salsa::Update> salsa::Update
-    for OrderedHashMap<Key, Value, BHImpl>
+unsafe impl<Key: salsa::Update + Eq + Hash, Value: salsa::Update, BH: BuildHasher> salsa::Update
+    for OrderedHashMap<Key, Value, BH>
 {
     // This code was taken from the salsa::Update trait implementation for IndexMap.
     // It is defined privately in macro_rules! maybe_update_map in the db-ext-macro repo.
@@ -144,43 +152,21 @@ impl<Key: Hash + Eq, Value, BH: BuildHasher + Default, const N: usize> From<[(Ke
 
 #[cfg(feature = "serde")]
 mod impl_serde {
-    #[cfg(not(feature = "std"))]
-    use alloc::vec::Vec;
-
-    use itertools::Itertools;
+    use indexmap::map::serde_seq;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     use super::*;
 
-    impl<K: Hash + Eq + Serialize, V: Serialize, BH: BuildHasher> Serialize
-        for OrderedHashMap<K, V, BH>
-    {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            self.0.serialize(serializer)
-        }
-    }
-
-    impl<'de, K: Hash + Eq + Deserialize<'de>, V: Deserialize<'de>, BH: BuildHasher + Default>
-        Deserialize<'de> for OrderedHashMap<K, V, BH>
-    {
-        fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-            IndexMap::<K, V, BH>::deserialize(deserializer).map(|s| OrderedHashMap(s))
-        }
-    }
-
-    pub fn serialize_ordered_hashmap_vec<'de, K, V, BH, S>(
+    pub fn serialize_ordered_hashmap_vec<K, V, BH, S>(
         v: &OrderedHashMap<K, V, BH>,
         serializer: S,
     ) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
-        K: Serialize + Deserialize<'de> + Hash + Eq,
-        V: Serialize + Deserialize<'de>,
+        K: Serialize + Hash + Eq,
+        V: Serialize,
     {
-        v.iter().collect_vec().serialize(serializer)
+        serde_seq::serialize(&v.0, serializer)
     }
 
     pub fn deserialize_ordered_hashmap_vec<'de, K, V, BH: BuildHasher + Default, D>(
@@ -188,10 +174,10 @@ mod impl_serde {
     ) -> Result<OrderedHashMap<K, V, BH>, D::Error>
     where
         D: Deserializer<'de>,
-        K: Serialize + Deserialize<'de> + Hash + Eq,
-        V: Serialize + Deserialize<'de>,
+        K: Deserialize<'de> + Hash + Eq,
+        V: Deserialize<'de>,
     {
-        Ok(Vec::<(K, V)>::deserialize(deserializer)?.into_iter().collect())
+        Ok(OrderedHashMap(serde_seq::deserialize(deserializer)?))
     }
 }
 #[cfg(feature = "serde")]
