@@ -1,7 +1,10 @@
 use std::hash::Hash;
+use std::marker::PhantomData;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use serde::de::{SeqAccess, Visitor};
+use serde::ser::SerializeSeq;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -202,15 +205,45 @@ fn serialize_map<Id: IdAsHashKey, S: serde::Serializer>(
     m: &OrderedHashMap<Id, SmolStr>,
     serializer: S,
 ) -> Result<S::Ok, S::Error> {
-    let v: Vec<_> = m.iter().map(|(id, name)| (id.get(), name)).sorted().collect();
-    v.serialize(serializer)
+    let mut seq = serializer.serialize_seq(Some(m.len()))?;
+    for (id, name) in m.iter().map(|(id, name)| (id.get(), name)).sorted() {
+        seq.serialize_element(&(id, name))?;
+    }
+    seq.end()
 }
 
 fn deserialize_map<'de, Id: IdAsHashKey, D: serde::Deserializer<'de>>(
     deserializer: D,
 ) -> Result<OrderedHashMap<Id, SmolStr>, D::Error> {
-    Ok(Vec::<(u64, SmolStr)>::deserialize(deserializer)?
-        .into_iter()
-        .map(|(id, name)| (Id::new(id), name))
-        .collect())
+    struct OrderedHashMapVisitor<Id> {
+        marker: PhantomData<Id>,
+    }
+
+    impl<'de, Id> Visitor<'de> for OrderedHashMapVisitor<Id>
+    where
+        Id: IdAsHashKey,
+    {
+        type Value = OrderedHashMap<Id, SmolStr>;
+
+        fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            formatter.write_str("a sequence of pairs")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+        where
+            A: SeqAccess<'de>,
+        {
+            let mut values = OrderedHashMap::default();
+            if let Some(size) = seq.size_hint() {
+                values.reserve_exact(size);
+            }
+
+            while let Some((k, v)) = seq.next_element()? {
+                values.insert(Id::new(k), v);
+            }
+
+            Ok(values)
+        }
+    }
+    deserializer.deserialize_seq(OrderedHashMapVisitor { marker: PhantomData })
 }
