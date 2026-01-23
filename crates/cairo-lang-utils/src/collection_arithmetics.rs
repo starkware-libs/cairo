@@ -74,7 +74,8 @@ impl<Key, Value: Sub<Output = Value>, T: MergeCollection<Key, Value>> SubCollect
     }
 }
 
-impl<Key: Hash + Eq, Value: HasZero + Clone + Eq, BH: BuildHasher> MergeCollection<Key, Value>
+impl<Key: Hash + Eq, Value: HasZero + Clone + PartialEq, BH: BuildHasher>
+    MergeCollection<Key, Value>
     for OrderedHashMap<Key, Value, BH>
 {
     fn merge_collection(
