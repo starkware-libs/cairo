@@ -1,17 +1,25 @@
 use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;
-#[cfg(feature = "std")]
-use std::collections::hash_map::RandomState;
 
 use indexmap::IndexSet;
 use itertools::zip_eq;
 
 #[cfg(feature = "std")]
-#[derive(Clone, Debug)]
-pub struct OrderedHashSet<Key, BH = RandomState>(IndexSet<Key, BH>);
+type BHImpl = std::collections::hash_map::RandomState;
 #[cfg(not(feature = "std"))]
+type BHImpl = hashbrown::DefaultHashBuilder;
+
 #[derive(Clone, Debug)]
-pub struct OrderedHashSet<Key, BH = hashbrown::DefaultHashBuilder>(IndexSet<Key, BH>);
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent),
+    serde(bound(
+        serialize = "Key: serde::Serialize",
+        deserialize = "Key: serde::Deserialize<'de> + Hash + Eq, BH: BuildHasher + Default"
+    ))
+)]
+pub struct OrderedHashSet<Key, BH = BHImpl>(IndexSet<Key, BH>);
 
 impl<Key, BH> core::ops::Deref for OrderedHashSet<Key, BH> {
     type Target = IndexSet<Key, BH>;
@@ -101,26 +109,5 @@ where
 
     fn sub(self, rhs: Self) -> Self::Output {
         OrderedHashSet::<Key, BH>(&self.0 - &rhs.0)
-    }
-}
-
-#[cfg(feature = "serde")]
-mod impl_serde {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-    use super::*;
-
-    impl<K: Hash + Eq + Serialize, BH: BuildHasher> Serialize for OrderedHashSet<K, BH> {
-        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-            self.0.serialize(serializer)
-        }
-    }
-
-    impl<'de, K: Hash + Eq + Deserialize<'de>, BH: BuildHasher + Default> Deserialize<'de>
-        for OrderedHashSet<K, BH>
-    {
-        fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-            IndexSet::<K, BH>::deserialize(deserializer).map(|s| OrderedHashSet(s))
-        }
     }
 }
