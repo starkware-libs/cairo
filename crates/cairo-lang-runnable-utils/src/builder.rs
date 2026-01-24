@@ -416,7 +416,8 @@ impl EntryCodeHelper {
             if !self.config.testing {
                 // Add a local variable for the output builtin
                 casm_build_extend!(self.ctx, localvar local;);
-                self.local_exprs.insert(BuiltinName::output, self.ctx.get_value(local, false));
+                self.local_exprs
+                    .insert(BuiltinName::output, self.ctx.get_unadjusted(local).clone());
             }
 
             for (generic_ty, _ty_size) in param_types {
@@ -424,7 +425,7 @@ impl EntryCodeHelper {
                     && name != &BuiltinName::segment_arena
                 {
                     casm_build_extend!(self.ctx, localvar local;);
-                    self.local_exprs.insert(*name, self.ctx.get_value(local, false));
+                    self.local_exprs.insert(*name, self.ctx.get_unadjusted(local).clone());
                 }
             }
 
@@ -591,7 +592,7 @@ impl EntryCodeHelper {
                 );
 
                 let var = self.builtin_vars[name];
-                self.local_exprs.insert(*name, self.ctx.get_value(var, false));
+                self.local_exprs.insert(*name, self.ctx.get_unadjusted(var).clone());
                 var
             });
         }
