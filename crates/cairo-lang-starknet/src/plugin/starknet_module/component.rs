@@ -18,7 +18,7 @@ use crate::plugin::consts::{
     GENERIC_CONTRACT_STATE_NAME, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::storage::handle_storage_struct;
-use crate::plugin::utils::{AstPathExtract, GenericParamExtract, ParamEx};
+use crate::plugin::utils::{AstPathExtract, GenericParamExtract};
 
 /// Accumulated data specific for component generation.
 #[derive(Default)]
