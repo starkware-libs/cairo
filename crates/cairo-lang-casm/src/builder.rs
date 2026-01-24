@@ -276,28 +276,38 @@ impl CasmBuilder {
     /// Adds an assertion that `dst = res`.
     /// `dst` must be a cell reference.
     pub fn assert_vars_eq(&mut self, dst: Var, res: Var, kind: AssertEqKind) {
-        let a = self.as_adjasted_cell_ref(dst);
-        let b = self.get_adjusted(res);
+        let a = extract_matches!(self.get_unadjusted(dst), CellExpression::Deref);
+        let b = self.get_unadjusted(res);
         let (a, b) = match b {
-            CellExpression::Deref(cell) => (a, ResOperand::Deref(cell)),
-            CellExpression::DoubleDeref(cell, offset) => (a, ResOperand::DoubleDeref(cell, offset)),
-            CellExpression::Immediate(imm) => (a, imm.into()),
+            CellExpression::Deref(cell) => (a, ResOperand::Deref(*cell)),
+            CellExpression::DoubleDeref(cell, offset) => {
+                (a, ResOperand::DoubleDeref(*cell, *offset))
+            }
+            CellExpression::Immediate(imm) => (a, imm.clone().into()),
             CellExpression::BinOp { op, a: other, b } => match op {
-                CellOperator::Add => {
-                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b }))
-                }
-                CellOperator::Mul => {
-                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: other, b }))
-                }
-                CellOperator::Sub => {
-                    (other, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }))
-                }
-                CellOperator::Div => {
-                    (other, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }))
-                }
+                CellOperator::Add => (
+                    a,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *other, b: b.clone() }),
+                ),
+                CellOperator::Mul => (
+                    a,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *other, b: b.clone() }),
+                ),
+                CellOperator::Sub => (
+                    other,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *a, b: b.clone() }),
+                ),
+                CellOperator::Div => (
+                    other,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *a, b: b.clone() }),
+                ),
             },
         };
-        let inner = AssertEqInstruction { a, b };
+        let ap_change = self.main_state.ap_change;
+        let inner = AssertEqInstruction {
+            a: a.unchecked_apply_known_ap_change(ap_change),
+            b: b.unchecked_apply_known_ap_change(ap_change),
+        };
         let instruction = self.next_instruction(
             match kind {
                 AssertEqKind::Felt252 => InstructionBody::AssertEq(inner),
