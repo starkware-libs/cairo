@@ -23,7 +23,7 @@ impl CostOperations for Ops<'_> {
     type CostType = CostTokenMap<i64>;
 
     fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
-        CostTokenMap::from_iter([(token_type, value as i64)])
+        CostTokenMap::from_single(token_type, value as i64)
     }
 
     fn function_token_cost(
@@ -34,7 +34,7 @@ impl CostOperations for Ops<'_> {
         if let Some(function_cost) = self.gas_info.function_costs.get(&function.id)
             && let Some(v) = function_cost.get(&token_type)
         {
-            CostTokenMap::from_iter([(token_type, *v)])
+            CostTokenMap::from_single(token_type, *v)
         } else {
             CostTokenMap::default()
         }
@@ -42,7 +42,7 @@ impl CostOperations for Ops<'_> {
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         if let Some(v) = self.gas_info.variable_values.get(&(self.idx, token_type)) {
-            CostTokenMap::from_iter([(token_type, *v)])
+            CostTokenMap::from_single(token_type, *v)
         } else {
             CostTokenMap::default()
         }

@@ -23,7 +23,7 @@ impl CostOperations for Ops<'_> {
     type CostType = CostExprMap;
 
     fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
-        Self::CostType::from_iter([(token_type, CostExpr::from_const(value))])
+        Self::CostType::from_single(token_type, CostExpr::from_const(value))
     }
 
     fn function_token_cost(
@@ -31,17 +31,17 @@ impl CostOperations for Ops<'_> {
         function: &FunctionCostInfo,
         token_type: CostTokenType,
     ) -> Self::CostType {
-        Self::CostType::from_iter([(
+        Self::CostType::from_single(
             token_type,
             self.statement_future_cost.get_future_cost(&function.entry_point)[&token_type].clone(),
-        )])
+        )
     }
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
-        Self::CostType::from_iter([(
+        Self::CostType::from_single(
             token_type,
             CostExpr::from_var(Var::LibfuncImplicitGasVariable(self.idx, token_type)),
-        )])
+        )
     }
 
     fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
