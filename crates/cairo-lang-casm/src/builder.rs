@@ -2,7 +2,7 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::small_ordered_map::{Entry, SmallOrderedMap};
 use num_bigint::BigInt;
-use num_traits::{One, Zero};
+use num_traits::{One, ToPrimitive, Zero};
 
 use crate::ap_change::ApplyApChange;
 use crate::cell_expression::{CellExpression, CellOperator};
@@ -44,18 +44,13 @@ pub struct State {
 }
 impl State {
     /// Returns the value, in relation to the initial ap value.
-    fn get_value(&self, var: Var) -> CellExpression {
-        self.vars[&var].clone()
+    fn get_unadjusted(&self, var: Var) -> &CellExpression {
+        &self.vars[&var]
     }
 
     /// Returns the value, in relation to the current ap value.
     pub fn get_adjusted(&self, var: Var) -> CellExpression {
-        self.get_value(var).unchecked_apply_known_ap_change(self.ap_change)
-    }
-
-    /// Returns the value, assuming it is a direct cell reference.
-    pub fn get_adjusted_as_cell_ref(&self, var: Var) -> CellRef {
-        extract_matches!(self.get_adjusted(var), CellExpression::Deref)
+        self.get_unadjusted(var).clone().unchecked_apply_known_ap_change(self.ap_change)
     }
 
     /// Validates that the state is valid, if it had enough AP change to support the requested
@@ -229,7 +224,7 @@ impl CasmBuilder {
 
     /// Returns an additional variable pointing to the same value.
     pub fn duplicate_var(&mut self, var: Var) -> Var {
-        self.add_var(self.get_value(var, false))
+        self.add_var(self.get_unadjusted(var).clone())
     }
 
     /// Adds a hint, generated from `inputs` which are cell refs or immediates and `outputs` which
@@ -247,25 +242,32 @@ impl CasmBuilder {
     ) {
         self.current_hints.push(
             f(
-                inputs.map(|v| match self.get_value(v, true) {
-                    CellExpression::Deref(cell) => ResOperand::Deref(cell),
-                    CellExpression::DoubleDeref(cell, offset) => {
-                        ResOperand::DoubleDeref(cell, offset)
+                inputs.map(|v| {
+                    match self.get_unadjusted(v) {
+                        CellExpression::Deref(cell) => ResOperand::Deref(*cell),
+                        CellExpression::DoubleDeref(cell, offset) => {
+                            ResOperand::DoubleDeref(*cell, *offset)
+                        }
+                        CellExpression::Immediate(imm) => imm.clone().into(),
+                        CellExpression::BinOp { op, a: other, b } => match op {
+                            CellOperator::Add => ResOperand::BinOp(BinOpOperand {
+                                op: Operation::Add,
+                                a: *other,
+                                b: b.clone(),
+                            }),
+                            CellOperator::Mul => ResOperand::BinOp(BinOpOperand {
+                                op: Operation::Mul,
+                                a: *other,
+                                b: b.clone(),
+                            }),
+                            CellOperator::Sub | CellOperator::Div => {
+                                panic!("hints to non ResOperand references are not supported.")
+                            }
+                        },
                     }
-                    CellExpression::Immediate(imm) => imm.into(),
-                    CellExpression::BinOp { op, a: other, b } => match op {
-                        CellOperator::Add => {
-                            ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b })
-                        }
-                        CellOperator::Mul => {
-                            ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: other, b })
-                        }
-                        CellOperator::Sub | CellOperator::Div => {
-                            panic!("hints to non ResOperand references are not supported.")
-                        }
-                    },
+                    .unchecked_apply_known_ap_change(self.main_state.ap_change)
                 }),
-                outputs.map(|v| self.as_cell_ref(v, true)),
+                outputs.map(|v| self.as_adjasted_cell_ref(v)),
             )
             .into(),
         );
@@ -274,8 +276,8 @@ impl CasmBuilder {
     /// Adds an assertion that `dst = res`.
     /// `dst` must be a cell reference.
     pub fn assert_vars_eq(&mut self, dst: Var, res: Var, kind: AssertEqKind) {
-        let a = self.as_cell_ref(dst, true);
-        let b = self.get_value(res, true);
+        let a = self.as_adjasted_cell_ref(dst);
+        let b = self.get_adjusted(res);
         let (a, b) = match b {
             CellExpression::Deref(cell) => (a, ResOperand::Deref(cell)),
             CellExpression::DoubleDeref(cell, offset) => (a, ResOperand::DoubleDeref(cell, offset)),
@@ -320,18 +322,18 @@ impl CasmBuilder {
     /// `deref` (which includes trivial calculations as well) so it instead returns a variable
     /// pointing to that location.
     pub fn maybe_add_tempvar(&mut self, var: Var) -> Var {
-        self.add_var(CellExpression::Deref(match self.get_value(var, false) {
-            CellExpression::Deref(cell) => cell,
+        self.add_var(CellExpression::Deref(match self.get_unadjusted(var) {
+            CellExpression::Deref(cell) => *cell,
             CellExpression::BinOp {
                 op: CellOperator::Add | CellOperator::Sub,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            } if imm.value.is_zero() => a,
+            } if imm.value.is_zero() => *a,
             CellExpression::BinOp {
                 op: CellOperator::Mul | CellOperator::Div,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            } if imm.value.is_one() => a,
+            } if imm.value.is_one() => *a,
             _ => {
                 let temp = self.alloc_var(false);
                 self.assert_vars_eq(temp, var, AssertEqKind::Felt252);
@@ -342,7 +344,7 @@ impl CasmBuilder {
 
     /// Increments a buffer and allocates and returns a variable pointing to its previous value.
     pub fn get_ref_and_inc(&mut self, buffer: Var) -> Var {
-        let (cell, offset) = self.as_cell_ref_plus_const(buffer, 0, false);
+        let (cell, offset) = self.as_unadjusted_cell_ref_plus_const(buffer, 0);
         self.main_state.vars.insert(
             buffer,
             CellExpression::BinOp {
@@ -358,15 +360,7 @@ impl CasmBuilder {
     /// Useful for writing, reading and referencing values.
     /// `buffer` must be a cell reference, or a cell reference with a small added constant.
     fn buffer_get_and_inc(&mut self, buffer: Var) -> (CellRef, i16) {
-        let (base, offset) = match self.get_value(buffer, false) {
-            CellExpression::Deref(cell) => (cell, 0),
-            CellExpression::BinOp {
-                op: CellOperator::Add,
-                a,
-                b: DerefOrImmediate::Immediate(imm),
-            } => (a, imm.value.try_into().expect("Too many buffer writes.")),
-            _ => panic!("Not a valid buffer."),
-        };
+        let (base, offset) = self.as_unadjusted_cell_ref_plus_const(buffer, 0);
         self.main_state.vars.insert(
             buffer,
             CellExpression::BinOp {
@@ -397,19 +391,19 @@ impl CasmBuilder {
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
     /// `lhs` must be a cell reference and `rhs` must be deref or immediate.
     pub fn bin_op(&mut self, op: CellOperator, lhs: Var, rhs: Var) -> Var {
-        let (a, b) = match self.get_value(lhs, false) {
+        let (a, b) = match self.get_unadjusted(lhs) {
             // Regular `bin_op` support.
-            CellExpression::Deref(cell) => (cell, self.as_deref_or_imm(rhs, false)),
+            CellExpression::Deref(cell) => (*cell, self.as_unadjasted_deref_or_imm(rhs)),
             // `add_with_const` + `imm` support.
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
             } if op == CellOperator::Add => (
-                a,
+                *a,
                 DerefOrImmediate::Immediate(
-                    (imm.value
-                        + extract_matches!(self.get_value(rhs, false), CellExpression::Immediate))
+                    (&imm.value
+                        + extract_matches!(self.get_unadjusted(rhs), CellExpression::Immediate))
                     .into(),
                 ),
             ),
@@ -424,7 +418,7 @@ impl CasmBuilder {
     /// Returns a variable that is `[[var] + offset]`.
     /// `var` must be a cell reference, or a cell ref plus a small constant.
     pub fn double_deref(&mut self, var: Var, offset: i16) -> Var {
-        let (cell, full_offset) = self.as_cell_ref_plus_const(var, offset, false);
+        let (cell, full_offset) = self.as_unadjusted_cell_ref_plus_const(var, offset);
         self.add_var(CellExpression::DoubleDeref(cell, full_offset))
     }
 
@@ -446,7 +440,7 @@ impl CasmBuilder {
     /// Adds a statement to jump to `label` if `condition != 0`.
     /// `condition` must be a cell reference.
     pub fn jump_nz(&mut self, condition: Var, label: &'static str) {
-        let cell = self.as_cell_ref(condition, true);
+        let cell = self.as_adjasted_cell_ref(condition);
         self.push_labeled_instruction(
             label,
             InstructionBody::Jnz(JnzInstruction {
@@ -469,9 +463,9 @@ impl CasmBuilder {
     pub fn blake2s_compress(&mut self, state: Var, byte_count: Var, message: Var, finalize: bool) {
         let instruction = self.next_instruction(
             InstructionBody::Blake2sCompress(Blake2sCompressInstruction {
-                state: self.as_cell_ref(state, true),
-                byte_count: self.as_cell_ref(byte_count, true),
-                message: self.as_cell_ref(message, true),
+                state: self.as_adjasted_cell_ref(state),
+                byte_count: self.as_adjasted_cell_ref(byte_count),
+                message: self.as_adjasted_cell_ref(message),
                 finalize,
             }),
             true,
@@ -640,20 +634,26 @@ impl CasmBuilder {
     }
 
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
-    pub fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
-        if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
+    pub fn get_adjusted(&self, var: Var) -> CellExpression {
+        self.main_state.get_adjusted(var)
+    }
+
+    /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
+    pub fn get_unadjusted(&self, var: Var) -> &CellExpression {
+        self.main_state.get_unadjusted(var)
     }
 
     /// Returns `var`s value as a cell reference, with fixed ap if `adjust_ap` is true.
-    fn as_cell_ref(&self, var: Var, adjust_ap: bool) -> CellRef {
-        extract_matches!(self.get_value(var, adjust_ap), CellExpression::Deref)
+    fn as_adjasted_cell_ref(&self, var: Var) -> CellRef {
+        extract_matches!(self.main_state.get_unadjusted(var), CellExpression::Deref)
+            .unchecked_apply_known_ap_change(self.main_state.ap_change)
     }
 
     /// Returns `var`s value as a cell reference or immediate, with fixed ap if `adjust_ap` is true.
-    fn as_deref_or_imm(&self, var: Var, adjust_ap: bool) -> DerefOrImmediate {
-        match self.get_value(var, adjust_ap) {
-            CellExpression::Deref(cell) => DerefOrImmediate::Deref(cell),
-            CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm.into()),
+    fn as_unadjasted_deref_or_imm(&self, var: Var) -> DerefOrImmediate {
+        match self.get_unadjusted(var) {
+            CellExpression::Deref(cell) => DerefOrImmediate::Deref(*cell),
+            CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm.clone().into()),
             CellExpression::DoubleDeref(_, _) | CellExpression::BinOp { .. } => {
                 panic!("wrong usage.")
             }
@@ -662,21 +662,23 @@ impl CasmBuilder {
 
     /// Returns `var`s value as a cell reference plus a small const offset, with fixed ap if
     /// `adjust_ap` is true.
-    fn as_cell_ref_plus_const(
+    fn as_unadjusted_cell_ref_plus_const(
         &self,
         var: Var,
         additional_offset: i16,
-        adjust_ap: bool,
     ) -> (CellRef, i16) {
-        match self.get_value(var, adjust_ap) {
-            CellExpression::Deref(cell) => (cell, additional_offset),
+        match self.main_state.get_unadjusted(var) {
+            CellExpression::Deref(cell) => (*cell, additional_offset),
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
             } => (
-                a,
-                (imm.value + additional_offset).try_into().expect("Offset too large for deref."),
+                *a,
+                imm.value
+                    .to_i16()
+                    .and_then(|v| v.checked_add(additional_offset))
+                    .expect("Offset too large for deref."),
             ),
             _ => panic!("Not a valid ptr."),
         }
