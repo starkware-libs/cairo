@@ -19,7 +19,7 @@ __boxed_segment += 1
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -50,7 +50,7 @@ fn foo(x: Box<felt252>) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -90,7 +90,7 @@ __boxed_segment += 2
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -123,7 +123,7 @@ fn foo(x: Box<u256>) -> u256 {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -157,7 +157,7 @@ fn foo(e: ()) -> Box<()> {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -187,7 +187,7 @@ fn foo(x: Box<()>) -> () {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({})
+test::foo: SmallOrderedMap([])
 
 //! > sierra_code
 type Box<Unit> = Box<Unit> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -219,7 +219,7 @@ fn foo(e: Empty) -> Box<Empty> {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -250,7 +250,7 @@ fn foo(x: Box<Empty>) -> Empty {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({})
+test::foo: SmallOrderedMap([])
 
 //! > sierra_code
 type Box<test::Empty> = Box<test::Empty> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -281,7 +281,7 @@ fn foo(value: @Box::<Array<felt252>>) -> Box<@Array<felt252>> {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type Box<Array<felt252>> = Box<Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
@@ -346,7 +346,7 @@ return([3]);
 test::foo@F0([0]: Box<test::A>) -> (Tuple<Box<core::integer::u256>, Box<core::integer::u256>>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > ==========================================================================
 
@@ -391,7 +391,7 @@ return([2]);
 test::foo@F0([0]: Box<test::Single>) -> (Tuple<Box<Array<felt252>>>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > ==========================================================================
 
@@ -448,7 +448,7 @@ return([5]);
 test::foo@F0([0]: Box<test::Many>) -> (Tuple<Box<core::integer::u256>, Box<felt252>, Box<Array<felt252>>, Box<core::integer::u256>>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap([(Const, 400)])
 
 //! > ==========================================================================
 
@@ -482,7 +482,7 @@ return();
 test::foo@F0([0]: Box<test::Empty>) -> ();
 
 //! > function_costs
-test::foo: SmallOrderedMap({})
+test::foo: SmallOrderedMap([])
 
 //! > ==========================================================================
 
@@ -529,7 +529,7 @@ return([3]);
 test::foo@F0([0]: Box<test::A>) -> (Tuple<Box<core::integer::u256>, Box<core::integer::u256>>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > ==========================================================================
 
@@ -554,7 +554,7 @@ struct Single {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type Box<Snapshot<test::Single>> = Box<Snapshot<test::Single>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -609,7 +609,7 @@ struct Many {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap([(Const, 400)])
 
 //! > sierra_code
 type Box<Snapshot<test::Many>> = Box<Snapshot<test::Many>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -684,8 +684,8 @@ call rel -13;
 ret;
 
 //! > function_costs
-test::helper: SmallOrderedMap({Const: 800})
-test::foo: SmallOrderedMap({Const: 1200})
+test::helper: SmallOrderedMap([(Const, 800)])
+test::foo: SmallOrderedMap([(Const, 1200)])
 
 //! > sierra_code
 type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -782,7 +782,7 @@ return([7]);
 test::foo@F0([0]: Box<Tuple<core::integer::u256, core::integer::u256>>) -> (Tuple<Box<u128>, Box<u128>, Box<u128>, Box<u128>>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap([(Const, 400)])
 
 //! > ==========================================================================
 
@@ -832,7 +832,7 @@ return([5]);
 test::foo@F0([0]: Box<core::integer::u256>) -> (Tuple<u128, u128>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])
 
 //! > ==========================================================================
 
@@ -877,7 +877,7 @@ return([4]);
 test::foo@F0([0]: Box<Tuple<Unit, Unit, u128>>) -> (u128);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > ==========================================================================
 
@@ -898,7 +898,7 @@ call rel 5;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -933,7 +933,7 @@ call rel 4;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -985,7 +985,7 @@ return([1]);
 test::foo@F0() -> (Box<Unit>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])
 
 //! > ==========================================================================
 
@@ -1006,7 +1006,7 @@ call rel 5;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -1055,8 +1055,8 @@ call rel 4;
 ret;
 
 //! > function_costs
-test::bar: SmallOrderedMap({Const: 100})
-test::foo: SmallOrderedMap({Const: 800})
+test::bar: SmallOrderedMap([(Const, 100)])
+test::foo: SmallOrderedMap([(Const, 800)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -1118,7 +1118,7 @@ call rel 5;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -1183,4 +1183,4 @@ return([4]);
 test::foo@F0([0]: Tuple<u128, u128, u128>) -> (Box<u128>);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])

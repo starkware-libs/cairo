@@ -18,7 +18,7 @@ fn foo() -> SingleVariant {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -60,7 +60,7 @@ fn foo(e: SingleVariant) -> felt252 {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -106,7 +106,7 @@ fn foo() -> Option {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -154,7 +154,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -211,7 +211,7 @@ fn foo() -> Color {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -254,7 +254,7 @@ fn foo() -> Color {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -307,7 +307,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 300})
+test::foo: SmallOrderedMap([(Const, 300)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -382,7 +382,7 @@ fn foo(index: BoundedInt<0, 4>) -> IndexEnum5 {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type BoundedInt<0, 4> = BoundedInt<0, 4> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -431,7 +431,7 @@ fn foo(index: BoundedInt<0, 1>) -> IndexEnum2 {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type BoundedInt<0, 1> = BoundedInt<0, 1> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -479,7 +479,7 @@ fn foo(index: BoundedInt<0, 0>) -> IndexEnum1 {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 100})
+test::foo: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type BoundedInt<0, 0> = BoundedInt<0, 0> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -524,7 +524,7 @@ fn foo(e: Box<Single>) -> BoxedSingle {
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
 
 //! > sierra_code
 type Box<test::Single> = Box<test::Single> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -577,7 +577,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap([(Const, 400)])
 
 //! > sierra_code
 type Box<core::option::Option::<core::felt252>> = Box<core::option::Option::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -650,7 +650,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 500})
+test::foo: SmallOrderedMap([(Const, 500)])
 
 //! > sierra_code
 type Box<test::Color> = Box<test::Color> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -720,7 +720,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 400})
+test::foo: SmallOrderedMap([(Const, 400)])
 
 //! > sierra_code
 type Box<test::Data> = Box<test::Data> [storable: true, drop: true, dup: true, zero_sized: false];
@@ -793,7 +793,7 @@ __boxed_segment += 2
 ret;
 
 //! > function_costs
-test::add_123: SmallOrderedMap({Const: 700})
+test::add_123: SmallOrderedMap([(Const, 700)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -874,7 +874,7 @@ ap += 2;
 ret;
 
 //! > function_costs
-test::add_123: SmallOrderedMap({Const: 900})
+test::add_123: SmallOrderedMap([(Const, 900)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -980,7 +980,7 @@ ret;
 ret;
 
 //! > function_costs
-test::test_blue: SmallOrderedMap({Const: 1100})
+test::test_blue: SmallOrderedMap([(Const, 1100)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -1087,7 +1087,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::test_small: SmallOrderedMap({Const: 1210})
+test::test_small: SmallOrderedMap([(Const, 1210)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -1188,7 +1188,7 @@ ret;
 ret;
 
 //! > function_costs
-test::test_large: SmallOrderedMap({Const: 1600})
+test::test_large: SmallOrderedMap([(Const, 1600)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -1295,4 +1295,4 @@ return([2]);
 test::foo@F0([0]: Box<Snapshot<test::SingleArray>>) -> (test::BoxedSingleArray);
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 200})
+test::foo: SmallOrderedMap([(Const, 200)])
