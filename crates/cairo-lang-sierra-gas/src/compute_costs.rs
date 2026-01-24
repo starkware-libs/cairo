@@ -89,7 +89,8 @@ impl CostTypeTrait for PreCost {
             let val2 = value2.0.get(token_type)?;
             Some((*token_type, *std::cmp::min(val1, val2)))
         };
-        PreCost(value1.0.iter().filter_map(map_fn).collect())
+        // Keys are unique since we're iterating over value1's keys.
+        PreCost(CostTokenMap::unchecked_from_vec(value1.0.iter().filter_map(map_fn).collect()))
     }
 
     fn max(values: impl Iterator<Item = Self>) -> Self {
@@ -104,9 +105,14 @@ impl CostTypeTrait for PreCost {
     }
 
     fn rectify(value: &Self) -> Self {
-        let map_fn =
-            |(token_type, val): (&CostTokenType, &i32)| (*token_type, std::cmp::max(*val, 0));
-        PreCost(value.0.iter().map(map_fn).collect())
+        // Keys are unique since we're iterating over value's keys.
+        PreCost(CostTokenMap::unchecked_from_vec(
+            value
+                .0
+                .iter()
+                .filter_map(|(token_type, val)| (*val >= 0).then_some((*token_type, *val)))
+                .collect(),
+        ))
     }
 }
 
@@ -693,7 +699,10 @@ pub struct PreCostContext {}
 
 impl SpecificCostContextTrait<PreCost> for PreCostContext {
     fn to_cost_map(cost: PreCost) -> CostTokenMap<i64> {
-        cost.0.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
+        // Keys are unique since we're converting from another map.
+        CostTokenMap::unchecked_from_vec(
+            cost.0.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect(),
+        )
     }
 
     fn into_full_cost_iter(cost: PreCost) -> impl Iterator<Item = (CostTokenType, i64)> {
@@ -790,7 +799,8 @@ impl<CostType: PostCostTypeEx, GetApChangeFn: Fn(&StatementIdx) -> usize>
         if cost == CostType::default() {
             Default::default()
         } else {
-            Self::into_full_cost_iter(cost).collect()
+            // Keys are unique since into_full_cost_iter iterates over each token type once.
+            CostTokenMap::unchecked_from_vec(Self::into_full_cost_iter(cost).collect())
         }
     }
 

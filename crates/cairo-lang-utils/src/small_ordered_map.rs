@@ -17,6 +17,34 @@ use alloc::vec::Vec;
 )]
 pub struct SmallOrderedMap<Key, Value>(Vec<(Key, Value)>);
 
+impl<Key, Value> SmallOrderedMap<Key, Value> {
+    /// Creates a map from a Vec of key-value pairs without checking for duplicate keys.
+    ///
+    /// # Safety
+    /// The caller must ensure that the Vec does not contain duplicate keys.
+    /// If duplicates exist, behavior of lookups is unspecified (may return any matching entry).
+    #[inline]
+    pub fn unchecked_from_vec(vec: Vec<(Key, Value)>) -> Self {
+        Self(vec)
+    }
+
+    /// Creates a map with a single key-value pair.
+    #[inline]
+    pub fn from_single(key: Key, value: Value) -> Self {
+        Self(vec![(key, value)])
+    }
+
+    /// Creates a map from an array of key-value pairs without checking for duplicate keys.
+    ///
+    /// # Safety
+    /// The caller must ensure that the array does not contain duplicate keys.
+    /// If duplicates exist, behavior of lookups is unspecified (may return any matching entry).
+    #[inline]
+    pub fn unchecked_from_iter<const N: usize>(arr: [(Key, Value); N]) -> Self {
+        Self(arr.into())
+    }
+}
+
 impl<Key: Eq, Value> SmallOrderedMap<Key, Value> {
     /// Creates a new empty map.
     pub fn new() -> Self {

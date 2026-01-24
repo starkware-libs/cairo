@@ -588,7 +588,7 @@ pub fn core_libfunc_cost(
                     // Failure.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
-                        pre_cost: PreCost(CostTokenMap::from_iter([
+                        pre_cost: PreCost(CostTokenMap::unchecked_from_iter([
                             (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
                             (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
                         ])),
@@ -596,7 +596,7 @@ pub fn core_libfunc_cost(
                     // Success.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
-                        pre_cost: PreCost(CostTokenMap::from_iter([
+                        pre_cost: PreCost(CostTokenMap::unchecked_from_iter([
                             (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
                             (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
                         ])),
@@ -901,7 +901,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(24),
-            pre_cost: PreCost(CostTokenMap::from_iter([(CostTokenType::Bitwise, 4)])),
+            pre_cost: PreCost(CostTokenMap::from_single(CostTokenType::Bitwise, 4)),
         }],
     }
 }
