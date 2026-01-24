@@ -580,7 +580,7 @@ pub fn core_libfunc_cost(
                     // Failure.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
-                        pre_cost: PreCost(CostTokenMap::from_iter([
+                        pre_cost: PreCost(CostTokenMap::unchecked_from_iter([
                             (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
                             (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
                         ])),
@@ -588,7 +588,7 @@ pub fn core_libfunc_cost(
                     // Success.
                     BranchCost::Regular {
                         const_cost: ConstCost::steps(steps),
-                        pre_cost: PreCost(CostTokenMap::from_iter([
+                        pre_cost: PreCost(CostTokenMap::unchecked_from_iter([
                             (CostTokenType::AddMod, info.add_offsets.len().into_or_panic()),
                             (CostTokenType::MulMod, info.mul_offsets.len().into_or_panic()),
                         ])),
@@ -761,27 +761,29 @@ impl BranchCost {
                 .map(|(token_type, val)| (*token_type, ops.cost_token(*val)))
                 .collect(),
             BranchCost::FunctionCost { const_cost: _, function, sign } => {
-                let func_content_cost: CostTokenMap<_> = CostTokenType::iter_precost()
-                    .filter_map(|token| Some((*token, ops.function_token_cost(function, *token)?)))
-                    .collect();
+                let func_content_cost =
+                    CostTokenMap::unchecked_from_iter(CostTokenType::iter_precost().filter_map(
+                        |token| Some((*token, ops.function_token_cost(function, *token)?)),
+                    ));
                 match sign {
                     BranchCostSign::Add => {
                         // The refund may be at most `cost`. It can be smaller if the refund cannot
                         // be used later (e.g., if the next statement is
                         // `return`).
-                        precost_statement_vars_cost(ops)
-                            .collect::<CostTokenMap<_>>()
+                        CostTokenMap::unchecked_from_iter(precost_statement_vars_cost(ops))
                             .sub_collection(func_content_cost)
                     }
                     BranchCostSign::Subtract => func_content_cost,
                 }
             }
             BranchCost::BranchAlign | BranchCost::RedepositGas => {
-                precost_statement_vars_cost(ops).collect()
+                CostTokenMap::unchecked_from_iter(precost_statement_vars_cost(ops))
             }
             BranchCost::WithdrawGas(info) => {
                 if info.success {
-                    precost_statement_vars_cost(ops).map(|(k, v)| (k, -v)).collect()
+                    CostTokenMap::unchecked_from_iter(
+                        precost_statement_vars_cost(ops).map(|(k, v)| (k, -v)),
+                    )
                 } else {
                     Default::default()
                 }
@@ -896,7 +898,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(24),
-            pre_cost: PreCost(CostTokenMap::from_iter([(CostTokenType::Bitwise, 4)])),
+            pre_cost: PreCost(CostTokenMap::from_single(CostTokenType::Bitwise, 4)),
         }],
     }
 }

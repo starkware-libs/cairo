@@ -716,7 +716,10 @@ pub struct PreCostContext {}
 
 impl SpecificCostContextTrait<PreCost> for PreCostContext {
     fn to_cost_map(cost: PreCost) -> CostTokenMap<i64> {
-        cost.0.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
+        // Keys are unique since we're converting from another map.
+        CostTokenMap::unchecked_from_iter(
+            cost.0.into_iter().map(|(token_type, val)| (token_type, val as i64)),
+        )
     }
 
     fn into_full_cost_iter(cost: PreCost) -> impl Iterator<Item = (CostTokenType, i64)> {
@@ -813,7 +816,8 @@ impl<CostType: PostCostTypeEx, GetApChangeFn: Fn(&StatementIdx) -> usize>
         if cost == CostType::default() {
             Default::default()
         } else {
-            Self::into_full_cost_iter(cost).collect()
+            // Keys are unique since into_full_cost_iter iterates over each token type once.
+            CostTokenMap::unchecked_from_iter(Self::into_full_cost_iter(cost))
         }
     }
 

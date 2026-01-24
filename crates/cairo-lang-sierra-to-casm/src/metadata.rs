@@ -12,6 +12,7 @@ use cairo_lang_sierra_gas::{
 };
 use cairo_lang_sierra_type_size::ProgramRegistryInfo;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use thiserror::Error;
 
 #[derive(Default)]
@@ -92,9 +93,10 @@ pub fn calc_metadata(
         .map(|(func, costs)| {
             (
                 func.clone(),
-                CostTokenType::iter_precost()
-                    .filter_map(|token| costs.get(token).map(|v| (*token, *v)))
-                    .collect(),
+                SmallOrderedMap::unchecked_from_iter(
+                    CostTokenType::iter_precost()
+                        .filter_map(|token| costs.get(token).map(|v| (*token, *v))),
+                ),
             )
         })
         .collect();
@@ -138,10 +140,10 @@ pub fn calc_metadata(
             .map(|(func, costs)| {
                 (
                     func.clone(),
-                    [CostTokenType::Const]
-                        .iter()
-                        .filter_map(|token| costs.get(token).map(|v| (*token, *v)))
-                        .collect(),
+                    costs
+                        .get(&CostTokenType::Const)
+                        .map(|v| SmallOrderedMap::from_single(CostTokenType::Const, *v))
+                        .unwrap_or_default(),
                 )
             })
             .collect();

@@ -70,11 +70,11 @@ impl std::ops::Sub for ConstCost {
 pub struct PreCost(pub CostTokenMap<i32>);
 impl PreCost {
     pub fn builtin(token_type: CostTokenType) -> Self {
-        Self(CostTokenMap::from_iter([(token_type, 1)]))
+        Self(CostTokenMap::from_single(token_type, 1))
     }
 
     pub fn n_builtins(token_type: CostTokenType, n: i32) -> Self {
-        Self(CostTokenMap::from_iter([(token_type, n)]))
+        Self(CostTokenMap::from_single(token_type, n))
     }
 }
 impl Neg for PreCost {
