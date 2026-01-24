@@ -30,19 +30,11 @@ impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
     }
 }
 
-/// A base to start ap tracking from.
-#[derive(Clone, Debug)]
-enum ApTrackingBase {
-    FunctionStart(FunctionId),
-    #[expect(dead_code)]
-    EnableStatement(StatementIdx),
-}
-
 /// The information for ap tracking of a statement.
 #[derive(Clone, Debug)]
 struct ApTrackingInfo {
-    /// The base tracking from.
-    base: ApTrackingBase,
+    /// The function entry point this tracking originated from, if any.
+    function_start: Option<FunctionId>,
     /// The ap-change from the base.
     ap_change: usize,
 }
@@ -213,7 +205,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         for (ap_change, target) in &self.branches[idx.0] {
             if matches!(ap_change, ApChange::EnableApTracking) {
                 self.infos[target.0].tracking_info = Some(ApTrackingInfo {
-                    base: ApTrackingBase::EnableStatement(idx),
+                    function_start: None,
                     ap_change: 0,
                 });
                 continue;
@@ -245,8 +237,8 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             return;
         };
         if matches!(self.program.get_statement(&idx), Some(Statement::Return(_))) {
-            if let ApTrackingBase::FunctionStart(id) = base_info.base
-                && let Some(func_change) = self.function_ap_change.get(&id)
+            if let Some(id) = &base_info.function_start
+                && let Some(func_change) = self.function_ap_change.get(id)
             {
                 self.infos[idx.0].effective_ap_change_from_base = Some(*func_change);
             }
@@ -346,7 +338,7 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     // Setting tracking info for function entry points.
     for f in &program.funcs {
         helper.infos[f.entry_point.0].tracking_info = Some(ApTrackingInfo {
-            base: ApTrackingBase::FunctionStart(f.id.clone()),
+            function_start: Some(f.id.clone()),
             ap_change: 0,
         });
     }
