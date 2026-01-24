@@ -5,9 +5,9 @@ use cairo_lang_filesystem::ids::{FileId, SmolStrId};
 use cairo_lang_filesystem::span::{TextOffset, TextPosition, TextSpan, TextWidth};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize};
 use cairo_lang_utils::require;
+use cairo_lang_utils::small_ordered_map::SmallOrderedMap;
 use salsa::Database;
 use salsa::plumbing::AsId;
-use vector_map::VecMap;
 
 use self::ast::TriviaGreen;
 use self::green::GreenNode;
@@ -310,7 +310,7 @@ impl<'a> SyntaxNode<'a> {
         let self_green = self.green_node(db);
         let children = self_green.children();
         let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
-        let mut key_map = VecMap::<_, usize>::new();
+        let mut key_map = SmallOrderedMap::<_, usize>::new();
         for green_id in children {
             let green = green_id.long(db);
             let width = green.width(db);
