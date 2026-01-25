@@ -1,7 +1,7 @@
 // Language constructs
 * Language Constructs
 ** xref:pages/notation.adoc[1. Notation]
-** 2 Lexical structure
+** xref:pages/lexical-structure.adoc[2. Lexical structure]
 *** xref:pages/keywords.adoc[2.1 Keywords]
 *** xref:pages/identifiers.adoc[2.2 Identifiers]
 *** xref:pages/comments.adoc[2.3 Comments]
@@ -15,7 +15,7 @@
 *** xref:pages/use.adoc[4.2 Use declarations]
 *** xref:pages/functions.adoc[4.3 Functions]
 **** xref:pages/functions.adoc#_generic_parameters [4.3.1 Generic parameters]
-**** xref:pages/functions.adoc#_specifying_arguments [4.3.2 Implicit arguments]
+**** xref:pages/functions.adoc#_implicits_and_nopanic [4.3.2 Implicit arguments]
 *** xref:pages/type-aliases.adoc[4.4 Type aliases 🚧]
 *** xref:pages/impl-aliases.adoc[4.5 Impl aliases 🚧]
 *** xref:pages/structs.adoc[4.6 Structs]
@@ -48,21 +48,23 @@
 **** xref:pages/equality-operators.adoc[7.4.3 Equality operators 🚧]
 **** xref:pages/comparison-operators.adoc[7.4.4 Comparison operators 🚧]
 **** xref:pages/boolean-operators.adoc[7.4.5 Boolean operators 🚧]
-**** xref:pages/error-propagation-operator.adoc[7.4.6 Error propagation operator 🚧]
-**** xref:pages/operator-precedence.adoc[7.4.7 Operator precedence]
+**** xref:pages/bitwise-operators.adoc[7.4.6 Bitwise operators 🚧]
+**** xref:pages/error-propagation-operator.adoc[7.4.7 Error propagation operator 🚧]
+**** xref:pages/operator-precedence.adoc[7.4.8 Operator precedence]
 *** xref:pages/parentheses.adoc[7.5 Parenthesized expressions]
 *** xref:pages/function-calls.adoc[7.6 Function calls]
 *** xref:pages/method-calls.adoc[7.7 Method calls]
 *** xref:pages/member-access-expressions.adoc[7.8 Member access expressions]
 *** xref:pages/tuple-expressions.adoc[7.9 Tuple expressions 🚧]
 *** xref:pages/struct-expressions.adoc[7.10 Struct expressions 🚧]
-*** xref:pages/if-expressions.adoc[7.11 If expressions 🚧]
-*** xref:pages/match-expressions.adoc[7.12 Match expressions 🚧]
-*** xref:pages/for-loop-expressions.adoc[7.13 For loop expressions 🚧]
+*** xref:pages/array-expressions.adoc[7.11 Array expressions 🚧]
+*** xref:pages/if-expressions.adoc[7.12 If expressions 🚧]
+*** xref:pages/match-expressions.adoc[7.13 Match expressions 🚧]
+*** xref:pages/for-loop-expressions.adoc[7.14 For loop expressions 🚧]
 
 ** xref:pages/patterns.adoc[8. Patterns          ]
 
-** 9. Type system
+** xref:pages/type-system.adoc[9. Type system]
 *** xref:pages/types.adoc[9.1 Types]
 **** xref:pages/boolean-types.adoc[9.1.1 Boolean types]
 **** xref:pages/felt252-type.adoc[9.1.2 Felt252 type 🚧]
@@ -75,7 +77,17 @@
 **** xref:pages/enum-types.adoc[9.1.9 Enum types 🚧]
 **** xref:pages/array-types.adoc[9.1.10 Array types 🚧]
 **** xref:pages/felt252dict-type.adoc[9.1.11 Dict type]
+**** xref:pages/slice-types.adoc[9.1.12 Slice types 🚧]
+**** xref:pages/box-type.adoc[9.1.13 Box type 🚧]
+**** xref:pages/snapshot-type.adoc[9.1.14 Snapshot type 🚧]
+**** xref:pages/error-type.adoc[9.1.15 Error types 🚧]
+*** xref:pages/type-layout.adoc[9.2 Type layout]
 *** xref:pages/generics.adoc[9.3 Generics]
 *** xref:pages/inference.adoc[9.4 Inference]
+*** xref:pages/derive-macro.adoc[9.5 Derive macro 🚧]
 
 ** xref:pages/panic.adoc[10. Panic]
+
+** xref:pages/contracts.adoc[11. Contracts 🚧]
+
+** xref:pages/hints.adoc[12. Hints 🚧]

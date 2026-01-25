@@ -421,7 +421,7 @@ pub fn check_basic_structure(
     if invocation.args.len() != libfunc.param_signatures().len()
         || !itertools::equal(
             invocation.branches.iter().map(|branch| branch.results.len()),
-            libfunc.output_types().iter().map(|types| types.len()),
+            libfunc.output_types().map(|types| types.len()),
         )
         || match libfunc.fallthrough() {
             Some(expected_fallthrough) => {

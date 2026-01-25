@@ -5,8 +5,6 @@
 #[cfg(not(feature = "std"))]
 extern crate alloc;
 
-#[cfg(not(feature = "std"))]
-use alloc::boxed::Box;
 use core::fmt;
 
 /// Re-exporting the [`smol_str`] crate so that downstream projects can always use the same

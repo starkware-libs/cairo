@@ -61,15 +61,15 @@ fn args_as_single_user_func(args: &[GenericArg]) -> Result<&FunctionId, Speciali
 }
 
 /// Extracts the generic args of `ty`, additionally validates it is of generic type `T`.
-fn extract_type_generic_args<T: NamedType>(
-    context: &dyn TypeSpecializationContext,
+fn extract_type_generic_args<'a, T: NamedType>(
+    context: &'a dyn TypeSpecializationContext,
     ty: &ConcreteTypeId,
-) -> Result<Vec<GenericArg>, SpecializationError> {
-    let long_id = context.get_type_info(ty)?.long_id;
+) -> Result<&'a [GenericArg], SpecializationError> {
+    let long_id = &context.get_type_info(ty)?.long_id;
     if long_id.generic_id != T::ID {
         Err(SpecializationError::UnsupportedGenericArg)
     } else {
-        Ok(long_id.generic_args)
+        Ok(&long_id.generic_args)
     }
 }
 

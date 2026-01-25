@@ -446,13 +446,13 @@ pub trait ConcreteLibfunc {
     fn fallthrough(&self) -> Option<usize>;
 
     /// Returns the output types returning from a library function per branch.
-    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
+    fn output_types(
+        &self,
+    ) -> impl Iterator<Item = impl ExactSizeIterator<Item = &ConcreteTypeId> + DoubleEndedIterator>
+    {
         self.branch_signatures()
             .iter()
-            .map(|branch_info| {
-                branch_info.vars.iter().map(|var_info| var_info.ty.clone()).collect()
-            })
-            .collect()
+            .map(|branch_info| branch_info.vars.iter().map(|var_info| &var_info.ty))
     }
 }
 

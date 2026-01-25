@@ -1,4 +1,5 @@
 use bimap::BiMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use num_bigint::BigInt;
 use test_case::test_case;
 
@@ -32,10 +33,39 @@ fn user_func_arg(name: &str) -> GenericArg {
 
 struct MockSpecializationContext {
     mapping: BiMap<ConcreteTypeId, ConcreteTypeLongId>,
+    type_infos: UnorderedHashMap<ConcreteTypeId, TypeInfo>,
 }
 impl MockSpecializationContext {
     pub fn new() -> Self {
-        Self { mapping: build_bijective_mapping() }
+        let mapping = build_bijective_mapping();
+        let mut type_infos = UnorderedHashMap::<ConcreteTypeId, TypeInfo>::default();
+        for name in ["u128", "u64"] {
+            let key = name.into();
+            let long_id = mapping.get_by_left(&key).unwrap().clone();
+            type_infos.insert(
+                key,
+                TypeInfo {
+                    long_id,
+                    storable: true,
+                    droppable: true,
+                    duplicatable: true,
+                    zero_sized: false,
+                },
+            );
+        }
+        let key = "ArrayU128".into();
+        let long_id = mapping.get_by_left(&key).unwrap().clone();
+        type_infos.insert(
+            key,
+            TypeInfo {
+                long_id,
+                storable: true,
+                droppable: true,
+                duplicatable: false,
+                zero_sized: false,
+            },
+        );
+        Self { mapping, type_infos }
     }
 }
 
@@ -49,34 +79,8 @@ impl SpecializationContext for MockSpecializationContext {
     }
 }
 impl TypeSpecializationContext for MockSpecializationContext {
-    fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<TypeInfo> {
-        if id == &"u128".into() || id == &"u64".into() || id == &"NonZeroInt".into() {
-            Some(TypeInfo {
-                long_id: self.mapping.get_by_left(id)?.clone(),
-                storable: true,
-                droppable: true,
-                duplicatable: true,
-                zero_sized: false,
-            })
-        } else if id == &"UninitializedInt".into() {
-            Some(TypeInfo {
-                long_id: self.mapping.get_by_left(id)?.clone(),
-                storable: false,
-                droppable: true,
-                duplicatable: false,
-                zero_sized: true,
-            })
-        } else if id == &"ArrayU128".into() {
-            Some(TypeInfo {
-                long_id: self.mapping.get_by_left(id)?.clone(),
-                storable: true,
-                droppable: true,
-                duplicatable: false,
-                zero_sized: false,
-            })
-        } else {
-            None
-        }
+    fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<&TypeInfo> {
+        self.type_infos.get(id)
     }
 }
 impl SignatureSpecializationContext for MockSpecializationContext {

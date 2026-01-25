@@ -63,7 +63,7 @@ impl StructConcreteType {
         let mut duplicatable = true;
         let mut droppable = true;
         let mut storable = true;
-        let mut members: Vec<ConcreteTypeId> = Vec::new();
+        let mut members: Vec<ConcreteTypeId> = Vec::with_capacity(args_iter.len());
         let mut zero_sized = true;
         for arg in args_iter {
             let ty = try_extract_matches!(arg, GenericArg::Type)
@@ -114,8 +114,7 @@ impl StructConcreteType {
         context: &dyn SignatureSpecializationContext,
         ty: &ConcreteTypeId,
     ) -> Result<Self, SpecializationError> {
-        let long_id = context.get_type_info(ty)?.long_id;
-        Self::try_from_long_id(context, &long_id)
+        Self::try_from_long_id(context, &context.get_type_info(ty)?.long_id)
     }
 }
 impl ConcreteType for StructConcreteType {
@@ -296,7 +295,7 @@ impl StructBoxedDeconstructLibfunc {
         ty: &ConcreteTypeId,
     ) -> Result<(Vec<ConcreteTypeId>, bool), SpecializationError> {
         let type_info = context.get_type_info(ty)?;
-        let (inner_ty, is_snapshot) = peel_snapshot(ty, &type_info)?;
+        let (inner_ty, is_snapshot) = peel_snapshot(ty, type_info)?;
         let struct_type = StructConcreteType::try_from_concrete_type(context, inner_ty)?;
         Ok((struct_type.members, is_snapshot))
     }
