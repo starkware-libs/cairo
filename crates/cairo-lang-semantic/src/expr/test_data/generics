@@ -712,3 +712,30 @@ error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<2>", found: 
  --> lib.cairo:11:10
     bar2(s);
          ^
+
+
+//! > ==========================================================================
+
+//! > generic struct with drop for the generic type
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct GenericStructWithDrop<T, +Drop<T>> {
+    a: T,
+}
+//! > function_body
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::MyStruct::<2>", found: "test::MyStruct::<1>".
+ --> lib.cairo:11:10
+    bar2(s);
+         ^
