@@ -378,6 +378,25 @@ impl<'db> AddStoreVariableStatements<'db> {
         for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
+
+            if !dup && var != var_on_stack{
+                if let Some(uninitialized_local_var_id) =
+                    self.local_variables.get(var_on_stack)
+                {
+                    self.store_local_ex(
+                        var,
+                        &uninitialized_local_var_id.clone(),
+                        var_on_stack,
+                        ty,
+                    );
+
+                    state.pop_var_state(var);
+                    state.variables.insert(var_on_stack.clone(), VarState::LocalVar );
+                    continue;
+                }
+            }
+
+
             let (is_on_stack, var_state) = match state.pop_var_state(var) {
                 VarState::Deferred { info: deferred_info } => {
                     if let DeferredOutputKind::Const = deferred_info.kind {
@@ -538,6 +557,22 @@ impl<'db> AddStoreVariableStatements<'db> {
             store_local_libfunc_id(self.db, ty.clone()),
             &[uninitialized_local_var_id.clone(), var.clone()],
             std::slice::from_ref(var),
+        ));
+    }
+
+    /// Adds a `store_local` command storing `var` into itself using the preallocated
+    /// `uninitialized_local_var_id`.
+    fn store_local_ex(
+        &mut self,
+        var: &sierra::ids::VarId,
+        uninitialized_local_var_id: &sierra::ids::VarId,
+        output: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
+    ) {
+        self.result.push(simple_statement(
+            store_local_libfunc_id(self.db, ty.clone()),
+            &[uninitialized_local_var_id.clone(), var.clone()],
+            &[output.clone()],
         ));
     }
 
