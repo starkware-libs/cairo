@@ -63,4 +63,4 @@ Together, we can make Cairo **better**!
 
 ## Authors & contributors
 
-For a full list of all authors and contributors, see link:https://github.com/starkware-libs/cairo/contributors[the contributors page].
+For a full list of all authors and contributors, see link:https://github.com/starkware-libs/cairo/graphs/contributors[the contributors page].
