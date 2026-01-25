@@ -97,8 +97,7 @@ fn is_circuit_component(
         return Err(SpecializationError::UnsupportedGenericArg);
     };
 
-    let long_id = context.get_type_info(ty)?.long_id;
-    Ok(CIRCUIT_COMPONENTS.contains(&long_id.generic_id))
+    Ok(CIRCUIT_COMPONENTS.contains(&context.get_type_info(ty)?.long_id.generic_id))
 }
 
 /// Circuit input type.
@@ -1064,8 +1063,7 @@ fn get_circuit_info(
         .collect();
 
     while let Some((ty, first_visit)) = stack.pop() {
-        let long_id = context.get_type_info(&ty)?.long_id;
-        let generic_id = long_id.generic_id;
+        let long_id = &context.get_type_info(&ty)?.long_id;
 
         if values.contains_key(&ty) {
             // The value was already processed.
@@ -1084,17 +1082,17 @@ fn get_circuit_info(
             let output_offset = 1 + n_inputs + values.len();
             let mut input_offsets = gate_inputs.map(|ty| values[ty]);
 
-            if generic_id == AddModGate::ID {
+            if long_id.generic_id == AddModGate::ID {
                 let [lhs, rhs] = input_offsets.next_array().unwrap();
                 add_offsets.push(GateOffsets { lhs, rhs, output: output_offset });
-            } else if generic_id == SubModGate::ID {
+            } else if long_id.generic_id == SubModGate::ID {
                 // output = sub_lhs - sub_rhs => output + sub_rhs = sub_lhs.
                 let [sub_lhs, sub_rhs] = input_offsets.next_array().unwrap();
                 add_offsets.push(GateOffsets { lhs: output_offset, rhs: sub_rhs, output: sub_lhs });
-            } else if generic_id == MulModGate::ID {
+            } else if long_id.generic_id == MulModGate::ID {
                 let [lhs, rhs] = input_offsets.next_array().unwrap();
                 mul_offsets.push(GateOffsets { lhs, rhs, output: output_offset });
-            } else if generic_id == InverseGate::ID {
+            } else if long_id.generic_id == InverseGate::ID {
                 // output = 1 / input => 1 = output * input.
                 // Note that the gate will fail if the input is not invertible.
                 // Evaluating this gate successfully implies that input is invertible.
@@ -1132,9 +1130,8 @@ fn parse_circuit_inputs<'a>(
             continue;
         }
 
-        let long_id = context.get_type_info(&ty)?.long_id;
-        let generic_id = long_id.generic_id;
-        if generic_id == CircuitInput::ID {
+        let long_id = &context.get_type_info(&ty)?.long_id;
+        if long_id.generic_id == CircuitInput::ID {
             let idx = args_as_single_value(&long_id.generic_args)?
                 .to_usize()
                 .ok_or(SpecializationError::UnsupportedGenericArg)?;

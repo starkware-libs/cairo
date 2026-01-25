@@ -152,7 +152,7 @@ impl SignatureOnlyGenericLibfunc for BoundedIntMulLibfunc {
                 Range::from_type(context, inner_ty)
             })
         } else {
-            [lhs_info, rhs_info].map(|info| Range::from_type_info(&info))
+            [lhs_info, rhs_info].map(Range::from_type_info)
         };
         let (lhs_range, rhs_range) = (lhs_range?, rhs_range?);
         // The result is the minimum and maximum of the four possible extremes.
@@ -330,7 +330,7 @@ impl NamedLibfunc for BoundedIntConstrainLibfunc {
             let inner_ty = args_as_single_type(&ty_info.long_id.generic_args)?;
             Range::from_type(context, inner_ty)?
         } else {
-            Range::from_type_info(&ty_info)?
+            Range::from_type_info(ty_info)?
         };
         require(&range.lower < boundary && boundary < &range.upper)
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
@@ -425,7 +425,7 @@ impl BoundedIntTrimConcreteLibfunc {
     ) -> Result<Self, SpecializationError> {
         let ty = args_as_single_type(args)?;
         let ty_info = context.get_type_info(ty)?;
-        let range = Range::from_type_info(&ty_info)?;
+        let range = Range::from_type_info(ty_info)?;
         let (res_ty, trimmed_value) = if IS_MAX {
             (
                 bounded_int_ty(context, range.lower.clone(), range.upper.clone() - 2)?,

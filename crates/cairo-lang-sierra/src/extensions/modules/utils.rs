@@ -93,7 +93,7 @@ impl Range {
         context: &dyn SignatureSpecializationContext,
         ty: &ConcreteTypeId,
     ) -> Result<Self, SpecializationError> {
-        Self::from_type_info(&context.get_type_info(ty)?)
+        Self::from_type_info(context.get_type_info(ty)?)
     }
     /// Returns true if this range is smaller than the RangeCheck range.
     pub fn is_small_range(&self) -> bool {
