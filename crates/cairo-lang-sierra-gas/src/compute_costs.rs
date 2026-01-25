@@ -107,7 +107,7 @@ impl CostTypeTrait for PreCost {
     fn rectify(value: &Self) -> Self {
         // Keys are unique since we're iterating over value's keys.
         PreCost(CostTokenMap::unchecked_from_iter(
-            value.0.iter().map(|(token_type, val)| (*token_type, std::cmp::max(*val, 0))),
+            value.0.iter().filter_map(|(k, v)| (*v >= 0).then_some((*k, *v))),
         ))
     }
 }
