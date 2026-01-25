@@ -42,7 +42,7 @@ The following concepts are central to Cairo's linear semantics:
   without consuming the original value.
 
 These topics are described in more detail in
-xref:language_semantics:linear-types.adoc[Linear types].
+xref:../../language_semantics/pages/linear-types.adoc[Linear types].
 
 == Type inference and impl resolution
 
@@ -77,7 +77,7 @@ Some aspects of Cairo's type system are motivated by its underlying memory model
 particular, the restrictions on copying, dropping and destructing values are related to
 how memory is allocated and reused in Cairo programs. For an in-depth discussion of the
 memory model and how it interacts with types, see
-xref:language_semantics:memory-model.adoc[Memory model].
+xref:../../language_semantics/pages/memory-model.adoc[Memory model].
 
 == Summary
 
