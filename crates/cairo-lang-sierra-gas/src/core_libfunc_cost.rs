@@ -1,11 +1,8 @@
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::program::StatementIdx;
-use itertools::zip_eq;
 
-use crate::core_libfunc_cost_base::{
-    CostOperations, FunctionCostInfo, core_libfunc_postcost, core_libfunc_precost,
-};
+use crate::core_libfunc_cost_base::{self, CostOperations, FunctionCostInfo};
 pub use crate::core_libfunc_cost_base::{
     DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST, DICT_SQUASH_UNIQUE_KEY_COST,
     InvocationCostInfoProvider, SEGMENT_ARENA_ALLOCATION_COST,
@@ -46,16 +43,16 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostTokenMap<i64>> {
-    let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
-    let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
-    zip_eq(precost, postcost)
-        .map(|(mut precost, postcost)| {
-            if precost.is_empty() {
-                postcost
-            } else {
-                precost.extend(postcost);
-                precost
+    core_libfunc_cost_base::core_libfunc_cost(libfunc, info_provider)
+        .into_iter()
+        .map(|v| {
+            let ops = &mut Ops { gas_info, idx: *idx };
+            let mut costs = v.precost(ops);
+            let postcost = v.postcost(ops, info_provider);
+            if postcost != 0 {
+                costs.insert(CostTokenType::Const, postcost);
             }
+            costs
         })
         .collect()
 }
