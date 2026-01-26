@@ -954,7 +954,7 @@ fn lower_expr_literal_to_var_usage<'db>(
         ConstValueId::from_int(ctx.db, ty, value)
     };
     let location = ctx.get_location(stable_ptr);
-    generators::Const { value, ty, location }.add(ctx, &mut builder.statements)
+    generators::Const { value, location }.add(ctx, &mut builder.statements)
 }
 
 fn lower_expr_string_literal<'db>(
@@ -1054,7 +1054,6 @@ fn add_chunks_to_data_array<'db, 'r>(
         let chunk_usage = generators::Const {
             value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, chunk), bytes31_ty)
                 .intern(ctx.db),
-            ty: bytes31_ty,
             location: ctx.get_location(expr_stable_ptr),
         }
         .add(ctx, &mut builder.statements);
@@ -1089,7 +1088,6 @@ fn add_pending_word<'db>(
     let pending_word_usage = generators::Const {
         value: ConstValue::Int(BigInt::from_bytes_be(Sign::Plus, pending_word_bytes), felt252_ty)
             .intern(ctx.db),
-        ty: felt252_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
     .add(ctx, &mut builder.statements);
@@ -1097,7 +1095,6 @@ fn add_pending_word<'db>(
     let pending_word_len = expr.value.len() % 31;
     let pending_word_len_usage = generators::Const {
         value: ConstValue::Int(pending_word_len.into(), pending_word_len_ty).intern(ctx.db),
-        ty: pending_word_len_ty,
         location: ctx.get_location(expr_stable_ptr),
     }
     .add(ctx, &mut builder.statements);
@@ -1112,7 +1109,7 @@ fn lower_expr_constant<'db>(
     log::trace!("Lowering a constant: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
-        generators::Const { value: expr.const_value_id, ty: expr.ty, location }
+        generators::Const { value: expr.const_value_id, location }
             .add(ctx, &mut builder.statements),
     ))
 }
