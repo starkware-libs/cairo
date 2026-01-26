@@ -2,13 +2,14 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
-use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::core::StatementLocation;
+use crate::analysis::{DataflowAnalyzer, DataflowBackAnalysis, Direction, Edge};
 use crate::blocks::BlocksBuilder;
+use crate::ids::LocationId;
 use crate::optimizations::remappings::{self, Context};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{
-    Block, BlockEnd, BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableArena,
-    VariableId,
+    Block, BlockEnd, BlockId, Lowered, Statement, VarRemapping, VariableArena, VariableId,
 };
 
 /// Reorganizes the blocks in lowered function and removes unnecessary remappings.
@@ -33,9 +34,7 @@ pub fn reorganize_blocks<'db>(lowered: &mut Lowered<'db>) {
         }
     });
 
-    let mut analysis = BackAnalysis::new(lowered, ctx);
-    analysis.get_root_info();
-    let ctx = analysis.analyzer;
+    DataflowBackAnalysis::new(lowered, &mut ctx).run();
 
     // Rebuild the blocks in the correct order.
     let mut new_blocks = BlocksBuilder::default();
@@ -112,8 +111,33 @@ pub struct TopSortContext {
     remappings_ctx: remappings::Context,
 }
 
-impl<'db> Analyzer<'db, '_> for TopSortContext {
+impl<'db, 'a> DataflowAnalyzer<'db, 'a> for TopSortContext {
     type Info = ();
+
+    const DIRECTION: Direction = Direction::Backward;
+
+    fn initial_info(&mut self, _block_id: BlockId, block_end: &'a BlockEnd<'db>) -> Self::Info {
+        // Handle return and panic cases
+        match block_end {
+            BlockEnd::Return(vars, _) => {
+                for var_usage in vars {
+                    self.remappings_ctx.set_used(var_usage.var_id);
+                }
+            }
+            BlockEnd::Panic(data) => {
+                self.remappings_ctx.set_used(data.var_id);
+            }
+            _ => {}
+        }
+    }
+
+    fn merge(
+        &mut self,
+        _statement_location: StatementLocation,
+        _location: &'a LocationId<'db>,
+        _infos: impl Iterator<Item = (BlockId, Self::Info)>,
+    ) -> Self::Info {
+    }
 
     fn visit_block_start(
         &mut self,
@@ -124,60 +148,36 @@ impl<'db> Analyzer<'db, '_> for TopSortContext {
         self.old_block_rev_order.push(block_id);
     }
 
-    fn visit_stmt(
+    fn transfer_stmt(
         &mut self,
         _info: &mut Self::Info,
         _statement_location: StatementLocation,
-        stmt: &Statement<'db>,
+        stmt: &'a Statement<'db>,
     ) {
         for var_usage in stmt.inputs() {
             self.remappings_ctx.set_used(var_usage.var_id);
         }
     }
 
-    fn visit_goto(
-        &mut self,
-        _info: &mut Self::Info,
-        _statement_location: StatementLocation,
-        target_block_id: BlockId,
-        // Note that the remappings of a goto are not considered a usage, Later usages (such as a
-        // merge) would catch them if used.
-        _remapping: &VarRemapping<'db>,
-    ) {
-        self.incoming_gotos[target_block_id.0] += 1;
-    }
-
-    fn merge_match(
-        &mut self,
-        _statement_location: StatementLocation,
-        match_info: &MatchInfo<'db>,
-        _infos: impl Iterator<Item = Self::Info>,
-    ) -> Self::Info {
-        for var_usage in match_info.inputs() {
-            self.remappings_ctx.set_used(var_usage.var_id);
+    fn transfer_edge(&mut self, info: &Self::Info, edge: &Edge<'db, 'a>) -> Self::Info {
+        match edge {
+            Edge::Goto { target, remapping: _ } => {
+                // Note that the remappings of a goto are not considered a usage. Later usages
+                // (such as a merge) would catch them if used.
+                self.incoming_gotos[target.0] += 1;
+            }
+            Edge::MatchArm { arm, match_info } => {
+                self.can_be_merged[arm.block_id.0] = false;
+                // Mark match inputs as used.
+                for var_usage in match_info.inputs() {
+                    self.remappings_ctx.set_used(var_usage.var_id);
+                }
+            }
+            Edge::Return { .. } | Edge::Panic { .. } => {
+                // Handled in initial_info.
+            }
         }
-
-        for arm in match_info.arms().iter() {
-            self.can_be_merged[arm.block_id.0] = false;
-        }
-    }
-
-    fn info_from_return(
-        &mut self,
-        _statement_location: StatementLocation,
-        vars: &[VarUsage<'db>],
-    ) -> Self::Info {
-        for var_usage in vars {
-            self.remappings_ctx.set_used(var_usage.var_id);
-        }
-    }
-
-    fn info_from_panic(
-        &mut self,
-        _statement_location: StatementLocation,
-        data: &VarUsage<'db>,
-    ) -> Self::Info {
-        self.remappings_ctx.set_used(data.var_id);
+        *info
     }
 }
 
