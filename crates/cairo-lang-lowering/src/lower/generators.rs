@@ -35,8 +35,6 @@ impl<'db> StatementsBuilder<'db> {
 pub struct Const<'db> {
     pub value: ConstValueId<'db>,
     pub location: LocationId<'db>,
-    // TODO(TomerStarkware): Remove this field and use the type from value.
-    pub ty: semantic::TypeId<'db>,
 }
 impl<'db> Const<'db> {
     pub fn add(
@@ -44,7 +42,9 @@ impl<'db> Const<'db> {
         ctx: &mut LoweringContext<'db, '_>,
         builder: &mut StatementsBuilder<'db>,
     ) -> VarUsage<'db> {
-        let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
+        let ty =
+            self.value.ty(ctx.db).expect("ConstValueId used in lowering must have a concrete type");
+        let output = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::Const(StatementConst::new_flat(self.value, output)));
         VarUsage { var_id: output, location: self.location }
     }
