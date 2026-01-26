@@ -1,3 +1,87 @@
 = Type system
 
-This chapter describes the type system of Cairo.
+Cairo is a strongly-typed language with a type system designed to make programs safer and
+more predictable while still being expressive enough for real-world applications.
+This chapter gives a high-level overview of Cairo's type system and points to the
+dedicated sections where each aspect is described in detail.
+
+== Kinds of types
+
+At a high level, Cairo provides:
+
+* Basic data types such as booleans and numeric types.
+* Sequence types such as tuples, arrays and dictionaries.
+* Pointer-like and reference-like types.
+* User-defined types such as structs and enums.
+
+An overview of the concrete types available in Cairo is given in
+xref:types.adoc[Types]. The following sections in that chapter describe:
+
+* Basic data types, including booleans, numeric types, the unit type `()` and the
+  never type.
+* Sequence types such as tuples, `Array`, `Felt252Dict`, slices and `Span`, and string
+  types.
+* Pointer-like types such as `Box` and nullable references.
+* User-defined struct and enum types, as well as helper derive macros.
+
+== Linear types and ownership
+
+The Cairo type system is closely tied to its linear type semantics. Values are moved by
+default, and copying or dropping values is restricted and controlled by traits. This
+allows the compiler to enforce correct use of resources at compile time.
+
+The following concepts are central to Cairo's linear semantics:
+
+* **Move semantics** – values are moved when passed, and cannot be used again unless
+  they are copyable or cloned.
+* **Copy and Clone** – traits that allow values to be copied or cloned when it is
+  semantically safe to do so.
+* **Drop and Destruct** – traits that control how values are safely disposed of or
+  destructed when they go out of scope.
+* **Snapshot types** – immutable views of values that can be freely copied and dropped
+  without consuming the original value.
+
+These topics are described in more detail in
+xref:../../language_semantics/pages/linear-types.adoc[Linear types].
+
+== Type inference and impl resolution
+
+In many situations, Cairo does not require you to write types explicitly. Instead, the
+compiler can infer:
+
+* The types of local variables in `let` statements that omit an explicit type clause.
+* Which concrete `impl` of a trait should be used in a given call.
+* Generic arguments for traits, types and functions when they can be deduced from
+  context.
+
+This behaviour is described in xref:inference.adoc[Inference]. That chapter explains
+where inference is applied, gives examples of inferred types and impls, and describes how
+the compiler searches for applicable impls and reports ambiguity when multiple impls
+match the same trait and arguments.
+
+== Traits, generics and abstraction
+
+Traits and generics are an important part of Cairo's type system. Traits describe
+behaviour that types can implement, and generic parameters allow writing reusable
+definitions that are abstract over types, lifetimes or other parameters.
+
+The interaction between traits, generic parameters and inference is what enables patterns
+such as method calls that select the appropriate implementation based on the types in
+scope, or trait-based generic code that works with many different concrete types.
+These mechanisms are covered throughout the documentation, for example in the sections on
+generics, traits and method calls.
+
+== Relationship to the memory model
+
+Some aspects of Cairo's type system are motivated by its underlying memory model. In
+particular, the restrictions on copying, dropping and destructing values are related to
+how memory is allocated and reused in Cairo programs. For an in-depth discussion of the
+memory model and how it interacts with types, see
+xref:../../language_semantics/pages/memory-model.adoc[Memory model].
+
+== Summary
+
+Taken together, Cairo's types, linear semantics, inference and trait system form a
+cohesive type system that aims to catch incorrect programs at compile time while keeping
+code expressive and ergonomic. The rest of this chapter, along with the referenced
+sections, describes each of these building blocks in more detail.
