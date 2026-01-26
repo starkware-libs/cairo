@@ -5,16 +5,17 @@ mod test;
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_semantic::{ConcreteVariant, corelib};
-use itertools::{Itertools, zip_eq};
+use itertools::Itertools;
 use salsa::Database;
 
-use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::core::StatementLocation;
+use crate::analysis::{DataflowAnalyzer, DataflowBackAnalysis, Direction, Edge};
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
 use crate::panic::PanicSignatureInfo;
 use crate::{
-    BlockId, Lowered, MatchInfo, Statement, StatementCall, StatementEnumConstruct, VarRemapping,
-    VarUsage, VariableId,
+    BlockEnd, BlockId, Lowered, Statement, StatementCall, StatementEnumConstruct, VarUsage,
+    VariableId,
 };
 
 /// Adds redeposit gas actions.
@@ -55,9 +56,8 @@ pub fn gas_redeposit<'db>(
     if panic_sig.always_panic {
         return;
     }
-    let ctx = GasRedepositContext { fixes: vec![], err_variant: panic_sig.err_variant };
-    let mut analysis = BackAnalysis::new(lowered, ctx);
-    analysis.get_root_info();
+    let mut ctx = GasRedepositContext { err_variant: panic_sig.err_variant, fixes: vec![] };
+    DataflowBackAnalysis::new(lowered, &mut ctx).run();
 
     let redeposit_gas = corelib::get_function_id(
         db,
@@ -66,7 +66,7 @@ pub fn gas_redeposit<'db>(
         vec![],
     )
     .lowered(db);
-    for (block_id, location) in analysis.analyzer.fixes {
+    for (block_id, location) in ctx.fixes {
         let block = &mut lowered.blocks[block_id];
 
         // The `redeposit_gas` function is added at the beginning of the block as it result in
@@ -86,13 +86,14 @@ pub fn gas_redeposit<'db>(
 }
 
 pub struct GasRedepositContext<'db> {
-    /// The list of blocks where we need to insert redeposit_gas.
-    fixes: Vec<(BlockId, LocationId<'db>)>,
     /// The panic error variant.
     pub err_variant: ConcreteVariant<'db>,
+    /// Locations where we need to insert redeposit_gas.
+    pub fixes: Vec<(BlockId, LocationId<'db>)>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+/// Redeposit state for a point in the program.
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum RedepositState {
     /// Gas might be burned if we don't redeposit.
     Required,
@@ -104,51 +105,34 @@ pub enum RedepositState {
     Return(VariableId),
 }
 
-impl<'db> Analyzer<'db, '_> for GasRedepositContext<'db> {
+impl<'db, 'a> DataflowAnalyzer<'db, 'a> for GasRedepositContext<'db> {
     type Info = RedepositState;
+    const DIRECTION: Direction = Direction::Backward;
 
-    fn visit_stmt(
-        &mut self,
-        info: &mut Self::Info,
-        _statement_location: StatementLocation,
-        stmt: &Statement<'db>,
-    ) {
-        let RedepositState::Return(var_id) = info else {
-            return;
-        };
-
-        let Statement::EnumConstruct(StatementEnumConstruct { variant, input: _, output }) = stmt
-        else {
-            return;
-        };
-
-        if output == var_id && *variant == self.err_variant {
-            *info = RedepositState::Unnecessary;
+    fn initial_info(&mut self, _block_id: BlockId, block_end: &'a BlockEnd<'db>) -> Self::Info {
+        // If the function has multiple returns with different gas costs, gas will get burned unless
+        // we redeposit it.
+        // If however, this return corresponds to a panic, we don't redeposit due to code size
+        // concerns.
+        match block_end {
+            BlockEnd::Return(vars, _) => match vars.last() {
+                Some(VarUsage { var_id, location: _ }) => RedepositState::Return(*var_id),
+                None => RedepositState::Required,
+            },
+            _ => RedepositState::Unnecessary,
         }
     }
 
-    fn visit_goto(
+    fn merge(
         &mut self,
-        info: &mut Self::Info,
         _statement_location: StatementLocation,
-        _target_block_id: BlockId,
-        _remapping: &VarRemapping<'db>,
-    ) {
-        // A goto is a convergence point, gas will get burned unless it is redeposited before the
-        // convergence.
-        *info = RedepositState::Required
-    }
-
-    fn merge_match(
-        &mut self,
-        _st: StatementLocation,
-        match_info: &MatchInfo<'db>,
-        infos: impl Iterator<Item = Self::Info>,
+        location: &'a LocationId<'db>,
+        infos: impl Iterator<Item = (BlockId, Self::Info)>,
     ) -> Self::Info {
-        for (info, arm) in zip_eq(infos, match_info.arms()) {
-            match info {
+        for (src, state) in infos {
+            match state {
                 RedepositState::Return(_) | RedepositState::Required => {
-                    self.fixes.push((arm.block_id, *match_info.location()));
+                    self.fixes.push((src, *location));
                 }
                 RedepositState::Unnecessary => {}
             }
@@ -158,14 +142,34 @@ impl<'db> Analyzer<'db, '_> for GasRedepositContext<'db> {
         RedepositState::Unnecessary
     }
 
-    fn info_from_return(&mut self, _: StatementLocation, vars: &[VarUsage<'db>]) -> Self::Info {
-        // If the function has multiple returns with different gas costs, gas will get burned unless
-        // we redeposit it.
-        // If however, this return corresponds to a panic, we don't redeposit due to code size
-        // concerns.
-        match vars.last() {
-            Some(VarUsage { var_id, location: _ }) => RedepositState::Return(*var_id),
-            None => RedepositState::Required,
+    fn transfer_stmt(
+        &mut self,
+        info: &mut Self::Info,
+        _statement_location: StatementLocation,
+        stmt: &'a Statement<'db>,
+    ) {
+        let RedepositState::Return(var_id) = *info else {
+            return;
+        };
+
+        let Statement::EnumConstruct(StatementEnumConstruct { variant, input: _, output }) = stmt
+        else {
+            return;
+        };
+
+        if *output == var_id && *variant == self.err_variant {
+            *info = RedepositState::Unnecessary;
+        }
+    }
+
+    fn transfer_edge(&mut self, info: &Self::Info, edge: &Edge<'db, 'a>) -> Self::Info {
+        match edge {
+            Edge::Goto { .. } => {
+                // A goto is a convergence point, gas will get burned unless it is redeposited
+                // before the convergence.
+                RedepositState::Required
+            }
+            _ => *info,
         }
     }
 }
