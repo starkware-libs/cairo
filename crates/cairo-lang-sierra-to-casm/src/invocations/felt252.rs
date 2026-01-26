@@ -1,6 +1,7 @@
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
+use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOpConcreteLibfunc, Felt252BinaryOperationConcrete, Felt252BinaryOperator,
     Felt252Concrete, Felt252OperationWithConstConcreteLibfunc,
@@ -62,6 +63,33 @@ fn build_felt252_op_with_const(
     op: Felt252BinaryOperator,
     c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
+    if matches!(op, Felt252BinaryOperator::Add | Felt252BinaryOperator::Sub) {
+        let [a] = builder.refs[0].expression.try_unpack::<1>()?;
+        let offset = if op == Felt252BinaryOperator::Sub { -c.clone() } else { c.clone() };
+        let new_expr = match a {
+            CellExpression::Deref(r) => Some(CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: *r,
+                b: DerefOrImmediate::Immediate(offset.into()),
+            }),
+            CellExpression::Immediate(imm) => Some(CellExpression::Immediate(imm + offset)),
+            CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: r,
+                b: DerefOrImmediate::Immediate(imm),
+            } => Some(CellExpression::BinOp {
+                op: CellOperator::Add,
+                a: *r,
+                b: DerefOrImmediate::Immediate((imm.value.clone() + offset).into()),
+            }),
+            _ => None,
+        };
+        if let Some(expr) = new_expr {
+            return Ok(builder.build_only_reference_changes(
+                [ReferenceExpression::from_cell(expr)].into_iter(),
+            ));
+        }
+    }
     let [a] = builder.try_get_single_cells()?;
     let mut casm_builder =
         CasmBuilder::with_capacity(if matches!(op, Felt252BinaryOperator::Div) { 1 } else { 0 }, 0);
