@@ -251,7 +251,7 @@ where
     }
 }
 
-impl<'db, V: Hash + Eq> DebugWithDb<'db> for OrderedHashSet<V>
+impl<'db, V> DebugWithDb<'db> for OrderedHashSet<V>
 where
     V: DebugWithDb<'db>,
 {
