@@ -54,3 +54,13 @@ impl<Var: Clone + Debug + Eq + Hash> std::ops::Sub for Expr<Var> {
         }
     }
 }
+
+impl<Var: Clone + Debug + Eq + Hash> std::ops::Neg for Expr<Var> {
+    type Output = Self;
+    fn neg(mut self) -> Self {
+        for (_k, v) in self.var_to_coef.iter_mut() {
+            *v = -*v;
+        }
+        Self { const_term: -self.const_term, var_to_coef: self.var_to_coef }
+    }
+}

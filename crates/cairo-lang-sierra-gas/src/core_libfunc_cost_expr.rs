@@ -2,7 +2,6 @@ use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::program::StatementIdx;
-use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 
 use crate::core_libfunc_cost_base::{
     CostOperations, FunctionCostInfo, InvocationCostInfoProvider, core_libfunc_postcost,
@@ -20,36 +19,22 @@ struct Ops<'a> {
     idx: StatementIdx,
 }
 impl CostOperations for Ops<'_> {
-    type CostType = CostExprMap;
+    type CostValueType = CostExpr;
 
-    fn cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType {
-        Self::CostType::from_iter([(token_type, CostExpr::from_const(value))])
+    fn cost_token(&self, value: i32) -> Self::CostValueType {
+        CostExpr::from_const(value)
     }
 
     fn function_token_cost(
         &mut self,
         function: &FunctionCostInfo,
         token_type: CostTokenType,
-    ) -> Self::CostType {
-        Self::CostType::from_iter([(
-            token_type,
-            self.statement_future_cost.get_future_cost(&function.entry_point)[&token_type].clone(),
-        )])
+    ) -> Option<Self::CostValueType> {
+        Some(self.statement_future_cost.get_future_cost(&function.entry_point)[&token_type].clone())
     }
 
-    fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
-        Self::CostType::from_iter([(
-            token_type,
-            CostExpr::from_var(Var::LibfuncImplicitGasVariable(self.idx, token_type)),
-        )])
-    }
-
-    fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        lhs.add_collection(rhs)
-    }
-
-    fn sub(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType {
-        lhs.sub_collection(rhs)
+    fn statement_var_cost(&self, token_type: CostTokenType) -> Option<Self::CostValueType> {
+        Some(CostExpr::from_var(Var::LibfuncImplicitGasVariable(self.idx, token_type)))
     }
 }
 
