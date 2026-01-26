@@ -148,4 +148,4 @@ needed for the operation.
 == See also
 
 * xref:functions.adoc[Functions] — Function declarations
-* xref:functions.adoc#_implicits_and_nopanic[Implicits and nopanic] — Function attributes for implicits and nopanic
+* xref:panic.adoc#_nopanic_notation[Nopanic] — Non-panicking functions
