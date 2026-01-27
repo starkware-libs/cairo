@@ -49,7 +49,7 @@ fn documentation_comment_parser_links_runner(
     for (index, doc_comment) in doc_comments.iter().enumerate() {
         let counter = index + 1;
         let content = doc_comment.get_text(&db);
-        let embedded_links = db.get_embedded_markdown_links(*doc_comment).unwrap_or_default();
+        let embedded_links = db.get_embedded_markdown_links(*doc_comment);
         output.insert(format!("Doc comment #{counter}"), content.to_string());
         output.insert(
             format!("Doc comment #{counter} links"),

@@ -49,10 +49,7 @@ pub trait DocGroup: Database {
         )
     }
 
-    fn get_embedded_markdown_links<'db>(
-        &'db self,
-        node: SyntaxNode<'db>,
-    ) -> Option<Vec<MarkdownLink>> {
+    fn get_embedded_markdown_links<'db>(&'db self, node: SyntaxNode<'db>) -> Vec<MarkdownLink> {
         get_embedded_markdown_links(self.as_dyn_database(), (), node)
     }
 }
@@ -265,21 +262,21 @@ fn get_embedded_markdown_links<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     node: SyntaxNode<'db>,
-) -> Option<Vec<MarkdownLink>> {
+) -> Vec<MarkdownLink> {
     match node.kind(db) {
         SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment => {
             let content = node.get_text(db);
             let base_span = node.span(db);
             parse_embedded_markdown_links(content, base_span.start)
         }
-        _ => None,
+        _ => vec![],
     }
 }
 
 fn parse_embedded_markdown_links(
     content: &str,
     comment_node_offset: TextOffset,
-) -> Option<Vec<MarkdownLink>> {
+) -> Vec<MarkdownLink> {
     let tokens = parse_documentation_comment(content);
     let mut results = Vec::new();
 
@@ -292,7 +289,7 @@ fn parse_embedded_markdown_links(
         });
     }
 
-    Some(results)
+    results
 }
 
 // When parsing a comment, we work with offset from the beginning of the comment node.
