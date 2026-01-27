@@ -7,8 +7,6 @@ use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, Sta
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
 use crate::CostError;
@@ -535,9 +533,9 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 
         // Compute the excess mapping - additional amount of cost that, if possible, should be
         // added to the wallet value.
-        let mut excess = UnorderedHashMap::<StatementIdx, CostType>::default();
+        let mut excess = vec![None; self.program.statements.len()];
         // The set of statements for which the excess value was already finalized.
-        let mut finalized_excess_statements = UnorderedHashSet::<StatementIdx>::default();
+        let mut finalized_excess_statements = vec![false; self.program.statements.len()];
 
         for idx in rev_topological_order.iter().rev() {
             self.handle_excess_at(
@@ -553,7 +551,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
             .map(|i| {
                 let idx = StatementIdx(i);
                 let original_wallet_value = self.wallet_at_ex(&idx, false).value;
-                original_wallet_value + excess.get(&idx).cloned().unwrap_or_default()
+                original_wallet_value + excess[i].take().unwrap_or_default()
             })
             .collect())
     }
@@ -569,23 +567,21 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         &self,
         idx: &StatementIdx,
         specific_cost_context: &SpecificCostContext,
-        excess: &mut UnorderedHashMap<StatementIdx, CostType>,
-        finalized_excess_statements: &mut UnorderedHashSet<StatementIdx>,
+        excess: &mut [Option<CostType>],
+        finalized_excess_statements: &mut [bool],
     ) -> Result<(), CostError> {
         let wallet_value = self.wallet_at_ex(idx, false).value;
 
         if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
             // No excess is expected at statement with enforced wallet value.
             // If there is one, we ignore it.
-            excess.insert(
-                *idx,
-                CostType::rectify(&(enforced_wallet_value.clone() - wallet_value.clone())),
-            );
+            excess[idx.0] =
+                Some(CostType::rectify(&(enforced_wallet_value.clone() - wallet_value.clone())));
         }
 
-        finalized_excess_statements.insert(*idx);
+        finalized_excess_statements[idx.0] = true;
 
-        let current_excess = excess.get(idx).cloned().unwrap_or_default();
+        let current_excess = excess[idx.0].clone().unwrap_or_default();
 
         let invocation = match &self.program.get_statement(idx).unwrap() {
             Statement::Invocation(invocation) => invocation,
@@ -612,7 +608,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
             zip_eq3(&invocation.branches, libfunc_cost, branch_requirements)
         {
             let branch_statement = idx.next(&branch_info.target);
-            if finalized_excess_statements.contains(&branch_statement) {
+            if finalized_excess_statements[branch_statement.0] {
                 // Don't update statements which were already visited.
                 return Ok(());
             }
@@ -655,15 +651,10 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
 
             // Update the excess for `branch_statement` using the minimum of the existing excess and
             // `actual_excess`.
-            match excess.entry(branch_statement) {
-                Entry::Occupied(mut entry) => {
-                    let current_value = entry.get();
-                    entry.insert(CostType::min2(current_value, &actual_excess));
-                }
-                Entry::Vacant(entry) => {
-                    entry.insert(actual_excess);
-                }
-            }
+            excess[branch_statement.0] = Some(match excess[branch_statement.0].take() {
+                Some(current_value) => CostType::min2(&current_value, &actual_excess),
+                None => actual_excess,
+            });
         }
         Ok(())
     }
