@@ -256,8 +256,8 @@ See xref:match-expressions.adoc[Match expressions] for details.
 
 === Patterns in `let ... else` Statements
 
-`let ... else` statements use **refutable patterns** with a fallback block that executes if
-the pattern fails to match:
+`let ... else` statements use **refutable patterns** with a fallback block that
+executes if the pattern fails to match:
 
 [source,cairo]
 ----
@@ -267,31 +267,37 @@ let Some(x) = option_value else {
 // x is available here
 ----
 
-The `else` block must diverge (return, panic, break, or continue) because if the pattern
-doesn't match, there's no value to bind.
+The `else` block must diverge (return, panic, break, or continue) because if the
+pattern doesn't match, there's no value to bind.
 
 Common uses:
 
 [source,cairo]
 ----
-fn process(data: Option<u32>) -> u32 {
-    let Some(value) = data else {
-        return 0;  // Early return if None
-    };
-    value * 2
-}
+// Early return when pattern doesn't match
+let Some(x) = span.pop_front() else {
+    return HashState { s0, s1, s2, odd: false }.finalize();
+};
 
-fn iterate(mut span: Span<felt252>) {
-    loop {
-        let Some(x) = span.pop_front() else {
-            break;  // Exit loop when span is empty
-        };
-        // Process x...
-    }
-}
+// Panic on failure
+let Some(_) = withdraw_gas_all(builtin_costs) else {
+    core::panic_with_felt252('Out of gas');
+};
+
+// Nested let...else statements
+let Some(first_word) = self.data.pop_front() else {
+    // Slice is included entirely in the remainder word.
+    let Some(pending_word_len) = helpers::index_checked_sub(
+        self.remainder_len, self.first_char_start_offset,
+    ) else {
+        return Default::default();
+    };
+    // ...
+};
 ----
 
-This provides a more concise alternative to `match` for simple refutable patterns.
+This provides a more concise alternative to `match` for simple refutable
+patterns.
 
 == Nested Patterns
 
