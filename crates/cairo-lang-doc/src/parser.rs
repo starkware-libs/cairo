@@ -11,6 +11,16 @@ use pulldown_cmark::{
 
 use crate::db::DocGroup;
 
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+pub struct MarkdownLink {
+    /// The span of the whole link, including the label, the destination URL and the delimiters.
+    pub link_span: TextSpan,
+    /// Where the link leads to. Not present when the label could not be resolved.
+    pub dest_span: Option<TextSpan>,
+    /// The underlying content of `dest_span`, if present.
+    pub dest_text: Option<String>,
+}
+
 /// Token representing a link to another item inside the documentation.
 #[derive(Debug, PartialEq, Clone, Eq, salsa::Update)]
 pub struct CommentLinkToken {
@@ -18,12 +28,8 @@ pub struct CommentLinkToken {
     pub label: String,
     /// A link part that's inside "()" brackets, right after the label.
     pub path: Option<String>,
-    /// The span of the whole link.
-    pub link_span: TextSpan,
-    /// The span of the destination, if it can be interpreted as a location link.
-    pub dest_span: Option<TextSpan>,
-    /// Normalized destination text, if it can be interpreted as a location link.
-    pub dest_text: Option<String>,
+    /// The link.
+    pub md_link: MarkdownLink,
 }
 
 /// Generic type for a comment token. It's either plain content or a link.
@@ -276,12 +282,11 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
                                 )
                             })
                             .unwrap_or((None, None));
+                        let md_link = MarkdownLink { link_span, dest_span, dest_text };
                         tokens.push(DocumentationCommentToken::Link(CommentLinkToken {
                             label: link.label,
                             path: link.path,
-                            link_span,
-                            dest_span,
-                            dest_text,
+                            md_link,
                         }));
                     }
                     current_link = None;
@@ -354,19 +359,19 @@ impl<'db> DebugWithDb<'db> for CommentLinkToken {
         f.debug_struct("CommentLinkToken")
             .field("label", &self.label)
             .field("path", &self.path)
-            .field("dest_text", &self.dest_text)
-            .field("dest_span", &self.dest_span)
-            .field("link_span", &self.link_span)
+            .field("md_link", &self.md_link)
             .finish()
     }
 }
 
+/// Converts a byte range within the string into a `TextSpan` relative to the string start.
 fn span_from_relative_range(content: &str, range: Range<usize>) -> TextSpan {
     let start = TextOffset::START.add_width(TextWidth::at(content, range.start));
     let end = TextOffset::START.add_width(TextWidth::at(content, range.end));
     TextSpan::new(start, end)
 }
 
+/// Extracts a location link span and normalized destination text for the given link fields.
 fn location_from_link_fields(
     link_type: LinkType,
     destination: &str,
@@ -388,15 +393,18 @@ fn location_from_link_fields(
     .map(|(range, text)| (trim_backtick_range(range.clone(), backticked), text))
 }
 
+/// Returns true when the string looks like a location path (letters, digits, '_' or ':').
 fn is_location_string(value: &str) -> bool {
     !value.is_empty() && value.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == ':')
 }
 
+/// Normalizes the link destination and reports whether it was backticked.
 fn normalize_location_text(value: &str) -> Option<(String, bool)> {
     let (value, backticked) = strip_backticks(value);
     is_location_string(value).then(|| (value.to_string(), backticked))
 }
 
+/// Strips backticks around a string if present and reports whether a pair was removed.
 fn strip_backticks(value: &str) -> (&str, bool) {
     let value = value.trim();
     if let Some(stripped) = value.strip_prefix('`').and_then(|rest| rest.strip_suffix('`')) {
@@ -406,10 +414,12 @@ fn strip_backticks(value: &str) -> (&str, bool) {
     }
 }
 
+/// Trims the range by one on each end when a backticked span is expected.
 fn trim_backtick_range(range: Range<usize>, backticked: bool) -> Range<usize> {
     if backticked { (range.start + 1)..(range.end - 1) } else { range }
 }
 
+/// Computes the range for an inline destination that follows a label.
 fn find_inline_destination_range(label_last_end: usize, destination: &str) -> Range<usize> {
     let destination_start = label_last_end + 2;
     let destination_end = destination_start + destination.len();

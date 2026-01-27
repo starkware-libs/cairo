@@ -12,7 +12,7 @@ use salsa::Database;
 
 use crate::documentable_item::DocumentableItemId;
 use crate::location_links::LocationLink;
-use crate::parser::{DocumentationCommentToken, parse_documentation_comment};
+use crate::parser::{DocumentationCommentToken, MarkdownLink, parse_documentation_comment};
 
 pub trait DocGroup: Database {
     // TODO(mkaput): Support #[doc] attribute. This will be a bigger chunk of work because it would
@@ -49,10 +49,8 @@ pub trait DocGroup: Database {
         )
     }
 
-    fn get_embedded_markdown_links<'db>(
-        &'db self,
-        node: SyntaxNode<'db>,
-    ) -> Option<Vec<MarkdownLink>> {
+    /// Extracts embedded Markdown links from a documentation comment syntax node.
+    fn get_embedded_markdown_links<'db>(&'db self, node: SyntaxNode<'db>) -> Vec<MarkdownLink> {
         get_embedded_markdown_links(self.as_dyn_database(), (), node)
     }
 }
@@ -250,49 +248,44 @@ fn is_comment_line(line: &str) -> bool {
     line.trim_start().starts_with("//")
 }
 
-#[derive(PartialEq, Eq, Hash, Debug, Clone)]
-pub struct MarkdownLink {
-    /// The span of the whole link, including the label, the destination URL and the delimiters.
-    pub link_span: TextSpan,
-    /// Where the link leads to. Not present when the label could not be resolved.
-    pub dest_span: Option<TextSpan>,
-    /// The underlying content of `dest_span`, if present.
-    pub dest_text: Option<String>,
-}
-
 #[salsa::tracked]
+/// Extracts embedded Markdown links from a documentation comment syntax node.
 fn get_embedded_markdown_links<'db>(
     db: &'db dyn Database,
     _tracked: Tracked,
     node: SyntaxNode<'db>,
-) -> Option<Vec<MarkdownLink>> {
+) -> Vec<MarkdownLink> {
     match node.kind(db) {
         SyntaxKind::TokenSingleLineDocComment | SyntaxKind::TokenSingleLineInnerComment => {
             let content = node.get_text(db);
             let base_span = node.span(db);
             parse_embedded_markdown_links(content, base_span.start)
         }
-        _ => None,
+        _ => vec![],
     }
 }
 
+/// Parses links from the Markdown content and shifts spans to file-relative offsets.
 fn parse_embedded_markdown_links(
     content: &str,
     comment_node_offset: TextOffset,
-) -> Option<Vec<MarkdownLink>> {
+) -> Vec<MarkdownLink> {
     let tokens = parse_documentation_comment(content);
     let mut results = Vec::new();
 
     for token in tokens {
         let DocumentationCommentToken::Link(link) = token else { continue };
         results.push(MarkdownLink {
-            link_span: shift_right_span(comment_node_offset, link.link_span),
-            dest_span: link.dest_span.map(|span| shift_right_span(comment_node_offset, span)),
-            dest_text: link.dest_text,
+            link_span: shift_right_span(comment_node_offset, link.md_link.link_span),
+            dest_span: link
+                .md_link
+                .dest_span
+                .map(|span| shift_right_span(comment_node_offset, span)),
+            dest_text: link.md_link.dest_text,
         });
     }
 
-    Some(results)
+    results
 }
 
 // When parsing a comment, we work with offset from the beginning of the comment node.
