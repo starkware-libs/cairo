@@ -788,46 +788,6 @@ impl BranchCost {
     }
 }
 
-/// Returns a postcost value for a libfunc - the cost of step token.
-/// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas cost after having a solution.
-// TODO(orizi): Remove this function once it's not used.
-pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
-    ops: &mut Ops,
-    libfunc: &CoreConcreteLibfunc,
-    info_provider: &InfoProvider,
-) -> Vec<CostTokenMap<Ops::CostValueType>>
-where
-    Ops::CostValueType: std::ops::Add<Ops::CostValueType, Output = Ops::CostValueType>
-        + std::ops::Sub<Ops::CostValueType, Output = Ops::CostValueType>
-        + std::ops::Neg<Output = Ops::CostValueType>
-        + HasZero,
-{
-    core_libfunc_cost(libfunc, info_provider)
-        .into_iter()
-        .map(|v| CostTokenMap::from_iter([(CostTokenType::Const, v.postcost(ops, info_provider))]))
-        .collect()
-}
-
-/// Returns a precost value for a libfunc - the cost of non-step tokens.
-/// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas cost after having a solution.
-// TODO(orizi): Remove this function once it's not used.
-pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: CostInfoProvider>(
-    ops: &mut Ops,
-    libfunc: &CoreConcreteLibfunc,
-    info_provider: &InfoProvider,
-) -> Vec<CostTokenMap<Ops::CostValueType>>
-where
-    Ops::CostValueType: std::ops::Add<Ops::CostValueType, Output = Ops::CostValueType>
-        + std::ops::Sub<Ops::CostValueType, Output = Ops::CostValueType>
-        + std::ops::Neg<Output = Ops::CostValueType>
-        + HasZero
-        + Eq,
-{
-    core_libfunc_cost(libfunc, info_provider).into_iter().map(|v| v.precost(ops)).collect()
-}
-
 /// Returns the sum of statement variables for all the requested tokens.
 fn precost_statement_vars_cost<Ops: CostOperations>(
     ops: &Ops,

@@ -4,8 +4,7 @@ use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType, GasConcret
 use cairo_lang_sierra::program::StatementIdx;
 
 use crate::core_libfunc_cost_base::{
-    CostOperations, FunctionCostInfo, InvocationCostInfoProvider, core_libfunc_postcost,
-    core_libfunc_precost,
+    CostOperations, FunctionCostInfo, InvocationCostInfoProvider, core_libfunc_cost,
 };
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
@@ -52,7 +51,8 @@ pub fn core_libfunc_precost_expr<InfoProvider: CostInfoProvider>(
         // Coupon refund is not supported (zero refund).
         vec![Default::default()]
     } else {
-        core_libfunc_precost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+        let ops = &mut Ops { statement_future_cost, idx: *idx };
+        core_libfunc_cost(libfunc, info_provider).into_iter().map(|v| v.precost(ops)).collect()
     }
 }
 
@@ -67,6 +67,12 @@ pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
         // Coupon refund is not supported (zero refund).
         vec![Default::default()]
     } else {
-        core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+        let ops = &mut Ops { statement_future_cost, idx: *idx };
+        core_libfunc_cost(libfunc, info_provider)
+            .into_iter()
+            .map(|v| {
+                CostTokenMap::from_iter([(CostTokenType::Const, v.postcost(ops, info_provider))])
+            })
+            .collect()
     }
 }
