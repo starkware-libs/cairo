@@ -1,16 +1,374 @@
 = Patterns
 
-Patterns are used to match values to specific structures.
-They can be used in xref:let-statement.adoc[`let` statements] and xref:match-expressions.adoc[`match`] arms.
-== Pattern examples
+Patterns are used to match values against specific structures and bind variables to their components.
+They appear in xref:let-statement.adoc[`let` statements] and xref:match-expressions.adoc[`match` expressions], enabling destructuring and conditional execution based on value shapes.
+
+== Overview
+
+A pattern describes the structure of a value.
+When a value matches a pattern, the pattern's variables are bound to the corresponding parts of the value.
+Patterns can be simple (matching a single value) or complex (destructuring nested structures).
+
+Cairo supports two categories of patterns:
+
+* **Refutable patterns** — May fail to match (used in `match` arms)
+* **Irrefutable patterns** — Always match (used in `let` statements)
+
+== Pattern Types
+
+=== Wildcard Pattern
+
+The underscore `_` matches any value and discards it without binding:
 
 [source,cairo]
 ----
-MyStruct {a: a, b : _b, c: _}
-MyEnum(a, b, c)
-(a, b, c)
-var_name
-12344
-'short_string'
-_
+let _ = expensive_computation();  // Run but ignore result
+let (x, _, z) = (1, 2, 3);        // Ignore middle element
 ----
+
+The wildcard is useful when you need to satisfy a pattern but don't need the value.
+
+=== Literal Patterns
+
+Literal patterns match exact values:
+
+[source,cairo]
+----
+match x {
+    0 => { /* handle zero */ },
+    1 => { /* handle one */ },
+    _ => { /* handle other */ },
+}
+----
+
+Supported literals:
+
+* **Numeric literals**: `0`, `42`, `0x1a`
+* **Boolean literals**: `true`, `false`
+* **Short string literals**: `'hello'`
+
+=== Identifier Patterns
+
+An identifier pattern binds the matched value to a variable:
+
+[source,cairo]
+----
+let x = 5;              // Binds 5 to x
+let name = 'Alice';     // Binds 'Alice' to name
+----
+
+In `match` expressions, identifiers bind enum variant data:
+
+[source,cairo]
+----
+match option_value {
+    Option::Some(value) => { /* value is bound here */ },
+    Option::None => { /* no binding */ },
+}
+----
+
+=== Tuple Patterns
+
+Tuple patterns destructure xref:tuple-types.adoc[tuples] by matching their elements:
+
+[source,cairo]
+----
+let (a, b, c) = (1, 2, 3);
+// a = 1, b = 2, c = 3
+
+let (x, (y, z)) = (1, (2, 3));
+// Nested destructuring: x = 1, y = 2, z = 3
+
+let (first, _, last) = (10, 20, 30);
+// first = 10, last = 30 (middle ignored)
+----
+
+Tuple patterns must match the tuple's arity (number of elements).
+
+=== Struct Patterns
+
+Struct patterns destructure xref:structs.adoc[structs] by matching their fields:
+
+[source,cairo]
+----
+struct Point {
+    x: felt252,
+    y: felt252,
+}
+
+// Basic destructuring
+let Point { x, y } = point;
+
+// Rename fields during destructuring
+let Point { x: px, y: py } = point;
+
+// Ignore specific fields
+let Point { x, y: _ } = point;
+
+// Nested struct destructuring
+struct Line {
+    start: Point,
+    end: Point,
+}
+
+let Line { start: Point { x: x1, y: y1 }, end: Point { x: x2, y: y2 } } = line;
+----
+
+**Field order doesn't matter** in struct patterns:
+
+[source,cairo]
+----
+let Point { y, x } = point;  // Same as { x, y }
+----
+
+**Shorthand syntax**: When the variable name matches the field name, you can omit the binding:
+
+[source,cairo]
+----
+let Point { x, y } = point;
+// Equivalent to: let Point { x: x, y: y } = point;
+----
+
+=== Enum Patterns
+
+Enum patterns match xref:enums.adoc[enum] variants and destructure their data:
+
+[source,cairo]
+----
+enum Result<T, E> {
+    Ok: T,
+    Err: E,
+}
+
+match result {
+    Result::Ok(value) => { /* value is bound here */ },
+    Result::Err(error) => { /* error is bound here */ },
+}
+----
+
+Enum patterns in `match` must be **exhaustive** — all variants must be covered:
+
+[source,cairo]
+----
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+match color {
+    Color::Red => { /* ... */ },
+    Color::Green => { /* ... */ },
+    Color::Blue => { /* ... */ },
+    // All variants covered
+}
+----
+
+You can use wildcard to handle multiple variants:
+
+[source,cairo]
+----
+match color {
+    Color::Red => { /* special handling */ },
+    _ => { /* handle Green and Blue */ },
+}
+----
+
+Enum patterns can destructure variant data:
+
+[source,cairo]
+----
+enum Message {
+    Quit,
+    Move: (felt252, felt252),
+    Write: ByteArray,
+}
+
+match message {
+    Message::Quit => { /* no data */ },
+    Message::Move((x, y)) => { /* x and y bound */ },
+    Message::Write(text) => { /* text bound */ },
+}
+----
+
+=== Fixed-Size Array Patterns
+
+Fixed-size array patterns destructure arrays with known lengths:
+
+[source,cairo]
+----
+let [a, b, c] = [1, 2, 3];
+// a = 1, b = 2, c = 3
+
+let [first, _, last] = [10, 20, 30];
+// first = 10, last = 30
+----
+
+The pattern must match the array's length exactly.
+
+== Pattern Contexts
+
+=== Patterns in `let` Statements
+
+`let` statements use **irrefutable patterns** — patterns that always match:
+
+[source,cairo]
+----
+let x = 5;                          // Identifier pattern
+let (a, b) = (1, 2);                // Tuple pattern
+let Point { x, y } = point;         // Struct pattern
+let [first, second, third] = arr;   // Array pattern
+----
+
+Using a refutable pattern in `let` causes a compilation error:
+
+[source,cairo]
+----
+// ERROR: refutable pattern in let statement
+let Option::Some(x) = option_value;
+----
+
+Use `match` for refutable patterns instead.
+
+=== Patterns in `match` Expressions
+
+`match` expressions use **refutable patterns** — patterns that may fail to match:
+
+[source,cairo]
+----
+match value {
+    Pattern1 => expression1,
+    Pattern2 => expression2,
+    _ => default_expression,
+}
+----
+
+Each pattern is tried in order until one matches.
+The `match` must be **exhaustive** — all possible values must be covered.
+
+See xref:match-expressions.adoc[Match expressions] for details.
+
+== Nested Patterns
+
+Patterns can be nested to destructure complex data structures:
+
+[source,cairo]
+----
+struct Person {
+    name: ByteArray,
+    location: Point,
+}
+
+let Person { name, location: Point { x, y } } = person;
+// Destructures both Person and its nested Point
+----
+
+Tuple and struct patterns can be arbitrarily nested:
+
+[source,cairo]
+----
+let ((a, b), (c, d)) = ((1, 2), (3, 4));
+
+match result {
+    Result::Ok((x, y)) => { /* destructure Ok's tuple */ },
+    Result::Err(_) => { /* ignore error details */ },
+}
+----
+
+== Mutability in Patterns
+
+Patterns in `let mut` statements bind mutable variables:
+
+[source,cairo]
+----
+let mut x = 5;
+x = 10;  // OK: x is mutable
+
+let mut (a, b) = (1, 2);
+a = 10;  // OK: a is mutable
+b = 20;  // OK: b is mutable
+----
+
+See xref:let-statement.adoc#_mutability[Mutability] for details.
+
+== Examples
+
+=== Basic Destructuring
+
+[source,cairo]
+----
+// Tuple destructuring
+let (x, y, z) = (1, 2, 3);
+
+// Struct destructuring
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+let Rectangle { width, height } = rect;
+
+// Nested destructuring
+let ((a, b), c) = ((1, 2), 3);
+----
+
+=== Pattern Matching
+
+[source,cairo]
+----
+enum Option<T> {
+    Some: T,
+    None,
+}
+
+fn unwrap_or<T>(option: Option<T>, default: T) -> T {
+    match option {
+        Option::Some(value) => value,
+        Option::None => default,
+    }
+}
+----
+
+=== Ignoring Values
+
+[source,cairo]
+----
+// Ignore specific tuple elements
+let (x, _, z) = (1, 2, 3);
+
+// Ignore struct fields
+let Point { x, y: _ } = point;
+
+// Ignore entire value
+let _ = expensive_function();
+----
+
+=== Complex Destructuring
+
+[source,cairo]
+----
+enum Message {
+    Move: (felt252, felt252),
+    Write: ByteArray,
+    ChangeColor: (u8, u8, u8),
+}
+
+match message {
+    Message::Move((x, y)) => {
+        // x and y are bound
+    },
+    Message::Write(text) => {
+        // text is bound
+    },
+    Message::ChangeColor((r, g, b)) => {
+        // r, g, b are bound
+    },
+}
+----
+
+== Related
+
+- xref:let-statement.adoc[Let statement] — Variable bindings with patterns
+- xref:match-expressions.adoc[Match expressions] — Pattern matching for control flow
+- xref:structs.adoc[Structs] — Struct patterns
+- xref:enums.adoc[Enums] — Enum patterns
+- xref:tuple-types.adoc[Tuple types] — Tuple patterns
