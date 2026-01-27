@@ -3,9 +3,9 @@
 //! This module provides generic analysis frameworks that can be used by various
 //! optimization passes and semantic checks.
 
-pub mod backward;
+mod backward;
+mod core;
 
-// Re-export commonly used types at the module level for convenience.
 pub use backward::BackAnalysis;
 
 use crate::{Block, BlockId, MatchInfo, Statement, VarRemapping, VarUsage};
