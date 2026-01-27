@@ -7,7 +7,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain, izip, zip_eq};
 
 use super::var_renamer::VarRenamer;
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, Lowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 

@@ -11,7 +11,7 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::db::LoweringGroup;
 use crate::{
     BlockId, Lowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,

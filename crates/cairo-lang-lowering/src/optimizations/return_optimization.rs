@@ -9,7 +9,7 @@ use cairo_lang_utils::{Intern, require};
 use salsa::Database;
 use semantic::MatchArmSelector;
 
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::ids::LocationId;
 use crate::{
     Block, BlockEnd, BlockId, Lowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
