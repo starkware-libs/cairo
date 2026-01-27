@@ -1,17 +1,23 @@
 = Patterns
 
-Patterns are used to match values against specific structures and bind variables to their components.
-They appear in xref:let-statement.adoc[`let` statements] and xref:match-expressions.adoc[`match` expressions], enabling destructuring and conditional execution based on value shapes.
+Patterns are used to match values against specific structures and bind variables to their
+components.
+They appear in xref:let-statement.adoc[`let` statements] and
+xref:match-expressions.adoc[`match` expressions], enabling destructuring and conditional
+execution based on value shapes.
 
 == Overview
 
 A pattern describes the structure of a value.
-When a value matches a pattern, the pattern's variables are bound to the corresponding parts of the value.
-Patterns can be simple (matching a single value) or complex (destructuring nested structures).
+When a value matches a pattern, the pattern's variables are bound to the corresponding parts
+of the value.
+Patterns can be simple (matching a single value) or complex (destructuring nested
+structures).
 
 Cairo supports two categories of patterns:
 
-* **Refutable patterns** — May fail to match (used in `match` arms)
+* **Refutable patterns** — May fail to match (used in `match` arms and `let ... else`
+  statements)
 * **Irrefutable patterns** — Always match (used in `let` statements)
 
 == Pattern Types
@@ -247,6 +253,45 @@ Each pattern is tried in order until one matches.
 The `match` must be **exhaustive** — all possible values must be covered.
 
 See xref:match-expressions.adoc[Match expressions] for details.
+
+=== Patterns in `let ... else` Statements
+
+`let ... else` statements use **refutable patterns** with a fallback block that executes if
+the pattern fails to match:
+
+[source,cairo]
+----
+let Some(x) = option_value else {
+    return;  // Execute if pattern doesn't match
+};
+// x is available here
+----
+
+The `else` block must diverge (return, panic, break, or continue) because if the pattern
+doesn't match, there's no value to bind.
+
+Common uses:
+
+[source,cairo]
+----
+fn process(data: Option<u32>) -> u32 {
+    let Some(value) = data else {
+        return 0;  // Early return if None
+    };
+    value * 2
+}
+
+fn iterate(mut span: Span<felt252>) {
+    loop {
+        let Some(x) = span.pop_front() else {
+            break;  // Exit loop when span is empty
+        };
+        // Process x...
+    }
+}
+----
+
+This provides a more concise alternative to `match` for simple refutable patterns.
 
 == Nested Patterns
 
