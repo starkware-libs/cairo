@@ -1,3 +1,5 @@
+use std::iter::zip;
+
 use assert_matches::assert_matches;
 use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
@@ -18,7 +20,6 @@ use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
 use cairo_lang_sierra_gas::core_libfunc_cost::{InvocationCostInfoProvider, core_libfunc_cost};
 use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_sierra_type_size::TypeSizeMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use thiserror::Error;
@@ -148,7 +149,7 @@ impl BranchChanges {
         let stack_base = if clear_old_stack { 0 } else { prev_env.stack_size };
         let mut new_stack_size = stack_base;
 
-        let refs: Vec<_> = zip_eq(expressions, &branch_signature.vars)
+        let refs: Vec<_> = zip(expressions, &branch_signature.vars)
             .enumerate()
             .map(|(output_idx, (expression, OutputVarInfo { ref_info, ty }))| {
                 validate_output_var_refs(ref_info, &expression);
@@ -169,7 +170,7 @@ impl BranchChanges {
                 OutputReferenceValue { expression, ty: ty.clone(), stack_idx, introduction_point }
             })
             .collect();
-        validate_stack_top(ap_change, branch_signature, &refs);
+        validate_stack_top(ap_change, branch_signature, &refs, new_stack_size - stack_base);
         Self { refs, ap_change, ap_tracking_change, gas_cost, clear_old_stack, new_stack_size }
     }
 }
@@ -210,26 +211,24 @@ fn validate_stack_top(
     ap_change: ApChange,
     branch_signature: &BranchSignature,
     refs: &[OutputReferenceValue],
+    stack_top_size: usize,
 ) {
     // A mapping for the new temp vars allocated on the top of the stack from their index on the
     // top of the stack to their index in the `refs` vector.
-    let stack_top_vars = UnorderedHashMap::<usize, usize>::from_iter(
-        branch_signature.vars.iter().enumerate().filter_map(|(arg_idx, var)| {
-            if let OutputVarReferenceInfo::NewTempVar { idx: stack_idx } = var.ref_info {
-                Some((stack_idx, arg_idx))
-            } else {
-                None
-            }
-        }),
-    );
+    let mut stack_top_vars = vec![None; stack_top_size];
+    for (arg_idx, var) in branch_signature.vars.iter().enumerate() {
+        if let OutputVarReferenceInfo::NewTempVar { idx: stack_idx } = var.ref_info {
+            stack_top_vars[stack_idx] = Some(arg_idx);
+        }
+    }
     let mut prev_ap_offset = None;
-    let mut stack_top_size = 0;
-    for i in 0..stack_top_vars.len() {
-        let Some(arg) = stack_top_vars.get(&i) else {
-            panic!("Missing top stack var #{i} out of {}.", stack_top_vars.len());
+    let mut stack_top_cells_count = 0;
+    for (i, arg) in stack_top_vars.into_iter().enumerate() {
+        let Some(arg) = arg else {
+            panic!("Missing top stack var #{i} out of {stack_top_size}.");
         };
-        let cells = &refs[*arg].expression.cells;
-        stack_top_size += cells.len();
+        let cells = &refs[arg].expression.cells;
+        stack_top_cells_count += cells.len();
         for cell in cells {
             let ap_offset = match cell {
                 CellExpression::Deref(CellRef { register: Register::AP, offset }) => *offset,
@@ -244,7 +243,7 @@ fn validate_stack_top(
     if matches!(branch_signature.ap_change, SierraApChange::Known { new_vars_only: true }) {
         assert_eq!(
             ap_change,
-            ApChange::Known(stack_top_size),
+            ApChange::Known(stack_top_cells_count),
             "New tempvar variables are not contiguous with the old stack."
         );
     }
