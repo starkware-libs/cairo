@@ -10,57 +10,55 @@
 //! 2. **Transfer granularity** (choose one):
 //!    - Block-level: override `transfer_block` for coarse-grained analysis
 //!    - Statement-level: override `transfer_stmt` (default `transfer_block` iterates statements)
-//! 3. **Variable tracking** (optional): `apply_remapping` - override if tracking per-variable state
-//! 4. **Advanced hooks** (optional): `merge_match`, `split_match`, etc. - override for special
-//!    cases
+//! 3. **Variable tracking** (optional): `transfer_edge` - override if tracking per-variable state
 //!
-//! The framework handles control flow mechanics automatically:
-//! - Goto with remapping: calls `apply_remapping`
-//! - Match (backward): calls `merge_match` which defaults to `merge`
-//! - Match (forward): calls `split_match` which defaults to cloning
+//! The Runner's (backward/forward/etc) should handle control flow mechanics automatically:
+//! - Goto with remapping/Match split: calls `transfer_edge`
+//! - Call transfer block for each block in need of processing
 
-use crate::{Block, BlockEnd, BlockId, MatchInfo, Statement, VarRemapping};
+use crate::ids::LocationId;
+use crate::{Block, BlockEnd, BlockId, MatchArm, MatchInfo, Statement, VarRemapping, VarUsage};
 
 /// Location of a lowering statement inside a block.
 pub type StatementLocation = (BlockId, usize);
 
 /// The direction of dataflow analysis.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[expect(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
     Forward,
     Backward,
 }
 
+/// Represents an edge in the control flow graph.
+///
+/// Each variant captures the specific information needed for that edge type,
+/// enabling analyzers to handle variable introductions and remappings.
+#[derive(Debug)]
+#[expect(dead_code)]
+pub enum Edge<'db, 'a> {
+    /// A goto edge with variable remapping.
+    Goto { target: BlockId, remapping: &'a VarRemapping<'db> },
+    /// A match arm edge with the arm's introduced variables.
+    MatchArm { arm: &'a MatchArm<'db>, match_info: &'a MatchInfo<'db> },
+    /// A return edge (terminal).
+    Return { vars: &'a [VarUsage<'db>], location: &'a LocationId<'db> },
+    /// A panic edge (terminal).
+    Panic { var: &'a VarUsage<'db> },
+}
+
 /// Unified analyzer trait for dataflow analysis.
 ///
 /// Implementors specify the direction via `DIRECTION` and implement the core methods.
-/// The framework handles control flow mechanics (remapping, match arms) automatically,
-/// with sensible defaults that can be overridden for complex analyses.
+/// The framework specifies the "behaviour" of the dataflow (essentially updates to lattice state
+/// for lattice analysis). Running an analysis is done by a runner (backward/forward/etc) which will
+/// handle control flow and dataflow mechanics.
 ///
 /// # Transfer Granularity
 ///
 /// You can work at either block or statement level:
 /// - **Block-level**: Override `transfer_block` for coarse-grained analysis
 /// - **Statement-level**: Override `transfer_stmt`; default `transfer_block` iterates statements
-///
-/// # Lifetime parameters
-/// - `'db`: The database lifetime (for interned types).
-/// - `'a`: The lifetime of borrowed lowering data.
-///
-/// # Example (statement-level forward analysis)
-/// ```ignore
-/// impl<'db, 'a> DataflowAnalyzer<'db, 'a> for MyAnalyzer {
-///     type Info = HashSet<VariableId>;
-///     const DIRECTION: Direction = Direction::Forward;
-///
-///     fn initial_info(&mut self) -> Self::Info { HashSet::new() }
-///     fn transfer_stmt(&mut self, info: &mut Self::Info, ..) { /* update info */ }
-///     fn merge(&mut self, infos: impl Iterator<Item = Self::Info>) -> Self::Info {
-///         infos.fold(HashSet::new(), |mut acc, i| { acc.extend(i); acc })
-///     }
-/// }
-/// ```
 ///
 /// # Example (block-level analysis)
 /// ```ignore
@@ -72,8 +70,8 @@ pub enum Direction {
 ///     fn transfer_block(&mut self, info: &mut Self::Info, block_id: BlockId, block: &Block<'db>) {
 ///         *info += 1;  // Just count blocks
 ///     }
-///     fn merge(&mut self, infos: impl Iterator<Item = Self::Info>) -> Self::Info {
-///         infos.max().unwrap_or(0)
+///     fn merge(&mut self, _loc: StatementLocation, _end_loc: &LocationId, infos: ..) -> Self::Info {
+///         infos.map(|(_, i)| i).max().unwrap_or(0)
 ///     }
 /// }
 /// ```
@@ -84,10 +82,6 @@ pub trait DataflowAnalyzer<'db, 'a> {
 
     /// The direction of this analysis.
     const DIRECTION: Direction;
-
-    // ========================================================================
-    // Core methods (must implement)
-    // ========================================================================
 
     /// Create the initial analysis state at a terminal block.
     ///
@@ -101,17 +95,15 @@ pub trait DataflowAnalyzer<'db, 'a> {
     /// Merge/join states from multiple control flow paths.
     /// Called at join points (match merge for backward, block entry for forward).
     ///
-    /// - `statement_location`: where the merge occurs in the CFG
-    /// - `infos`: iterator of (source_block_id, info) pairs from each incoming path
+    /// - `statement_location`: where the merge occurs in the CFG.
+    /// - `location`: source location of the merge.
+    /// - `infos`: iterator of (source_block_id, info) pairs from each incoming path.
     fn merge(
         &mut self,
         statement_location: StatementLocation,
+        location: &'a LocationId<'db>,
         infos: impl Iterator<Item = (BlockId, Self::Info)>,
     ) -> Self::Info;
-
-    // ========================================================================
-    // Transfer functions (choose granularity)
-    // ========================================================================
 
     /// Transfer function for an entire block.
     /// - Backward: transforms post-block state to pre-block state
@@ -147,29 +139,18 @@ pub trait DataflowAnalyzer<'db, 'a> {
     ) {
     }
 
-    // ========================================================================
-    // Variable tracking (optional - override if tracking per-variable state)
-    // ========================================================================
-
-    /// Apply variable remapping to the state.
-    /// Called by the framework when crossing a goto with remapping.
+    /// Transfer state along a CFG edge.
+    /// Called when traversing between blocks via control flow edges.
     ///
-    /// - Backward: translates demands on destination vars to demands on source vars
-    /// - Forward: translates state of source vars to state of destination vars
+    /// - `info`: the state to transfer
+    /// - `edge`: the edge being traversed, containing all relevant information
     ///
-    /// Default is no-op (fine for analyses that don't track per-variable state).
-    fn apply_remapping(
-        &mut self,
-        _info: &mut Self::Info,
-        _statement_location: StatementLocation,
-        _target_block_id: BlockId,
-        _remapping: &'a VarRemapping<'db>,
-    ) {
+    /// Default implementation clones the state.
+    /// Override to modify state based on edge properties (e.g., variable remapping,
+    /// introduced variables in match arms).
+    fn transfer_edge(&mut self, info: &Self::Info, _edge: &Edge<'db, 'a>) -> Self::Info {
+        info.clone()
     }
-
-    // ========================================================================
-    // Block boundary hooks (optional)
-    // ========================================================================
 
     /// Called when entering a block during traversal (before transfer_block).
     fn visit_block_start(
@@ -178,34 +159,5 @@ pub trait DataflowAnalyzer<'db, 'a> {
         _block_id: BlockId,
         _block: &Block<'db>,
     ) {
-    }
-
-    // ========================================================================
-    // Match handling (optional - have sensible defaults)
-    // ========================================================================
-
-    /// Backward: merge states from match arms.
-    /// Default implementation calls `merge` with arm block IDs.
-    /// Override for special handling (e.g., tracking arm-specific metadata).
-    fn merge_match(
-        &mut self,
-        statement_location: StatementLocation,
-        match_info: &'a MatchInfo<'db>,
-        arm_infos: impl Iterator<Item = Self::Info>,
-    ) -> Self::Info {
-        let infos_with_blocks = match_info.arms().iter().map(|arm| arm.block_id).zip(arm_infos);
-        self.merge(statement_location, infos_with_blocks)
-    }
-
-    /// Forward: split state for match arms.
-    /// Default implementation clones state for each arm.
-    /// Override to refine state based on match conditions.
-    fn split_match(
-        &mut self,
-        info: &Self::Info,
-        _statement_location: StatementLocation,
-        match_info: &'a MatchInfo<'db>,
-    ) -> Vec<Self::Info> {
-        match_info.arms().iter().map(|_| info.clone()).collect()
     }
 }
