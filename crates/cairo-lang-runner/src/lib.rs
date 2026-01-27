@@ -118,6 +118,7 @@ pub fn token_gas_cost(token_type: CostTokenType) -> usize {
         CostTokenType::EcOp => 4085,
         CostTokenType::AddMod => 230,
         CostTokenType::MulMod => 604,
+        CostTokenType::Blake => 3334,
     }
 }
 
