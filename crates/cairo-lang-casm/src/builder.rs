@@ -267,7 +267,7 @@ impl CasmBuilder {
                     }
                     .unchecked_apply_known_ap_change(self.main_state.ap_change)
                 }),
-                outputs.map(|v| self.as_adjasted_cell_ref(v)),
+                outputs.map(|v| self.as_adjusted_cell_ref(v)),
             )
             .into(),
         );
@@ -403,7 +403,7 @@ impl CasmBuilder {
     pub fn bin_op(&mut self, op: CellOperator, lhs: Var, rhs: Var) -> Var {
         let (a, b) = match self.get_unadjusted(lhs) {
             // Regular `bin_op` support.
-            CellExpression::Deref(cell) => (*cell, self.as_unadjasted_deref_or_imm(rhs)),
+            CellExpression::Deref(cell) => (*cell, self.as_unadjusted_deref_or_imm(rhs)),
             // `add_with_const` + `imm` support.
             CellExpression::BinOp {
                 op: CellOperator::Add,
@@ -450,7 +450,7 @@ impl CasmBuilder {
     /// Adds a statement to jump to `label` if `condition != 0`.
     /// `condition` must be a cell reference.
     pub fn jump_nz(&mut self, condition: Var, label: &'static str) {
-        let cell = self.as_adjasted_cell_ref(condition);
+        let cell = self.as_adjusted_cell_ref(condition);
         self.push_labeled_instruction(
             label,
             InstructionBody::Jnz(JnzInstruction {
@@ -473,9 +473,9 @@ impl CasmBuilder {
     pub fn blake2s_compress(&mut self, state: Var, byte_count: Var, message: Var, finalize: bool) {
         let instruction = self.next_instruction(
             InstructionBody::Blake2sCompress(Blake2sCompressInstruction {
-                state: self.as_adjasted_cell_ref(state),
-                byte_count: self.as_adjasted_cell_ref(byte_count),
-                message: self.as_adjasted_cell_ref(message),
+                state: self.as_adjusted_cell_ref(state),
+                byte_count: self.as_adjusted_cell_ref(byte_count),
+                message: self.as_adjusted_cell_ref(message),
                 finalize,
             }),
             true,
@@ -654,13 +654,13 @@ impl CasmBuilder {
     }
 
     /// Returns `var`s value as a cell reference, with fixed ap if `adjust_ap` is true.
-    fn as_adjasted_cell_ref(&self, var: Var) -> CellRef {
+    fn as_adjusted_cell_ref(&self, var: Var) -> CellRef {
         extract_matches!(self.main_state.get_unadjusted(var), CellExpression::Deref)
             .unchecked_apply_known_ap_change(self.main_state.ap_change)
     }
 
     /// Returns `var`s value as a cell reference or immediate, with fixed ap if `adjust_ap` is true.
-    fn as_unadjasted_deref_or_imm(&self, var: Var) -> DerefOrImmediate {
+    fn as_unadjusted_deref_or_imm(&self, var: Var) -> DerefOrImmediate {
         match self.get_unadjusted(var) {
             CellExpression::Deref(cell) => DerefOrImmediate::Deref(*cell),
             CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm.clone().into()),
