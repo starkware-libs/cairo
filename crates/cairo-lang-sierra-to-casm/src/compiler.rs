@@ -605,7 +605,7 @@ pub fn compile(
                     zip_eq(&invocation.branches, compiled_invocation.results)
                         .zip(all_updated_annotations)
                 {
-                    let destination_statement_idx = statement_idx.next(&branch_info.target);
+                    let destination_statement_idx = statement_idx.next(branch_info.target);
                     if branching_libfunc
                         && !is_branch_align(
                             &program_info.registry,
@@ -676,21 +676,21 @@ pub fn validate_metadata(
     }
 
     // Get the libfunc for the given statement index, or an error.
-    let get_libfunc = |idx: &StatementIdx| -> Result<&CoreConcreteLibfunc, CompilationError> {
+    let get_libfunc = |idx: StatementIdx| -> Result<&CoreConcreteLibfunc, CompilationError> {
         if let Statement::Invocation(invocation) =
-            program.get_statement(idx).ok_or(CompilationError::MetadataStatementOutOfBound(*idx))?
+            program.get_statement(idx).ok_or(CompilationError::MetadataStatementOutOfBound(idx))?
         {
             registry
                 .get_libfunc(&invocation.libfunc_id)
                 .map_err(CompilationError::ProgramRegistryError)
         } else {
-            Err(CompilationError::StatementNotSupportingApChangeVariables(*idx))
+            Err(CompilationError::StatementNotSupportingApChangeVariables(idx))
         }
     };
 
     // Statement validations.
     for idx in metadata.ap_change_info.variable_values.keys() {
-        if !matches!(get_libfunc(idx)?, CoreConcreteLibfunc::BranchAlign(_)) {
+        if !matches!(get_libfunc(*idx)?, CoreConcreteLibfunc::BranchAlign(_)) {
             return Err(CompilationError::StatementNotSupportingApChangeVariables(*idx));
         }
     }
@@ -699,7 +699,7 @@ pub fn validate_metadata(
             return Err(CompilationError::MetadataNegativeGasVariable);
         }
         if !matches!(
-            get_libfunc(idx)?,
+            get_libfunc(*idx)?,
             CoreConcreteLibfunc::BranchAlign(_)
                 | CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))
                 | CoreConcreteLibfunc::Gas(

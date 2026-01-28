@@ -216,7 +216,7 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                     dst: index,
                 }));
             }
-            let next = index.next(&invocation_branch.target);
+            let next = index.next(invocation_branch.target);
             if next.0 >= program.statements.len() {
                 return Err(Box::new(ProgramRegistryError::JumpOutOfRange(index)));
             }

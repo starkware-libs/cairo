@@ -127,7 +127,7 @@ pub fn calc_metadata(
         compute_postcost_info(
             program,
             program_info,
-            &|idx| ap_change_info.variable_values.get(idx).copied().unwrap_or_default(),
+            &|idx| ap_change_info.variable_values.get(&idx).copied().unwrap_or_default(),
             &pre_gas_info,
             &enforced_function_costs,
         )
@@ -158,7 +158,7 @@ pub fn calc_metadata(
         let post_gas_info_runtime = compute_postcost_info::<ConstCost>(
             program,
             program_info,
-            &|idx| ap_change_info.variable_values.get(idx).copied().unwrap_or_default(),
+            &|idx| ap_change_info.variable_values.get(&idx).copied().unwrap_or_default(),
             &pre_gas_info,
             &Default::default(),
         )?;

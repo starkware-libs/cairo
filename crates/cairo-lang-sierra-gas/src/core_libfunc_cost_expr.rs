@@ -29,7 +29,7 @@ impl CostOperations for Ops<'_> {
         function: &FunctionCostInfo,
         token_type: CostTokenType,
     ) -> Option<Self::CostValueType> {
-        Some(self.statement_future_cost.get_future_cost(&function.entry_point)[&token_type].clone())
+        Some(self.statement_future_cost.get_future_cost(function.entry_point)[&token_type].clone())
     }
 
     fn statement_var_cost(&self, token_type: CostTokenType) -> Option<Self::CostValueType> {
@@ -40,7 +40,7 @@ impl CostOperations for Ops<'_> {
 /// Returns an expression for the gas cost for core libfuncs.
 pub fn core_libfunc_precost_expr<InfoProvider: CostInfoProvider>(
     statement_future_cost: &mut dyn StatementFutureCost,
-    idx: &StatementIdx,
+    idx: StatementIdx,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
@@ -51,7 +51,7 @@ pub fn core_libfunc_precost_expr<InfoProvider: CostInfoProvider>(
         // Coupon refund is not supported (zero refund).
         vec![Default::default()]
     } else {
-        let ops = &mut Ops { statement_future_cost, idx: *idx };
+        let ops = &mut Ops { statement_future_cost, idx };
         core_libfunc_cost(libfunc, info_provider).into_iter().map(|v| v.precost(ops)).collect()
     }
 }
@@ -59,7 +59,7 @@ pub fn core_libfunc_precost_expr<InfoProvider: CostInfoProvider>(
 /// Returns an expression for the gas cost for core libfuncs.
 pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
     statement_future_cost: &mut dyn StatementFutureCost,
-    idx: &StatementIdx,
+    idx: StatementIdx,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
@@ -67,7 +67,7 @@ pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
         // Coupon refund is not supported (zero refund).
         vec![Default::default()]
     } else {
-        let ops = &mut Ops { statement_future_cost, idx: *idx };
+        let ops = &mut Ops { statement_future_cost, idx };
         core_libfunc_cost(libfunc, info_provider)
             .into_iter()
             .map(|v| {
