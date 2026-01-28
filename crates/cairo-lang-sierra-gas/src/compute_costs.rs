@@ -5,8 +5,10 @@ use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenMap, CostTok
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::small_ordered_map::Entry;
 use itertools::zip_eq;
 
 use crate::CostError;
@@ -17,94 +19,130 @@ type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
 
 /// A trait for the cost type (either [PreCost] for pre-cost computation, or `i32` for the post-cost
 /// computation).
-pub trait CostTypeTrait:
-    std::fmt::Debug + Default + Clone + Eq + Add<Output = Self> + Sub<Output = Self>
-{
-    /// Computes the minimum of the given two values (for each token type).
-    ///
-    /// Assumes that the arguments are non-negative.
-    fn min2(value1: &Self, value2: &Self) -> Self;
+pub trait CostTypeTrait: std::fmt::Debug + Default + Clone + Eq {
+    /// Computes the addition of `self` and `other`.
+    fn add_with(self, other: &Self) -> Self;
 
-    /// Computes the maximum of the given value (for each token type).
-    ///
-    /// Assumes that the arguments are non-negative.
-    fn max(values: impl Iterator<Item = Self>) -> Self;
+    /// Computes the subtraction of `self` and `other`.
+    fn sub_with(self, other: &Self) -> Self;
 
-    /// For each token type, returns the value if it is non-negative and 0 otherwise.
-    fn rectify(value: &Self) -> Self;
+    /// Computes the minimum of `self` and `other`.
+    fn min_with(self, other: &Self) -> Self;
+
+    /// Computes the maximum of `self` and `other`.
+    fn max_with(self, other: &Self) -> Self;
+
+    /// Returns the value where all negatives values are replaced with 0.
+    fn rectify(self) -> Self;
 }
 
 impl CostTypeTrait for i32 {
-    fn min2(value1: &Self, value2: &Self) -> Self {
-        *std::cmp::min(value1, value2)
+    fn add_with(self, other: &Self) -> Self {
+        self + *other
     }
 
-    fn max(values: impl Iterator<Item = Self>) -> Self {
-        values.max().unwrap_or_default()
+    fn sub_with(self, other: &Self) -> Self {
+        self - *other
     }
 
-    fn rectify(value: &Self) -> Self {
-        std::cmp::max(*value, 0)
+    fn min_with(self, other: &Self) -> Self {
+        std::cmp::min(self, *other)
+    }
+
+    fn max_with(self, other: &Self) -> Self {
+        std::cmp::max(self, *other)
+    }
+
+    fn rectify(self) -> Self {
+        std::cmp::max(self, 0)
     }
 }
 
 impl CostTypeTrait for ConstCost {
-    fn min2(value1: &Self, value2: &Self) -> Self {
+    fn add_with(self, other: &Self) -> Self {
         ConstCost {
-            steps: std::cmp::min(value1.steps, value2.steps),
-            holes: std::cmp::min(value1.holes, value2.holes),
-            range_checks: std::cmp::min(value1.range_checks, value2.range_checks),
-            range_checks96: std::cmp::min(value1.range_checks96, value2.range_checks96),
+            steps: self.steps + other.steps,
+            holes: self.holes + other.holes,
+            range_checks: self.range_checks + other.range_checks,
+            range_checks96: self.range_checks96 + other.range_checks96,
         }
     }
 
-    fn max(values: impl Iterator<Item = Self>) -> Self {
-        values
-            .reduce(|acc, value| ConstCost {
-                steps: std::cmp::max(acc.steps, value.steps),
-                holes: std::cmp::max(acc.holes, value.holes),
-                range_checks: std::cmp::max(acc.range_checks, value.range_checks),
-                range_checks96: std::cmp::max(acc.range_checks96, value.range_checks96),
-            })
-            .unwrap_or_default()
+    fn sub_with(self, other: &Self) -> Self {
+        ConstCost {
+            steps: self.steps - other.steps,
+            holes: self.holes - other.holes,
+            range_checks: self.range_checks - other.range_checks,
+            range_checks96: self.range_checks96 - other.range_checks96,
+        }
     }
 
-    fn rectify(value: &Self) -> Self {
+    fn min_with(self, other: &Self) -> Self {
         ConstCost {
-            steps: std::cmp::max(value.steps, 0),
-            holes: std::cmp::max(value.holes, 0),
-            range_checks: std::cmp::max(value.range_checks, 0),
-            range_checks96: std::cmp::max(value.range_checks96, 0),
+            steps: std::cmp::min(self.steps, other.steps),
+            holes: std::cmp::min(self.holes, other.holes),
+            range_checks: std::cmp::min(self.range_checks, other.range_checks),
+            range_checks96: std::cmp::min(self.range_checks96, other.range_checks96),
+        }
+    }
+
+    fn max_with(self, other: &Self) -> Self {
+        ConstCost {
+            steps: std::cmp::max(self.steps, other.steps),
+            holes: std::cmp::max(self.holes, other.holes),
+            range_checks: std::cmp::max(self.range_checks, other.range_checks),
+            range_checks96: std::cmp::max(self.range_checks96, other.range_checks96),
+        }
+    }
+
+    fn rectify(self) -> Self {
+        ConstCost {
+            steps: std::cmp::max(self.steps, 0),
+            holes: std::cmp::max(self.holes, 0),
+            range_checks: std::cmp::max(self.range_checks, 0),
+            range_checks96: std::cmp::max(self.range_checks96, 0),
         }
     }
 }
 
 impl CostTypeTrait for PreCost {
-    fn min2(value1: &Self, value2: &Self) -> Self {
-        let map_fn = |(token_type, val1)| {
-            // The tokens that should appear are the tokens that appear in the intersection of both
-            // parameters. Return `None` if the token does not appear in `value2`.
-            let val2 = value2.0.get(token_type)?;
-            Some((*token_type, *std::cmp::min(val1, val2)))
-        };
-        PreCost(value1.0.iter().filter_map(map_fn).collect())
+    fn add_with(self, other: &Self) -> Self {
+        PreCost(self.0.add_collection(other.0.iter().map(|(k, v)| (*k, *v))))
     }
 
-    fn max(values: impl Iterator<Item = Self>) -> Self {
-        let mut res = Self::default();
-        for value in values {
-            for (token_type, val) in value.0 {
-                let new_val = std::cmp::max(*res.0.get(&token_type).unwrap_or(&0), val);
-                res.0.insert(token_type, new_val);
+    fn sub_with(self, other: &Self) -> Self {
+        PreCost(self.0.sub_collection(other.0.iter().map(|(k, v)| (*k, *v))))
+    }
+
+    fn min_with(mut self, other: &Self) -> Self {
+        self.0.retain(|k, v1| {
+            let Some(v2) = other.0.get(k) else {
+                return false;
+            };
+            *v1 = std::cmp::min(*v1, *v2);
+            true
+        });
+        self
+    }
+
+    fn max_with(mut self, other: &Self) -> Self {
+        for (token_type, val) in other.0.iter() {
+            match self.0.entry(*token_type) {
+                Entry::Vacant(e) => {
+                    e.insert(*val);
+                }
+                Entry::Occupied(mut e) => {
+                    let new_val = std::cmp::max(*e.get(), *val);
+                    e.insert(new_val);
+                }
             }
         }
-        res
+        self
     }
 
-    fn rectify(value: &Self) -> Self {
-        let map_fn =
-            |(token_type, val): (&CostTokenType, &i32)| (*token_type, std::cmp::max(*val, 0));
-        PreCost(value.0.iter().map(map_fn).collect())
+    fn rectify(mut self) -> Self {
+        self.0.retain(|_k, v| *v > 0);
+        self
     }
 }
 
@@ -288,7 +326,7 @@ fn analyze_gas_statements<
                 );
             }
         } else if let BranchCost::RedepositGas = branch_cost {
-            let cost = wallet_value.clone() - branch_requirement.value.clone();
+            let cost = wallet_value.clone().sub_with(&branch_requirement.value);
             for (token_type, amount) in SpecificCostContext::into_full_cost_iter(cost) {
                 assert_eq!(variable_values.insert((*idx, token_type), amount), None);
             }
@@ -296,12 +334,12 @@ fn analyze_gas_statements<
             // If the refund can be fully used, the wallet value will be the same as
             // `branch_requirement`. Otherwise, wallet value will be zero and the difference
             // should be registered in the refund variables.
-            let cost = wallet_value.clone() - branch_requirement.value.clone();
+            let cost = wallet_value.clone().sub_with(&branch_requirement.value);
             for (token_type, amount) in SpecificCostContext::into_full_cost_iter(cost) {
                 assert_eq!(variable_values.insert((*idx, token_type), amount), None);
             }
         } else if invocation.branches.len() > 1 {
-            let cost = wallet_value.clone() - branch_requirement.value.clone();
+            let cost = wallet_value.clone().sub_with(&branch_requirement.value);
             for (token_type, amount) in SpecificCostContext::into_full_cost_iter(cost) {
                 assert_eq!(
                     variable_values.insert((idx.next(&branch_info.target), token_type), amount),
@@ -357,7 +395,10 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
         target_value: Option<&CostType>,
     ) -> Self {
         let n_branches = branches.len();
-        let mut max_value = CostType::max(branches.map(|wallet_info| wallet_info.value));
+        let mut max_value = branches
+            .map(|wallet_info| wallet_info.value)
+            .reduce(|a, b| a.max_with(&b))
+            .unwrap_or_default();
 
         // If there are multiple branches, there must be a branch_align in each of them, which
         // can be used to increase the wallet value up to the target value.
@@ -371,15 +412,15 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
         {
             // If the target value is greater than the maximum value of the branches, use the target
             // value.
-            max_value = CostType::max([max_value, target_value.clone()].into_iter());
+            max_value = max_value.max_with(target_value);
         }
 
         WalletInfo { value: max_value }
     }
 
     /// See [CostTypeTrait::rectify].
-    fn rectify(&self) -> Self {
-        Self { value: CostType::rectify(&self.value) }
+    fn rectify(self) -> Self {
+        Self { value: self.value.rectify() }
     }
 }
 
@@ -387,15 +428,6 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
 impl<CostType: CostTypeTrait> From<CostType> for WalletInfo<CostType> {
     fn from(value: CostType) -> Self {
         WalletInfo { value }
-    }
-}
-
-/// Implements addition of WalletInfo.
-impl<CostType: CostTypeTrait> std::ops::Add for WalletInfo<CostType> {
-    type Output = Self;
-
-    fn add(self, other: Self) -> Self {
-        WalletInfo { value: self.value + other.value }
     }
 }
 
@@ -551,7 +583,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
             .map(|i| {
                 let idx = StatementIdx(i);
                 let original_wallet_value = self.wallet_at_ex(&idx, false).value;
-                original_wallet_value + excess[i].take().unwrap_or_default()
+                original_wallet_value.add_with(&excess[i].take().unwrap_or_default())
             })
             .collect())
     }
@@ -575,8 +607,7 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
         if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
             // No excess is expected at statement with enforced wallet value.
             // If there is one, we ignore it.
-            excess[idx.0] =
-                Some(CostType::rectify(&(enforced_wallet_value.clone() - wallet_value.clone())));
+            excess[idx.0] = Some(enforced_wallet_value.clone().sub_with(&wallet_value).rectify());
         }
 
         finalized_excess_statements[idx.0] = true;
@@ -630,13 +661,14 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                     // Note that planned_withdrawal may be either positive (where there is an actual
                     // withdrawal) or negative (where we do not need to withdraw and the failing
                     // branch is more expensive than the success branch).
-                    actual_excess = CostType::rectify(&(actual_excess - planned_withdrawal));
+                    actual_excess = actual_excess.sub_with(&planned_withdrawal).rectify();
                 } else {
                     // Branch align of a non-withdraw-gas statement.
                     // If there are branch align, increase the excess by the current difference,
                     // so that future statements will be able to use it (e.g., `redeposit_gas`).
-                    let additional_excess = wallet_value.clone() - branch_requirement.value;
-                    actual_excess = actual_excess + CostType::rectify(&additional_excess);
+                    actual_excess = actual_excess.add_with(
+                        &wallet_value.clone().sub_with(&branch_requirement.value).rectify(),
+                    );
                 }
             } else if let BranchCost::RedepositGas = branch_cost {
                 // All the excess can be redeposited.
@@ -645,14 +677,14 @@ impl<CostType: CostTypeTrait> CostContext<'_, CostType> {
                 // The difference between `wallet_value` and `branch_requirement.value` is the
                 // amount of "wasted" refund (refund that could not be used in the first
                 // iteration) - this amount can be added to the excess.
-                let additional_excess = wallet_value.clone() - branch_requirement.value;
-                actual_excess = actual_excess + CostType::rectify(&additional_excess);
+                actual_excess = actual_excess
+                    .add_with(&wallet_value.clone().sub_with(&branch_requirement.value).rectify())
             }
 
             // Update the excess for `branch_statement` using the minimum of the existing excess and
             // `actual_excess`.
             excess[branch_statement.0] = Some(match excess[branch_statement.0].take() {
-                Some(current_value) => CostType::min2(&current_value, &actual_excess),
+                Some(current_value) => current_value.min_with(&actual_excess),
                 None => actual_excess,
             });
         }
@@ -700,7 +732,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
         wallet_value: &PreCost,
         future_wallet_value: PreCost,
     ) -> Result<PreCost, CostError> {
-        Ok(future_wallet_value - wallet_value.clone())
+        Ok(PreCost::sub_with(future_wallet_value, wallet_value))
     }
 
     fn get_branch_requirement(
@@ -716,7 +748,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
             BranchCost::FunctionCost { const_cost: _, function, sign } => {
                 let func_cost = wallet_at_fn(&function.entry_point).value;
                 match sign {
-                    BranchCostSign::Add => PreCost::default() - func_cost,
+                    BranchCostSign::Add => -func_cost,
                     BranchCostSign::Subtract => func_cost,
                 }
             }
@@ -730,13 +762,13 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
                 }
             }
         };
-        let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
-        WalletInfo::from(branch_cost) + future_wallet_value
+        let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target)).value;
+        WalletInfo::from(PreCost::add_with(branch_cost, &future_wallet_value))
     }
 }
 
 /// Extension of [CostTypeTrait] that can be used in post-cost computation [PostcostContext].
-pub trait PostCostTypeEx: CostTypeTrait + Copy {
+pub trait PostCostTypeEx: CostTypeTrait + Copy + Add<Output = Self> + Sub<Output = Self> {
     /// Constructor from [ConstCost].
     fn from_const_cost(const_cost: &ConstCost) -> Self;
 
@@ -853,8 +885,8 @@ impl<CostType: PostCostTypeEx, GetApChangeFn: Fn(&StatementIdx) -> usize>
                 CostType::from_const_cost(&self.compute_redeposit_gas_cost(idx))
             }
         };
-        let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
-        WalletInfo { value: branch_cost_val } + future_wallet_value
+        let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target)).value;
+        WalletInfo { value: branch_cost_val + future_wallet_value }
     }
 }
 
