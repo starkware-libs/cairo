@@ -117,7 +117,7 @@ fn test_compiled_class_hash(
     let name = inputs.get("compiled_class").expect("Missing `compiled_class` input.");
     let compiled_json_path =
         get_example_file_path(format!("{name}.compiled_contract_class.json").as_str());
-    let compiled_json_str = fs::read_to_string(compiled_json_path.clone())
+    let compiled_json_str = fs::read_to_string(&compiled_json_path)
         .unwrap_or_else(|_| panic!("Could not read file: '{compiled_json_path:?}'"));
     let casm_contract_class: CasmContractClass =
         serde_json::from_str(compiled_json_str.as_str()).unwrap();
