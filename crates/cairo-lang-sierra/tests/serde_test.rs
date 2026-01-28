@@ -20,7 +20,7 @@ fn test_sierra_serde_json(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let prog: VersionedProgram = serde_json::from_str(&inputs["pretty_json"].clone())
+    let prog: VersionedProgram = serde_json::from_str(inputs["pretty_json"].as_str())
         .expect("Could not deserialize VersionedProgram.");
     let json = serde_json::to_string_pretty(&prog).expect("Could not serialize VersionedProgram.");
     TestRunnerResult::success(OrderedHashMap::from([("pretty_json".into(), json)]))
