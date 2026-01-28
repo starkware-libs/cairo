@@ -70,7 +70,7 @@ Allowed externs (from `ConstCalcInfo::new`):
     enabling const upcast to `u256` and downcast to `u128`.
 - Downcast / trimming (returning an `Option`-like enum; some are reversed per configuration):
   * `core::internal::bounded_int::{downcast,bounded_int_trim_min,bounded_int_trim_max}`.
-  * `core::integer::{u8,u16,u32,u64,u128,i8,i16,i32,i64,i128}_try_from_felt252`.
+  * `core::integer::{u8,u16,u32,u64,i8,i16,i32,i64,i128}_try_from_felt252`.
   * `core::starknet::class_hash::class_hash_try_from_felt252`.
   * `core::starknet::contract_address::contract_address_try_from_felt252`.
 - Non-zero utilities:
@@ -95,9 +95,15 @@ solved or finalized for consts; unresolved or mismatched types result in diagnos
 
 - `UnsupportedConstant` — construct not permitted in const context.
 - `DivisionByZero` — division or remainder by zero detected during evaluation.
+- `FailedConstantCalculation` — error produced when a `panic_with_felt252` call is reached during
+  constant evaluation.
 - `ConstantCalculationDepthExceeded` — recursion/expansion beyond the internal limit (100).
 - `InnerFailedConstantCalculation` — bubbled-up error from a called const function; includes a note
   with the inner location.
+- `ConstCycle` — cycle detected while resolving `const` items.
+- `ConstTypeNotVarFree` — constant type depends on inference variables and is not stable.
+- `LiteralError` — malformed literal detected in a const expression (for example, an out-of-range
+  value).
 
 == Relation to optimization passes
 
