@@ -39,14 +39,14 @@ impl CostOperations for Ops<'_> {
 /// Values with unknown values will return as None.
 pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     gas_info: &GasInfo,
-    idx: &StatementIdx,
+    idx: StatementIdx,
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostTokenMap<i64>> {
     core_libfunc_cost_base::core_libfunc_cost(libfunc, info_provider)
         .into_iter()
         .map(|v| {
-            let ops = &mut Ops { gas_info, idx: *idx };
+            let ops = &mut Ops { gas_info, idx };
             let mut costs = v.precost(ops);
             let postcost = v.postcost(ops, info_provider);
             if postcost != 0 {

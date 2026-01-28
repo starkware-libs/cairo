@@ -73,7 +73,7 @@ impl GasInfo {
         {
             if val != 0
                 && !matches!(
-                    program.get_statement(&idx),
+                    program.get_statement(idx),
                     Some(Statement::Invocation(x))
                     if Some(&x.libfunc_id) == branch_align_id
                 )

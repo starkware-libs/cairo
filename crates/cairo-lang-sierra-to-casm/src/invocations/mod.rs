@@ -391,7 +391,7 @@ impl CompiledInvocationBuilder<'_> {
         >,
     ) -> CompiledInvocation {
         let gas_changes =
-            core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self);
+            core_libfunc_cost(&self.program_info.metadata.gas_info, self.idx, self.libfunc, &self);
 
         let branch_signatures = self.libfunc.branch_signatures();
         assert_eq!(
@@ -517,7 +517,7 @@ impl CompiledInvocationBuilder<'_> {
             );
         }
         let gas_changes =
-            core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self)
+            core_libfunc_cost(&self.program_info.metadata.gas_info, self.idx, self.libfunc, &self)
                 .into_iter()
                 .map(|costs| costs.get(&CostTokenType::Const).copied().unwrap_or_default());
         let mut final_costs: [ConstCost; BRANCH_COUNT] =

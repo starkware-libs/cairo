@@ -163,7 +163,7 @@ impl FunctionInfo {
         match statement {
             Statement::Invocation(invocation) => {
                 for branch in &invocation.branches {
-                    let next_statement_idx = StatementIdx(idx).next(&branch.target).0;
+                    let next_statement_idx = StatementIdx(idx).next(branch.target).0;
                     if next_statement_idx < self.entry_point {
                         return Err(SegmentationError::JumpOutsideFunction(StatementIdx(idx)));
                     }

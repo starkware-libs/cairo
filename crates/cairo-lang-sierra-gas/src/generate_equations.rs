@@ -16,13 +16,13 @@ mod test;
 /// Trait for getting the future cost expressions of statements.
 pub trait StatementFutureCost {
     /// Returns the future cost starting from a statement.
-    fn get_future_cost(&mut self, idx: &StatementIdx) -> &CostExprMap;
+    fn get_future_cost(&mut self, idx: StatementIdx) -> &CostExprMap;
 }
 
 /// Generates a set of equations from a program, and a function to extract cost expressions from a
 /// library function id.
 pub fn generate_equations<
-    GetCost: Fn(&mut dyn StatementFutureCost, &StatementIdx, &ConcreteLibfuncId) -> Vec<CostExprMap>,
+    GetCost: Fn(&mut dyn StatementFutureCost, StatementIdx, &ConcreteLibfuncId) -> Vec<CostExprMap>,
 >(
     program: &Program,
     get_cost: GetCost,
@@ -34,23 +34,23 @@ pub fn generate_equations<
     let mut generator = EquationGenerator::new(vec![None; program.statements.len()]);
     // Adding a variable for every function entry point.
     for func in &program.funcs {
-        generator.get_future_cost(&func.entry_point);
+        generator.get_future_cost(func.entry_point);
     }
     // Using reverse topological order to go over the program statement so that we'd use less
     // variables (since we create variables in any case where we don't already have a cost
     // expression).
     for idx in statement_topological_ordering {
-        match &program.get_statement(&idx).unwrap() {
+        match &program.get_statement(idx).unwrap() {
             Statement::Return(_) => {
-                generator.set_or_add_constraint(&idx, CostExprMap::default());
+                generator.set_or_add_constraint(idx, CostExprMap::default());
             }
             Statement::Invocation(invocation) => {
-                let libfunc_cost = get_cost(&mut generator, &idx, &invocation.libfunc_id);
+                let libfunc_cost = get_cost(&mut generator, idx, &invocation.libfunc_id);
                 for (branch, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
                     let next_future_cost =
-                        generator.get_future_cost(&idx.next(&branch.target)).clone();
+                        generator.get_future_cost(idx.next(branch.target)).clone();
                     generator
-                        .set_or_add_constraint(&idx, branch_cost.add_collection(next_future_cost));
+                        .set_or_add_constraint(idx, branch_cost.add_collection(next_future_cost));
                 }
             }
         }
@@ -74,7 +74,7 @@ impl EquationGenerator {
     }
 
     /// Sets some future or adds a matching equation if already set.
-    fn set_or_add_constraint(&mut self, idx: &StatementIdx, cost: CostExprMap) {
+    fn set_or_add_constraint(&mut self, idx: StatementIdx, cost: CostExprMap) {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
             for (token_type, val) in other.clone().sub_collection(cost) {
@@ -88,14 +88,14 @@ impl EquationGenerator {
 impl StatementFutureCost for EquationGenerator {
     /// Returns the future cost starting from a statement, will additionally make sure this
     /// statement actually exists.
-    fn get_future_cost(&mut self, idx: &StatementIdx) -> &CostExprMap {
+    fn get_future_cost(&mut self, idx: StatementIdx) -> &CostExprMap {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
             other
         } else {
             entry.insert(CostExprMap::from_iter(CostTokenType::iter_casm_tokens().map(
                 |token_type| {
-                    (*token_type, CostExpr::from_var(Var::StatementFuture(*idx, *token_type)))
+                    (*token_type, CostExpr::from_var(Var::StatementFuture(idx, *token_type)))
                 },
             )))
         }
@@ -109,13 +109,13 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
         program.funcs.iter().map(|f| f.entry_point),
         program.statements.len(),
         |idx| {
-            Ok(match program.get_statement(&idx).unwrap() {
+            Ok(match program.get_statement(idx).unwrap() {
                 Statement::Invocation(invocation) => invocation.branches.as_slice(),
                 Statement::Return(_) => &[],
             }
             .iter()
             .rev()
-            .map(move |branch| idx.next(&branch.target)))
+            .map(move |branch| idx.next(branch.target)))
         },
         |_| unreachable!("Cycles are not detected."),
     )
