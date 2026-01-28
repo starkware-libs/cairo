@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::gas::{CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_utils::collection_arithmetics::SubCollection;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use itertools::{Itertools, chain};
 
 /// Gas information for a Sierra program.
@@ -18,44 +18,25 @@ pub struct GasInfo {
     pub function_costs: OrderedHashMap<FunctionId, CostTokenMap<i64>>,
 }
 impl GasInfo {
-    pub fn combine(mut self, mut other: GasInfo) -> GasInfo {
-        let variable_values = chain!(self.variable_values.keys(), other.variable_values.keys())
-            .unique()
-            .copied()
-            .map(|i| {
-                (
-                    i,
-                    self.variable_values.get(&i).copied().unwrap_or_default()
-                        + other.variable_values.get(&i).copied().unwrap_or_default(),
-                )
-            })
-            .collect();
-        let function_costs = chain!(self.function_costs.keys(), other.function_costs.keys())
-            .unique()
-            .cloned()
-            .collect_vec()
-            .into_iter()
-            .map(|i| {
-                let costs0 = self.function_costs.swap_remove(&i).unwrap_or_default();
-                let costs1 = other.function_costs.swap_remove(&i).unwrap_or_default();
-                (
-                    i,
-                    chain!(costs0.keys(), costs1.keys())
-                        .unique()
-                        .copied()
-                        .map(|i| {
-                            (
-                                i,
-                                costs0.get(&i).copied().unwrap_or_default()
-                                    + costs1.get(&i).copied().unwrap_or_default(),
-                            )
-                        })
-                        .collect(),
-                )
-            })
-            .collect();
-
-        GasInfo { variable_values, function_costs }
+    /// Combines two GasInfo instances into the sum of their values.
+    pub fn combine(mut self, other: GasInfo) -> GasInfo {
+        for (key, value) in other.variable_values {
+            *self.variable_values.entry(key).or_insert(0) += value;
+        }
+        for (key, other_val) in other.function_costs {
+            match self.function_costs.entry(key) {
+                Entry::Occupied(mut e) => {
+                    let e = e.get_mut();
+                    for (token, value) in other_val {
+                        *e.entry(token).or_insert(0) += value;
+                    }
+                }
+                Entry::Vacant(e) => {
+                    e.insert(other_val);
+                }
+            }
+        }
+        self
     }
 
     /// Asserts that all non-branch align values in `self.variable_values` are equal to the values
