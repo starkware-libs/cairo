@@ -91,7 +91,7 @@ specification and may evolve. Refer to the ABI page when stabilized.
 
 See also:
 
-- xref:application-binary-interface.adoc[Application binary interface] (WIP)
+- xref:application-binary-interface.adoc[Application binary interface]
 
 == Implementation reference
 
