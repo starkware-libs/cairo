@@ -819,3 +819,28 @@ impl CopyRepeated<T, +Copy<T>> of Repeated<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > impl constant type using Self::SIZE resolves correctly.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait SomeTrait {
+    const SIZE: usize;
+    const IDS: [felt252; Self::SIZE];
+}
+impl SomeImpl of SomeTrait {
+    const SIZE: usize = 2;
+    const IDS: [felt252; Self::SIZE] = [1, 2];
+}
+
+//! > expected_diagnostics
