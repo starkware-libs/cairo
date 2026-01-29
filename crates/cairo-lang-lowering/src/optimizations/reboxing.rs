@@ -14,12 +14,13 @@ use itertools::Itertools;
 use salsa::Database;
 
 use super::var_renamer::VarRenamer;
-use crate::analysis::StatementLocation;
+use crate::analysis::ForwardDataflowAnalysis;
+use crate::analysis::core::{DataflowAnalyzer, Direction, Edge, StatementLocation};
 use crate::blocks::Blocks;
 use crate::utils::RebuilderEx;
 use crate::{
-    BlockEnd, Lowered, Statement, StatementStructDestructure, VarUsage, Variable, VariableArena,
-    VariableId,
+    BlockEnd, BlockId, Lowered, Statement, StatementStructDestructure, VarUsage, Variable,
+    VariableArena, VariableId,
 };
 
 /// Data for the MemberOfUnboxed variant.
@@ -55,7 +56,29 @@ pub struct ReboxCandidate {
     pub into_box_location: StatementLocation,
 }
 
-/// Finds reboxing candidates in the lowered function. Assumes a topological sort of blocks.
+/// The state tracked during reboxing analysis.
+type ReboxingState = OrderedHashMap<VariableId, ReboxingValue>;
+
+/// Analyzer for finding reboxing candidates using the forward dataflow framework.
+///
+/// Uses a single global state map since the lowered IR is in SSA form (each variable ID is unique).
+/// This avoids allocating state per-block/per-edge.
+struct ReboxingAnalyzer<'db> {
+    /// Reference to the lowered function's variables for checking copyable/droppable.
+    variables: &'db crate::VariableArena<'db>,
+    /// Global state tracking reboxing values for each variable.
+    state: ReboxingState,
+    /// Collected reboxing candidates.
+    candidates: OrderedHashSet<ReboxCandidate>,
+}
+
+impl<'db> ReboxingAnalyzer<'db> {
+    fn new(variables: &'db crate::VariableArena<'db>) -> Self {
+        Self { variables, state: Default::default(), candidates: Default::default() }
+    }
+}
+
+/// Finds reboxing candidates in the lowered function using forward dataflow analysis.
 ///
 /// This analysis detects patterns where we:
 /// 1. Unbox a struct
@@ -78,70 +101,94 @@ pub fn find_reboxing_candidates<'db>(lowered: &Lowered<'db>) -> OrderedHashSet<R
     // the case where snapshots are taken and we need to track that a snapshot of a member
     // is equivalent to a member of a snapshot.
 
-    let mut current_state: OrderedHashMap<VariableId, ReboxingValue> = Default::default();
-    let mut candidates: OrderedHashSet<ReboxCandidate> = Default::default();
+    let analyzer = ReboxingAnalyzer::new(&lowered.variables);
+    let mut analysis = ForwardDataflowAnalysis::new(lowered, analyzer);
+    let _ = analysis.run();
 
-    for (block_id, block) in lowered.blocks.iter() {
-        for (stmt_idx, stmt) in block.statements.iter().enumerate() {
-            match stmt {
-                Statement::Unbox(unbox_stmt) => {
-                    let res = ReboxingValue::Unboxed(unbox_stmt.input.var_id);
-                    current_state.insert(unbox_stmt.output, res);
-                }
-                Statement::IntoBox(into_box_stmt) => {
-                    let source = current_state
-                        .get(&into_box_stmt.input.var_id)
-                        .unwrap_or(&ReboxingValue::Revoked);
-                    if !matches!(source, ReboxingValue::Revoked) {
-                        candidates.insert(ReboxCandidate {
-                            source: source.clone(),
-                            reboxed_var: into_box_stmt.output,
-                            into_box_location: (block_id, stmt_idx),
-                        });
-                    }
-                }
-                Statement::StructDestructure(destructure_stmt) => {
-                    let info = &lowered.variables[destructure_stmt.input.var_id].info;
-                    if info.copyable.is_err() || info.droppable.is_err() {
-                        continue;
-                    }
-                    let input_state = current_state
-                        .get(&destructure_stmt.input.var_id)
-                        .cloned()
-                        .unwrap_or(ReboxingValue::Revoked);
-                    match input_state {
-                        ReboxingValue::Revoked => {}
-                        ReboxingValue::MemberOfUnboxed { .. } | ReboxingValue::Unboxed(_) => {
-                            for (member_idx, output_var) in
-                                destructure_stmt.outputs.iter().enumerate()
-                            {
-                                let res = ReboxingValue::MemberOfUnboxed(MemberOfUnboxedData {
-                                    source: Rc::new(input_state.clone()),
-                                    deconstruct_location: (block_id, stmt_idx),
-                                    member: member_idx,
-                                });
+    let candidates = analysis.analyzer.candidates;
+    trace!("Found {} reboxing candidate(s).", candidates.len());
+    candidates
+}
 
-                                current_state.insert(*output_var, res);
-                            }
+impl<'db, 'a> DataflowAnalyzer<'db, 'a> for ReboxingAnalyzer<'db> {
+    /// Unit type since we use a single global state in the analyzer.
+    type Info = ();
+
+    const DIRECTION: Direction = Direction::Forward;
+
+    fn transfer_stmt(
+        &mut self,
+        _info: &mut Self::Info,
+        statement_location: StatementLocation,
+        stmt: &'a Statement<'db>,
+    ) {
+        match stmt {
+            Statement::Unbox(unbox_stmt) => {
+                let res = ReboxingValue::Unboxed(unbox_stmt.input.var_id);
+                self.state.insert(unbox_stmt.output, res);
+            }
+            Statement::IntoBox(into_box_stmt) => {
+                let source =
+                    self.state.get(&into_box_stmt.input.var_id).unwrap_or(&ReboxingValue::Revoked);
+                if !matches!(source, ReboxingValue::Revoked) {
+                    self.candidates.insert(ReboxCandidate {
+                        source: source.clone(),
+                        reboxed_var: into_box_stmt.output,
+                        into_box_location: statement_location,
+                    });
+                }
+            }
+            Statement::StructDestructure(destructure_stmt) => {
+                let var_info = &self.variables[destructure_stmt.input.var_id].info;
+                if var_info.copyable.is_err() || var_info.droppable.is_err() {
+                    return;
+                }
+                let input_state = self
+                    .state
+                    .get(&destructure_stmt.input.var_id)
+                    .cloned()
+                    .unwrap_or(ReboxingValue::Revoked);
+                match input_state {
+                    ReboxingValue::Revoked => {}
+                    ReboxingValue::MemberOfUnboxed { .. } | ReboxingValue::Unboxed(_) => {
+                        for (member_idx, output_var) in destructure_stmt.outputs.iter().enumerate()
+                        {
+                            let res = ReboxingValue::MemberOfUnboxed(MemberOfUnboxedData {
+                                source: Rc::new(input_state.clone()),
+                                deconstruct_location: statement_location,
+                                member: member_idx,
+                            });
+
+                            self.state.insert(*output_var, res);
                         }
                     }
                 }
-                _ => {}
             }
+            _ => {}
         }
+    }
 
-        // Process block end to handle variable remapping
-        if let BlockEnd::Goto(_, remapping) = &block.end {
+    fn transfer_edge(&mut self, _info: &Self::Info, edge: &Edge<'db, 'a>) -> Self::Info {
+        // Handle variable remapping at goto edges by updating the global state.
+        if let Edge::Goto { remapping, .. } = edge {
             for (dst, src_usage) in remapping.iter() {
                 let src_state =
-                    current_state.get(&src_usage.var_id).cloned().unwrap_or(ReboxingValue::Revoked);
-                update_reboxing_variable_join(&mut current_state, *dst, src_state);
+                    self.state.get(&src_usage.var_id).cloned().unwrap_or(ReboxingValue::Revoked);
+                update_reboxing_variable_join(&mut self.state, *dst, src_state);
             }
         }
     }
 
-    trace!("Found {} reboxing candidate(s).", candidates.len());
-    candidates
+    fn initial_info(&mut self, _block_id: BlockId, _block_end: &'a BlockEnd<'db>) -> Self::Info {}
+
+    fn merge(
+        &mut self,
+        _lowered: &Lowered<'db>,
+        _statement_location: StatementLocation,
+        _info1: Self::Info,
+        _info2: Self::Info,
+    ) -> Self::Info {
+    }
 }
 
 /// Update the reboxing state for a variable join. If the variable is already in the state with a

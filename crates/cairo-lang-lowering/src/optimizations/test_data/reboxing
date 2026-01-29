@@ -776,7 +776,7 @@ fn mixed_reboxing(p: Box<Point>, flag: bool) -> Box<felt252> {
 }
 
 //! > candidates
-v5, v9, v14
+v14, v5, v9
 
 //! > before
 Parameters: v0: core::box::Box::<test::Point>, v1: core::bool
@@ -825,18 +825,18 @@ blk1:
 Statements:
   (v4: test::Point) <- unbox(v0)
   (v6: test::Point) <- unbox(v0)
-  (v15: core::box::Box::<core::felt252>, v16: core::box::Box::<core::felt252>) <- struct_destructure(v0)
+  (v17: core::box::Box::<core::felt252>, v18: core::box::Box::<core::felt252>) <- struct_destructure(v0)
   (v7: core::felt252, v8: core::felt252) <- struct_destructure(v6)
 End:
-  Goto(blk3, {v16 -> v10})
+  Goto(blk3, {v18 -> v10})
 
 blk2:
 Statements:
   (v11: test::Point) <- unbox(v0)
-  (v17: core::box::Box::<core::felt252>, v18: core::box::Box::<core::felt252>) <- struct_destructure(v0)
+  (v15: core::box::Box::<core::felt252>, v16: core::box::Box::<core::felt252>) <- struct_destructure(v0)
   (v12: core::felt252, v13: core::felt252) <- struct_destructure(v11)
 End:
-  Goto(blk3, {v17 -> v10})
+  Goto(blk3, {v15 -> v10})
 
 blk3:
 Statements:
