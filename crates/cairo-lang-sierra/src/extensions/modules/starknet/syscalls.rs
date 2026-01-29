@@ -214,7 +214,7 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleInitLibfunc {
             ],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(Sha256StateHandleType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -238,7 +238,7 @@ impl NoGenericArgsGenericLibfunc for Sha256StateHandleDigestLibfunc {
             ],
             vec![OutputVarInfo {
                 ty: sha256_state_handle_unwrapped_type(context)?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: false },
         ))
