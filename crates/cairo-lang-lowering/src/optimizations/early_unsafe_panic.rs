@@ -7,13 +7,13 @@ use std::collections::HashSet;
 use cairo_lang_defs::ids::ExternFunctionId;
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::helper::ModuleHelper;
-use itertools::zip_eq;
 use salsa::Database;
 
-use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::core::StatementLocation;
+use crate::analysis::{DataflowAnalyzer, DataflowBackAnalysis, Direction, Edge};
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::{
-    BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall, VarUsage,
+    Block, BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall,
 };
 
 /// Adds an early unsafe_panic when we detect that `return` is unreachable from a certain point in
@@ -32,12 +32,15 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
         core.submodule("internal").extern_function_id("trace"),
     ]);
 
-    let ctx = UnsafePanicContext { db, fixes: vec![], libfuncs_with_sideffect };
-    let mut analysis = BackAnalysis::new(lowered, ctx);
-    let fixes = if let ReachableSideEffects::Unreachable(location) = analysis.get_root_info() {
+    let mut ctx = UnsafePanicContext { db, libfuncs_with_sideffect, fixes: Vec::new() };
+    let root_info = DataflowBackAnalysis::new(lowered, &mut ctx).run();
+
+    // If the root block is completely unreachable (no path to return), replace entire function
+    // with unsafe_panic from the start.
+    let fixes = if let ReachableSideEffects::Unreachable(location) = root_info {
         vec![((BlockId::root(), 0), location)]
     } else {
-        analysis.analyzer.fixes
+        ctx.fixes
     };
 
     let panic_func_id = core.submodule("panics").function_id("unsafe_panic", vec![]).lowered(db);
@@ -94,47 +97,63 @@ pub enum ReachableSideEffects<'db> {
     Unreachable(LocationId<'db>),
 }
 
-impl<'db> Analyzer<'db, '_> for UnsafePanicContext<'db> {
+impl<'db, 'a> DataflowAnalyzer<'db, 'a> for UnsafePanicContext<'db> {
     type Info = ReachableSideEffects<'db>;
+    const DIRECTION: Direction = Direction::Backward;
 
-    fn visit_stmt(
-        &mut self,
-        info: &mut Self::Info,
-        statement_location: StatementLocation,
-        stmt: &Statement<'db>,
-    ) {
-        if self.has_side_effects(stmt)
-            && let ReachableSideEffects::Unreachable(locations) = *info
+    fn transfer_block(&mut self, info: &mut Self::Info, block_id: BlockId, block: &'a Block<'db>) {
+        if let BlockEnd::Match { info: match_info } = &block.end
+            && let ReachableSideEffects::Unreachable(_) = info
         {
-            self.fixes.push((statement_location, locations));
-            *info = ReachableSideEffects::Reachable
+            self.fixes.push(((block_id, block.statements.len()), *match_info.location()));
         }
-    }
-
-    fn merge_match(
-        &mut self,
-        statement_location: StatementLocation,
-        match_info: &MatchInfo<'db>,
-        infos: impl Iterator<Item = Self::Info>,
-    ) -> Self::Info {
-        let mut res = ReachableSideEffects::Unreachable(*match_info.location());
-        for (arm, info) in zip_eq(match_info.arms(), infos) {
-            match info {
-                ReachableSideEffects::Reachable => {
-                    res = ReachableSideEffects::Reachable;
-                }
-                ReachableSideEffects::Unreachable(l) => self.fixes.push(((arm.block_id, 0), l)),
+        if ReachableSideEffects::Reachable == *info {
+            return;
+        }
+        for (i, stmt) in block.statements.iter().enumerate() {
+            if self.has_side_effects(stmt)
+                && let ReachableSideEffects::Unreachable(locations) = *info
+            {
+                self.fixes.push(((block_id, i), locations));
+                *info = ReachableSideEffects::Reachable;
+                break;
             }
         }
-
-        if let ReachableSideEffects::Unreachable(location) = res {
-            self.fixes.push((statement_location, location));
-        }
-
-        res
     }
 
-    fn info_from_return(&mut self, _: StatementLocation, _vars: &[VarUsage<'db>]) -> Self::Info {
-        ReachableSideEffects::Reachable
+    fn merge(
+        &mut self,
+        lowered: &Lowered<'db>,
+        statement_location: StatementLocation,
+        info1: Self::Info,
+        info2: Self::Info,
+    ) -> Self::Info {
+        match (info1, info2) {
+            (ReachableSideEffects::Reachable, _) | (_, ReachableSideEffects::Reachable) => {
+                ReachableSideEffects::Reachable
+            }
+            // Both are unreachable.
+            (ReachableSideEffects::Unreachable(_), ReachableSideEffects::Unreachable(_)) => {
+                ReachableSideEffects::Unreachable(
+                    lowered.blocks[statement_location.0].end.location().unwrap(),
+                )
+            }
+        }
+    }
+
+    fn transfer_edge(&mut self, info: &Self::Info, edge: &Edge<'db, 'a>) -> Self::Info {
+        if let Edge::MatchArm { arm, .. } = edge
+            && let ReachableSideEffects::Unreachable(l) = info
+        {
+            self.fixes.push(((arm.block_id, 0), *l));
+        }
+        info.clone()
+    }
+
+    fn initial_info(&mut self, _block_id: BlockId, block_end: &'a BlockEnd<'db>) -> Self::Info {
+        match block_end {
+            BlockEnd::Match { info } => ReachableSideEffects::Unreachable(*info.location()),
+            _ => ReachableSideEffects::Reachable,
+        }
     }
 }
