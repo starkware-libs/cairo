@@ -2697,7 +2697,7 @@ fn validate_impl_item_constant<'db>(
     let actual_ty = inference.rewrite(constant_ty).no_err();
     if expected_ty != actual_ty {
         diagnostics.report(
-            impl_constant_type_clause_ast.stable_ptr(db),
+            impl_constant_type_clause_ast.ty(db).stable_ptr(db),
             WrongType { expected_ty, actual_ty },
         );
     }
