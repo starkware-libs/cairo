@@ -108,9 +108,7 @@ impl<'db> DebugWithDb<'db> for BlockEnd<'db> {
                 write!(f, ")")
             }
             BlockEnd::Panic(data) => {
-                write!(f, "  Panic(")?;
-                write!(f, "v{:?}", data.var_id.index())?;
-                write!(f, ")")
+                write!(f, "  Panic(v{:?})", data.var_id.index())
             }
             BlockEnd::Goto(block_id, remapping) => {
                 write!(f, "  Goto({block_id:?}, {:?})", remapping.debug(ctx))
