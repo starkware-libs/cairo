@@ -1,4 +1,183 @@
 = Never type
 
-A _never type_ is a type of an expression that should not be evaluated in the encapsulating block,
-but should cause a flow control change - this may be caused by `return` or `break` statements.
+The _never type_ represents computations that never complete normally.
+It is the type of expressions that diverge — expressions that exit the current
+control flow rather than producing a value.
+
+== Definition
+
+The never type is defined as an empty enum:
+
+[source,cairo]
+----
+pub enum never {}
+----
+
+Because this enum has no variants, it is impossible to construct a value of
+type `never`.
+This makes it useful for representing operations that never return.
+
+== Diverging Expressions
+
+Expressions with type `never` are called _diverging expressions_.
+They don't produce a value in the normal sense; instead, they change the
+control flow by:
+
+* **Exiting the function** — `return` expressions
+* **Terminating execution** — `panic` and related functions
+* **Exiting loops** — `break` and `continue` expressions
+* **Looping forever** — Infinite loops (though Cairo doesn't support `loop`
+  without termination)
+
+== Common Uses
+
+=== Panic Functions
+
+Functions that panic have return type `never`:
+
+[source,cairo]
+----
+pub extern fn panic(data: Array<felt252>) -> never;
+
+pub fn panic_with_felt252(err_code: felt252) -> never {
+    panic(array![err_code])
+}
+
+pub fn panic_with_const_felt252<const ERR_CODE: felt252>() -> never {
+    panic_with_felt252(ERR_CODE)
+}
+
+pub fn panic_with_byte_array(err: @ByteArray) -> crate::never {
+    let mut serialized = array![crate::byte_array::BYTE_ARRAY_MAGIC];
+    err.serialize(ref serialized);
+    panic(serialized)
+}
+----
+
+These functions never return to their caller because they terminate execution.
+
+=== Return Expressions
+
+A `return` statement has type `never` because it exits the function:
+
+[source,cairo]
+----
+let Some(x) = span.pop_front() else {
+    return HashState { s0, s1, s2, odd: false }.finalize();
+};
+----
+
+The `return` expression doesn't produce a value for the `else` block — it exits
+the entire function.
+
+=== Match Arms
+
+In `match` expressions, arms that diverge can have type `never`:
+
+[source,cairo]
+----
+const fn expect(self: Option<T>, err: felt252) -> T {
+    match self {
+        Some(x) => x,
+        None => crate::panic_with_felt252(err),
+    }
+}
+----
+
+The `None` arm has type `never`, while the `Some` arm has type `T`.
+This is valid because `never` is compatible with any type.
+
+== Type Compatibility
+
+The never type is compatible with all other types.
+This is because if an expression has type `never`, it will never actually
+produce a value, so it can be used where any type is expected.
+
+This allows mixing diverging and non-diverging branches in match expressions
+and conditional statements.
+
+== Relationship with Control Flow
+
+=== Return Statements
+
+xref:return-expressions.adoc[Return expressions] have type `never` because they
+exit the enclosing function.
+The `let ... else` construct commonly uses `return` in the `else` block:
+
+[source,cairo]
+----
+let Some(y) = span.pop_front() else {
+    return HashState { s0: s0 + *x, s1, s2, odd: true }.finalize();
+};
+----
+
+=== Panic
+
+xref:panic.adoc[Panic] functions return `never` because they terminate
+execution.
+They can be used in `let ... else` blocks:
+
+[source,cairo]
+----
+let Some(_) = withdraw_gas_all(builtin_costs) else {
+    panic_with_felt252('Out of gas');
+};
+----
+
+== Examples from Core Library
+
+=== Nullable Deref
+
+[source,cairo]
+----
+fn deref(self: Nullable<T>) -> T {
+    match match_nullable(self) {
+        FromNullableResult::Null => crate::panic_with_felt252('Attempted to deref null value'),
+        FromNullableResult::NotNull(value) => value.unbox(),
+    }
+}
+----
+
+The `Null` arm diverges with a panic, while the `NotNull` arm returns `T`.
+
+=== Bytes31 Power Calculation
+
+[source,cairo]
+----
+match n_bytes {
+    0 => 1,
+    1 => 0x100,
+    2 => 0x10000,
+    // ... more cases ...
+    15 => 0x1000000000000000000000000000000,
+    _ => crate::panic_with_felt252('n_bytes too big'),
+}
+----
+
+The default arm diverges, ensuring all valid cases are handled.
+
+=== Option Unwrap
+
+[source,cairo]
+----
+const fn unwrap(self: Option<T>) -> T {
+    self.expect('Option::unwrap failed.')
+}
+
+const fn expect(self: Option<T>, err: felt252) -> T {
+    match self {
+        Some(x) => x,
+        None => crate::panic_with_felt252(err),
+    }
+}
+----
+
+The `unwrap` function uses `expect`, which panics on `None`.
+
+== Related
+
+- xref:return-expressions.adoc[Return expressions] — Exit functions early
+- xref:panic.adoc[Panic] — Terminate execution with an error
+- xref:match-expressions.adoc[Match expressions] — Pattern matching with
+  diverging arms
+- xref:unit-type.adoc[Unit type] — The type with one value, `()`
