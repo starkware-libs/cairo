@@ -25,6 +25,7 @@ control flow by:
 
 * **Exiting the function** — `return` expressions
 * **Terminating execution** — `panic` and related functions
+* **Exiting loops** — `break` and `continue` expressions
 * **Looping forever** — Infinite loops (though Cairo doesn't support `loop`
   without termination)
 
@@ -46,8 +47,8 @@ pub fn panic_with_const_felt252<const ERR_CODE: felt252>() -> never {
     panic_with_felt252(ERR_CODE)
 }
 
-pub fn panic_with_byte_array(err: @ByteArray) -> never {
-    let mut serialized = array![BYTE_ARRAY_MAGIC];
+pub fn panic_with_byte_array(err: @ByteArray) -> crate::never {
+    let mut serialized = array![crate::byte_array::BYTE_ARRAY_MAGIC];
     err.serialize(ref serialized);
     panic(serialized)
 }
@@ -78,7 +79,7 @@ In `match` expressions, arms that diverge can have type `never`:
 const fn expect(self: Option<T>, err: felt252) -> T {
     match self {
         Some(x) => x,
-        None => panic_with_felt252(err),
+        None => crate::panic_with_felt252(err),
     }
 }
 ----
@@ -131,7 +132,7 @@ let Some(_) = withdraw_gas_all(builtin_costs) else {
 ----
 fn deref(self: Nullable<T>) -> T {
     match match_nullable(self) {
-        FromNullableResult::Null => panic_with_felt252('Attempted to deref null value'),
+        FromNullableResult::Null => crate::panic_with_felt252('Attempted to deref null value'),
         FromNullableResult::NotNull(value) => value.unbox(),
     }
 }
@@ -149,7 +150,7 @@ match n_bytes {
     2 => 0x10000,
     // ... more cases ...
     15 => 0x1000000000000000000000000000000,
-    _ => panic_with_felt252('n_bytes too big'),
+    _ => crate::panic_with_felt252('n_bytes too big'),
 }
 ----
 
@@ -166,7 +167,7 @@ const fn unwrap(self: Option<T>) -> T {
 const fn expect(self: Option<T>, err: felt252) -> T {
     match self {
         Some(x) => x,
-        None => panic_with_felt252(err),
+        None => crate::panic_with_felt252(err),
     }
 }
 ----
