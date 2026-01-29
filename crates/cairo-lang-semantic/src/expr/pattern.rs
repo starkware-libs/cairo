@@ -8,7 +8,9 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use salsa::Database;
 
 use super::fmt::ExprFormatter;
+use crate::corelib::core_box_ty;
 use crate::items::function_with_body::FunctionWithBodySemantic;
+use crate::types::wrap_in_snapshots;
 use crate::{
     ConcreteStructId, ExprNumericLiteral, ExprStringLiteral, LocalVariable, PatternArena,
     PatternId, semantic,
@@ -106,6 +108,30 @@ impl<'db> From<&Pattern<'db>> for SyntaxStablePtrId<'db> {
     }
 }
 
+/// Information about how a type is wrapped for pattern matching.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PatternWrappingInfo {
+    /// Number of outer snapshot wrappers (e.g., `@Box<Enum>` has 1 outer snapshot).
+    pub n_outer_snapshots: usize,
+    /// Whether the type is wrapped in a Box.
+    pub is_boxed: bool,
+    /// Number of inner snapshot wrappers inside the Box (e.g., `Box<@Enum>` has 1 inner snapshot).
+    pub n_inner_snapshots: usize,
+}
+impl PatternWrappingInfo {
+    pub fn wrap<'db>(&self, db: &'db dyn Database, ty: crate::TypeId<'db>) -> crate::TypeId<'db> {
+        wrap_in_snapshots(
+            db,
+            if self.is_boxed {
+                core_box_ty(db, wrap_in_snapshots(db, ty, self.n_inner_snapshots))
+            } else {
+                ty
+            },
+            self.n_outer_snapshots,
+        )
+    }
+}
+
 /// Polymorphic container of [`Pattern`] objects used for querying pattern variables.
 pub trait PatternVariablesQueryable<'a> {
     /// Lookup the pattern in this container and then get [`Pattern::variables`] from it.
@@ -178,7 +204,7 @@ pub struct PatternStruct<'db> {
     pub field_patterns: Vec<(PatternId, semantic::Member<'db>)>,
     pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
-    pub n_snapshots: usize,
+    pub wrapping_info: PatternWrappingInfo,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::PatternStructPtr<'db>,

@@ -6,6 +6,7 @@ use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
     try_get_ty_by_name, unwrap_error_propagation_type, validate_literal,
 };
+use cairo_lang_semantic::expr::compute::unwrap_pattern_type;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::functions::{
@@ -38,7 +39,7 @@ use semantic::corelib::{
     core_submodule, get_core_function_id, get_core_ty_by_name, get_function_id, never_ty, unit_ty,
 };
 use semantic::items::constant::ConstValue;
-use semantic::types::{peel_snapshots, wrap_in_snapshots};
+use semantic::types::wrap_in_snapshots;
 use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
     MatchArmSelector, SemanticDiagnostic, TypeLongId,
@@ -750,14 +751,14 @@ fn lower_single_pattern<'db>(
             let mut required_members = UnorderedHashMap::<_, _>::from_iter(
                 structure.field_patterns.iter().map(|(pattern, member)| (member.id, *pattern)),
             );
-            let n_snapshots = structure.n_snapshots;
+            let wrapping_info = structure.wrapping_info;
             let stable_ptr = structure.stable_ptr.untyped();
             let generator = generators::StructDestructure {
                 input: lowered_expr.as_var_usage(ctx, builder)?,
                 var_reqs: members
                     .iter()
                     .map(|(_, member)| VarRequest {
-                        ty: wrap_in_snapshots(ctx.db, member.ty, n_snapshots),
+                        ty: wrapping_info.wrap(ctx.db, member.ty),
                         location: ctx.get_location(
                             required_members
                                 .get(&member.id)
@@ -821,7 +822,8 @@ fn lower_tuple_like_pattern_helper<'db>(
         LoweredExpr::Tuple { exprs, .. } => exprs,
         LoweredExpr::FixedSizeArray { exprs, .. } => exprs,
         _ => {
-            let (n_snapshots, long_type_id) = peel_snapshots(ctx.db, ty);
+            let (type_id, wrapping_info) = unwrap_pattern_type(ctx.db, ty);
+            let long_type_id = type_id;
             let tys = match long_type_id {
                 TypeLongId::Tuple(tys) => tys,
                 TypeLongId::FixedSizeArray { type_id, size } => {
@@ -839,7 +841,7 @@ fn lower_tuple_like_pattern_helper<'db>(
                 .iter()
                 .zip_eq(tys)
                 .map(|(pattern, ty)| VarRequest {
-                    ty: wrap_in_snapshots(ctx.db, ty, n_snapshots),
+                    ty: wrapping_info.wrap(ctx.db, ty),
                     location: ctx.get_location(
                         ctx.function_body.arenas.patterns[*pattern].stable_ptr().untyped(),
                     ),

@@ -2125,3 +2125,219 @@ Root: 8
 //! > lowering_diagnostics
 
 //! > lowered
+
+//! > ==========================================================================
+
+//! > Boxed enum recursive match with snapshots
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, future_sierra: true)
+
+//! > function_code
+fn foo(x: (@@Box<@@@Outer>, @@@Inner)) -> (@@Box<@@@Leaf>,) {
+    match x {
+        (Outer::Wrap(Inner::Next(leaf)), Inner::Next(_)) => (leaf,),
+        _ => (@@BoxTrait::new(@@@Leaf::A(5)),),
+    }
+}
+
+//! > module_code
+enum Outer {
+    Wrap: Inner,
+    Other: felt252,
+}
+
+enum Inner {
+    Next: Leaf,
+}
+
+enum Leaf {
+    A: felt252,
+}
+
+//! > graph
+Root: 6
+6 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(5) }
+5 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(4) }
+4 EnumMatch { matched_var: v1, variants: (NodeId(3), v3), (NodeId(1), v6)}
+3 EnumMatch { matched_var: v3, variants: (NodeId(2), v4)}
+2 BindVar { input: v4, output: PatternVarId(0), next: NodeId(0) }
+1 ArmExpr { expr: ExprId(11) }
+0 ArmExpr { expr: ExprId(2) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: (@@core::box::Box::<@@@test::Outer>, @@@test::Inner)
+blk0 (root):
+Statements:
+  (v1: @@core::box::Box::<@@@test::Outer>, v2: @@@test::Inner) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    Outer::Wrap(v3) => blk1,
+    Outer::Other(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v3) {
+    Inner::Next(v5) => blk3,
+  })
+
+blk2:
+Statements:
+  (v6: core::felt252) <- 5
+  (v7: test::Leaf) <- Leaf::A(v6)
+  (v8: test::Leaf, v9: @test::Leaf) <- snapshot(v7)
+  (v10: @test::Leaf, v11: @@test::Leaf) <- snapshot(v9)
+  (v12: @@test::Leaf, v13: @@@test::Leaf) <- snapshot(v11)
+  (v14: core::box::Box::<@@@test::Leaf>) <- core::box::BoxImpl::<@@@test::Leaf>::new(v13)
+  (v15: core::box::Box::<@@@test::Leaf>, v16: @core::box::Box::<@@@test::Leaf>) <- snapshot(v14)
+  (v17: @core::box::Box::<@@@test::Leaf>, v18: @@core::box::Box::<@@@test::Leaf>) <- snapshot(v16)
+  (v19: (@@core::box::Box::<@@@test::Leaf>,)) <- struct_construct(v18)
+End:
+  Goto(blk4, {v19 -> v21})
+
+blk3:
+Statements:
+  (v20: (@@core::box::Box::<@@@test::Leaf>,)) <- struct_construct(v5)
+End:
+  Goto(blk4, {v20 -> v21})
+
+blk4:
+Statements:
+End:
+  Return(v21)
+
+//! > ==========================================================================
+
+//! > Boxed enum Never type
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, future_sierra: true)
+
+//! > function_code
+fn foo(x: Box<Never>) -> felt252 {
+    match x {}
+}
+
+//! > module_code
+enum Never {}
+
+//! > graph
+Root: 1
+1 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(0) }
+0 EnumMatch { matched_var: v0, variants: }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::box::Box::<test::Never>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+  })
+
+//! > ==========================================================================
+
+//! > Boxed struct deconstruct to enum match
+
+//! > test_runner_name
+test_create_graph(expect_diagnostics: false, future_sierra: true)
+
+//! > function_code
+fn foo(x: Box<(MyEnum, MyEnum)>) -> Box<felt252> {
+    match x {
+        (MyEnum::Variant1(x), MyEnum::Variant1(_)) => x,
+        (MyEnum::Variant2(x), MyEnum::Variant2(_)) => x,
+        _ => BoxTrait::new(2),
+    }
+}
+
+//! > module_code
+enum MyEnum {
+    Variant1: felt252,
+    Variant2: felt252,
+}
+
+//! > graph
+Root: 9
+9 EvaluateExpr { expr: ExprId(0), var_id: v0, next: NodeId(8) }
+8 Deconstruct { input: v0, outputs: [v1, v2], next: NodeId(7) }
+7 EnumMatch { matched_var: v1, variants: (NodeId(4), v3), (NodeId(6), v6)}
+6 EnumMatch { matched_var: v2, variants: (NodeId(2), v7), (NodeId(5), v8)}
+5 BindVar { input: v6, output: PatternVarId(1), next: NodeId(1) }
+4 EnumMatch { matched_var: v2, variants: (NodeId(3), v4), (NodeId(2), v5)}
+3 BindVar { input: v3, output: PatternVarId(0), next: NodeId(0) }
+2 ArmExpr { expr: ExprId(4) }
+1 ArmExpr { expr: ExprId(2) }
+0 ArmExpr { expr: ExprId(1) }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowered
+Parameters: v0: core::box::Box::<(test::MyEnum, test::MyEnum)>
+blk0 (root):
+Statements:
+  (v1: core::box::Box::<test::MyEnum>, v2: core::box::Box::<test::MyEnum>) <- struct_destructure(v0)
+End:
+  Match(match_enum(v1) {
+    MyEnum::Variant1(v3) => blk1,
+    MyEnum::Variant2(v4) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match_enum(v2) {
+    MyEnum::Variant1(v7) => blk5,
+    MyEnum::Variant2(v8) => blk6,
+  })
+
+blk2:
+Statements:
+End:
+  Match(match_enum(v2) {
+    MyEnum::Variant1(v5) => blk3,
+    MyEnum::Variant2(v6) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk8, {v4 -> v11})
+
+blk5:
+Statements:
+End:
+  Goto(blk8, {v3 -> v11})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
+Statements:
+  (v9: core::felt252) <- 2
+  (v10: core::box::Box::<core::felt252>) <- core::box::BoxImpl::<core::felt252>::new(v9)
+End:
+  Goto(blk8, {v10 -> v11})
+
+blk8:
+Statements:
+End:
+  Return(v11)
