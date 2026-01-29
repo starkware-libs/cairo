@@ -22,7 +22,7 @@ use cairo_lang_syntax::node::TypedStablePtr;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::{Entry, UnorderedHashMap};
-use cairo_lang_utils::{Intern, extract_matches, try_extract_matches};
+use cairo_lang_utils::{Intern, extract_matches};
 use context::handle_lowering_flow_error;
 use defs::ids::TopLevelLanguageElementId;
 use flow_control::create_graph::{
@@ -1267,11 +1267,22 @@ fn lower_expr_function_call<'db>(
 
     // TODO(spapini): Use the correct stable pointer.
     let arg_inputs = lower_exprs_to_var_usages(ctx, &expr.args, builder)?;
-    let ref_args_iter = expr
-        .args
-        .iter()
-        .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Reference));
-    let ref_tys = ref_args_iter.clone().map(|ref_arg| ref_arg.ty()).collect();
+
+    let mut ref_args_to_rebind = Vec::new();
+    let mut extra_ret_tys = Vec::new();
+    for arg in &expr.args {
+        match arg {
+            ExprFunctionCallArg::Reference(ref_arg) => {
+                extra_ret_tys.push(ref_arg.ty());
+                ref_args_to_rebind.push(Some(ref_arg.clone()));
+            }
+            ExprFunctionCallArg::TempReference(expr_id) => {
+                extra_ret_tys.push(ctx.function_body.arenas.exprs[*expr_id].ty());
+                ref_args_to_rebind.push(None); // No rebinding needed for TempReference
+            }
+            ExprFunctionCallArg::Value(_) => {}
+        }
+    }
 
     let coupon_input = if let Some(coupon_arg) = expr.coupon_arg {
         Some(lower_expr_to_var_usage(ctx, builder, coupon_arg)?)
@@ -1294,7 +1305,7 @@ fn lower_expr_function_call<'db>(
             function: expr.function,
             concrete_enum_id: *concrete_enum_id,
             inputs: arg_inputs,
-            member_paths: ref_args_iter.cloned().collect(),
+            member_paths: ref_args_to_rebind.iter().flatten().cloned().collect(),
             location,
         };
 
@@ -1313,15 +1324,17 @@ fn lower_expr_function_call<'db>(
             function: expr.function,
             inputs: arg_inputs,
             coupon_input,
-            extra_ret_tys: ref_tys,
+            extra_ret_tys,
             ret_ty: expr.ty,
         },
         location,
     )?;
 
-    // Rebind the ref variables.
-    for (ref_arg, output_var) in zip_eq(ref_args_iter, ref_outputs) {
-        builder.update_ref(ctx, ref_arg, output_var.var_id);
+    // Rebind the ref variables (skip TempReference which has None).
+    for (maybe_ref_arg, output_var) in zip_eq(ref_args_to_rebind, ref_outputs) {
+        if let Some(ref_arg) = maybe_ref_arg {
+            builder.update_ref(ctx, &ref_arg, output_var.var_id);
+        }
     }
 
     Ok(res)
@@ -1746,17 +1759,21 @@ fn lower_exprs_to_var_usages<'db>(
     // variable, while still allowing `arr.append(arr.len())`.
     let mut value_iter = args
         .iter()
-        .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
-        .map(|arg_expr_id| lower_expr_to_var_usage(ctx, builder, *arg_expr_id))
+        .filter_map(|arg| match arg {
+            ExprFunctionCallArg::Value(expr_id) | ExprFunctionCallArg::TempReference(expr_id) => {
+                Some(lower_expr_to_var_usage(ctx, builder, *expr_id))
+            }
+            ExprFunctionCallArg::Reference(_) => None,
+        })
         .collect::<Result<Vec<_>, _>>()?
         .into_iter();
     Ok(args
         .iter()
         .map(|arg| match arg {
-            semantic::ExprFunctionCallArg::Reference(ref_arg) => {
-                builder.get_ref(ctx, ref_arg).unwrap()
+            semantic::ExprFunctionCallArg::Reference(arg) => builder.get_ref(ctx, arg).unwrap(),
+            ExprFunctionCallArg::Value(_) | ExprFunctionCallArg::TempReference(_) => {
+                value_iter.next().unwrap()
             }
-            semantic::ExprFunctionCallArg::Value(_) => value_iter.next().unwrap(),
         })
         .collect())
 }

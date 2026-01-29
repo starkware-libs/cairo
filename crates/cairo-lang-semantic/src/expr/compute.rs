@@ -172,9 +172,48 @@ impl<'db> Deref for PatternAndId<'db> {
     }
 }
 
-/// Named argument in a function call.
+/// An argument in a function call, with optional name and modifiers.
 #[derive(Debug, Clone)]
-pub struct NamedArg<'db>(ExprAndId<'db>, Option<ast::TerminalIdentifier<'db>>, Mutability);
+pub struct NamedArg<'db> {
+    /// The expression for this argument.
+    expr: ExprAndId<'db>,
+    /// The name of the argument, if provided (for named arguments like `foo: value`).
+    name: Option<ast::TerminalIdentifier<'db>>,
+    /// The mutability modifiers (`ref` or `mut`) applied to this argument.
+    mutability: Mutability,
+    /// Whether this argument can be passed as a temporary reference.
+    /// This is only true for `ref self` in method calls on temporary expressions
+    /// (e.g., `make_foo().method()` where `method` takes `ref self`).
+    is_temp_ref_allowed: bool,
+}
+
+impl<'db> NamedArg<'db> {
+    /// Creates a new argument with the given expression and modifiers.
+    /// This is the common case for most function arguments.
+    fn new(expr: ExprAndId<'db>, modifiers: Mutability) -> Self {
+        Self { expr, name: None, mutability: modifiers, is_temp_ref_allowed: false }
+    }
+
+    /// Creates a new immutable argument (no modifiers).
+    fn value(expr: ExprAndId<'db>) -> Self {
+        Self::new(expr, Mutability::Immutable)
+    }
+
+    /// Creates an argument that allows temporary references.
+    /// Used for `ref self` in method calls on temporary expressions.
+    fn temp_reference(expr: ExprAndId<'db>) -> Self {
+        Self { expr, name: None, mutability: Mutability::Reference, is_temp_ref_allowed: true }
+    }
+
+    /// Creates an argument with a name (for named arguments like `foo: value`).
+    fn named(
+        expr: ExprAndId<'db>,
+        name: Option<ast::TerminalIdentifier<'db>>,
+        modifiers: Mutability,
+    ) -> Self {
+        Self { expr, name, mutability: modifiers, is_temp_ref_allowed: false }
+    }
+}
 
 pub enum ContextFunction<'db> {
     Global,
@@ -1036,7 +1075,7 @@ fn compute_expr_unary_semantic<'db>(
                         return expr_function_call(
                             ctx,
                             *function_id,
-                            vec![NamedArg(desnapped_expr, None, *self_mutability)],
+                            vec![NamedArg::new(desnapped_expr, *self_mutability)],
                             syntax.stable_ptr(db),
                             syntax.stable_ptr(db).into(),
                         );
@@ -1105,11 +1144,10 @@ fn compute_expr_unary_semantic<'db>(
             expr_function_call(
                 ctx,
                 function,
-                vec![NamedArg(
-                    ExprAndId { expr: Expr::Snapshot(snapshot_expr), id: snapshot_expr_id },
-                    None,
-                    Mutability::Immutable,
-                )],
+                vec![NamedArg::value(ExprAndId {
+                    expr: Expr::Snapshot(snapshot_expr),
+                    id: snapshot_expr_id,
+                })],
                 stable_ptr,
                 stable_ptr.into(),
             )
@@ -1149,7 +1187,7 @@ fn compute_expr_unary_semantic<'db>(
             expr_function_call(
                 ctx,
                 function,
-                vec![NamedArg(expr, None, Mutability::Immutable)],
+                vec![NamedArg::value(expr)],
                 syntax.stable_ptr(db),
                 syntax.stable_ptr(db).into(),
             )
@@ -1313,10 +1351,7 @@ fn call_core_binary_op<'db>(
     expr_function_call(
         ctx,
         function,
-        vec![
-            NamedArg(lexpr, None, first_param.mutability),
-            NamedArg(rexpr, None, Mutability::Immutable),
-        ],
+        vec![NamedArg::new(lexpr, first_param.mutability), NamedArg::value(rexpr)],
         stable_ptr,
         stable_ptr.into(),
     )
@@ -1468,16 +1503,16 @@ fn compute_expr_function_call_semantic<'db>(
                 for arg_syntax in args_iter {
                     let stable_ptr = arg_syntax.stable_ptr(db);
                     let arg = compute_named_argument_clause(ctx, arg_syntax, None);
-                    if arg.2 != Mutability::Immutable {
+                    if arg.mutability != Mutability::Immutable {
                         return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
                     }
-                    if arg.1.is_some() {
+                    if arg.name.is_some() {
                         return Err(ctx
                             .diagnostics
                             .report(stable_ptr, NamedArgumentsAreNotSupported));
                     }
-                    args.push(arg.0.id);
-                    arg_types.push(arg.0.ty());
+                    args.push(arg.expr.id);
+                    arg_types.push(arg.expr.ty());
                 }
                 let args_expr = Expr::Tuple(ExprTuple {
                     items: args,
@@ -1491,8 +1526,8 @@ fn compute_expr_function_call_semantic<'db>(
                     ctx,
                     call_function_id,
                     vec![
-                        NamedArg(fixed_closure, None, closure_mutability),
-                        NamedArg(args_expr, None, Mutability::Immutable),
+                        NamedArg::new(fixed_closure, closure_mutability),
+                        NamedArg::value(args_expr),
                     ],
                     call_ptr,
                     call_ptr.into(),
@@ -1534,7 +1569,7 @@ fn compute_expr_function_call_semantic<'db>(
                     WrongNumberOfArguments { expected: 1, actual: named_args.len() },
                 ));
             }
-            let NamedArg(arg, name_terminal, mutability) = named_args[0].clone();
+            let NamedArg { expr: arg, name: name_terminal, mutability, .. } = named_args[0].clone();
             if let Some(name_terminal) = name_terminal {
                 ctx.diagnostics.report(name_terminal.stable_ptr(db), NamedArgumentsAreNotSupported);
             }
@@ -1636,7 +1671,7 @@ pub fn compute_named_argument_clause<'db>(
             (expr, Some(arg_name_identifier))
         }
     };
-    NamedArg(expr, arg_name_identifier, mutability)
+    NamedArg::named(expr, arg_name_identifier, mutability)
 }
 
 /// Handles the semantic computation of a closure expression.
@@ -2200,7 +2235,7 @@ fn compute_expr_for_semantic<'db>(
     let into_iter_call = expr_function_call(
         ctx,
         into_iterator_function_id,
-        vec![NamedArg(fixed_into_iter_var, None, into_iter_mutability)],
+        vec![NamedArg::new(fixed_into_iter_var, into_iter_mutability)],
         expr_ptr,
         expr_ptr,
     )?;
@@ -2557,10 +2592,7 @@ fn compute_expr_indexed_semantic<'db>(
     expr_function_call(
         ctx,
         function_id,
-        vec![
-            NamedArg(fixed_expr, None, mutability),
-            NamedArg(index_expr, None, Mutability::Immutable),
-        ],
+        vec![NamedArg::new(fixed_expr, mutability), NamedArg::value(index_expr)],
         syntax.stable_ptr(db),
         index_expr_syntax.stable_ptr(db),
     )
@@ -2709,7 +2741,7 @@ fn get_method_function_candidates<'db>(
         let derefed_expr = expr_function_call(
             ctx,
             deref_info.function_id,
-            vec![NamedArg(fixed_expr, None, deref_info.self_mutability)],
+            vec![NamedArg::new(fixed_expr, deref_info.self_mutability)],
             method_syntax,
             expr_ptr,
         )?;
@@ -3726,8 +3758,17 @@ fn method_call_expr<'db>(
     // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
     let arguments_var = expr.arguments(db).arguments(db);
     let mut args_iter = arguments_var.elements(db);
-    // Self argument.
-    let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
+    // Self argument. Allow temp reference if it's a `ref self` method and the receiver is a
+    // temporary expression (not a variable).
+    // Self argument. Allow temp reference if it's a `ref self` method and the receiver is a
+    // temporary expression (not a variable).
+    let is_temp_ref = mutability == Mutability::Reference && fixed_lexpr.as_member_path().is_none();
+    let self_arg = if is_temp_ref {
+        NamedArg::temp_reference(fixed_lexpr)
+    } else {
+        NamedArg::new(fixed_lexpr, mutability)
+    };
+    let mut named_args = vec![self_arg];
     // Other arguments.
     let closure_params: OrderedHashMap<TypeId<'db>, TypeId<'_>> =
         ctx.db.concrete_function_closure_params(function_id)?;
@@ -3799,7 +3840,7 @@ fn member_access_expr<'db>(
                 let cur_expr = expr_function_call(
                     ctx,
                     *deref_function,
-                    vec![NamedArg(derefed_expr, None, *mutability)],
+                    vec![NamedArg::new(derefed_expr, *mutability)],
                     stable_ptr,
                     stable_ptr,
                 )
@@ -4160,7 +4201,7 @@ fn expr_function_call<'db>(
 
     let inference = &mut ctx.resolver.inference();
     let mut args = Vec::new();
-    for (NamedArg(arg, _name, mutability), param) in
+    for (NamedArg { expr: arg, mutability, is_temp_ref_allowed, .. }, param) in
         named_args.into_iter().zip(signature.params.iter())
     {
         let arg_ty = arg.ty();
@@ -4179,23 +4220,28 @@ fn expr_function_call<'db>(
         }
 
         args.push(if param.mutability == Mutability::Reference {
-            // Verify the argument is a variable.
-            let Some(ref_arg) = arg.as_member_path() else {
+            if let Some(ref_arg) = arg.as_member_path() {
+                // The argument is a variable - verify it's mutable and pass as Reference.
+                ctx.variable_tracker.report_var_mutability_error(
+                    ctx.db,
+                    ctx.diagnostics,
+                    &ref_arg.base_var(),
+                    arg.deref(),
+                    RefArgNotMutable,
+                );
+                // Verify that it is passed explicitly as 'ref' (not required for method calls on
+                // temporaries).
+                if mutability != Mutability::Reference && !is_temp_ref_allowed {
+                    ctx.diagnostics.report(arg.deref(), RefArgNotExplicit);
+                }
+                ExprFunctionCallArg::Reference(ref_arg)
+            } else if is_temp_ref_allowed {
+                // For method calls on temporaries, allow expressions (not just variables).
+                // The expression will be stored in a temporary and passed by reference.
+                ExprFunctionCallArg::TempReference(arg.id)
+            } else {
                 return Err(ctx.diagnostics.report(arg.deref(), RefArgNotAVariable));
-            };
-            // Verify the variable is mutable and hasn't been referenced.
-            ctx.variable_tracker.report_var_mutability_error(
-                ctx.db,
-                ctx.diagnostics,
-                &ref_arg.base_var(),
-                arg.deref(),
-                RefArgNotMutable,
-            );
-            // Verify that it is passed explicitly as 'ref'.
-            if mutability != Mutability::Reference {
-                ctx.diagnostics.report(arg.deref(), RefArgNotExplicit);
             }
-            ExprFunctionCallArg::Reference(ref_arg)
         } else {
             // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {
@@ -4229,7 +4275,7 @@ fn maybe_pop_coupon_argument<'db>(
     function_id: FunctionId<'db>,
 ) -> Option<ExprId> {
     let mut coupon_arg: Option<ExprId> = None;
-    if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
+    if let NamedArg { expr: arg, name: Some(name_terminal), mutability, .. } = named_args.last()? {
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_id);
         if name_terminal.text(ctx.db).long(ctx.db) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
@@ -4284,7 +4330,7 @@ fn check_named_arguments<'db>(
     // Indicates whether a [UnnamedArgumentFollowsNamed] diagnostic was reported. Used to prevent
     // multiple similar diagnostics.
     let mut reported_unnamed_argument_follows_named: bool = false;
-    for (NamedArg(arg, name_opt, _mutability), param) in
+    for (NamedArg { expr: arg, name: name_opt, .. }, param) in
         named_args.iter().zip(signature.params.iter())
     {
         // Check name.
