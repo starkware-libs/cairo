@@ -17,7 +17,9 @@
 //! - Call transfer block for each block in need of processing
 
 use crate::ids::LocationId;
-use crate::{Block, BlockEnd, BlockId, MatchArm, MatchInfo, Statement, VarRemapping, VarUsage};
+use crate::{
+    Block, BlockEnd, BlockId, Lowered, MatchArm, MatchInfo, Statement, VarRemapping, VarUsage,
+};
 
 /// Location of a lowering statement inside a block.
 pub type StatementLocation = (BlockId, usize);
@@ -42,9 +44,9 @@ pub enum Edge<'db, 'a> {
     /// A match arm edge with the arm's introduced variables.
     MatchArm { arm: &'a MatchArm<'db>, match_info: &'a MatchInfo<'db> },
     /// A return edge (terminal).
-    Return { vars: &'a [VarUsage<'db>], location: &'a LocationId<'db> },
+    Return { vars: &'a [VarUsage<'db>], location: LocationId<'db> },
     /// A panic edge (terminal).
-    Panic { var: &'a VarUsage<'db> },
+    Panic { var: VarUsage<'db> },
 }
 
 /// Unified analyzer trait for dataflow analysis.
@@ -96,13 +98,14 @@ pub trait DataflowAnalyzer<'db, 'a> {
     /// Called at join points (match merge for backward, block entry for forward).
     ///
     /// - `statement_location`: where the merge occurs in the CFG.
-    /// - `location`: source location of the merge.
-    /// - `infos`: iterator of (source_block_id, info) pairs from each incoming path.
+    /// - `info1`: first info from an incoming path.
+    /// - `info2`: second info from another incoming path.
     fn merge(
         &mut self,
+        lowered: &Lowered<'db>,
         statement_location: StatementLocation,
-        location: &'a LocationId<'db>,
-        infos: impl Iterator<Item = (BlockId, Self::Info)>,
+        info1: Self::Info,
+        info2: Self::Info,
     ) -> Self::Info;
 
     /// Transfer function for an entire block.
@@ -159,5 +162,33 @@ pub trait DataflowAnalyzer<'db, 'a> {
         _block_id: BlockId,
         _block: &Block<'db>,
     ) {
+    }
+
+    /// Block entry location.
+    /// For Backward it is the merge location.
+    /// For Forward it is the block entry location, if there is a statement.
+    /// If not statement exists it will look at block end. This might recurse to next block if we
+    /// have a goto with no remappings.
+    fn block_entry_location(&self, lowered: &Lowered<'db>, block_id: BlockId) -> LocationId<'db> {
+        match Self::DIRECTION {
+            Direction::Backward => {
+                if let BlockEnd::Match { info } = &lowered.blocks[block_id].end {
+                    *info.location()
+                } else {
+                    unreachable!("In a backward analysis a merge should always be a match end.")
+                }
+            }
+            Direction::Forward => lowered.blocks[block_id]
+                .statements
+                .iter()
+                .find_map(|s| s.location())
+                .or(lowered.blocks[block_id].end.location())
+                .unwrap_or_else(|| {
+                    let BlockEnd::Goto(next, _) = &lowered.blocks[block_id].end else {
+                        unreachable!("Only goto end has no location")
+                    };
+                    self.block_entry_location(lowered, *next)
+                }),
+        }
     }
 }
