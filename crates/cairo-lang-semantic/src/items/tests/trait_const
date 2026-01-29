@@ -169,9 +169,9 @@ impl MyImpl of MyTrait {
 
 //! > expected_diagnostics
 error[E2039]: Expected type "core::integer::u32", found: "core::integer::i32".
- --> lib.cairo:5:12
+ --> lib.cairo:5:14
     const X: i32 = 9;
-           ^^^^^
+             ^^^
 
 //! > ==========================================================================
 
