@@ -83,11 +83,11 @@ The assembler and runner code define instruction flags and memory helpers that d
 semantics at execution time (e.g., `ApUpdate`, `FpUpdate`, creating new segments, reading/writing
 buffers).
 
-== Out of scope / WIP
+== Out of scope
 
 This page intentionally does not fix the exact Application Binary Interface (ABI) layout or a
 formal, stable layout for all composite types in VM memory. Those details are covered by the ABI
-specification and may evolve. Refer to the ABI page when stabilized.
+specification and may evolve. Refer to the ABI page.
 
 See also:
 
