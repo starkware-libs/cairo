@@ -147,6 +147,16 @@ fn simulate(
 #[test_case("u128_overflowing_sub", vec![], vec![RangeCheck, Uint128(3), Uint128(5)]
              => Ok((vec![RangeCheck, Uint128(u128::MAX - 1)], 1));
             "u128_overflowing_sub(3, 5)")]
+#[test_case("array_pop_front_consume", vec![type_arg("u128")],
+             vec![Array(vec![Uint128(5), Uint128(7)])]
+             => Ok((
+                 vec![Array(vec![Uint128(7)]), Uint128(5)],
+                 0,
+             ));
+            "array_pop_front_consume([5,7]) non-empty")]
+#[test_case("array_pop_front_consume", vec![type_arg("u128")], vec![Array(vec![])]
+             => Ok((vec![], 1));
+            "array_pop_front_consume([]) empty")]
 fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
