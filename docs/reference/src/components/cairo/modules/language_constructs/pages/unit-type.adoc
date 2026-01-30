@@ -1,5 +1,142 @@
 = Unit type
 
-A _unit type_ is a type which has only one value (xref:literal-expressions.adoc[unit literal], `()`).
-It is represented by a tuple with no elements.
-Its size is always zero, and it is guaranteed to not exist in the compiled code.
+The _unit type_ is a type with exactly one value, written as `()`.
+It represents the absence of a meaningful value and is used for functions and
+expressions that perform side effects but don't return data.
+
+== Definition
+
+The unit type is represented by an empty tuple with only one possible value:
+the xref:literal-expressions.adoc[unit literal] `()`.
+
+== Characteristics
+
+=== Zero Size
+
+The unit type has zero size and is guaranteed to not exist in compiled code.
+It carries no runtime information.
+
+=== Single Value
+
+Because `()` has only one possible value, the compiler can optimize it away
+entirely.
+There's no need to store or pass it at runtime.
+
+== Common Uses
+
+=== Functions with Side Effects
+
+Functions that perform actions but don't return meaningful data use `()`:
+
+[source,cairo]
+----
+pub fn assert_eq<T, +PartialEq<T>>(a: @T, b: @T, err_code: felt252) {
+    assert(a == b, err_code);
+}
+----
+
+The function returns `()` implicitly because it only performs a side effect
+(asserting equality).
+
+=== Implicit Returns
+
+When a function doesn't explicitly return a value, it returns `()`:
+
+[source,cairo]
+----
+#[test]
+fn test_felt252_operators() {
+    assert_eq(@(1 + 3), @4, '1 + 3 == 4');
+    assert_eq(@(3 + 6), @9, '3 + 6 == 9');
+    // No return statement, implicitly returns ()
+}
+----
+
+=== If Expressions Without Else
+
+xref:if-expressions.adoc[If expressions] without an `else` branch evaluate to
+`()` when the condition is false.
+
+== Trait Implementations
+
+The unit type implements several core traits:
+
+=== Default
+
+[source,cairo]
+----
+impl DefaultTupleBase of Default<()> {
+    fn default() -> () {
+        ()
+    }
+}
+----
+
+=== Clone
+
+[source,cairo]
+----
+impl CloneHelperBaseTuple of CloneHelper<(), ()> {
+    fn clone(value: ()) -> () {
+        value
+    }
+}
+----
+
+=== TupleSnapForward
+
+[source,cairo]
+----
+impl TupleSnapForwardTupleSize0 of TupleSnapForward<()> {
+    type SnapForward = ();
+    fn snap_forward(self: @()) -> () nopanic {
+        ()
+    }
+}
+----
+
+== Comparison with Never Type
+
+The unit type `()` is different from the xref:never-type.adoc[never type]:
+
+* **Unit type `()`**: Has one value, represents "no meaningful data"
+* **Never type `never`**: Has no values, represents "never returns"
+
+Functions returning `()` complete normally but return no data.
+Functions returning `never` never complete normally — they either panic, return
+early, or loop forever.
+
+== Examples
+
+=== Side Effect Functions
+
+[source,cairo]
+----
+pub fn set_block_number(block_number: u64) {
+    // Performs side effect, returns ()
+}
+
+pub fn set_caller_address(address: ContractAddress) {
+    // Performs side effect, returns ()
+}
+----
+
+=== Assertion Functions
+
+[source,cairo]
+----
+pub fn assert_le<T, +PartialOrd<T>>(a: T, b: T, err_code: felt252) {
+    assert(a <= b, err_code);
+}
+
+pub fn assert_gt<T, +PartialOrd<T>>(a: T, b: T, err_code: felt252) {
+    assert(a > b, err_code);
+}
+----
+
+== Related
+
+- xref:tuple-types.adoc[Tuple types] — Unit is an empty tuple
+- xref:never-type.adoc[Never type] — Type with no values
+- xref:literal-expressions.adoc[Literal expressions] — Unit literal `()`
+- xref:if-expressions.adoc[If expressions] — If without else returns `()`
