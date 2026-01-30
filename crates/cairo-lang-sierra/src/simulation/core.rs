@@ -149,7 +149,12 @@ pub fn simulate<
         }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::PopFrontConsume(_)) => {
             take_inputs!(let [CoreValue::Array(mut arr)] = inputs);
-            if arr.is_empty() { (vec![CoreValue::Array(arr)], 1) } else { (vec![arr.remove(0)], 0) }
+            if arr.is_empty() {
+                (vec![], 1)
+            } else {
+                let front = arr.remove(0);
+                (vec![CoreValue::Array(arr), front], 0)
+            }
         }
         CoreConcreteLibfunc::Array(ArrayConcreteLibfunc::Get(_)) => {
             take_inputs!(
