@@ -9,7 +9,7 @@ use alloc::{format, string::String, vec::Vec};
 use num_bigint::ToBigInt;
 use num_bigint::{BigInt, BigUint};
 #[cfg(feature = "serde")]
-use num_traits::{Num, Signed};
+use num_traits::Signed;
 
 /// A wrapper for BigUint that serializes as hex.
 #[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
