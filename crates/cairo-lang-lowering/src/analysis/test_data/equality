@@ -1,0 +1,627 @@
+//! > Test multiple snapshots of same variable creates equivalences
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: Array<felt252>) -> (@Array<felt252>, @Array<felt252>) {
+    let snap1 = @x;
+    let snap2 = @x;
+    (snap1, snap2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v1)
+  (v5: (@core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>)) <- struct_construct(v2, v4)
+End:
+  Return(v5)
+
+//! > analysis_state
+Block 0:
+@v0 = v2, v0 = v1, v0 = v3, v2 = v4
+
+//! > ==========================================================================
+
+//! > Test simple function with no equality operations
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: felt252, y: felt252) -> felt252 {
+    x + y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+End:
+  Return(v2)
+
+//! > analysis_state
+Block 0:
+(empty)
+
+//! > ==========================================================================
+
+//! > Test chained snapshots track transitive equality
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: Array<felt252>) -> (@Array<felt252>, @Array<felt252>, @Array<felt252>) {
+    let snap1 = @x;
+    let snap2 = @x;
+    let snap3 = @x;
+    (snap1, snap2, snap3)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v1)
+  (v5: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v3)
+  (v7: (@core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>)) <- struct_construct(v2, v4, v6)
+End:
+  Return(v7)
+
+//! > analysis_state
+Block 0:
+@v0 = v2, v0 = v1, v0 = v3, v0 = v5, v2 = v4, v2 = v6
+
+//! > ==========================================================================
+
+//! > Test box of same value creates box equivalence
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: felt252) -> (Box<felt252>, Box<felt252>) {
+    let box1 = BoxTrait::new(x);
+    let box2 = BoxTrait::new(x);
+    (box1, box2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::box::Box::<core::felt252>) <- into_box(v0)
+  (v2: core::box::Box::<core::felt252>) <- into_box(v0)
+  (v3: (core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)) <- struct_construct(v1, v2)
+End:
+  Return(v3)
+
+//! > analysis_state
+Block 0:
+Box(v0) = v1, v1 = v2
+
+//! > ==========================================================================
+
+//! > Test struct construct and destructure tracks equality
+
+//! > TODO(eytan-starkware): Track struct field equality through construct/destructure
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252, b: felt252) -> (MyStruct, felt252, felt252) {
+    let s = MyStruct { x: a, y: b };
+    let MyStruct { x, y } = s;
+    (MyStruct { x, y }, x, y)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct MyStruct {
+    x: felt252,
+    y: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: test::MyStruct) <- struct_construct(v0, v1)
+  (v3: (test::MyStruct, core::felt252, core::felt252)) <- struct_construct(v2, v0, v1)
+End:
+  Return(v3)
+
+//! > analysis_state
+Block 0:
+(empty)
+
+//! > ==========================================================================
+
+//! > Test enum construct tracks variant
+
+//! > TODO(eytan-starkware): Track enum variant and inner value relationship
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: felt252) -> MyEnum {
+    MyEnum::A(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::MyEnum) <- MyEnum::A(v0)
+End:
+  Return(v1)
+
+//! > analysis_state
+Block 0:
+(empty)
+
+//! > ==========================================================================
+
+//! > Test match with diamond control flow loses equality info
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: felt252) -> felt252 {
+    let snap1 = @x;
+    let result = match x {
+        0 => 1,
+        _ => 2,
+    };
+    result
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:2:9
+    let snap1 = @x;
+        ^^^^^
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1
+End:
+  Return(v2)
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 2
+End:
+  Return(v3)
+
+//! > analysis_state
+Block 0:
+(empty)
+
+Block 1:
+(empty)
+
+Block 2:
+(empty)
+
+//! > ==========================================================================
+
+//! > Test match on Option with diamond merges conservatively
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(opt: Option<felt252>) -> felt252 {
+    match opt {
+        Option::Some(val) => val,
+        Option::None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 0
+End:
+  Return(v3)
+
+//! > analysis_state
+Block 0:
+(empty)
+
+Block 1:
+(empty)
+
+Block 2:
+(empty)
+
+//! > ==========================================================================
+
+//! > Test equality preserved within single match arm
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(arr: Array<felt252>) -> @Array<felt252> {
+    match arr.len() {
+        0 => {
+            let snap = @arr;
+            snap
+        },
+        _ => {
+            let snap = @arr;
+            snap
+        },
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
+  (v3: core::integer::u32) <- core::array::array_len::<core::felt252>(v2)
+  (v4: core::felt252) <- core::internal::bounded_int::upcast::<core::integer::u32, core::felt252>(v3)
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v5) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v6: core::array::Array::<core::felt252>, v7: @core::array::Array::<core::felt252>) <- snapshot(v1)
+End:
+  Return(v7)
+
+//! > analysis_state
+Block 0:
+@v0 = v2, v0 = v1
+
+Block 1:
+@v0 = v2, v0 = v1
+
+Block 2:
+@v0 = v2, v0 = v1
+
+Block 3:
+@v0 = v2, v0 = v1, v0 = v6, v2 = v7
+
+//! > ==========================================================================
+
+//! > Test nested box operations
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: felt252) -> (Box<Box<felt252>>, felt252) {
+    let box1 = BoxTrait::new(x);
+    let box2 = BoxTrait::new(box1);
+    let unbox1 = box2.unbox();
+    let unbox2 = unbox1.unbox();
+    // Return both to prevent optimization from eliminating the boxes
+    (box2, unbox2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::box::Box::<core::felt252>) <- into_box(v0)
+  (v2: core::box::Box::<core::box::Box::<core::felt252>>) <- into_box(v1)
+  (v3: (core::box::Box::<core::box::Box::<core::felt252>>, core::felt252)) <- struct_construct(v2, v0)
+End:
+  Return(v3)
+
+//! > analysis_state
+Block 0:
+Box(v0) = v1, Box(v1) = v2
+
+//! > ==========================================================================
+
+//! > Test snapshot of boxed value
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: Array<felt252>) -> @Box<@Array<felt252>> {
+    let snap = @x;
+    let boxed = BoxTrait::new(snap);
+    let box_snap = @boxed;
+    box_snap
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
+  (v3: core::box::Box::<@core::array::Array::<core::felt252>>) <- into_box(v2)
+  (v4: core::box::Box::<@core::array::Array::<core::felt252>>, v5: @core::box::Box::<@core::array::Array::<core::felt252>>) <- snapshot(v3)
+End:
+  Return(v5)
+
+//! > analysis_state
+Block 0:
+@v0 = v2, @v3 = v5, Box(v2) = v3, v0 = v1, v3 = v4
+
+//! > ==========================================================================
+
+//! > Test reboxing through function call
+
+//! > TODO(eytan-starkware): Inter-procedural analysis to track equality through function calls
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(boxed: Box<felt252>) -> Box<felt252> {
+    let unboxed = boxed.unbox();
+    let modified = identity(unboxed);
+    let reboxed = BoxTrait::new(modified);
+    reboxed
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn identity(x: felt252) -> felt252 {
+    x
+}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::box::Box::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- unbox(v0)
+  (v2: core::felt252) <- test::identity(v1)
+  (v3: core::box::Box::<core::felt252>) <- into_box(v2)
+End:
+  Return(v3)
+
+//! > analysis_state
+Block 0:
+Box(v1) = v0, Box(v2) = v3
+
+//! > ==========================================================================
+
+//! > Test reboxing through desnap - equality preserved
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(boxed: Box<felt252>) -> (@Box<felt252>, Box<felt252>) {
+    let snap = @boxed;
+    let desnapped = *snap;
+    let unboxed = desnapped.unbox();
+    let reboxed = BoxTrait::new(unboxed);
+    (snap, reboxed)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::box::Box::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::box::Box::<core::felt252>, v2: @core::box::Box::<core::felt252>) <- snapshot(v0)
+  (v3: core::felt252) <- unbox(v0)
+  (v4: core::box::Box::<core::felt252>) <- into_box(v3)
+  (v5: (@core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)) <- struct_construct(v2, v4)
+End:
+  Return(v5)
+
+//! > analysis_state
+Block 0:
+@v0 = v2, Box(v3) = v0, v0 = v1, v0 = v4
+
+//! > ==========================================================================
+
+//! > Test reboxing works through snapshot - equality tracked correctly
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(boxed: Box<felt252>) -> Box<felt252> {
+    let unboxed = boxed.unbox();
+    let snap = @unboxed;
+    use_snap(snap);
+    let reboxed = BoxTrait::new(unboxed);
+    reboxed
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn use_snap(x: @felt252) {}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::box::Box::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- unbox(v0)
+  (v2: core::felt252, v3: @core::felt252) <- snapshot(v1)
+  () <- test::use_snap(v3)
+  (v4: core::box::Box::<core::felt252>) <- into_box(v2)
+End:
+  Return(v4)
+
+//! > analysis_state
+Block 0:
+@v1 = v3, Box(v1) = v0, v0 = v4, v1 = v2
+
+//! > ==========================================================================
+
+//! > Test reboxing with different type - no equality
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(boxed: Box<u32>) -> Box<felt252> {
+    let unboxed: u32 = boxed.unbox();
+    let converted: felt252 = unboxed.into();
+    let reboxed = BoxTrait::new(converted);
+    reboxed
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::box::Box::<core::integer::u32>
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- unbox(v0)
+  (v2: core::felt252) <- core::integer::u32_to_felt252(v1)
+  (v3: core::box::Box::<core::felt252>) <- into_box(v2)
+End:
+  Return(v3)
+
+//! > analysis_state
+Block 0:
+Box(v1) = v0, Box(v2) = v3
