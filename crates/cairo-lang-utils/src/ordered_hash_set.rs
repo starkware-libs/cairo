@@ -2,7 +2,6 @@ use core::hash::{BuildHasher, Hash};
 use core::ops::Sub;
 
 use indexmap::IndexSet;
-use itertools::zip_eq;
 
 #[cfg(feature = "std")]
 type BHImpl = std::collections::hash_map::RandomState;
@@ -85,11 +84,7 @@ impl<'a, Key, BH> IntoIterator for &'a OrderedHashSet<Key, BH> {
 
 impl<Key: Eq, BH> PartialEq for OrderedHashSet<Key, BH> {
     fn eq(&self, other: &Self) -> bool {
-        if self.len() != other.len() {
-            return false;
-        };
-
-        zip_eq(self.iter(), other.iter()).all(|(a, b)| a == b)
+        self.iter().eq(other.iter())
     }
 }
 
