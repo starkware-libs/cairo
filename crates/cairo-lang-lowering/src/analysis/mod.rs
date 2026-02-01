@@ -9,9 +9,12 @@ pub use backward::{BackAnalysis, DataflowBackAnalysis};
 pub mod core;
 pub use core::{DataflowAnalyzer, Direction, Edge, StatementLocation};
 
+pub mod equality_analysis;
 pub mod forward;
 pub use forward::ForwardDataflowAnalysis;
 
+#[cfg(test)]
+mod equality_analysis_test;
 #[cfg(test)]
 mod test;
 
