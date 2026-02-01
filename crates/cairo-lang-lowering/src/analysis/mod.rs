@@ -5,8 +5,11 @@
 
 pub mod backward;
 pub mod core;
+pub mod equality_analysis;
 pub mod forward;
 
+#[cfg(test)]
+mod equality_analysis_test;
 #[cfg(test)]
 mod test;
 
