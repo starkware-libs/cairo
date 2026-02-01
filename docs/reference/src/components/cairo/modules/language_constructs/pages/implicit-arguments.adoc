@@ -2,7 +2,7 @@
 
 Implicit arguments in Cairo are parameters that are automatically passed
 to functions without being explicitly specified at each call site.
-They provide context for low-level operation like range checking and gas tracking.
+They provide context for low-level operations like range checking and gas tracking.
 
 == Overview
 
@@ -59,7 +59,7 @@ extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic
 ----
 
 The `GasBuiltin` implicit tracks computational resources
-to prevent infinite loop and excessive computation.
+to prevent infinite loops and excessive computation.
 
 === System
 
@@ -78,7 +78,7 @@ The `System` implicit provides access to Starknet's state and operations.
 == Automatic propagation
 
 Implicit arguments are automatically propagated through the call stack.
-When a function with implicits call another function that requires the same implicits,
+When a function with implicits calls another function that requires the same implicits,
 they're passed automatically:
 
 [source,cairo]
@@ -139,7 +139,7 @@ needed for the operation.
 
 == Notes
 
-* Implicits are used in Sierra libfuncs, which are defined as `extern` function
+* Implicits are used in Sierra libfuncs, which are defined as `extern` functions
   at the core library code
 * Most applications code doesn't need to explicitly manage implicits
 * The compiler automatically handles implicit threading through the call stack
