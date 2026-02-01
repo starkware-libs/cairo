@@ -14,20 +14,10 @@ An inline module contains its items directly within braces:
 
 [source,cairo]
 ----
-mod bounded_int {
-    use crate::internal::bounded_int::{
-        self, AddHelper, BoundedInt, ConstrainHelper, DivRemHelper,
-    };
-
-    const U128_UPPER: felt252 = 0x100000000000000000000000000000000;
-    const U128_MAX: felt252 = U128_UPPER - 1;
-
-    fn is_some_of<T>(value: Option<T>, expected: felt252) -> bool {
-        match value {
-            Some(v) => upcast(v) == expected,
-            None => false,
-        }
-    }
+mod a {
+    pub const NON_SHADOWED: felt252 = 'non_shadowed';
+    pub const SHADOWED: felt252 = 'original_shadowed';
+    pub const PUBLISHED_ONCE: felt252 = 'published_once';
 }
 ----
 
