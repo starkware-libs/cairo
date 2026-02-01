@@ -129,7 +129,6 @@ impl TestBuilder {
                 self.current_test_name.as_ref().unwrap_or(&"<unknown>".into())
             );
             attributes.insert(tag.name, tag.content.trim().to_string());
-            self.current_tag = None;
         }
     }
 
@@ -409,7 +408,7 @@ pub fn run_test_file(
     let mut failed_tests = Vec::new();
     for (test_name, mut test) in tests {
         if !test_name.contains(&filter) {
-            new_tests.insert(test_name.to_string(), test);
+            new_tests.insert(test_name, test);
             continue;
         }
         let line_num = test.line_num;

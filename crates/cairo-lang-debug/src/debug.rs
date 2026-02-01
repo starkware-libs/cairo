@@ -4,7 +4,6 @@ mod test;
 
 // Mostly taken from https://github.com/salsa-rs/salsa/blob/fd715619813f634fa07952f0d1b3d3a18b68fd65/components/salsa-2022/src/debug.rs
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -174,7 +173,7 @@ where
     }
 }
 
-impl<'db, K: Hash + Eq, V> DebugWithDb<'db> for OrderedHashMap<K, V>
+impl<'db, K, V> DebugWithDb<'db> for OrderedHashMap<K, V>
 where
     K: DebugWithDb<'db>,
     V: DebugWithDb<'db, Db = K::Db>,
@@ -251,7 +250,7 @@ where
     }
 }
 
-impl<'db, V: Hash + Eq> DebugWithDb<'db> for OrderedHashSet<V>
+impl<'db, V> DebugWithDb<'db> for OrderedHashSet<V>
 where
     V: DebugWithDb<'db>,
 {
