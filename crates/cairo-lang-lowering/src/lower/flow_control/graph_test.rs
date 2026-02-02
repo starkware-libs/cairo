@@ -32,14 +32,18 @@ cairo_lang_test_utils::test_file_test!(
         match_: "match",
     },
     test_create_graph,
-    ["expect_diagnostics", "skip_lowering"]
+    ["expect_diagnostics", "skip_lowering", "future_sierra"]
 );
 
 fn test_create_graph(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> TestRunnerResult {
-    let db = &mut LoweringDatabaseForTesting::default();
+    let db = &mut if args.get("future_sierra").is_some_and(|v| v == "true") {
+        LoweringDatabaseForTesting::with_future_sierra()
+    } else {
+        LoweringDatabaseForTesting::default()
+    };
     let (test_function, semantic_diagnostics) = setup_test_function_ex(
         db,
         inputs["function_code"].as_str(),

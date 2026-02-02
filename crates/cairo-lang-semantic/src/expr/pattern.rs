@@ -8,7 +8,9 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use salsa::Database;
 
 use super::fmt::ExprFormatter;
+use crate::corelib::core_box_ty;
 use crate::items::function_with_body::FunctionWithBodySemantic;
+use crate::types::wrap_in_snapshots;
 use crate::{
     ConcreteStructId, ExprNumericLiteral, ExprStringLiteral, LocalVariable, PatternArena,
     PatternId, semantic,
@@ -106,6 +108,32 @@ impl<'db> From<&Pattern<'db>> for SyntaxStablePtrId<'db> {
     }
 }
 
+/// Information about how a type is wrapped for pattern matching.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PatternWrappingInfo {
+    /// Number of outer snapshot wrappers (e.g., `@Box<Enum>` has 1 outer snapshot).
+    pub n_outer_snapshots: usize,
+    /// If the type is wrapped in a Box, contains the number of inner snapshots
+    /// (e.g., `Box<@Enum>` has `Some(1)`, `Box<Enum>` has `Some(0)`, non-boxed has `None`).
+    pub n_boxed_inner_snapshots: Option<usize>,
+}
+impl PatternWrappingInfo {
+    /// Wraps a type according to the wrapping information.
+    /// First wraps with inner snapshots (if boxed), then wraps in a Box (if boxed),
+    /// and finally wraps with outer snapshots.
+    pub fn wrap<'db>(&self, db: &'db dyn Database, ty: crate::TypeId<'db>) -> crate::TypeId<'db> {
+        wrap_in_snapshots(
+            db,
+            if let Some(n_inner_snapshots) = self.n_boxed_inner_snapshots {
+                core_box_ty(db, wrap_in_snapshots(db, ty, n_inner_snapshots))
+            } else {
+                ty
+            },
+            self.n_outer_snapshots,
+        )
+    }
+}
+
 /// Polymorphic container of [`Pattern`] objects used for querying pattern variables.
 pub trait PatternVariablesQueryable<'a> {
     /// Lookup the pattern in this container and then get [`Pattern::variables`] from it.
@@ -178,7 +206,7 @@ pub struct PatternStruct<'db> {
     pub field_patterns: Vec<(PatternId, semantic::Member<'db>)>,
     pub ty: semantic::TypeId<'db>,
     #[dont_rewrite]
-    pub n_snapshots: usize,
+    pub wrapping_info: PatternWrappingInfo,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::PatternStructPtr<'db>,

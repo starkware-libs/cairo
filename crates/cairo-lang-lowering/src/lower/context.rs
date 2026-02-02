@@ -333,9 +333,10 @@ pub struct LoweredExprExternEnum<'db> {
     pub function: semantic::FunctionId<'db>,
     pub concrete_enum_id: semantic::ConcreteEnumId<'db>,
     pub inputs: Vec<VarUsage<'db>>,
-    pub member_paths: Vec<semantic::ExprVarMemberPath<'db>>,
+    pub ref_args: Vec<RefArg<'db>>,
     pub location: LocationId<'db>,
 }
+
 impl<'db> LoweredExprExternEnum<'db> {
     pub fn as_var_usage(
         self,
@@ -357,12 +358,12 @@ impl<'db> LoweredExprExternEnum<'db> {
 
                 let mut var_ids = vec![];
                 // Bind the ref parameters.
-                for member_path in &self.member_paths {
-                    let var =
-                        ctx.new_var(VarRequest { ty: member_path.ty(), location: self.location });
+                for ref_arg in &self.ref_args {
+                    let var = ctx.new_var(VarRequest { ty: ref_arg.ty(), location: self.location });
                     var_ids.push(var);
-
-                    subscope.update_ref(ctx, member_path, var);
+                    if let RefArg::Ref(member_path) = ref_arg {
+                        subscope.update_ref(ctx, member_path, var);
+                    }
                 }
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
@@ -410,6 +411,23 @@ impl<'db> LoweredExprExternEnum<'db> {
         builder
             .merge_and_end_with_match(ctx, match_info, sealed_blocks, self.location)?
             .as_var_usage(ctx, builder)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum RefArg<'db> {
+    /// Reference to a variable member path.
+    Ref(semantic::ExprVarMemberPath<'db>),
+    /// Reference to a temporary variable.
+    Temp(semantic::TypeId<'db>),
+}
+impl<'db> RefArg<'db> {
+    /// Returns the type of the reference argument.
+    pub fn ty(&self) -> semantic::TypeId<'db> {
+        match self {
+            RefArg::Ref(member_path) => member_path.ty(),
+            RefArg::Temp(ty) => *ty,
+        }
     }
 }
 

@@ -52,12 +52,12 @@ use super::inference::{Inference, InferenceData, InferenceError};
 use super::objects::*;
 use super::pattern::{
     Pattern, PatternEnumVariant, PatternFixedSizeArray, PatternLiteral, PatternMissing,
-    PatternOtherwise, PatternTuple, PatternVariable,
+    PatternOtherwise, PatternTuple, PatternVariable, PatternWrappingInfo,
 };
 use crate::corelib::{
-    CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr,
-    get_usize_ty, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
-    unwrap_error_propagation_type, validate_literal,
+    self, CorelibSemantic, core_binary_operator, core_bool_ty, core_unary_operator,
+    false_literal_expr, get_usize_ty, never_ty, true_literal_expr, try_extract_box_inner_type,
+    try_get_core_ty_by_name, unit_expr, unit_ty, unwrap_error_propagation_type, validate_literal,
 };
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
@@ -172,9 +172,48 @@ impl<'db> Deref for PatternAndId<'db> {
     }
 }
 
-/// Named argument in a function call.
+/// An argument in a function call, with optional name and modifiers.
 #[derive(Debug, Clone)]
-pub struct NamedArg<'db>(ExprAndId<'db>, Option<ast::TerminalIdentifier<'db>>, Mutability);
+pub struct NamedArg<'db> {
+    /// The expression for this argument.
+    expr: ExprAndId<'db>,
+    /// The name of the argument, if provided (for named arguments like `foo: value`).
+    name: Option<ast::TerminalIdentifier<'db>>,
+    /// The mutability modifiers (`ref` or `mut`) applied to this argument.
+    mutability: Mutability,
+    /// Whether this argument can be passed as a temporary reference.
+    /// This is only true for `ref self` in method calls on temporary expressions
+    /// (e.g., `make_foo().method()` where `method` takes `ref self`).
+    is_temp_ref_allowed: bool,
+}
+
+impl<'db> NamedArg<'db> {
+    /// Creates a new argument with the given expression and modifiers.
+    /// This is the common case for most function arguments.
+    fn new(expr: ExprAndId<'db>, modifiers: Mutability) -> Self {
+        Self { expr, name: None, mutability: modifiers, is_temp_ref_allowed: false }
+    }
+
+    /// Creates a new immutable argument (no modifiers).
+    fn value(expr: ExprAndId<'db>) -> Self {
+        Self::new(expr, Mutability::Immutable)
+    }
+
+    /// Creates an argument that allows temporary references.
+    /// Used for `ref self` in method calls on temporary expressions.
+    fn temp_reference(expr: ExprAndId<'db>) -> Self {
+        Self { expr, name: None, mutability: Mutability::Reference, is_temp_ref_allowed: true }
+    }
+
+    /// Creates an argument with a name (for named arguments like `foo: value`).
+    fn named(
+        expr: ExprAndId<'db>,
+        name: Option<ast::TerminalIdentifier<'db>>,
+        modifiers: Mutability,
+    ) -> Self {
+        Self { expr, name, mutability: modifiers, is_temp_ref_allowed: false }
+    }
+}
 
 pub enum ContextFunction<'db> {
     Global,
@@ -1036,7 +1075,7 @@ fn compute_expr_unary_semantic<'db>(
                         return expr_function_call(
                             ctx,
                             *function_id,
-                            vec![NamedArg(desnapped_expr, None, *self_mutability)],
+                            vec![NamedArg::new(desnapped_expr, *self_mutability)],
                             syntax.stable_ptr(db),
                             syntax.stable_ptr(db).into(),
                         );
@@ -1105,11 +1144,10 @@ fn compute_expr_unary_semantic<'db>(
             expr_function_call(
                 ctx,
                 function,
-                vec![NamedArg(
-                    ExprAndId { expr: Expr::Snapshot(snapshot_expr), id: snapshot_expr_id },
-                    None,
-                    Mutability::Immutable,
-                )],
+                vec![NamedArg::value(ExprAndId {
+                    expr: Expr::Snapshot(snapshot_expr),
+                    id: snapshot_expr_id,
+                })],
                 stable_ptr,
                 stable_ptr.into(),
             )
@@ -1149,7 +1187,7 @@ fn compute_expr_unary_semantic<'db>(
             expr_function_call(
                 ctx,
                 function,
-                vec![NamedArg(expr, None, Mutability::Immutable)],
+                vec![NamedArg::value(expr)],
                 syntax.stable_ptr(db),
                 syntax.stable_ptr(db).into(),
             )
@@ -1313,10 +1351,7 @@ fn call_core_binary_op<'db>(
     expr_function_call(
         ctx,
         function,
-        vec![
-            NamedArg(lexpr, None, first_param.mutability),
-            NamedArg(rexpr, None, Mutability::Immutable),
-        ],
+        vec![NamedArg::new(lexpr, first_param.mutability), NamedArg::value(rexpr)],
         stable_ptr,
         stable_ptr.into(),
     )
@@ -1468,16 +1503,16 @@ fn compute_expr_function_call_semantic<'db>(
                 for arg_syntax in args_iter {
                     let stable_ptr = arg_syntax.stable_ptr(db);
                     let arg = compute_named_argument_clause(ctx, arg_syntax, None);
-                    if arg.2 != Mutability::Immutable {
+                    if arg.mutability != Mutability::Immutable {
                         return Err(ctx.diagnostics.report(stable_ptr, RefClosureArgument));
                     }
-                    if arg.1.is_some() {
+                    if arg.name.is_some() {
                         return Err(ctx
                             .diagnostics
                             .report(stable_ptr, NamedArgumentsAreNotSupported));
                     }
-                    args.push(arg.0.id);
-                    arg_types.push(arg.0.ty());
+                    args.push(arg.expr.id);
+                    arg_types.push(arg.expr.ty());
                 }
                 let args_expr = Expr::Tuple(ExprTuple {
                     items: args,
@@ -1491,8 +1526,8 @@ fn compute_expr_function_call_semantic<'db>(
                     ctx,
                     call_function_id,
                     vec![
-                        NamedArg(fixed_closure, None, closure_mutability),
-                        NamedArg(args_expr, None, Mutability::Immutable),
+                        NamedArg::new(fixed_closure, closure_mutability),
+                        NamedArg::value(args_expr),
                     ],
                     call_ptr,
                     call_ptr.into(),
@@ -1534,7 +1569,7 @@ fn compute_expr_function_call_semantic<'db>(
                     WrongNumberOfArguments { expected: 1, actual: named_args.len() },
                 ));
             }
-            let NamedArg(arg, name_terminal, mutability) = named_args[0].clone();
+            let NamedArg { expr: arg, name: name_terminal, mutability, .. } = named_args[0].clone();
             if let Some(name_terminal) = name_terminal {
                 ctx.diagnostics.report(name_terminal.stable_ptr(db), NamedArgumentsAreNotSupported);
             }
@@ -1636,7 +1671,7 @@ pub fn compute_named_argument_clause<'db>(
             (expr, Some(arg_name_identifier))
         }
     };
-    NamedArg(expr, arg_name_identifier, mutability)
+    NamedArg::named(expr, arg_name_identifier, mutability)
 }
 
 /// Handles the semantic computation of a closure expression.
@@ -2200,7 +2235,7 @@ fn compute_expr_for_semantic<'db>(
     let into_iter_call = expr_function_call(
         ctx,
         into_iterator_function_id,
-        vec![NamedArg(fixed_into_iter_var, None, into_iter_mutability)],
+        vec![NamedArg::new(fixed_into_iter_var, into_iter_mutability)],
         expr_ptr,
         expr_ptr,
     )?;
@@ -2557,10 +2592,7 @@ fn compute_expr_indexed_semantic<'db>(
     expr_function_call(
         ctx,
         function_id,
-        vec![
-            NamedArg(fixed_expr, None, mutability),
-            NamedArg(index_expr, None, Mutability::Immutable),
-        ],
+        vec![NamedArg::new(fixed_expr, mutability), NamedArg::value(index_expr)],
         syntax.stable_ptr(db),
         index_expr_syntax.stable_ptr(db),
     )
@@ -2709,7 +2741,7 @@ fn get_method_function_candidates<'db>(
         let derefed_expr = expr_function_call(
             ctx,
             deref_info.function_id,
-            vec![NamedArg(fixed_expr, None, deref_info.self_mutability)],
+            vec![NamedArg::new(fixed_expr, deref_info.self_mutability)],
             method_syntax,
             expr_ptr,
         )?;
@@ -2789,11 +2821,11 @@ fn maybe_compute_pattern_semantic<'db>(
             let concrete_variant = try_extract_matches!(item, ResolvedConcreteItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(path.stable_ptr(db), NotAVariant))?;
 
-            let n_snapshots =
+            let wrapping_info =
                 validate_pattern_type_and_args(ctx, pattern_syntax, ty, concrete_variant)?;
 
             // Compute inner pattern.
-            let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
+            let inner_ty = wrapping_info.wrap(ctx.db, concrete_variant.ty);
 
             let inner_pattern = match enum_pattern.pattern(db) {
                 ast::OptionPatternEnumInnerPattern::Empty(_) => None,
@@ -2834,7 +2866,7 @@ fn maybe_compute_pattern_semantic<'db>(
                     ResolutionContext::Statement(&mut ctx.environment),
                 );
                 if let Ok(ResolvedConcreteItem::Variant(concrete_variant)) = item {
-                    let _n_snapshots =
+                    let _ =
                         validate_pattern_type_and_args(ctx, pattern_syntax, ty, concrete_variant)?;
                     return Ok(Pattern::EnumVariant(PatternEnumVariant {
                         variant: concrete_variant,
@@ -2886,15 +2918,15 @@ fn maybe_compute_pattern_semantic<'db>(
                 ctx.diagnostics.report(pattern_struct.path(db).stable_ptr(db), NotAType)
             })?;
             let inference = &mut ctx.resolver.inference();
-            inference.conform_ty(pattern_ty, peel_snapshots(ctx.db, ty).1.intern(ctx.db)).map_err(
-                |err_set| inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr),
-            )?;
+            let (inner_ty, _) = unwrap_pattern_type(ctx.db, ty);
+            inference.conform_ty(pattern_ty, inner_ty.intern(ctx.db)).map_err(|err_set| {
+                inference.report_on_pending_error(err_set, ctx.diagnostics, stable_ptr)
+            })?;
             let ty = ctx.reduce_ty(ty);
-            // Peel all snapshot wrappers.
-            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+            let (inner_ty, wrapping_info) = unwrap_pattern_type(ctx.db, ty);
 
             // Check that type is a struct, and get the concrete struct from it.
-            let concrete_struct_id = try_extract_matches!(long_ty, TypeLongId::Concrete)
+            let concrete_struct_id = try_extract_matches!(inner_ty, TypeLongId::Concrete)
                 .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
                 .ok_or(())
                 .or_else(|_| {
@@ -2939,7 +2971,7 @@ fn maybe_compute_pattern_semantic<'db>(
                         else {
                             continue;
                         };
-                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+                        let ty = wrapping_info.wrap(ctx.db, member.ty);
                         let pattern = create_variable_pattern(
                             ctx,
                             name,
@@ -2957,7 +2989,7 @@ fn maybe_compute_pattern_semantic<'db>(
                         else {
                             continue;
                         };
-                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+                        let ty = wrapping_info.wrap(ctx.db, member.ty);
                         let pattern = compute_pattern_semantic(
                             ctx,
                             &with_expr.pattern(db),
@@ -2981,7 +3013,7 @@ fn maybe_compute_pattern_semantic<'db>(
                 concrete_struct_id,
                 field_patterns,
                 ty,
-                n_snapshots,
+                wrapping_info,
                 stable_ptr: pattern_struct.stable_ptr(db),
             })
         }
@@ -3059,10 +3091,13 @@ fn compute_tuple_like_pattern_semantic<'db>(
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
 ) -> Pattern<'db> {
     let db = ctx.db;
-    let (n_snapshots, mut long_ty) =
-        match finalized_snapshot_peeled_ty(ctx, ty, pattern_syntax.stable_ptr(db)) {
+    let (wrapping_info, mut long_ty) =
+        match extract_tuple_like_from_pattern_and_validate(ctx, pattern_syntax, ty) {
             Ok(value) => value,
-            Err(diag_added) => (0, TypeLongId::Missing(diag_added)),
+            Err(diag_added) => (
+                PatternWrappingInfo { n_outer_snapshots: 0, n_boxed_inner_snapshots: None },
+                TypeLongId::Missing(diag_added),
+            ),
         };
     // Assert that the pattern is of the same type as the expr.
     match (pattern_syntax, &long_ty) {
@@ -3146,7 +3181,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
     }
     let subpatterns = zip_eq(patterns_syntax, inner_tys)
         .map(|(pattern_ast, ty)| {
-            let ty = wrap_in_snapshots(db, ty, n_snapshots);
+            let ty = wrapping_info.wrap(db, ty);
             compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map).id
         })
         .collect();
@@ -3165,21 +3200,22 @@ fn compute_tuple_like_pattern_semantic<'db>(
     }
 }
 
-/// Validates that the semantic type of an enum pattern is an enum, and returns the concrete enum.
+/// Validates that the semantic type of an enum pattern is an enum (or `Box<enum>`), and returns the
+/// concrete enum along with information about how it's wrapped.
 fn extract_concrete_enum_from_pattern_and_validate<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern: &ast::Pattern<'db>,
     ty: TypeId<'db>,
     concrete_enum_id: ConcreteEnumId<'db>,
-) -> Maybe<(ConcreteEnumId<'db>, usize)> {
+) -> Maybe<(ConcreteEnumId<'db>, PatternWrappingInfo)> {
     // Peel all snapshot wrappers.
-    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(ctx.db))?;
+    let (n_outer_snapshots, long_ty) =
+        finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(ctx.db))?;
 
     // Check that type is an enum, and get the concrete enum from it.
-    let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
-        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-        .ok_or(())
-        .or_else(|_| {
+    // Also support Box<Enum> types - if the type is a Box, extract the inner type.
+    let (concrete_enum, n_boxed_inner_snapshots) =
+        extract_enum_from_type(ctx.db, &long_ty).ok_or(()).or_else(|_| {
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
@@ -3193,21 +3229,88 @@ fn extract_concrete_enum_from_pattern_and_validate<'db>(
             WrongEnum { expected_enum: concrete_enum.enum_id(ctx.db), actual_enum: pattern_enum },
         ));
     }
-    Ok((concrete_enum, n_snapshots))
+    Ok((concrete_enum, PatternWrappingInfo { n_outer_snapshots, n_boxed_inner_snapshots }))
+}
+
+/// Extracts a concrete enum from a type, supporting both direct enums and `Box<Enum>` types.
+/// Returns the concrete enum and the number of inner snapshots if boxed (for `Box<@Enum>`),
+/// or `None` if not boxed.
+fn extract_enum_from_type<'db>(
+    db: &'db dyn Database,
+    long_ty: &TypeLongId<'db>,
+) -> Option<(ConcreteEnumId<'db>, Option<usize>)> {
+    // First, try to extract an enum directly.
+    if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum)) = long_ty {
+        return Some((*concrete_enum, None));
+    }
+    // If not a direct enum, check if it's a Box<Enum>.
+    let inner_ty = try_extract_box_inner_type(db, long_ty)?;
+    // Peel any inner snapshots from the Box's content.
+    let (n_inner_snapshots, inner_long_ty) = peel_snapshots(db, inner_ty);
+    if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum)) = inner_long_ty {
+        return Some((concrete_enum, Some(n_inner_snapshots)));
+    }
+    None
+}
+
+/// Unwraps a pattern type, returning the inner type and the wrapping information.
+/// The wrapping information includes the number of outer snapshots, whether the type is boxed,
+/// and the number of inner snapshots in case it is boxed.
+pub fn unwrap_pattern_type<'db>(
+    db: &'db dyn Database,
+    ty: semantic::TypeId<'db>,
+) -> (TypeLongId<'db>, PatternWrappingInfo) {
+    let (n_outer_snapshots, long_ty) = peel_snapshots(db, ty);
+    if let Some(inner_ty) = corelib::try_extract_box_inner_type(db, &long_ty) {
+        let (n_inner_snapshots, most_inner_ty) = peel_snapshots(db, inner_ty);
+        (
+            most_inner_ty,
+            PatternWrappingInfo {
+                n_outer_snapshots,
+                n_boxed_inner_snapshots: Some(n_inner_snapshots),
+            },
+        )
+    } else {
+        (long_ty, PatternWrappingInfo { n_outer_snapshots, n_boxed_inner_snapshots: None })
+    }
+}
+
+/// Validates that the semantic type of a tuple-like pattern is a tuple or a fixed size array
+/// (possibly boxed), and returns the unwrapped type along with information about how it's wrapped.
+fn extract_tuple_like_from_pattern_and_validate<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    pattern: &ast::Pattern<'db>,
+    ty: TypeId<'db>,
+) -> Maybe<(PatternWrappingInfo, TypeLongId<'db>)> {
+    // Peel all snapshot wrappers.
+    let (n_outer_snapshots, long_ty) =
+        finalized_snapshot_peeled_ty(ctx, ty, pattern.stable_ptr(ctx.db))?;
+
+    if let Some(inner_ty) = try_extract_box_inner_type(ctx.db, &long_ty) {
+        let (n_inner_snapshots, inner_long_ty) = peel_snapshots(ctx.db, inner_ty);
+        let wrapping_info = PatternWrappingInfo {
+            n_outer_snapshots,
+            n_boxed_inner_snapshots: Some(n_inner_snapshots),
+        };
+        return Ok((wrapping_info, inner_long_ty));
+    }
+
+    let wrapping_info = PatternWrappingInfo { n_outer_snapshots, n_boxed_inner_snapshots: None };
+    Ok((wrapping_info, long_ty))
 }
 
 /// Validates that the semantic type of an enum pattern is an enum.
 /// After that finds the concrete variant in the pattern, and verifies it has args if needed.
-/// Returns the number of snapshots.
+/// Returns information about how the enum type is wrapped.
 fn validate_pattern_type_and_args<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     pattern: &ast::Pattern<'db>,
     ty: TypeId<'db>,
     concrete_variant: ConcreteVariant<'db>,
-) -> Maybe<usize> {
+) -> Maybe<PatternWrappingInfo> {
     let db = ctx.db;
 
-    let (concrete_enum, n_snapshots) = extract_concrete_enum_from_pattern_and_validate(
+    let (concrete_enum, wrapping_info) = extract_concrete_enum_from_pattern_and_validate(
         ctx,
         pattern,
         ty,
@@ -3252,7 +3355,7 @@ fn validate_pattern_type_and_args<'db>(
         ctx.diagnostics.report(pattern.stable_ptr(db), PatternMissingArgs(path));
     }
 
-    Ok(n_snapshots)
+    Ok(wrapping_info)
 }
 
 /// Creates a local variable pattern.
@@ -3726,8 +3829,17 @@ fn method_call_expr<'db>(
     // Note there may be n+1 arguments for n parameters, if the last one is a coupon.
     let arguments_var = expr.arguments(db).arguments(db);
     let mut args_iter = arguments_var.elements(db);
-    // Self argument.
-    let mut named_args = vec![NamedArg(fixed_lexpr, None, mutability)];
+    // Self argument. Allow temp reference if it's a `ref self` method and the receiver is a
+    // temporary expression (not a variable).
+    // Self argument. Allow temp reference if it's a `ref self` method and the receiver is a
+    // temporary expression (not a variable).
+    let is_temp_ref = mutability == Mutability::Reference && fixed_lexpr.as_member_path().is_none();
+    let self_arg = if is_temp_ref {
+        NamedArg::temp_reference(fixed_lexpr)
+    } else {
+        NamedArg::new(fixed_lexpr, mutability)
+    };
+    let mut named_args = vec![self_arg];
     // Other arguments.
     let closure_params: OrderedHashMap<TypeId<'db>, TypeId<'_>> =
         ctx.db.concrete_function_closure_params(function_id)?;
@@ -3799,7 +3911,7 @@ fn member_access_expr<'db>(
                 let cur_expr = expr_function_call(
                     ctx,
                     *deref_function,
-                    vec![NamedArg(derefed_expr, None, *mutability)],
+                    vec![NamedArg::new(derefed_expr, *mutability)],
                     stable_ptr,
                     stable_ptr,
                 )
@@ -4160,7 +4272,7 @@ fn expr_function_call<'db>(
 
     let inference = &mut ctx.resolver.inference();
     let mut args = Vec::new();
-    for (NamedArg(arg, _name, mutability), param) in
+    for (NamedArg { expr: arg, mutability, is_temp_ref_allowed, .. }, param) in
         named_args.into_iter().zip(signature.params.iter())
     {
         let arg_ty = arg.ty();
@@ -4179,23 +4291,28 @@ fn expr_function_call<'db>(
         }
 
         args.push(if param.mutability == Mutability::Reference {
-            // Verify the argument is a variable.
-            let Some(ref_arg) = arg.as_member_path() else {
+            if let Some(ref_arg) = arg.as_member_path() {
+                // The argument is a variable - verify it's mutable and pass as Reference.
+                ctx.variable_tracker.report_var_mutability_error(
+                    ctx.db,
+                    ctx.diagnostics,
+                    &ref_arg.base_var(),
+                    arg.deref(),
+                    RefArgNotMutable,
+                );
+                // Verify that it is passed explicitly as 'ref' (not required for method calls on
+                // temporaries).
+                if mutability != Mutability::Reference && !is_temp_ref_allowed {
+                    ctx.diagnostics.report(arg.deref(), RefArgNotExplicit);
+                }
+                ExprFunctionCallArg::Reference(ref_arg)
+            } else if is_temp_ref_allowed {
+                // For method calls on temporaries, allow expressions (not just variables).
+                // The expression will be stored in a temporary and passed by reference.
+                ExprFunctionCallArg::TempReference(arg.id)
+            } else {
                 return Err(ctx.diagnostics.report(arg.deref(), RefArgNotAVariable));
-            };
-            // Verify the variable is mutable and hasn't been referenced.
-            ctx.variable_tracker.report_var_mutability_error(
-                ctx.db,
-                ctx.diagnostics,
-                &ref_arg.base_var(),
-                arg.deref(),
-                RefArgNotMutable,
-            );
-            // Verify that it is passed explicitly as 'ref'.
-            if mutability != Mutability::Reference {
-                ctx.diagnostics.report(arg.deref(), RefArgNotExplicit);
             }
-            ExprFunctionCallArg::Reference(ref_arg)
         } else {
             // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {
@@ -4229,7 +4346,7 @@ fn maybe_pop_coupon_argument<'db>(
     function_id: FunctionId<'db>,
 ) -> Option<ExprId> {
     let mut coupon_arg: Option<ExprId> = None;
-    if let Some(NamedArg(arg, Some(name_terminal), mutability)) = named_args.last() {
+    if let NamedArg { expr: arg, name: Some(name_terminal), mutability, .. } = named_args.last()? {
         let coupons_enabled = are_coupons_enabled(ctx.db, ctx.resolver.module_id);
         if name_terminal.text(ctx.db).long(ctx.db) == "__coupon__" && coupons_enabled {
             // Check that the argument type is correct.
@@ -4284,7 +4401,7 @@ fn check_named_arguments<'db>(
     // Indicates whether a [UnnamedArgumentFollowsNamed] diagnostic was reported. Used to prevent
     // multiple similar diagnostics.
     let mut reported_unnamed_argument_follows_named: bool = false;
-    for (NamedArg(arg, name_opt, _mutability), param) in
+    for (NamedArg { expr: arg, name: name_opt, .. }, param) in
         named_args.iter().zip(signature.params.iter())
     {
         // Check name.

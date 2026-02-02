@@ -1,5 +1,41 @@
 = Unit type
 
-A _unit type_ is a type which has only one value (xref:literal-expressions.adoc[unit literal], `()`).
-It is represented by a tuple with no elements.
-Its size is always zero, and it is guaranteed to not exist in the compiled code.
+The _unit type_ is a type with exactly one value, written as `()`.
+It represents the absence of a meaningful value and is used for functions that
+perform side effects but don't return data.
+
+== Characteristics
+
+The unit type is represented by an empty tuple: the
+xref:literal-expressions.adoc[unit literal] `()`.
+
+Its size is zero and it is guaranteed to not exist in compiled code.
+
+== Common Uses
+
+Functions that perform actions but don't return meaningful data use `()`:
+
+[source,cairo]
+----
+pub fn assert_eq<T, +PartialEq<T>>(a: @T, b: @T, err_code: felt252) {
+    assert(a == b, err_code);
+}
+----
+
+When a function doesn't explicitly return a value, it returns `()` implicitly.
+
+xref:if-expressions.adoc[If expressions] without an `else` branch also
+evaluate to `()` when the condition is false.
+
+== Comparison with Never Type
+
+The unit type `()` is different from the xref:never-type.adoc[never type]:
+
+* **Unit type `()`**: Has one value, represents "no meaningful data"
+* **Never type `never`**: Has no values, represents "never returns"
+
+== Related
+
+- xref:tuple-types.adoc[Tuple types] — Unit is an empty tuple
+- xref:never-type.adoc[Never type] — Type with no values
+- xref:literal-expressions.adoc[Literal expressions] — Unit literal `()`

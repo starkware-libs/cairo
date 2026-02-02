@@ -77,7 +77,7 @@ fn main() {
 }
 ----
 
-See xref:pages/boolean-operators.adoc[Boolean operators] for more details on the difference
+See xref:boolean-operators.adoc[Boolean operators] for more details on the difference
 between bitwise and logical operators on `bool`.
 
 === Manual implementation for a custom type

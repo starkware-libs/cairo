@@ -347,7 +347,8 @@ impl<'db> Usages<'db> {
                             current.usage.insert(member_path.into(), member_path.clone());
                             current.changes.insert(member_path.into(), member_path.clone());
                         }
-                        ExprFunctionCallArg::Value(expr) => {
+                        ExprFunctionCallArg::Value(expr)
+                        | ExprFunctionCallArg::TempReference(expr) => {
                             self.handle_expr(arenas, *expr, current)
                         }
                     }
