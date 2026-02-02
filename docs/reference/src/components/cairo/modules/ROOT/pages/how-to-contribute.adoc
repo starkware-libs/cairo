@@ -39,11 +39,6 @@ See a full list of content and what is currently missing below:
 * xref:../../language_constructs/pages/enum-types.adoc[9.1.9 Enum types]
 * xref:../../language_constructs/pages/array-types.adoc[9.1.10 Array types]
 
-=== Language Semantics
-* xref:../../language_semantics/pages/memory-model.adoc[Memory model]
-* xref:../../language_semantics/pages/constant-evaluation.adoc[Constant evaluation]
-* xref:../../language_semantics/pages/application-binary-interface.adoc[Application binary interface]
-* xref:../../language_semantics/pages/runtime.adoc[Runtime]
 
 ## Support
 
