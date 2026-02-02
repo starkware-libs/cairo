@@ -58,12 +58,21 @@ fn handle_struct<'db>(
             &[("member_name".to_string(), member_name.clone())].into(),
         );
         let append_member = append_field(member_kind, member_for_append);
-        let deserialize_member = deserialize_field(member_kind, member_name.clone());
+        // Use a prefixed name for the deserialized value to avoid shadowing the `keys` and `data` parameters.
+        let val_member_name = RewriteNode::interpolate_patched(
+            "__val_$member_name$",
+            &[("member_name".to_string(), member_name.clone())].into(),
+        );
+        let deserialize_member = deserialize_field(member_kind, val_member_name.clone());
         append_members.push(append_member);
         deserialize_members.push(deserialize_member);
         ctor.push(RewriteNode::interpolate_patched(
-            "$member_name$, ",
-            &[("member_name".to_string(), member_name)].into(),
+            "$member_name$: $val_member_name$, ",
+            &[
+                ("member_name".to_string(), member_name),
+                ("val_member_name".to_string(), val_member_name),
+            ]
+            .into(),
         ));
     }
     let event_data = EventData::Struct {
