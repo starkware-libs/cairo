@@ -136,7 +136,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: |
-          cargo run --profile=ci-dev --bin cairo-test -- ${{ matrix.cmd }}
+          cargo run --profile=ci-dev --bin cairo-test --features=mimalloc -- ${{ matrix.cmd }}
   # Checks that all Cairo code tests run correctly.
   cairotest:
     if: ${{ always() }}
