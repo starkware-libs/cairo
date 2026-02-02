@@ -21,7 +21,7 @@ impl<'db, T: TypedSyntaxNode<'db>> ElementList<'db, T, 1> {
     pub fn elements_vec(&self, db: &'db dyn Database) -> Vec<T> {
         self.elements(db).collect()
     }
-    pub fn elements<'a: 'db>(
+    pub fn elements(
         &self,
         db: &'db dyn Database,
     ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + use<'db, T> {
