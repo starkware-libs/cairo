@@ -49,7 +49,8 @@ cairo_lang_test_utils::test_file_test!(
   {
       abi_failures: "abi_failures",
   },
-  test_abi_failure
+  test_abi_failure,
+  ["expect_diagnostics"]
 );
 
 /// Helper function for testing multiple Storage path accesses to the same place.
@@ -76,5 +77,6 @@ cairo_lang_test_utils::test_file_test!(
       storage_node: "storage_node",
       storage_path_check: "storage_path_check",
   },
-  test_plugin_diagnostics
+  test_plugin_diagnostics,
+  ["expect_diagnostics"]
 );

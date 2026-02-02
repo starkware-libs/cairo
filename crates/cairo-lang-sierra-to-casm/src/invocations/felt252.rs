@@ -42,7 +42,8 @@ pub fn build_felt252_op_with_var(
     op: Felt252BinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder =
+        CasmBuilder::with_capacity(if matches!(op, Felt252BinaryOperator::Div) { 1 } else { 0 }, 0);
     add_input_variables! {casm_builder,
         deref a;
         deref_or_immediate b;
@@ -62,7 +63,8 @@ fn build_felt252_op_with_const(
     c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [a] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder =
+        CasmBuilder::with_capacity(if matches!(op, Felt252BinaryOperator::Div) { 1 } else { 0 }, 0);
     add_input_variables! {casm_builder, deref a; };
     let c = casm_builder.add_var(CellExpression::Immediate(c));
     let (res_var, extra_costs) = bin_op_helper(&mut casm_builder, a, c, op);

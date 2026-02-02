@@ -2,6 +2,15 @@
 ///
 /// Wraps the `vector_map::VecMap` structure.
 #[derive(Clone, Debug)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent),
+    serde(bound(
+        serialize = "Key: serde::Serialize + Eq, Value: serde::Serialize",
+        deserialize = "Key: serde::Deserialize<'de> + Eq, Value: serde::Deserialize<'de>",
+    ))
+)]
 pub struct SmallOrderedMap<Key, Value>(vector_map::VecMap<Key, Value>);
 impl<Key: Eq, Value> SmallOrderedMap<Key, Value> {
     /// Creates a new empty map.
@@ -92,25 +101,3 @@ unsafe impl<Key: salsa::Update + Eq, Value: salsa::Update> salsa::Update
 }
 /// Entry for an existing key-value pair or a vacant location to insert one.
 pub type Entry<'a, Key, Value> = vector_map::Entry<'a, Key, Value>;
-
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-#[cfg(feature = "serde")]
-impl<Key: Eq + Serialize, Value: Serialize> Serialize for SmallOrderedMap<Key, Value> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.0.serialize(serializer)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de, Key: Eq + Deserialize<'de>, Value: Deserialize<'de>> Deserialize<'de>
-    for SmallOrderedMap<Key, Value>
-{
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        vector_map::VecMap::<Key, Value>::deserialize(deserializer).map(|s| SmallOrderedMap(s))
-    }
-}

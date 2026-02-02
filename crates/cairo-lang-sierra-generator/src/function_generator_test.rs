@@ -15,5 +15,6 @@ cairo_lang_test_utils::test_file_test!(
         generics: "generics",
 
     },
-    test_function_generator
+    test_function_generator,
+    ["future_sierra"]
 );

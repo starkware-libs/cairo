@@ -37,7 +37,8 @@ cairo_lang_test_utils::test_file_test!(
         plus_eq: "plus_eq",
         inline: "inline",
     },
-    test_expr_diagnostics
+    test_expr_diagnostics,
+    ["expect_diagnostics"]
 );
 
 #[cairo_lang_test_utils::test]

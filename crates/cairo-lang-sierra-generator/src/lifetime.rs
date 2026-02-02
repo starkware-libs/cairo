@@ -10,8 +10,8 @@ use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, zip_eq};
+use lowering::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::Demand;
-use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::{AuxCombine, DemandReporter};
 use lowering::{Lowered, VarUsage};
 

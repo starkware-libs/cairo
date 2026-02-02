@@ -42,7 +42,7 @@ impl NoGenericArgsGenericLibfunc for Uint512DivmodU256Libfunc {
                 ParamSignature::new(nonzero_ty(context, &u256_ty)?),
             ],
             vec![
-                OutputVarInfo::new_builtin(range_check_type, 0),
+                OutputVarInfo::new_builtin(range_check_type),
                 OutputVarInfo { ty: u512_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
                 OutputVarInfo { ty: u256_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
                 guarantee_output_info.clone(),

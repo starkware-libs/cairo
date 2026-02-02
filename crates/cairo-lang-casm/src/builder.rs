@@ -2,7 +2,7 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::small_ordered_map::{Entry, SmallOrderedMap};
 use num_bigint::BigInt;
-use num_traits::{One, Zero};
+use num_traits::{One, ToPrimitive, Zero};
 
 use crate::ap_change::ApplyApChange;
 use crate::cell_expression::{CellExpression, CellOperator};
@@ -44,18 +44,13 @@ pub struct State {
 }
 impl State {
     /// Returns the value, in relation to the initial ap value.
-    fn get_value(&self, var: Var) -> CellExpression {
-        self.vars[&var].clone()
+    fn get_unadjusted(&self, var: Var) -> &CellExpression {
+        &self.vars[&var]
     }
 
     /// Returns the value, in relation to the current ap value.
     pub fn get_adjusted(&self, var: Var) -> CellExpression {
-        self.get_value(var).unchecked_apply_known_ap_change(self.ap_change)
-    }
-
-    /// Returns the value, assuming it is a direct cell reference.
-    pub fn get_adjusted_as_cell_ref(&self, var: Var) -> CellRef {
-        extract_matches!(self.get_adjusted(var), CellExpression::Deref)
+        self.get_unadjusted(var).clone().unchecked_apply_known_ap_change(self.ap_change)
     }
 
     /// Validates that the state is valid, if it had enough AP change to support the requested
@@ -95,15 +90,14 @@ impl State {
     }
 }
 
-/// A statement added to the builder.
-enum Statement {
-    /// A final instruction, no need for further editing.
-    Final(Instruction),
-    /// A jump or call command, requires fixing the actual target label.
-    Jump(&'static str, Instruction),
-    /// A target label for jumps, additionally with an offset for defining the label in a position
-    /// relative to the current statement.
-    Label(&'static str, usize),
+/// Represents a relocation to a label.
+struct LabelRelocation {
+    /// The label to which the instruction should be relocated.
+    label: &'static str,
+    /// The index of the instruction that needs to be relocated.
+    instruction_index: usize,
+    /// The code offset of the instruction to be relocated.
+    instruction_offset: usize,
 }
 
 /// The builder result.
@@ -118,8 +112,19 @@ pub struct CasmBuildResult<const BRANCH_COUNT: usize> {
 struct LabelInfo {
     /// The state at a point of jumping into the label.
     state: State,
-    /// Whether the label state is read-only.
-    read_only: bool,
+    /// The offset of the label. If not set means not yet reached (and not read-only).
+    offset: Offset,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct Offset(pub usize);
+impl Offset {
+    /// The value for an unset offset.
+    const UNSET: Offset = Offset(usize::MAX);
+    /// Check if the offset is set.
+    fn is_set(&self) -> bool {
+        self != &Self::UNSET
+    }
 }
 
 /// Builder to more easily write CASM code.
@@ -132,8 +137,10 @@ pub struct CasmBuilder {
     label_info: SmallOrderedMap<&'static str, LabelInfo>,
     /// The state at the last added statement.
     main_state: State,
-    /// The added statements.
-    statements: Vec<Statement>,
+    /// The added instructions.
+    instructions: Vec<Instruction>,
+    /// The relocations to be applied to the instructions.
+    relocations: Vec<LabelRelocation>,
     /// The current set of added hints.
     current_hints: Vec<Hint>,
     /// The number of vars created. Used to not reuse var names.
@@ -141,6 +148,8 @@ pub struct CasmBuilder {
     /// Is the current state reachable.
     /// Example for unreachable state is after an unconditional jump, before any label is stated.
     reachable: bool,
+    /// The size of the code until this point.
+    next_instruction_offset: usize,
 }
 impl CasmBuilder {
     /// Finalizes the builder, with the requested labels as the returning branches.
@@ -153,55 +162,29 @@ impl CasmBuilder {
             self.current_hints.is_empty(),
             "Build cannot be called with hints as the last addition."
         );
-        let label_offsets = self.compute_label_offsets();
-        if self.reachable {
-            self.label_info
-                .insert("Fallthrough", LabelInfo { state: self.main_state, read_only: false });
-        }
-        let mut instructions = vec![];
-        let mut branch_relocations: [Vec<usize>; BRANCH_COUNT] = core::array::from_fn(|_| vec![]);
-        let mut offset = 0;
-        for statement in self.statements {
-            match statement {
-                Statement::Final(inst) => {
-                    offset += inst.body.op_size();
-                    instructions.push(inst);
-                }
-                Statement::Jump(label, mut inst) => {
-                    match label_offsets.get(&label) {
-                        Some(label_offset) => match &mut inst.body {
-                            InstructionBody::Jnz(JnzInstruction {
-                                jump_offset: DerefOrImmediate::Immediate(value),
-                                ..
-                            })
-                            | InstructionBody::Jump(JumpInstruction {
-                                target: DerefOrImmediate::Immediate(value),
-                                ..
-                            })
-                            | InstructionBody::Call(CallInstruction {
-                                target: DerefOrImmediate::Immediate(value),
-                                ..
-                            }) => {
-                                // Updating the value, instead of assigning into it, to avoid
-                                // allocating a BigInt since it is already 0.
-                                value.value += *label_offset as i128 - offset as i128;
-                            }
-
-                            _ => unreachable!("Only jump or call statements should be here."),
-                        },
-                        None => {
-                            let idx = branch_names.iter().position(|name| name == &label).unwrap();
-                            branch_relocations[idx].push(instructions.len())
-                        }
-                    }
-                    offset += inst.body.op_size();
-                    instructions.push(inst);
-                }
-                Statement::Label(name, _) => {
-                    self.label_info.remove(&name);
-                }
+        let mut branch_relocations: [Vec<usize>; BRANCH_COUNT] =
+            core::array::from_fn(|_| Vec::new());
+        for LabelRelocation { label, instruction_index, instruction_offset } in self.relocations {
+            // Use cached offset if available (backward jump), otherwise lookup
+            let label_offset = self.label_info[&label].offset;
+            // Check if this is an internal label (offset set) or external branch
+            if label_offset.is_set() {
+                relocate_instruction(
+                    &mut self.instructions[instruction_index],
+                    label_offset.0 as i32 - instruction_offset as i32,
+                );
+            } else {
+                // External branch - find which branch index
+                let idx = branch_names.iter().position(|name| name == &label).unwrap();
+                branch_relocations[idx].push(instruction_index);
             }
         }
+        self.label_info.retain(|_, info| !info.offset.is_set());
+        if self.reachable {
+            self.label_info
+                .insert("Fallthrough", LabelInfo { state: self.main_state, offset: Offset::UNSET });
+        }
+
         let branches = core::array::from_fn(|i| {
             let label = branch_names[i];
             let info = self
@@ -212,30 +195,13 @@ impl CasmBuilder {
             (info.state, core::mem::take(&mut branch_relocations[i]))
         });
         assert!(self.label_info.is_empty(), "Did not use all branches.");
-        CasmBuildResult { instructions, branches }
+        CasmBuildResult { instructions: self.instructions, branches }
     }
 
     /// Returns the current ap change of the builder.
     /// Useful for manual ap change handling.
     pub fn curr_ap_change(&self) -> usize {
         self.main_state.ap_change
-    }
-
-    /// Computes the code offsets of all the labels.
-    fn compute_label_offsets(&self) -> SmallOrderedMap<&'static str, usize> {
-        let mut label_offsets = SmallOrderedMap::default();
-        let mut offset = 0;
-        for statement in &self.statements {
-            match statement {
-                Statement::Final(inst) | Statement::Jump(_, inst) => {
-                    offset += inst.body.op_size();
-                }
-                Statement::Label(name, extra_offset) => {
-                    label_offsets.insert(*name, offset + extra_offset);
-                }
-            }
-        }
-        label_offsets
     }
 
     /// Adds a variable pointing to `value`.
@@ -258,7 +224,7 @@ impl CasmBuilder {
 
     /// Returns an additional variable pointing to the same value.
     pub fn duplicate_var(&mut self, var: Var) -> Var {
-        self.add_var(self.get_value(var, false))
+        self.add_var(self.get_unadjusted(var).clone())
     }
 
     /// Adds a hint, generated from `inputs` which are cell refs or immediates and `outputs` which
@@ -276,25 +242,32 @@ impl CasmBuilder {
     ) {
         self.current_hints.push(
             f(
-                inputs.map(|v| match self.get_value(v, true) {
-                    CellExpression::Deref(cell) => ResOperand::Deref(cell),
-                    CellExpression::DoubleDeref(cell, offset) => {
-                        ResOperand::DoubleDeref(cell, offset)
+                inputs.map(|v| {
+                    match self.get_unadjusted(v) {
+                        CellExpression::Deref(cell) => ResOperand::Deref(*cell),
+                        CellExpression::DoubleDeref(cell, offset) => {
+                            ResOperand::DoubleDeref(*cell, *offset)
+                        }
+                        CellExpression::Immediate(imm) => imm.clone().into(),
+                        CellExpression::BinOp { op, a: other, b } => match op {
+                            CellOperator::Add => ResOperand::BinOp(BinOpOperand {
+                                op: Operation::Add,
+                                a: *other,
+                                b: b.clone(),
+                            }),
+                            CellOperator::Mul => ResOperand::BinOp(BinOpOperand {
+                                op: Operation::Mul,
+                                a: *other,
+                                b: b.clone(),
+                            }),
+                            CellOperator::Sub | CellOperator::Div => {
+                                panic!("hints to non ResOperand references are not supported.")
+                            }
+                        },
                     }
-                    CellExpression::Immediate(imm) => imm.into(),
-                    CellExpression::BinOp { op, a: other, b } => match op {
-                        CellOperator::Add => {
-                            ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b })
-                        }
-                        CellOperator::Mul => {
-                            ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: other, b })
-                        }
-                        CellOperator::Sub | CellOperator::Div => {
-                            panic!("hints to non ResOperand references are not supported.")
-                        }
-                    },
+                    .unchecked_apply_known_ap_change(self.main_state.ap_change)
                 }),
-                outputs.map(|v| self.as_cell_ref(v, true)),
+                outputs.map(|v| self.as_adjusted_cell_ref(v)),
             )
             .into(),
         );
@@ -303,28 +276,38 @@ impl CasmBuilder {
     /// Adds an assertion that `dst = res`.
     /// `dst` must be a cell reference.
     pub fn assert_vars_eq(&mut self, dst: Var, res: Var, kind: AssertEqKind) {
-        let a = self.as_cell_ref(dst, true);
-        let b = self.get_value(res, true);
+        let a = extract_matches!(self.get_unadjusted(dst), CellExpression::Deref);
+        let b = self.get_unadjusted(res);
         let (a, b) = match b {
-            CellExpression::Deref(cell) => (a, ResOperand::Deref(cell)),
-            CellExpression::DoubleDeref(cell, offset) => (a, ResOperand::DoubleDeref(cell, offset)),
-            CellExpression::Immediate(imm) => (a, imm.into()),
+            CellExpression::Deref(cell) => (a, ResOperand::Deref(*cell)),
+            CellExpression::DoubleDeref(cell, offset) => {
+                (a, ResOperand::DoubleDeref(*cell, *offset))
+            }
+            CellExpression::Immediate(imm) => (a, imm.clone().into()),
             CellExpression::BinOp { op, a: other, b } => match op {
-                CellOperator::Add => {
-                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b }))
-                }
-                CellOperator::Mul => {
-                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: other, b }))
-                }
-                CellOperator::Sub => {
-                    (other, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }))
-                }
-                CellOperator::Div => {
-                    (other, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }))
-                }
+                CellOperator::Add => (
+                    a,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *other, b: b.clone() }),
+                ),
+                CellOperator::Mul => (
+                    a,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *other, b: b.clone() }),
+                ),
+                CellOperator::Sub => (
+                    other,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *a, b: b.clone() }),
+                ),
+                CellOperator::Div => (
+                    other,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *a, b: b.clone() }),
+                ),
             },
         };
-        let inner = AssertEqInstruction { a, b };
+        let ap_change = self.main_state.ap_change;
+        let inner = AssertEqInstruction {
+            a: a.unchecked_apply_known_ap_change(ap_change),
+            b: b.unchecked_apply_known_ap_change(ap_change),
+        };
         let instruction = self.next_instruction(
             match kind {
                 AssertEqKind::Felt252 => InstructionBody::AssertEq(inner),
@@ -332,7 +315,7 @@ impl CasmBuilder {
             },
             true,
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
     }
 
     /// Writes and increments a buffer.
@@ -349,18 +332,18 @@ impl CasmBuilder {
     /// `deref` (which includes trivial calculations as well) so it instead returns a variable
     /// pointing to that location.
     pub fn maybe_add_tempvar(&mut self, var: Var) -> Var {
-        self.add_var(CellExpression::Deref(match self.get_value(var, false) {
-            CellExpression::Deref(cell) => cell,
+        self.add_var(CellExpression::Deref(match self.get_unadjusted(var) {
+            CellExpression::Deref(cell) => *cell,
             CellExpression::BinOp {
                 op: CellOperator::Add | CellOperator::Sub,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            } if imm.value.is_zero() => a,
+            } if imm.value.is_zero() => *a,
             CellExpression::BinOp {
                 op: CellOperator::Mul | CellOperator::Div,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            } if imm.value.is_one() => a,
+            } if imm.value.is_one() => *a,
             _ => {
                 let temp = self.alloc_var(false);
                 self.assert_vars_eq(temp, var, AssertEqKind::Felt252);
@@ -371,7 +354,7 @@ impl CasmBuilder {
 
     /// Increments a buffer and allocates and returns a variable pointing to its previous value.
     pub fn get_ref_and_inc(&mut self, buffer: Var) -> Var {
-        let (cell, offset) = self.as_cell_ref_plus_const(buffer, 0, false);
+        let (cell, offset) = self.as_unadjusted_cell_ref_plus_const(buffer, 0);
         self.main_state.vars.insert(
             buffer,
             CellExpression::BinOp {
@@ -387,15 +370,7 @@ impl CasmBuilder {
     /// Useful for writing, reading and referencing values.
     /// `buffer` must be a cell reference, or a cell reference with a small added constant.
     fn buffer_get_and_inc(&mut self, buffer: Var) -> (CellRef, i16) {
-        let (base, offset) = match self.get_value(buffer, false) {
-            CellExpression::Deref(cell) => (cell, 0),
-            CellExpression::BinOp {
-                op: CellOperator::Add,
-                a,
-                b: DerefOrImmediate::Immediate(imm),
-            } => (a, imm.value.try_into().expect("Too many buffer writes.")),
-            _ => panic!("Not a valid buffer."),
-        };
+        let (base, offset) = self.as_unadjusted_cell_ref_plus_const(buffer, 0);
         self.main_state.vars.insert(
             buffer,
             CellExpression::BinOp {
@@ -413,7 +388,7 @@ impl CasmBuilder {
             InstructionBody::AddAp(AddApInstruction { operand: BigInt::from(size).into() }),
             false,
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
         self.main_state.ap_change += size;
     }
 
@@ -426,19 +401,19 @@ impl CasmBuilder {
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
     /// `lhs` must be a cell reference and `rhs` must be deref or immediate.
     pub fn bin_op(&mut self, op: CellOperator, lhs: Var, rhs: Var) -> Var {
-        let (a, b) = match self.get_value(lhs, false) {
+        let (a, b) = match self.get_unadjusted(lhs) {
             // Regular `bin_op` support.
-            CellExpression::Deref(cell) => (cell, self.as_deref_or_imm(rhs, false)),
+            CellExpression::Deref(cell) => (*cell, self.as_unadjusted_deref_or_imm(rhs)),
             // `add_with_const` + `imm` support.
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
             } if op == CellOperator::Add => (
-                a,
+                *a,
                 DerefOrImmediate::Immediate(
-                    (imm.value
-                        + extract_matches!(self.get_value(rhs, false), CellExpression::Immediate))
+                    (&imm.value
+                        + extract_matches!(self.get_unadjusted(rhs), CellExpression::Immediate))
                     .into(),
                 ),
             ),
@@ -453,53 +428,38 @@ impl CasmBuilder {
     /// Returns a variable that is `[[var] + offset]`.
     /// `var` must be a cell reference, or a cell ref plus a small constant.
     pub fn double_deref(&mut self, var: Var, offset: i16) -> Var {
-        let (cell, full_offset) = self.as_cell_ref_plus_const(var, offset, false);
+        let (cell, full_offset) = self.as_unadjusted_cell_ref_plus_const(var, offset);
         self.add_var(CellExpression::DoubleDeref(cell, full_offset))
-    }
-
-    /// Sets the label to have the set states, otherwise tests if the state matches the existing one
-    /// by merging.
-    fn set_or_test_label_state(&mut self, label: &'static str, state: State) {
-        match self.label_info.entry(label) {
-            Entry::Occupied(e) => {
-                let info = e.into_mut();
-                info.state.intersect(&state, info.read_only);
-            }
-            Entry::Vacant(e) => {
-                e.insert(LabelInfo { state, read_only: false });
-            }
-        }
     }
 
     /// Adds a statement to jump to `label`.
     pub fn jump(&mut self, label: &'static str) {
-        let instruction = self.next_instruction(
+        self.push_labeled_instruction(
+            label,
             InstructionBody::Jump(JumpInstruction {
-                target: deref_or_immediate!(0),
+                target: deref_or_immediate!(BigInt::ZERO),
                 relative: true,
             }),
             true,
         );
-        self.statements.push(Statement::Jump(label, instruction));
-        let mut state = State::default();
-        core::mem::swap(&mut state, &mut self.main_state);
-        self.set_or_test_label_state(label, state);
+        let state = core::mem::take(&mut self.main_state);
+        self.set_or_test_label(label, state);
         self.reachable = false;
     }
 
     /// Adds a statement to jump to `label` if `condition != 0`.
     /// `condition` must be a cell reference.
     pub fn jump_nz(&mut self, condition: Var, label: &'static str) {
-        let cell = self.as_cell_ref(condition, true);
-        let instruction = self.next_instruction(
+        let cell = self.as_adjusted_cell_ref(condition);
+        self.push_labeled_instruction(
+            label,
             InstructionBody::Jnz(JnzInstruction {
                 condition: cell,
-                jump_offset: deref_or_immediate!(0),
+                jump_offset: deref_or_immediate!(BigInt::ZERO),
             }),
             true,
         );
-        self.statements.push(Statement::Jump(label, instruction));
-        self.set_or_test_label_state(label, self.main_state.clone());
+        self.set_or_test_label(label, self.main_state.clone());
     }
 
     /// Adds a statement performing Blake2s compression.
@@ -513,9 +473,9 @@ impl CasmBuilder {
     pub fn blake2s_compress(&mut self, state: Var, byte_count: Var, message: Var, finalize: bool) {
         let instruction = self.next_instruction(
             InstructionBody::Blake2sCompress(Blake2sCompressInstruction {
-                state: self.as_cell_ref(state, true),
-                byte_count: self.as_cell_ref(byte_count, true),
-                message: self.as_cell_ref(message, true),
+                state: self.as_adjusted_cell_ref(state),
+                byte_count: self.as_adjusted_cell_ref(byte_count),
+                message: self.as_adjusted_cell_ref(message),
                 finalize,
             }),
             true,
@@ -525,28 +485,40 @@ impl CasmBuilder {
             self.main_state.allocated as usize, self.main_state.ap_change,
             "Output var must be top of stack"
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
     }
 
     /// Adds a label here named `name`.
     pub fn label(&mut self, name: &'static str) {
-        if self.reachable {
-            self.set_or_test_label_state(name, self.main_state.clone());
-        }
-        let info = self
-            .label_info
-            .get_mut(&name)
-            .unwrap_or_else(|| panic!("No known value for state on reaching {name}."));
-        info.read_only = true;
+        // Single lookup: merge state if reachable and set offset
+        let info = match self.label_info.entry(name) {
+            Entry::Occupied(e) => {
+                let info = e.into_mut();
+                if self.reachable {
+                    info.state.intersect(&self.main_state, false);
+                }
+                info
+            }
+            Entry::Vacant(e) => {
+                // Label defined before any jumps to it - use current state
+                if !self.reachable {
+                    panic!("No known value for state on reaching {name}.");
+                }
+                e.insert(LabelInfo { state: self.main_state.clone(), offset: Offset::UNSET })
+            }
+        };
+        info.offset = Offset(self.next_instruction_offset);
         self.main_state = info.state.clone();
-        self.statements.push(Statement::Label(name, 0));
         self.reachable = true;
     }
 
     /// Adds a label `name` in distance `offset` from the current point.
     /// Useful for calling code outside of the builder's context.
     pub fn future_label(&mut self, name: &'static str, offset: usize) {
-        self.statements.push(Statement::Label(name, offset));
+        self.label_info
+            .get_mut(&name)
+            .expect("This is always at the end of code, something must have built this.")
+            .offset = Offset(self.next_instruction_offset + offset);
     }
 
     /// Rescoping the values, while ignoring all vars not stated in `vars` and giving the vars on
@@ -614,28 +586,26 @@ impl CasmBuilder {
                 main_vars.insert(*var, value.clone());
             }
         }
-
-        let instruction = self.next_instruction(
+        self.push_labeled_instruction(
+            label,
             InstructionBody::Call(CallInstruction {
                 relative: true,
                 target: deref_or_immediate!(0),
             }),
             false,
         );
-        self.statements.push(Statement::Jump(label, instruction));
 
         self.main_state.vars = main_vars;
         self.main_state.allocated = 0;
         self.main_state.ap_change = 0;
-        let function_state = State { vars: function_vars, ..Default::default() };
-        self.set_or_test_label_state(label, function_state);
+        self.set_or_test_label(label, State { vars: function_vars, ..Default::default() });
     }
 
     /// A return statement in the code.
     pub fn ret(&mut self) {
         self.main_state.validate_finality();
         let instruction = self.next_instruction(InstructionBody::Ret(RetInstruction {}), false);
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
         self.reachable = false;
     }
 
@@ -663,7 +633,7 @@ impl CasmBuilder {
             }),
             false,
         );
-        self.statements.push(Statement::Final(instruction));
+        self.instructions.push(instruction);
         self.mark_unreachable();
     }
 
@@ -674,20 +644,26 @@ impl CasmBuilder {
     }
 
     /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
-    pub fn get_value(&self, var: Var, adjust_ap: bool) -> CellExpression {
-        if adjust_ap { self.main_state.get_adjusted(var) } else { self.main_state.get_value(var) }
+    pub fn get_adjusted(&self, var: Var) -> CellExpression {
+        self.main_state.get_adjusted(var)
+    }
+
+    /// Returns `var`s value, with fixed ap if `adjust_ap` is true.
+    pub fn get_unadjusted(&self, var: Var) -> &CellExpression {
+        self.main_state.get_unadjusted(var)
     }
 
     /// Returns `var`s value as a cell reference, with fixed ap if `adjust_ap` is true.
-    fn as_cell_ref(&self, var: Var, adjust_ap: bool) -> CellRef {
-        extract_matches!(self.get_value(var, adjust_ap), CellExpression::Deref)
+    fn as_adjusted_cell_ref(&self, var: Var) -> CellRef {
+        extract_matches!(self.main_state.get_unadjusted(var), CellExpression::Deref)
+            .unchecked_apply_known_ap_change(self.main_state.ap_change)
     }
 
     /// Returns `var`s value as a cell reference or immediate, with fixed ap if `adjust_ap` is true.
-    fn as_deref_or_imm(&self, var: Var, adjust_ap: bool) -> DerefOrImmediate {
-        match self.get_value(var, adjust_ap) {
-            CellExpression::Deref(cell) => DerefOrImmediate::Deref(cell),
-            CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm.into()),
+    fn as_unadjusted_deref_or_imm(&self, var: Var) -> DerefOrImmediate {
+        match self.get_unadjusted(var) {
+            CellExpression::Deref(cell) => DerefOrImmediate::Deref(*cell),
+            CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm.clone().into()),
             CellExpression::DoubleDeref(_, _) | CellExpression::BinOp { .. } => {
                 panic!("wrong usage.")
             }
@@ -696,21 +672,23 @@ impl CasmBuilder {
 
     /// Returns `var`s value as a cell reference plus a small const offset, with fixed ap if
     /// `adjust_ap` is true.
-    fn as_cell_ref_plus_const(
+    fn as_unadjusted_cell_ref_plus_const(
         &self,
         var: Var,
         additional_offset: i16,
-        adjust_ap: bool,
     ) -> (CellRef, i16) {
-        match self.get_value(var, adjust_ap) {
-            CellExpression::Deref(cell) => (cell, additional_offset),
+        match self.main_state.get_unadjusted(var) {
+            CellExpression::Deref(cell) => (*cell, additional_offset),
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
             } => (
-                a,
-                (imm.value + additional_offset).try_into().expect("Offset too large for deref."),
+                *a,
+                imm.value
+                    .to_i16()
+                    .and_then(|v| v.checked_add(additional_offset))
+                    .expect("Offset too large for deref."),
             ),
             _ => panic!("Not a valid ptr."),
         }
@@ -726,22 +704,84 @@ impl CasmBuilder {
             self.main_state.ap_change += 1;
         }
         self.main_state.steps += 1;
-        let mut hints = vec![];
-        core::mem::swap(&mut hints, &mut self.current_hints);
-        Instruction { body, inc_ap, hints }
+        self.next_instruction_offset += body.op_size();
+        Instruction { body, inc_ap, hints: core::mem::take(&mut self.current_hints) }
+    }
+
+    /// Pushes a jump-style instruction to the builder.
+    /// Additionally pushes a label relocation for the instruction.
+    fn push_labeled_instruction(
+        &mut self,
+        label: &'static str,
+        body: InstructionBody,
+        inc_ap_supported: bool,
+    ) {
+        self.relocations.push(LabelRelocation {
+            instruction_index: self.instructions.len(),
+            instruction_offset: self.next_instruction_offset,
+            label,
+        });
+        let instruction = self.next_instruction(body, inc_ap_supported);
+        self.instructions.push(instruction);
+    }
+
+    /// Sets or tests a label's state.
+    fn set_or_test_label(&mut self, label: &'static str, state: State) {
+        match self.label_info.entry(label) {
+            Entry::Occupied(e) => {
+                let info = e.into_mut();
+                info.state.intersect(&state, info.offset.is_set());
+            }
+            Entry::Vacant(e) => {
+                e.insert(LabelInfo { state, offset: Offset::UNSET });
+            }
+        };
+    }
+}
+
+/// Relocates an instruction by updating its jump offset.
+fn relocate_instruction(instruction: &mut Instruction, updated: i32) {
+    match &mut instruction.body {
+        InstructionBody::Jnz(JnzInstruction {
+            jump_offset: DerefOrImmediate::Immediate(value),
+            ..
+        })
+        | InstructionBody::Jump(JumpInstruction {
+            target: DerefOrImmediate::Immediate(value),
+            ..
+        })
+        | InstructionBody::Call(CallInstruction {
+            target: DerefOrImmediate::Immediate(value),
+            ..
+        }) => {
+            value.value = BigInt::from(updated);
+        }
+        _ => unreachable!("Only jump or call statements should be here."),
+    }
+}
+
+impl CasmBuilder {
+    /// Creates a new `CasmBuilder` with pre-allocated capacity for instructions and relocations.
+    ///
+    /// Use this when you know the approximate number of instructions and relocations
+    /// to avoid repeated allocations during building.
+    pub fn with_capacity(instructions: usize, relocations: usize) -> Self {
+        Self {
+            label_info: Default::default(),
+            main_state: Default::default(),
+            instructions: Vec::with_capacity(instructions),
+            relocations: Vec::with_capacity(relocations),
+            current_hints: Default::default(),
+            var_count: Default::default(),
+            reachable: true,
+            next_instruction_offset: 0,
+        }
     }
 }
 
 impl Default for CasmBuilder {
     fn default() -> Self {
-        Self {
-            label_info: Default::default(),
-            main_state: Default::default(),
-            statements: Default::default(),
-            current_hints: Default::default(),
-            var_count: Default::default(),
-            reachable: true,
-        }
+        Self::with_capacity(1, 0)
     }
 }
 

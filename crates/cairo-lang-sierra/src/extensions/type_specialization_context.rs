@@ -5,10 +5,13 @@ use crate::ids::ConcreteTypeId;
 /// Trait for the specialization of types.
 pub trait TypeSpecializationContext {
     /// Returns the type information for the type with the given id.
-    fn try_get_type_info(&self, id: &ConcreteTypeId) -> Option<TypeInfo>;
+    fn try_get_type_info<'a>(&'a self, id: &ConcreteTypeId) -> Option<&'a TypeInfo>;
 
     /// Wraps [Self::try_get_type_info] with a result object.
-    fn get_type_info(&self, id: &ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
+    fn get_type_info<'a>(
+        &'a self,
+        id: &ConcreteTypeId,
+    ) -> Result<&'a TypeInfo, SpecializationError> {
         self.try_get_type_info(id).ok_or(SpecializationError::MissingTypeInfo(id.clone()))
     }
 }

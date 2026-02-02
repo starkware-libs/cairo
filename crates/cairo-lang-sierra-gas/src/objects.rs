@@ -1,8 +1,9 @@
+use std::ops::Neg;
+
 use cairo_lang_sierra::extensions::circuit::CircuitInfo;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostsType, CostTokenMap, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
-use cairo_lang_utils::collection_arithmetics::{AddCollection, SubCollection};
 
 use crate::core_libfunc_cost_base::FunctionCostInfo;
 
@@ -76,22 +77,14 @@ impl PreCost {
         Self(CostTokenMap::from_iter([(token_type, n)]))
     }
 }
-
-/// Adds two [PreCost] instances.
-impl std::ops::Add for PreCost {
+impl Neg for PreCost {
     type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        PreCost(self.0.add_collection(rhs.0))
-    }
-}
-
-/// Subtracts two [PreCost] instances.
-impl std::ops::Sub for PreCost {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        PreCost(self.0.sub_collection(rhs.0))
+    fn neg(mut self) -> Self::Output {
+        for (_k, v) in self.0.iter_mut() {
+            *v = -*v;
+        }
+        self
     }
 }
 

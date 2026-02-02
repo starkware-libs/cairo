@@ -59,7 +59,8 @@ cairo_lang_test_utils::test_file_test!(
         while_: "while",
         for_: "for",
     },
-    test_function_lowering
+    test_function_lowering,
+    ["expect_diagnostics"]
 );
 
 fn test_function_lowering(

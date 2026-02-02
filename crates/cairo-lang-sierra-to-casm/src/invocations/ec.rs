@@ -1,10 +1,7 @@
-use std::str::FromStr;
-
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
+use cairo_lang_sierra::extensions::ec::{EcConcreteLibfunc, EcPointType};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
-use num_bigint::BigInt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -12,12 +9,6 @@ use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     BuiltinInfo, CostValidationInfo, add_input_variables, get_non_fallthrough_statement_id,
 };
-
-/// Returns the Beta value of the Starkware elliptic curve.
-fn get_beta() -> BigInt {
-    BigInt::from_str("3141592653589793238462643383279502884197169399375105820974944592307816406665")
-        .unwrap()
-}
 
 /// Builds instructions for Sierra EC operations.
 pub fn build(
@@ -67,7 +58,7 @@ fn compute_rhs(
     computed_rhs: Var,
 ) {
     casm_build_extend! {casm_builder,
-        const beta = (get_beta());
+        const beta = EcPointType::BETA.to_bigint();
         assert x2 = x * x;
         assert x3 = x2 * x;
         assert alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
@@ -116,7 +107,7 @@ fn add_ec_points_inner(
 fn build_ec_zero(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
 
     casm_build_extend!(casm_builder,
         const zero = 0;
@@ -135,7 +126,7 @@ fn build_ec_point_try_new_nz(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_single_cells()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(7, 1);
     add_input_variables! {casm_builder,
         deref x;
         deref y;
@@ -169,7 +160,7 @@ fn build_ec_point_from_x_nz(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, x] = builder.try_get_single_cells()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 3);
     add_input_variables! {casm_builder,
         buffer(2) range_check;
         deref x;
@@ -251,7 +242,7 @@ fn build_ec_point_unwrap(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref x;
         deref y;
@@ -270,7 +261,7 @@ fn build_ec_point_is_zero(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 1);
     add_input_variables!(casm_builder, deref x; deref y; );
     casm_build_extend! {casm_builder,
         // To check whether `(x, y) = (0, 0)` (the zero point), it is enough to check
@@ -292,7 +283,7 @@ fn build_ec_neg(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref x;
         deref y;
@@ -313,7 +304,7 @@ fn build_ec_neg(
 fn build_ec_state_init(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(7, 0);
 
     // Sample a random point on the curve.
     casm_build_extend! {casm_builder,
@@ -355,7 +346,7 @@ fn build_ec_state_add(
     let [sx, sy, random_ptr] = expr_state.try_unpack()?;
     let [px, py] = expr_point.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(11, 1);
     add_input_variables! {casm_builder,
         deref px;
         deref py;
@@ -393,7 +384,7 @@ fn build_ec_state_finalize(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [x, y, random_ptr] = builder.try_get_refs::<1>()?[0].try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(14, 2);
     add_input_variables! {casm_builder,
         deref x;
         deref y;
@@ -445,7 +436,7 @@ fn build_ec_state_add_mul(
     let [m] = expr_m.try_unpack()?;
     let [px, py] = expr_point.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(5, 0);
     add_input_variables! {casm_builder,
         buffer(6) ec_builtin;
         deref sx;

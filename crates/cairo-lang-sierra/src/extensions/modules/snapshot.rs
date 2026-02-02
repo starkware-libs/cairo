@@ -22,14 +22,14 @@ impl GenericTypeArgGenericType for SnapshotTypeWrapped {
         &self,
         _context: &dyn TypeSpecializationContext,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { zero_sized, storable, duplicatable, .. }: TypeInfo,
+        wrapped_info: &TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Duplicatable types are their own snapshot - as the snapshot itself is useless if we can
         // dup the value already.
-        if storable && !duplicatable {
+        if wrapped_info.storable && !wrapped_info.duplicatable {
             Ok(TypeInfo {
                 long_id,
-                zero_sized,
+                zero_sized: wrapped_info.zero_sized,
                 storable: true,
                 droppable: true,
                 duplicatable: true,

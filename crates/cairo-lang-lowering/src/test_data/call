@@ -66,3 +66,72 @@ Statements:
   (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Test ref self method call on expression receiver.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> u32 {
+    // ref self method called on expression (not a variable) should work
+    make_counter().increment()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct Counter {
+    value: u32,
+}
+
+trait CounterTrait {
+    fn increment(ref self: Counter) -> u32;
+}
+
+impl CounterImpl of CounterTrait {
+    #[inline(never)]
+    fn increment(ref self: Counter) -> u32 {
+        self.value += 1;
+        self.value
+    }
+}
+
+#[inline(never)]
+fn make_counter() -> Counter {
+    Counter { value: 0 }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::Counter) <- test::make_counter()
+  (v1: core::panics::PanicResult::<(test::Counter, core::integer::u32)>) <- test::CounterImpl::increment(v0)
+End:
+  Match(match_enum(v1) {
+    PanicResult::Ok(v2) => blk1,
+    PanicResult::Err(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::Counter, v5: core::integer::u32) <- struct_destructure(v2)
+  (v6: (core::integer::u32,)) <- struct_construct(v5)
+  (v7: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v6)
+End:
+  Return(v7)
+
+blk2:
+Statements:
+  (v8: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v3)
+End:
+  Return(v8)

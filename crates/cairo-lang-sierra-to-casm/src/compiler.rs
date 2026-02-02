@@ -421,7 +421,7 @@ pub fn check_basic_structure(
     if invocation.args.len() != libfunc.param_signatures().len()
         || !itertools::equal(
             invocation.branches.iter().map(|branch| branch.results.len()),
-            libfunc.output_types().iter().map(|types| types.len()),
+            libfunc.output_types().map(|types| types.len()),
         )
         || match libfunc.fallthrough() {
             Some(expected_fallthrough) => {
@@ -543,12 +543,11 @@ pub fn compile(
                     .map_err(CompilationError::ProgramRegistryError)?;
                 check_basic_structure(statement_idx, invocation, libfunc)?;
 
-                let param_types: Vec<_> = libfunc
-                    .param_signatures()
-                    .iter()
-                    .map(|param_signature| param_signature.ty.clone())
-                    .collect();
-                check_types_match(&invoke_refs, &param_types).map_err(|error| {
+                check_types_match(
+                    &invoke_refs,
+                    libfunc.param_signatures().iter().map(|sig| &sig.ty),
+                )
+                .map_err(|error| {
                     Box::new(AnnotationError::ReferencesError { statement_idx, error }.into())
                 })?;
                 invoke_refs.iter().for_each(|r| r.validate(&program_info.type_sizes));
@@ -606,7 +605,7 @@ pub fn compile(
                     zip_eq(&invocation.branches, compiled_invocation.results)
                         .zip(all_updated_annotations)
                 {
-                    let destination_statement_idx = statement_idx.next(&branch_info.target);
+                    let destination_statement_idx = statement_idx.next(branch_info.target);
                     if branching_libfunc
                         && !is_branch_align(
                             &program_info.registry,
@@ -677,21 +676,21 @@ pub fn validate_metadata(
     }
 
     // Get the libfunc for the given statement index, or an error.
-    let get_libfunc = |idx: &StatementIdx| -> Result<&CoreConcreteLibfunc, CompilationError> {
+    let get_libfunc = |idx: StatementIdx| -> Result<&CoreConcreteLibfunc, CompilationError> {
         if let Statement::Invocation(invocation) =
-            program.get_statement(idx).ok_or(CompilationError::MetadataStatementOutOfBound(*idx))?
+            program.get_statement(idx).ok_or(CompilationError::MetadataStatementOutOfBound(idx))?
         {
             registry
                 .get_libfunc(&invocation.libfunc_id)
                 .map_err(CompilationError::ProgramRegistryError)
         } else {
-            Err(CompilationError::StatementNotSupportingApChangeVariables(*idx))
+            Err(CompilationError::StatementNotSupportingApChangeVariables(idx))
         }
     };
 
     // Statement validations.
     for idx in metadata.ap_change_info.variable_values.keys() {
-        if !matches!(get_libfunc(idx)?, CoreConcreteLibfunc::BranchAlign(_)) {
+        if !matches!(get_libfunc(*idx)?, CoreConcreteLibfunc::BranchAlign(_)) {
             return Err(CompilationError::StatementNotSupportingApChangeVariables(*idx));
         }
     }
@@ -700,7 +699,7 @@ pub fn validate_metadata(
             return Err(CompilationError::MetadataNegativeGasVariable);
         }
         if !matches!(
-            get_libfunc(idx)?,
+            get_libfunc(*idx)?,
             CoreConcreteLibfunc::BranchAlign(_)
                 | CoreConcreteLibfunc::Coupon(CouponConcreteLibfunc::Refund(_))
                 | CoreConcreteLibfunc::Gas(

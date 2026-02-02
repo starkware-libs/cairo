@@ -184,11 +184,11 @@ pub fn build_function_parameters_refs(
 }
 
 /// Checks that the list of references contains types matching the given types.
-pub fn check_types_match(
+pub fn check_types_match<'a>(
     refs: &[ReferenceValue],
-    types: &[ConcreteTypeId],
+    types: impl IntoIterator<Item = &'a ConcreteTypeId>,
 ) -> Result<(), ReferencesError> {
-    if itertools::equal(types.iter(), refs.iter().map(|r| &r.ty)) {
+    if itertools::equal(types, refs.iter().map(|r| &r.ty)) {
         Ok(())
     } else {
         Err(ReferencesError::InvalidReferenceTypeForArgument)

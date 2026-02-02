@@ -46,7 +46,7 @@ fn build_array_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     builder.try_get_refs::<0>()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 0);
     casm_build_extend! {casm_builder,
         tempvar arr_start;
         hint AllocSegment into {dst: arr_start};
@@ -67,9 +67,7 @@ fn build_span_from_tuple(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [start_ptr] = builder.try_get_single_cells()?;
     let full_struct_size = builder.program_info.type_sizes[ty];
-
-    let mut casm_builder = CasmBuilder::default();
-
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref start_ptr;
     };
@@ -95,7 +93,7 @@ fn build_tuple_from_span(
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let full_struct_size = builder.program_info.type_sizes[ty];
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(3, 1);
 
     add_input_variables! {casm_builder,
         deref arr_start;
@@ -121,8 +119,7 @@ fn build_array_append(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [expr_arr, elem] = builder.try_get_refs()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
-
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(elem.cells.len(), 0);
     add_input_variables! {casm_builder,
         buffer(0) arr_start;
         buffer(elem.cells.len() as i16) arr_end;
@@ -147,7 +144,7 @@ fn build_pop_front(
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(3, 2);
     add_input_variables! {casm_builder,
         deref arr_start;
         deref arr_end;
@@ -182,7 +179,7 @@ fn build_pop_back(
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(3, 2);
     add_input_variables! {casm_builder,
         deref arr_start;
         deref arr_end;
@@ -217,10 +214,8 @@ fn build_array_get(
     let range_check = expr_range_check.try_unpack_single()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
     let index = expr_index.try_unpack_single()?;
-
     let element_size = builder.program_info.type_sizes[elem_ty];
-
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(10, 2);
     add_input_variables! {casm_builder,
         deref_or_immediate index;
         deref arr_start;
@@ -289,7 +284,7 @@ fn build_array_slice(
 
     let element_size = builder.program_info.type_sizes[elem_ty];
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(11, 2);
     add_input_variables! {casm_builder,
         deref slice_start;
         deref_or_immediate slice_length;
@@ -356,7 +351,7 @@ fn build_array_len(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(if element_size == 1 { 0 } else { 1 }, 0);
     add_input_variables! {casm_builder,
         deref arr_start;
         deref arr_end;
@@ -390,8 +385,7 @@ fn build_multi_pop_front(
     let range_check = expr_range_check.try_unpack_single()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
     let popped_size = builder.program_info.type_sizes[&libfunc.popped_ty];
-
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 2);
     add_input_variables! {casm_builder,
         buffer(1) range_check;
         deref arr_start;
@@ -441,8 +435,7 @@ fn build_multi_pop_back(
     let range_check = expr_range_check.try_unpack_single()?;
     let [arr_start, arr_end] = expr_arr.try_unpack()?;
     let popped_size = builder.program_info.type_sizes[&libfunc.popped_ty];
-
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(8, 2);
     add_input_variables! {casm_builder,
         buffer(1) range_check;
         deref arr_start;

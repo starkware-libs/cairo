@@ -191,6 +191,10 @@ fn test_iter_any() {
 
     let mut iter = array![].into_iter();
     assert!(!iter.any(|x| x == 1));
+
+    assert!(array![1, 2, 3].into_iter().any(|x| x == 2));
+    assert!(!array![1, 2, 3].into_iter().any(|x| x == 5));
+    assert!(!array![].into_iter().any(|x| x == 1));
 }
 
 #[test]
@@ -205,17 +209,24 @@ fn test_iter_all() {
 
     let mut iter = array![].into_iter();
     assert!(iter.all(|x| x == 1));
+
+    assert!(array![1, 1, 1].into_iter().all(|x| x == 1));
+    assert!(!array![1, 2, 3].into_iter().all(|x| x == 1));
+    assert!(array![].into_iter().all(|x| x == 1));
 }
 
 #[test]
 fn test_iter_find() {
     let mut iter = array![1, 2, 3].into_iter();
-    assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
-    assert_eq!(iter.find(|x| *x == 5), Option::None);
+    assert_eq!(iter.find(|x| *x == 2), Some(2));
+    assert_eq!(iter.find(|x| *x == 5), None);
 
     let mut iter = array![1, 2, 3].into_iter();
-    assert_eq!(iter.find(|x| *x == 2), Option::Some(2));
-    assert_eq!(iter.next(), Option::Some(3));
+    assert_eq!(iter.find(|x| *x == 2), Some(2));
+    assert_eq!(iter.next(), Some(3));
+
+    assert_eq!(array![1, 2, 3].into_iter().find(|x| *x == 2), Some(2));
+    assert_eq!(array![1, 2, 3].into_iter().find(|x| *x == 5), None);
 }
 
 #[test]

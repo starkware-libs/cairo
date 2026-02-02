@@ -16,7 +16,7 @@ use cairo_lang_sierra::extensions::const_type::ConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::coupon::CouponConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
-use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
+use cairo_lang_sierra::extensions::enm::{EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc};
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
@@ -49,6 +49,7 @@ use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::{ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::collection_arithmetics::{HasZero, SubCollection};
 use itertools::{Itertools, chain};
 use num_bigint::BigInt;
 use num_traits::{One, Zero};
@@ -94,32 +95,23 @@ impl FunctionCostInfo {
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
-    type CostType: Clone;
+    type CostValueType: Clone;
 
     /// Gets a cost from a constant value (of type [CostTokenType::Const]).
-    fn const_cost(&self, value: ConstCost) -> Self::CostType {
-        self.cost_token(value.cost(), CostTokenType::Const)
-    }
-
-    /// Gets a cost from step count.
-    fn steps(&self, steps: i32) -> Self::CostType {
-        self.const_cost(ConstCost { steps, ..ConstCost::default() })
+    fn const_cost(&self, value: ConstCost) -> Self::CostValueType {
+        self.cost_token(value.cost())
     }
 
     /// Gets a cost of the given token type.
-    fn cost_token(&self, count: i32, token_type: CostTokenType) -> Self::CostType;
+    fn cost_token(&self, count: i32) -> Self::CostValueType;
     /// Gets a cost for the content of a function.
     fn function_token_cost(
         &mut self,
         function: &FunctionCostInfo,
         token_type: CostTokenType,
-    ) -> Self::CostType;
+    ) -> Option<Self::CostValueType>;
     /// Gets a cost for a variable for the current statement.
-    fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType;
-    /// Adds costs.
-    fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType;
-    /// Subtracts costs.
-    fn sub(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType;
+    fn statement_var_cost(&self, token_type: CostTokenType) -> Option<Self::CostValueType>;
 }
 
 /// Trait for providing extra information required for calculating costs for a specific libfunc
@@ -411,6 +403,24 @@ pub fn core_libfunc_cost(
                     .collect_vec(),
                 }
             }
+            EnumConcreteLibfunc::BoxedMatch(EnumBoxedMatchConcreteLibfunc {
+                signature, ..
+            }) => {
+                // BoxedMatch needs to load the variant selector with a double-deref (1 step)
+                // plus the regular match cost - but only when branching is actually needed
+                let n = signature.branch_signatures.len();
+                match n {
+                    0 => vec![],
+                    1 => vec![ConstCost::default().into()], // No branching needed for single
+                    // variant
+                    2 => vec![ConstCost::steps(2).into(); 2],
+                    _ => chain!(
+                        iter::once(ConstCost::steps(2).into()),
+                        itertools::repeat_n(ConstCost::steps(3).into(), n - 1)
+                    )
+                    .collect_vec(),
+                }
+            }
         },
         Struct(
             StructConcreteLibfunc::Construct(_)
@@ -636,8 +646,10 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
-        // TODO(ilya): Add blake token to blake gas cost.
-        Blake(_) => vec![ConstCost::steps(1).into()],
+        Blake(_) => vec![BranchCost::Regular {
+            const_cost: ConstCost::steps(1),
+            pre_cost: PreCost::builtin(CostTokenType::Blake),
+        }],
         Trace(_) => vec![ConstCost::steps(1).into()],
         QM31(libfunc) => match libfunc {
             QM31Concrete::Const(_) => vec![ConstCost::default().into()],
@@ -655,134 +667,135 @@ pub fn core_libfunc_cost(
     }
 }
 
-/// Returns a postcost value for a libfunc - the cost of step token.
-/// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas cost after having a solution.
-// TODO(lior): Remove this function once it's not used.
-pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
-    ops: &mut Ops,
-    libfunc: &CoreConcreteLibfunc,
-    info_provider: &InfoProvider,
-) -> Vec<Ops::CostType> {
-    let res = core_libfunc_cost(libfunc, info_provider);
-    res.into_iter()
-        .map(|cost| match cost {
-            BranchCost::Regular { const_cost, pre_cost: _ } => ops.const_cost(const_cost),
+impl BranchCost {
+    /// Returns a postcost value for a libfunc's branch - the cost of step token.
+    pub fn postcost<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
+        &self,
+        ops: &mut Ops,
+        info_provider: &InfoProvider,
+    ) -> Ops::CostValueType
+    where
+        Ops::CostValueType: std::ops::Add<Ops::CostValueType, Output = Ops::CostValueType>
+            + std::ops::Sub<Ops::CostValueType, Output = Ops::CostValueType>
+            + std::ops::Neg<Output = Ops::CostValueType>
+            + HasZero,
+    {
+        match self {
+            BranchCost::Regular { const_cost, pre_cost: _ } => ops.const_cost(*const_cost),
             BranchCost::FunctionCost { const_cost, function, sign } => {
-                let func_content_cost = ops.function_token_cost(&function, CostTokenType::Const);
-                let cost = ops.add(ops.const_cost(const_cost), func_content_cost);
-
+                let mut cost = ops.const_cost(*const_cost);
+                if let Some(func_cost) = ops.function_token_cost(function, CostTokenType::Const) {
+                    cost = cost + func_cost;
+                }
                 match sign {
                     BranchCostSign::Add => {
-                        // The refund may be at most `cost`. It can be smaller if the refund cannot
-                        // be used later (e.g., if the next statement is `return`).
-                        ops.sub(ops.statement_var_cost(CostTokenType::Const), cost)
+                        // The refund may be at most `cost`. It can be smaller if the refund
+                        // cannot be used later (e.g., if the next
+                        // statement is `return`).
+                        if let Some(refund_cost) = ops.statement_var_cost(CostTokenType::Const) {
+                            refund_cost - cost
+                        } else {
+                            -cost
+                        }
                     }
                     BranchCostSign::Subtract => cost,
                 }
             }
             BranchCost::BranchAlign => {
                 let ap_change = info_provider.ap_change_var_value();
-                let burnt_cost = ops.statement_var_cost(CostTokenType::Const);
+                let burnt_cost =
+                    ops.statement_var_cost(CostTokenType::Const).unwrap_or_else(HasZero::zero);
                 if ap_change == 0 {
                     burnt_cost
                 } else {
-                    ops.add(
-                        burnt_cost,
-                        ops.const_cost(ConstCost {
+                    burnt_cost
+                        + ops.const_cost(ConstCost {
                             steps: 1,
                             holes: ap_change as i32,
                             range_checks: 0,
                             range_checks96: 0,
-                        }),
-                    )
+                        })
                 }
             }
             BranchCost::WithdrawGas(info) => {
                 let total_cost = ops.const_cost(
                     info.const_cost(|token_type| info_provider.token_usages(token_type)),
                 );
-                if info.success {
-                    ops.sub(total_cost, ops.statement_var_cost(CostTokenType::Const))
+                if info.success
+                    && let Some(var_value) = ops.statement_var_cost(CostTokenType::Const)
+                {
+                    total_cost - var_value
                 } else {
                     total_cost
                 }
             }
-            BranchCost::RedepositGas => ops.add(
-                ops.const_cost(ConstCost::steps(
+            BranchCost::RedepositGas => {
+                let base = ops.const_cost(ConstCost::steps(
                     BuiltinCostsType::cost_computation_steps(false, |token_type| {
                         info_provider.token_usages(token_type)
                     })
                     .into_or_panic(),
-                )),
-                ops.statement_var_cost(CostTokenType::Const),
-            ),
-        })
-        .collect()
-}
-
-/// Returns a precost value for a libfunc - the cost of non-step tokens.
-/// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas cost after having a solution.
-pub fn core_libfunc_precost<Ops: CostOperations, InfoProvider: CostInfoProvider>(
-    ops: &mut Ops,
-    libfunc: &CoreConcreteLibfunc,
-    info_provider: &InfoProvider,
-) -> Vec<Ops::CostType> {
-    let res = core_libfunc_cost(libfunc, info_provider);
-
-    res.into_iter()
-        .map(|cost| match cost {
-            BranchCost::Regular { const_cost: _, pre_cost } => {
-                let mut res = ops.steps(0);
-                for (token_type, val) in pre_cost.0 {
-                    res = ops.add(res, ops.cost_token(val, token_type));
+                ));
+                if let Some(var_value) = ops.statement_var_cost(CostTokenType::Const) {
+                    base + var_value
+                } else {
+                    base
                 }
-                res
             }
-            BranchCost::FunctionCost { const_cost: _, function, sign } => {
-                let func_content_cost = CostTokenType::iter_precost()
-                    .map(|token| ops.function_token_cost(&function, *token))
-                    .collect_vec()
-                    .into_iter()
-                    .reduce(|x, y| ops.add(x, y));
+        }
+    }
 
+    /// Returns a precost value for a libfunc's branch - the cost of non-step tokens.
+    pub fn precost<Ops: CostOperations>(&self, ops: &mut Ops) -> CostTokenMap<Ops::CostValueType>
+    where
+        Ops::CostValueType: std::ops::Add<Ops::CostValueType, Output = Ops::CostValueType>
+            + std::ops::Sub<Ops::CostValueType, Output = Ops::CostValueType>
+            + std::ops::Neg<Output = Ops::CostValueType>
+            + HasZero
+            + Eq,
+    {
+        match self {
+            BranchCost::Regular { const_cost: _, pre_cost } => pre_cost
+                .0
+                .iter()
+                .map(|(token_type, val)| (*token_type, ops.cost_token(*val)))
+                .collect(),
+            BranchCost::FunctionCost { const_cost: _, function, sign } => {
+                let func_content_cost: CostTokenMap<_> = CostTokenType::iter_precost()
+                    .filter_map(|token| Some((*token, ops.function_token_cost(function, *token)?)))
+                    .collect();
                 match sign {
                     BranchCostSign::Add => {
                         // The refund may be at most `cost`. It can be smaller if the refund cannot
                         // be used later (e.g., if the next statement is
                         // `return`).
-                        ops.sub(
-                            statement_vars_cost(ops, CostTokenType::iter_precost()),
-                            func_content_cost.unwrap(),
-                        )
+                        precost_statement_vars_cost(ops)
+                            .collect::<CostTokenMap<_>>()
+                            .sub_collection(func_content_cost)
                     }
-                    BranchCostSign::Subtract => func_content_cost.unwrap(),
+                    BranchCostSign::Subtract => func_content_cost,
                 }
             }
             BranchCost::BranchAlign | BranchCost::RedepositGas => {
-                statement_vars_cost(ops, CostTokenType::iter_precost())
+                precost_statement_vars_cost(ops).collect()
             }
             BranchCost::WithdrawGas(info) => {
                 if info.success {
-                    ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost()))
+                    precost_statement_vars_cost(ops).map(|(k, v)| (k, -v)).collect()
                 } else {
-                    ops.steps(0)
+                    Default::default()
                 }
             }
-        })
-        .collect()
+        }
+    }
 }
 
 /// Returns the sum of statement variables for all the requested tokens.
-fn statement_vars_cost<'a, Ops: CostOperations, TokenTypes: Iterator<Item = &'a CostTokenType>>(
+fn precost_statement_vars_cost<Ops: CostOperations>(
     ops: &Ops,
-    token_types: TokenTypes,
-) -> Ops::CostType {
-    token_types
-        .map(|token_type| ops.statement_var_cost(*token_type))
-        .reduce(|x, y| ops.add(x, y))
-        .unwrap()
+) -> impl Iterator<Item = (CostTokenType, Ops::CostValueType)> {
+    CostTokenType::iter_precost()
+        .filter_map(|token_type| Some((*token_type, ops.statement_var_cost(*token_type)?)))
 }
 
 /// Returns costs for u64/u32/u16/u8 libfuncs.

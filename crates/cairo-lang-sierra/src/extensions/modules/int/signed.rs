@@ -87,7 +87,7 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
         let ty_param = ParamSignature::new(ty.clone());
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone());
         let wrapping_result_info = OutputVarInfo {
             ty: ty.clone(),
             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -151,7 +151,7 @@ impl<TSintTraits: SintTraits> NoGenericArgsGenericLibfunc for SintDiffLibfunc<TS
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
         let signed_ty_param = ParamSignature::new(signed_ty);
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone());
         let wrapping_result_ref_info = if TSintTraits::IS_SMALL {
             OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
         } else {

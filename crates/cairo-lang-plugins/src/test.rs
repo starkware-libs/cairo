@@ -38,7 +38,8 @@ cairo_lang_test_utils::test_file_test!(
         panicable: "panicable",
         external_attributes_validation: "external_attributes_validation",
     },
-    test_expand_plugin
+    test_expand_plugin,
+    ["expect_diagnostics"]
 );
 
 cairo_lang_test_utils::test_file_test!(
@@ -47,7 +48,8 @@ cairo_lang_test_utils::test_file_test!(
     {
         general: "general",
     },
-    test_general_plugin
+    test_general_plugin,
+    ["expect_diagnostics"]
 );
 
 #[salsa::db]

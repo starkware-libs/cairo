@@ -7,7 +7,6 @@ use cairo_lang_proc_macros::{DebugWithDb, HeapSize};
 use cairo_lang_utils::require;
 use salsa::Database;
 use salsa::plumbing::AsId;
-use vector_map::VecMap;
 
 use self::ast::TriviaGreen;
 use self::green::GreenNode;
@@ -310,16 +309,25 @@ impl<'a> SyntaxNode<'a> {
         let self_green = self.green_node(db);
         let children = self_green.children();
         let mut res: Vec<SyntaxNode<'_>> = Vec::with_capacity(children.len());
-        let mut key_map = VecMap::<_, usize>::new();
+        let mut key_map = Vec::<(_, usize)>::with_capacity(children.len());
         for green_id in children {
             let green = green_id.long(db);
             let width = green.width(db);
             let kind = green.kind;
             let rng = key_fields::key_fields_range(kind);
             let key_fields: &'a [GreenId<'a>] = &green.children()[rng];
-            let key_count = key_map.entry((kind, key_fields)).or_insert(0);
-            let index = *key_count;
-            *key_count += 1;
+            let index = key_map
+                .iter_mut()
+                .find(|(k, _v)| *k == key_fields)
+                .map(|(_k, v)| {
+                    let index = *v;
+                    *v += 1;
+                    index
+                })
+                .unwrap_or_else(|| {
+                    key_map.push((key_fields, 1));
+                    0
+                });
             // Create the SyntaxNode view for the child.
             res.push(new_syntax_node(
                 db,

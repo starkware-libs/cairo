@@ -130,7 +130,7 @@ impl NoGenericArgsGenericLibfunc for U128MulGuaranteeVerifyLibfunc {
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(U128MulGuaranteeType::id(), &[])?),
             ],
-            vec![OutputVarInfo::new_builtin(range_check_type, 0)],
+            vec![OutputVarInfo::new_builtin(range_check_type)],
             SierraApChange::Known { new_vars_only: false },
         ))
     }
@@ -148,7 +148,7 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone());
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
@@ -205,7 +205,7 @@ impl NoGenericArgsGenericLibfunc for U128ByteReverseLibfunc {
             ],
             vec![
                 // bitwise
-                OutputVarInfo::new_builtin(bitwise_ty, 0),
+                OutputVarInfo::new_builtin(bitwise_ty),
                 // result
                 OutputVarInfo {
                     ty: u128_ty,

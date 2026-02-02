@@ -13,7 +13,7 @@ pub fn build_storage_address_from_base_and_offset(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [base, offset] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref base;
         deref_or_immediate offset;
@@ -32,7 +32,7 @@ pub fn build_storage_base_address_from_felt252(
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound: BigInt = (BigInt::from(1) << 251) - 256;
     let [range_check, addr] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(19, 3);
     add_input_variables! {casm_builder,
         buffer(2) range_check;
         deref addr;

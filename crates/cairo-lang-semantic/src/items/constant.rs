@@ -548,9 +548,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 SemanticDiagnosticKind::UnsupportedConstant,
                             );
                         }
-                    }
-                    if let ExprFunctionCallArg::Value(arg) = arg {
-                        self.validate(*arg);
+                        ExprFunctionCallArg::TempReference(expr_id) => {
+                            self.diagnostics.report(
+                                self.arenas.exprs[*expr_id].stable_ptr(),
+                                SemanticDiagnosticKind::UnsupportedConstant,
+                            );
+                        }
                     }
                 }
                 if !self.is_function_const(expr.function) {

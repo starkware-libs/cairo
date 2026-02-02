@@ -17,7 +17,7 @@ insufficient type information is available for definite inference.
 
 == Patterns
 
-The `let` statement uses xref:pages/patterns.adoc[patterns] to bind values to variables.
+The `let` statement uses xref:patterns.adoc[patterns] to bind values to variables.
 Patterns allow you to destructure data and bind their components to variables.
 
 Simple variable binding:
@@ -47,7 +47,7 @@ let (x, _, z) = (1, 2, 3);  // Ignore second value
 let Point { x, y: _ } = point;  // Ignore y field
 ----
 
-See xref:pages/patterns.adoc[Patterns] for more details.
+See xref:patterns.adoc[Patterns] for more details.
 
 == Mutability
 
@@ -63,7 +63,7 @@ let mut y = 5;
 y = 6;  // OK: y is mutable
 ----
 
-Mutable variables can be reassigned using xref:pages/assignment-statement.adoc[assignment].
+Mutable variables can be reassigned using xref:assignment-statement.adoc[assignment].
 
 Mutability can be combined with patterns:
 [source,cairo]
@@ -77,7 +77,7 @@ y = 20;  // OK
 ====
 Mutability in Cairo is local to the variable binding.
 Reassigning a mutable variable does not affect other references to the value.
-See xref:pages/variables.adoc[Variables] for more details.
+See xref:variables.adoc[Variables] for more details.
 ====
 
 == Variable scope and shadowing

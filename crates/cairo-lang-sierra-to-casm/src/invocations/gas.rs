@@ -36,7 +36,7 @@ fn build_withdraw_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, gas_counter] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 2);
     add_input_variables! {casm_builder,
         buffer(1) range_check;
         deref gas_counter;
@@ -118,7 +118,7 @@ fn build_redeposit_gas(
             .into_iter(),
         ));
     }
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 0);
     add_input_variables! {casm_builder,
         deref gas_counter;
     };
@@ -145,7 +145,7 @@ fn build_get_unspent_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [gas_counter] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 0);
     add_input_variables! {casm_builder,
         deref gas_counter;
     };
@@ -188,7 +188,7 @@ fn build_builtin_withdraw_gas(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, gas_counter, builtin_cost] = builder.try_get_single_cells()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(16, 2);
     add_input_variables! {casm_builder,
         buffer(1) range_check;
         deref gas_counter;
@@ -310,7 +310,7 @@ impl CompiledInvocationBuilder<'_> {
 fn build_get_builtin_costs(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     let (pre_instructions, cost_builtin_ptr) = add_cost_builtin_ptr_fetch_code(&mut casm_builder);
     Ok(builder.build_from_casm_builder_ex(
         casm_builder,

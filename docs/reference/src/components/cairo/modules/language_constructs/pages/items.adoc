@@ -24,6 +24,8 @@ Cairo supports the following types of items:
 === Trait and implementation items
 
 * xref:traits.adoc[Traits] — Define shared behavior and implement it using `trait` and `impl`
+* xref:impl-aliases.adoc[Impl aliases] — Create alternate names for existing implementations
+
 
 === Value items
 

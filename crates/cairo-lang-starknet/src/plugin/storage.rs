@@ -28,6 +28,7 @@ pub fn handle_storage_struct<'db, 'a>(
     let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
 
+    let is_backwards_compatible_storage = backwards_compatible_storage(metadata.edition);
     let mut substorage_members_struct_code = vec![];
     let mut substorage_members_init_code = vec![];
     let mut storage_struct_members = vec![];
@@ -49,12 +50,14 @@ pub fn handle_storage_struct<'db, 'a>(
                 ));
             }
         }
-        storage_struct_members.push(get_simple_member_code(db, &member, metadata));
+        if is_backwards_compatible_storage {
+            storage_struct_members.push(get_simple_member_code(db, &member, metadata));
+        }
     }
 
     let module_kind = starknet_module_kind.to_str_lower();
     let unsafe_new_function_name = format!("unsafe_new_{module_kind}_state");
-    let storage_struct_code = if backwards_compatible_storage(metadata.edition) {
+    let storage_struct_code = if is_backwards_compatible_storage {
         formatdoc!(
             "
             #[phantom]

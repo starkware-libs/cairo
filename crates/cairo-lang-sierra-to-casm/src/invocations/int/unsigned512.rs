@@ -28,7 +28,7 @@ fn build_u512_safe_divmod_by_u256(
     let [dividend0, dividend1, dividend2, dividend3] = dividend.try_unpack()?;
     let [divisor0, divisor1] = divisor.try_unpack()?;
 
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(57, 8);
     add_input_variables! {casm_builder,
         buffer(9) range_check;
         deref dividend0;

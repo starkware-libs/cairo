@@ -19,8 +19,8 @@ use itertools::{Itertools, chain, zip_eq};
 use salsa::Database;
 use semantic::{TypeId, TypeLongId};
 
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::Demand;
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::{AuxCombine, DemandReporter};
 use crate::ids::{
     ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, GeneratedFunction,

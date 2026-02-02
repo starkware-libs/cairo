@@ -79,13 +79,16 @@ that all fields implement `Destruct`, and will automatically call `.destruct()` 
 
 [source,cairo]
 ----
+use core::dict::Felt252Dict;
+
 #[derive(Destruct)]
 struct A {
-    d: Dict<usize>
+    d: Felt252Dict<u32>
 }
 
 fn main() {
-    A {}; // No error, A will be destructed.
+    let _a = A { d: Default::default() };
+    // No error, _a will be destructed.
 }
 ----
 

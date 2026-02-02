@@ -1,6 +1,6 @@
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use crate::borrow_check::analysis::StatementLocation;
+use crate::analysis::StatementLocation;
 use crate::{BlockId, Lowered, VariableId};
 
 /// Possible failing validations.

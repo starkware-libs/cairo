@@ -51,7 +51,7 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone());
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
@@ -201,6 +201,8 @@ pub enum CostTokenType {
     AddMod,
     // mul mod builtin.
     MulMod,
+    /// One invocation of the Blake hash function.
+    Blake,
 }
 impl CostTokenType {
     /// Iterates over the pre-cost token types.
@@ -212,6 +214,7 @@ impl CostTokenType {
             CostTokenType::EcOp,
             CostTokenType::AddMod,
             CostTokenType::MulMod,
+            CostTokenType::Blake,
         ]
         .iter()
     }
@@ -231,6 +234,7 @@ impl CostTokenType {
             CostTokenType::Hole => "hole",
             CostTokenType::RangeCheck => "range_check",
             CostTokenType::RangeCheck96 => "range_check96",
+            CostTokenType::Blake => "blake",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
@@ -262,6 +266,7 @@ impl CostTokenType {
             // TODO(ilya): Update the actual table.
             CostTokenType::AddMod => 4,
             CostTokenType::MulMod => 5,
+            CostTokenType::Blake => 6,
         }
     }
 }
@@ -316,7 +321,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone());
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),

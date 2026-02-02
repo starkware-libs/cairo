@@ -15,18 +15,7 @@ pub struct DeferredVariableInfo {
     /// The type of the variable.
     pub ty: sierra::ids::ConcreteTypeId,
     /// The deferred type.
-    pub kind: DeferredVariableKind,
-}
-
-/// The type of a deferred variable.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum DeferredVariableKind {
-    /// See [DeferredOutputKind::Const].
-    Const,
-    /// See [DeferredOutputKind::AddConst].
-    AddConst,
-    /// See [DeferredOutputKind::Generic].
-    Generic,
+    pub kind: DeferredOutputKind,
 }
 
 /// Represents the state of Sierra variable.
@@ -101,14 +90,7 @@ impl VariablesState {
 
         let var_state = match &output_info.ref_info {
             OutputVarReferenceInfo::Deferred(kind) => VarState::Deferred {
-                info: DeferredVariableInfo {
-                    ty: output_info.ty.clone(),
-                    kind: match kind {
-                        DeferredOutputKind::Const => DeferredVariableKind::Const,
-                        DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
-                        DeferredOutputKind::Generic => DeferredVariableKind::Generic,
-                    },
-                },
+                info: DeferredVariableInfo { ty: output_info.ty.clone(), kind: *kind },
             },
             OutputVarReferenceInfo::NewTempVar { idx } => {
                 add_to_known_stack = Some(idx.into_or_panic::<isize>());

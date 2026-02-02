@@ -53,7 +53,7 @@ impl NoGenericArgsGenericLibfunc for HadesPermutationLibfunc {
                 felt252_param,
             ],
             vec![
-                OutputVarInfo::new_builtin(poseidon_ty, 0),
+                OutputVarInfo::new_builtin(poseidon_ty),
                 deferred_felt252_output_info.clone(),
                 deferred_felt252_output_info.clone(),
                 deferred_felt252_output_info,

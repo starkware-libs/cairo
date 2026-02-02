@@ -244,7 +244,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         let Some(base_info) = self.infos[idx.0].tracking_info.clone() else {
             return;
         };
-        if matches!(self.program.get_statement(&idx), Some(Statement::Return(_))) {
+        if matches!(self.program.get_statement(idx), Some(Statement::Return(_))) {
             if let ApTrackingBase::FunctionStart(id) = base_info.base
                 && let Some(func_change) = self.function_ap_change.get(&id)
             {
@@ -306,8 +306,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     /// Calculates the branches for all statements.
     fn calc_branches(&mut self) -> Result<(), ApChangeError> {
         for idx in (0..self.program.statements.len()).map(StatementIdx) {
-            let Statement::Invocation(invocation) = self.program.get_statement(&idx).unwrap()
-            else {
+            let Statement::Invocation(invocation) = self.program.get_statement(idx).unwrap() else {
                 continue;
             };
             let libfunc = self.program_info.registry.get_libfunc(&invocation.libfunc_id)?;
@@ -320,7 +319,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             )
             .into_iter()
             .zip(&invocation.branches)
-            .map(|(ap_change, branch_info)| (ap_change, idx.next(&branch_info.target)))
+            .map(|(ap_change, branch_info)| (ap_change, idx.next(branch_info.target)))
             .collect();
         }
         Ok(())

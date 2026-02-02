@@ -886,6 +886,18 @@ pub fn try_extract_nz_wrapped_type<'db>(
     (extern_type_id.name(db).long(db) == "NonZero").then_some(inner)
 }
 
+/// Returns the inner type of a `Box<T>` type, if `ty` is a `Box`.
+pub fn try_extract_box_inner_type<'db>(
+    db: &'db dyn Database,
+    ty: &TypeLongId<'db>,
+) -> Option<TypeId<'db>> {
+    let concrete_ty = try_extract_matches!(ty, TypeLongId::Concrete)?;
+    let extern_ty = try_extract_matches!(concrete_ty, ConcreteTypeId::Extern)?;
+    let ConcreteExternTypeLongId { extern_type_id, generic_args } = extern_ty.long(db);
+    let [GenericArgumentId::Type(inner)] = generic_args[..] else { return None };
+    (extern_type_id.name(db).long(db) == "Box").then_some(inner)
+}
+
 /// Returns the ranges of a BoundedInt if it is a BoundedInt type.
 pub fn try_extract_bounded_int_type_ranges<'db>(
     db: &'db dyn Database,

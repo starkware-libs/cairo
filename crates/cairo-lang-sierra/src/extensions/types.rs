@@ -122,7 +122,7 @@ pub trait GenericTypeArgGenericType: Default {
         &self,
         context: &dyn TypeSpecializationContext,
         long_id: ConcreteTypeLongId,
-        wrapped_info: TypeInfo,
+        wrapped_info: &TypeInfo,
     ) -> Result<TypeInfo, SpecializationError>;
 }
 

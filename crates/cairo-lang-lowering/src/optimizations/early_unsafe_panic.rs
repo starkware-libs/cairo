@@ -10,7 +10,7 @@ use cairo_lang_semantic::helper::ModuleHelper;
 use itertools::zip_eq;
 use salsa::Database;
 
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::{
     BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall, VarUsage,

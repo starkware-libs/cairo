@@ -126,7 +126,7 @@ pub struct Program {
     pub funcs: Vec<Function>,
 }
 impl Program {
-    pub fn get_statement(&self, id: &StatementIdx) -> Option<&Statement> {
+    pub fn get_statement(&self, id: StatementIdx) -> Option<&Statement> {
         self.statements.get(id.0)
     }
 
@@ -236,10 +236,10 @@ pub struct Param {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize, PartialOrd, Ord)]
 pub struct StatementIdx(pub usize);
 impl StatementIdx {
-    pub fn next(&self, target: &BranchTarget) -> StatementIdx {
+    pub fn next(&self, target: BranchTarget) -> StatementIdx {
         match target {
             BranchTarget::Fallthrough => StatementIdx(self.0 + 1),
-            BranchTarget::Statement(id) => *id,
+            BranchTarget::Statement(id) => id,
         }
     }
 }
@@ -301,7 +301,7 @@ pub struct GenBranchInfo<StatementId> {
     pub results: Vec<VarId>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum GenBranchTarget<StatementId> {
     /// Continues a run to the next statement.
     Fallthrough,

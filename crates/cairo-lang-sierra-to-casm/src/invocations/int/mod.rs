@@ -42,7 +42,7 @@ pub fn build_small_wide_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(0, 0);
     add_input_variables! {casm_builder,
         deref a;
         deref_or_immediate b;
@@ -89,7 +89,7 @@ impl<'a> SmallDiffHelper<'a> {
         limit: BigInt,
     ) -> Result<Self, InvocationError> {
         let [range_check, a, b] = builder.try_get_single_cells()?;
-        let mut casm_builder = CasmBuilder::default();
+        let mut casm_builder = CasmBuilder::with_capacity(6, 2);
         add_input_variables! {casm_builder,
             buffer(0) range_check;
             deref a;

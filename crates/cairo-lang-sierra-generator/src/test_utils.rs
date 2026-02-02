@@ -48,6 +48,14 @@ pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: LazyLock<Mutex<SierraGenDatabaseFo
         db.set_flag(add_withdraw_gas_flag_id, Some(Flag::AddWithdrawGas(false)));
         Mutex::new(db)
     });
+pub static SHARED_DB_WITHOUT_ADD_WITHDRAW_GAS_FUTURE_SIERRA: LazyLock<
+    Mutex<SierraGenDatabaseForTesting>,
+> = LazyLock::new(|| {
+    let mut db = SierraGenDatabaseForTesting::new_empty();
+    db.set_flag(FlagLongId(Flag::ADD_WITHDRAW_GAS.into()), Some(Flag::AddWithdrawGas(false)));
+    db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
+    Mutex::new(db)
+});
 impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
@@ -69,6 +77,9 @@ impl SierraGenDatabaseForTesting {
     }
     pub fn without_add_withdraw_gas() -> Self {
         SHARED_DB_WITHOUT_AD_WITHDRAW_GAS.lock().unwrap().snapshot()
+    }
+    pub fn without_add_withdraw_gas_future_sierra() -> Self {
+        SHARED_DB_WITHOUT_ADD_WITHDRAW_GAS_FUTURE_SIERRA.lock().unwrap().snapshot()
     }
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> SierraGenDatabaseForTesting {

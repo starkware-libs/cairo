@@ -144,7 +144,7 @@ fn test_get_unspent_gas() {
     let after = crate::testing::get_unspent_gas();
     let expected_cost = 100 // `one + two`.
         + 300 // `identity(...)`.
-        + 2300; // `get_unspent_gas()`.
+        + 2600; // `get_unspent_gas()`.
     assert_eq!(prev - after, expected_cost);
 }
 

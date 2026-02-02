@@ -8,7 +8,7 @@ use cairo_lang_semantic::{ConcreteVariant, corelib};
 use itertools::{Itertools, zip_eq};
 use salsa::Database;
 
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::implicits::FunctionImplicitsTrait;
 use crate::panic::PanicSignatureInfo;

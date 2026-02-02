@@ -211,9 +211,9 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 &InvocationCostInfoProviderForEqGen {
                     type_sizes: &program_info.type_sizes,
                     token_usages: |token_type| {
-                        precost_gas_info.variable_values[&(*idx, token_type)].into_or_panic()
+                        precost_gas_info.variable_values[&(idx, token_type)].into_or_panic()
                     },
-                    ap_change_var_value: || ap_change_var_value(*idx),
+                    ap_change_var_value: || ap_change_var_value(idx),
                 },
             )
         },
@@ -243,7 +243,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
 
 /// Calculates gas information. Used for both precost and postcost.
 fn calc_gas_info_inner<
-    GetCost: Fn(&mut dyn StatementFutureCost, &StatementIdx, &ConcreteLibfuncId) -> Vec<CostExprMap>,
+    GetCost: Fn(&mut dyn StatementFutureCost, StatementIdx, &ConcreteLibfuncId) -> Vec<CostExprMap>,
 >(
     program: &Program,
     get_cost: GetCost,
@@ -290,7 +290,7 @@ fn calc_gas_info_inner<
         for v in token_equations.iter().flat_map(|eq| eq.var_to_coef.keys()).unique() {
             minimization_vars[match v {
                 Var::LibfuncImplicitGasVariable(idx, _) => {
-                    match program.get_statement(idx).unwrap() {
+                    match program.get_statement(*idx).unwrap() {
                         Statement::Invocation(invocation) => {
                             match registry.get_libfunc(&invocation.libfunc_id).unwrap() {
                                 CoreConcreteLibfunc::BranchAlign(_) => 2,
@@ -356,7 +356,7 @@ fn calc_gas_info_inner<
 pub fn compute_postcost_info<CostType: PostCostTypeEx>(
     program: &Program,
     program_info: &ProgramRegistryInfo,
-    get_ap_change_fn: &impl Fn(&StatementIdx) -> usize,
+    get_ap_change_fn: &impl Fn(StatementIdx) -> usize,
     precost_gas_info: &GasInfo,
     enforced_function_costs: &OrderedHashMap<FunctionId, CostType>,
 ) -> Result<GasInfo, CostError> {

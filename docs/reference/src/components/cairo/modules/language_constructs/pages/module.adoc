@@ -1,15 +1,128 @@
 = Module item
 
-A module item is a declaration that defines a module.
+A _module item_ is a declaration that defines a module, which is a named
+container for xref:items.adoc[items] such as structs, enums, functions,
+constants, and traits.
+
+== Syntax
+
+Modules can be defined in two ways:
+
+=== Inline Modules
+
+An inline module contains its items directly within braces:
 
 [source,cairo]
 ----
-// This is a module defined in the current file.
-mod foo {
-    // ... items ...
+mod a {
+    pub const NON_SHADOWED: felt252 = 'non_shadowed';
+    pub const SHADOWED: felt252 = 'original_shadowed';
+    pub const PUBLISHED_ONCE: felt252 = 'published_once';
 }
-
-// This is a module defined in `a/bar.cairo`.
-mod bar;
 ----
-See xref:modules-and-source-files.adoc[Modules & source files]
+
+=== File Modules
+
+A file module declaration loads the module from a separate file:
+
+[source,cairo]
+----
+mod map;
+pub use map::Map;
+
+mod enumerate;
+pub use enumerate::Enumerate;
+
+pub(crate) mod zip;
+pub use zip::Zip;
+----
+
+The module `map` is loaded from `map.cairo` in the same directory.
+
+== Module Hierarchy
+
+Modules can be nested to create a hierarchy.
+When a module is defined inside another module, it is called a submodule:
+
+[source,cairo]
+----
+mod a {
+    pub mod b {
+        pub const C: u8 = 1;
+    }
+}
+----
+
+The parent module can be referred to using the `super` keyword.
+The root module of a crate can be referred to using the `crate` keyword.
+
+== Visibility
+
+By default, items in a module are private.
+Use visibility modifiers to control access:
+
+[source,cairo]
+----
+mod map;
+pub use map::Map;
+
+pub(crate) mod zip;
+pub use zip::Zip;
+
+mod peekable;
+pub use peekable::{Peekable, PeekableTrait};
+----
+
+* `pub` — Public, accessible from anywhere
+* `pub(crate)` — Public within the current crate only
+* No modifier — Private to the module
+
+== Module Scope
+
+Items defined inside a module are directly available within that module.
+Items from outer modules are not automatically available in inner modules.
+
+To use items from other modules, they must be either:
+
+* Fully qualified: `crate::module::Item`
+* Imported with xref:use.adoc[`use`]: `use crate::module::Item;`
+
+== Common Patterns
+
+=== Re-exporting Items
+
+Modules often re-export items from submodules:
+
+[source,cairo]
+----
+mod map;
+pub use map::Map;
+
+mod enumerate;
+pub use enumerate::Enumerate;
+----
+
+This allows users to access `Map` and `Enumerate` directly from the parent
+module.
+
+=== Organizing Related Items
+
+Modules group related functionality:
+
+[source,cairo]
+----
+mod adapters;
+mod traits;
+pub use adapters::PeekableTrait;
+pub use adapters::zip::zip;
+pub use traits::{Extend, FromIterator, IntoIterator, Iterator, Product, Sum};
+----
+
+== Related
+
+- xref:modules-and-source-files.adoc[Modules & source files] — Module system
+  details
+- xref:use.adoc[Use declarations] — Importing items
+- xref:path.adoc[Paths] — Referring to items
+- xref:items.adoc[Items] — Module contents
+- xref:visibility.adoc[Visibility] — Access control

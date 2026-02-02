@@ -106,7 +106,7 @@ impl NamedLibfunc for CouponBuyLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let coupon_ty = args_as_single_type(args)?;
-        let long_id = context.get_type_info(coupon_ty)?.long_id;
+        let long_id = &context.get_type_info(coupon_ty)?.long_id;
         if long_id.generic_id != CouponType::id() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -151,7 +151,7 @@ impl NamedLibfunc for CouponRefundLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let coupon_ty = args_as_single_type(args)?;
-        let long_id = context.get_type_info(coupon_ty)?.long_id;
+        let long_id = &context.get_type_info(coupon_ty)?.long_id;
         if long_id.generic_id != CouponType::id() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }

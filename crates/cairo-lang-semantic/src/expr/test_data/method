@@ -423,3 +423,90 @@ Candidate `test::ChannelTrait::draw_felt` inference failed with: Type mismatch: 
  --> lib.cairo:18:13
     channel.draw_felt();
             ^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test ref self on expression receiver (not a variable)
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    // ref self method called on expression (not a variable) should work
+    let _ = make_counter().increment();
+    let _ = make_counter().increment().increment();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct Counter {
+    value: u32,
+}
+
+trait CounterTrait {
+    fn increment(ref self: Counter) -> Counter;
+}
+
+impl CounterImpl of CounterTrait {
+    fn increment(ref self: Counter) -> Counter {
+        self.value += 1;
+        self
+    }
+}
+
+fn make_counter() -> Counter {
+    Counter { value: 0 }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test ref self on expression receiver - regular ref arg still requires variable
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    // ref self on expression works
+    let _ = make_counter().increment();
+    // but regular ref arg (not self) still requires a variable
+    bar(make_counter());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct Counter {
+    value: u32,
+}
+
+trait CounterTrait {
+    fn increment(ref self: Counter) -> Counter;
+}
+
+impl CounterImpl of CounterTrait {
+    fn increment(ref self: Counter) -> Counter {
+        self.value += 1;
+        self
+    }
+}
+
+fn make_counter() -> Counter {
+    Counter { value: 0 }
+}
+
+fn bar(ref x: Counter) {}
+
+//! > expected_diagnostics
+error[E2079]: ref argument must be a variable.
+ --> lib.cairo:26:9
+    bar(make_counter());
+        ^^^^^^^^^^^^^^

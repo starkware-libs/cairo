@@ -355,3 +355,24 @@ fn test_fail() {
         "}
     );
 }
+
+#[test]
+fn test_future_label() {
+    let mut builder = CasmBuilder::default();
+    casm_build_extend! {builder,
+        const value = 1000;
+        tempvar var = value;
+        jump FAR_AWAY if var != 0;
+    };
+    builder.future_label("FAR_AWAY", 100);
+    let CasmBuildResult { instructions, branches: [(_, awaiting_relocations)] } =
+        builder.build(["Fallthrough"]);
+    assert!(awaiting_relocations.is_empty());
+    assert_eq!(
+        join(instructions.iter().map(|inst| format!("{inst};\n")), ""),
+        indoc! {"
+            [ap + 0] = 1000, ap++;
+            jmp rel 102 if [ap + -1] != 0;
+        "}
+    );
+}

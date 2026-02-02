@@ -1,5 +1,3 @@
-use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
-use cairo_lang_filesystem::ids::FlagLongId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -18,15 +16,8 @@ pub fn test_function_generator(
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
 
-    let db = if let Some(v) = args.get("future_sierra").map(|s| s.to_lowercase())
-        && v == "true"
-    {
-        // When turning on future_sierra, we might affect other tests using the same db, so an empty
-        // db is needed.
-        let mut db = SierraGenDatabaseForTesting::new_empty();
-        db.set_flag(FlagLongId(Flag::ADD_WITHDRAW_GAS.into()), Some(Flag::AddWithdrawGas(false)));
-        db.set_flag(FlagLongId(Flag::FUTURE_SIERRA.into()), Some(Flag::FutureSierra(true)));
-        db
+    let db = if args.get("future_sierra").is_some_and(|v| v.to_lowercase() == "true") {
+        SierraGenDatabaseForTesting::without_add_withdraw_gas_future_sierra()
     } else {
         SierraGenDatabaseForTesting::without_add_withdraw_gas()
     };

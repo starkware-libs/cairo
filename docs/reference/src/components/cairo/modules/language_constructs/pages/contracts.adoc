@@ -127,12 +127,27 @@ For example:
         pub value: u128,
     }
 
+    #[derive(Drop, starknet::Event)]
+    pub struct MyOtherEvent {
+        pub other_value: u128,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub enum MyAnotherEvent {
+        MyOtherEvent: MyOtherEvent,
+    }
+
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         MyEvent: MyEvent,
+        #[flat]
+        AnotherEvent: MyAnotherEvent,
     }
 ----
+
+The `\#[flat]` attribute is used to merge the variants of `MyAnotherEvent` into `Event`,
+enforcing unique selectors across both. Without `#[flat]`, the event would be nested.
 
 Events are emitted using `self.emit()`:
 [source,cairo]

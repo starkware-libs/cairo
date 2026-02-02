@@ -396,6 +396,9 @@ pub struct ExprClosure<'db> {
 pub enum ExprFunctionCallArg<'db> {
     Reference(ExprVarMemberPath<'db>),
     Value(ExprId),
+    /// An argument for function calls which is an expression result, but expected to be taken as
+    /// reference. Only valid for the first parameter of method calls with `ref self`.
+    TempReference(ExprId),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]

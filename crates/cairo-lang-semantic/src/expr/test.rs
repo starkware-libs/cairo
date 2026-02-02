@@ -24,7 +24,8 @@ cairo_lang_test_utils::test_file_test!(
     {
         inline_macros: "inline_macros",
     },
-    test_expand_expr
+    test_expand_expr,
+    ["expect_diagnostics"]
 );
 
 cairo_lang_test_utils::test_file_test!(
@@ -65,7 +66,8 @@ cairo_lang_test_utils::test_file_test!(
         while_: "while",
         impl_: "impl",
     },
-    test_function_diagnostics
+    test_function_diagnostics,
+    ["expect_diagnostics"]
 );
 
 cairo_lang_test_utils::test_file_test!(
@@ -94,7 +96,8 @@ cairo_lang_test_utils::test_file_test!(
         use_: "use",
         repr_ptr: "repr_ptr",
     },
-    test_expr_semantics
+    test_expr_semantics,
+    ["expect_diagnostics"]
 );
 
 /// Tests the syntactic expansion of a given expression. Can be use to test the expansion of inline

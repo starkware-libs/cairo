@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::blocks::BlocksBuilder;
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::optimizations::remappings::{self, Context};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{

@@ -202,14 +202,15 @@ impl HeapSize for smol_str::SmolStr {
 // For num-bigint
 impl HeapSize for num_bigint::BigUint {
     fn heap_size(&self) -> usize {
-        // BigUint has internal Vec<u8>
-        self.to_bytes_le().capacity()
+        // Approximate the number of bytes required to store the magnitude.
+        let bits = self.bits() as usize;
+        bits.div_ceil(8)
     }
 }
 
 impl HeapSize for num_bigint::BigInt {
     fn heap_size(&self) -> usize {
-        self.to_bytes_le().1.capacity()
+        self.magnitude().heap_size()
     }
 }
 

@@ -95,31 +95,27 @@ impl<'db> DebugWithDb<'db> for BlockEnd<'db> {
     type Db = LoweredFormatter<'db>;
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &Self::Db) -> std::fmt::Result {
-        let outputs = match &self {
+        match &self {
             BlockEnd::Return(returns, _location) => {
                 write!(f, "  Return(")?;
-                returns.iter().map(|var_usage| var_usage.var_id).collect()
+                let mut it = returns.iter().peekable();
+                while let Some(var_usage) = it.next() {
+                    write!(f, "v{:?}", var_usage.var_id.index())?;
+                    if it.peek().is_some() {
+                        write!(f, ", ")?;
+                    }
+                }
+                write!(f, ")")
             }
             BlockEnd::Panic(data) => {
-                write!(f, "  Panic(")?;
-                vec![data.var_id]
+                write!(f, "  Panic(v{:?})", data.var_id.index())
             }
             BlockEnd::Goto(block_id, remapping) => {
-                return write!(f, "  Goto({block_id:?}, {:?})", remapping.debug(ctx));
+                write!(f, "  Goto({block_id:?}, {:?})", remapping.debug(ctx))
             }
-            BlockEnd::NotSet => return write!(f, "  Not set"),
-            BlockEnd::Match { info } => {
-                return write!(f, "  Match({:?})", info.debug(ctx));
-            }
-        };
-        let mut outputs = outputs.iter().peekable();
-        while let Some(var) = outputs.next() {
-            write!(f, "v{:?}", var.index())?;
-            if outputs.peek().is_some() {
-                write!(f, ", ")?;
-            }
+            BlockEnd::NotSet => write!(f, "  Not set"),
+            BlockEnd::Match { info } => write!(f, "  Match({:?})", info.debug(ctx)),
         }
-        write!(f, ")")
     }
 }
 

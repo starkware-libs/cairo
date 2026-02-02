@@ -1,10 +1,9 @@
-use std::collections::VecDeque;
-
 use cairo_lang_casm::casm;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
+use itertools::Itertools;
 
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, check_references_on_stack,
@@ -22,19 +21,20 @@ pub fn build(
         check_references_on_stack(builder.refs)?;
     }
 
-    let output_types = libfunc.output_types();
-    let fallthrough_outputs = &output_types[0];
+    let Ok(output_types) = libfunc.output_types().exactly_one() else {
+        unreachable!("FunctionCall has only one branch");
+    };
 
-    let mut refs = VecDeque::with_capacity(fallthrough_outputs.len());
+    let mut refs = Vec::with_capacity(output_types.len());
 
     let mut offset = -1;
-    for output_type in fallthrough_outputs.iter().rev() {
+    for output_type in output_types.rev() {
         let size = builder
             .program_info
             .type_sizes
             .get(output_type)
             .ok_or(InvocationError::UnknownVariableData)?;
-        refs.push_front(ReferenceExpression {
+        refs.push(ReferenceExpression {
             cells: ((offset - size + 1)..(offset + 1))
                 .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
                 .collect(),
@@ -48,6 +48,6 @@ pub fn build(
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(libfunc.function.entry_point),
         }],
-        [refs.into_iter()].into_iter(),
+        [refs.into_iter().rev()].into_iter(),
     ))
 }

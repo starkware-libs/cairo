@@ -61,7 +61,7 @@ pub fn build_is_zero(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 1);
     add_input_variables!(casm_builder, deref value; );
     casm_build_extend! {casm_builder,
         jump Target if value != 0;
@@ -82,7 +82,7 @@ pub fn build_jump(
         [BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
         _ => panic!("malformed invocation"),
     };
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(1, 1);
     casm_build_extend! {casm_builder,
         jump Target;
     };
@@ -123,7 +123,7 @@ pub fn build_branch_align(
 pub fn build_cell_eq(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(3, 2);
     let [a, b] = builder.try_get_single_cells()?;
 
     add_input_variables! {casm_builder,
@@ -269,7 +269,7 @@ pub fn build_unsigned_try_from_felt252(
 ) -> Result<CompiledInvocation, InvocationError> {
     let val_bound: BigInt = BigInt::from(1) << num_bits;
     let [range_check, value] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
+    let mut casm_builder = CasmBuilder::with_capacity(15, 2);
     add_input_variables! {casm_builder,
         buffer(2) range_check;
         deref value;

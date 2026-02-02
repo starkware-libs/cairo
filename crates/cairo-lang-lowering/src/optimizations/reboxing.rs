@@ -14,8 +14,8 @@ use itertools::Itertools;
 use salsa::Database;
 
 use super::var_renamer::VarRenamer;
+use crate::analysis::StatementLocation;
 use crate::blocks::Blocks;
-use crate::borrow_check::analysis::StatementLocation;
 use crate::utils::RebuilderEx;
 use crate::{
     BlockEnd, Lowered, Statement, StatementStructDestructure, VarUsage, Variable, VariableArena,

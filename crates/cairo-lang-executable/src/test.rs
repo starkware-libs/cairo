@@ -79,6 +79,10 @@ impl TestFileRunner for CompileExecutableTestRunner {
             error,
         }
     }
+
+    fn allowed_arg(&self, arg: &str) -> bool {
+        arg == "expect_diagnostics"
+    }
 }
 
 cairo_lang_test_utils::test_file_test_with_runner!(

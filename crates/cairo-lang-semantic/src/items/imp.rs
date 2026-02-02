@@ -2684,7 +2684,9 @@ fn validate_impl_item_constant<'db>(
         })?;
     let concrete_trait_constant =
         ConcreteTraitConstantId::new_from_data(db, concrete_trait_id, trait_constant_id);
-    let concrete_trait_constant_ty = db.concrete_trait_constant_type(concrete_trait_constant)?;
+    let impl_def_substitution = db.impl_def_substitution(impl_def_id)?;
+    let concrete_trait_constant_ty = impl_def_substitution
+        .substitute(db, db.concrete_trait_constant_type(concrete_trait_constant)?)?;
 
     let impl_constant_type_clause_ast = impl_constant_ast.type_clause(db);
 
@@ -2697,7 +2699,7 @@ fn validate_impl_item_constant<'db>(
     let actual_ty = inference.rewrite(constant_ty).no_err();
     if expected_ty != actual_ty {
         diagnostics.report(
-            impl_constant_type_clause_ast.stable_ptr(db),
+            impl_constant_type_clause_ast.ty(db).stable_ptr(db),
             WrongType { expected_ty, actual_ty },
         );
     }

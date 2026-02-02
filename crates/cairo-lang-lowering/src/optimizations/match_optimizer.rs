@@ -9,8 +9,8 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::{Itertools, zip_eq};
 
 use super::var_renamer::VarRenamer;
+use crate::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::Demand;
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::EmptyDemandReporter;
 use crate::utils::RebuilderEx;
 use crate::{

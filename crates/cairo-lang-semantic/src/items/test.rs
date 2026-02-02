@@ -21,5 +21,6 @@ cairo_lang_test_utils::test_file_test!(
         early_conform: "early_conform",
         type_mismatch_diagnostics: "type_mismatch_diagnostics",
     },
-    test_function_diagnostics
+    test_function_diagnostics,
+    ["expect_diagnostics"]
 );

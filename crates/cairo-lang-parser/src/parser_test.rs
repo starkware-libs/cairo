@@ -131,7 +131,8 @@ cairo_lang_test_utils::test_file_test!(
         test2: "test2",
         test3: "test3",
     },
-    test_full_parser_tree
+    test_full_parser_tree,
+    ["expect_diagnostics"]
 );
 cairo_lang_test_utils::test_file_test!(
     colored_parsed_code,
@@ -139,7 +140,8 @@ cairo_lang_test_utils::test_file_test!(
     {
         colored: "colored",
     },
-    test_colored_parsed_code
+    test_colored_parsed_code,
+    ["expect_diagnostics"]
 );
 cairo_lang_test_utils::test_file_test!(
     diagnostics,
@@ -203,8 +205,9 @@ cairo_lang_test_utils::test_file_test!(
         use_: "use",
         type_alias: "type_alias",
         macro_declaration: "macro_declaration",
-},
-    test_partial_parser_tree
+    },
+    test_partial_parser_tree,
+    ["expect_diagnostics"]
 );
 cairo_lang_test_utils::test_file_test!(
     partial_parser_tree_with_trivia,
@@ -215,5 +218,6 @@ cairo_lang_test_utils::test_file_test!(
         path_compat: "path_compat",
         attribute_errors: "attribute_errors",
     },
-    test_partial_parser_tree_with_trivia
+    test_partial_parser_tree_with_trivia,
+    ["expect_diagnostics"]
 );
