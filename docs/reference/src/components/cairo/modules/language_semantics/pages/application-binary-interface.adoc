@@ -56,6 +56,8 @@ Function item (with return value):
   "state_mutability": "view"
 }
 
+----
+
 Function item (tuple return):
 [source,json]
 ----
@@ -68,6 +70,38 @@ Function item (tuple return):
   ],
   "outputs": [
     { "type": "(u8, u8)" }
+  ],
+  "state_mutability": "view"
+}
+----
+
+Function item (with array):
+[source,json]
+----
+{
+  "type": "function",
+  "name": "sum",
+  "inputs": [
+    { "name": "values", "type": "core::array::Array::<core::integer::u256>" }
+  ],
+  "outputs": [
+    { "type": "u256" }
+  ],
+  "state_mutability": "view"
+}
+----
+
+Function item (with fixed size array):
+[source,json]
+----
+{
+  "type": "function",
+  "name": "hash_bytes",
+  "inputs": [
+    { "name": "data", "type": "[core::integer::u8; 32]" }
+  ],
+  "outputs": [
+    { "type": "core::integer::u256" }
   ],
   "state_mutability": "view"
 }
