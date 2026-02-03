@@ -303,8 +303,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             EnumConcreteLibfunc::BoxedMatch(EnumBoxedMatchConcreteLibfunc {
                 signature, ..
             }) => {
-                // For zero or one variants, no instructions are generated (no branching needed)
-                // For other cases, we need 1 AP change for loading the variant selector
+                // For zero or one variants, no instructions are generated (no branching needed).
+                // For other cases, we need 1 AP change for loading the variant selector.
                 let n = signature.branch_signatures.len();
                 if n <= 1 { vec![ApChange::Known(0); n] } else { vec![ApChange::Known(1); n] }
             }
