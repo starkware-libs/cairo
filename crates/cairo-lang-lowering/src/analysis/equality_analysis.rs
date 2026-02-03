@@ -4,13 +4,15 @@
 //! program. Two variables are equivalent if they hold the same value. Additionally, the analysis
 //! tracks `Box`/unbox and snapshot/desnap relationships between equivalence classes.
 
-use std::fmt;
-
+use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_semantic::{ConcreteVariant, MatchArmSelector};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use salsa::Database;
 
 use crate::analysis::core::Edge;
 use crate::analysis::{DataflowAnalyzer, Direction, ForwardDataflowAnalysis};
-use crate::{BlockEnd, BlockId, Lowered, Statement, VariableId};
+use crate::{BlockEnd, BlockId, Lowered, MatchInfo, Statement, VariableId};
 
 /// Tracks relationships between equivalence classes.
 #[derive(Clone, Debug, Default)]
@@ -67,16 +69,29 @@ impl ClassInfo {
 ///
 /// Uses sparse HashMaps for efficiency - only variables that have been touched
 /// by the analysis are stored.
-#[derive(Clone, Default)]
-pub struct EqualityState {
+#[derive(Clone, Debug, Default)]
+pub struct EqualityState<'db> {
     /// Union-find parent map. If a variable is not in the map, it is its own representative.
     union_find: OrderedHashMap<VariableId, VariableId>,
 
     /// For each equivalence class representative, track relationships only if they exist.
     class_info: OrderedHashMap<VariableId, ClassInfo>,
+
+    /// Hashcons for enum constructs: maps (variant, input_rep) -> output_rep.
+    /// This allows us to detect when two enum constructs with the same variant
+    /// and equivalent inputs should produce equivalent outputs.
+    ///
+    /// Keys use representatives at insertion time. In SSA form each variable is defined
+    /// exactly once, so representatives cannot change within a block and keys stay valid
+    /// without migration during `union`. At merge points the maps are rebuilt from scratch.
+    enum_hashcons: OrderedHashMap<(ConcreteVariant<'db>, VariableId), VariableId>,
+
+    /// Reverse hashcons for enum constructs: maps output_rep -> (variant, input_rep).
+    /// This allows efficient lookup when matching on an enum to find the original input.
+    enum_hashcons_rev: OrderedHashMap<VariableId, (ConcreteVariant<'db>, VariableId)>,
 }
 
-impl EqualityState {
+impl<'db> EqualityState<'db> {
     /// Gets the parent of a variable, defaulting to itself (root) if not in the map.
     fn get_parent(&self, var: VariableId) -> VariableId {
         self.union_find.get(&var).copied().unwrap_or(var)
@@ -102,7 +117,7 @@ impl EqualityState {
     }
 
     /// Finds the representative without modifying the structure.
-    fn find_immut(&self, var: VariableId) -> VariableId {
+    pub(crate) fn find_immut(&self, var: VariableId) -> VariableId {
         let parent = self.get_parent(var);
         if parent != var { self.find_immut(parent) } else { var }
     }
@@ -199,10 +214,40 @@ impl EqualityState {
             |ci| &mut ci.original_class,
         );
     }
+
+    /// Records an enum construct: output = Variant(input).
+    /// If we've already seen the same variant with an equivalent input, unions the outputs.
+    fn set_enum_construct(
+        &mut self,
+        variant: ConcreteVariant<'db>,
+        input: VariableId,
+        output: VariableId,
+    ) {
+        let input_rep = self.find(input);
+        let output_rep = self.find(output);
+
+        match self.enum_hashcons.entry((variant, input_rep)) {
+            cairo_lang_utils::ordered_hash_map::Entry::Occupied(entry) => {
+                let existing_output = *entry.get();
+                self.union(existing_output, output);
+                // Union may have changed the representative. Update the reverse map
+                // so that transfer_edge lookups via find() hit the current representative.
+                let new_output_rep = self.find(existing_output);
+                self.enum_hashcons_rev.swap_remove(&existing_output);
+                self.enum_hashcons_rev.insert(new_output_rep, (variant, input_rep));
+            }
+            cairo_lang_utils::ordered_hash_map::Entry::Vacant(entry) => {
+                entry.insert(output_rep);
+                self.enum_hashcons_rev.insert(output_rep, (variant, input_rep));
+            }
+        }
+    }
 }
 
-impl fmt::Debug for EqualityState {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<'db> DebugWithDb<'db> for EqualityState<'db> {
+    type Db = dyn Database;
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &'db Self::Db) -> std::fmt::Result {
         let v = |id: VariableId| format!("v{}", self.find_immut(id).index());
         let mut lines = Vec::<String>::new();
         for (&rep, info) in self.class_info.iter() {
@@ -212,6 +257,10 @@ impl fmt::Debug for EqualityState {
             if let Some(b) = info.boxed_class {
                 lines.push(format!("Box({}) = {}", v(rep), v(b)));
             }
+        }
+        for (&(variant, input), &output) in self.enum_hashcons.iter() {
+            let name = variant.id.name(db).to_string(db);
+            lines.push(format!("{name}({}) = {}", v(input), v(output)));
         }
         for &var in self.union_find.keys() {
             let rep = self.find_immut(var);
@@ -234,16 +283,16 @@ pub struct EqualityAnalysis;
 impl EqualityAnalysis {
     /// Runs equality analysis on a lowered function.
     /// Returns the equality state at the exit of each block.
-    pub fn analyze<'a, 'db>(lowered: &'a Lowered<'db>) -> Vec<Option<EqualityState>> {
-        ForwardDataflowAnalysis::new(lowered, EqualityAnalysis).run()
+    pub fn analyze<'db>(lowered: &'_ Lowered<'db>) -> Vec<Option<EqualityState<'db>>> {
+        ForwardDataflowAnalysis::new(lowered, EqualityAnalysis {}).run()
     }
 }
 
 /// Returns an iterator over all variables with equality ir relationship information in the equality
 /// states.
-fn merge_referenced_vars<'a>(
-    info1: &'a EqualityState,
-    info2: &'a EqualityState,
+fn merge_referenced_vars<'db, 'a>(
+    info1: &'a EqualityState<'db>,
+    info2: &'a EqualityState<'db>,
 ) -> impl Iterator<Item = VariableId> + 'a {
     let union_find_vars = info1.union_find.keys().chain(info2.union_find.keys()).copied();
 
@@ -253,32 +302,22 @@ fn merge_referenced_vars<'a>(
         .chain(info2.class_info.values())
         .flat_map(ClassInfo::referenced_vars);
 
-    union_find_vars.chain(class_info_vars)
+    let enum_vars = info1
+        .enum_hashcons
+        .iter()
+        .chain(info2.enum_hashcons.iter())
+        .flat_map(|(&(_, input), &output)| [input, output]);
+
+    union_find_vars.chain(class_info_vars).chain(enum_vars)
 }
 
 /// Preserves only class relationships (box/snapshot) that exist in both branches.
 fn merge_class_relationships(
-    info1: &EqualityState,
-    info2: &EqualityState,
+    info1: &EqualityState<'_>,
+    info2: &EqualityState<'_>,
     intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
-    result: &mut EqualityState,
+    result: &mut EqualityState<'_>,
 ) {
-    /// Finds an intersection representative: given a rep in info1 and a rep in info2,
-    /// returns the intersection representative in the result if one exists.
-    fn find_intersection_rep(
-        equality_state: &mut EqualityState,
-        info1: &EqualityState,
-        info2: &EqualityState,
-        intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
-        rep1: Option<VariableId>,
-        rep2: Option<VariableId>,
-    ) -> Option<VariableId> {
-        let (rep1, rep2) = (info1.find_immut(rep1?), info2.find_immut(rep2?));
-        intersections.get(&rep1)?.iter().find_map(|(intersection_r2, intersection_rep)| {
-            (*intersection_r2 == rep2).then(|| equality_state.find(*intersection_rep))
-        })
-    }
-
     for (&var, class1) in info1.class_info.iter() {
         for &(var_rep2, intersection_var) in intersections.get(&var).unwrap_or(&vec![]) {
             let Some(class2) = info2.class_info.get(&var_rep2) else {
@@ -310,8 +349,47 @@ fn merge_class_relationships(
     }
 }
 
+/// Finds an intersection representative: given a rep in info1 and a rep in info2,
+/// returns the intersection representative in the result if one exists.
+fn find_intersection_rep(
+    equality_state: &mut EqualityState<'_>,
+    info1: &EqualityState<'_>,
+    info2: &EqualityState<'_>,
+    intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
+    rep1: Option<VariableId>,
+    rep2: Option<VariableId>,
+) -> Option<VariableId> {
+    let (rep1, rep2) = (info1.find_immut(rep1?), info2.find_immut(rep2?));
+    intersections.get(&rep1)?.iter().find_map(|(intersection_r2, intersection_rep)| {
+        (*intersection_r2 == rep2).then(|| equality_state.find(*intersection_rep))
+    })
+}
+
+/// Preserves enum hashcons entries that exist in both branches.
+/// An entry survives if both input and output have intersection representatives, and info2 has the
+/// same relation.
+fn merge_enum_hashcons<'db>(
+    info1: &EqualityState<'db>,
+    info2: &EqualityState<'db>,
+    intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
+    result: &mut EqualityState<'db>,
+) {
+    for (&(variant, input1), &output1) in info1.enum_hashcons.iter() {
+        for &(input_rep2, input_intersection) in intersections.get(&input1).unwrap_or(&vec![]) {
+            let output2 = info2.enum_hashcons.get(&(variant, input_rep2)).copied();
+            let Some(output_intersection) =
+                find_intersection_rep(result, info1, info2, intersections, Some(output1), output2)
+            else {
+                continue;
+            };
+
+            result.set_enum_construct(variant, input_intersection, output_intersection);
+        }
+    }
+}
+
 impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis {
-    type Info = EqualityState;
+    type Info = EqualityState<'db>;
 
     const DIRECTION: Direction = Direction::Forward;
 
@@ -364,6 +442,8 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis {
 
         merge_class_relationships(&info1, &info2, &intersections, &mut result);
 
+        merge_enum_hashcons(&info1, &info2, &intersections, &mut result);
+
         result
     }
 
@@ -394,10 +474,19 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis {
                 info.set_box_relationship(unbox_stmt.output, unbox_stmt.input.var_id);
             }
 
-            // TODO(eytan-starkware): Struct/enum handling.
-            Statement::StructConstruct(_)
-            | Statement::StructDestructure(_)
-            | Statement::EnumConstruct(_) => {}
+            Statement::EnumConstruct(enum_stmt) => {
+                // output = Variant(input): track via hashcons
+                // If we've already seen this variant with an equivalent input, the outputs are
+                // equal.
+                info.set_enum_construct(
+                    enum_stmt.variant,
+                    enum_stmt.input.var_id,
+                    enum_stmt.output,
+                );
+            }
+
+            // Struct handling deferred to future PR (hashconsing)
+            Statement::StructConstruct(_) | Statement::StructDestructure(_) => {}
 
             Statement::Const(_) | Statement::Call(_) => {}
         }
@@ -405,11 +494,37 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis {
 
     fn transfer_edge(&mut self, info: &Self::Info, edge: &Edge<'db, 'a>) -> Self::Info {
         let mut new_info = info.clone();
-        if let Edge::Goto { remapping, .. } = edge {
-            // Union remapped variables: dst and src should be in the same equivalence class
-            for (dst, src_usage) in remapping.iter() {
-                new_info.union(*dst, src_usage.var_id);
+        match edge {
+            Edge::Goto { remapping, .. } => {
+                // Union remapped variables: dst and src should be in the same equivalence class
+                for (dst, src_usage) in remapping.iter() {
+                    new_info.union(*dst, src_usage.var_id);
+                }
             }
+            Edge::MatchArm { arm, match_info } => {
+                // For enum matches, track that matched_var = Variant(arm_var).
+                if let MatchInfo::Enum(enum_info) = match_info
+                    && let MatchArmSelector::VariantId(variant) = arm.arm_selector
+                    && let [arm_var] = arm.var_ids[..]
+                {
+                    let matched_var = enum_info.input.var_id;
+
+                    // If we previously saw this enum constructed with the same variant,
+                    // union with the original input. Skip if variants differ — this can
+                    // happen after optimizations merge states from different branches.
+                    let output_rep = new_info.find(matched_var);
+                    if let Some((old_variant, input)) =
+                        new_info.enum_hashcons_rev.get(&output_rep).copied()
+                        && variant == old_variant
+                    {
+                        new_info.union(arm_var, input);
+                    }
+
+                    // Record the relationship: matched_var = Variant(arm_var)
+                    new_info.set_enum_construct(variant, arm_var, matched_var);
+                }
+            }
+            Edge::Return { .. } | Edge::Panic { .. } => {}
         }
         new_info
     }
