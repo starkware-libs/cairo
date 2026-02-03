@@ -64,6 +64,7 @@
       "ec_state_try_finalize_nz": null,
       "emit_event_syscall": null,
       "enable_ap_tracking": null,
+      "enum_boxed_match": { "major": 1, "minor": 8, "patch": 0 },
       "enum_from_bounded_int": null,
       "enum_init": null,
       "enum_match": null,
