@@ -8,8 +8,8 @@ use crate::ap_change::ApplyApChange;
 use crate::cell_expression::{CellExpression, CellOperator};
 use crate::hints::Hint;
 use crate::instructions::{
-    AddApInstruction, AssertEqInstruction, Blake2sCompressInstruction, CallInstruction,
-    Instruction, InstructionBody, JnzInstruction, JumpInstruction, RetInstruction,
+    AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
+    JnzInstruction, JumpInstruction, RetInstruction,
 };
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 use crate::{cell_ref, deref_or_immediate};
@@ -460,32 +460,6 @@ impl CasmBuilder {
             true,
         );
         self.set_or_test_label(label, self.main_state.clone());
-    }
-
-    /// Adds a statement performing Blake2s compression.
-    ///
-    /// `state` must be a cell reference to a pointer to `[u32; 8]` as the hash state.
-    /// `byte_count` must be a cell reference to the number of bytes in the message.
-    /// `message` must be a cell reference to a pointer to `[u32; 16]` as the message.
-    /// `finalize` should be `true` if this is the final compression.
-    ///
-    /// Additionally the pointer to the output hash state should be on the top of the stack.
-    pub fn blake2s_compress(&mut self, state: Var, byte_count: Var, message: Var, finalize: bool) {
-        let instruction = self.next_instruction(
-            InstructionBody::Blake2sCompress(Blake2sCompressInstruction {
-                state: self.as_adjusted_cell_ref(state),
-                byte_count: self.as_adjusted_cell_ref(byte_count),
-                message: self.as_adjusted_cell_ref(message),
-                finalize,
-            }),
-            true,
-        );
-        assert!(instruction.inc_ap);
-        assert_eq!(
-            self.main_state.allocated as usize, self.main_state.ap_change,
-            "Output var must be top of stack"
-        );
-        self.instructions.push(instruction);
     }
 
     /// Adds a label here named `name`.
