@@ -2,6 +2,7 @@ use std::iter;
 use std::ops::Shl;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
+use cairo_lang_sierra::extensions::blake::BlakeConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::bounded_int::{
     BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
@@ -646,7 +647,9 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
-        Blake(_) => vec![BranchCost::Regular {
+        Blake(
+            BlakeConcreteLibfunc::Blake2sCompress(_) | BlakeConcreteLibfunc::Blake2sFinalize(_),
+        ) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(1),
             pre_cost: PreCost::builtin(CostTokenType::Blake),
         }],
