@@ -1,10 +1,57 @@
 = Comments
 
-Comments follow the general C++/Rust style of line (`//`) comments.
+Cairo supports three types of comments: line comments, doc comments, and
+module-level doc comments.
+All comments follow the general C++/Rust style.
 
-== Example
+== Line Comments
+
+Line comments begin with `//` and continue to the end of the line.
+They are used for explanatory notes within code:
 
 [source,cairo]
 ----
-// Comment.
+// Test simple access.
+let ba: ByteArray = "AB";
+let span = ba.span();
 ----
+
+== Doc Comments
+
+Doc comments begin with `///` and are used to document items like types,
+functions, and traits.
+They appear directly before the item they document:
+
+[source,cairo]
+----
+/// A `Box` is a type that points to a wrapped value.
+/// It allows for cheap moving around of the value, as its size is small, and may wrap a large size.
+pub extern type Box<T>;
+----
+
+Doc comments support markdown formatting and are typically used to generate
+documentation.
+
+== Module-level Doc Comments
+
+Module-level doc comments begin with `//!` and document the containing module
+itself.
+They typically appear at the top of a file:
+
+[source,cairo]
+----
+//! Overloadable operators.
+//!
+//! Implementing these traits allows you to overload certain operators.
+//!
+//! > Note: Other overloadable operators are also defined in the
+//! > [`core::traits`] module.
+----
+
+Module-level doc comments provide an overview of the module's purpose and
+contents.
+
+== Related
+
+- xref:items.adoc[Items] — Elements that can be documented
+- xref:module.adoc[Modules] — Module organization

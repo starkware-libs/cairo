@@ -1415,7 +1415,7 @@ fn perform_function_call<'db>(
         return Ok((vec![], LoweredExpr::AtVariable(res)));
     }
 
-    let ret_tys = extern_facade_return_tys(ctx, ret_ty);
+    let ret_tys = extern_facade_return_tys(ctx.db, &ret_ty).to_vec();
     let call_result = generators::Call {
         function: function.lowered(ctx.db),
         inputs,
@@ -1431,7 +1431,7 @@ fn perform_function_call<'db>(
         extern_facade_expr(
             ctx,
             ret_ty,
-            call_result.returns.into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+            call_result.returns.into_iter().map(|var_usage| var_usage.var_id),
             location,
         ),
     ))
@@ -2252,25 +2252,27 @@ fn lower_optimized_extern_error_propagate<'db>(
     // Ok arm.
     let mut subscope_ok = create_subscope(ctx, builder);
     let block_ok_id = subscope_ok.block_id;
-    let input_tys = match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
-    let mut input_vars: Vec<VariableId> =
-        input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
-    let block_ok_input_vars = input_vars.clone();
-    match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
-    let expr = extern_facade_expr(ctx, ok_variant.ty, input_vars, location)
+    let block_ok_input_vars: Vec<VariableId> =
+        match_extern_variant_arm_input_types(ctx.db, &ok_variant.ty, &extern_enum)
+            .map(|ty| ctx.new_var(VarRequest { ty, location }))
+            .collect();
+    let returns =
+        match_extern_arm_ref_args_bind(ctx, &block_ok_input_vars, &extern_enum, &mut subscope_ok);
+    let expr = extern_facade_expr(ctx, ok_variant.ty, returns.iter().copied(), location)
         .as_var_usage(ctx, &mut subscope_ok)?;
     let sealed_block_ok = subscope_ok.goto_callsite(Some(expr));
 
     // Err arm.
     let mut subscope_err = create_subscope(ctx, builder);
     let block_err_id = subscope_err.block_id;
-    let input_tys = match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
-    let mut input_vars: Vec<VariableId> =
-        input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
-    let block_err_input_vars = input_vars.clone();
+    let block_err_input_vars: Vec<VariableId> =
+        match_extern_variant_arm_input_types(ctx.db, &err_variant.ty, &extern_enum)
+            .map(|ty| ctx.new_var(VarRequest { ty, location }))
+            .collect();
 
-    match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_err);
-    let expr = extern_facade_expr(ctx, err_variant.ty, input_vars, location);
+    let returns =
+        match_extern_arm_ref_args_bind(ctx, &block_err_input_vars, &extern_enum, &mut subscope_err);
+    let expr = extern_facade_expr(ctx, err_variant.ty, returns.iter().copied(), location);
     let input = expr.as_var_usage(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: *func_err_variant, location }
         .add(ctx, &mut subscope_err.statements);
@@ -2307,29 +2309,32 @@ fn lower_optimized_extern_error_propagate<'db>(
 
 /// Returns the input types for an extern match variant arm.
 fn match_extern_variant_arm_input_types<'db>(
-    ctx: &mut LoweringContext<'db, '_>,
-    ty: semantic::TypeId<'db>,
+    db: &'db dyn salsa::Database,
+    ty: &semantic::TypeId<'db>,
     extern_enum: &LoweredExprExternEnum<'db>,
-) -> Vec<semantic::TypeId<'db>> {
-    let variant_input_tys = extern_facade_return_tys(ctx, ty);
-    let ref_tys = extern_enum.ref_args.iter().map(|ref_arg| ref_arg.ty());
-    chain!(ref_tys, variant_input_tys.into_iter()).collect()
+) -> impl Iterator<Item = semantic::TypeId<'db>> {
+    chain!(
+        extern_enum.ref_args.iter().map(|ref_arg| ref_arg.ty()),
+        extern_facade_return_tys(db, ty).iter().copied()
+    )
 }
 
-/// Binds input references when matching on extern functions.
-fn match_extern_arm_ref_args_bind<'db>(
+/// Binds the input references when matching on extern functions, and returns the remaining arm
+/// inputs.
+fn match_extern_arm_ref_args_bind<'db, 'vars>(
     ctx: &mut LoweringContext<'db, '_>,
-    arm_inputs: &mut Vec<VariableId>,
+    arm_inputs: &'vars [VariableId],
     extern_enum: &LoweredExprExternEnum<'db>,
     subscope: &mut BlockBuilder<'db>,
-) {
-    let ref_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.ref_args.len()).collect();
+) -> &'vars [VariableId] {
+    let (ref_outputs, others) = arm_inputs.split_at(extern_enum.ref_args.len());
     // Bind the ref parameters.
     for (ref_arg, output_var) in zip_eq(&extern_enum.ref_args, ref_outputs) {
         if let RefArg::Ref(ref_arg) = ref_arg {
-            subscope.update_ref(ctx, ref_arg, output_var);
+            subscope.update_ref(ctx, ref_arg, *output_var);
         }
     }
+    others
 }
 
 /// Lowers an expression of type [semantic::ExprAssignment].
