@@ -14,6 +14,8 @@
       "array_snapshot_pop_back": null,
       "array_snapshot_pop_front": null,
       "bitwise": null,
+      "blake2s_compress": { "major": 1, "minor": 8, "patch": 0 },
+      "blake2s_finalize": { "major": 1, "minor": 8, "patch": 0 },
       "bool_and_impl": null,
       "bool_not_impl": null,
       "bool_or_impl": null,
