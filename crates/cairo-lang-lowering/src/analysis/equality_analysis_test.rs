@@ -1,5 +1,6 @@
 //! File-based tests for the equality analysis.
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -41,7 +42,7 @@ fn test_equality_analysis(
             .iter()
             .enumerate()
             .filter_map(|(i, s)| s.as_ref().map(|state| (i, state)))
-            .map(|(block_idx, state)| format!("Block {block_idx}:\n{state:?}"))
+            .map(|(block_idx, state)| format!("Block {block_idx}:\n{:?}", state.debug(db)))
             .collect::<Vec<_>>()
             .join("\n\n");
 
