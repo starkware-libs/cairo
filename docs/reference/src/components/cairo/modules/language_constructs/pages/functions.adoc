@@ -37,6 +37,14 @@ fn <name>[<<generic_parameters>>](<parameters>) [-> <return_type>]
 
 In the example above, the signature is `fn inc_n<T, const N>(x: T) -> T`.
 
+[[generic_parameters]]
+=== Generic parameters
+
+Generic parameters are declared inside angle brackets (`<...>`) after the function name.
+They can include type parameters (like `T`) and const parameters (like `const N`).
+
+For more information, see xref:generics.adoc[Generics].
+
 === Function name
 
 The function name is the name used to refer to the function.

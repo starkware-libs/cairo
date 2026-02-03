@@ -57,7 +57,6 @@ impl InlineMacroExprPlugin for AssertMacro {
             };
         };
         let f = "__formatter_for_assert_macro__";
-        let value_escaped = escape_node(db, value.as_syntax_node());
         let mut builder = PatchBuilder::new(db, syntax);
         builder.add_modified(RewriteNode::interpolate_patched(
             &formatdoc! {
@@ -69,6 +68,7 @@ impl InlineMacroExprPlugin for AssertMacro {
             &[("value".to_string(), RewriteNode::from_ast_trimmed(&value))].into(),
         ));
         if arguments.len() == 0 {
+            let value_escaped = escape_node(db, value.as_syntax_node());
             builder.add_str(&formatdoc!(
                 "core::result::ResultTrait::<(), core::fmt::Error>::unwrap(write!({f}, \
                  \"assertion failed: `{value_escaped}`.\"));\n",
