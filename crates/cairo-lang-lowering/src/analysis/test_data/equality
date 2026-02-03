@@ -179,8 +179,6 @@ Block 0:
 
 //! > Test enum construct tracks variant
 
-//! > TODO(eytan-starkware): Track enum variant and inner value relationship
-
 //! > test_runner_name
 test_equality_analysis
 
@@ -211,7 +209,7 @@ End:
 
 //! > analysis_state
 Block 0:
-(empty)
+A(v0) = v1
 
 //! > ==========================================================================
 
@@ -321,10 +319,10 @@ Block 0:
 (empty)
 
 Block 1:
-(empty)
+Some(v1) = v0
 
 Block 2:
-(empty)
+None(v2) = v0
 
 //! > ==========================================================================
 
@@ -511,6 +509,160 @@ End:
 //! > analysis_state
 Block 0:
 Box(v1) = v0, Box(v2) = v3
+
+//! > ==========================================================================
+
+//! > Test enum construct with same variant across branches preserves info after merge
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(cond: bool, x: felt252) -> felt252 {
+    // Construct same enum variant in both branches
+    let e = if cond {
+        MyEnum::A(x)
+    } else {
+        MyEnum::A(x)
+    };
+
+    // Force the value to be used after merge
+    use_enum(e);
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+#[inline(never)]
+fn use_enum(e: MyEnum) {}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: test::MyEnum) <- MyEnum::A(v1)
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk2:
+Statements:
+  (v6: test::MyEnum) <- MyEnum::A(v1)
+End:
+  Goto(blk3, {v6 -> v5})
+
+blk3:
+Statements:
+  () <- test::use_enum(v5)
+End:
+  Return(v1)
+
+//! > analysis_state
+Block 0:
+(empty)
+
+Block 1:
+A(v1) = v4, False(v2) = v0
+
+Block 2:
+A(v1) = v6, True(v3) = v0
+
+Block 3:
+A(v1) = v5
+
+//! > ==========================================================================
+
+//! > Test enum construct with different variants across branches loses enum info after merge
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(cond: bool, x: felt252, y: felt252) -> felt252 {
+    // Construct different enum variants in branches
+    let e = if cond {
+        MyEnum::A(x)
+    } else {
+        MyEnum::B(y)
+    };
+
+    // Force the value to be used after merge
+    use_enum(e);
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+enum MyEnum {
+    A: felt252,
+    B: felt252,
+}
+
+#[inline(never)]
+fn use_enum(e: MyEnum) {}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool, v1: core::felt252, v2: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v3) => blk1,
+    bool::True(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: test::MyEnum) <- MyEnum::B(v2)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk2:
+Statements:
+  (v7: test::MyEnum) <- MyEnum::A(v1)
+End:
+  Goto(blk3, {v7 -> v6})
+
+blk3:
+Statements:
+  () <- test::use_enum(v6)
+End:
+  Return(v1)
+
+//! > analysis_state
+Block 0:
+(empty)
+
+Block 1:
+B(v2) = v5, False(v3) = v0
+
+Block 2:
+A(v1) = v7, True(v4) = v0
+
+Block 3:
+(empty)
 
 //! > ==========================================================================
 
