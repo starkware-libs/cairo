@@ -20,7 +20,7 @@ use num_traits::Signed;
 
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
-use super::utils::{boxed_ty_with_optional_snapshot, peel_snapshot, reinterpret_cast_signature};
+use super::utils::{peel_snapshot, reinterpret_cast_signature};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bounded_int::bounded_int_ty;
 use crate::extensions::boxing::box_ty;
@@ -31,6 +31,7 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
+use crate::extensions::utils::ty_with_optional_snapshot;
 use crate::extensions::{
     ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
     SpecializationError, args_as_single_type,
@@ -402,22 +403,23 @@ impl EnumBoxedMatchLibfunc {
     fn create_signature(
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
-        variant_types: impl IntoIterator<Item = ConcreteTypeId>,
+        variant_types: impl ExactSizeIterator<Item = ConcreteTypeId>,
         is_snapshot: bool,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let variants: Vec<ConcreteTypeId> = variant_types.into_iter().collect();
-        let is_empty = variants.is_empty();
-        let no_ap_change = variants.len() <= 1;
-        let branch_signatures = variants
-            .into_iter()
+        let new_vars_only = variant_types.len() <= 1;
+        let fallthrough = if variant_types.len() == 0 { None } else { Some(0) };
+        let branch_signatures = variant_types
             .map(|variant_ty| {
                 let ref_info = OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst);
                 Ok(BranchSignature {
                     vars: vec![OutputVarInfo {
-                        ty: boxed_ty_with_optional_snapshot(context, variant_ty, is_snapshot)?,
+                        ty: box_ty(
+                            context,
+                            ty_with_optional_snapshot(context, variant_ty, is_snapshot)?,
+                        )?,
                         ref_info,
                     }],
-                    ap_change: SierraApChange::Known { new_vars_only: no_ap_change },
+                    ap_change: SierraApChange::Known { new_vars_only },
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -427,7 +429,7 @@ impl EnumBoxedMatchLibfunc {
                 ParamSignature::new(box_ty(context, ty)?).with_allow_add_const(),
             ],
             branch_signatures,
-            fallthrough: (!is_empty).then_some(0),
+            fallthrough,
         })
     }
 }
@@ -443,7 +445,7 @@ impl NamedLibfunc for EnumBoxedMatchLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let enum_type = args_as_single_type(args)?;
         let (variant_types, is_snapshot) = Self::analyze_enum_type(context, enum_type)?;
-        Self::create_signature(context, enum_type.clone(), variant_types, is_snapshot)
+        Self::create_signature(context, enum_type.clone(), variant_types.into_iter(), is_snapshot)
     }
 
     fn specialize(
