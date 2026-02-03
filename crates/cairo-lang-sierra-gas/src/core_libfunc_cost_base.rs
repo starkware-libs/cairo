@@ -407,14 +407,13 @@ pub fn core_libfunc_cost(
                 signature, ..
             }) => {
                 // BoxedMatch needs to load the variant selector with a double-deref (1 step)
-                // plus the regular match cost - but only when branching is actually needed
+                // plus the regular match cost - but only when branching is actually needed.
                 let n = signature.branch_signatures.len();
                 match n {
                     0 => vec![],
-                    1 => vec![ConstCost::default().into()], // No branching needed for single
-                    // variant
+                    1 => vec![ConstCost::default().into()],
                     2 => vec![ConstCost::steps(2).into(); 2],
-                    _ => chain!(
+                    n => chain!(
                         iter::once(ConstCost::steps(2).into()),
                         itertools::repeat_n(ConstCost::steps(3).into(), n - 1)
                     )

@@ -7,7 +7,6 @@ use num_traits::One;
 use starknet_types_core::felt::CAIRO_PRIME_BIGINT;
 
 use super::bounded_int::BoundedIntType;
-use super::boxing::box_ty;
 use super::bytes31::Bytes31Type;
 use super::int::signed::{Sint8Type, Sint16Type, Sint32Type, Sint64Type};
 use super::int::signed128::Sint128Type;
@@ -143,12 +142,11 @@ pub fn peel_snapshot<'a>(
     }
 }
 
-/// Helper to create a boxed output variable for unpack operations.
-pub fn boxed_ty_with_optional_snapshot(
+/// Helper to optionally wrap a type with `Snapshot<>`.
+pub fn ty_with_optional_snapshot(
     context: &dyn SignatureSpecializationContext,
-    component_ty: ConcreteTypeId,
+    ty: ConcreteTypeId,
     is_snapshot: bool,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    let inner_type = if is_snapshot { snapshot_ty(context, component_ty)? } else { component_ty };
-    box_ty(context, inner_type)
+    if is_snapshot { snapshot_ty(context, ty) } else { Ok(ty) }
 }

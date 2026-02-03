@@ -753,6 +753,226 @@ test::foo@F0([0]: Box<test::Data>) -> (test::BoxedData);
 
 //! > ==========================================================================
 
+//! > boxed match enum with 1 variant - no-rewrap.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+enum Single {
+    Value: felt252,
+}
+
+enum BoxedSingle {
+    Value: Box<felt252>,
+}
+
+extern fn enum_boxed_match<T>(e: Box<T>) -> BoxedSingle nopanic;
+
+fn foo(e: Box<Single>) -> Box<felt252> {
+    match enum_boxed_match(e) {
+        BoxedSingle::Value(value) => value,
+    }
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 100})
+
+//! > sierra_code
+type Box<test::Single> = Box<test::Single> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::Single = Enum<ut@test::Single, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_boxed_match<test::Single> = enum_boxed_match<test::Single>;
+libfunc branch_align = branch_align;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+enum_boxed_match<test::Single>([0]) -> ([1]);
+branch_align() -> ();
+store_temp<Box<felt252>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: Box<test::Single>) -> (Box<felt252>);
+
+//! > ==========================================================================
+
+//! > boxed match enum with 1 variant - reuse value.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+enum A {
+    Value: felt252,
+}
+
+enum B {
+    Value: A,
+}
+
+mod a {
+    enum A {
+        Value: Box<felt252>,
+    }
+    extern fn enum_boxed_match<T>(e: Box<T>) -> A nopanic;
+}
+
+mod b {
+    enum B {
+        Value: Box<super::A>,
+    }
+    extern fn enum_boxed_match<T>(e: Box<T>) -> B nopanic;
+}
+
+fn foo(x: Box<B>) -> Box<felt252> {
+    match b::enum_boxed_match(x) {
+        b::B::Value(value) => match a::enum_boxed_match(value) {
+            a::A::Value(value) => value,
+        },
+    }
+}
+
+//! > casm
+[ap + 0] = [fp + -3] + 2, ap++;
+ret;
+
+//! > sierra_code
+type Box<test::B> = Box<test::B> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::A = Enum<ut@test::A, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::B = Enum<ut@test::B, test::A> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::A> = Box<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_boxed_match<test::B> = enum_boxed_match<test::B>;
+libfunc branch_align = branch_align;
+libfunc enum_boxed_match<test::A> = enum_boxed_match<test::A>;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+enum_boxed_match<test::B>([0]) -> ([1]);
+branch_align() -> ();
+enum_boxed_match<test::A>([1]) -> ([2]);
+branch_align() -> ();
+store_temp<Box<felt252>>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: Box<test::B>) -> (Box<felt252>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 100})
+
+//! > ==========================================================================
+
+//! > boxed match enum with 2 variant - reuse value.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+enum A {
+    Value1: felt252,
+    Value2: felt252,
+}
+
+enum B {
+    Value1: A,
+    Value2: A,
+}
+
+mod a {
+    enum A {
+        Value1: Box<felt252>,
+        Value2: Box<felt252>,
+    }
+    extern fn enum_boxed_match<T>(e: Box<T>) -> A nopanic;
+}
+
+mod b {
+    enum B {
+        Value1: Box<super::A>,
+        Value2: Box<super::A>,
+    }
+    extern fn enum_boxed_match<T>(e: Box<T>) -> B nopanic;
+}
+
+fn foo(x: Box<B>) -> Box<felt252> {
+    match b::enum_boxed_match(x) {
+        b::B::Value1(value) => match a::enum_boxed_match(value) {
+            a::A::Value1(value) => value,
+            a::A::Value2(value) => value,
+        },
+        b::B::Value2(value) => match a::enum_boxed_match(value) {
+            a::A::Value1(value) => value,
+            a::A::Value2(value) => value,
+        },
+    }
+}
+
+//! > casm
+[ap + 0] = [[fp + -3] + 0], ap++;
+jmp rel 11 if [ap + -1] != 0;
+[ap + 0] = [[fp + -3] + 1], ap++;
+jmp rel 5 if [ap + -1] != 0;
+[ap + 0] = [fp + -3] + 2, ap++;
+ret;
+[ap + 0] = [fp + -3] + 2, ap++;
+ret;
+[ap + 0] = [[fp + -3] + 1], ap++;
+jmp rel 5 if [ap + -1] != 0;
+[ap + 0] = [fp + -3] + 2, ap++;
+ret;
+[ap + 0] = [fp + -3] + 2, ap++;
+ret;
+
+//! > sierra_code
+type Box<test::B> = Box<test::B> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::A = Enum<ut@test::A, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type test::B = Enum<ut@test::B, test::A, test::A> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<test::A> = Box<test::A> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc enum_boxed_match<test::B> = enum_boxed_match<test::B>;
+libfunc branch_align = branch_align;
+libfunc enum_boxed_match<test::A> = enum_boxed_match<test::A>;
+libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
+
+F0:
+enum_boxed_match<test::B>([0]) { fallthrough([1]) F0_B1([2]) };
+branch_align() -> ();
+enum_boxed_match<test::A>([1]) { fallthrough([3]) F0_B0([4]) };
+branch_align() -> ();
+store_temp<Box<felt252>>([3]) -> ([3]);
+return([3]);
+F0_B0:
+branch_align() -> ();
+store_temp<Box<felt252>>([4]) -> ([4]);
+return([4]);
+F0_B1:
+branch_align() -> ();
+enum_boxed_match<test::A>([2]) { fallthrough([5]) F0_B2([6]) };
+branch_align() -> ();
+store_temp<Box<felt252>>([5]) -> ([5]);
+return([5]);
+F0_B2:
+branch_align() -> ();
+store_temp<Box<felt252>>([6]) -> ([6]);
+return([6]);
+
+test::foo@F0([0]: Box<test::B>) -> (Box<felt252>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 500})
+
+//! > ==========================================================================
+
 //! > boxed match enum with 1 variant
 
 //! > test_runner_name

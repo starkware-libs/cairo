@@ -14,7 +14,7 @@
 use cairo_lang_utils::try_extract_matches;
 
 use super::snapshot::snapshot_ty;
-use super::utils::{boxed_ty_with_optional_snapshot, peel_snapshot};
+use super::utils::peel_snapshot;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::boxing::box_ty;
 use crate::extensions::lib_func::{
@@ -23,6 +23,7 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
+use crate::extensions::utils::ty_with_optional_snapshot;
 use crate::extensions::{
     ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
     SpecializationError, args_as_single_type,
@@ -321,7 +322,10 @@ impl StructBoxedDeconstructLibfunc {
         for member_ty in member_types.by_ref() {
             let ref_info = OutputVarReferenceInfo::SameAsParam { param_idx: 0 };
             outputs.push(OutputVarInfo {
-                ty: boxed_ty_with_optional_snapshot(context, member_ty.clone(), is_snapshot)?,
+                ty: box_ty(
+                    context,
+                    ty_with_optional_snapshot(context, member_ty.clone(), is_snapshot)?,
+                )?,
                 ref_info,
             });
             if !context.get_type_info(&member_ty)?.zero_sized {
@@ -332,7 +336,7 @@ impl StructBoxedDeconstructLibfunc {
         for member_ty in member_types {
             let ref_info = OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst);
             outputs.push(OutputVarInfo {
-                ty: boxed_ty_with_optional_snapshot(context, member_ty, is_snapshot)?,
+                ty: box_ty(context, ty_with_optional_snapshot(context, member_ty, is_snapshot)?)?,
                 ref_info,
             });
         }
