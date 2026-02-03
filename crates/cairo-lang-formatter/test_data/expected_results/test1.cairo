@@ -74,3 +74,22 @@ fn if_let_test() {
 impl DropMyImplCoupon<T> of Drop<MyImpl::<T>::trait_fn::Coupon>;
 impl DropMyImplCoupon<T> of Drop<MyImpl::<T>::trait_fn>;
 impl DropMyImplCoupon<T> of Drop<MyImpl<T>>;
+
+// Test that semicolons are preserved when next statement starts with a post operator.
+fn semicolon_preservation_test() {
+    // Semicolon should be preserved - next starts with [ (array literal vs indexing)
+    if true {
+        return;
+    };
+    [1, 2, 3];
+    // Semicolon should be preserved - next starts with - (negation vs subtraction)
+    if true {
+        return;
+    };
+    -5;
+    // Semicolon should be removed - next starts with identifier (not a post operator)
+    if true {
+        return;
+    }
+    foo();
+}
