@@ -480,11 +480,13 @@ impl CasmBuilder {
             }),
             true,
         );
+
+        // Sanity checks.
+        // TODO: Avoid using "as". Why is allocated i16 and not u16 or usize?
         assert!(instruction.inc_ap);
-        assert_eq!(
-            self.main_state.allocated as usize, self.main_state.ap_change,
-            "Output var must be top of stack"
-        );
+        assert_eq!(self.main_state.ap_change, 1);
+        assert_eq!(self.main_state.allocated, 1);
+
         self.instructions.push(instruction);
     }
 

@@ -143,6 +143,8 @@ pub fn peel_snapshot<'a>(
     }
 }
 
+// TODO: Refactor this function to only add optional snapshot, and remove the box-related things.
+// Instead, call box_ty outside.
 /// Helper to create a boxed output variable for unpack operations.
 pub fn boxed_ty_with_optional_snapshot(
     context: &dyn SignatureSpecializationContext,

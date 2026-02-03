@@ -2,6 +2,7 @@ use std::iter;
 use std::ops::Shl;
 
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
+use cairo_lang_sierra::extensions::blake::BlakeConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::bounded_int::{
     BoundedIntConcreteLibfunc, BoundedIntDivRemAlgorithm,
@@ -407,14 +408,12 @@ pub fn core_libfunc_cost(
                 signature, ..
             }) => {
                 // BoxedMatch needs to load the variant selector with a double-deref (1 step)
-                // plus the regular match cost - but only when branching is actually needed
-                let n = signature.branch_signatures.len();
-                match n {
+                // plus the regular match cost - but only when branching is actually needed.
+                match signature.branch_signatures.len() {
                     0 => vec![],
-                    1 => vec![ConstCost::default().into()], // No branching needed for single
-                    // variant
+                    1 => vec![ConstCost::default().into()],
                     2 => vec![ConstCost::steps(2).into(); 2],
-                    _ => chain!(
+                    n => chain!(
                         iter::once(ConstCost::steps(2).into()),
                         itertools::repeat_n(ConstCost::steps(3).into(), n - 1)
                     )
@@ -646,10 +645,16 @@ pub fn core_libfunc_cost(
                 vec![ConstCost::steps(2).into(), ConstCost::steps(2).into()]
             }
         },
-        Blake(_) => vec![BranchCost::Regular {
-            const_cost: ConstCost::steps(1),
-            pre_cost: PreCost::builtin(CostTokenType::Blake),
-        }],
+        Blake(libfunc) => match libfunc {
+            BlakeConcreteLibfunc::Blake2sCompress(_) | BlakeConcreteLibfunc::Blake2sFinalize(_) => {
+                vec![BranchCost::Regular {
+                    // TODO: consider changing to 0 steps, as Blake includes the gas cost of the step
+                    // (unlike other builtins).
+                    const_cost: ConstCost::steps(1),
+                    pre_cost: PreCost::builtin(CostTokenType::Blake),
+                }]
+            }
+        }
         Trace(_) => vec![ConstCost::steps(1).into()],
         QM31(libfunc) => match libfunc {
             QM31Concrete::Const(_) => vec![ConstCost::default().into()],

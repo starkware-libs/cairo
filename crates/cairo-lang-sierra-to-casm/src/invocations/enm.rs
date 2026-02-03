@@ -419,7 +419,7 @@ fn build_enum_boxed_match(
 ) -> Result<CompiledInvocation, InvocationError> {
     let num_branches = builder.invocation.branches.len();
 
-    // Handle zero variants case - no instructions needed for uninhabited type
+    // Handle zero variants case - no instructions needed for uninhabited type.
     if num_branches == 0 {
         return Ok(builder.build(
             vec![],
@@ -429,10 +429,11 @@ fn build_enum_boxed_match(
     }
 
     let [cell] = builder.try_get_single_cells()?;
-    let cell_ref = cell.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let mut cell_ref = cell.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
-    // Calculate the size of each variant
-    let mut variant_sizes: Vec<i16> = Vec::new();
+    // Calculate the size of each variant.
+    // TODO: Either use with_capacity or map.
+    let mut variant_sizes: Vec<i16> = Vec::with_capacity(libfunc.variants.len());
     for variant_ty in &libfunc.variants {
         let variant_size = *builder
             .program_info
@@ -442,54 +443,58 @@ fn build_enum_boxed_match(
         variant_sizes.push(variant_size);
     }
 
-    // The enum size is 1 (selector) + max(variant_sizes)
-    let max_variant_size = variant_sizes.iter().max().copied().unwrap_or(0);
+    // For single variant enums, no branching is needed - just return the variant box
+    if num_branches == 1 {
+        // The box should point to: base_addr + 1 (selector).
+        let variant_box = CellExpression::BinOp {
+            op: CellOperator::Add,
+            a: cell_ref,
+            b: DerefOrImmediate::Immediate(1.into()),
+        };
 
-    let output_cellref = if num_branches > 1 {
-        let mut adjusted = cell_ref;
-        assert!(adjusted.apply_known_ap_change(1));
-        adjusted
-    } else {
-        cell_ref
-    };
+        let output_expressions_for_branch = [ReferenceExpression::from_cell(variant_box)].into_iter();
+        return Ok(builder.build(vec![], vec![], [output_expressions_for_branch].into_iter()));
+    }
 
-    // For each branch, we need to create a reference to Box<Variant>
-    // The variant data starts at offset 1 + padding to skip to the variant
+    // Load the variant selector into a temporary variable.
+    // TODO: Can we use the casm builder instead?
+    let instructions = casm! { [ap] = [[&cell_ref]], ap++; }.instructions;
+    let variant_selector_cell = CellRef { register: Register::AP, offset: -1 };
+
+    // Adjust cell_ref to account to the ap++ above.
+    assert!(cell_ref.apply_known_ap_change(1));
+
+    // The enum size is 1 (selector) + max(variant_sizes).
+    let max_variant_size = *variant_sizes.iter().max().unwrap_or(&0);
+
+    // For each branch, we need to create a reference to `Box<Variant>`.
+    // The variant data starts at offset 1 + padding.
     let output_expressions_for_branches = variant_sizes.iter().map(|&variant_size| {
-        // Calculate padding: the variant is right-aligned in the enum's value space
+        // Calculate padding: the variant is right-aligned in the enum's value space.
         let padding = max_variant_size - variant_size;
-        // The box should point to: base_addr + 1 (selector) + padding
+        // The box should point to: base-addr + 1 (selector) + padding.
         let variant_offset = 1 + padding;
         let variant_box = CellExpression::BinOp {
             op: CellOperator::Add,
-            a: output_cellref,
+            a: cell_ref,
             b: DerefOrImmediate::Immediate(variant_offset.into()),
         };
 
         vec![ReferenceExpression::from_cell(variant_box)].into_iter()
     });
 
-    // For single variant enums, no branching is needed - just return the variant box
-    if num_branches == 1 {
-        return Ok(builder.build(vec![], vec![], output_expressions_for_branches));
-    }
-
-    // Load the variant selector into a temporary - this is a double deref
-    let instructions = casm! { [ap] = [[&cell_ref]], ap++; }.instructions;
-    let variant_selector_cell = CellRef { register: Register::AP, offset: -1 };
-
     if num_branches == 2 {
         build_enum_match_short_ex(
             builder,
             variant_selector_cell,
-            output_expressions_for_branches.into_iter().map(|v| v.into_iter()),
+            output_expressions_for_branches,
             instructions,
         )
     } else {
         build_enum_match_long_ex(
             builder,
             variant_selector_cell,
-            output_expressions_for_branches.into_iter().map(|v| v.into_iter()),
+            output_expressions_for_branches,
             instructions,
         )
     }

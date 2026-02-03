@@ -10,12 +10,10 @@ pub fn build(
     libfunc: &BlakeConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let finalize = match libfunc {
-        BlakeConcreteLibfunc::Blake2sCompress(_) => false,
-        BlakeConcreteLibfunc::Blake2sFinalize(_) => true,
-    };
-
-    build_compress(builder, finalize)
+    match libfunc {
+        BlakeConcreteLibfunc::Blake2sCompress(_) => build_compress(builder, false),
+        BlakeConcreteLibfunc::Blake2sFinalize(_) => build_compress(builder, true),
+    }
 }
 
 /// Handles instructions for boolean AND.
