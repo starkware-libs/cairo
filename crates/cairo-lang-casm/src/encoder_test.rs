@@ -5,8 +5,11 @@ use num_bigint::BigInt;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
-use crate::casm;
 use crate::inline::CasmContext;
+use crate::instructions::{
+    AssertEqInstruction, Blake2sCompressInstruction, Instruction, InstructionBody,
+};
+use crate::{casm, cell_ref, res};
 
 #[test_case(
     casm!(jmp abs 3;),
@@ -110,4 +113,76 @@ fn test_encode_multiple(casm: CasmContext, expected: Vec<i128>) {
     let enc: Vec<BigInt> =
         casm.instructions.iter().flat_map(|inst| inst.assemble().encode()).collect();
     assert_eq!(enc, exp);
+}
+
+#[test_case(
+    Instruction::new(
+        InstructionBody::Blake2sCompress(Blake2sCompressInstruction {
+            state: cell_ref!([fp + 0]),
+            message: cell_ref!([ap + 0]),
+            byte_count: cell_ref!([fp + -1]),
+            finalize: false,
+        }),
+        true,
+    ),
+    0x8813_8000_8000_7fff,
+    None;
+    "blake2s[state=[fp + 0], message=[ap + 0], byte_count=[fp + -1], finalize=false] => [ap + 0];"
+)]
+#[test_case(
+    Instruction::new(
+        InstructionBody::Blake2sCompress(Blake2sCompressInstruction {
+            state: cell_ref!([fp + 0]),
+            message: cell_ref!([ap + 0]),
+            byte_count: cell_ref!([fp + -1]),
+            finalize: true,
+        }),
+        true,
+    ),
+    0x1_0813_8000_8000_7fff,
+    None;
+    "blake2s[state=[fp + 0], message=[ap + 0], byte_count=[fp + -1], finalize=true] => [ap + 0];"
+)]
+#[test_case(
+    Instruction::new(
+        InstructionBody::QM31AssertEq(AssertEqInstruction {
+            a: cell_ref!([ap + 0]),
+            b: res!([fp + -3]),
+        }),
+        true,
+    ),
+    0x1_c80a_7ffd_7fff_8000,
+    None;
+    "{QM31} [ap + 0] = [fp - 3], ap++;"
+)]
+#[test_case(
+    Instruction::new(
+        InstructionBody::QM31AssertEq(AssertEqInstruction {
+            a: cell_ref!([ap + 2]),
+            b: res!([fp + -1]),
+        }),
+        false,
+    ),
+    0x1_c00a_7fff_7fff_8002,
+    None;
+    "{QM31} [ap + 2] = [fp - 1];"
+)]
+#[test_case(
+    Instruction::new(
+        InstructionBody::QM31AssertEq(AssertEqInstruction {
+            a: cell_ref!([ap + 2]),
+            b: res!([fp + -1] + 8),
+        }),
+        false,
+    ),
+    0x1_c026_8001_7fff_8002,
+    Some(BigInt::from(8));
+    "{QM31} [ap + 2] = [fp - 1] + 8;"
+)]
+fn test_encode_instruction(instruction: Instruction, encoding: u128, immediate: Option<BigInt>) {
+    let enc = BigInt::from(encoding);
+    assert_eq!(
+        instruction.assemble().encode(),
+        if let Some(imm) = immediate { vec![enc, imm] } else { vec![enc] }
+    );
 }
