@@ -3684,9 +3684,13 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let mut diag_end = None;
         while !should_stop(self.peek().kind) {
             let terminal = self.take_raw();
-            diag_start.get_or_insert(self.offset);
-            diag_end =
-                Some(self.offset.add_width(TextWidth::from_str(terminal.text.long(self.db))));
+            let leading_width = trivia_total_width(self.db, &terminal.leading_trivia);
+            let text_width = TextWidth::from_str(terminal.text.long(self.db));
+            let text_start = self.offset.add_width(leading_width);
+            let text_end = text_start.add_width(text_width);
+
+            diag_start.get_or_insert(text_start);
+            diag_end = Some(text_end);
 
             self.pending_trivia.extend(terminal.leading_trivia);
             self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
