@@ -6,7 +6,7 @@ It resolves to one of these items:
 
 * A local variable
 * A xref:constant-items.adoc[constant item]
-* A generic const parameter (currently unsupported)
+* A generic const parameter
 
 == Local Variables
 
@@ -30,20 +30,21 @@ Variables bound in patterns are also local variables. In the example above,
 
 == Constants
 
-A path expression can refer to a constant item:
+A path expression can refer to a constant item using a qualified path:
 
 [source,cairo]
 ----
-const TRUE: bool = true;
-const IF_CONST_TRUE: felt252 = if TRUE {
-    4
-} else {
-    5
-};
+mod config {
+    pub const MAX_SIZE: u32 = 100;
+}
+
+fn check_size(size: u32) -> bool {
+    size <= config::MAX_SIZE
+}
 ----
 
-The identifier `TRUE` is a path expression that evaluates to the constant
-value.
+The path `config::MAX_SIZE` is a path expression that evaluates to the constant
+value defined in the `config` module.
 
 == Related
 
