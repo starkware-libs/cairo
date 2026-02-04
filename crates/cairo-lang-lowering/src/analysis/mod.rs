@@ -4,7 +4,6 @@
 //! optimization passes and semantic checks.
 
 mod backward;
-mod core;
 
 pub use backward::BackAnalysis;
 
