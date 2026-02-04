@@ -2,7 +2,7 @@ use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
-use cairo_lang_casm::{casm, casm_extend};
+use cairo_lang_casm::{casm, casm_extend, cell_ref};
 use cairo_lang_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -93,7 +93,7 @@ fn build_store_temp(
     let instructions = get_store_instructions(
         &builder,
         ty,
-        repeat_n(CellRef { register: Register::AP, offset: 0 }, type_size as usize),
+        repeat_n(cell_ref!([ap]), type_size as usize),
         expression,
     )?;
     Ok(builder.build(
@@ -158,9 +158,7 @@ fn build_alloc_local(
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression {
             cells: (0..allocation_size)
-                .map(|i| {
-                    CellExpression::Deref(CellRef { register: Register::FP, offset: slot + i })
-                })
+                .map(|i| CellExpression::Deref(cell_ref!([fp + (slot + i)])))
                 .collect(),
         }]
         .into_iter(),

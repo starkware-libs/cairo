@@ -4,8 +4,8 @@ use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
-use cairo_lang_casm::{casm, casm_build_extend, casm_extend};
+use cairo_lang_casm::operand::{CellRef, DerefOrImmediate};
+use cairo_lang_casm::{casm, casm_build_extend, casm_extend, cell_ref};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::{
     EnumBoxedMatchConcreteLibfunc, EnumConcreteLibfunc, EnumInitConcreteLibfunc,
@@ -476,7 +476,7 @@ fn build_enum_boxed_match(
 
     // Load the variant selector into a temporary - this is a double deref
     let instructions = casm! { [ap] = [[&cell_ref]], ap++; }.instructions;
-    let variant_selector_cell = CellRef { register: Register::AP, offset: -1 };
+    let variant_selector_cell = cell_ref!([ap - 1]);
 
     if num_branches == 2 {
         build_enum_match_short_ex(

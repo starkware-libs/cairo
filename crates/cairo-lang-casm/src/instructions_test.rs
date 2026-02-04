@@ -4,12 +4,13 @@ use alloc::{string::ToString, vec};
 use cairo_lang_test_utils::test;
 use indoc::indoc;
 
+use crate::cell_ref;
 use crate::hints::CoreHint;
 use crate::instructions::{
     AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
     JnzInstruction, JumpInstruction, RetInstruction,
 };
-use crate::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
+use crate::operand::{DerefOrImmediate, ResOperand};
 
 #[test]
 fn test_jump_format() {
@@ -50,17 +51,15 @@ fn test_call_format() {
 
 #[test]
 fn test_jnz_format() {
-    let jnz_insn = JnzInstruction {
-        jump_offset: DerefOrImmediate::from(205),
-        condition: CellRef { register: Register::AP, offset: 5 },
-    };
+    let jnz_insn =
+        JnzInstruction { jump_offset: DerefOrImmediate::from(205), condition: cell_ref!([ap + 5]) };
 
     assert_eq!(jnz_insn.to_string(), "jmp rel 205 if [ap + 5] != 0");
 }
 
 #[test]
 fn test_assert_eq_format() {
-    let op1 = CellRef { register: Register::AP, offset: 5 };
+    let op1 = cell_ref!([ap + 5]);
     let op2 = ResOperand::from(205);
 
     let insn = AssertEqInstruction { a: op1, b: op2 };
@@ -84,7 +83,7 @@ fn test_add_ap_format() {
 
 #[test]
 fn test_instruction_with_hint() {
-    let dst = CellRef { register: Register::AP, offset: 5 };
+    let dst = cell_ref!([ap + 5]);
     let abs_jmp_insn = Instruction {
         body: InstructionBody::Jump(JumpInstruction {
             target: DerefOrImmediate::from(3),

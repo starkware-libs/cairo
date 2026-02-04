@@ -2,12 +2,12 @@ use cairo_lang_test_utils::test;
 use indoc::indoc;
 
 use crate::hints::{CoreHint, PythonicHint, StarknetHint};
-use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
-use crate::res;
+use crate::operand::{BinOpOperand, DerefOrImmediate, Operation, ResOperand};
+use crate::{cell_ref, res};
 
 #[test]
 fn test_alloc_segment_format() {
-    let dst = CellRef { register: Register::AP, offset: 5 };
+    let dst = cell_ref!([ap + 5]);
     let hint = CoreHint::AllocSegment { dst };
 
     assert_eq!(hint.get_pythonic_hint(), "memory[ap + 5] = segments.add()");
@@ -23,27 +23,19 @@ fn test_less_than_format() {
         CoreHint::TestLessThan {
             lhs: ap_based.clone(),
             rhs: fp_based.clone(),
-            dst: CellRef { register: Register::AP, offset: 0 }
+            dst: cell_ref!([ap])
         }
         .get_pythonic_hint(),
         "memory[ap + 0] = memory[ap + 6] < memory[fp + 4]"
     );
     assert_eq!(
-        CoreHint::TestLessThan {
-            lhs: fp_based,
-            rhs: immediate.clone(),
-            dst: CellRef { register: Register::AP, offset: 0 }
-        }
-        .get_pythonic_hint(),
+        CoreHint::TestLessThan { lhs: fp_based, rhs: immediate.clone(), dst: cell_ref!([ap]) }
+            .get_pythonic_hint(),
         "memory[ap + 0] = memory[fp + 4] < 3"
     );
     assert_eq!(
-        CoreHint::TestLessThan {
-            lhs: immediate,
-            rhs: ap_based,
-            dst: CellRef { register: Register::AP, offset: 0 }
-        }
-        .get_pythonic_hint(),
+        CoreHint::TestLessThan { lhs: immediate, rhs: ap_based, dst: cell_ref!([ap]) }
+            .get_pythonic_hint(),
         "memory[ap + 0] = 3 < memory[ap + 6]"
     );
 }
@@ -58,7 +50,7 @@ fn test_less_than_or_equal_format() {
         CoreHint::TestLessThanOrEqual {
             lhs: ap_based.clone(),
             rhs: fp_based.clone(),
-            dst: CellRef { register: Register::AP, offset: 0 }
+            dst: cell_ref!([ap])
         }
         .get_pythonic_hint(),
         "memory[ap + 0] = memory[ap + 6] <= memory[fp + 4]"
@@ -67,18 +59,14 @@ fn test_less_than_or_equal_format() {
         CoreHint::TestLessThanOrEqual {
             lhs: fp_based,
             rhs: immediate.clone(),
-            dst: CellRef { register: Register::AP, offset: 0 }
+            dst: cell_ref!([ap])
         }
         .get_pythonic_hint(),
         "memory[ap + 0] = memory[fp + 4] <= 3"
     );
     assert_eq!(
-        CoreHint::TestLessThanOrEqual {
-            lhs: immediate,
-            rhs: ap_based,
-            dst: CellRef { register: Register::AP, offset: 0 }
-        }
-        .get_pythonic_hint(),
+        CoreHint::TestLessThanOrEqual { lhs: immediate, rhs: ap_based, dst: cell_ref!([ap]) }
+            .get_pythonic_hint(),
         "memory[ap + 0] = 3 <= memory[ap + 6]"
     );
 }
@@ -87,7 +75,7 @@ fn test_less_than_or_equal_format() {
 fn test_syscall_hint_format() {
     let system = ResOperand::BinOp(BinOpOperand {
         op: Operation::Add,
-        a: CellRef { register: Register::FP, offset: -3 },
+        a: cell_ref!([fp - 3]),
         b: DerefOrImmediate::from(3),
     });
 
@@ -123,14 +111,14 @@ fn encode_hint() {
     use crate::hints::{CoreHintBase, Hint};
 
     let hint = Hint::Core(CoreHintBase::Core(CoreHint::TestLessThan {
-        lhs: ResOperand::Deref(CellRef { register: Register::FP, offset: -3 }),
+        lhs: ResOperand::Deref(cell_ref!([fp - 3])),
         rhs: ResOperand::Immediate(BigIntAsHex {
             value: num_bigint::BigInt::from_str(
                 "3618502788666131106986593281521497120414687020801267626233049500247285301248",
             )
             .unwrap(),
         }),
-        dst: CellRef { register: Register::AP, offset: 4 },
+        dst: cell_ref!([ap + 4]),
     }));
 
     let encoding = hint.encode();

@@ -1,6 +1,5 @@
-use cairo_lang_casm::casm;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_casm::{casm, cell_ref};
 use cairo_lang_sierra::extensions::const_type::{
     ConstAsBoxConcreteLibfunc, ConstAsImmediateConcreteLibfunc, ConstConcreteLibfunc,
 };
@@ -47,11 +46,8 @@ fn build_as_box(
     Ok(builder.build(
         ctx.instructions,
         relocations,
-        [vec![ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
-            register: Register::AP,
-            offset: -1,
-        }))]
-        .into_iter()]
+        [vec![ReferenceExpression::from_cell(CellExpression::Deref(cell_ref!([ap - 1])))]
+            .into_iter()]
         .into_iter(),
     ))
 }

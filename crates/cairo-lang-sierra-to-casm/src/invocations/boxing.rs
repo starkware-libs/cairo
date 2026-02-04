@@ -1,7 +1,7 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
-use cairo_lang_casm::{casm, casm_build_extend};
+use cairo_lang_casm::{casm, casm_build_extend, cell_ref};
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use num_bigint::ToBigInt;
@@ -63,7 +63,7 @@ fn build_local_into_box(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [operand] = builder.try_get_refs()?;
 
-    let fp_val = CellRef { register: Register::AP, offset: -2 };
+    let fp_val = cell_ref!([ap - 2]);
     let offset = match operand.cells.as_slice() {
         [] => 0,
         [CellExpression::Deref(CellRef { register: Register::FP, offset }), ..] => *offset,

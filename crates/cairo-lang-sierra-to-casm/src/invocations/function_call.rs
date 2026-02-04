@@ -1,6 +1,5 @@
-use cairo_lang_casm::casm;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_casm::{casm, cell_ref};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::extensions::function_call::SignatureAndFunctionConcreteLibfunc;
 use itertools::Itertools;
@@ -36,7 +35,7 @@ pub fn build(
             .ok_or(InvocationError::UnknownVariableData)?;
         refs.push(ReferenceExpression {
             cells: ((offset - size + 1)..(offset + 1))
-                .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
+                .map(|i| CellExpression::Deref(cell_ref!([ap + i])))
                 .collect(),
         });
         offset -= size;
