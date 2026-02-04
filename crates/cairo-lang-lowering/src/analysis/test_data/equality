@@ -29,7 +29,7 @@ End:
 
 //! > analysis_state
 Block 0:
-@v0 = v2, v0 = v1, v0 = v3, v2 = v4
+(@core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>)(v2, v2) = v5, @v0 = v2, v0 = v1, v0 = v3, v2 = v4
 
 //! > ==========================================================================
 
@@ -97,7 +97,7 @@ End:
 
 //! > analysis_state
 Block 0:
-@v0 = v2, v0 = v1, v0 = v3, v0 = v5, v2 = v4, v2 = v6
+(@core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>, @core::array::Array::<core::felt252>)(v2, v2, v2) = v7, @v0 = v2, v0 = v1, v0 = v3, v0 = v5, v2 = v4, v2 = v6
 
 //! > ==========================================================================
 
@@ -132,13 +132,11 @@ End:
 
 //! > analysis_state
 Block 0:
-Box(v0) = v1, v1 = v2
+(core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)(v1, v1) = v3, Box(v0) = v1, v1 = v2
 
 //! > ==========================================================================
 
 //! > Test struct construct and destructure tracks equality
-
-//! > TODO(eytan-starkware): Track struct field equality through construct/destructure
 
 //! > test_runner_name
 test_equality_analysis
@@ -173,7 +171,7 @@ End:
 
 //! > analysis_state
 Block 0:
-(empty)
+(test::MyStruct, core::felt252, core::felt252)(v2, v0, v1) = v3, test::MyStruct(v0, v1) = v2
 
 //! > ==========================================================================
 
@@ -430,7 +428,7 @@ End:
 
 //! > analysis_state
 Block 0:
-Box(v0) = v1, Box(v1) = v2
+(core::box::Box::<core::box::Box::<core::felt252>>, core::felt252)(v2, v0) = v3, Box(v0) = v1, Box(v1) = v2
 
 //! > ==========================================================================
 
@@ -700,7 +698,7 @@ End:
 
 //! > analysis_state
 Block 0:
-@v0 = v2, Box(v3) = v0, v0 = v1, v0 = v4
+(@core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)(v2, v0) = v5, @v0 = v2, Box(v3) = v0, v0 = v1, v0 = v4
 
 //! > ==========================================================================
 
@@ -777,3 +775,163 @@ End:
 //! > analysis_state
 Block 0:
 Box(v1) = v0, Box(v2) = v3
+
+//! > ==========================================================================
+
+//! > Test empty struct construct
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo() -> (EmptyStruct, EmptyStruct) {
+    let s1 = EmptyStruct {};
+    let s2 = EmptyStruct {};
+    (s1, s2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct EmptyStruct {}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::EmptyStruct) <- struct_construct()
+  (v1: (test::EmptyStruct, test::EmptyStruct)) <- struct_construct(v0, v0)
+End:
+  Return(v1)
+
+//! > analysis_state
+Block 0:
+(test::EmptyStruct, test::EmptyStruct)(v0, v0) = v1, test::EmptyStruct() = v0
+
+//! > ==========================================================================
+
+//! > Test nested struct construct
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252) -> Outer {
+    let inner = Inner { x: a };
+    Outer { inner }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct Inner {
+    x: felt252,
+}
+
+#[derive(Drop, Copy)]
+struct Outer {
+    inner: Inner,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: test::Inner) <- struct_construct(v0)
+  (v2: test::Outer) <- struct_construct(v1)
+End:
+  Return(v2)
+
+//! > analysis_state
+Block 0:
+test::Inner(v0) = v1, test::Outer(v1) = v2
+
+//! > ==========================================================================
+
+//! > Test struct hashcons merges across branches when inputs are equivalent
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(arr: Array<felt252>, cond: bool) -> @MyStruct {
+    let snap = @arr;
+    let s = if cond {
+        let s = MyStruct { a: snap };
+        use_struct(@s);
+        s
+    } else {
+        let s = MyStruct { a: snap };
+        use_struct(@s);
+        s
+    };
+    @s
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct MyStruct {
+    a: @Array<felt252>,
+}
+
+#[inline(never)]
+fn use_struct(s: @MyStruct) {}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::bool
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>, v3: @core::array::Array::<core::felt252>) <- snapshot(v0)
+End:
+  Match(match_enum(v1) {
+    bool::False(v4) => blk1,
+    bool::True(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: test::MyStruct) <- struct_construct(v3)
+  (v7: test::MyStruct, v8: @test::MyStruct) <- snapshot(v6)
+  () <- test::use_struct(v8)
+End:
+  Goto(blk3, {v7 -> v9})
+
+blk2:
+Statements:
+  (v10: test::MyStruct) <- struct_construct(v3)
+  (v11: test::MyStruct, v12: @test::MyStruct) <- snapshot(v10)
+  () <- test::use_struct(v12)
+End:
+  Goto(blk3, {v11 -> v9})
+
+blk3:
+Statements:
+  (v13: test::MyStruct, v14: @test::MyStruct) <- snapshot(v9)
+End:
+  Return(v14)
+
+//! > analysis_state
+Block 0:
+@v0 = v3, v0 = v2
+
+Block 1:
+@v0 = v3, @v6 = v8, False(v4) = v1, test::MyStruct(v3) = v6, v0 = v2, v6 = v7
+
+Block 2:
+@v0 = v3, @v10 = v12, True(v5) = v1, test::MyStruct(v3) = v10, v0 = v2, v10 = v11
+
+Block 3:
+@v0 = v3, @v9 = v14, test::MyStruct(v3) = v9, v0 = v2, v9 = v13
