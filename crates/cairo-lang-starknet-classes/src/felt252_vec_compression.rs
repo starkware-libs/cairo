@@ -1,8 +1,8 @@
 use cairo_lang_utils::bigint::BigUintAsHex;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::require;
 use num_bigint::BigUint;
-use num_integer::Integer;
 use num_traits::{ToPrimitive, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
@@ -47,22 +47,22 @@ pub fn decompress(packed_values: &[BigUintAsHex]) -> Option<Vec<&BigUint>> {
     let words_per_felt = words_per_felt(padded_code_size);
     require(remaining_unpacked_size <= packed_values.len() * words_per_felt)?;
     let mut result = Vec::with_capacity(remaining_unpacked_size);
+    let bits = padded_code_size.trailing_zeros();
+    let mask: u128 = (padded_code_size - 1).into_or_panic();
     for packed_value in packed_values {
         let curr_words = std::cmp::min(words_per_felt, remaining_unpacked_size);
-        let mut iter = packed_value.value.iter_u64_digits();
-        // Since all values are felt252s, we can assume 4 `u64` limbs are enough.
-        let mut v: [u64; 4] = std::array::from_fn(|_| iter.next().unwrap_or_default());
-        assert_eq!(iter.next(), None, "Unexpected extra limbs.");
+        let mut digits = packed_value.value.iter_u64_digits();
+        let mut buffer = 0_u128;
+        let mut bits_in_buffer = 0;
         for _ in 0..curr_words {
-            // No allocation 4 limbs long division implementation.
-            let divisor = padded_code_size as u128;
-            let mut rem: usize = 0;
-            for limb in v.iter_mut().rev() {
-                let (q, r) = (*limb as u128 | ((rem as u128) << 64)).div_rem(&divisor);
-                *limb = q as u64;
-                rem = r as usize;
+            // Refill buffer if needed.
+            if bits_in_buffer < bits {
+                buffer |= (digits.next().unwrap_or_default() as u128) << bits_in_buffer;
+                bits_in_buffer += 64;
             }
-            result.push(&code.get(rem)?.value);
+            result.push(&code.get((buffer & mask).into_or_panic::<usize>())?.value);
+            buffer >>= bits;
+            bits_in_buffer -= bits;
         }
         remaining_unpacked_size -= curr_words;
     }
