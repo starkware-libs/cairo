@@ -89,11 +89,6 @@ impl Display for CellRef {
     }
 }
 
-/// Returns a CellRef referencing AP with the given offset.
-pub fn ap_cell_ref(offset: i16) -> CellRef {
-    CellRef { register: Register::AP, offset }
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]

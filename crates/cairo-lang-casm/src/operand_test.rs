@@ -4,21 +4,19 @@ use alloc::string::ToString;
 use cairo_lang_test_utils::test;
 
 use super::{BinOpOperand, DerefOrImmediate, Operation};
+use crate::cell_ref;
 use crate::operand::{CellRef, Register, ResOperand};
 
 #[test]
 fn test_deref_operand_format() {
-    assert_eq!(CellRef { register: Register::AP, offset: 5 }.to_string(), "[ap + 5]");
+    assert_eq!(cell_ref!([ap + 5]).to_string(), "[ap + 5]");
 
-    assert_eq!(CellRef { register: Register::FP, offset: -3 }.to_string(), "[fp + -3]");
+    assert_eq!(cell_ref!([fp - 3]).to_string(), "[fp + -3]");
 }
 
 #[test]
 fn test_double_deref_op_format() {
-    assert_eq!(
-        ResOperand::DoubleDeref(CellRef { register: Register::AP, offset: 5 }, 12).to_string(),
-        "[[ap + 5] + 12]"
-    );
+    assert_eq!(ResOperand::DoubleDeref(cell_ref!([ap + 5]), 12).to_string(), "[[ap + 5] + 12]");
 }
 
 #[test]

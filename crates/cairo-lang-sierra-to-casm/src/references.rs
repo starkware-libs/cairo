@@ -1,6 +1,6 @@
 use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::{CellRef, Register};
+use cairo_lang_casm::cell_ref;
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
@@ -160,9 +160,7 @@ pub fn build_function_parameters_refs(
                 ReferenceValue {
                     expression: ReferenceExpression {
                         cells: ((offset - size + 1)..(offset + 1))
-                            .map(|i| {
-                                CellExpression::Deref(CellRef { register: Register::FP, offset: i })
-                            })
+                            .map(|i| CellExpression::Deref(cell_ref!([fp + i])))
                             .collect(),
                     },
                     ty: param.ty.clone(),
