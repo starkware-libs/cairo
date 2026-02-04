@@ -6,7 +6,7 @@
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_semantic::{ConcreteVariant, MatchArmSelector};
+use cairo_lang_semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
 
@@ -89,6 +89,15 @@ pub struct EqualityState<'db> {
     /// Reverse hashcons for enum constructs: maps output_rep -> (variant, input_rep).
     /// This allows efficient lookup when matching on an enum to find the original input.
     enum_hashcons_rev: OrderedHashMap<VariableId, (ConcreteVariant<'db>, VariableId)>,
+
+    /// Hashcons for struct constructs: maps (type, [field_reps...]) -> output_rep.
+    /// This allows us to detect when two struct constructs with the same type
+    /// and equivalent fields should produce equivalent outputs.
+    struct_hashcons: OrderedHashMap<(TypeId<'db>, Vec<VariableId>), VariableId>,
+
+    /// Reverse hashcons for struct constructs: maps output_rep -> (type, [field_reps...]).
+    /// This allows efficient lookup when destructuring a struct to find the original fields.
+    struct_hashcons_rev: OrderedHashMap<VariableId, (TypeId<'db>, Vec<VariableId>)>,
 }
 
 impl<'db> EqualityState<'db> {
@@ -242,6 +251,24 @@ impl<'db> EqualityState<'db> {
             }
         }
     }
+
+    /// Records a struct construct: output = StructType(inputs...).
+    /// If we've already seen the same type with equivalent inputs, unions the outputs.
+    fn set_struct_construct(
+        &mut self,
+        ty: TypeId<'db>,
+        input_reps: Vec<VariableId>,
+        output: VariableId,
+    ) {
+        let key = (ty, input_reps);
+        if let Some(&existing_output) = self.struct_hashcons.get(&key) {
+            self.union(existing_output, output);
+        } else {
+            let output_rep = self.find(output);
+            self.struct_hashcons.insert(key.clone(), output_rep);
+            self.struct_hashcons_rev.insert(output_rep, key);
+        }
+    }
 }
 
 impl<'db> DebugWithDb<'db> for EqualityState<'db> {
@@ -262,6 +289,11 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
             let name = variant.id.name(db).to_string(db);
             lines.push(format!("{name}({}) = {}", v(input), v(output)));
         }
+        for ((ty, inputs), &output) in self.struct_hashcons.iter() {
+            let type_name = ty.format(db);
+            let fields = inputs.iter().map(|&id| v(id)).collect::<Vec<_>>().join(", ");
+            lines.push(format!("{type_name}({fields}) = {}", v(output)));
+        }
         for &var in self.union_find.keys() {
             let rep = self.find_immut(var);
             if var != rep {
@@ -278,13 +310,20 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 /// This analyzer tracks snapshot/desnap and box/unbox relationships as data flows
 /// through the program. At merge points (after match arms converge), we conservatively
 /// intersect the equivalence classes, keeping only equalities that hold on all paths.
-pub struct EqualityAnalysis;
+pub struct EqualityAnalysis<'a, 'db> {
+    lowered: &'a Lowered<'db>,
+}
 
-impl EqualityAnalysis {
+impl<'a, 'db> EqualityAnalysis<'a, 'db> {
+    /// Creates a new equality analysis instance.
+    pub fn new(lowered: &'a Lowered<'db>) -> Self {
+        Self { lowered }
+    }
+
     /// Runs equality analysis on a lowered function.
     /// Returns the equality state at the exit of each block.
-    pub fn analyze<'db>(lowered: &'_ Lowered<'db>) -> Vec<Option<EqualityState<'db>>> {
-        ForwardDataflowAnalysis::new(lowered, EqualityAnalysis {}).run()
+    pub fn analyze(lowered: &'a Lowered<'db>) -> Vec<Option<EqualityState<'db>>> {
+        ForwardDataflowAnalysis::new(lowered, EqualityAnalysis::new(lowered)).run()
     }
 }
 
@@ -308,7 +347,12 @@ fn merge_referenced_vars<'db, 'a>(
         .chain(info2.enum_hashcons.iter())
         .flat_map(|(&(_, input), &output)| [input, output]);
 
-    union_find_vars.chain(class_info_vars).chain(enum_vars)
+    let struct_vars =
+        info1.struct_hashcons.iter().chain(info2.struct_hashcons.iter()).flat_map(
+            |((_, inputs), &output)| inputs.iter().copied().chain(std::iter::once(output)),
+        );
+
+    union_find_vars.chain(class_info_vars).chain(enum_vars).chain(struct_vars)
 }
 
 /// Preserves only class relationships (box/snapshot) that exist in both branches.
@@ -324,8 +368,7 @@ fn merge_class_relationships(
                 continue;
             };
 
-            if let Some(boxed_rep) = find_intersection_rep(
-                result,
+            if let Some(boxed_rep) = find_intersection_rep_opt(
                 info1,
                 info2,
                 intersections,
@@ -335,8 +378,7 @@ fn merge_class_relationships(
                 result.set_box_relationship(intersection_var, boxed_rep);
             }
 
-            if let Some(snap_rep) = find_intersection_rep(
-                result,
+            if let Some(snap_rep) = find_intersection_rep_opt(
                 info1,
                 info2,
                 intersections,
@@ -352,17 +394,25 @@ fn merge_class_relationships(
 /// Finds an intersection representative: given a rep in info1 and a rep in info2,
 /// returns the intersection representative in the result if one exists.
 fn find_intersection_rep(
-    equality_state: &mut EqualityState<'_>,
+    intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
+    rep1: VariableId,
+    rep2: VariableId,
+) -> Option<VariableId> {
+    intersections.get(&rep1)?.iter().find_map(|(intersection_r2, intersection_rep)| {
+        (*intersection_r2 == rep2).then_some(*intersection_rep)
+    })
+}
+
+/// Like [`find_intersection_rep`], but accepts optional reps and resolves them through the
+/// respective states. Returns `None` if either rep is `None` or no intersection exists.
+fn find_intersection_rep_opt(
     info1: &EqualityState<'_>,
     info2: &EqualityState<'_>,
     intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
     rep1: Option<VariableId>,
     rep2: Option<VariableId>,
 ) -> Option<VariableId> {
-    let (rep1, rep2) = (info1.find_immut(rep1?), info2.find_immut(rep2?));
-    intersections.get(&rep1)?.iter().find_map(|(intersection_r2, intersection_rep)| {
-        (*intersection_r2 == rep2).then(|| equality_state.find(*intersection_rep))
-    })
+    find_intersection_rep(intersections, info1.find_immut(rep1?), info2.find_immut(rep2?))
 }
 
 /// Preserves enum hashcons entries that exist in both branches.
@@ -378,7 +428,7 @@ fn merge_enum_hashcons<'db>(
         for &(input_rep2, input_intersection) in intersections.get(&input1).unwrap_or(&vec![]) {
             let output2 = info2.enum_hashcons.get(&(variant, input_rep2)).copied();
             let Some(output_intersection) =
-                find_intersection_rep(result, info1, info2, intersections, Some(output1), output2)
+                find_intersection_rep_opt(info1, info2, intersections, Some(output1), output2)
             else {
                 continue;
             };
@@ -388,7 +438,46 @@ fn merge_enum_hashcons<'db>(
     }
 }
 
-impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis {
+/// Preserves struct hashcons entries that exist in both branches.
+/// An entry survives if all inputs and output have intersection representatives, and info2 has the
+/// same relation.
+fn merge_struct_hashcons<'db>(
+    info1: &EqualityState<'db>,
+    info2: &EqualityState<'db>,
+    intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
+    result: &mut EqualityState<'db>,
+) {
+    for ((ty, inputs1), &output1) in info1.struct_hashcons.iter() {
+        let input_reps2: Vec<_> = inputs1.iter().map(|&v| info2.find_immut(v)).collect();
+
+        let Some(&output2) = info2.struct_hashcons.get(&(*ty, input_reps2.clone())) else {
+            continue;
+        };
+
+        let result_inputs: Option<Vec<_>> = inputs1
+            .iter()
+            .zip(&input_reps2)
+            .map(|(&v, &rep2)| {
+                find_intersection_rep(intersections, info1.find_immut(v), info2.find_immut(rep2))
+            })
+            .collect();
+        let Some(result_inputs) = result_inputs else {
+            continue;
+        };
+
+        let Some(output_intersection) = find_intersection_rep(
+            intersections,
+            info1.find_immut(output1),
+            info2.find_immut(output2),
+        ) else {
+            continue;
+        };
+
+        result.set_struct_construct(*ty, result_inputs, output_intersection);
+    }
+}
+
+impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
     type Info = EqualityState<'db>;
 
     const DIRECTION: Direction = Direction::Forward;
@@ -444,6 +533,8 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis {
 
         merge_enum_hashcons(&info1, &info2, &intersections, &mut result);
 
+        merge_struct_hashcons(&info1, &info2, &intersections, &mut result);
+
         result
     }
 
@@ -485,8 +576,29 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis {
                 );
             }
 
-            // Struct handling deferred to future PR (hashconsing)
-            Statement::StructConstruct(_) | Statement::StructDestructure(_) => {}
+            Statement::StructConstruct(struct_stmt) => {
+                // output = StructType(inputs...): track via hashcons
+                // If we've already seen the same struct type with equivalent inputs, the outputs
+                // are equal.
+                let ty = self.lowered.variables[struct_stmt.output].ty;
+                let input_reps = struct_stmt.inputs.iter().map(|i| info.find(i.var_id)).collect();
+                info.set_struct_construct(ty, input_reps, struct_stmt.output);
+            }
+
+            Statement::StructDestructure(struct_stmt) => {
+                // (outputs...) = struct_destructure(input)
+                // 1. If input was previously constructed, union outputs with original fields.
+                let input_rep = info.find(struct_stmt.input.var_id);
+                if let Some((_, field_reps)) = info.struct_hashcons_rev.get(&input_rep).cloned() {
+                    for (&output, &field_rep) in struct_stmt.outputs.iter().zip(field_reps.iter()) {
+                        info.union(output, field_rep);
+                    }
+                }
+                // 2. Record: struct_construct(outputs) == input (for future constructs).
+                let ty = self.lowered.variables[struct_stmt.input.var_id].ty;
+                let output_reps = struct_stmt.outputs.iter().map(|&v| info.find(v)).collect();
+                info.set_struct_construct(ty, output_reps, struct_stmt.input.var_id);
+            }
 
             Statement::Const(_) | Statement::Call(_) => {}
         }
