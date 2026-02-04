@@ -233,6 +233,18 @@ pub enum BlockEnd<'db> {
     },
 }
 
+impl<'db> BlockEnd<'db> {
+    /// Returns the location of this block end, if available.
+    pub fn location(&self) -> Option<LocationId<'db>> {
+        match self {
+            BlockEnd::Return(_, location) => Some(*location),
+            BlockEnd::Panic(var) => Some(var.location),
+            BlockEnd::Match { info } => Some(*info.location()),
+            BlockEnd::Goto(_, _) | BlockEnd::NotSet => None,
+        }
+    }
+}
+
 /// Lowered variable representation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable<'db> {

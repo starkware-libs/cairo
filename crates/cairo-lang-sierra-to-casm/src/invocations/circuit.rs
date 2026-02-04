@@ -1,7 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::{CellRef, Register};
-use cairo_lang_casm::{casm, casm_build_extend};
+use cairo_lang_casm::{casm, casm_build_extend, cell_ref};
 use cairo_lang_sierra::extensions::circuit::{
     CircuitConcreteLibfunc, CircuitInfo, MOD_BUILTIN_INSTANCE_SIZE, OFFSETS_PER_GATE, VALUE_SIZE,
 };
@@ -165,10 +164,10 @@ fn build_get_descriptor(
         relocations,
         [vec![ReferenceExpression {
             cells: vec![
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -4 }),
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -3 }),
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -2 }),
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
+                CellExpression::Deref(cell_ref!([ap - 4])),
+                CellExpression::Deref(cell_ref!([ap - 3])),
+                CellExpression::Deref(cell_ref!([ap - 2])),
+                CellExpression::Deref(cell_ref!([ap - 1])),
             ],
         }]
         .into_iter()]

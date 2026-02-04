@@ -3,7 +3,7 @@ use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::hints::ExternalHint;
 use cairo_lang_casm::instructions::Instruction;
-use cairo_lang_casm::{ap_change, casm, casm_build_extend, deref};
+use cairo_lang_casm::{ap_change, casm, casm_build_extend, cell_ref};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::circuit::{AddModType, MulModType};
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -315,7 +315,7 @@ pub fn create_entry_code_from_params(
         for builtin_name in helper.builtins.iter().rev() {
             helper.builtin_vars.insert(
                 *builtin_name,
-                helper.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
+                helper.ctx.add_var(CellExpression::Deref(cell_ref!([fp - builtin_offset]))),
             );
             builtin_offset += 1;
         }
@@ -392,7 +392,7 @@ impl EntryCodeHelper {
             if param_types.iter().any(|(ty, _)| ty == builtin_ty) {
                 self.builtin_vars.insert(
                     *builtin_name,
-                    self.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset]))),
+                    self.ctx.add_var(CellExpression::Deref(cell_ref!([fp - builtin_offset]))),
                 );
                 builtin_offset += 1;
                 self.builtins.push(*builtin_name);
@@ -400,7 +400,7 @@ impl EntryCodeHelper {
         }
         if !self.config.testing {
             let output_builtin_var =
-                self.ctx.add_var(CellExpression::Deref(deref!([fp - builtin_offset])));
+                self.ctx.add_var(CellExpression::Deref(cell_ref!([fp - builtin_offset])));
             self.builtin_vars.insert(BuiltinName::output, output_builtin_var);
             self.builtins.push(BuiltinName::output);
         }
@@ -514,7 +514,7 @@ impl EntryCodeHelper {
     fn process_output(&mut self, return_types: &[(GenericTypeId, i16)]) {
         let mut unprocessed_return_size = return_types.iter().map(|(_, size)| size).sum::<i16>();
         let mut next_unprocessed_deref = || {
-            let deref_cell = CellExpression::Deref(deref!([ap - unprocessed_return_size]));
+            let deref_cell = CellExpression::Deref(cell_ref!([ap - unprocessed_return_size]));
             assert!(unprocessed_return_size > 0);
             unprocessed_return_size -= 1;
             deref_cell

@@ -242,22 +242,19 @@ fn handle_extern_match<'db>(
             let mut child_builder = ctx.create_child_builder(&builder);
             let ty = flow_control_var.ty(ctx.graph);
 
-            let input_tys = match_extern_variant_arm_input_types(ctx.ctx, ty, lowered_extern_enum);
-            let mut input_vars = input_tys
-                .into_iter()
-                .map(|ty| ctx.ctx.new_var(VarRequest { ty, location }))
-                .collect_vec();
-
-            let input_vars_to_report = input_vars.clone();
+            let input_vars_to_report =
+                match_extern_variant_arm_input_types(ctx.ctx.db, &ty, lowered_extern_enum)
+                    .map(|ty| ctx.ctx.new_var(VarRequest { ty, location }))
+                    .collect_vec();
             // Bind the variant inner values to semantic variables.
-            match_extern_arm_ref_args_bind(
+            let returns = match_extern_arm_ref_args_bind(
                 ctx.ctx,
-                &mut input_vars,
+                &input_vars_to_report,
                 lowered_extern_enum,
                 &mut child_builder,
             );
 
-            let variant_expr = extern_facade_expr(ctx.ctx, ty, input_vars, location);
+            let variant_expr = extern_facade_expr(ctx.ctx, ty, returns.iter().copied(), location);
 
             // Since `extern_facade_expr` returns either
             // (a) `LoweredExpr::AtVariable` or

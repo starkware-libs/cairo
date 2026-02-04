@@ -366,16 +366,17 @@ impl<'db> LoweredExprExternEnum<'db> {
                     }
                 }
 
-                let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
-                    .into_iter()
-                    .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
-                    .collect_vec();
-                var_ids.extend(variant_vars.iter());
-
-                arm_var_ids.push(var_ids);
+                let before_returns = var_ids.len();
+                var_ids.extend(
+                    extern_facade_return_tys(ctx.db, &concrete_variant.ty)
+                        .iter()
+                        .map(|ty| ctx.new_var(VarRequest { ty: *ty, location: self.location })),
+                );
+                let returns = var_ids[before_returns..].iter().copied();
                 let maybe_input =
-                    extern_facade_expr(ctx, concrete_variant.ty, variant_vars, self.location)
+                    extern_facade_expr(ctx, concrete_variant.ty, returns, self.location)
                         .as_var_usage(ctx, &mut subscope);
+                arm_var_ids.push(var_ids);
                 let input = match maybe_input {
                     Ok(var_usage) => var_usage,
                     Err(err) => {

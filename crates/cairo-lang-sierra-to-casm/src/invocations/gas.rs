@@ -1,7 +1,7 @@
 use cairo_lang_casm::builder::{CasmBuilder, Var};
-use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
+use cairo_lang_casm::operand::DerefOrImmediate;
+use cairo_lang_casm::{casm_build_extend, cell_ref};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra_gas::core_libfunc_cost::InvocationCostInfoProvider;
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -333,7 +333,7 @@ fn add_cost_builtin_ptr_fetch_code(
     (
         pre_instructions,
         casm_builder.add_var(CellExpression::DoubleDeref(
-            CellRef { register: Register::AP, offset: (ap_change - 1).into_or_panic() },
+            cell_ref!([ap + (ap_change - 1).into_or_panic()]),
             0,
         )),
     )
