@@ -1,5 +1,6 @@
 #![allow(non_upper_case_globals)]
 
+use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::{
@@ -7,6 +8,7 @@ use cairo_lang_test_utils::{
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
+use super::{Parser, SkippedError};
 use crate::colored_printer::print_colored;
 use crate::printer::{print_partial_tree, print_tree};
 use crate::test_utils::{create_virtual_file, get_diagnostics};
@@ -120,6 +122,23 @@ fn get_syntax_root_and_diagnostics_from_inputs<'a>(
     let file_id = create_virtual_file(db, file_path, &cairo_code);
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, file_id);
     (syntax_root, diagnostics.format(db))
+}
+
+#[test]
+fn skip_until_span_excludes_leading_trivia_and_covers_all_tokens() {
+    let db = &SimpleParserDatabase::default();
+    let code = "  a b";
+    let file_id = create_virtual_file(db, "dummy_file.cairo", code);
+    let mut diagnostics = DiagnosticsBuilder::default();
+
+    let mut parser = Parser::new(db, file_id, code, &mut diagnostics);
+    let span = match parser.skip_until(Parser::is_eof) {
+        Err(SkippedError(span)) => span,
+        Ok(()) => panic!("Expected skip_until to skip tokens and return SkippedError"),
+    };
+
+    assert_eq!(span.start.as_u32(), 2);
+    assert_eq!(span.end.as_u32(), code.len() as u32);
 }
 
 cairo_lang_test_utils::test_file_test!(
