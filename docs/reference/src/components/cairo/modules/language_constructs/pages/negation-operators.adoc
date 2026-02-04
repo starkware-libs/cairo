@@ -1,7 +1,8 @@
 = Negation operators
 
 Cairo provides three negation operators: arithmetic negation (`-`), logical
-NOT (`!`), and bitwise NOT (`~`). These operators are prefix unary operators that appear before their operand.
+NOT (`!`), and bitwise NOT (`~`). These operators are prefix unary operators
+that appear before their operand.
 
 == Arithmetic Negation
 
@@ -20,7 +21,8 @@ fn main() {
 }
 ----
 
-For `felt252`, negation is performed modulo the field prime, following the field arithmetic semantics.
+For `felt252`, negation is performed modulo the field prime, following the
+field arithmetic semantics.
 
 Negating the minimum value of a signed integer type causes a panic:
 
