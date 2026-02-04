@@ -1,6 +1,6 @@
 use cairo_lang_casm::assembler::AssembledCairoProgram;
 use cairo_lang_casm::inline::CasmContext;
-use cairo_lang_casm::{casm, deref};
+use cairo_lang_casm::{casm, cell_ref};
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CairoProgramDebugInfo};
 use cairo_lang_utils::byte_array::BYTE_ARRAY_MAGIC;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
@@ -149,7 +149,7 @@ fn test_allocate_segment() {
     let program = assembled(casm! {
         [ap] = 1337, ap++;
         %{ memory[ap] = segments.add() %}
-        [ap - 1] = [[&deref!([ap])]];
+        [ap - 1] = [[&cell_ref!([ap])]];
         ret;
     });
     let (hints_dict, string_to_hint) = build_hints_dict(&program.hints);
