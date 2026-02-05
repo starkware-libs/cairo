@@ -5,8 +5,6 @@ macro_rules! debug {
         tracing::debug!(target: "optimization", $($arg)*)
     };
 }
-#[allow(unused_imports)]
-pub(crate) use debug;
 
 /// Macro for trace logging with "optimization" target.
 #[allow(unused)]
@@ -15,8 +13,6 @@ macro_rules! trace {
         tracing::trace!(target: "optimization", $($arg)*)
     };
 }
-#[allow(unused_imports)]
-pub(crate) use trace;
 
 pub mod branch_inversion;
 pub mod cancel_ops;
