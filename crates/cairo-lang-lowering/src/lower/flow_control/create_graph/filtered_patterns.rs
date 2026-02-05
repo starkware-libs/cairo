@@ -71,7 +71,7 @@ impl FilteredPatterns {
     ///
     /// For example, if the original list of patterns is `[x, _]`, then the bindings vector should
     /// be `[Bindings::single(..., x), Bindings::default()]`.
-    pub fn add_bindings(self, bindings: Vec<Bindings>) -> Self {
+    pub fn add_bindings(self, bindings: &[Bindings]) -> Self {
         Self {
             filter: self
                 .filter
