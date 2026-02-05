@@ -106,7 +106,7 @@ pub fn create_node_for_patterns<'db>(
         cache.get_or_compute(
             build_node_callback,
             graph,
-            pattern_indices.add_bindings(bindings.clone()),
+            pattern_indices.add_bindings(&bindings),
             path,
         )
     };
