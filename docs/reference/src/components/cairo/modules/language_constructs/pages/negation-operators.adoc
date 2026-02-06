@@ -1,11 +1,118 @@
 = Negation operators
 
-The following table summarizes the behavior of negation operators and which traits are used to
-overload them for other types:
+Cairo provides three negation operators: arithmetic negation (`-`), logical
+NOT (`!`), and bitwise NOT (`~`). These operators are prefix unary operators
+that appear before their operand.
+
+== Arithmetic Negation
+
+The arithmetic negation operator `-` negates numeric values.
+It is supported for signed integer types (`i8`, `i16`, `i32`, `i64`, `i128`) and `felt252`.
+Unsigned integer types do not support arithmetic negation.
+
+[source,cairo]
+----
+fn main() {
+    let value: i32 = -42;
+    let negated: i32 = -value;  // negated = 42
+
+    let x: felt252 = 5;
+    let neg_x: felt252 = -x;  // Negation modulo the field prime
+}
+----
+
+For `felt252`, negation is performed modulo the field prime, following the
+field arithmetic semantics.
+
+Negating the minimum value of a signed integer type causes a panic:
+
+[source,cairo]
+----
+fn will_panic() {
+    let min: i8 = Bounded::<i8>::MIN;
+    let result = -min;  // Panics: i8_neg Underflow
+}
+----
+
+== Logical NOT
+
+The logical NOT operator `!` inverts boolean values:
+
+[source,cairo]
+----
+fn main() {
+    let flag = true;
+    let inverted = !flag;  // inverted = false
+
+    // Common usage in conditionals
+    if !flag {
+        // Executes when flag is false
+    }
+}
+----
+
+It is commonly used in conditional expressions and assertions:
+
+[source,cairo]
+----
+fn validate_range(value: u8) {
+    assert(!(value < 10), 'Value must be >= 10');
+    assert(!(value > 100), 'Value must be <= 100');
+}
+----
+
+== Bitwise NOT
+
+The bitwise NOT operator `~` inverts all bits of an integer value:
+
+[source,cairo]
+----
+fn main() {
+    let value: u8 = 0b10101010;  // 170
+    let inverted = ~value;        // 0b01010101 = 85
+
+    // All bits are flipped
+    assert(inverted == 0b01010101_u8, 'bitwise NOT');
+
+    // Double negation returns original
+    assert(~~value == value, 'double negation');
+}
+----
+
+The bitwise NOT operator is supported for all integer types:
+
+[source,cairo]
+----
+fn bitwise_examples() {
+    let a: u8 = 0xFF;
+    let not_a = ~a;  // 0x00
+
+    let b: u32 = 0x0000FFFF;
+    let not_b = ~b;  // 0xFFFF0000
+
+    let c: u16 = 0b1111000011110000;
+    let not_c = ~c;  // 0b0000111100001111
+}
+----
+
+== Overloading
+
+All three operators can be overloaded for custom types by implementing the
+appropriate trait:
 
 [cols="1,2,2,2",options="header"]
 |===
 | Symbol | Operation   | Accepted types             | Overloading trait
-| `-`    | Negation    | `felt`, `int`, `i*` family | `std::ops::Neg`
-| `!`    | Logical NOT | `bool`                     | `std::ops::Not`
+| `-`    | Arithmetic negation | `felt252`, `i*` family     | `core::ops::Neg`
+| `!`    | Logical NOT | `bool`                     | `core::ops::Not`
+| `~`    | Bitwise NOT | Integer types              | `core::ops::BitNot`
 |===
+
+== Related
+
+- xref:operator-expressions.adoc[Operator expressions] — Overview of all operators
+- xref:operator-precedence.adoc[Operator precedence] — Evaluation order
+- xref:boolean-types.adoc[Boolean types] — The `bool` type
+- xref:integer-types.adoc[Integer types] — Signed and unsigned integer types
+- xref:felt252-type.adoc[felt252 type] — Field element type and arithmetic
+- xref:bitwise-operators.adoc[Bitwise operators] — Bitwise operations including `~`

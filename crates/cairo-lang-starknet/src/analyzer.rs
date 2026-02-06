@@ -119,9 +119,8 @@ impl AnalyzerPlugin for StorageAnalyzer {
         module_id: ModuleId<'db>,
     ) -> Vec<PluginDiagnostic<'db>> {
         let mut diagnostics = vec![];
-
-        // Analyze all the structs in the module.
         if let Ok(module_data) = module_id.module_data(db) {
+            // Analyze all the structs in the module.
             for (id, item) in module_data.structs(db).iter() {
                 // Only run the analysis on storage structs or structs with the storage attribute.
                 if item.has_attr(db, STORAGE_NODE_ATTR)
@@ -133,9 +132,7 @@ impl AnalyzerPlugin for StorageAnalyzer {
                     analyze_storage_struct(db, *id, &mut diagnostics);
                 }
             }
-        }
-        // Analyze all the enums in the module.
-        if let Ok(module_data) = module_id.module_data(db) {
+            // Analyze all the enums in the module.
             for (id, item) in module_data.enums(db).iter() {
                 if has_derive(item, db, STORE_TRAIT).is_some()
                     && !item.has_attr_with_arg(db, ALLOW_ATTR, ALLOW_NO_DEFAULT_VARIANT_ATTR)

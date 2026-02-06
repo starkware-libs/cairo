@@ -110,12 +110,8 @@ impl SimulationContext<'_> {
                         SimulationError::EditStateError(error, current_statement_id)
                     })?;
                     let libfunc = self.registry.get_libfunc(&invocation.libfunc_id)?;
-                    let (outputs, chosen_branch) = self.simulate_libfunc(
-                        current_statement_id,
-                        libfunc,
-                        inputs,
-                        current_statement_id,
-                    )?;
+                    let (outputs, chosen_branch) =
+                        self.simulate_libfunc(current_statement_id, libfunc, inputs)?;
                     let branch_info = &invocation.branches[chosen_branch];
                     state.put_vars(izip!(branch_info.results.iter(), outputs)).map_err(
                         |error| SimulationError::EditStateError(error, current_statement_id),
@@ -129,15 +125,14 @@ impl SimulationContext<'_> {
     /// inputs.
     fn simulate_libfunc(
         &self,
-        idx: StatementIdx,
+        statement_id: StatementIdx,
         libfunc: &CoreConcreteLibfunc,
         inputs: Vec<CoreValue>,
-        current_statement_id: StatementIdx,
     ) -> Result<(Vec<CoreValue>, usize), SimulationError> {
         core::simulate(
             libfunc,
             inputs,
-            || self.statement_gas_info.get(&idx).copied(),
+            || self.statement_gas_info.get(&statement_id).copied(),
             |function_id, inputs| {
                 self.simulate_function(function_id, inputs).map_err(|error| {
                     LibfuncSimulationError::FunctionSimulationError(
@@ -147,6 +142,6 @@ impl SimulationContext<'_> {
                 })
             },
         )
-        .map_err(|error| SimulationError::LibfuncSimulationError(error, current_statement_id))
+        .map_err(|error| SimulationError::LibfuncSimulationError(error, statement_id))
     }
 }

@@ -6,13 +6,13 @@ use num_traits::{One, ToPrimitive, Zero};
 
 use crate::ap_change::ApplyApChange;
 use crate::cell_expression::{CellExpression, CellOperator};
-use crate::deref_or_immediate;
 use crate::hints::Hint;
 use crate::instructions::{
     AddApInstruction, AssertEqInstruction, Blake2sCompressInstruction, CallInstruction,
     Instruction, InstructionBody, JnzInstruction, JumpInstruction, RetInstruction,
 };
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
+use crate::{cell_ref, deref_or_immediate};
 
 #[cfg(test)]
 #[path = "builder_test.rs"]
@@ -621,7 +621,7 @@ impl CasmBuilder {
 
     /// Creates an assert that would always fail.
     pub fn fail(&mut self) {
-        let cell = CellRef { offset: -1, register: Register::FP };
+        let cell = cell_ref!([fp - 1]);
         let instruction = self.next_instruction(
             InstructionBody::AssertEq(AssertEqInstruction {
                 a: cell,

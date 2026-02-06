@@ -1,3 +1,4 @@
+use cairo_lang_parser::operators::get_post_operator_precedence;
 use cairo_lang_syntax::attribute::consts::FMT_SKIP_ATTR;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -991,24 +992,29 @@ impl<'a> SyntaxNodeFormat for SyntaxNode<'a> {
             && self.parent_kind(db) == Some(SyntaxKind::StatementExpr)
         {
             let statement_node = self.parent(db).unwrap();
-            let statements_node = statement_node.parent(db).unwrap();
-            // Checking if not the last statement, as `;` may be there to prevent the block from
-            // returning the value of the current block.
-            let not_last = !is_last(&statement_node, statements_node.get_children(db));
-            let children = statement_node.get_children(db);
-            if not_last
-                && matches!(
-                    children[1].kind(db),
-                    SyntaxKind::ExprBlock
-                        | SyntaxKind::ExprIf
-                        | SyntaxKind::ExprMatch
-                        | SyntaxKind::ExprLoop
-                        | SyntaxKind::ExprWhile
-                        | SyntaxKind::ExprFor
-                )
-            {
-                return true;
+            // Keep the semicolon if the statement is not a block expression.
+            if !matches!(
+                statement_node.get_children(db)[1].kind(db),
+                SyntaxKind::ExprBlock
+                    | SyntaxKind::ExprIf
+                    | SyntaxKind::ExprMatch
+                    | SyntaxKind::ExprLoop
+                    | SyntaxKind::ExprWhile
+                    | SyntaxKind::ExprFor
+            ) {
+                return false;
             }
+            let siblings = statement_node.parent(db).unwrap().get_children(db);
+            let position = siblings.iter().rposition(|s| *s == statement_node).unwrap();
+            // Keep the semicolon if the statement is the last.
+            let Some(next_sibling) = siblings.get(position + 1) else {
+                return false;
+            };
+            // Keep the semicolon if the next statement starts with a post operator.
+            return next_sibling
+                .tokens(db)
+                .next()
+                .is_none_or(|token| get_post_operator_precedence(token.kind(db)).is_none());
         }
         if self.kind(db) == SyntaxKind::TerminalColonColon
             && self.parent_kind(db) == Some(SyntaxKind::PathSegmentWithGenericArgs)

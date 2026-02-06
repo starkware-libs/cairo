@@ -5,12 +5,13 @@ use cairo_lang_test_utils::test;
 
 use super::{BinOpOperand, DerefOrImmediate};
 use crate::ap_change::{ApChange, ApChangeError, ApplyApChange};
-use crate::operand::{CellRef, Operation, Register, ResOperand};
+use crate::cell_ref;
+use crate::operand::{Operation, ResOperand};
 
 #[test]
 fn test_res_operand_ap_change() {
-    let fp_based_operand = CellRef { register: Register::FP, offset: -3 };
-    let ap_based_operand = CellRef { register: Register::AP, offset: 3 };
+    let fp_based_operand = cell_ref!([fp - 3]);
+    let ap_based_operand = cell_ref!([ap + 3]);
 
     let operand = ResOperand::BinOp(BinOpOperand {
         op: Operation::Mul,
@@ -30,7 +31,7 @@ fn test_res_operand_ap_change() {
 
 #[test]
 fn test_overflow() {
-    let ap_based_operand = CellRef { register: Register::AP, offset: i16::MIN };
+    let ap_based_operand = cell_ref!([ap + i16::MIN]);
 
     assert_eq!(
         apply_ap_change(ap_based_operand, ApChange::Known(1)),

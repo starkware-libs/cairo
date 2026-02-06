@@ -255,7 +255,7 @@ fn get_generated_contract_module<'db>(
         Some(ModuleItemId::Submodule(generated_module_id)) => {
             Ok(ModuleId::Submodule(generated_module_id))
         }
-        _ => anyhow::bail!(format!("Failed to get generated module {}.", contract_name.long(db))),
+        _ => anyhow::bail!("Failed to get generated module {}.", contract_name.long(db)),
     }
 }
 

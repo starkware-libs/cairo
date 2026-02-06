@@ -47,7 +47,7 @@ macro_rules! ref_expr_extend {
     ($cells:ident) => {};
     ($cells:ident, [$a:ident $($op:tt $offset:expr)?] $(, $tok:tt)*) => {
         $cells.push(
-            cairo_lang_casm::cell_expression::CellExpression::Deref(cairo_lang_casm::deref!([$a $($op $offset)?]))
+            cairo_lang_casm::cell_expression::CellExpression::Deref(cairo_lang_casm::cell_ref!([$a $($op $offset)?]))
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
@@ -55,20 +55,20 @@ macro_rules! ref_expr_extend {
         $cells.push(
             cairo_lang_casm::cell_expression::CellExpression::BinOp {
                 op: $crate::cell_expr_operator!($operator),
-                a: cairo_lang_casm::deref!([$a $($op $offset)?]),
+                a: cairo_lang_casm::cell_ref!([$a $($op $offset)?]),
                 b: cairo_lang_casm::deref_or_immediate!($b),
         });
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?]] $(, $tok:tt)*) => {
         $cells.push(
-            cairo_lang_casm::cell_expression::CellExpression::DoubleDeref(cairo_lang_casm::deref!([$a $($op $offset)?]), 0)
+            cairo_lang_casm::cell_expression::CellExpression::DoubleDeref(cairo_lang_casm::cell_ref!([$a $($op $offset)?]), 0)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?] + $offset2:expr] $(, $tok:tt)*) => {
         $cells.push(
-            cairo_lang_casm::cell_expression::CellExpression::DoubleDeref(cairo_lang_casm::deref!([$a $($op $offset)?]), $offset2)
+            cairo_lang_casm::cell_expression::CellExpression::DoubleDeref(cairo_lang_casm::cell_ref!([$a $($op $offset)?]), $offset2)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };

@@ -6,6 +6,8 @@ use num_integer::Integer;
 use num_traits::{ToPrimitive, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
+const MIN_PADDED_CODE_SIZE: usize = 256;
+
 /// Compresses a vector of `BigUintAsHex` representing felts into `result`, by creating a code
 /// mapping, and then compressing several original code words into the given felts.
 pub fn compress(values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>) {
@@ -16,7 +18,7 @@ pub fn compress(values: &[BigUintAsHex], result: &mut Vec<BigUintAsHex>) {
     }
     // Limiting the number of possible encodings by working only on powers of 2, as well as only
     // starting at 256 (or 8 bits per code word).
-    let padded_code_size = std::cmp::max(256, code.len()).next_power_of_two();
+    let padded_code_size = std::cmp::max(MIN_PADDED_CODE_SIZE, code.len()).next_power_of_two();
     result.extend([code.len(), padded_code_size - code.len()].map(BigUintAsHex::from));
     result.extend(code.keys().copied().cloned());
     result.push(values.len().into());
@@ -39,6 +41,9 @@ pub fn decompress(packed_values: &[BigUintAsHex]) -> Option<Vec<&BigUint>> {
     let (code, packed_values) = packed_values.split_at(code_size);
     let (packed_values, mut remaining_unpacked_size) = pop_usize(packed_values)?;
     let padded_code_size = code_size.checked_add(padding_size)?;
+    if padded_code_size < MIN_PADDED_CODE_SIZE || !padded_code_size.is_power_of_two() {
+        return None;
+    }
     let words_per_felt = words_per_felt(padded_code_size);
     require(remaining_unpacked_size <= packed_values.len() * words_per_felt)?;
     let mut result = Vec::with_capacity(remaining_unpacked_size);

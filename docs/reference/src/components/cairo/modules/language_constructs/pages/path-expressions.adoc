@@ -1,9 +1,54 @@
 = Path expressions
 
-A path expression is a standalone xref:path.adoc[concrete path].
+A path expression is a standalone xref:path.adoc[concrete path] used as an
+expression.
 It resolves to one of these items:
 
-* A local variable. In this case the path is a single identifier.
-* A xref:constant-items.adoc[constant item].
-* A generic const parameter. In this case the path is a single identifier.
-  These are still unsupported.
+* A local variable
+* A xref:constant-items.adoc[constant item]
+* A generic const parameter
+
+== Local Variables
+
+The simplest path expression is a single identifier referring to a local
+variable:
+
+[source,cairo]
+----
+const fn unwrap_or<+Destruct<T>>(self: Option<T>, default: T) -> T {
+    match self {
+        Some(x) => x,
+        None => default,
+    }
+}
+----
+
+Here `x` and `default` are path expressions that evaluate to local variables.
+
+Variables bound in patterns are also local variables. In the example above,
+`x` is bound by the pattern `Some(x)`.
+
+== Constants
+
+A path expression can refer to a constant item using a qualified path:
+
+[source,cairo]
+----
+mod config {
+    pub const MAX_SIZE: u32 = 100;
+}
+
+fn check_size(size: u32) -> bool {
+    size <= config::MAX_SIZE
+}
+----
+
+The path `config::MAX_SIZE` is a path expression that evaluates to the constant
+value defined in the `config` module.
+
+== Related
+
+- xref:path.adoc[Paths] — Path syntax and resolution
+- xref:variables.adoc[Variables] — Variable declarations
+- xref:constant-items.adoc[Constants] — Constant items
+- xref:expressions.adoc[Expressions] — Expression types

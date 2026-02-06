@@ -4,6 +4,7 @@ use assert_matches::assert_matches;
 use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::cell_ref;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::circuit::CircuitInfo;
@@ -616,8 +617,7 @@ impl CompiledInvocationBuilder<'_> {
     ) -> Result<[&CellExpression; COUNT], InvocationError> {
         let refs = self.try_get_refs::<COUNT>()?;
         let mut last_err = None;
-        const FAKE_CELL: CellExpression =
-            CellExpression::Deref(CellRef { register: Register::AP, offset: 0 });
+        const FAKE_CELL: CellExpression = CellExpression::Deref(cell_ref!([ap]));
         // TODO(orizi): Use `refs.try_map` once it is a stable feature.
         let result = refs.map(|r| match r.try_unpack_single() {
             Ok(cell) => cell,
