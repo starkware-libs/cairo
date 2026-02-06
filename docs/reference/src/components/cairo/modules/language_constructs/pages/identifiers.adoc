@@ -1,20 +1,53 @@
 = Identifiers
 
-An identifier is a sequence of one or more alphanumeric characters and underscores that is used to
-name a language construct.
-The exceptions are:
+An identifier is a sequence of alphanumeric characters and underscores used to
+name language constructs.
 
-- A single underscore character does not form an identifier.
-Using a single underscore instead of an identifier means no identifier is given to this construct.
-- Cairo xref:keywords.adoc[keywords] cannot be used as identifiers.
+== Rules
 
-[NOTE]
-====
-Identifiers starting with an underscore are typically used to indicate an identifier that
-is intentionally unused, and will silence the unused warning.
-====
+- Must start with a letter or underscore
+- Can contain letters, digits, and underscores
+- A single underscore `_` is not an identifier (means "no identifier")
+- Cairo xref:keywords.adoc[keywords] cannot be used as identifiers
 
-== Case sensitivity
+== Examples
 
-Cairo is a _case-sensitive_ language.
-This means that identifiers that differ by case of one or more of their characters are distinct.
+[source,cairo]
+----
+fn main() {
+    let variable_name = 10;
+    let _unused = 20;  // Underscore prefix for unused variables
+    let value123 = 30;
+}
+----
+
+== Case Sensitivity
+
+Cairo is case-sensitive. Identifiers that differ by case are distinct:
+
+[source,cairo]
+----
+fn main() {
+    let value = 1;
+    let Value = 2;  // Different identifier
+    let VALUE = 3;  // Also different
+}
+----
+
+== Unused Variables
+
+Identifiers starting with an underscore indicate intentionally unused variables
+and silence unused warnings:
+
+[source,cairo]
+----
+fn main() {
+    let _unused = 42;  // No warning
+    let used = 10;     // Warning if not used
+}
+----
+
+== Related
+
+- xref:keywords.adoc[Keywords] — Reserved identifiers
+- xref:let-statement.adoc[Let statement] — Variable declarations
