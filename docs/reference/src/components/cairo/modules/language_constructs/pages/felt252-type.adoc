@@ -1,35 +1,91 @@
 = Felt252 type
 
-Field elements have the property of intentionally "wrapping around" when their value exceeds the
-specified range, using modular arithmetic.
+The `felt252` type represents a field element in Cairo's prime field. Field
+elements use modular arithmetic and "wrap around" when their value exceeds the
+field prime.
 
-== Code Example
-The following example demonstrates how the maximum value of `felt252` behaves when adding `1`.
+== Characteristics
+
+- **Range**: 0 to P-1, where P = 2^251 + 17 * 2^192 + 1
+- **Default type**: When no type is specified, Cairo uses `felt252`
+- **Modular arithmetic**: Operations wrap around modulo P
+- **Size**: 252 bits
+
+== Syntax
+
+[source,cairo]
+----
+let x: felt252 = 42;
+let y = 100;  // Type inferred as felt252
+----
+
+== Modular Arithmetic
+
+The following example demonstrates how the maximum value of `felt252` behaves
+when adding `1`:
 
 [source,cairo]
 ----
 fn main() {
-    // max value of felt252
-    let x: felt252 = 3618502788666131213697322783095070105623107215331596699973092056135872020480;
-    let y: felt252 = 1;
-    assert(x + y == 0, 'P == 0 (mod P)');
+    // Maximum value of felt252 (P - 1)
+    let max: felt252 =
+        3618502788666131213697322783095070105623107215331596699973092056135872020480;
+    let one: felt252 = 1;
+
+    // Adding 1 wraps to 0
+    assert(max + one == 0, 'P == 0 (mod P)');
 }
 ----
 
-== Simplifying the Code
-Since `felt252` is the default data type, there's no need to explicitly specify it in simple cases.
-Here’s the simplified version:
+== Operations
+
+All standard arithmetic operations are supported:
 
 [source,cairo]
 ----
 fn main() {
-    // max value of felt252
-    let x = 3618502788666131213697322783095070105623107215331596699973092056135872020480;
-    let y = 1;
-    assert(x + y == 0, 'P == 0 (mod P)');
+    let a: felt252 = 12;
+    let b: felt252 = 3;
+
+    let sum = a + b;        // 15
+    let diff = a - b;       // 9
+    let prod = a * b;       // 36
+    let quot = a / b;       // 4 (field division)
 }
 ----
 
-== Conclusion
-The `felt252` data type uses modular arithmetic to ensure that all values remain within the allowed
-range. This makes it ideal for applications requiring reliable computation in finite fields.
+== Negation
+
+Arithmetic negation is performed modulo the field prime:
+
+[source,cairo]
+----
+fn main() {
+    let x: felt252 = 5;
+    let neg_x: felt252 = -x;  // Negation modulo P
+}
+----
+
+== Conversions
+
+Converting between `felt252` and integer types:
+
+[source,cairo]
+----
+use core::traits::TryInto;
+
+fn main() {
+    let f: felt252 = 42;
+    let i: u32 = f.try_into().unwrap();  // felt252 -> u32
+
+    let j: u32 = 100;
+    let g: felt252 = j.into();  // u32 -> felt252
+}
+----
+
+== Related
+
+- xref:integer-types.adoc[Integer types] — Fixed-size integer types
+- xref:literal-expressions.adoc[Literal expressions] — Numeric literals
+- xref:arithmetic-and-logical-operators.adoc[Arithmetic operators] —
+Operations on felt252
