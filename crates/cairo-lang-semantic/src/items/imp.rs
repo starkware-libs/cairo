@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::hash::Hash;
 use std::sync::Arc;
-use std::{mem, panic, vec};
+use std::mem;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
