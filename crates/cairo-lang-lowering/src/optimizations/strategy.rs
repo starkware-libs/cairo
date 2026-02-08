@@ -47,6 +47,7 @@ pub enum OptimizationPhase<'db> {
     ReturnOptimization,
     SplitStructs,
     TrimUnreachable,
+    VariableForwarding,
     GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
     /// after it, so it is convenient to treat it as an optimization.
@@ -103,6 +104,9 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
+            OptimizationPhase::VariableForwarding => {
+                super::variable_forwarding::variable_forwarding(db, lowered)
+            }
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
             OptimizationPhase::Validate => validate(lowered).unwrap_or_else(|err| {
@@ -201,6 +205,8 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::Reboxing,
                 OptimizationPhase::CancelOps,
+                OptimizationPhase::VariableForwarding,
+                OptimizationPhase::ReorderStatements,
                 OptimizationPhase::ReorganizeBlocks,
                 // Performing CSE here after blocks are the most contiguous, to reach maximum
                 // effect.

@@ -171,8 +171,8 @@ End:
 
 blk4:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v11, v11)
-  (v13: core::felt252) <- core::felt252_add(v12, v11)
+  (v12: core::felt252) <- core::felt252_add(v4, v4)
+  (v13: core::felt252) <- core::felt252_add(v12, v4)
 End:
   Goto(blk5, {})
 
