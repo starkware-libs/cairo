@@ -4,8 +4,6 @@
 //! primitives, such as signatures and L1 <-> L2 messages.
 
 use core::debug::PrintTrait;
-#[allow(unused_imports)]
-use core::integer::{U128TryIntoNonZero, U256TryIntoFelt252, u128_safe_divmod};
 use core::serde::Serde;
 use core::traits::{Into, TryInto};
 
