@@ -33,3 +33,4 @@ pub mod strategy;
 pub mod trim_unreachable;
 pub mod validate;
 pub mod var_renamer;
+pub mod variable_forwarding;

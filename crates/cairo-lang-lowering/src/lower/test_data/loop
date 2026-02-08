@@ -3439,18 +3439,17 @@ End:
 blk3:
 Statements:
   (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
-  (v14: core::result::Result::<(), core::integer::u32>) <- Result::Err(v8)
-  (v15: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v14)
-  (v16: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v15)
+  (v14: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v6)
+  (v15: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v14)
 End:
-  Return(v2, v13, v16)
+  Return(v2, v13, v15)
 
 blk4:
 Statements:
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v18: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v17)
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v17: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v16)
 End:
-  Return(v4, v5, v18)
+  Return(v4, v5, v17)
 
 
 Final lowering of specialized call "test::foo[30-63]":
@@ -3482,18 +3481,17 @@ End:
 blk3:
 Statements:
   (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
-  (v14: core::result::Result::<(), core::integer::u32>) <- Result::Err(v8)
-  (v15: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v14)
-  (v16: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v15)
+  (v14: (core::result::Result::<(), core::integer::u32>,)) <- struct_construct(v6)
+  (v15: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Ok(v14)
 End:
-  Return(v2, v13, v16)
+  Return(v2, v13, v15)
 
 blk4:
 Statements:
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v18: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v17)
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v17: core::panics::PanicResult::<(core::result::Result::<(), core::integer::u32>,)>) <- PanicResult::Err(v16)
 End:
-  Return(v4, v5, v18)
+  Return(v4, v5, v17)
 
 //! > lowering_diagnostics
 
