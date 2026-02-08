@@ -3442,7 +3442,6 @@ enum_match<cairo_level_tests::components::mintable::mintable::Event>([191]) { };
 F24_B15:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([192]) -> ([240]);
-branch_align() -> ();
 store_temp<GasBuiltin>([177]) -> ([177]);
 redeposit_gas([177]) -> ([241]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([240]) -> ([242], [243]);
@@ -3942,7 +3941,6 @@ enum_match<cairo_level_tests::components::mintable::mintable::Event>([59]) { };
 F27_B4:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([60]) -> ([108]);
-branch_align() -> ();
 store_temp<GasBuiltin>([45]) -> ([45]);
 redeposit_gas([45]) -> ([109]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([108]) -> ([110], [111]);
@@ -4787,7 +4785,6 @@ enum_match<cairo_level_tests::components::mintable::mintable::Event>([207]) { };
 F32_B14:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([208]) -> ([256]);
-branch_align() -> ();
 store_temp<GasBuiltin>([192]) -> ([192]);
 redeposit_gas([192]) -> ([257]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([256]) -> ([258], [259]);
@@ -5174,7 +5171,6 @@ enum_match<cairo_level_tests::components::mintable::mintable::Event>([72]) { };
 F33_B3:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([73]) -> ([121]);
-branch_align() -> ();
 store_temp<GasBuiltin>([53]) -> ([53]);
 redeposit_gas([53]) -> ([122]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([121]) -> ([123], [124]);
@@ -5516,7 +5512,6 @@ enum_match<cairo_level_tests::components::mintable::mintable::Event>([104]) { };
 F34_B4:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([105]) -> ([153]);
-branch_align() -> ();
 store_temp<GasBuiltin>([89]) -> ([89]);
 redeposit_gas([89]) -> ([154]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([153]) -> ([155], [156]);

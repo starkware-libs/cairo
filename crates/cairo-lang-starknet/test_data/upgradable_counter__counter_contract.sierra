@@ -823,7 +823,6 @@ jump() { F8_B2() };
 F8_B1:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([46]) -> ([65]);
-branch_align() -> ();
 store_temp<GasBuiltin>([33]) -> ([33]);
 redeposit_gas([33]) -> ([66]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([65]) -> ([67], [68]);
@@ -1004,7 +1003,6 @@ jump() { F10_B2() };
 F10_B1:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([46]) -> ([65]);
-branch_align() -> ();
 store_temp<GasBuiltin>([33]) -> ([33]);
 redeposit_gas([33]) -> ([66]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([65]) -> ([67], [68]);
@@ -1208,7 +1206,6 @@ jump() { F11_B2() };
 F11_B1:
 branch_align() -> ();
 enum_match<cairo_level_tests::components::upgradable::upgradable::Event>([72]) -> ([91]);
-branch_align() -> ();
 store_temp<GasBuiltin>([53]) -> ([53]);
 redeposit_gas([53]) -> ([92]);
 struct_deconstruct<cairo_level_tests::components::upgradable::upgradable::ContractUpgraded>([91]) -> ([93], [94]);

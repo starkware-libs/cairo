@@ -2606,7 +2606,6 @@ snapshot_take<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([190]) -> ();
 store_temp<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([191]) -> ([191]);
 enum_match<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([191]) -> ([192]);
-branch_align() -> ();
 array_new<felt252>() -> ([193]);
 array_new<felt252>() -> ([194]);
 const_as_immediate<Const<felt252, 1190150164469695256489056864806728873972977054475874954637603409982778368090>>() -> ([195]);
@@ -3081,7 +3080,6 @@ snapshot_take<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([53]) -> ();
 store_temp<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([54]) -> ([54]);
 enum_match<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([54]) -> ([55]);
-branch_align() -> ();
 array_new<felt252>() -> ([56]);
 array_new<felt252>() -> ([57]);
 const_as_immediate<Const<felt252, 1190150164469695256489056864806728873972977054475874954637603409982778368090>>() -> ([58]);
@@ -3612,7 +3610,6 @@ snapshot_take<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract
 drop<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([98]) -> ();
 store_temp<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([99]) -> ([99]);
 enum_match<cairo_level_tests::contracts::with_erc20_mini::erc20_mini_contract::Event>([99]) -> ([100]);
-branch_align() -> ();
 array_new<felt252>() -> ([101]);
 array_new<felt252>() -> ([102]);
 const_as_immediate<Const<felt252, 1190150164469695256489056864806728873972977054475874954637603409982778368090>>() -> ([103]);

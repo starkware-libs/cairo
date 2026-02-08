@@ -498,25 +498,27 @@ fn generate_match_code<'db>(
         program::GenInvocation { libfunc_id, args, branches },
     )));
 
-    let ap_tracking_enabled = context.get_ap_tracking();
+    let starting_cairo_location = context.curr_cairo_location.take();
+    let ap_tracking_state = context.get_ap_tracking();
+    // No need for `branch_align` if there's only one arm - since there's only one path.
+    let require_branch_aligns = arms.len() > 1;
 
-    let match_block_location = context.curr_cairo_location.take();
     block_gen_stack.push(BlockGenStackElement::Statement(end_label));
     // Generate the blocks.
     for (i, MatchArm { arm_selector: _, block_id, var_ids: _ }) in enumerate(arms).rev() {
         block_gen_stack.push(BlockGenStackElement::Block(*block_id));
-        block_gen_stack.push(BlockGenStackElement::Statement(simple_basic_statement(
-            branch_align_libfunc_id(context.get_db()),
-            &[],
-            &[],
-        )));
+        if require_branch_aligns {
+            block_gen_stack.push(BlockGenStackElement::Statement(simple_basic_statement(
+                branch_align_libfunc_id(context.get_db()),
+                &[],
+                &[],
+            )));
+        }
         if i > 0 {
             block_gen_stack.push(BlockGenStackElement::Statement(arm_labels[i - 1].0.clone()));
         }
-        block_gen_stack.push(BlockGenStackElement::Config {
-            starting_cairo_location: match_block_location,
-            ap_tracking_state: ap_tracking_enabled,
-        });
+        block_gen_stack
+            .push(BlockGenStackElement::Config { starting_cairo_location, ap_tracking_state });
     }
     Ok(())
 }

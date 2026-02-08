@@ -274,3 +274,55 @@ Statements:
   (v11: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
   Return(v11)
+
+//! > ==========================================================================
+
+//! > Test single arm match (no branch_align needed).
+
+//! > test_runner_name
+block_generator_test
+
+//! > function_code
+fn foo(x: SingleVariant) -> felt252 {
+    match x {
+        SingleVariant::Only(v) => v + 1,
+    }
+}
+
+//! > module_code
+enum SingleVariant {
+    Only: felt252,
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+enum_match<test::SingleVariant>([0]) -> ([1])
+const_as_immediate<Const<felt252, 1>>() -> ([2])
+felt252_add([1], [2]) -> ([3])
+PushValues([3]: felt252) -> ([3])
+return([3])
+label_test::foo::0:
+
+//! > lowering_flat
+Parameters: v0: test::SingleVariant
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    SingleVariant::Only(v1) => blk1,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 1
+  (v3: core::felt252) <- core::felt252_add(v1, v2)
+End:
+  Return(v3)

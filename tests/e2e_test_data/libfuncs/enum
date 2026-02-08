@@ -68,14 +68,12 @@ type test::SingleVariant = Enum<ut@test::SingleVariant, felt252> [storable: true
 type Const<felt252, 0> = Const<felt252, 0> [storable: false, drop: false, dup: false, zero_sized: false];
 
 libfunc enum_match<test::SingleVariant> = enum_match<test::SingleVariant>;
-libfunc branch_align = branch_align;
 libfunc drop<felt252> = drop<felt252>;
 libfunc const_as_immediate<Const<felt252, 0>> = const_as_immediate<Const<felt252, 0>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
 F0:
 enum_match<test::SingleVariant>([0]) -> ([1]);
-branch_align() -> ();
 drop<felt252>([1]) -> ();
 const_as_immediate<Const<felt252, 0>>() -> ([2]);
 store_temp<felt252>([2]) -> ([2]);
@@ -534,13 +532,11 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 type test::Single = Enum<ut@test::Single, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc enum_boxed_match<test::Single> = enum_boxed_match<test::Single>;
-libfunc branch_align = branch_align;
 libfunc enum_init<test::BoxedSingle, 0> = enum_init<test::BoxedSingle, 0>;
 libfunc store_temp<test::BoxedSingle> = store_temp<test::BoxedSingle>;
 
 F0:
 enum_boxed_match<test::Single>([0]) -> ([1]);
-branch_align() -> ();
 enum_init<test::BoxedSingle, 0>([1]) -> ([2]);
 store_temp<test::BoxedSingle>([2]) -> ([2]);
 return([2]);
@@ -806,7 +802,6 @@ libfunc enum_init<test::Single, 0> = enum_init<test::Single, 0>;
 libfunc store_temp<test::Single> = store_temp<test::Single>;
 libfunc into_box<test::Single> = into_box<test::Single>;
 libfunc enum_boxed_match<test::Single> = enum_boxed_match<test::Single>;
-libfunc branch_align = branch_align;
 libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
 libfunc unbox<felt252> = unbox<felt252>;
 libfunc const_as_immediate<Const<felt252, 123>> = const_as_immediate<Const<felt252, 123>>;
@@ -818,7 +813,6 @@ enum_init<test::Single, 0>([0]) -> ([1]);
 store_temp<test::Single>([1]) -> ([1]);
 into_box<test::Single>([1]) -> ([2]);
 enum_boxed_match<test::Single>([2]) -> ([3]);
-branch_align() -> ();
 store_temp<Box<felt252>>([3]) -> ([3]);
 unbox<felt252>([3]) -> ([4]);
 const_as_immediate<Const<felt252, 123>>() -> ([5]);
@@ -1281,13 +1275,11 @@ type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: 
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc enum_boxed_match<Snapshot<test::SingleArray>> = enum_boxed_match<Snapshot<test::SingleArray>>;
-libfunc branch_align = branch_align;
 libfunc enum_init<test::BoxedSingleArray, 0> = enum_init<test::BoxedSingleArray, 0>;
 libfunc store_temp<test::BoxedSingleArray> = store_temp<test::BoxedSingleArray>;
 
 F0:
 enum_boxed_match<Snapshot<test::SingleArray>>([0]) -> ([1]);
-branch_align() -> ();
 enum_init<test::BoxedSingleArray, 0>([1]) -> ([2]);
 store_temp<test::BoxedSingleArray>([2]) -> ([2]);
 return([2]);
