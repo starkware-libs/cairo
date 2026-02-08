@@ -1,4 +1,3 @@
-use std::ops::DerefMut;
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
