@@ -66,10 +66,10 @@ impl FilteredPatterns {
         self.filter.into_iter().next()
     }
 
-    /// Adds bindings to the filter. The length of the vector must be equal to the number of
+    /// Adds bindings to the filter. The length of the slice must be equal to the number of
     /// patterns in the original list of patterns.
     ///
-    /// For example, if the original list of patterns is `[x, _]`, then the bindings vector should
+    /// For example, if the original list of patterns is `[x, _]`, then the bindings slice should
     /// be `[Bindings::single(..., x), Bindings::default()]`.
     pub fn add_bindings(self, bindings: &[Bindings]) -> Self {
         Self {
