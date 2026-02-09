@@ -106,5 +106,5 @@ fn example(x: u32) {
 
 - xref:boolean-operators.adoc[Boolean operators] — Logical and bitwise operations
 - xref:negation-operators.adoc[Negation operators] — The `!` operator
-- xref:comparison-operators.adoc[Comparison operators] — Operators that return `bool`
+- xref:equality-operators.adoc[Equality operators] — Operators that return `bool`
 - xref:if-expressions.adoc[If expressions] — Conditional branching
