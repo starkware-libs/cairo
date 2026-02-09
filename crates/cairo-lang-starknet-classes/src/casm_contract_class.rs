@@ -197,12 +197,16 @@ fn bytecode_hash_node<H: StarkHash>(
         }
         NestedIntList::Node(nodes) => {
             // Compute `1 + poseidon(len0, hash0, len1, hash1, ...)`.
-            let inner_nodes =
-                nodes.iter().map(|node| bytecode_hash_node::<H>(iter, node)).collect_vec();
-            let hash = H::hash_array(
-                &inner_nodes.iter().flat_map(|(len, hash)| [(*len).into(), *hash]).collect_vec(),
-            ) + 1;
-            (inner_nodes.iter().map(|(len, _)| len).sum(), hash)
+            let mut total_len = 0usize;
+            let mut hash_elements = Vec::with_capacity(nodes.len() * 2);
+            for node in nodes {
+                let (len, hash) = bytecode_hash_node::<H>(iter, node);
+                total_len += len;
+                hash_elements.push(len.into());
+                hash_elements.push(hash);
+            }
+            let hash = H::hash_array(&hash_elements) + 1;
+            (total_len, hash)
         }
     }
 }
