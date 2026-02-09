@@ -89,7 +89,7 @@ impl<'db> Rebuilder<'db> for Context {
 /// Implementation of the [Context::set_used] method, used directly on the members, so can be
 /// partially mutable.
 fn set_used_impl(
-    dest_to_srcs: &Vec<Vec<VariableId>>,
+    dest_to_srcs: &[Vec<VariableId>],
     var_representatives: &mut Vec<Option<VariableId>>,
     variable_used: &mut Vec<bool>,
     var: VariableId,
@@ -106,7 +106,7 @@ fn set_used_impl(
 /// Implementation of the [Context::map_var_id] method, used directly on the members, so can be
 /// partially mutable.
 fn map_var_id_impl(
-    dest_to_srcs: &Vec<Vec<VariableId>>,
+    dest_to_srcs: &[Vec<VariableId>],
     var_representatives: &mut Vec<Option<VariableId>>,
     var: VariableId,
 ) -> VariableId {

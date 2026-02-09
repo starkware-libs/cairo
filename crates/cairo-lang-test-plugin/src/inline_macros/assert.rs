@@ -12,6 +12,7 @@ use cairo_lang_parser::macro_helpers::AsLegacyInlineMacro;
 use cairo_lang_syntax::node::ast::WrappedArgList;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
 use indoc::formatdoc;
+use itertools::Itertools;
 use salsa::Database;
 
 /// The type of value the comparison function expects to find.
@@ -47,8 +48,8 @@ trait CompareAssertionPlugin: NamedPlugin {
         else {
             return unsupported_bracket_diagnostic(db, &legacy_inline_macro, syntax.stable_ptr(db));
         };
-        let arguments = arguments_syntax.arguments(db).elements_vec(db);
-        if arguments.len() < 2 {
+        let mut arguments = arguments_syntax.arguments(db).elements(db);
+        let Some((lhs, rhs)) = arguments.next_tuple() else {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error(
@@ -56,10 +57,9 @@ trait CompareAssertionPlugin: NamedPlugin {
                     format!("Macro `{}` requires at least 2 arguments.", Self::NAME),
                 )],
             };
-        }
-        let (lhs, rest) = arguments.split_first().unwrap();
-        let (rhs, format_args) = rest.split_first().unwrap();
-        let Some(lhs) = try_extract_unnamed_arg(db, lhs) else {
+        };
+        let format_args = arguments;
+        let Some(lhs) = try_extract_unnamed_arg(db, &lhs) else {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error_with_inner_span(
@@ -70,7 +70,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                 )],
             };
         };
-        let Some(rhs) = try_extract_unnamed_arg(db, rhs) else {
+        let Some(rhs) = try_extract_unnamed_arg(db, &rhs) else {
             return InlinePluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic::error_with_inner_span(
@@ -116,7 +116,7 @@ trait CompareAssertionPlugin: NamedPlugin {
             ]
             .into(),
         ));
-        if format_args.is_empty() {
+        if format_args.len() == 0 {
             builder.add_str(&formatdoc!(
                 "core::result::ResultTrait::<(), core::fmt::Error>::unwrap(writeln!({f}, \
                  \".\"));\n",
@@ -144,8 +144,7 @@ trait CompareAssertionPlugin: NamedPlugin {
                         "args".to_string(),
                         RewriteNode::interspersed(
                             format_args
-                                .iter()
-                                .map(RewriteNode::from_ast_trimmed),
+                                .map(|arg| RewriteNode::from_ast_trimmed(&arg)),
                             RewriteNode::text(", "),
                         ),
                     ),

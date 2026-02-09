@@ -1,4 +1,5 @@
 use cairo_lang_filesystem::ids::SmolStrId;
+use itertools::Itertools;
 use salsa::Database;
 
 use super::ast::{
@@ -14,7 +15,7 @@ use super::ast::{
 use super::ids::SyntaxStablePtrId;
 use super::kind::SyntaxKind;
 use super::{SyntaxNode, Terminal, TypedStablePtr, TypedSyntaxNode};
-use crate::node::ast::{Attribute, AttributeList};
+use crate::node::ast::{Attribute, AttributeList, PathSegment};
 use crate::node::green::GreenNodeDetails;
 
 #[cfg(test)]
@@ -268,8 +269,8 @@ impl<'a> GenericParamEx<'a> for ast::GenericParam<'a> {
 pub fn is_single_arg_attr(db: &dyn Database, attr: &Attribute<'_>, arg_name: &str) -> bool {
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
-            matches!(&args.arguments(db).elements_vec(db)[..],
-                    [arg] if arg.as_syntax_node().get_text_without_trivia(db).long(db) == arg_name)
+            matches!(args.arguments(db).elements(db).exactly_one(),
+                    Ok(arg) if arg.as_syntax_node().get_text_without_trivia(db).long(db) == arg_name)
         }
         OptionArgListParenthesized::Empty(_) => false,
     }
@@ -736,22 +737,22 @@ pub trait IsDependentType<'db> {
 
 impl<'a> IsDependentType<'a> for ast::ExprPath<'a> {
     fn is_dependent_type(&self, db: &'a dyn Database, identifiers: &[SmolStrId<'a>]) -> bool {
-        let segments = self.segments(db).elements_vec(db);
-        if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
-            identifiers.contains(&arg_segment.identifier(db))
-        } else {
-            segments.into_iter().any(|segment| {
-                let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
-                    return false;
-                };
-                with_generics.generic_args(db).generic_args(db).elements(db).any(|arg| {
-                    match arg {
-                        ast::GenericArg::Named(named) => named.value(db),
-                        ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
-                    }
-                    .is_dependent_type(db, identifiers)
-                })
+        let is_non_single_dependent = |segment: PathSegment<'a>| {
+            let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
+                return false;
+            };
+            with_generics.generic_args(db).generic_args(db).elements(db).any(|arg| {
+                match arg {
+                    ast::GenericArg::Named(named) => named.value(db),
+                    ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
+                }
+                .is_dependent_type(db, identifiers)
             })
+        };
+        match self.segments(db).elements(db).exactly_one() {
+            Ok(ast::PathSegment::Simple(simple)) => identifiers.contains(&simple.identifier(db)),
+            Ok(other) => is_non_single_dependent(other),
+            Err(segments) => segments.into_iter().any(is_non_single_dependent),
         }
     }
 }

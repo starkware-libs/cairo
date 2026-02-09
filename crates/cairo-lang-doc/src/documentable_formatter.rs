@@ -589,8 +589,7 @@ impl<'db> HirDisplay<'db> for MacroDeclarationId<'db> {
                 WrappedMacro::Parenthesized(m) => ("(", m.elements(f.db), ")"),
             };
             let macro_match = elements
-                .elements_vec(f.db)
-                .iter()
+                .elements(f.db)
                 .map(|element| element.as_syntax_node().get_text(f.db))
                 .join("")
                 .split_whitespace()

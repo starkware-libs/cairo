@@ -244,14 +244,14 @@ pub fn is_macro_rule_match<'db>(
     let mut ctx = MatcherContext::default();
 
     let matcher_elements = get_macro_elements(db, rule.pattern.clone());
-    let input_elements = match input.subtree(db) {
+    let mut input_iter = match input.subtree(db) {
         ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
         ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
         ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
         ast::WrappedTokenTree::Missing(_) => unreachable!(),
     }
-    .elements_vec(db);
-    let mut input_iter = input_elements.iter().peekable();
+    .elements(db)
+    .peekable();
     is_macro_rule_match_ex(db, matcher_elements, &mut input_iter, &mut ctx, true)?;
     if !validate_repetition_operator_constraints(&ctx) {
         return None;
@@ -265,7 +265,9 @@ pub fn is_macro_rule_match<'db>(
 fn is_macro_rule_match_ex<'db>(
     db: &'db dyn Database,
     matcher_elements: ast::MacroElements<'db>,
-    input_iter: &mut std::iter::Peekable<std::slice::Iter<'_, ast::TokenTree<'db>>>,
+    input_iter: &mut std::iter::Peekable<
+        impl DoubleEndedIterator<Item = ast::TokenTree<'db>> + Clone,
+    >,
     ctx: &mut MatcherContext<'db>,
     consume_all_input: bool,
 ) -> Option<()> {
@@ -302,7 +304,7 @@ fn is_macro_rule_match_ex<'db>(
                 match placeholder_kind {
                     PlaceholderKind::Identifier => {
                         let input_token = input_iter.next()?;
-                        let captured_text = match input_token {
+                        let captured_text = match &input_token {
                             ast::TokenTree::Token(token_tree_leaf) => {
                                 match token_tree_leaf.leaf(db) {
                                     ast::TokenNode::TerminalIdentifier(terminal_identifier) => {
@@ -325,8 +327,7 @@ fn is_macro_rule_match_ex<'db>(
                     PlaceholderKind::Expr => {
                         let peek_token = input_iter.peek().cloned()?;
                         let file_id = peek_token.as_syntax_node().stable_ptr(db).file_id(db);
-                        let expr_node =
-                            as_expr_macro_token_tree(input_iter.clone().cloned(), file_id, db)?;
+                        let expr_node = as_expr_macro_token_tree(input_iter.clone(), file_id, db)?;
                         let expr_text = expr_node.as_syntax_node().get_text(db);
                         let expr_length = expr_text.len();
                         // An empty expression is parsed successfully. However we don't want to
@@ -350,20 +351,13 @@ fn is_macro_rule_match_ex<'db>(
                         // iterating separately.
                         for token_tree_leaf in input_iter.by_ref() {
                             let token_text = match token_tree_leaf {
-                                ast::TokenTree::Token(token_tree_leaf) => {
-                                    token_tree_leaf.as_syntax_node().get_text(db)
-                                }
-                                ast::TokenTree::Subtree(token_subtree) => {
-                                    token_subtree.as_syntax_node().get_text(db)
-                                }
-                                ast::TokenTree::Repetition(token_repetition) => {
-                                    token_repetition.as_syntax_node().get_text(db)
-                                }
-                                ast::TokenTree::Param(token_param) => {
-                                    token_param.as_syntax_node().get_text(db)
-                                }
+                                ast::TokenTree::Token(leaf) => leaf.as_syntax_node(),
+                                ast::TokenTree::Subtree(subtree) => subtree.as_syntax_node(),
+                                ast::TokenTree::Repetition(rep) => rep.as_syntax_node(),
+                                ast::TokenTree::Param(param) => param.as_syntax_node(),
                                 ast::TokenTree::Missing(_) => unreachable!(),
-                            };
+                            }
+                            .get_text(db);
                             current_length += token_text.len();
                             if current_length >= expr_length {
                                 break;
@@ -377,14 +371,14 @@ fn is_macro_rule_match_ex<'db>(
                 let input_token = input_iter.next()?;
                 if let ast::TokenTree::Subtree(input_subtree) = input_token {
                     let inner_elements = get_macro_elements(db, matcher_subtree.subtree(db));
-                    let inner_input_elements = match input_subtree.subtree(db) {
+                    let mut inner_input_iter = match input_subtree.subtree(db) {
                         ast::WrappedTokenTree::Parenthesized(tt) => tt.tokens(db),
                         ast::WrappedTokenTree::Braced(tt) => tt.tokens(db),
                         ast::WrappedTokenTree::Bracketed(tt) => tt.tokens(db),
                         ast::WrappedTokenTree::Missing(_) => unreachable!(),
                     }
-                    .elements_vec(db);
-                    let mut inner_input_iter = inner_input_elements.iter().peekable();
+                    .elements(db)
+                    .peekable();
                     is_macro_rule_match_ex(db, inner_elements, &mut inner_input_iter, ctx, true)?;
                     continue;
                 } else {

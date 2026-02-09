@@ -1382,18 +1382,18 @@ fn compute_expr_fixed_size_array_semantic<'db>(
     syntax: &ast::ExprFixedSizeArray<'db>,
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
-    let exprs = syntax.exprs(db).elements_vec(db);
+    let mut exprs = syntax.exprs(db).elements(db);
     let size_ty = get_usize_ty(db);
     let (items, type_id, size) = if let Some(size_const_id) =
         extract_fixed_size_array_size(db, ctx.diagnostics, syntax, ctx.resolver)?
     {
         // Fixed size array with a defined size must have exactly one element.
-        let [expr] = exprs.as_slice() else {
+        let Ok(expr) = exprs.exactly_one() else {
             return Err(ctx
                 .diagnostics
                 .report(syntax.stable_ptr(db), FixedSizeArrayNonSingleValue));
         };
-        let expr_semantic = compute_expr_semantic(ctx, expr);
+        let expr_semantic = compute_expr_semantic(ctx, &expr);
         let size = size_const_id
             .long(db)
             .to_int()
@@ -1408,15 +1408,15 @@ fn compute_expr_fixed_size_array_semantic<'db>(
             expr_semantic.ty(),
             size_const_id,
         )
-    } else if let Some((first_expr, tail_exprs)) = exprs.split_first() {
-        let size = ConstValue::Int((tail_exprs.len() + 1).into(), size_ty).intern(db);
-        let first_expr_semantic = compute_expr_semantic(ctx, first_expr);
+    } else if let Some(first_expr) = exprs.next() {
+        let size = ConstValue::Int((exprs.len() + 1).into(), size_ty).intern(db);
+        let first_expr_semantic = compute_expr_semantic(ctx, &first_expr);
         let mut items: Vec<ExprId> = vec![first_expr_semantic.id];
         // The type of the first expression is the type of the array. All other expressions must
         // have the same type.
         let first_expr_ty = ctx.reduce_ty(first_expr_semantic.ty());
-        for expr_syntax in tail_exprs {
-            let expr_semantic = compute_expr_semantic(ctx, expr_syntax);
+        for expr_syntax in exprs {
+            let expr_semantic = compute_expr_semantic(ctx, &expr_syntax);
             let inference = &mut ctx.resolver.inference();
             inference.conform_ty_for_diag(
                 expr_semantic.ty(),
@@ -1648,8 +1648,7 @@ pub fn compute_named_argument_clause<'db>(
 ) -> NamedArg<'db> {
     let db = ctx.db;
 
-    let mutability =
-        compute_mutability(ctx.diagnostics, db, &arg_syntax.modifiers(db).elements_vec(db));
+    let mutability = compute_mutability(ctx.diagnostics, db, arg_syntax.modifiers(db).elements(db));
 
     let arg_clause = arg_syntax.arg_clause(db);
     let (expr, arg_name_identifier) = match arg_clause {
@@ -2880,17 +2879,16 @@ fn maybe_compute_pattern_semantic<'db>(
             // Paths with a single element are treated as identifiers, which will result in a
             // variable pattern if no matching enum variant is found. If a matching enum
             // variant exists, it is resolved to the corresponding concrete variant.
-            let segments_var = path.segments(db);
-            let mut segments = segments_var.elements(db);
-            if segments.len() > 1 {
+            let Ok(ast::PathSegment::Simple(segment)) =
+                path.segments(db).elements(db).exactly_one()
+            else {
                 return Err(ctx.diagnostics.report(path.stable_ptr(ctx.db), Unsupported));
-            }
-            // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
-            let identifier = segments.next().unwrap().identifier_ast(db);
+            };
+            let identifier = segment.ident(db);
             create_variable_pattern(
                 ctx,
                 identifier,
-                &[],
+                [],
                 ty,
                 path.stable_ptr(db).into(),
                 or_pattern_variables_map,
@@ -2899,7 +2897,7 @@ fn maybe_compute_pattern_semantic<'db>(
         ast::Pattern::Identifier(identifier) => create_variable_pattern(
             ctx,
             identifier.name(db),
-            &identifier.modifiers(db).elements_vec(db),
+            identifier.modifiers(db).elements(db),
             ty,
             identifier.stable_ptr(db).into(),
             or_pattern_variables_map,
@@ -2975,7 +2973,7 @@ fn maybe_compute_pattern_semantic<'db>(
                         let pattern = create_variable_pattern(
                             ctx,
                             name,
-                            &single.modifiers(db).elements_vec(db),
+                            single.modifiers(db).elements(db),
                             ty,
                             single.stable_ptr(db).into(),
                             or_pattern_variables_map,
@@ -3362,7 +3360,7 @@ fn validate_pattern_type_and_args<'db>(
 fn create_variable_pattern<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     identifier: ast::TerminalIdentifier<'db>,
-    modifier_list: &[ast::Modifier<'db>],
+    modifier_list: impl IntoIterator<Item = ast::Modifier<'db>>,
     ty: TypeId<'db>,
     stable_ptr: ast::PatternPtr<'db>,
     or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,

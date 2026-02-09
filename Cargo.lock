@@ -1083,6 +1083,7 @@ dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
+ "itertools 0.14.0",
  "num-bigint",
  "num-traits",
  "pretty_assertions",

@@ -297,7 +297,7 @@ fn create_node_for_enum<'db>(
 fn create_node_for_tuple<'db>(
     params: CreateNodeParams<'db, '_, '_>,
     input_var: FlowControlVar,
-    types: &Vec<TypeId<'db>>,
+    types: &[TypeId<'db>],
     wrapping_info: PatternWrappingInfo,
 ) -> NodeId {
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
@@ -381,10 +381,10 @@ fn create_node_for_struct<'db>(
 /// `struct_members` is the list of members of the struct, or `None` if the type is a tuple.
 fn create_node_for_tuple_inner<'db>(
     params: CreateNodeParams<'db, '_, '_>,
-    inner_vars: &Vec<FlowControlVar>,
-    types: &Vec<TypeId<'db>>,
+    inner_vars: &[FlowControlVar],
+    types: &[TypeId<'db>],
     item_idx: usize,
-    struct_members: Option<&Vec<&semantic::Member<'db>>>,
+    struct_members: Option<&[&semantic::Member<'db>]>,
 ) -> NodeId {
     let CreateNodeParams { ctx, graph, patterns, build_node_callback, location } = params;
 

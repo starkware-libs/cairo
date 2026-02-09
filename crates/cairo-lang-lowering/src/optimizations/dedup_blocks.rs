@@ -304,7 +304,7 @@ pub fn dedup_blocks<'db>(lowered: &mut Lowered<'db>) {
     }
 
     let mut new_goto_block =
-        |block_id, inputs: &Vec<VarUsage<'db>>, target_inputs: &Vec<VarUsage<'db>>| {
+        |block_id, inputs: &[VarUsage<'db>], target_inputs: &[VarUsage<'db>]| {
             new_blocks.push(Block {
                 statements: vec![],
                 end: BlockEnd::Goto(
