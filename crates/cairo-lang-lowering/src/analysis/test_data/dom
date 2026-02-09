@@ -1,0 +1,255 @@
+//! > Test simple linear function — root dominates itself
+
+//! > test_runner_name
+test_dom_analysis
+
+//! > function_code
+fn foo(x: felt252, y: felt252) -> felt252 {
+    x + y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+End:
+  Return(v2)
+
+//! > dominators
+blk0: {blk0}
+
+//! > ==========================================================================
+
+//! > Test if-else with no merge — root dominates both arms
+
+//! > test_runner_name
+test_dom_analysis
+
+//! > function_code
+fn foo(x: bool) -> felt252 {
+    if x {
+        1
+    } else {
+        2
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v1) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 2
+End:
+  Return(v3)
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 1
+End:
+  Return(v4)
+
+//! > dominators
+blk0: {blk0}
+blk1: {blk0, blk1}
+blk2: {blk0, blk2}
+
+//! > ==========================================================================
+
+//! > Test diamond CFG — if-else with merge block
+
+//! > test_runner_name
+test_dom_analysis
+
+//! > function_code
+fn foo(x: bool) -> felt252 {
+    let y = if x {
+        1
+    } else {
+        2
+    };
+    y + 3
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v1) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 2
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 1
+End:
+  Goto(blk3, {v5 -> v4})
+
+blk3:
+Statements:
+  (v6: core::felt252) <- 3
+  (v7: core::felt252) <- core::felt252_add(v4, v6)
+End:
+  Return(v7)
+
+//! > dominators
+blk0: {blk0}
+blk1: {blk0, blk1}
+blk2: {blk0, blk2}
+blk3: {blk0, blk3}
+
+//! > ==========================================================================
+
+//! > Test nested if-else — transitive dominance
+
+//! > test_runner_name
+test_dom_analysis
+
+//! > function_code
+fn foo(x: bool, y: bool) -> felt252 {
+    if x {
+        if y {
+            1
+        } else {
+            2
+        }
+    } else {
+        3
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252) <- 3
+End:
+  Return(v4)
+
+blk2:
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v5) => blk3,
+    bool::True(v6) => blk4,
+  })
+
+blk3:
+Statements:
+  (v7: core::felt252) <- 2
+End:
+  Return(v7)
+
+blk4:
+Statements:
+  (v8: core::felt252) <- 1
+End:
+  Return(v8)
+
+//! > dominators
+blk0: {blk0}
+blk1: {blk0, blk1}
+blk2: {blk0, blk2}
+blk3: {blk0, blk2, blk3}
+blk4: {blk0, blk2, blk4}
+
+//! > ==========================================================================
+
+//! > Test match with multiple arms
+
+//! > test_runner_name
+test_dom_analysis
+
+//! > function_code
+fn foo(x: felt252) -> felt252 {
+    match x {
+        0 => 10,
+        _ => 20,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v1) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- 10
+End:
+  Return(v2)
+
+blk2:
+Statements:
+  (v3: core::felt252) <- 20
+End:
+  Return(v3)
+
+//! > dominators
+blk0: {blk0}
+blk1: {blk0, blk1}
+blk2: {blk0, blk2}
