@@ -13,8 +13,9 @@ Cairo provides fixed-size unsigned and signed integer types.
 | u64   | 0       | 2^64 - 1
 | u128  | 0       | 2^128 - 1
 | u256  | 0       | 2^256 - 1
-| usize | 0       | 2^32 - 1 (alias for u32)
 |===
+
+The `usize` type is an alias to `u32`, and is used for array indexing.
 
 == Signed Integer Types
 
@@ -39,8 +40,9 @@ fn main() {
     let y = 0xff_u64;
     let z = 100_u32;
 
-    // u256 construction
-    let w: u256 = u256 { high: 0_u128, low: 10_u128 };
+    // u256 can use type suffix or struct construction
+    let a = 100_u256;
+    let b: u256 = u256 { high: 0_u128, low: 10_u128 };
 }
 ----
 
@@ -66,7 +68,7 @@ All integer types support standard arithmetic and comparison operations:
 
 == Bitwise Operations
 
-Integer types support bitwise operations:
+Unsigned integer types support bitwise operations:
 
 [options="header"]
 |===
