@@ -5,7 +5,7 @@ The boolean type `bool` represents a logical value that can be either `true` or
 
 == Syntax
 
-The type is denoted by the keyword `bool`. Boolean values are created using the
+The type is denoted by `bool`. Boolean values are created using the
 literal keywords `true` and `false`:
 
 [source,cairo]
@@ -16,10 +16,10 @@ let y: bool = false;
 
 == Characteristics
 
-- **Size**: Represented as a single bit logically
 - **Values**: Only two possible values: `true` and `false`
 - **No implicit conversions**: Only `bool` can be used in boolean contexts
 - **Copy type**: `bool` implements the `Copy` trait
+- **Runtime representation**: Stored as `felt252` at runtime
 
 == Operators
 
@@ -49,7 +49,7 @@ See xref:boolean-operators.adoc[Boolean operators] for details.
 
 See xref:bitwise-operators.adoc[Bitwise operators] for details.
 
-=== Comparison Operators
+=== Equality Operators
 
 [options="header"]
 |===
