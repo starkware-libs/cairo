@@ -175,7 +175,7 @@ impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S> {
 ///
 /// ```
 /// impl MyTypeHash<S, +HashStateTrait<S>, +Drop<S>> =
-///     core::hash::into_felt252_based::HashImpl<MyType, S>;`
+///     core::hash::into_felt252_based::HashImpl<MyType, S>;
 /// ```
 pub mod into_felt252_based {
     pub impl HashImpl<

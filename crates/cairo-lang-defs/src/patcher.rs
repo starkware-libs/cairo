@@ -231,9 +231,9 @@ impl<'db> From<SyntaxNode<'db>> for RewriteNode<'db> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModifiedNode<'db> {
     /// Children of the node.
-    /// Can be None, in which case this is an empty node (of width 0). It's not the same as
-    /// Some(vec![]) - A child can be (idempotently) modified for None, whereas modifying a child
-    /// for Some(vec![]) would panic.
+    /// Can be None, in which case this is an empty node (of width 0). This is not the same as
+    /// Some(vec![]) - A child can be (idempotently) modified to None, whereas modifying a child
+    /// to Some(vec![]) would panic.
     pub children: Option<Vec<RewriteNode<'db>>>,
 }
 

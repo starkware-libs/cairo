@@ -582,7 +582,7 @@ impl EntryCodeHelper {
             }
         }
 
-        // All the builtins not in in return_types should be copied from self.builtin_vars to
+        // All the builtins not in return_types should be copied from self.builtin_vars to
         // new_builtin_vars and local_exprs.
         for name in &self.builtins {
             new_builtin_vars.entry(*name).or_insert_with(|| {
