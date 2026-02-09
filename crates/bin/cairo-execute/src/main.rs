@@ -410,7 +410,7 @@ struct DebugData<'a> {
 /// Encodes the trace entry by entry as triplets of `u64`s.
 fn write_relocated_trace(
     path: &PathBuf,
-    relocated_trace: &Vec<RelocatedTraceEntry>,
+    relocated_trace: &[RelocatedTraceEntry],
 ) -> Result<(), io::Error> {
     let mut writer = io::BufWriter::with_capacity(3 * 1024 * 1024, std::fs::File::create(path)?);
     for entry in relocated_trace {

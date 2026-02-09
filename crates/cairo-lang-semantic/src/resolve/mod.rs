@@ -1750,8 +1750,7 @@ impl<'db, 'a> Resolution<'db, 'a> {
 
         let mut cur_offset =
             ExpansionOffset::new(path.offset(db).expect("Trying to resolve an empty path."));
-        let elements_vec = path.to_segments(db);
-        let mut segments = elements_vec.into_iter().peekable();
+        let mut segments = path.to_segments(db).into_iter().peekable();
         let mut cur_macro_call_data = resolver.macro_call_data.as_ref();
         let mut path_defining_module = resolver.data.module_id;
         // Climb up the macro call data while the current resolved path is being mapped to an

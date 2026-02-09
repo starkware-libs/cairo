@@ -77,7 +77,7 @@ impl<'db> Blocks<'db> {
         Self(vec![])
     }
 
-    pub fn get(&self) -> &Vec<Block<'db>> {
+    pub fn get(&self) -> &[Block<'db>] {
         &self.0
     }
 

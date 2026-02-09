@@ -1,4 +1,5 @@
 use cairo_lang_filesystem::ids::SmolStrId;
+use itertools::{Itertools, chain};
 use salsa::Database;
 
 use super::ast::{
@@ -268,8 +269,8 @@ impl<'a> GenericParamEx<'a> for ast::GenericParam<'a> {
 pub fn is_single_arg_attr(db: &dyn Database, attr: &Attribute<'_>, arg_name: &str) -> bool {
     match attr.arguments(db) {
         OptionArgListParenthesized::ArgListParenthesized(args) => {
-            matches!(&args.arguments(db).elements_vec(db)[..],
-                    [arg] if arg.as_syntax_node().get_text_without_trivia(db).long(db) == arg_name)
+            matches!(args.arguments(db).elements(db).exactly_one(),
+                    Ok(arg) if arg.as_syntax_node().get_text_without_trivia(db).long(db) == arg_name)
         }
         OptionArgListParenthesized::Empty(_) => false,
     }
@@ -736,11 +737,13 @@ pub trait IsDependentType<'db> {
 
 impl<'a> IsDependentType<'a> for ast::ExprPath<'a> {
     fn is_dependent_type(&self, db: &'a dyn Database, identifiers: &[SmolStrId<'a>]) -> bool {
-        let segments = self.segments(db).elements_vec(db);
-        if let [ast::PathSegment::Simple(arg_segment)] = &segments[..] {
-            identifiers.contains(&arg_segment.identifier(db))
-        } else {
-            segments.into_iter().any(|segment| {
+        let mut segments = self.segments(db).elements(db);
+        match segments.next() {
+            None => false,
+            Some(ast::PathSegment::Simple(simple)) if segments.len() == 0 => {
+                identifiers.contains(&simple.identifier(db))
+            }
+            Some(first) => chain!([first], segments).any(|segment| {
                 let ast::PathSegment::WithGenericArgs(with_generics) = segment else {
                     return false;
                 };
@@ -751,7 +754,7 @@ impl<'a> IsDependentType<'a> for ast::ExprPath<'a> {
                     }
                     .is_dependent_type(db, identifiers)
                 })
-            })
+            }),
         }
     }
 }

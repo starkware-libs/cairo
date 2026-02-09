@@ -906,7 +906,7 @@ fn ast_param_to_semantic<'db>(
     };
 
     let mutability =
-        modifiers::compute_mutability(diagnostics, db, &ast_param.modifiers(db).elements_vec(db));
+        modifiers::compute_mutability(diagnostics, db, ast_param.modifiers(db).elements(db));
 
     semantic::Parameter { id, name: name.text(db), ty, mutability, stable_ptr: name.stable_ptr(db) }
 }

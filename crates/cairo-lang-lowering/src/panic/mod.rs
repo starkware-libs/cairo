@@ -80,7 +80,7 @@ pub fn lower_panics<'db>(
     .unwrap();
     let mut ctx = PanicLoweringContext {
         variables,
-        block_queue: VecDeque::from(lowered.blocks.get().clone()),
+        block_queue: VecDeque::from_iter(lowered.blocks.get().iter().cloned()),
         flat_blocks: BlocksBuilder::new(),
         panic_info,
     };

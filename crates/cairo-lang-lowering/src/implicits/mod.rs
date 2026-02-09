@@ -211,10 +211,8 @@ fn lower_function_blocks_implicits<'db>(
                     MatchInfo::Extern(stmt) => {
                         let callee_implicits = ctx.db.function_implicits(stmt.function)?;
 
-                        let indices =
-                            callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
-
-                        let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
+                        let implicit_input_vars =
+                            callee_implicits.iter().map(|ty| implicits[ctx.implicit_index[ty]]);
                         stmt.inputs.splice(0..0, implicit_input_vars);
                         let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
 

@@ -11,7 +11,7 @@ use crate::diagnostic::{SemanticDiagnostics, SemanticDiagnosticsBuilder};
 pub fn compute_mutability<'db>(
     diagnostics: &mut SemanticDiagnostics<'db>,
     db: &'db dyn Database,
-    modifier_list: &[Modifier<'db>],
+    modifier_list: impl IntoIterator<Item = Modifier<'db>>,
 ) -> Mutability {
     let mut mutability = Mutability::Immutable;
 
