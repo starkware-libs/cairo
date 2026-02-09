@@ -39,7 +39,7 @@ fn main() {
 
 == Operations
 
-All standard arithmetic operations are supported:
+Basic arithmetic operations are supported:
 
 [source,cairo]
 ----
@@ -50,9 +50,11 @@ fn main() {
     let sum = a + b;        // 15
     let diff = a - b;       // 9
     let prod = a * b;       // 36
-    let quot = a / b;       // 4 (field division)
 }
 ----
+
+NOTE: Division is not directly supported via the `/` operator. Use the
+`felt252_div` function from the core library for field division.
 
 == Negation
 
