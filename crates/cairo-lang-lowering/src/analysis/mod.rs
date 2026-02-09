@@ -4,6 +4,7 @@
 //! optimization passes and semantic checks.
 
 pub mod backward;
+pub mod def_site;
 pub use backward::{BackAnalysis, DataflowBackAnalysis};
 
 pub mod core;
@@ -14,11 +15,31 @@ pub mod forward;
 pub use forward::ForwardDataflowAnalysis;
 
 #[cfg(test)]
+mod def_site_test;
+#[cfg(test)]
 mod equality_analysis_test;
 #[cfg(test)]
 mod test;
 
 use crate::{Block, BlockId, MatchInfo, Statement, VarRemapping, VarUsage};
+
+/// Where a variable is defined.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DefLocation {
+    /// Defined by a statement at the given location.
+    Statement(StatementLocation),
+    /// Defined at block entry (parameter, goto remapping, or match arm binding).
+    BlockEntry(BlockId),
+}
+
+impl std::fmt::Debug for DefLocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DefLocation::Statement((block, stmt_idx)) => write!(f, "stmt({block:?}, {stmt_idx})"),
+            DefLocation::BlockEntry(block) => write!(f, "entry({block:?})"),
+        }
+    }
+}
 
 /// Analyzer trait to implement for each specific analysis.
 #[allow(unused_variables)]
