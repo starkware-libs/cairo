@@ -1,7 +1,8 @@
 = Integer types
 
-Cairo uses the following integer types:
+Cairo provides fixed-size unsigned and signed integer types.
 
+== Unsigned Integer Types
 
 [options="header"]
 |===
@@ -12,42 +13,103 @@ Cairo uses the following integer types:
 | u64   | 0       | 2^64 - 1
 | u128  | 0       | 2^128 - 1
 | u256  | 0       | 2^256 - 1
+| usize | 0       | 2^32 - 1 (alias for u32)
 |===
 
-The `usize` type is an alias to `u32`, and is used for array indexing.
+== Signed Integer Types
 
-== Integer Creation
+[options="header"]
+|===
+| Type | Minimum    | Maximum
+| i8   | -2^7       | 2^7 - 1
+| i16  | -2^15      | 2^15 - 1
+| i32  | -2^31      | 2^31 - 1
+| i64  | -2^63      | 2^63 - 1
+| i128 | -2^127     | 2^127 - 1
+|===
 
-All integer types can be created as literals using the appropriate suffix.
-For `u256`, you can also construct values from other types explicitly.
+== Syntax
+
+Integer literals can use type suffixes:
+
 [source,cairo]
 ----
 fn main() {
     let x: u8 = 10_u8;
     let y = 0xff_u64;
-    let z = 10_u256;
-    let w: u256 = u256 { high: 0_u128, low: 10_u128 }; // 10 in u256 type via manual construction
+    let z = 100_u32;
+
+    // u256 construction
+    let w: u256 = u256 { high: 0_u128, low: 10_u128 };
 }
 ----
 
-== Integer Operations
-All integer types support the operations in the following table.
+== Operations
+
+All integer types support standard arithmetic and comparison operations:
 
 [options="header"]
 |===
-| Operation | Description           | Supported by `u256`
-| `+`       | Addition              | Yes
-| `-`       | Subtraction           | Yes
-| `*`       | Multiplication        | Yes
-| `/`       | Integer division      | Yes
-| `%`       | Modulo                | Yes
-| `==`      | Equality              | Yes
-| `!=`      | Inequality            | Yes
-| `<`       | Less than             | Yes
-| `\<=`     | Less than or equal    | Yes
-| `>`       | Greater than          | Yes
-| `>=`      | Greater than or equal | Yes
-| `\|`      | Bitwise or            | Yes
-| `&`       | Bitwise and           | Yes
-| `^`       | Bitwise xor           | Yes
+| Operation | Description           | Example
+| `+`       | Addition              | `x + y`
+| `-`       | Subtraction           | `x - y`
+| `*`       | Multiplication        | `x * y`
+| `/`       | Integer division      | `x / y`
+| `%`       | Modulo                | `x % y`
+| `==`      | Equality              | `x == y`
+| `!=`      | Inequality            | `x != y`
+| `<`       | Less than             | `x < y`
+| `\<=`     | Less than or equal    | `x \<= y`
+| `>`       | Greater than          | `x > y`
+| `>=`      | Greater than or equal | `x >= y`
 |===
+
+== Bitwise Operations
+
+Integer types support bitwise operations:
+
+[options="header"]
+|===
+| Operation | Description | Example
+| `\|`      | Bitwise OR  | `x \| y`
+| `&`       | Bitwise AND | `x & y`
+| `^`       | Bitwise XOR | `x ^ y`
+| `~`       | Bitwise NOT | `~x`
+|===
+
+== Overflow Behavior
+
+Integer operations panic on overflow:
+
+[source,cairo]
+----
+fn will_panic() {
+    let x: u8 = 255;
+    let y = x + 1;  // Panics: u8_add Overflow
+}
+----
+
+== Conversions
+
+Use `TryInto` and `Into` traits for conversions:
+
+[source,cairo]
+----
+use core::traits::TryInto;
+
+fn main() {
+    let x: u32 = 100;
+    let y: u64 = x.into();  // Widening conversion
+
+    let z: u64 = 1000;
+    let w: u32 = z.try_into().unwrap();  // Narrowing conversion
+}
+----
+
+== Related
+
+- xref:felt252-type.adoc[felt252 type] — Field element type
+- xref:literal-expressions.adoc[Literal expressions] — Integer literals
+- xref:arithmetic-and-logical-operators.adoc[Arithmetic operators] —
+Operations on integers
+- xref:negation-operators.adoc[Negation operators] — The `-` operator
