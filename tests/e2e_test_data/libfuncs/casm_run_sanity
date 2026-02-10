@@ -13,7 +13,7 @@ fn add_three(x: felt252) -> felt252 {
 ret;
 
 //! > function_costs
-test::add_three: SmallOrderedMap({Const: 100})
+test::add_three: SmallOrderedMap([(Const, 100)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -58,7 +58,7 @@ __boxed_segment += 1
 ret;
 
 //! > function_costs
-test::box_double: SmallOrderedMap({Const: 300})
+test::box_double: SmallOrderedMap([(Const, 300)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -113,7 +113,7 @@ ret;
 ret;
 
 //! > function_costs
-test::match_val: SmallOrderedMap({Const: 500})
+test::match_val: SmallOrderedMap([(Const, 500)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -256,10 +256,10 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::fib: SmallOrderedMap({Const: 3370})
-test::fib[116-219]: SmallOrderedMap({Const: 1970})
-core::panic_with_const_felt252::<375233589013918064796019>: SmallOrderedMap({Const: 700})
-core::panic_with_felt252: SmallOrderedMap({Const: 400})
+test::fib: SmallOrderedMap([(Const, 3370)])
+test::fib[116-219]: SmallOrderedMap([(Const, 1970)])
+core::panic_with_const_felt252::<375233589013918064796019>: SmallOrderedMap([(Const, 700)])
+core::panic_with_felt252: SmallOrderedMap([(Const, 400)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];

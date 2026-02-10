@@ -29,8 +29,6 @@ opt-level = 3
 opt-level = 3
 [profile.ci-dev.package."tokio"]
 opt-level = 3
-[profile.ci-dev.package."vector-map"]
-opt-level = 3
 [profile.ci-dev.package."mimalloc"]
 opt-level = 3
 [profile.ci-dev.package."libmimalloc-sys"]
@@ -160,7 +158,6 @@ tracing-log = "0.2.0"
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt", "time"] }
 typetag = "0.2"
 unescaper = "0.1.6"
-vector-map = { version = "1.0.2", features = ["serde_impl"] }
 xshell = "0.2.7"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 

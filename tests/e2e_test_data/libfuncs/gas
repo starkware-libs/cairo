@@ -33,8 +33,8 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 900})
-test::bar: SmallOrderedMap({})
+test::foo: SmallOrderedMap([(Const, 900)])
+test::bar: SmallOrderedMap([])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -129,7 +129,7 @@ call rel 16;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Bitwise: 2, Pedersen: 1, Const: 1830})
+test::foo: SmallOrderedMap([(Bitwise, 2), (Pedersen, 1), (Const, 1830)])
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
@@ -238,7 +238,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 770})
+test::foo: SmallOrderedMap([(Const, 770)])
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -319,7 +319,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 1570})
+test::foo: SmallOrderedMap([(Const, 1570)])
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -432,7 +432,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 1970})
+test::foo: SmallOrderedMap([(Const, 1970)])
 
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
@@ -546,7 +546,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 870})
+test::foo: SmallOrderedMap([(Const, 870)])
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -632,7 +632,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 1170})
+test::foo: SmallOrderedMap([(Const, 1170)])
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -735,7 +735,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 1170})
+test::foo: SmallOrderedMap([(Const, 1170)])
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
@@ -849,7 +849,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: SmallOrderedMap({Const: 1470})
+test::foo: SmallOrderedMap([(Const, 1470)])
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
