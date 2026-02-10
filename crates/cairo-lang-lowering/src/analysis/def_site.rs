@@ -5,19 +5,30 @@
 //! or `Statement` (output of a statement). Uses the forward analysis framework
 //! and all results are accumulated in the analyzer's global `def_sites` vector.
 
+use std::fmt;
+
 use crate::analysis::DefLocation;
 use crate::analysis::core::{DataflowAnalyzer, Direction, Edge, StatementLocation};
 use crate::analysis::forward::ForwardDataflowAnalysis;
 use crate::{BlockEnd, BlockId, Lowered, Statement};
 
 /// Result of def-site analysis: the def location for each variable, indexed by arena index.
-#[derive(Debug)]
 pub struct DefSites(pub Vec<DefLocation>);
 
 impl std::ops::Deref for DefSites {
     type Target = [DefLocation];
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl fmt::Debug for DefSites {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut list = f.debug_list();
+        for (idx, def) in self.0.iter().enumerate() {
+            list.entry(&format_args!("v{idx}: {def:?}"));
+        }
+        list.finish()
     }
 }
 

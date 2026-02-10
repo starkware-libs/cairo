@@ -1,7 +1,7 @@
 //! > Test simple linear function with parameters and statement outputs
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(x: felt252, y: felt252) -> felt252 {
@@ -24,20 +24,18 @@ End:
   Return(v2)
 
 //! > result
-DefSites(
-    [
-        entry(blk0),
-        entry(blk0),
-        stmt(blk0, 0),
-    ],
-)
+[
+    v0: entry(blk0),
+    v1: entry(blk0),
+    v2: stmt(blk0, 0),
+]
 
 //! > ==========================================================================
 
 //! > Test match with arm variables
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(x: bool) -> felt252 {
@@ -78,22 +76,20 @@ End:
   Return(v4)
 
 //! > result
-DefSites(
-    [
-        entry(blk0),
-        entry(blk1),
-        entry(blk2),
-        stmt(blk1, 0),
-        stmt(blk2, 0),
-    ],
-)
+[
+    v0: entry(blk0),
+    v1: entry(blk1),
+    v2: entry(blk2),
+    v3: stmt(blk1, 0),
+    v4: stmt(blk2, 0),
+]
 
 //! > ==========================================================================
 
 //! > Test branch and merge with goto remapping
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(x: bool) -> felt252 {
@@ -142,25 +138,23 @@ End:
   Return(v7)
 
 //! > result
-DefSites(
-    [
-        entry(blk0),
-        entry(blk1),
-        entry(blk2),
-        stmt(blk1, 0),
-        entry(blk3),
-        stmt(blk2, 0),
-        stmt(blk3, 0),
-        stmt(blk3, 1),
-    ],
-)
+[
+    v0: entry(blk0),
+    v1: entry(blk1),
+    v2: entry(blk2),
+    v3: stmt(blk1, 0),
+    v4: entry(blk3),
+    v5: stmt(blk2, 0),
+    v6: stmt(blk3, 0),
+    v7: stmt(blk3, 1),
+]
 
 //! > ==========================================================================
 
 //! > Test loop with break
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(n: felt252) -> felt252 {
@@ -206,26 +200,24 @@ End:
   Return(v8)
 
 //! > result
-DefSites(
-    [
-        entry(blk0),
-        stmt(blk0, 0),
-        entry(blk1),
-        entry(blk2),
-        stmt(blk1, 0),
-        stmt(blk1, 0),
-        stmt(blk1, 1),
-        stmt(blk1, 2),
-        stmt(blk2, 0),
-    ],
-)
+[
+    v0: entry(blk0),
+    v1: stmt(blk0, 0),
+    v2: entry(blk1),
+    v3: entry(blk2),
+    v4: stmt(blk1, 0),
+    v5: stmt(blk1, 0),
+    v6: stmt(blk1, 1),
+    v7: stmt(blk1, 2),
+    v8: stmt(blk2, 0),
+]
 
 //! > ==========================================================================
 
 //! > Test multi-output statement (snapshot)
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(x: Array<felt252>) -> @Array<felt252> {
@@ -249,10 +241,8 @@ End:
   Return(v2)
 
 //! > result
-DefSites(
-    [
-        entry(blk0),
-        stmt(blk0, 0),
-        stmt(blk0, 0),
-    ],
-)
+[
+    v0: entry(blk0),
+    v1: stmt(blk0, 0),
+    v2: stmt(blk0, 0),
+]
