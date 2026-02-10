@@ -30,3 +30,8 @@ smol_str.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "compile"
+harness = false
