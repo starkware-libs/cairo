@@ -36,6 +36,11 @@ rstest.workspace = true
 salsa.workspace = true
 starknet-types-core.workspace = true
 tracing.workspace = true
+criterion.workspace = true
+
+[[bench]]
+name = "compile"
+harness = false
 
 [[test]]
 name = "examples_test"
