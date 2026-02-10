@@ -202,11 +202,9 @@ fn bytecode_hash_node<H: StarkHash>(
             for node in nodes {
                 let (len, hash) = bytecode_hash_node::<H>(iter, node);
                 total_len += len;
-                hash_elements.push(len.into());
-                hash_elements.push(hash);
+                hash_elements.extend([len.into(), hash]);
             }
-            let hash = H::hash_array(&hash_elements) + 1;
-            (total_len, hash)
+            (total_len, H::hash_array(&hash_elements) + 1)
         }
     }
 }
