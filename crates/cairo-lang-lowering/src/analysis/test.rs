@@ -3,15 +3,68 @@
 use std::collections::HashSet;
 
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::core::{DataflowAnalyzer, Direction, StatementLocation};
+use super::def_site::DefSiteAnalysis;
+use super::dominator::Dominators;
 use super::forward::ForwardDataflowAnalysis;
 use crate::db::LoweringGroup;
-use crate::ids::FunctionWithBodyLongId;
-use crate::test_utils::LoweringDatabaseForTesting;
-use crate::{Block, BlockEnd, BlockId, Lowered};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
+use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
+use crate::{Block, BlockEnd, BlockId, Lowered, LoweringStage};
+
+// ============================================================================
+// Golden test runner — dispatches to the analysis specified by the `analysis`
+// arg in the test data file.  Adding a new analysis only requires a new match
+// arm here plus a `test_data/<name>` file.
+// ============================================================================
+
+cairo_lang_test_utils::test_file_test!(
+    analysis,
+    "src/analysis/test_data",
+    {
+        dominator: "dominator",
+        def_site: "def_site",
+    },
+    test_analysis,
+    ["analysis"]
+);
+
+fn test_analysis(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let analysis_name = args.get("analysis").expect("test requires `analysis` arg");
+
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
+
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline);
+
+    let (lowering_str, result_str) = if let Ok(lowered) = lowered {
+        let lowering_str = formatted_lowered(db, Some(lowered));
+        let result_str = match analysis_name.as_str() {
+            "dominator" => format!("{:#?}", Dominators::analyze(lowered)),
+            "def_site" => format!("{:#?}", DefSiteAnalysis::analyze(lowered)),
+            _ => panic!("unknown analysis: {analysis_name}"),
+        };
+        (lowering_str, result_str)
+    } else {
+        ("Lowering failed.".to_string(), "".to_string())
+    };
+
+    TestRunnerResult::success(OrderedHashMap::from([
+        ("semantic_diagnostics".into(), semantic_diagnostics),
+        ("lowering".into(), lowering_str),
+        ("result".into(), result_str),
+    ]))
+}
 
 // ============================================================================
 // Block-level Analysis: Count blocks (demonstrates transfer_block override)
@@ -188,4 +241,25 @@ fn test_forward_with_branching() {
     for block_id in &analysis.analyzer.reachable_blocks {
         assert!(exit_info[block_id.0].is_some(), "Block {:?} should have exit info", block_id);
     }
+}
+
+/// Verifies the `UNRESOLVED` assert fires when an arena slot is left unreached by the traversal
+/// (a regression guard for future passes that drop defs without compacting `lowered.variables`).
+#[test]
+#[should_panic(expected = "DefSiteAnalysis left variables unresolved")]
+fn unresolved_assert_fires() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    let inputs = OrderedHashMap::from([
+        ("function_code".to_string(), "fn foo(x: felt252) -> felt252 { x }".to_string()),
+        ("function_name".to_string(), "foo".to_string()),
+    ]);
+    let test_function = setup_test_function(db, &inputs).split().0;
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+    let mut lowered = db.lowered_body(function_id, LoweringStage::PostBaseline).cloned().unwrap();
+    // Here we allocate an extra variable to test that `UNRESOLVED` slots are detected. Causes
+    // panic.
+    let extra = lowered.variables.iter().next().unwrap().1.clone();
+    lowered.variables.alloc(extra);
+    DefSiteAnalysis::analyze(&lowered);
 }
