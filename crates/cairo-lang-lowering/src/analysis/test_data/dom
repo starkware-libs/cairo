@@ -1,7 +1,7 @@
 //! > Test simple linear function — root dominates itself
 
 //! > test_runner_name
-test_dom_analysis
+test_analysis(analysis: dom)
 
 //! > function_code
 fn foo(x: felt252, y: felt252) -> felt252 {
@@ -23,7 +23,7 @@ Statements:
 End:
   Return(v2)
 
-//! > dominators
+//! > result
 blk0: {blk0}
 
 //! > ==========================================================================
@@ -31,7 +31,7 @@ blk0: {blk0}
 //! > Test if-else with no merge — root dominates both arms
 
 //! > test_runner_name
-test_dom_analysis
+test_analysis(analysis: dom)
 
 //! > function_code
 fn foo(x: bool) -> felt252 {
@@ -71,7 +71,7 @@ Statements:
 End:
   Return(v4)
 
-//! > dominators
+//! > result
 blk0: {blk0}
 blk1: {blk0, blk1}
 blk2: {blk0, blk2}
@@ -81,7 +81,7 @@ blk2: {blk0, blk2}
 //! > Test diamond CFG — if-else with merge block
 
 //! > test_runner_name
-test_dom_analysis
+test_analysis(analysis: dom)
 
 //! > function_code
 fn foo(x: bool) -> felt252 {
@@ -129,7 +129,7 @@ Statements:
 End:
   Return(v7)
 
-//! > dominators
+//! > result
 blk0: {blk0}
 blk1: {blk0, blk1}
 blk2: {blk0, blk2}
@@ -140,7 +140,7 @@ blk3: {blk0, blk3}
 //! > Test nested if-else — transitive dominance
 
 //! > test_runner_name
-test_dom_analysis
+test_analysis(analysis: dom)
 
 //! > function_code
 fn foo(x: bool, y: bool) -> felt252 {
@@ -198,7 +198,7 @@ Statements:
 End:
   Return(v8)
 
-//! > dominators
+//! > result
 blk0: {blk0}
 blk1: {blk0, blk1}
 blk2: {blk0, blk2}
@@ -210,7 +210,7 @@ blk4: {blk0, blk2, blk4}
 //! > Test match with multiple arms
 
 //! > test_runner_name
-test_dom_analysis
+test_analysis(analysis: dom)
 
 //! > function_code
 fn foo(x: felt252) -> felt252 {
@@ -249,7 +249,7 @@ Statements:
 End:
   Return(v3)
 
-//! > dominators
+//! > result
 blk0: {blk0}
 blk1: {blk0, blk1}
 blk2: {blk0, blk2}

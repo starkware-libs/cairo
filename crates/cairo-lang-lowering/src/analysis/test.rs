@@ -3,15 +3,68 @@
 use std::collections::HashSet;
 
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::core::{DataflowAnalyzer, Direction, StatementLocation};
+use super::def_site::DefSiteAnalysis;
+use super::dom::Dominators;
 use super::forward::ForwardDataflowAnalysis;
 use crate::db::LoweringGroup;
-use crate::ids::FunctionWithBodyLongId;
-use crate::test_utils::LoweringDatabaseForTesting;
-use crate::{Block, BlockEnd, BlockId, Lowered};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
+use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
+use crate::{Block, BlockEnd, BlockId, Lowered, LoweringStage};
+
+// ============================================================================
+// Golden test runner — dispatches to the analysis specified by the `analysis`
+// arg in the test data file.  Adding a new analysis only requires a new match
+// arm here plus a `test_data/<name>` file.
+// ============================================================================
+
+cairo_lang_test_utils::test_file_test!(
+    analysis,
+    "src/analysis/test_data",
+    {
+        dom: "dom",
+        def_site: "def_site",
+    },
+    test_analysis,
+    ["analysis"]
+);
+
+fn test_analysis(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
+    let analysis_name = args.get("analysis").expect("test requires `analysis` arg");
+
+    let db = &mut LoweringDatabaseForTesting::default();
+    let (test_function, semantic_diagnostics) = setup_test_function(db, inputs).split();
+
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline);
+
+    let (lowering_str, result_str) = if let Ok(lowered) = lowered {
+        let lowering_str = formatted_lowered(db, Some(lowered));
+        let result_str = match analysis_name.as_str() {
+            "dom" => Dominators::analyze(lowered).to_string(),
+            "def_site" => DefSiteAnalysis::analyze(lowered).to_string(),
+            _ => panic!("unknown analysis: {analysis_name}"),
+        };
+        (lowering_str, result_str)
+    } else {
+        ("Lowering failed.".to_string(), "".to_string())
+    };
+
+    TestRunnerResult::success(OrderedHashMap::from([
+        ("semantic_diagnostics".into(), semantic_diagnostics),
+        ("lowering".into(), lowering_str),
+        ("result".into(), result_str),
+    ]))
+}
 
 // ============================================================================
 // Block-level Analysis: Count blocks (demonstrates transfer_block override)
