@@ -827,7 +827,7 @@ impl<'db> ImplImplDefId<'db> {
     pub fn impl_def_id(&self, db: &'db dyn Database) -> ImplDefId<'db> {
         let ImplImplDefLongId(module_id, ptr) = self.long(db).clone();
 
-        // Impl constant ast lies 3 levels below the impl ast.
+        // Impl impl ast lies 3 levels below the impl ast.
         let impl_ptr = ast::ItemImplPtr(ptr.untyped().nth_parent(db, 3));
         ImplDefLongId(module_id, impl_ptr).intern(db)
     }
