@@ -117,28 +117,38 @@ pub fn compile_test_prepared_db<'db>(
             tests_compilation_config.contract_crate_ids.unwrap_or_else(|| db.crates()),
         )
     });
-    let all_entry_points = if tests_compilation_config.starknet {
-        contracts
-            .iter()
-            .flat_map(|contract| {
-                chain!(
-                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap_or_default(),
-                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE)
-                        .unwrap_or_default(),
-                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap_or_default(),
-                )
-            })
-            .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
-            .collect()
-    } else {
-        vec![]
-    };
 
     let test_crate_ids = CrateInput::into_crate_ids(db, test_crate_ids);
-    let executable_functions = find_executable_function_ids(
-        db,
-        tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone()),
-    );
+    let executable_crate_ids =
+        tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone());
+
+    {
+        // Warmup executable functions and entrypoints in parallel.
+        let entry_db = db.dyn_clone();
+        let exec_db = db.dyn_clone();
+        let contracts = contracts.clone();
+        let executable_crate_ids = executable_crate_ids.clone();
+        rayon::join(
+            move || {
+                let entry_db = entry_db.as_ref();
+                if tests_compilation_config.starknet {
+                    let _ = collect_contract_entrypoints(entry_db, &contracts);
+                }
+            },
+            move || {
+                let exec_db = exec_db.as_ref();
+                let _ = find_executable_function_ids(exec_db, executable_crate_ids);
+            },
+        );
+    }
+
+    let all_entry_points: Vec<ConcreteFunctionWithBodyId<'db>> =
+        if tests_compilation_config.starknet {
+            collect_contract_entrypoints(db, &contracts)
+        } else {
+            vec![]
+        };
+    let executable_functions = find_executable_function_ids(db, executable_crate_ids);
     let all_tests = find_all_tests(db, test_crate_ids);
 
     let func_ids = chain!(
@@ -289,6 +299,26 @@ fn find_all_tests<'db>(
         }
     }
     tests
+}
+
+/// Collects all entrypoints for given contracts.
+/// This will look for all functions in `__external`, `__constructor` and `__l1_handler` modules
+/// of given contracts ABI.
+fn collect_contract_entrypoints<'db>(
+    db: &'db dyn Database,
+    contracts: &[ContractDeclaration<'db>],
+) -> Vec<ConcreteFunctionWithBodyId<'db>> {
+    contracts
+        .iter()
+        .flat_map(|contract| {
+            chain!(
+                get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap_or_default(),
+                get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap_or_default(),
+                get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap_or_default(),
+            )
+        })
+        .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
+        .collect()
 }
 
 /// The suite of plugins that implements assert macros for tests.
