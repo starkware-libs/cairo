@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateId, CrateInput};
+use cairo_lang_filesystem::ids::{CrateId, CrateInput, SmolStrId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::items::function_with_body::FunctionWithBodySemantic;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
@@ -117,29 +117,69 @@ pub fn compile_test_prepared_db<'db>(
             tests_compilation_config.contract_crate_ids.unwrap_or_else(|| db.crates()),
         )
     });
-    let all_entry_points = if tests_compilation_config.starknet {
-        contracts
-            .iter()
-            .flat_map(|contract| {
-                chain!(
-                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap_or_default(),
-                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE)
-                        .unwrap_or_default(),
-                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap_or_default(),
-                )
-            })
-            .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
-            .collect()
-    } else {
-        vec![]
-    };
 
     let test_crate_ids = CrateInput::into_crate_ids(db, test_crate_ids);
-    let executable_functions = find_executable_function_ids(
-        db,
-        tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone()),
-    );
+    let executable_crate_ids =
+        tests_compilation_config.executable_crate_ids.unwrap_or_else(|| test_crate_ids.clone());
+
+    let (all_entry_points_ids, executable_functions_ids) = {
+        let entry_db = db.dyn_clone();
+        let exec_db = db.dyn_clone();
+        let contracts = contracts.clone();
+        rayon::join(
+            move || {
+                let entry_db = entry_db.as_ref();
+                if tests_compilation_config.starknet {
+                    contracts
+                        .iter()
+                        .flat_map(|contract| {
+                            chain!(
+                                get_contract_abi_functions(entry_db, contract, EXTERNAL_MODULE)
+                                    .unwrap_or_default(),
+                                get_contract_abi_functions(entry_db, contract, CONSTRUCTOR_MODULE)
+                                    .unwrap_or_default(),
+                                get_contract_abi_functions(entry_db, contract, L1_HANDLER_MODULE)
+                                    .unwrap_or_default(),
+                            )
+                        })
+                        .map(|func| {
+                            ConcreteFunctionWithBodyId::from_semantic(entry_db, func.value)
+                                .as_intern_id()
+                        })
+                        .collect()
+                } else {
+                    vec![]
+                }
+            },
+            move || {
+                let exec_db = exec_db.as_ref();
+                find_executable_function_ids(exec_db, executable_crate_ids)
+                    .into_iter()
+                    .map(|(func_id, attrs)| {
+                        (
+                            func_id.as_intern_id(),
+                            attrs.into_iter().map(|attr| attr.as_intern_id()).collect::<Vec<_>>(),
+                        )
+                    })
+                    .collect::<OrderedHashMap<_, _>>()
+            },
+        )
+    };
+
     let all_tests = find_all_tests(db, test_crate_ids);
+
+    let all_entry_points: Vec<ConcreteFunctionWithBodyId<'db>> =
+        all_entry_points_ids.into_iter().map(ConcreteFunctionWithBodyId::from_intern_id).collect();
+    let executable_functions: OrderedHashMap<ConcreteFunctionWithBodyId<'db>, Vec<SmolStrId<'db>>> =
+        executable_functions_ids
+            .into_iter()
+            .map(|(func_id, attrs)| {
+                (
+                    ConcreteFunctionWithBodyId::from_intern_id(func_id),
+                    attrs.into_iter().map(SmolStrId::from_intern_id).collect(),
+                )
+            })
+            .collect();
 
     let func_ids = chain!(
         executable_functions.keys().cloned(),
