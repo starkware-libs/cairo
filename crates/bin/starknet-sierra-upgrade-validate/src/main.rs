@@ -168,6 +168,7 @@ async fn main() -> anyhow::Result<()> {
     if let Some(fullnode_url) = args.fullnode_url {
         let client = FullNodeClient::new(fullnode_url.clone());
         let max_end_block = client.post::<_, u64>("starknet_blockNumber", ()).await? + 1;
+        eprintln!("Latest block #{max_end_block}.");
         let fullnode_args = args.fullnode_args.unwrap();
         let (start_block, end_block) = if let Some(last_n_blocks) = fullnode_args.last_n_blocks {
             let end_block = max_end_block;
@@ -177,6 +178,12 @@ async fn main() -> anyhow::Result<()> {
             let start_block =
                 fullnode_args.start_block.with_context(|| "no start block provided")?;
             let mut end_block = fullnode_args.end_block.with_context(|| "no end block provided")?;
+            if max_end_block < start_block {
+                anyhow::bail!(
+                    "provided `start-block` {start_block} is greater than the max possible block \
+                     {max_end_block}. Quitting."
+                );
+            }
             if max_end_block < end_block {
                 eprintln!(
                     "provided `end-block` {end_block} is greater than the max possible block \
