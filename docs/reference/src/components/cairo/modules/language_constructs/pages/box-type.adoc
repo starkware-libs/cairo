@@ -83,13 +83,16 @@ using `.as_snapshot()`:
 
 [source,cairo]
 ----
-let boxed_value = BoxTrait::new([1, 2, 3]);
-let snap_boxed = @boxed_value;         // @Box<[u32; 3]>
-let boxed_snap = snap_boxed.as_snapshot();  // Box<@[u32; 3]>
-let value_snap = boxed_snap.unbox();   // @[u32; 3]
+let boxed_value = BoxTrait::new(array![1, 2, 3]);
+let snap_boxed = @boxed_value;         // @Box<Array<felt252>>
+let boxed_snap = snap_boxed.as_snapshot();  // Box<@Array<felt252>>
+let value_snap = boxed_snap.unbox();   // @Array<felt252>
 ----
 
 This is useful when working with non-copyable types.
+Since `Array` is not copyable, `Box<Array<T>>` is also not copyable.
+However, `Box<@Array<T>>` is copyable because snapshots are always copyable.
+This allows you to copy a `Box` containing a non-copyable type when needed.
 
 == Dereferencing
 
