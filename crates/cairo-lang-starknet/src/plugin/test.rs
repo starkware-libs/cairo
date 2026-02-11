@@ -125,7 +125,7 @@ impl TestFileRunner for ExpandContractFromCrateTestRunner {
     ) -> TestRunnerResult {
         let db = SHARED_DB_WITH_CONTRACTS.lock().unwrap().snapshot();
         let contract_file_id =
-            FileLongId::OnDisk(PathBuf::from(inputs["contract_file_name"].clone())).intern(&db);
+            FileLongId::OnDisk(PathBuf::from(&inputs["contract_file_name"])).intern(&db);
         let contract_module_ids = db.file_modules(contract_file_id).unwrap();
         let mut diagnostic_items = vec![];
         let result = contract_module_ids
