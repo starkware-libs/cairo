@@ -368,28 +368,16 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CounterIncreased") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::CounterIncreased(val));
+            return Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("CounterDecreased") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::CounterDecreased(val));
+            return Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("UpgradableEvent") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::UpgradableEvent(val));
+            return Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("OwnableEvent") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::OwnableEvent(val));
+            return Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -424,10 +412,7 @@ impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CounterIncreased> {
-                let amount = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(CounterIncreased {amount, })
+        Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
@@ -440,10 +425,7 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CounterDecreased> {
-                let amount = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(CounterDecreased {amount, })
+        Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 #[doc(hidden)]
@@ -1481,28 +1463,16 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CounterIncreased") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::CounterIncreased(val));
+            return Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("CounterDecreased") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::CounterDecreased(val));
+            return Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("UpgradableEvent") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::UpgradableEvent(val));
+            return Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("OwnableEvent") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::OwnableEvent(val));
+            return Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -1537,10 +1507,7 @@ impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CounterIncreased> {
-                let amount = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(CounterIncreased {amount, })
+        Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
@@ -1553,10 +1520,7 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CounterDecreased> {
-                let amount = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(CounterDecreased {amount, })
+        Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 #[doc(hidden)]

@@ -1128,10 +1128,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("Log") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Log(val));
+            return Option::Some(Event::Log(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }

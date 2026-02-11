@@ -375,16 +375,10 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("AwesomeEvent") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::AwesomeEvent(val));
+            return Option::Some(Event::AwesomeEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("BestEventEver") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::BestEventEver(val));
+            return Option::Some(Event::BestEventEver(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -425,13 +419,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<AwesomeEvent> {
-                let x = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-                let data = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(AwesomeEvent {x, data, })
+        Option::Some(AwesomeEvent {x: core::serde::Serde::deserialize(ref data)?, data: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 

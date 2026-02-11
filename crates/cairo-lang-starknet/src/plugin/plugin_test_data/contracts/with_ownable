@@ -273,10 +273,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("Ownable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Ownable(val));
+            return Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -568,10 +565,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("Ownable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Ownable(val));
+            return Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }

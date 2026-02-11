@@ -416,28 +416,16 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ERC20") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::ERC20(val));
+            return Option::Some(Event::ERC20(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Ownable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Ownable(val));
+            return Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Mintable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Mintable(val));
+            return Option::Some(Event::Mintable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Upgradable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Upgradable(val));
+            return Option::Some(Event::Upgradable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -1457,28 +1445,16 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ERC20") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::ERC20(val));
+            return Option::Some(Event::ERC20(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Ownable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Ownable(val));
+            return Option::Some(Event::Ownable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Mintable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Mintable(val));
+            return Option::Some(Event::Mintable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Upgradable") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Upgradable(val));
+            return Option::Some(Event::Upgradable(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }

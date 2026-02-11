@@ -215,10 +215,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ERC20Token") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::ERC20Token(val));
+            return Option::Some(Event::ERC20Token(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -455,10 +452,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ERC20Token") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::ERC20Token(val));
+            return Option::Some(Event::ERC20Token(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }

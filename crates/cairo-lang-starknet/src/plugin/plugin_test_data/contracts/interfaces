@@ -1933,10 +1933,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("CompEvent") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::CompEvent(val));
+            return Option::Some(Event::CompEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }

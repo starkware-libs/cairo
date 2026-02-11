@@ -416,10 +416,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("ABC") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::ABC(val));
+            return Option::Some(Event::ABC(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -1062,16 +1059,10 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("Comp1Event") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Comp1Event(val));
+            return Option::Some(Event::Comp1Event(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Comp2Event") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Comp2Event(val));
+            return Option::Some(Event::Comp2Event(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -1729,16 +1720,10 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("Comp1Event") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Comp1Event(val));
+            return Option::Some(Event::Comp1Event(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("Comp2Event") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::Comp2Event(val));
+            return Option::Some(Event::Comp2Event(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }

@@ -90,16 +90,10 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("AwesomeEvent") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::AwesomeEvent(val));
+            return Option::Some(Event::AwesomeEvent(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("BestEventEver") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::BestEventEver(val));
+            return Option::Some(Event::BestEventEver(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }

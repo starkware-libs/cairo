@@ -44,7 +44,6 @@ fn handle_struct<'db>(
 
     // Generate append_keys_and_data() code.
     let mut append_members = vec![];
-    let mut deserialize_members = vec![];
     let mut ctor = vec![];
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
@@ -57,12 +56,9 @@ fn handle_struct<'db>(
             "self.$member_name$",
             &[("member_name".to_string(), member_name.clone())].into(),
         );
-        let append_member = append_field(member_kind, member_for_append);
-        let deserialize_member = deserialize_field(member_kind, member_name.clone());
-        append_members.push(append_member);
-        deserialize_members.push(deserialize_member);
+        append_members.push(append_field(member_kind, member_for_append));
         ctor.push(RewriteNode::interpolate_patched(
-            "$member_name$, ",
+            &format!("$member_name$: {}?, ", deserialize_member_code(member_kind)),
             &[("member_name".to_string(), member_name)].into(),
         ));
     }
@@ -70,8 +66,6 @@ fn handle_struct<'db>(
         members: members.into_iter().map(|(name, kind)| (name.to_string(db), kind)).collect(),
     };
     let append_members = RewriteNode::Modified(ModifiedNode { children: Some(append_members) });
-    let deserialize_members =
-        RewriteNode::Modified(ModifiedNode { children: Some(deserialize_members) });
     let ctor = RewriteNode::Modified(ModifiedNode { children: Some(ctor) });
 
     // Add an implementation for `Event<StructName>`.
@@ -86,7 +80,7 @@ fn handle_struct<'db>(
                 }}
                 fn deserialize(
                     ref keys: Span<felt252>, ref data: Span<felt252>,
-                ) -> Option<$struct_name$> {{$deserialize_members$
+                ) -> Option<$struct_name$> {{
                     Option::Some($struct_name$ {{$ctor$}})
                 }}
             }}
@@ -95,7 +89,6 @@ fn handle_struct<'db>(
         &[
             ("struct_name".to_string(), struct_name),
             ("append_members".to_string(), append_members),
-            ("deserialize_members".to_string(), deserialize_members),
             ("ctor".to_string(), ctor),
         ]
         .into(),
@@ -219,7 +212,6 @@ fn handle_enum<'db>(
             get_field_kind_for_variant(db, diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
 
-        let append_member = append_field(member_kind, RewriteNode::text("val"));
         let append_variant = RewriteNode::interpolate_patched(
             &format!(
                 "
@@ -229,46 +221,47 @@ fn handle_enum<'db>(
             &[
                 ("enum_name".to_string(), enum_name.clone()),
                 ("variant_name".to_string(), variant_name.clone()),
-                ("append_member".to_string(), append_member),
+                ("append_member".to_string(), append_field(member_kind, RewriteNode::text("val"))),
             ]
             .into(),
         );
 
         if variant.has_attr(db, FLAT_ATTR) {
             let deserialize_variant = RewriteNode::interpolate_patched(
-                "{
+                &format!(
+                    "{{
             let mut keys = keys;
             let mut data = data;
-            match $try_deserialize_member$ {
-                Option::Some(val) => {
+            match {} {{
+                Option::Some(val) => {{
                     return Option::Some($enum_name$::$variant_name$(val));
-                },
-                Option::None => {},
-            };
-        }
+                }},
+                Option::None => {{}},
+            }};
+        }}
         ",
+                    deserialize_member_code(member_kind)
+                ),
                 &[
                     ("enum_name".to_string(), enum_name.clone()),
                     ("variant_name".to_string(), variant_name.clone()),
-                    ("try_deserialize_member".to_string(), try_deserialize_field(member_kind)),
                 ]
                 .into(),
             );
             deserialize_flat_variants.push(deserialize_variant);
         } else {
-            let deserialize_member = deserialize_field(member_kind, RewriteNode::text("val"));
             let deserialize_variant = RewriteNode::interpolate_patched(
                 &format!(
                     "\
-        if {SELECTOR} == selector!(\"$variant_name$\") {{$deserialize_member$
-                return Option::Some($enum_name$::$variant_name$(val));
+        if {SELECTOR} == selector!(\"$variant_name$\") {{
+            return Option::Some($enum_name$::$variant_name$({}?));
         }}
-        "
+        ",
+                    deserialize_member_code(member_kind)
                 ),
                 &[
                     ("enum_name".to_string(), enum_name.clone()),
                     ("variant_name".to_string(), variant_name.clone()),
-                    ("deserialize_member".to_string(), deserialize_member),
                 ]
                 .into(),
             );
@@ -365,41 +358,13 @@ fn append_field<'db>(member_kind: EventFieldKind, field: RewriteNode<'db>) -> Re
     }
 }
 
-fn deserialize_field<'db>(
-    member_kind: EventFieldKind,
-    member_name: RewriteNode<'db>,
-) -> RewriteNode<'db> {
-    RewriteNode::interpolate_patched(
-        match member_kind {
-            EventFieldKind::Nested | EventFieldKind::Flat => {
-                "
-                let $member_name$ = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;"
-            }
-            EventFieldKind::KeySerde => {
-                "
-                let $member_name$ = core::serde::Serde::deserialize(
-                    ref keys
-                )?;"
-            }
-            EventFieldKind::DataSerde => {
-                "
-                let $member_name$ = core::serde::Serde::deserialize(
-                    ref data
-                )?;"
-            }
-        },
-        &[("member_name".to_string(), member_name)].into(),
-    )
-}
-
-fn try_deserialize_field<'db>(member_kind: EventFieldKind) -> RewriteNode<'db> {
-    RewriteNode::text(match member_kind {
+/// Returns the the relevant deserialize code for a field.
+fn deserialize_member_code(member_kind: EventFieldKind) -> &'static str {
+    match member_kind {
         EventFieldKind::Nested | EventFieldKind::Flat => {
             "starknet::Event::deserialize(ref keys, ref data)"
         }
         EventFieldKind::KeySerde => "core::serde::Serde::deserialize(ref keys)",
         EventFieldKind::DataSerde => "core::serde::Serde::deserialize(ref data)",
-    })
+    }
 }

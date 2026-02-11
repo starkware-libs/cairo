@@ -110,13 +110,7 @@ impl AIsEvent of starknet::Event<A> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<A> {
-                let x = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-                let data = core::serde::Serde::deserialize(
-                    ref keys
-                )?;
-        Option::Some(A {x, data, })
+        Option::Some(A {x: core::serde::Serde::deserialize(ref data)?, data: core::serde::Serde::deserialize(ref keys)?, })
     }
 }
 impl AStore<> of starknet::Store::<A> {
@@ -280,10 +274,7 @@ impl BIsEvent of starknet::Event<B> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<B> {
-                let x = core::serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(B {x, })
+        Option::Some(B {x: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 
@@ -328,10 +319,7 @@ impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
     ) -> Option<NestedEventEnum> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("B") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(NestedEventEnum::B(val));
+            return Option::Some(NestedEventEnum::B(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
@@ -441,16 +429,10 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         }
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
         if __selector__ == selector!("A") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(MyEventEnum::A(val));
+            return Option::Some(MyEventEnum::A(starknet::Event::deserialize(ref keys, ref data)?));
         }
         if __selector__ == selector!("B") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(MyEventEnum::B(val));
+            return Option::Some(MyEventEnum::B(starknet::Event::deserialize(ref keys, ref data)?));
         }
         Option::None
     }
