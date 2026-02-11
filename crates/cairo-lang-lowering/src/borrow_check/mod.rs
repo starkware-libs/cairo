@@ -234,10 +234,8 @@ impl<'db, 'mt> Analyzer<'db, '_> for BorrowChecker<'db, 'mt, '_> {
         match_info: &MatchInfo<'db>,
         infos: impl Iterator<Item = Self::Info>,
     ) -> Self::Info {
-        let infos: Vec<_> = infos.collect();
-        let arm_demands = zip_eq(match_info.arms(), &infos)
-            .map(|(arm, demand)| {
-                let mut demand = demand.clone();
+        let arm_demands = zip_eq(match_info.arms(), infos)
+            .map(|(arm, mut demand)| {
                 demand.variables_introduced(self, &arm.var_ids, (None, block_id));
                 (demand, (Some(DropPosition::Diverge(*match_info.location())), block_id))
             })
