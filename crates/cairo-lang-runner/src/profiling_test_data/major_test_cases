@@ -565,30 +565,27 @@ ecdsa_call
 
 //! > expected_profiling_info
 Weight by sierra statement:
-  statement 68: 14 (ec_point_from_x_nz([0], [3]) { fallthrough([18], [19]) 192([20]) })
-  statement 71: 14 (ec_point_from_x_nz([18], [21]) { fallthrough([22], [23]) 184([24]) })
-  statement 84: 12 (ec_state_try_finalize_nz([31]) { fallthrough([32]) 166() })
-  statement 95: 12 (ec_state_try_finalize_nz([39]) { fallthrough([40]) 160() })
-  statement 101: 12 (ec_state_try_finalize_nz([43]) { fallthrough([44]) 117() })
-  statement 134: 12 (ec_state_try_finalize_nz([55]) { fallthrough([56]) 155() })
-  statement 99: 10 (ec_state_add([41], [42]) -> ([43]))
-  statement 132: 10 (ec_state_add([37], [52]) -> ([55]))
-  statement 77: 7 (ec_point_try_new_nz([25], [26]) { fallthrough([27]) 175() })
-  statement 79: 7 (ec_state_init() -> ([28]))
-  statement 82: 5 (ec_state_add_mul([1], [29], [5], [23]) -> ([30], [31]))
-  statement 90: 5 (ec_state_add_mul([30], [35], [2], [27]) -> ([36], [37]))
-  statement 92: 5 (ec_state_add_mul([36], [28], [4], [19]) -> ([38], [39]))
-  statement 19: 3 (store_temp<core::panics::PanicResult::<((),)>>([13]) -> ([13]))
-  statement 83: 3 (store_temp<EcState>([31]) -> ([31]))
-  statement 93: 3 (store_temp<EcState>([39]) -> ([39]))
-  statement 94: 3 (store_temp<EcState>([37]) -> ([37]))
-  statement 100: 3 (store_temp<EcState>([43]) -> ([43]))
-  statement 133: 3 (store_temp<EcState>([55]) -> ([55]))
-  statement 148: 3 (store_temp<core::panics::PanicResult::<(core::bool,)>>([64]) -> ([64]))
-  statement 81: 2 (store_temp<NonZero<EcPoint>>([23]) -> ([23]))
-  statement 89: 2 (store_temp<NonZero<EcPoint>>([27]) -> ([27]))
-  statement 91: 2 (store_temp<NonZero<EcPoint>>([19]) -> ([19]))
-  statement 120: 2 (store_temp<EcPoint>([51]) -> ([51]))
+  statement 56: 14 (ec_point_from_x_nz([0], [3]) { fallthrough([18], [19]) 151([20]) })
+  statement 59: 14 (ec_point_from_x_nz([18], [21]) { fallthrough([22], [23]) 143([24]) })
+  statement 66: 12 (ec_state_try_finalize_nz([28]) { fallthrough([29]) 135() })
+  statement 78: 12 (ec_state_try_finalize_nz([37]) { fallthrough([38]) 129() })
+  statement 84: 12 (ec_state_try_finalize_nz([41]) { fallthrough([42]) 100() })
+  statement 105: 12 (ec_state_try_finalize_nz([49]) { fallthrough([50]) 124() })
+  statement 82: 10 (ec_state_add([39], [40]) -> ([41]))
+  statement 103: 10 (ec_state_add([35], [48]) -> ([49]))
+  statement 61: 7 (ec_state_init() -> ([25]))
+  statement 64: 5 (ec_state_add_mul([1], [26], [5], [23]) -> ([27], [28]))
+  statement 73: 5 (ec_state_add_mul([27], [33], [2], [32]) -> ([34], [35]))
+  statement 75: 5 (ec_state_add_mul([34], [25], [4], [19]) -> ([36], [37]))
+  statement 65: 3 (store_temp<EcState>([28]) -> ([28]))
+  statement 76: 3 (store_temp<EcState>([37]) -> ([37]))
+  statement 77: 3 (store_temp<EcState>([35]) -> ([35]))
+  statement 83: 3 (store_temp<EcState>([41]) -> ([41]))
+  statement 104: 3 (store_temp<EcState>([49]) -> ([49]))
+  statement 63: 2 (store_temp<NonZero<EcPoint>>([23]) -> ([23]))
+  statement 72: 2 (store_temp<NonZero<EcPoint>>([32]) -> ([32]))
+  statement 74: 2 (store_temp<NonZero<EcPoint>>([19]) -> ([19]))
+  statement 102: 2 (store_temp<NonZero<EcPoint>>([48]) -> ([48]))
   statement 4: 1 (store_temp<RangeCheck>([0]) -> ([0]))
   statement 5: 1 (store_temp<EcOp>([1]) -> ([1]))
   statement 6: 1 (store_temp<felt252>([2]) -> ([2]))
@@ -596,85 +593,71 @@ Weight by sierra statement:
   statement 8: 1 (store_temp<felt252>([4]) -> ([4]))
   statement 9: 1 (store_temp<felt252>([5]) -> ([5]))
   statement 10: 1 (function_call<user@core::ecdsa::check_ecdsa_signature>([0], [1], [2], [3], [4], [5]) -> ([6], [7], [8]))
-  statement 11: 1 (enum_match<core::panics::PanicResult::<(core::bool,)>>([8]) { fallthrough([9]) 21([10]) })
-  statement 17: 1 (store_temp<RangeCheck>([6]) -> ([6]))
-  statement 18: 1 (store_temp<EcOp>([7]) -> ([7]))
-  statement 20: 1 (return([6], [7], [13]))
-  statement 28: 1 (felt252_is_zero([6]) { fallthrough() 35([7]) })
-  statement 41: 1 (store_temp<felt252>([11]) -> ([11]))
-  statement 42: 1 (felt252_is_zero([11]) { fallthrough() 52([12]) })
-  statement 56: 1 (store_temp<felt252>([16]) -> ([16]))
-  statement 57: 1 (felt252_is_zero([16]) { fallthrough() 66([17]) })
-  statement 75: 1 (store_temp<felt252>([25]) -> ([25]))
-  statement 76: 1 (store_temp<felt252>([26]) -> ([26]))
-  statement 107: 1 (store_temp<felt252>([48]) -> ([48]))
-  statement 108: 1 (felt252_is_zero([48]) { fallthrough() 114([49]) })
-  statement 116: 1 (jump() { 118() })
-  statement 121: 1 (ec_point_is_zero([51]) { fallthrough() 131([52]) })
-  statement 139: 1 (store_temp<felt252>([59]) -> ([59]))
-  statement 140: 1 (felt252_is_zero([59]) { fallthrough() 150([60]) })
-  statement 146: 1 (store_temp<RangeCheck>([22]) -> ([22]))
-  statement 147: 1 (store_temp<EcOp>([38]) -> ([38]))
-  statement 149: 1 (return([22], [38], [64]))
+  statement 12: 1 (store_temp<RangeCheck>([6]) -> ([6]))
+  statement 13: 1 (store_temp<EcOp>([7]) -> ([7]))
+  statement 14: 1 (return([6], [7]))
+  statement 16: 1 (felt252_is_zero([6]) { fallthrough() 23([7]) })
+  statement 29: 1 (store_temp<felt252>([11]) -> ([11]))
+  statement 30: 1 (felt252_is_zero([11]) { fallthrough() 40([12]) })
+  statement 44: 1 (store_temp<felt252>([16]) -> ([16]))
+  statement 45: 1 (felt252_is_zero([16]) { fallthrough() 54([17]) })
+  statement 90: 1 (store_temp<felt252>([46]) -> ([46]))
+  statement 91: 1 (felt252_is_zero([46]) { fallthrough() 97([47]) })
+  statement 99: 1 (jump() { 101() })
+  statement 110: 1 (store_temp<felt252>([53]) -> ([53]))
+  statement 111: 1 (felt252_is_zero([53]) { fallthrough() 119([54]) })
+  statement 115: 1 (store_temp<RangeCheck>([22]) -> ([22]))
+  statement 116: 1 (store_temp<EcOp>([36]) -> ([36]))
+  statement 117: 1 (store_temp<core::bool>([56]) -> ([56]))
+  statement 118: 1 (return([22], [36], [56]))
 Weight by concrete libfunc:
   libfunc ec_state_try_finalize_nz: 48
   libfunc ec_point_from_x_nz: 28
   libfunc ec_state_add: 20
   libfunc ec_state_add_mul: 15
   libfunc store_temp<EcState>: 15
-  libfunc store_temp<felt252>: 10
-  libfunc ec_point_try_new_nz: 7
+  libfunc store_temp<NonZero<EcPoint>>: 8
+  libfunc store_temp<felt252>: 8
   libfunc ec_state_init: 7
-  libfunc store_temp<NonZero<EcPoint>>: 6
   libfunc felt252_is_zero: 5
   libfunc store_temp<EcOp>: 3
   libfunc store_temp<RangeCheck>: 3
-  libfunc store_temp<core::panics::PanicResult::<((),)>>: 3
-  libfunc store_temp<core::panics::PanicResult::<(core::bool,)>>: 3
-  libfunc store_temp<EcPoint>: 2
-  libfunc ec_point_is_zero: 1
-  libfunc enum_match<core::panics::PanicResult::<(core::bool,)>>: 1
   libfunc function_call<user@core::ecdsa::check_ecdsa_signature>: 1
   libfunc jump: 1
+  libfunc store_temp<core::bool>: 1
   return: 2
 Weight by generic libfunc:
   libfunc ec_state_try_finalize_nz: 48
-  libfunc store_temp: 45
+  libfunc store_temp: 38
   libfunc ec_point_from_x_nz: 28
   libfunc ec_state_add: 20
   libfunc ec_state_add_mul: 15
-  libfunc ec_point_try_new_nz: 7
   libfunc ec_state_init: 7
   libfunc felt252_is_zero: 5
-  libfunc ec_point_is_zero: 1
-  libfunc enum_match: 1
   libfunc function_call: 1
   libfunc jump: 1
   return: 2
 Weight by user function (inc. generated):
-  function core::ecdsa::check_ecdsa_signature: 167
-  function test::ecdsa_call: 14
+  function core::ecdsa::check_ecdsa_signature: 155
+  function test::ecdsa_call: 10
 Weight by original user function (exc. generated):
-  function core::ecdsa::check_ecdsa_signature: 167
-  function test::ecdsa_call: 14
+  function core::ecdsa::check_ecdsa_signature: 155
+  function test::ecdsa_call: 10
 Weight by Cairo function:
   function core::ec::EcStateImpl::finalize_nz: 63
   function core::ec::EcPointImpl::new_nz_from_x: 28
   function core::ec::EcStateImpl::add_mul: 21
-  function lib.cairo::ecdsa_call: 14
-  function core::Felt252PartialEq::eq: 10
+  function core::Felt252PartialEq::eq: 14
+  function core::ec::EcStateImpl::sub: 12
   function core::ec::EcStateImpl::add: 10
-  function core::ec::EcStateImpl::sub: 10
-  function core::ec::EcPointImpl::new_nz: 9
+  function lib.cairo::ecdsa_call: 10
   function core::ec::EcStateImpl::init: 7
-  function core::ecdsa::check_ecdsa_signature: 6
-  function core::ec::EcPointTryIntoNonZero::try_into: 3
 Weight by Sierra stack trace:
-  test::ecdsa_call: 181
-  test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 167
+  test::ecdsa_call: 165
+  test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 155
 Weight by Cairo stack trace:
-  test::ecdsa_call: 181
-  test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 167
+  test::ecdsa_call: 165
+  test::ecdsa_call -> core::ecdsa::check_ecdsa_signature: 155
 
 //! > ==========================================================================
 

@@ -5,7 +5,6 @@ mod reboxing_test;
 use std::rc::Rc;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_semantic::corelib::core_box_ty;
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -308,10 +307,6 @@ fn create_deconstruct_statements<'db>(
 ///
 /// And replaces it with a direct struct_boxed_deconstruct libfunc call.
 pub fn apply_reboxing<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) -> Maybe<()> {
-    if db.flag_future_sierra() {
-        let candidates = find_reboxing_candidates(lowered);
-        apply_reboxing_candidates(db, lowered, &candidates)
-    } else {
-        Ok(())
-    }
+    let candidates = find_reboxing_candidates(lowered);
+    apply_reboxing_candidates(db, lowered, &candidates)
 }
