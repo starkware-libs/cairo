@@ -88,74 +88,80 @@ impl<'db> Usage<'db> {
     /// Removes usage that was introduced current block and usage that is already covered
     /// by containing variables.
     pub fn finalize_as_scope(&mut self) {
-        for (member_path, _) in self.usage.clone() {
-            // Prune introductions from usages.
-            if self.introductions.contains(&member_path.base_var()) {
-                self.usage.swap_remove(&member_path);
-                continue;
-            }
-
+        // Prune introductions from usages.
+        for member_path in prune_and_get_candidates(&mut self.usage, |k| {
+            self.introductions.contains(&k.base_var())
+        }) {
             // Prune usages that are members of other usages.
-            let mut current_path = member_path.clone();
+            let mut current_path = &member_path;
             while let MemberPath::Member { parent, .. } = current_path {
-                current_path = *parent.clone();
-                if self.usage.contains_key(&current_path) {
+                current_path = parent.as_ref();
+                if self.usage.contains_key(current_path) {
                     self.usage.swap_remove(&member_path);
                     break;
                 }
             }
         }
-        for (member_path, _) in self.snap_usage.clone() {
-            // Prune usages from snap_usage.
-            if self.usage.contains_key(&member_path) {
-                self.snap_usage.swap_remove(&member_path);
-                continue;
-            }
-
-            // Prune introductions from snap_usage.
-            if self.introductions.contains(&member_path.base_var()) {
-                self.snap_usage.swap_remove(&member_path);
-            }
-
+        // Prune usages and introdictions from snap_usage.
+        for member_path in prune_and_get_candidates(&mut self.snap_usage, |k| {
+            self.usage.contains_key(k) || self.introductions.contains(&k.base_var())
+        }) {
             // Prune snap_usage that are members of other snap_usage or usages.
-            let mut current_path = member_path.clone();
+            let mut current_path = &member_path;
             while let MemberPath::Member { parent, .. } = current_path {
-                current_path = *parent.clone();
-                if self.snap_usage.contains_key(&current_path)
-                    | self.usage.contains_key(&current_path)
+                current_path = parent.as_ref();
+                if self.snap_usage.contains_key(current_path)
+                    | self.usage.contains_key(current_path)
                 {
                     self.snap_usage.swap_remove(&member_path);
                     break;
                 }
             }
         }
-        for (member_path, _) in self.changes.clone() {
-            // Prune introductions from changes.
-            if self.introductions.contains(&member_path.base_var()) {
-                self.changes.swap_remove(&member_path);
-            }
-
+        // Prune introductions from changes.
+        for member_path in prune_and_get_candidates(&mut self.changes, |k| {
+            self.introductions.contains(&k.base_var())
+        }) {
             // Prune changes that are members of other changes.
             // Also if a child is changed and its parent is used, then we change the parent.
             // TODO(TomerStarkware): Deconstruct the parent, and snap_use other members.
-            let mut current_path = member_path.clone();
+            let mut current_path = &member_path;
             while let MemberPath::Member { parent, .. } = current_path {
-                current_path = *parent.clone();
-                if self.snap_usage.contains_key(&current_path) {
+                current_path = parent.as_ref();
+                if self.snap_usage.contains_key(current_path) {
                     // Note that current_path must be top most usage as we prune snap_usage and
                     // usage.
-                    if let Some(value) = self.snap_usage.swap_remove(&current_path) {
+                    if let Some(value) = self.snap_usage.swap_remove(current_path) {
                         self.usage.insert(current_path.clone(), value.clone());
                         self.changes.insert(current_path.clone(), value);
                     };
                 }
-                if self.changes.contains_key(&current_path) {
+                if self.changes.contains_key(current_path) {
                     self.changes.swap_remove(&member_path);
                     break;
                 }
             }
         }
     }
+}
+
+/// Prunes the map by removing entries for which `filter` returns true.
+/// From the remaining entries, collects the `MemberPath::Member` variants and returns them.
+fn prune_and_get_candidates<'db>(
+    map: &mut OrderedHashMap<MemberPath<'db>, ExprVarMemberPath<'db>>,
+    filter: impl Fn(&MemberPath<'db>) -> bool,
+) -> Vec<MemberPath<'db>> {
+    let mut candidates = Vec::new();
+    map.retain(|k, _| {
+        if filter(k) {
+            return false;
+        }
+        if matches!(k, MemberPath::Member { .. }) {
+            candidates.push(k.clone());
+        }
+        true
+    });
+    candidates
 }
 
 /// Usages of member paths in expressions of interest, currently loops and closures.

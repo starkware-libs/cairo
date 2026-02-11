@@ -103,10 +103,10 @@ test_compiled_class_hash
 libfuncs_coverage__libfuncs_coverage
 
 //! > compiled_class_hash
-5d51b7cb81347221075fee64962b7ebf66f7ce641f3453575943e391aa7d5a7
+48014a7284f6bf24d346a43f4d7ccb1d4827ee9aacf76a8fdc81fb9c9cf43a1
 
 //! > legacy_compiled_class_hash
-56e7ea805897fa615e927033a7ee84ae057fee222e96d6d1ccac4125482673a
+4bc1d6387f72bba5e9bb8cded1f51abbb8e3d28f31ea18b20bb1c751831c1b2
 
 //! > ==========================================================================
 

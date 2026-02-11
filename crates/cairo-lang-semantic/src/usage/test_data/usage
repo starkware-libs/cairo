@@ -34,7 +34,7 @@ struct B {
 
 //! > usage
 Loop 8:4:
-  Usage: LocalVarId(test::c), ParamId(test::a)::b, ParamId(test::b),
+  Usage: LocalVarId(test::c), ParamId(test::b), ParamId(test::a)::b,
   Changes: ParamId(test::a)::b::c, ParamId(test::b),
   Snapshot_Usage:
 
