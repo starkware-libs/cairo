@@ -68,7 +68,7 @@ fn flag_numeric_match_optimization_min_arms_threshold(db: &dyn salsa::Database) 
     )
 }
 
-/// Returns the value of the `unsafe_panic` flag, or `false` if the flag is not set.
+/// Returns the value of the `panic_backtrace` flag, or `false` if the flag is not set.
 #[salsa::tracked]
 fn flag_panic_backtrace(db: &dyn salsa::Database) -> bool {
     extract_flag_value!(db, PANIC_BACKTRACE, PanicBacktrace).unwrap_or_default()
