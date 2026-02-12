@@ -229,7 +229,10 @@ fn generate_ast_code() -> rust::Tokens {
                     Variants::List(variants) => variants,
                     Variants::AllTokens => all_tokens
                         .iter()
-                        .map(|node| Variant { name: node.name.clone(), kind: node.name.clone() })
+                        .map(|node| {
+                            let n = node.name.clone();
+                            Variant { name: n.clone(), kind: n }
+                        })
                         .collect(),
                 };
                 gen_enum_code(name, variants_list, missing_variant)
