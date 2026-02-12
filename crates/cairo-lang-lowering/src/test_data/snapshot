@@ -222,7 +222,7 @@ Statements:
   (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
   () <- test::bar(v3)
 End:
-  Return(v2)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -236,17 +236,23 @@ fn foo() -> usize {
     let mut array: Array<u32> = array![14];
     let mut i = 0;
 
-    while i < array.len() {
+    while i < opaque_len(@array) {
         i += 1;
     }
 
     array.pop_front().unwrap();
 
-    array.len()
+    opaque_len(@array)
 }
 
 //! > function_name
 foo
+
+//! > module_code
+#[inline(never)]
+fn opaque_len(a: @Array<u32>) -> usize {
+    a.len()
+}
 
 //! > semantic_diagnostics
 
@@ -256,7 +262,7 @@ foo
 Parameters: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::u32, ())>) <- test::foo[83-134]{0, @array![14], }(v0, v1)
+  (v2: core::RangeCheck, v3: core::gas::GasBuiltin, v4: core::panics::PanicResult::<(core::integer::u32, ())>) <- test::foo[83-141]{0, @array![14], }(v0, v1)
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -265,9 +271,9 @@ End:
 
 blk1:
 Statements:
-  (v7: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
-  (v8: core::integer::u32) <- 14
-  (v9: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v7, v8)
+  (v7: core::integer::u32) <- 14
+  (v8: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
+  (v9: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v8, v7)
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v9) {
     Option::Some(v10, v11) => blk2,
@@ -278,7 +284,7 @@ blk2:
 Statements:
   (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
   (v14: core::array::Array::<core::integer::u32>, v15: @core::array::Array::<core::integer::u32>) <- snapshot(v10)
-  (v16: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v15)
+  (v16: core::integer::u32) <- test::opaque_len(v15)
   (v17: (core::integer::u32,)) <- struct_construct(v16)
   (v18: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v17)
 End:

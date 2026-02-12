@@ -3,10 +3,11 @@
 //! Tracks where each variable is used (statement inputs and block-end inputs).
 //! Updated incrementally as forwarding runs, so later checks see current use counts.
 //!
-//! A use is identified by the `(variable, UseLocation)` pair: a single statement
-//! that consumes the same variable in multiple input slots (e.g. `felt252_add(v, v)`)
-//! is recorded once. This matches forwarding's rename semantics — a single rename
-//! at a `UseLocation` rewrites every input slot at that location.
+//! Each `(variable, UseLocation)` pair stores a multiplicity: the number of input
+//! slots consuming the variable at that location (e.g. `felt252_add(v, v)` records `v`
+//! at that location with count 2). `use_count` sums these, so it is the total number
+//! of consuming slots. A rename rewrites every slot at a location at once, so moving a
+//! variable's uses to another (see `move_uses`) transfers the whole per-location count.
 
 use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 
@@ -56,30 +57,26 @@ impl UseSites {
         Self { sites }
     }
 
-    /// Returns how many distinct use sites remain for `var`.
+    /// Returns the total number of consuming slots remaining for `var` (the summed
+    /// multiplicity across all of its use-site locations).
     pub fn use_count(&self, var: VariableId) -> usize {
         self.sites[var.index()].iter().map(|(_, count)| *count).sum()
     }
 
-    /// Removes the use of `var` at `loc`. Idempotent.
-    pub fn remove_use(&mut self, var: VariableId, loc: UseLocation) {
-        match self.sites[var.index()].entry(loc) {
-            Entry::Occupied(mut entry) => {
-                *entry.get_mut() -= 1;
-                if *entry.get() == 0 {
-                    entry.swap_remove();
-                }
-            }
-            Entry::Vacant(_) => {}
-        }
+    /// Moves all uses of `from` at `loc` to `to`, mirroring a rename that rewrites
+    /// every consuming slot at that location in one go: the whole per-location count is
+    /// transferred and added to any uses `to` already has there. No-op if `from` has no
+    /// use at `loc`.
+    pub fn move_uses(&mut self, from: VariableId, to: VariableId, loc: UseLocation) {
+        let Entry::Occupied(entry) = self.sites[from.index()].entry(loc) else {
+            return;
+        };
+        let count = entry.swap_remove();
+        *self.sites[to.index()].entry(loc).or_default() += count;
     }
 
-    /// Adds a use of `var` at `loc`. Idempotent.
-    pub fn add_use(&mut self, var: VariableId, loc: UseLocation) {
-        *self.sites[var.index()].entry(loc).or_default() += 1;
-    }
-
-    /// Returns the use-site locations for `var`.
+    /// Returns each use-site location for `var` together with its multiplicity (the
+    /// number of consuming slots at that location).
     pub fn use_locs(
         &self,
         var: VariableId,
