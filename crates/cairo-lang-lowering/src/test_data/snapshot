@@ -222,7 +222,7 @@ Statements:
   (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
   () <- test::bar(v3)
 End:
-  Return(v2)
+  Return(v1)
 
 //! > ==========================================================================
 
@@ -265,9 +265,9 @@ End:
 
 blk1:
 Statements:
-  (v7: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
-  (v8: core::integer::u32) <- 14
-  (v9: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v7, v8)
+  (v7: core::integer::u32) <- 14
+  (v8: core::array::Array::<core::integer::u32>) <- core::array::array_new::<core::integer::u32>()
+  (v9: core::array::Array::<core::integer::u32>) <- core::array::array_append::<core::integer::u32>(v8, v7)
 End:
   Match(match core::array::array_pop_front::<core::integer::u32>(v9) {
     Option::Some(v10, v11) => blk2,
@@ -277,25 +277,24 @@ End:
 blk2:
 Statements:
   (v13: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v3)
-  (v14: core::array::Array::<core::integer::u32>, v15: @core::array::Array::<core::integer::u32>) <- snapshot(v10)
-  (v16: core::integer::u32) <- core::array::array_len::<core::integer::u32>(v15)
-  (v17: (core::integer::u32,)) <- struct_construct(v16)
-  (v18: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v17)
+  (v14: core::integer::u32) <- 0
+  (v15: (core::integer::u32,)) <- struct_construct(v14)
+  (v16: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Ok(v15)
 End:
-  Return(v2, v13, v18)
+  Return(v2, v13, v16)
 
 blk3:
 Statements:
-  (v19: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
-  (v20: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v19)
+  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<29721761890975875353235833581453094220424382983267374>()
+  (v18: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v17)
 End:
-  Return(v2, v3, v20)
+  Return(v2, v3, v18)
 
 blk4:
 Statements:
-  (v21: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v6)
+  (v19: core::panics::PanicResult::<(core::integer::u32,)>) <- PanicResult::Err(v6)
 End:
-  Return(v2, v3, v21)
+  Return(v2, v3, v19)
 
 //! > ==========================================================================
 

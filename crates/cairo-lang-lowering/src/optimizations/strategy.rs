@@ -25,6 +25,7 @@ use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::optimizations::return_optimization::return_optimization;
 use crate::optimizations::split_structs::split_structs;
+use crate::optimizations::variable_forwarding::variable_forwarding;
 use crate::reorganize_blocks::reorganize_blocks;
 
 /// Enum of the optimization phases that can be used in a strategy.
@@ -47,6 +48,7 @@ pub enum OptimizationPhase<'db> {
     ReturnOptimization,
     SplitStructs,
     TrimUnreachable,
+    VariableForwarding,
     GasRedeposit,
     /// The following is not really an optimization but we want to apply optimizations before and
     /// after it, so it is convenient to treat it as an optimization.
@@ -103,6 +105,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
             OptimizationPhase::ReturnOptimization => return_optimization(db, lowered),
             OptimizationPhase::SplitStructs => split_structs(lowered),
             OptimizationPhase::TrimUnreachable => trim_unreachable(db, lowered),
+            OptimizationPhase::VariableForwarding => variable_forwarding(db, lowered),
             OptimizationPhase::LowerImplicits => lower_implicits(db, function, lowered),
             OptimizationPhase::GasRedeposit => gas_redeposit(db, function, lowered),
             OptimizationPhase::Validate => validate(lowered).unwrap_or_else(|err| {
@@ -189,18 +192,31 @@ pub fn baseline_optimization_strategy<'db>(db: &'db dyn Database) -> Optimizatio
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::ReorderStatements,
                 OptimizationPhase::BranchInversion,
-                OptimizationPhase::CancelOps,
+                OptimizationPhase::VariableForwarding,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::OptimizeMatches,
+                OptimizationPhase::ReorderStatements,
                 // Must be right before const folding.
                 OptimizationPhase::ReorganizeBlocks,
                 OptimizationPhase::ConstFolding,
-                OptimizationPhase::OptimizeMatches,
-                OptimizationPhase::SplitStructs,
-                OptimizationPhase::ReorganizeBlocks,
-                OptimizationPhase::ReorderStatements,
-                OptimizationPhase::OptimizeMatches,
-                OptimizationPhase::ReorganizeBlocks,
+                // TODO(eytan-starkware): Teach `VariableForwarding` to detect the
+                // `unbox + struct_destruct + into_box` pattern and synthesize the
+                // boxed-deconstruct directly, then drop this dedicated pass. The
+                // following `VariableForwarding` cleans up Reboxing's leftover
+                // unbox/destruct/into_box statements.
                 OptimizationPhase::Reboxing,
-                OptimizationPhase::CancelOps,
+                OptimizationPhase::VariableForwarding,
+                // TODO(eytan-starkware): Teach `VariableForwarding` to cancel
+                // `struct_construct/struct_destructure` pairs across goto merges
+                // (per-edge cancellation), then drop this dedicated pass. Placed
+                // before `OptimizeMatches` so the now-exposed `match_enum`s on
+                // unwrapped enums can fold.
+                OptimizationPhase::SplitStructs,
+                OptimizationPhase::ReorderStatements,
+                OptimizationPhase::ReorganizeBlocks,
+                OptimizationPhase::OptimizeMatches,
+                OptimizationPhase::ReorderStatements,
                 OptimizationPhase::ReorganizeBlocks,
                 // Performing CSE here after blocks are the most contiguous, to reach maximum
                 // effect.

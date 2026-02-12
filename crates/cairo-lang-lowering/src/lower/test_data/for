@@ -151,20 +151,18 @@ End:
 blk3:
 Statements:
   (v21: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v6)
-  (v22: core::array::Span::<core::felt252>) <- struct_construct(v13)
-  (v23: core::array::SpanIter::<core::felt252>) <- struct_construct(v22)
-  (v24: ()) <- struct_construct()
-  (v25: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v23, v3, v24)
-  (v26: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v25)
+  (v22: ()) <- struct_construct()
+  (v23: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v2, v3, v22)
+  (v24: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v23)
 End:
-  Return(v5, v21, v26)
+  Return(v5, v21, v24)
 
 blk4:
 Statements:
-  (v27: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v28: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v27)
+  (v25: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v26: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v25)
 End:
-  Return(v7, v8, v28)
+  Return(v7, v8, v26)
 
 
 Final lowering of specialized call "test::foo[118-164]{NotSpecialized, 1, 2, }":
@@ -201,20 +199,18 @@ blk3:
 Statements:
   (v19: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v4)
   (v20: core::felt252) <- 1
-  (v21: core::array::Span::<core::felt252>) <- struct_construct(v11)
-  (v22: core::array::SpanIter::<core::felt252>) <- struct_construct(v21)
-  (v23: ()) <- struct_construct()
-  (v24: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v22, v20, v23)
-  (v25: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v24)
+  (v21: ()) <- struct_construct()
+  (v22: (core::array::SpanIter::<core::felt252>, core::felt252, ())) <- struct_construct(v2, v20, v21)
+  (v23: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Ok(v22)
 End:
-  Return(v3, v19, v25)
+  Return(v3, v19, v23)
 
 blk4:
 Statements:
-  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v26)
+  (v24: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v25: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::felt252, ())>) <- PanicResult::Err(v24)
 End:
-  Return(v5, v6, v27)
+  Return(v5, v6, v25)
 
 //! > ==========================================================================
 
@@ -454,20 +450,18 @@ End:
 blk3:
 Statements:
   (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v23: core::array::Span::<core::felt252>) <- struct_construct(v12)
-  (v24: core::array::SpanIter::<core::felt252>) <- struct_construct(v23)
-  (v25: ()) <- struct_construct()
-  (v26: (core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())) <- struct_construct(v24, v3, v25)
-  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Ok(v26)
+  (v23: ()) <- struct_construct()
+  (v24: (core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())) <- struct_construct(v2, v3, v23)
+  (v25: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Ok(v24)
 End:
-  Return(v4, v22, v27)
+  Return(v4, v22, v25)
 
 blk4:
 Statements:
-  (v28: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v29: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v28)
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v26)
 End:
-  Return(v6, v7, v29)
+  Return(v6, v7, v27)
 
 
 Final lowering of specialized call "test::foo[78-125]":
@@ -505,17 +499,15 @@ End:
 blk3:
 Statements:
   (v22: core::gas::GasBuiltin) <- core::gas::redeposit_gas(v5)
-  (v23: core::array::Span::<core::felt252>) <- struct_construct(v12)
-  (v24: core::array::SpanIter::<core::felt252>) <- struct_construct(v23)
-  (v25: ()) <- struct_construct()
-  (v26: (core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())) <- struct_construct(v24, v3, v25)
-  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Ok(v26)
+  (v23: ()) <- struct_construct()
+  (v24: (core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())) <- struct_construct(v2, v3, v23)
+  (v25: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Ok(v24)
 End:
-  Return(v4, v22, v27)
+  Return(v4, v22, v25)
 
 blk4:
 Statements:
-  (v28: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
-  (v29: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v28)
+  (v26: (core::panics::Panic, core::array::Array::<core::felt252>)) <- core::panic_with_const_felt252::<375233589013918064796019>()
+  (v27: core::panics::PanicResult::<(core::array::SpanIter::<core::felt252>, core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v26)
 End:
-  Return(v6, v7, v29)
+  Return(v6, v7, v27)

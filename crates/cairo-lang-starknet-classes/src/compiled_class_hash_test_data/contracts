@@ -7,10 +7,10 @@ test_compiled_class_hash
 account__account
 
 //! > compiled_class_hash
-157b171a4b32501500368cd24fa28c23cd5489ea88cb8190a81ba28aa7c319a
+6e3ae009755d4ce1a684fd16b1e2d565ce87b307160a0d9e12d5d3d4f76e0f2
 
 //! > legacy_compiled_class_hash
-fd82d15135051e1ac83ad3a695ed312254af902b36bfee0fb4ddaa9a84d0ff
+6bc2a61702aab219a0d8d873684bd664dba9818bc573d2b05ec0dea05c8d435
 
 //! > ==========================================================================
 
@@ -39,10 +39,10 @@ test_compiled_class_hash
 test_contract__test_contract
 
 //! > compiled_class_hash
-2e3ad85380cbeb20f09e4671ab791369a527d6ed941b4f2ec51b593291684bf
+148be50c28d387a297a32baaa8773bda81d821f993a66c132bd8a914761588a
 
 //! > legacy_compiled_class_hash
-3deb04754bccda833bd8c86c23e0e110e6ec1aa446acc98833f4f78420120d5
+4a4c40d4032c5a176196401a6bdcd59a63475aa61af64e0c0c298d1e9efbff6
 
 //! > ==========================================================================
 
@@ -55,10 +55,10 @@ test_compiled_class_hash
 new_syntax_test_contract__counter_contract
 
 //! > compiled_class_hash
-108e25201ddc45d0555956f12aa953f00527fae65d21f9cdf61c9df8b307eb9
+49080e17d0099142c3bbff4a843cda97d8f5040c2979b341aa3bcd9603d73b6
 
 //! > legacy_compiled_class_hash
-3cb88fee4910efe25ebfadb3f8f953c2dd8f019d3ea746f0acfa64d2547fae2
+5b06f69298676c6b5341b1d1cb10d8cb76217e45702b31acb92f0b2704d29e1
 
 //! > ==========================================================================
 
@@ -103,10 +103,10 @@ test_compiled_class_hash
 libfuncs_coverage__libfuncs_coverage
 
 //! > compiled_class_hash
-572a8f8844c699a43673a1baf92b168c820520241fa73ff234e42c886f0305c
+68c1e76b34177228e509d0cfc8ddd95bb4f439a96855b88ddb9e0a0beacb92e
 
 //! > legacy_compiled_class_hash
-6c10c6d327e23907417691997d5b6accb010d2006113c86ee0469a73e332b0f
+67d9403099a979a32e9cf76ca1c8b4d6e87e34e115c7d723316c753b0a110e2
 
 //! > ==========================================================================
 
