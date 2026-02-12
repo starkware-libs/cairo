@@ -1166,7 +1166,6 @@ End:
 blk4:
 Statements:
   (v24: ()) <- struct_construct()
-  (v25: core::array::Span::<core::felt252>) <- struct_construct(v15)
 End:
   Return()
 
@@ -1184,7 +1183,7 @@ Block 3:
 ()() = v23, @core::array::Array::<core::felt252>() = v13, @core::array::Array::<core::felt252>(v1) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v14, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v13 = v21, v3 = v16, v8 = v9
 
 Block 4:
-()() = v24, @core::array::Array::<core::felt252>() = v10, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v10 = v15, v11 = v25, v8 = v9
+()() = v24, @core::array::Array::<core::felt252>() = v10, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v10 = v15, v8 = v9
 
 //! > ==========================================================================
 
@@ -1273,7 +1272,6 @@ End:
 blk4:
 Statements:
   (v24: ()) <- struct_construct()
-  (v25: core::array::Span::<core::felt252>) <- struct_construct(v15)
 End:
   Return()
 
@@ -1291,7 +1289,7 @@ Block 3:
 ()() = v23, @core::array::Array::<core::felt252>() = v13, @core::array::Array::<core::felt252>(v0) = v13, @v0 = v3, @v1 = v5, @v8 = v10, Box(v5) = v14, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, core::array::Span::<core::felt252>(v13) = v17, v0 = v2, v1 = v4, v10 = v12, v13 = v18, v13 = v21, v5 = v16, v8 = v9
 
 Block 4:
-()() = v24, @core::array::Array::<core::felt252>() = v10, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v10 = v15, v11 = v25, v8 = v9
+()() = v24, @core::array::Array::<core::felt252>() = v10, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, core::array::Span::<core::felt252>(v10) = v11, v0 = v2, v1 = v4, v10 = v12, v10 = v15, v8 = v9
 
 //! > ==========================================================================
 
