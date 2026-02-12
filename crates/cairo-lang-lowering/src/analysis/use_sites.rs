@@ -56,7 +56,7 @@ impl UseSites {
         Self { sites }
     }
 
-    /// Returns how many distinct use sites remain for `var`.
+    /// Returns how many distinct use sites exist for `var`.
     pub fn use_count(&self, var: VariableId) -> usize {
         self.sites[var.index()].len()
     }
