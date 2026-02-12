@@ -39,8 +39,13 @@ test::add_three@F0([0]: felt252) -> (felt252);
 SmallE2ETestRunner(test_data_function: box_double, test_data_input: 7, test_data_output: 14)
 
 //! > cairo_code
+#[inline(never)]
+fn make_box(x: felt252) -> Box<felt252> {
+    BoxTrait::new(x)
+}
+
 fn box_double(x: felt252) -> felt252 {
-    let boxed = BoxTrait::new(x);
+    let boxed = make_box(x);
     let val = boxed.unbox();
     val + val
 }
@@ -53,25 +58,34 @@ memory[ap + 0] = __boxed_segment
 __boxed_segment += 1
 %}
 [fp + -3] = [[ap + 0] + 0], ap++;
+ret;
+[ap + 0] = [fp + -3], ap++;
+call rel -3;
 [ap + 0] = [[ap + -1] + 0], ap++;
 [ap + 0] = [ap + -1] + [ap + -1], ap++;
 ret;
 
 //! > function_costs
-test::box_double: SmallOrderedMap({Const: 300})
+test::make_box: SmallOrderedMap({Const: 100})
+test::box_double: SmallOrderedMap({Const: 600})
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc into_box<felt252> = into_box<felt252>;
-libfunc unbox<felt252> = unbox<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc function_call<user@test::make_box> = function_call<user@test::make_box>;
+libfunc unbox<felt252> = unbox<felt252>;
 libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_add = felt252_add;
 
 F0:
 into_box<felt252>([0]) -> ([1]);
+return([1]);
+F1:
+store_temp<felt252>([0]) -> ([0]);
+function_call<user@test::make_box>([0]) -> ([1]);
 unbox<felt252>([1]) -> ([2]);
 store_temp<felt252>([2]) -> ([2]);
 dup<felt252>([2]) -> ([2], [3]);
@@ -79,7 +93,8 @@ felt252_add([3], [2]) -> ([4]);
 store_temp<felt252>([4]) -> ([4]);
 return([4]);
 
-test::box_double@F0([0]: felt252) -> (felt252);
+test::make_box@F0([0]: felt252) -> (Box<felt252>);
+test::box_double@F1([0]: felt252) -> (felt252);
 
 //! > ==========================================================================
 
