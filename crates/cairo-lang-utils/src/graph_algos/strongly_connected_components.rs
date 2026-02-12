@@ -88,7 +88,7 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
             Some(neighbor_node) => {
                 // If neighbor is known but not on stack, it's in a concluded dropped SCC.
                 // Ignore it.
-                if !ctx.known_nodes[&neighbor_id].on_stack {
+                if !neighbor_node.on_stack {
                     continue;
                 }
                 // This is a back edge, meaning neighbor is in current_node's SCC.
