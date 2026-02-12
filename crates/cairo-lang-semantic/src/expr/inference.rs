@@ -123,7 +123,7 @@ impl<'db> ImplVar<'db> {
     }
 }
 
-/// A negative impl variable
+/// A negative impl variable.
 #[derive(
     Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject, HeapSize, salsa::Update,
 )]
@@ -357,7 +357,7 @@ struct PendingInferenceError<'db> {
     stable_ptr: Option<SyntaxStablePtrId<'db>>,
 }
 
-/// A mapping of an impl var's trait items to concrete items
+/// A mapping of an impl var's trait items to concrete items.
 #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, SemanticObject, salsa::Update)]
 pub struct ImplVarTraitItemMappings<'db> {
     /// The trait types of the impl var.

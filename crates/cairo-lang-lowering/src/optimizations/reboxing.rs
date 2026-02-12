@@ -47,11 +47,11 @@ pub enum ReboxingValue {
 /// Represents a candidate for reboxing optimization.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ReboxCandidate {
-    /// The reboxing data
+    /// The reboxing data.
     pub source: ReboxingValue,
-    /// The reboxed variable (output of into_box)
+    /// The reboxed variable (output of into_box).
     pub reboxed_var: VariableId,
-    /// Location where into_box call occurs (block_id, stmt_idx)
+    /// Location where into_box call occurs (block_id, stmt_idx).
     pub into_box_location: StatementLocation,
 }
 

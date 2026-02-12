@@ -213,7 +213,7 @@ mod impl_parity_scale_codec {
             core::mem::size_of::<u8>() + bits / 8 + if bits.is_multiple_of(8) { 0 } else { 1 }
         }
 
-        /// /!\ Warning this function panics if the number encoded is too big (>= 2**504)
+        /// /!\ Warning this function panics if the number encoded is too big (>= 2**504).
         fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, dest: &mut T) {
             let (sign, data) = self.value.to_bytes_le();
             assert!(data.len() <= 63, "Can't encode numbers longer than 63 bytes");

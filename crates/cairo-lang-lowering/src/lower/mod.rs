@@ -1134,7 +1134,7 @@ fn lower_expr_tuple<'db>(
     Ok(LoweredExpr::Tuple { exprs: inputs, location })
 }
 
-/// Lowers an expression of type [semantic::ExprFixedSizeArray]
+/// Lowers an expression of type [semantic::ExprFixedSizeArray].
 fn lower_expr_fixed_size_array<'db>(
     ctx: &mut LoweringContext<'db, '_>,
     expr: &semantic::ExprFixedSizeArray<'db>,

@@ -1453,7 +1453,7 @@ pub trait TraitSemantic<'db>: Database {
         self.priv_trait_function_body_data(trait_function_id)
             .map(|x| x.map(|y| y.resolver_data.clone()))
     }
-    /// Private query to compute data about a trait function definition (declaration + body)
+    /// Private query to compute data about a trait function definition (declaration + body).
     fn priv_trait_function_body_data(
         &'db self,
         trait_function_id: TraitFunctionId<'db>,

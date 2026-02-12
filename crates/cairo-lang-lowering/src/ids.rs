@@ -538,7 +538,7 @@ impl<'a> DebugWithDb<'a> for SpecializedFunction<'a> {
 pub struct EnrichedSemanticSignature<'db> {
     /// Input params.
     pub params: Vec<semantic::ExprVarMemberPath<'db>>,
-    /// Extra returns - e.g. ref params
+    /// Extra returns - e.g. ref params.
     pub extra_rets: Vec<semantic::ExprVarMemberPath<'db>>,
     /// Return type.
     pub return_type: semantic::TypeId<'db>,
@@ -606,7 +606,7 @@ semantic::add_rewrite!(<'a, 'b>, SubstitutionRewriter<'a, 'b>, DiagnosticAdded, 
 pub struct Signature<'db> {
     /// Input params.
     pub params: Vec<LoweredParam<'db>>, // Vec<semantic::ExprVarMemberPath<'db>>,
-    /// Extra returns - e.g. ref params
+    /// Extra returns - e.g. ref params.
     pub extra_rets: Vec<semantic::ExprVarMemberPath<'db>>,
     /// Return type.
     pub return_type: semantic::TypeId<'db>,

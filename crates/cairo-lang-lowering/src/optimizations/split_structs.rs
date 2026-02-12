@@ -40,7 +40,7 @@ type SplitMapping = UnorderedHashMap<VariableId, SplitInfo>;
 /// Keeps track of the variables that were reconstructed.
 /// If the value is None the variable was reconstructed at the first usage.
 /// If the value is Some(Block_id) then the variable needs to be reconstructed at the end of
-/// `block_id`
+/// `block_id`.
 type ReconstructionMapping = OrderedHashMap<VariableId, Option<BlockId>>;
 
 /// Returns a mapping from variables that should be split to the variables resulting from the split.

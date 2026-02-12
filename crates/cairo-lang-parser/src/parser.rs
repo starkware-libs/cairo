@@ -563,7 +563,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         )
     }
 
-    /// Expected pattern: `<ParenthesizedParamList><ReturnTypeClause>`
+    /// Expected pattern: `<ParenthesizedParamList><ReturnTypeClause>`.
     fn expect_function_signature(&mut self) -> FunctionSignatureGreen<'a> {
         let lparen = self.parse_token::<TerminalLParen<'_>>();
         let params = self.parse_param_list();
@@ -1104,7 +1104,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: `<FunctionDeclaration>`
+    /// Expected pattern: `<FunctionDeclaration>`.
     fn expect_function_declaration(
         &mut self,
         optional_const: OptionTerminalConstGreen<'a>,
@@ -1114,7 +1114,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: `<FunctionDeclaration>`
+    /// Expected pattern: `<FunctionDeclaration>`.
     fn expect_function_declaration_ex(
         &mut self,
         optional_const: OptionTerminalConstGreen<'a>,
@@ -1135,7 +1135,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: `<FunctionDeclaration><Block>`
+    /// Expected pattern: `<FunctionDeclaration><Block>`.
     fn expect_item_function_with_body(
         &mut self,
         attributes: AttributeListGreen<'a>,
@@ -1216,7 +1216,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: `<FunctionDeclaration><SemiColon>`
+    /// Expected pattern: `<FunctionDeclaration><SemiColon>`.
     fn expect_trait_item_function(
         &mut self,
         attributes: AttributeListGreen<'a>,
@@ -1756,7 +1756,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is LParen.
-    /// Expected pattern: `<ArgListParenthesized>`
+    /// Expected pattern: `<ArgListParenthesized>`.
     fn expect_function_call(&mut self, path: ExprPathGreen<'a>) -> ExprFunctionCallGreen<'a> {
         let func_name = path;
         let parenthesized_args = self.expect_parenthesized_argument_list();
@@ -1764,7 +1764,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is TerminalNot.
-    /// Expected pattern: `!<WrappedArgList>`
+    /// Expected pattern: `!<WrappedArgList>`.
     fn expect_macro_call(&mut self, path: ExprPathGreen<'a>) -> ExprInlineMacroGreen<'a> {
         let bang = self.take::<TerminalNot<'_>>();
         let macro_name = path;
@@ -2013,7 +2013,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is LParen.
-    /// Expected pattern: `\(<ArgList>\)`
+    /// Expected pattern: `\(<ArgList>\)`.
     fn expect_parenthesized_argument_list(&mut self) -> ArgListParenthesizedGreen<'a> {
         self.expect_wrapped_argument_list::<TerminalLParen<'_>, TerminalRParen<'_>, _, _>(
             ArgListParenthesized::new_green,
@@ -2021,7 +2021,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Tries to parse parenthesized argument list.
-    /// Expected pattern: `\(<ArgList>\)`
+    /// Expected pattern: `\(<ArgList>\)`.
     fn try_parse_parenthesized_argument_list(&mut self) -> OptionArgListParenthesizedGreen<'a> {
         if self.peek().kind == SyntaxKind::TerminalLParen {
             self.expect_parenthesized_argument_list().into()
@@ -2138,7 +2138,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is LBrace.
-    /// Expected pattern: `<StructArgListBraced>`
+    /// Expected pattern: `<StructArgListBraced>`.
     fn expect_constructor_call(&mut self, path: ExprPathGreen<'a>) -> ExprStructCtorCallGreen<'a> {
         let ctor_name = path;
         let args = self.expect_struct_ctor_argument_list_braced();
@@ -2226,7 +2226,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is DotDot.
-    /// Expected pattern: `\.\.<Expr>`
+    /// Expected pattern: `\.\.<Expr>`.
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen<'a> {
         let dotdot = self.take::<TerminalDotDot<'_>>(); // ..
         // TODO(yuval): consider changing this to SimpleExpr once it exists.
@@ -3239,7 +3239,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is LT.
-    /// Expected pattern: `\< <GenericArgList> \>`
+    /// Expected pattern: `\< <GenericArgList> \>`.
     fn expect_generic_args(&mut self) -> GenericArgsGreen<'a> {
         let langle = self.take::<TerminalLT<'_>>();
         let generic_args = GenericArgList::new_green(
@@ -3256,7 +3256,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is LT.
-    /// Expected pattern: `\< <GenericParamList> \>`
+    /// Expected pattern: `\< <GenericParamList> \>`.
     fn expect_generic_params(&mut self) -> WrappedGenericParamListGreen<'a> {
         let langle = self.take::<TerminalLT<'_>>();
         let generic_params = GenericParamList::new_green(
@@ -3325,7 +3325,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is LBrack.
-    /// Expected pattern: `[ <associated_item_constraints_list> ]>`
+    /// Expected pattern: `[ <associated_item_constraints_list> ]>`.
     fn expect_associated_item_constraints(&mut self) -> AssociatedItemConstraintsGreen<'a> {
         let lbrack = self.take::<TerminalLBrack<'_>>();
         let associated_item_constraints_list = AssociatedItemConstraintList::new_green(

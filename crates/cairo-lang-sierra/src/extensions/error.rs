@@ -18,7 +18,7 @@ pub enum SpecializationError {
     #[error("index is out of the relevant range")]
     IndexOutOfRange {
         index: BigInt,
-        /// Range is [0, range_size - 1]
+        /// Range is [0, range_size - 1].
         range_size: usize,
     },
     #[error("Could not find the requested function")]

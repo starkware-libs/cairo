@@ -140,7 +140,7 @@ impl<'db, 'a> ReturnOptimizerContext<'db, 'a> {
         }
     }
 
-    /// Returns true if the variable is droppable
+    /// Returns true if the variable is droppable.
     fn is_droppable(&self, var_id: VariableId) -> bool {
         self.lowered.variables[var_id].info.droppable.is_ok()
     }
@@ -362,7 +362,7 @@ impl<'db> ValueInfo<'db> {
 
 /// Information about the current state of the analyzer.
 /// Used to track the value that should be returned from the function at the current
-/// analysis point
+/// analysis point.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReturnInfo<'db> {
     returned_vars: Vec<ValueInfo<'db>>,
@@ -390,7 +390,7 @@ impl<'db> AnalyzerInfo<'db> {
         *self = Self::invalidated();
     }
 
-    /// Applies the given function to the returned_vars
+    /// Applies the given function to the returned_vars.
     fn apply<F>(&mut self, f: &F)
     where
         F: Fn(&VarUsage<'db>) -> ValueInfo<'db>,

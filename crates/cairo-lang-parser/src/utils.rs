@@ -66,7 +66,7 @@ impl SimpleParserDatabase {
 
     /// Parses a token stream (based on whole file) and returns its syntax root.
     /// It's very similar to [Self::parse_virtual_with_diagnostics], but instead of taking a content
-    /// as a string, it takes a type that implements [ToPrimitiveTokenStream] trait
+    /// as a string, it takes a type that implements [ToPrimitiveTokenStream] trait.
     pub fn parse_token_stream(
         &self,
         token_stream: &dyn ToPrimitiveTokenStream<Iter = impl Iterator<Item = PrimitiveToken>>,

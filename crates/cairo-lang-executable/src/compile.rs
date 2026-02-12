@@ -66,7 +66,7 @@ pub struct ExecutableConfig {
     pub unsafe_panic: bool,
 
     /// An optional list of builtins to use in the entry code (if its none the builtins will be
-    /// inferred from the param_types)
+    /// inferred from the param_types).
     pub builtin_list: Option<Vec<BuiltinName>>,
 }
 

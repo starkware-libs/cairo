@@ -38,7 +38,7 @@ struct CseContext<'db> {
     /// Maps expression keys to the variable that holds the result of that expression in the
     /// current block.
     expression_map: UnorderedHashMap<ExpressionKey<'db>, Vec<VariableId>>,
-    /// Maps variables to their replacement (for variables that have been eliminated)
+    /// Maps variables to their replacement (for variables that have been eliminated).
     var_replacements: UnorderedHashMap<VariableId, VariableId>,
     /// A mapping from new non-snapshot variables after taking snapshot, to the original variable
     /// the snapshot was taken from. Used to canonicalize the variable after taking snapshot.
@@ -107,7 +107,7 @@ impl<'db> CseContext<'db> {
         }
     }
 
-    /// Resolves a variable through the replacement chain
+    /// Resolves a variable through the replacement chain.
     fn resolve_var(&self, var: VariableId) -> VariableId {
         match self.var_replacements.get(&var).or_else(|| self.snapshot_remappings.get(&var)) {
             Some(&replacement) => self.resolve_var(replacement),
@@ -116,7 +116,7 @@ impl<'db> CseContext<'db> {
     }
 
     /// Determines if a function is pure and safe to optimize
-    /// For now, we're conservative and only optimize very basic operations
+    /// For now, we're conservative and only optimize very basic operations.
     fn is_pure_function(&self, _function: &FunctionId<'db>) -> bool {
         // TODO: Implement logic to determine if a function is pure
         // For now, we're being conservative and not optimizing any function calls

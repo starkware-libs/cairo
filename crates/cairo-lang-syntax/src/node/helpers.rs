@@ -637,7 +637,7 @@ impl<'a> WrappedArgListHelper<'a> for WrappedArgList<'a> {
 }
 
 pub trait WrappedGenericParamListHelper<'a> {
-    /// Checks whether there are 0 generic parameters
+    /// Checks whether there are 0 generic parameters.
     fn is_empty(&'a self, db: &'a dyn Database) -> bool;
 }
 impl<'a> WrappedGenericParamListHelper<'a> for ast::WrappedGenericParamList<'a> {
@@ -648,7 +648,7 @@ impl<'a> WrappedGenericParamListHelper<'a> for ast::WrappedGenericParamList<'a> 
 
 pub trait OptionWrappedGenericParamListHelper<'a> {
     /// Checks whether there are 0 generic parameters. True either when the generic params clause
-    /// doesn't exist or when it's empty
+    /// doesn't exist or when it's empty.
     fn is_empty(&'a self, db: &'a dyn Database) -> bool;
 }
 impl<'a> OptionWrappedGenericParamListHelper<'a> for ast::OptionWrappedGenericParamList<'a> {

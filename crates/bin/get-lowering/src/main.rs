@@ -88,7 +88,7 @@ struct Args {
     #[arg(short, long)]
     no_gas: bool,
 
-    /// Use the executable plugin suite instead of the Starknet suite
+    /// Use the executable plugin suite instead of the Starknet suite.
     #[arg(short, long)]
     executable: bool,
 

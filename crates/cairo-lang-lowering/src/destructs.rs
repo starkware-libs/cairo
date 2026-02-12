@@ -37,15 +37,15 @@ pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
 /// The add destruct flow type, used for grouping of destruct calls.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum AddDestructFlowType {
-    /// Plain destruct
+    /// Plain destruct.
     Plain,
-    /// Panic destruct following the creation of a panic variable (or return of a panic variable)
+    /// Panic destruct following the creation of a panic variable (or return of a panic variable).
     PanicVar,
     /// Panic destruct following a match of PanicResult.
     PanicPostMatch,
 }
 
-/// Context for the destructor call addition phase,
+/// Context for the destructor call addition phase.
 pub struct DestructAdder<'db, 'a> {
     db: &'db dyn Database,
     lowered: &'a Lowered<'db>,

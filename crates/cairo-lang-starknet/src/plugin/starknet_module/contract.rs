@@ -130,7 +130,7 @@ impl<'db> ComponentsGenerationData<'db> {
         RewriteNode::new_modified(has_component_impls)
     }
 
-    /// Validate the component
+    /// Validate the component.
     fn validate_component(
         &self,
         db: &'db dyn Database,

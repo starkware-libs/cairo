@@ -232,7 +232,7 @@ impl SierraCasmRunner {
         })
     }
 
-    /// Extract inner type if `ty` is a panic wrapper
+    /// Extract inner type if `ty` is a panic wrapper.
     fn inner_type_from_panic_wrapper(
         &self,
         ty: &GenericTypeId,

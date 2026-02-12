@@ -333,7 +333,7 @@ fn handle_enum<'db>(
     Some((event_impl, StarknetEventAuxData { event_data }))
 }
 
-/// Generates code to emit an event for a field
+/// Generates code to emit an event for a field.
 fn append_field<'db>(member_kind: EventFieldKind, field: RewriteNode<'db>) -> RewriteNode<'db> {
     match member_kind {
         EventFieldKind::Nested | EventFieldKind::Flat => RewriteNode::interpolate_patched(

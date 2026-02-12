@@ -101,7 +101,7 @@ pub struct ReferenceExpression {
 }
 
 impl ReferenceExpression {
-    /// Builds a reference expression containing only a single cell
+    /// Builds a reference expression containing only a single cell.
     pub fn from_cell(cell_expr: CellExpression) -> Self {
         Self { cells: vec![cell_expr] }
     }

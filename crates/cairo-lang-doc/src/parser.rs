@@ -54,9 +54,9 @@ impl DocumentationCommentToken {
 
 /// Helper struct for formatting possibly nested Markdown lists.
 struct DocCommentListItem {
-    /// Ordered list item separator
+    /// Ordered list item separator.
     delimiter: Option<u64>,
-    /// Flag for an ordered list
+    /// Flag for an ordered list.
     is_ordered_list: bool,
 }
 

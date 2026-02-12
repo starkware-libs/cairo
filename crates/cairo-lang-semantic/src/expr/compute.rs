@@ -232,13 +232,13 @@ struct InnerContext<'db> {
 /// Kinds of inner context.
 #[derive(Debug, Clone)]
 enum InnerContextKind<'db> {
-    /// Context inside a `loop`
+    /// Context inside a `loop`.
     Loop { type_merger: FlowMergeTypeHelper<'db> },
-    /// Context inside a `while` loop
+    /// Context inside a `while` loop.
     While,
-    /// Context inside a `for` loop
+    /// Context inside a `for` loop.
     For,
-    /// Context inside a `closure`
+    /// Context inside a `closure`.
     Closure,
 }
 

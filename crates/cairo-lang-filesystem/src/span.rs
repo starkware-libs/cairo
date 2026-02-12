@@ -186,7 +186,7 @@ impl TextSpan {
         Self::cursor(self.start)
     }
 
-    /// Returns self.start..self.end as [`Range<usize>`]
+    /// Returns self.start..self.end as [`Range<usize>`].
     pub fn to_str_range(&self) -> Range<usize> {
         self.start.0.0 as usize..self.end.0.0 as usize
     }

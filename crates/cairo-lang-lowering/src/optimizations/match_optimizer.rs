@@ -318,7 +318,7 @@ fn try_get_fix_info<'db>(
 }
 
 pub struct FixInfo<'db> {
-    /// The location that needs to be fixed,
+    /// The location that needs to be fixed.
     statement_location: (BlockId, usize),
     /// The block with the match statement that we want to jump over.
     match_block: BlockId,

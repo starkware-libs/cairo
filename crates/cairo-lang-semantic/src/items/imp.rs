@@ -4364,7 +4364,7 @@ pub trait ImplSemantic<'db>: Database {
     ) -> Maybe<Arc<ResolverData<'db>>> {
         Ok(self.priv_impl_function_body_data(impl_function_id)?.resolver_data.clone())
     }
-    /// Private query to compute data about an impl function definition (declaration + body)
+    /// Private query to compute data about an impl function definition (declaration + body).
     fn priv_impl_function_body_data(
         &'db self,
         impl_function_id: ImplFunctionId<'db>,

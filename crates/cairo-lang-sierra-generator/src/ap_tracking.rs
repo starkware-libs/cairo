@@ -47,7 +47,7 @@ pub fn get_ap_tracking_configuration(
 
 /// Context for the ap tracking analysis.
 /// This analysis is used to determine where ap tracking should be enabled/disabled
-/// based on `vars_of_interest`
+/// based on `vars_of_interest`.
 struct ApTrackingAnalysisContext {
     /// The variables that require ap alignment.
     pub vars_of_interest: OrderedHashSet<VariableId>,

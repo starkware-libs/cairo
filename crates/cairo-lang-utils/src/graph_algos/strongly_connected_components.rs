@@ -16,7 +16,7 @@ pub trait ComputeScc: GraphNode {
 /// additional state for the algorithm.
 #[derive(Default, PartialEq, Eq, Hash, Clone)]
 struct SccAlgoNode<Node: GraphNode> {
-    /// The wrapped GraphNode
+    /// The wrapped GraphNode.
     node: Node,
     /// The index of the node in the algorithm. The smaller the index, the earlier the node was
     /// reached.

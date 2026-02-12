@@ -37,7 +37,7 @@ struct Args {
     #[arg(long, default_value_t = false)]
     starknet: bool,
     /// Whether to run the profiler, and what results to produce. See
-    /// [cairo_lang_runner::profiling::ProfilerConfig]
+    /// [cairo_lang_runner::profiling::ProfilerConfig].
     #[arg(short, long, default_value_t, value_enum)]
     run_profiler: RunProfilerConfigArg,
     /// Whether to disable gas calculation.

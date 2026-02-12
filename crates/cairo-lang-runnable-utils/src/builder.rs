@@ -225,7 +225,7 @@ impl RunnableBuilder {
         create_entry_code_from_params(&param_types, &return_types, code_offset, config)
     }
 
-    /// Converts array of `ConcreteTypeId`s into corresponding `GenericTypeId`s and their sizes
+    /// Converts array of `ConcreteTypeId`s into corresponding `GenericTypeId`s and their sizes.
     pub fn generic_id_and_size_from_concrete(
         &self,
         types: &[ConcreteTypeId],
@@ -260,7 +260,7 @@ pub struct EntryCodeConfig {
     pub allow_unsound: bool,
 
     /// An optional list of builtins to use in the entry code (if its none the builtins will be
-    /// inferred from the param_types)
+    /// inferred from the param_types).
     pub builtin_list: Option<Vec<BuiltinName>>,
 }
 impl EntryCodeConfig {

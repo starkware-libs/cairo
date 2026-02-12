@@ -241,7 +241,7 @@ impl NamedType for CircuitInputAccumulator {
     }
 }
 
-/// A type that can be used as a circuit modulus (a u384 that is not zero or one)
+/// A type that can be used as a circuit modulus (a u384 that is not zero or one).
 #[derive(Default)]
 pub struct CircuitModulus {}
 impl NoGenericArgsGenericType for CircuitModulus {

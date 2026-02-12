@@ -170,7 +170,7 @@ impl NoGenericArgsGenericLibfunc for GetUnspentGasLibfunc {
 pub type CostTokenMap<Value> = SmallOrderedMap<CostTokenType, Value>;
 
 /// Represents different types of costs.
-/// Note that if you add a type here you should update 'iter_precost'
+/// Note that if you add a type here you should update 'iter_precost'.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CostTokenType {
     /// A compile time known cost unit. This is a linear combination of the runtime tokens

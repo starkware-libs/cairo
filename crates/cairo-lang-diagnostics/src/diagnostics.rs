@@ -277,7 +277,7 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         if self.has_errors() { Err(DiagnosticAdded) } else { Ok(()) }
     }
 
-    /// Checks if there are no entries inside `Diagnostics`
+    /// Checks if there are no entries inside `Diagnostics`.
     pub fn is_empty(&self) -> bool {
         self.0.leaves.is_empty() && self.0.subtrees.iter().all(|subtree| subtree.is_empty())
     }

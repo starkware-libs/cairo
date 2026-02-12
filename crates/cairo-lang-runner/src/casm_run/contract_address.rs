@@ -7,7 +7,7 @@ const ADDR_BOUND: NonZeroFelt252 =
         "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00",
     ));
 
-/// Cairo string of "STARKNET_CONTRACT_ADDRESS"
+/// Cairo string of "STARKNET_CONTRACT_ADDRESS".
 const CONTRACT_ADDRESS_PREFIX: Felt252 =
     Felt252::from_hex_unchecked("0x535441524b4e45545f434f4e54524143545f41444452455353");
 

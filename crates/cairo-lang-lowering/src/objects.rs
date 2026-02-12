@@ -657,6 +657,6 @@ pub enum LoweringStage {
     /// `baseline_optimization_strategy`.
     PostBaseline,
     /// Lowering with all of the optimizations - specifically, adds the stages at
-    /// `final_optimization_strategy`
+    /// `final_optimization_strategy`.
     Final,
 }

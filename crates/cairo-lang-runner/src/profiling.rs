@@ -672,7 +672,7 @@ impl<'a> ProfilingInfoProcessor<'a> {
         )
     }
 
-    /// Process Sierra statement weights in the scope of a particular call stack
+    /// Process Sierra statement weights in the scope of a particular call stack.
     fn process_scoped_sierra_statement_weights(
         &self,
         raw_profiling_info: &ProfilingInfo,

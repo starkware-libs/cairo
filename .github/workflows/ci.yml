@@ -145,6 +145,14 @@ jobs:
       - run: >
           scripts/validate_error_codes.sh
 
+  # Check that doc comment blocks end with punctuation.
+  doc-comment-punctuation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: >
+          scripts/check_comment_punctuation.py crates
+
   # Check for unnecessary dependencies.
   udeps:
     runs-on: ubuntu-latest

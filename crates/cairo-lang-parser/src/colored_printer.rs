@@ -6,7 +6,7 @@ use salsa::Database;
 
 struct ColoredPrinter<'a> {
     db: &'a dyn Database,
-    /// Whether to also print empty and missing tokens/nodes
+    /// Whether to also print empty and missing tokens/nodes.
     verbose: bool,
     result: String,
 }

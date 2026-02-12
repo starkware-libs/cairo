@@ -46,17 +46,17 @@ pub fn create_virtual_file<'a>(
 }
 
 /// Mocked struct which implements [cairo_lang_primitive_token::ToPrimitiveTokenStream]
-/// Its main purpose is being used for testing the [crate::parser::Parser::parse_token_stream]
+/// Its main purpose is being used for testing the [crate::parser::Parser::parse_token_stream].
 #[derive(Debug, Clone)]
 pub struct MockTokenStream {
-    /// Field that holds all the tokens that are part of the stream
+    /// Field that holds all the tokens that are part of the stream.
     pub tokens: Vec<MockToken>,
 }
 
-/// Represents a token inside the [MockTokenStream]
+/// Represents a token inside the [MockTokenStream].
 #[derive(Debug, Default, Clone)]
 pub struct MockToken {
-    /// Just a text of a given [MockToken]
+    /// Just a text of a given [MockToken].
     pub content: String,
     /// Its offsets are related to the other tokens present in the same [MockTokenStream].
     pub span: TextSpan,
@@ -67,7 +67,7 @@ impl MockToken {
         Self { content, span }
     }
 
-    /// Create a token based on [SyntaxNode]
+    /// Create a token based on [SyntaxNode].
     pub fn from_syntax_node(db: &dyn Database, node: SyntaxNode<'_>) -> MockToken {
         MockToken::new(node.get_text(db).to_string(), node.span(db))
     }

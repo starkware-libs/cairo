@@ -1,4 +1,4 @@
-//! CASM backend. Compiles from Sierra down to CASM. See [cairo_lang_sierra] and [cairo_lang_casm]
+//! CASM backend. Compiles from Sierra down to CASM. See [cairo_lang_sierra] and [cairo_lang_casm].
 
 pub mod annotations;
 pub mod circuit;
