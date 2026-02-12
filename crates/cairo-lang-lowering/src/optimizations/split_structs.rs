@@ -169,10 +169,10 @@ fn rebuild_blocks(lowered: &mut Lowered<'_>, split: SplitMapping) {
                         split.get(&ctx.var_remapper.map_var_id(stmt.input.var_id))
                     {
                         for (output, new_var) in
-                            zip_eq(stmt.outputs.iter(), output_split.vars.to_vec())
+                            zip_eq(stmt.outputs.iter().copied(), output_split.vars.iter().copied())
                         {
                             assert!(
-                                ctx.var_remapper.renamed_vars.insert(*output, new_var).is_none()
+                                ctx.var_remapper.renamed_vars.insert(output, new_var).is_none()
                             )
                         }
                     } else {
