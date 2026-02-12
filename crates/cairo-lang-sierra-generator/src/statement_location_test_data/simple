@@ -2225,20 +2225,49 @@ Inlined at:
 In function: println_macro::println_macro
 [27]:
 Originating location:
-  fn foo() {
- __________^
-| ...
-| }
-|_^
-In function: lib.cairo::foo
+    const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
+                                  ^^^^
+In function: core::result::ResultTraitImpl::unwrap
+Inlined at:
+      core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+ _____^
+|         writeln!(__formatter_for_print_macros__, "x != y")
+|     );
+|_____^
+In function: println_macro::println_macro
 [28]:
 Originating location:
-  fn foo() {
- __________^
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _______________________________________________________________________________^
 | ...
-| }
-|_^
-In function: lib.cairo::foo
+|     }
+|_____^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+      const fn expect<+PanicDestruct<E>>(self: Result<T, E>, err: felt252) -> T {
+ _____^
+| ...
+|     }
+|_____^
+In function: core::result::ResultTraitImpl::expect
+Inlined at:
+        self.expect('Result::unwrap failed.')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::result::ResultTraitImpl::unwrap
+Inlined at:
+      const fn unwrap<+Destruct<E>>(self: Result<T, E>) -> T {
+ _____^
+|         self.expect('Result::unwrap failed.')
+|     }
+|_____^
+In function: core::result::ResultTraitImpl::unwrap
+Inlined at:
+      core::result::ResultTrait::<(), core::fmt::Error>::unwrap(
+ _____^
+|         writeln!(__formatter_for_print_macros__, "x != y")
+|     );
+|_____^
+In function: println_macro::println_macro
 [29]:
 Originating location:
   fn foo() {
@@ -2791,99 +2820,32 @@ Originating location:
 | }
 |_^
 In function: assert_macro::assert_macro
-array_new<bytes31>() -> ([31])
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
-                          ^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-drop<Array<bytes31>>([31]) -> ()
-Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
-                          ^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-array_new<felt252>() -> ([32])
+array_new<felt252>() -> ([31])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([33])
+const_as_immediate<Const<felt252, 1997209042069643135709344952807065910992472029923670688473712229447419591075>>() -> ([32])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-store_temp<felt252>([33]) -> ([33])
+store_temp<felt252>([32]) -> ([32])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-array_append<felt252>([32], [33]) -> ([34])
+array_append<felt252>([31], [32]) -> ([33])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-const_as_immediate<Const<felt252, 0>>() -> ([35])
+const_as_immediate<Const<felt252, 0>>() -> ([34])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-dup<felt252>([35]) -> ([35], [36])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<felt252>([36]) -> ([36])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-array_append<felt252>([34], [36]) -> ([37])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-dup<felt252>([35]) -> ([35], [38])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-store_temp<felt252>([38]) -> ([38])
-Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: assert_macro::assert_macro
-array_append<felt252>([37], [38]) -> ([39])
+dup<felt252>([34]) -> ([34], [35])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2893,20 +2855,119 @@ Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-array_append<felt252>([39], [35]) -> ([40])
+array_append<felt252>([33], [35]) -> ([36])
 Originating location:
     core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+dup<felt252>([34]) -> ([34], [37])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<felt252>([37]) -> ([37])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_append<felt252>([36], [37]) -> ([38])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+store_temp<felt252>([34]) -> ([34])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_append<felt252>([38], [34]) -> ([39])
+Originating location:
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+array_new<bytes31>() -> ([40])
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: assert_macro::assert_macro
+drop<Array<bytes31>>([40]) -> ()
+Originating location:
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 struct_construct<core::panics::Panic>() -> ([41])
 Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([41], [40]) -> ([42])
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([41], [39]) -> ([42])
 Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 enum_init<core::panics::PanicResult::<((),)>, 1>([42]) -> ([43])
 Originating location:
@@ -3461,24 +3522,8 @@ Originating location:
 In function: assert_macro::assert_macro
 [31]:
 Originating location:
-        array_new()
-        ^^^^^^^^^^^
-In function: core::array::ArrayImpl::new
-Inlined at:
-        ArrayTrait::new()
-        ^^^^^^^^^^^^^^^^^
-In function: core::array::ArrayDefault::default
-Inlined at:
-        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
-                          ^^^^^^^^^^^^^^^^^^
-In function: core::byte_array::ByteArrayDefault::default
-Inlined at:
-        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
-                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In function: core::fmt::FormatterDefault::default
-Inlined at:
-    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
-                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 [32]:
 Originating location:
@@ -3522,8 +3567,24 @@ Originating location:
 In function: assert_macro::assert_macro
 [40]:
 Originating location:
-    core::panics::panic_with_byte_array(@__formatter_for_assert_macro__.buffer)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        array_new()
+        ^^^^^^^^^^^
+In function: core::array::ArrayImpl::new
+Inlined at:
+        ArrayTrait::new()
+        ^^^^^^^^^^^^^^^^^
+In function: core::array::ArrayDefault::default
+Inlined at:
+        ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
+                          ^^^^^^^^^^^^^^^^^^
+In function: core::byte_array::ByteArrayDefault::default
+Inlined at:
+        let buffer = core::internal::InferDestruct::<ByteArray> { value: core::traits::Default::<ByteArray>::default() };
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In function: core::fmt::FormatterDefault::default
+Inlined at:
+    let mut __formatter_for_assert_macro__: core::fmt::Formatter = core::traits::Default::default();
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In function: assert_macro::assert_macro
 [41]:
 Originating location:
