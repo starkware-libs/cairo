@@ -1,0 +1,931 @@
+//! > Test basic variable forwarding with snapshot.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(a: felt252) -> felt252 {
+    let snap = @a;
+    let desnap = *snap;
+    desnap + a
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v3: core::felt252) <- desnap(v2)
+  (v4: core::felt252) <- core::felt252_add(v3, v1)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v4: core::felt252) <- core::felt252_add(v0, v0)
+End:
+  Return(v4)
+
+//! > ==========================================================================
+
+//! > Test forwarding in same block after definition.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(a: felt252, b: felt252) -> felt252 {
+    let c = a + b;
+    let d = (c,);
+    let (e,) = d;
+    e + c
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+  (v3: (core::felt252,)) <- struct_construct(v2)
+  (v4: core::felt252) <- struct_destructure(v3)
+  (v5: core::felt252) <- core::felt252_add(v4, v2)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+  (v5: core::felt252) <- core::felt252_add(v2, v2)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test forwarding only common equalities after branch merge.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(a: felt252) -> felt252 {
+    let b = if a == 0 {
+        a
+    } else {
+        a + 1
+    };
+    b + a
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v6: core::felt252) <- desnap(v2)
+End:
+  Match(match core::felt252_is_zero(v6) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::True(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::False(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v10) {
+    bool::False(v13) => blk4,
+    bool::True(v14) => blk5,
+  })
+
+blk4:
+Statements:
+  (v15: core::felt252) <- 1
+  (v16: core::felt252) <- core::felt252_add(v1, v15)
+End:
+  Goto(blk6, {v16 -> v17})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {v1 -> v17})
+
+blk6:
+Statements:
+  (v18: core::felt252) <- core::felt252_add(v17, v1)
+End:
+  Return(v18)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_construct()
+  (v9: core::bool) <- bool::True(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::bool) <- bool::False(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v10) {
+    bool::False(v13) => blk4,
+    bool::True(v14) => blk5,
+  })
+
+blk4:
+Statements:
+  (v15: core::felt252) <- 1
+  (v16: core::felt252) <- core::felt252_add(v0, v15)
+End:
+  Goto(blk6, {v16 -> v17})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {v0 -> v17})
+
+blk6:
+Statements:
+  (v18: core::felt252) <- core::felt252_add(v17, v0)
+End:
+  Return(v18)
+
+//! > ==========================================================================
+
+//! > Test struct construct/destructure forwarding.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(a: felt252, b: felt252) -> felt252 {
+    let t = (a, b);
+    let (c, d) = t;
+    c + d
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
+  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v2)
+  (v5: core::felt252) <- core::felt252_add(v3, v4)
+End:
+  Return(v5)
+
+//! > after
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v5: core::felt252) <- core::felt252_add(v0, v1)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test non-copy struct roundtrip forwarding.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(a: Array<felt252>, b: Array<felt252>) -> Array<felt252> {
+    let t = (a, b);
+    let (c, _d) = t;
+    c
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: (core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)) <- struct_construct(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: (core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)) <- struct_construct(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: core::array::Array::<core::felt252>) <- struct_destructure(v2)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test non-copy partial forwarding — snapshot original forwarded but fields blocked.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(a: Array<felt252>, b: Array<felt252>) -> (Array<felt252>, Array<felt252>) {
+    let t = (a, b);
+    let snap = @t;
+    let _ = snap;
+    let (c, d) = t;
+    (c, d)
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: (core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)) <- struct_construct(v0, v1)
+  (v3: (core::array::Array::<core::felt252>, core::array::Array::<core::felt252>), v4: @(core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)) <- snapshot(v2)
+  (v5: core::array::Array::<core::felt252>, v6: core::array::Array::<core::felt252>) <- struct_destructure(v3)
+  (v7: (core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)) <- struct_construct(v5, v6)
+End:
+  Return(v7)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: (core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)) <- struct_construct(v0, v1)
+End:
+  Return(v2)
+
+//! > ==========================================================================
+
+//! > Test non-copy box/unbox roundtrip forwarding.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(a: Array<felt252>) -> Array<felt252> {
+    let boxed = BoxTrait::new(a);
+    let unboxed = boxed.unbox();
+    unboxed
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::box::Box::<core::array::Array::<core::felt252>>) <- into_box(v0)
+  (v2: core::array::Array::<core::felt252>) <- unbox(v1)
+End:
+  Return(v2)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
+//! > Test non-copy isnt forwarded due to sibling
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+#[inline(never)]
+fn use_snapshot(s: @Array<felt252>) {
+    let _ = s;
+}
+
+fn foo(a: Array<felt252>) -> Array<felt252> {
+    use_snapshot(@a);
+    a
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
+  () <- test::use_snapshot(v2)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: @core::array::Array::<core::felt252>) <- snapshot(v0)
+  () <- test::use_snapshot(v2)
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > fold match_enum behind a single-element tuple wrap.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > TODO: Variable forwarding should cancel the `struct_construct/
+
+//! > struct_destructure` pair across a Goto merge so the downstream `match_enum`
+
+//! > can fold to per-predecessor known variants.
+
+//! > function_code
+fn foo(c: bool, x: felt252) -> felt252 {
+    let t: (Option<felt252>,) = if c {
+        (Option::Some(x),)
+    } else {
+        (Option::None,)
+    };
+    let (v,) = t;
+    match v {
+        Option::Some(y) => y,
+        Option::None => 0,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::bool, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<core::felt252>) <- Option::None(v4)
+  (v6: (core::option::Option::<core::felt252>,)) <- struct_construct(v5)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::option::Option::<core::felt252>) <- Option::Some(v1)
+  (v9: (core::option::Option::<core::felt252>,)) <- struct_construct(v8)
+End:
+  Goto(blk3, {v9 -> v7})
+
+blk3:
+Statements:
+  (v10: core::option::Option::<core::felt252>) <- struct_destructure(v7)
+End:
+  Match(match_enum(v10) {
+    Option::Some(v11) => blk4,
+    Option::None(v12) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v11 -> v13})
+
+blk5:
+Statements:
+  (v14: core::felt252) <- 0
+End:
+  Goto(blk6, {v14 -> v13})
+
+blk6:
+Statements:
+End:
+  Return(v13)
+
+//! > after
+Parameters: v0: core::bool, v1: core::felt252
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<core::felt252>) <- Option::None(v4)
+  (v6: (core::option::Option::<core::felt252>,)) <- struct_construct(v5)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v8: core::option::Option::<core::felt252>) <- Option::Some(v1)
+  (v9: (core::option::Option::<core::felt252>,)) <- struct_construct(v8)
+End:
+  Goto(blk3, {v9 -> v7})
+
+blk3:
+Statements:
+  (v10: core::option::Option::<core::felt252>) <- struct_destructure(v7)
+End:
+  Match(match_enum(v10) {
+    Option::Some(v11) => blk4,
+    Option::None(v12) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v11 -> v13})
+
+blk5:
+Statements:
+  (v14: core::felt252) <- 0
+End:
+  Goto(blk6, {v14 -> v13})
+
+blk6:
+Statements:
+End:
+  Return(v13)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > TODO: fold reboxing pattern (unbox + struct_destruct + into_box).
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > TODO: Support `unbox(B) -> V; struct_destruct(V) -> fields;
+
+//! > into_box(field_i) -> B'` chain and replace `B'` with the i-th boxed-member
+
+//! > of B.
+
+//! > function_code
+fn foo(a: Box<u256>) -> Box<u128> {
+    let val: u256 = a.unbox();
+    BoxTrait::new(val.high)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::box::Box::<core::integer::u256>
+blk0 (root):
+Statements:
+  (v1: core::integer::u256) <- unbox(v0)
+  (v2: core::integer::u128, v3: core::integer::u128) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::integer::u128>) <- into_box(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::box::Box::<core::integer::u256>
+blk0 (root):
+Statements:
+  (v1: core::integer::u256) <- unbox(v0)
+  (v2: core::integer::u128, v3: core::integer::u128) <- struct_destructure(v1)
+  (v4: core::box::Box::<core::integer::u128>) <- into_box(v3)
+End:
+  Return(v4)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Snapshotted non-copy enum: match should NOT be folded — the EnumConstruct
+
+//! > cannot be removed (snapshot still consumes it), so folding the match would
+
+//! > double-consume the non-copy payload.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+extern fn keep_snap(s: @Option<Array<felt252>>) -> bool nopanic;
+
+fn foo(arr: Array<felt252>) -> Array<felt252> {
+    let opt: Option<Array<felt252>> = Option::Some(arr);
+    let _ = keep_snap(@opt);
+    match opt {
+        Option::Some(a) => a,
+        Option::None => array![],
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+  (v2: core::option::Option::<core::array::Array::<core::felt252>>, v3: @core::option::Option::<core::array::Array::<core::felt252>>) <- snapshot(v1)
+End:
+  Match(match test::keep_snap(v3) {
+    bool::False => blk1,
+    bool::True => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Option::Some(v8) => blk4,
+    Option::None(v9) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v0 -> v10})
+
+blk5:
+Statements:
+  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk6, {v11 -> v10})
+
+blk6:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+  (v2: core::option::Option::<core::array::Array::<core::felt252>>, v3: @core::option::Option::<core::array::Array::<core::felt252>>) <- snapshot(v1)
+End:
+  Match(match test::keep_snap(v3) {
+    bool::False => blk1,
+    bool::True => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v2) {
+    Option::Some(v8) => blk4,
+    Option::None(v9) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Goto(blk6, {v0 -> v10})
+
+blk5:
+Statements:
+  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk6, {v11 -> v10})
+
+blk6:
+Statements:
+End:
+  Return(v10)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Mixed-droppability struct: round-trip wrap of a droppable field while a
+
+//! > non-droppable field is consumed by an opaque call. The cascade from the
+
+//! > inner round-trip into the outer struct_destructure must NOT orphan the
+
+//! > non-droppable field — verify_non_copy_safety catches it if it does.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+extern fn drop_nondrop<T>(c: T) nopanic;
+extern fn make_mixed() -> Mixed nopanic;
+
+fn foo() -> Array<felt252> {
+    let m = make_mixed();
+    let Mixed { a, b } = m;
+    let wa = (a,);
+    drop_nondrop(b);
+    let (a2,) = wa;
+    a2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct NonDrop {
+    x: u64,
+}
+
+struct Mixed {
+    a: Array<felt252>,
+    b: NonDrop,
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::Mixed) <- test::make_mixed()
+  (v1: core::array::Array::<core::felt252>, v2: test::NonDrop) <- struct_destructure(v0)
+  () <- test::drop_nondrop::<test::NonDrop>(v2)
+  (v3: (core::array::Array::<core::felt252>,)) <- struct_construct(v1)
+  (v4: core::array::Array::<core::felt252>) <- struct_destructure(v3)
+End:
+  Return(v4)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: test::Mixed) <- test::make_mixed()
+  (v1: core::array::Array::<core::felt252>, v2: test::NonDrop) <- struct_destructure(v0)
+  () <- test::drop_nondrop::<test::NonDrop>(v2)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Copy + non-Drop field cascade: when the construct-destruct round-trip is
+
+//! > cascaded out, the copy+non-drop input gets `freed_delta += 1` but is
+
+//! > skipped by the inner cascade block (because `copyable.is_err()` is false).
+
+//! > The forwarding rename generated for the destructure's copy+non-drop output
+
+//! > re-routes the original consumer to the copy+non-drop input, so no orphan.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+extern fn make_arr() -> Array<felt252> nopanic;
+extern fn make_copy_only() -> CopyOnly nopanic;
+extern fn consume_copy_only(c: CopyOnly) nopanic;
+
+fn foo() -> Array<felt252> {
+    let a_val = make_arr();
+    let u_val = make_copy_only();
+    let m = Mixed { a: a_val, u: u_val };
+    let Mixed { a, u } = m;
+    let wa = (a,);
+    consume_copy_only(u);
+    let (a2,) = wa;
+    a2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy)]
+struct CopyOnly {
+    x: felt252,
+}
+
+struct Mixed {
+    a: Array<felt252>,
+    u: CopyOnly,
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- test::make_arr()
+  (v1: test::CopyOnly) <- test::make_copy_only()
+  (v2: test::Mixed) <- struct_construct(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: test::CopyOnly) <- struct_destructure(v2)
+  () <- test::consume_copy_only(v4)
+  (v5: (core::array::Array::<core::felt252>,)) <- struct_construct(v3)
+  (v6: core::array::Array::<core::felt252>) <- struct_destructure(v5)
+End:
+  Return(v6)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- test::make_arr()
+  (v1: test::CopyOnly) <- test::make_copy_only()
+  () <- test::consume_copy_only(v1)
+End:
+  Return(v0)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Non-copy enum without snapshot: match SHOULD be folded — EnumConstruct gets
+
+//! > removed by Phase 2, so the fold is safe.
+
+//! > test_runner_name
+test_variable_forwarding
+
+//! > function_code
+fn foo(arr: Array<felt252>) -> Array<felt252> {
+    let opt: Option<Array<felt252>> = Option::Some(arr);
+    match opt {
+        Option::Some(a) => a,
+        Option::None => array![],
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v0 -> v4})
+
+blk2:
+Statements:
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk3, {v5 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > after
+Parameters: v0: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+  (v1: core::option::Option::<core::array::Array::<core::felt252>>) <- Option::Some(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {v0 -> v4})
+
+blk2:
+Statements:
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk3, {v5 -> v4})
+
+blk3:
+Statements:
+End:
+  Return(v4)
+
+//! > lowering_diagnostics
