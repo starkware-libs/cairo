@@ -34,8 +34,7 @@ impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
 #[derive(Clone, Debug)]
 enum ApTrackingBase {
     FunctionStart(FunctionId),
-    #[expect(dead_code)]
-    EnableStatement(StatementIdx),
+    EnableStatement,
 }
 
 /// The information for ap tracking of a statement.
@@ -213,7 +212,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         for (ap_change, target) in &self.branches[idx.0] {
             if matches!(ap_change, ApChange::EnableApTracking) {
                 self.infos[target.0].tracking_info = Some(ApTrackingInfo {
-                    base: ApTrackingBase::EnableStatement(idx),
+                    base: ApTrackingBase::EnableStatement,
                     ap_change: 0,
                 });
                 continue;
