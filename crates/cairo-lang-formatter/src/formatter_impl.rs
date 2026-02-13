@@ -780,9 +780,10 @@ impl fmt::Display for CommentLine {
     }
 }
 
-/// Formats a comment to fit in the line width. There are no merges of lines, as this is not clear
-/// when to merge two lines the user chose to write on separate lines, so all original line breaks
-/// are preserved.
+/// Formats a comment to fit in the line width. Original line breaks chosen by the user are
+/// preserved. However, when the formatter itself breaks a line and the broken line appears to
+/// continue (ending with an alphanumeric character or comma), the fragments are re-merged before
+/// re-wrapping.
 fn format_leading_comment(content: &str, cur_indent: usize, max_line_width: usize) -> String {
     let mut formatted_comment = String::new();
     let mut prev_comment_line = CommentLine::from_string("".to_string());
