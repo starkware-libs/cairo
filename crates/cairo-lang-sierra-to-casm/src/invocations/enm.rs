@@ -406,7 +406,7 @@ fn get_enum_size(
     program_info: &ProgramInfo<'_>,
     concrete_enum_type: &ConcreteTypeId,
 ) -> Option<i16> {
-    Some(program_info.type_sizes.get(concrete_enum_type)?.to_owned())
+    Some(*program_info.type_sizes.get(concrete_enum_type)?)
 }
 
 /// Generates CASM instructions for matching a boxed enum into individual boxed variants.
