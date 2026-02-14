@@ -137,7 +137,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
     }
 
     /// Calculates the lower bound of an ap-change to the furthest return per statement.
-    /// If it is unknown does not set it.
+    /// If it is unknown, does not set it.
     fn calc_known_ap_change_for_statement(
         &mut self,
         idx: StatementIdx,

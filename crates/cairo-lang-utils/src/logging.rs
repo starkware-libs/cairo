@@ -16,7 +16,7 @@ pub mod level {
 
 /// Initializes logging (tracing library).
 /// The format is:
-/// `<level>  /path/to/file:<line_number>  <time>  <log_message>`
+/// `<level> /path/to/file:<line_number> <time> <log_message>`
 pub fn init_logging(level: tracing::Level) {
     INIT.call_once(|| {
         // Bridge log records to tracing so existing log macros still work via tracing-log
