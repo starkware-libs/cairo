@@ -34,6 +34,16 @@ fn main() {
 }
 ----
 
+Attempting to use an identifier with incorrect case results in a compilation error:
+
+[source,cairo]
+----
+fn main() {
+    let value = 1;
+    // let result = Value;  // Error: unresolved identifier 'Value'
+}
+----
+
 == Unused Variables
 
 Identifiers starting with an underscore indicate intentionally unused variables
