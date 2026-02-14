@@ -90,7 +90,7 @@ fn build_enum_init(
     let num_padding = enum_size - 1 - variant_size;
     let inner_value = chain!(
         repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding as usize),
-        init_arg_cells.clone(),
+        init_arg_cells.iter().cloned(),
     )
     .collect();
 
@@ -406,7 +406,7 @@ fn get_enum_size(
     program_info: &ProgramInfo<'_>,
     concrete_enum_type: &ConcreteTypeId,
 ) -> Option<i16> {
-    Some(program_info.type_sizes.get(concrete_enum_type)?.to_owned())
+    Some(*program_info.type_sizes.get(concrete_enum_type)?)
 }
 
 /// Generates CASM instructions for matching a boxed enum into individual boxed variants.
