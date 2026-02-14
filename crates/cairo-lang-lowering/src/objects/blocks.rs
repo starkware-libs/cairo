@@ -120,6 +120,14 @@ impl<'db> Blocks<'db> {
         self.0[block_id.0] = block;
     }
 }
+impl<'db> IntoIterator for Blocks<'db> {
+    type Item = Block<'db>;
+    type IntoIter = std::vec::IntoIter<Block<'db>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
 impl<'db> Index<BlockId> for Blocks<'db> {
     type Output = Block<'db>;
 
