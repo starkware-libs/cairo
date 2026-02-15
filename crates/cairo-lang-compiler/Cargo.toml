@@ -28,5 +28,3 @@ salsa.workspace = true
 semver.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
-
-[dev-dependencies]

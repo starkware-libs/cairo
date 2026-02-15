@@ -73,7 +73,7 @@ jobs:
       - name: Run benchmarks
         run: |
           set -o pipefail
-          cargo bench -- --output-format bencher 2>&1 | tee benchmark-output.txt
+          cargo bench --bench compile -- --output-format bencher 2>&1 | tee benchmark-output.txt
 
       - name: Store benchmark results
         uses: benchmark-action/github-action-benchmark@4bdcce38c94cec68da58d012ac24b7b1155efe8b
