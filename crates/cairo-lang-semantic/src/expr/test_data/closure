@@ -271,10 +271,10 @@ fn bar<T, +core::ops::FnOnce<T, (u32,)>>(c: T) -> core::ops::FnOnce::<T, (u32,)>
 }
 
 //! > expected_diagnostics
-error[E2308]: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,), core::traits::DestructFromDrop::<{closure@lib.cairo:5:13: 5:16}, Generated core::traits::Drop::<{closure@lib.cairo:5:13: 5:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>>::Output` type mismatch: `core::felt252` and `core::integer::u128`.
- --> lib.cairo:10:23
-    let _k: felt252 = bar(c);
-                      ^^^
+error[E2308]: `core::ops::function::FnOnceImpl::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,), core::traits::DestructFromDrop::<{closure@lib.cairo:5:13: 5:16}, Generated core::traits::Drop::<{closure@lib.cairo:5:13: 5:16}>>, Generated core::ops::function::Fn::<{closure@lib.cairo:5:13: 5:16}, (core::integer::u32,)>>::Output` type mismatch: `core::integer::u128` and `core::felt252`.
+ --> lib.cairo:9:39
+    let _f: u128 = core::ops::FnOnce::call(c, (2,));
+                                      ^^^^
 
 //! > ==========================================================================
 
