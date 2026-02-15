@@ -90,11 +90,7 @@ pub struct VariableLifetimeResult {
 impl VariableLifetimeResult {
     /// Registers where a drop statement should appear.
     fn add_drop(&mut self, var_id: SierraGenVar, drop_location: DropLocation) {
-        if let Some(vars) = self.drops.get_mut(&drop_location) {
-            vars.push(var_id);
-        } else {
-            self.drops.insert(drop_location, vec![var_id]);
-        }
+        self.drops.entry(drop_location).or_default().push(var_id);
     }
 }
 
