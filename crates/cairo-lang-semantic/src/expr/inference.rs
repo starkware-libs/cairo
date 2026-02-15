@@ -1186,6 +1186,11 @@ impl<'db, 'id> Inference<'db, 'id> {
         concrete_trait_id: ConcreteTraitId<'db>,
         lookup_context: ImplLookupContextId<'db>,
     ) -> InferenceResult<SolutionSet<'db, ConcreteTraitId<'db>>> {
+        // When the trait is not var free, the infrence system might force the args so the impl is
+        // found (and the negative impl is not).
+        if !concrete_trait_id.is_var_free(self.db) {
+            return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
+        }
         for negative_impl in &lookup_context.long(self.db).negative_impls {
             let generic_param = self
                 .db
