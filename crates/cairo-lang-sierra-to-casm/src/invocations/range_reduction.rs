@@ -88,11 +88,10 @@ pub fn build_felt252_range_reduction(
         maybe_tempvar rc_val = value + minus_range_lower;
         assert rc_val = *(range_check++);
     }
-    let rc_size = u128_bound().clone();
     // If the out range is exactly `rc_size` the previous addition to the buffer validated this
     // case as well.
-    if out_range.size() < rc_size {
-        let upper_bound_fixer = rc_size - &out_range.upper;
+    if out_range.size() < *u128_bound() {
+        let upper_bound_fixer = u128_bound() - &out_range.upper;
         casm_build_extend! {casm_builder,
             const upper_bound_fixer = upper_bound_fixer;
             // Using `maybe_tempvar` since `upper_bound_fixer` may be 0.
