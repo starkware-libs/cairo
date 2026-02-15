@@ -331,7 +331,32 @@ pub impl ImplBad<const C: u32, -TypeEqual<A<C>, A<0>>> of Bad {
 }
 
 //! > expected_diagnostics
-error[E2311]: Trait has no implementation in context: test::Bad.
+error[E2313]: Cannot infer trait core::metaprogramming::TypeEqual::<test::A::<?0>, test::A::<0>>. First generic argument must be known.
  --> lib.cairo:7:10
     Bad::bad();
          ^^^
+
+//! > ==========================================================================
+
+//! > Test negative impl with generic param that is not var free.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo(a: u32) -> (u32, u32) {
+    let s0 = array![a].span();
+    let s1 = array![a + 1].span();
+    let cols = array![s0, s1].span();
+
+    let [mut c0, mut c1] = (*cols.try_into().unwrap()).unbox();
+
+    (*c0.pop_front().unwrap(), *c1.pop_front().unwrap())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
