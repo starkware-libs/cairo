@@ -114,17 +114,14 @@ impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let is_zero_sized = context.get_type_info(&ty)?.zero_sized;
+        let ref_info = if context.get_type_info(&ty)?.zero_sized {
+            OutputVarReferenceInfo::ZeroSized
+        } else {
+            OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+        };
         Ok(LibfuncSignature::new_non_branch(
             vec![box_ty(context, ty.clone())?],
-            vec![OutputVarInfo {
-                ty,
-                ref_info: if is_zero_sized {
-                    OutputVarReferenceInfo::ZeroSized
-                } else {
-                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
-                },
-            }],
+            vec![OutputVarInfo { ty, ref_info }],
             SierraApChange::Known { new_vars_only: true },
         ))
     }
