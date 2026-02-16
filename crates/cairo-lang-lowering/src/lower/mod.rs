@@ -1165,11 +1165,9 @@ fn lower_expr_fixed_size_array<'db>(
             // If there are multiple elements, the type must be copyable as we copy the var `size`
             // times.
             if size > 1 && ctx.variables[var_usage.var_id].info.copyable.is_err() {
-                {
-                    return Err(LoweringFlowError::Failed(
-                        ctx.diagnostics.report(expr.stable_ptr.0, FixedSizeArrayNonCopyableType),
-                    ));
-                }
+                return Err(LoweringFlowError::Failed(
+                    ctx.diagnostics.report(expr.stable_ptr.0, FixedSizeArrayNonCopyableType),
+                ));
             }
             let expr = LoweredExpr::AtVariable(var_usage);
             vec![expr; size]
