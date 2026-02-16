@@ -935,3 +935,368 @@ Block 2:
 
 Block 3:
 @v0 = v3, @v9 = v14, test::MyStruct(v3) = v9, v0 = v2, v9 = v13
+
+//! > ==========================================================================
+
+//! > Test array new and append tracked via struct hashcons
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252, b: felt252) -> Array<felt252> {
+    let mut arr = ArrayTrait::new();
+    arr.append(a);
+    arr.append(b);
+    arr
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+End:
+  Return(v4)
+
+//! > analysis_state
+Block 0:
+core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+
+//! > ==========================================================================
+
+//! > Test array pop_front recovers elements and merge works correctly
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252, b: felt252) -> Array<felt252> {
+    let mut arr = ArrayTrait::new();
+    arr.append(a);
+    arr.append(b);
+    let result = match arr.pop_front() {
+        Option::Some(val) => {
+            let mut remaining = ArrayTrait::new();
+            remaining.append(val);
+            remaining
+        },
+        Option::None => { arr },
+    };
+    use_arr(@result);
+    result
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_arr(x: @Array<felt252>) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v4) {
+    Option::Some(v5, v6) => blk1,
+    Option::None(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v0)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v7 -> v10})
+
+blk3:
+Statements:
+  (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v10)
+  () <- test::use_arr(v12)
+End:
+  Return(v11)
+
+//! > analysis_state
+Block 0:
+core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+
+Block 1:
+Box(v0) = v6, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, core::array::Array::<core::felt252>(v1) = v5, v2 = v8, v3 = v9
+
+Block 2:
+core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v4 = v7
+
+Block 3:
+@v10 = v12, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v10 = v11
+
+//! > ==========================================================================
+
+//! > Test two identical arrays are equivalent
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252) -> (Array<felt252>, Array<felt252>) {
+    let mut arr1 = ArrayTrait::new();
+    arr1.append(a);
+    let mut arr2 = ArrayTrait::new();
+    arr2.append(a);
+    (arr1, arr2)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v1, v0)
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v0)
+  (v5: (core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)) <- struct_construct(v2, v4)
+End:
+  Return(v5)
+
+//! > analysis_state
+Block 0:
+(core::array::Array::<core::felt252>, core::array::Array::<core::felt252>)(v2, v2) = v5, core::array::Array::<core::felt252>() = v1, core::array::Array::<core::felt252>(v0) = v2, v1 = v3, v2 = v4
+
+//! > ==========================================================================
+
+//! > Test array_snapshot_pop_front recovers element from tracked array
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252, b: felt252) {
+    let mut arr = ArrayTrait::new();
+    arr.append(a);
+    arr.append(b);
+    let mut snap = @arr;
+    match core::array::array_snapshot_pop_front(ref snap) {
+        Option::Some(boxed_elem) => {
+            let snap_elem = core::box::unbox(boxed_elem);
+            use_snap_felt(snap_elem);
+        },
+        Option::None => {},
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_snap_felt(x: @felt252) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+  (v5: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v4)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v6) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: @core::felt252) <- unbox(v8)
+  () <- test::use_snap_felt(v10)
+End:
+  Return()
+
+blk2:
+Statements:
+End:
+  Return()
+
+//! > analysis_state
+Block 0:
+@v4 = v6, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v4 = v5
+
+Block 1:
+@core::array::Array::<core::felt252>(v1) = v7, @v4 = v6, Box(v10) = v8, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v4 = v5
+
+Block 2:
+@v4 = v6, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v4 = v5, v6 = v9
+
+//! > ==========================================================================
+
+//! > Test array_snapshot_pop_back recovers element from tracked array
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252, b: felt252) {
+    let mut arr = ArrayTrait::new();
+    arr.append(a);
+    arr.append(b);
+    let mut snap = @arr;
+    match core::array::array_snapshot_pop_back(ref snap) {
+        Option::Some(boxed_elem) => {
+            let snap_elem = core::box::unbox(boxed_elem);
+            use_snap_felt(snap_elem);
+        },
+        Option::None => {},
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_snap_felt(x: @felt252) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+  (v5: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v4)
+End:
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v6) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v10: @core::felt252) <- unbox(v8)
+  () <- test::use_snap_felt(v10)
+End:
+  Return()
+
+blk2:
+Statements:
+End:
+  Return()
+
+//! > analysis_state
+Block 0:
+@v4 = v6, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v4 = v5
+
+Block 1:
+@core::array::Array::<core::felt252>(v0) = v7, @v4 = v6, Box(v10) = v8, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v4 = v5
+
+Block 2:
+@v4 = v6, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v4 = v5, v6 = v9
+
+//! > ==========================================================================
+
+//! > Test snapshot pop element recovery when element has snapshot class
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252, b: felt252) {
+    let mut arr = ArrayTrait::new();
+    arr.append(a);
+    arr.append(b);
+    // Create snapshot of a, so a has a snapshot class.
+    use_snap_felt(@a);
+    let mut snap = @arr;
+    match core::array::array_snapshot_pop_front(ref snap) {
+        Option::Some(boxed_elem) => {
+            let snap_elem = core::box::unbox(boxed_elem);
+            use_snap_felt(snap_elem);
+        },
+        Option::None => {},
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_snap_felt(x: @felt252) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering
+todo
+
+//! > analysis_state
+todo
+
+//! > ==========================================================================
+
+//! > Test chained snapshot pop recovers elements
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(a: felt252, b: felt252) {
+    let mut arr = ArrayTrait::new();
+    arr.append(a);
+    arr.append(b);
+    let mut snap = @arr;
+    match core::array::array_snapshot_pop_front(ref snap) {
+        Option::Some(first_boxed) => {
+            let first_snap = core::box::unbox(first_boxed);
+            use_snap_felt(first_snap);
+            match core::array::array_snapshot_pop_front(ref snap) {
+                Option::Some(second_boxed) => {
+                    let second_snap = core::box::unbox(second_boxed);
+                    use_snap_felt(second_snap);
+                },
+                Option::None => {},
+            };
+        },
+        Option::None => {},
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_snap_felt(x: @felt252) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering
+todo
+
+//! > analysis_state
+todo
