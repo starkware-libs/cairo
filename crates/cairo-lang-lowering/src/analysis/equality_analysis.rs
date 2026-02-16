@@ -2,17 +2,22 @@
 //!
 //! This module tracks semantic equivalence between variables as information flows through the
 //! program. Two variables are equivalent if they hold the same value. Additionally, the analysis
-//! tracks `Box`/unbox and snapshot/desnap relationships between equivalence classes.
+//! tracks `Box`/unbox, snapshot/desnap, and struct/array construct relationships between
+//! equivalence classes. Arrays reuse the struct hashcons infrastructure since both map
+//! `(TypeId, Vec<VariableId>)` — array pop operations act as destructures.
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::NamedLanguageElementId;
+use cairo_lang_defs::ids::{ExternFunctionId, NamedLanguageElementId};
+use cairo_lang_semantic::helper::ModuleHelper;
 use cairo_lang_semantic::{ConcreteVariant, MatchArmSelector, TypeId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
 
 use crate::analysis::core::Edge;
 use crate::analysis::{DataflowAnalyzer, Direction, ForwardDataflowAnalysis};
-use crate::{BlockEnd, BlockId, Lowered, MatchInfo, Statement, VariableId};
+use crate::{
+    BlockEnd, BlockId, Lowered, MatchArm, MatchExternInfo, MatchInfo, Statement, VariableId,
+};
 
 /// Tracks relationships between equivalence classes.
 #[derive(Clone, Debug, Default)]
@@ -90,13 +95,16 @@ pub struct EqualityState<'db> {
     /// This allows efficient lookup when matching on an enum to find the original input.
     enum_hashcons_rev: OrderedHashMap<VariableId, (ConcreteVariant<'db>, VariableId)>,
 
-    /// Hashcons for struct constructs: maps (type, [field_reps...]) -> output_rep.
-    /// This allows us to detect when two struct constructs with the same type
-    /// and equivalent fields should produce equivalent outputs.
+    /// Hashcons for struct/array constructs: maps (type, [field_reps...]) -> output_rep.
+    /// This allows us to detect when two constructs with the same type
+    /// and equivalent fields/elements should produce equivalent outputs.
+    /// Arrays reuse this same infrastructure — `array_new`/`array_append` chains are recorded
+    /// as constructs keyed by the array type, and `array_pop_front` acts as a destructure.
     struct_hashcons: OrderedHashMap<(TypeId<'db>, Vec<VariableId>), VariableId>,
 
-    /// Reverse hashcons for struct constructs: maps output_rep -> (type, [field_reps...]).
-    /// This allows efficient lookup when destructuring a struct to find the original fields.
+    /// Reverse hashcons for struct/array constructs: maps output_rep -> (type,
+    /// [field_reps/element_reps...]).
+    /// This allows efficient lookup when destructuring a struct or popping from an array.
     struct_hashcons_rev: OrderedHashMap<VariableId, (TypeId<'db>, Vec<VariableId>)>,
 }
 
@@ -307,23 +315,165 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 
 /// Variable equality analysis.
 ///
-/// This analyzer tracks snapshot/desnap and box/unbox relationships as data flows
-/// through the program. At merge points (after match arms converge), we conservatively
+/// This analyzer tracks snapshot/desnap, box/unbox, and array construct relationships as data
+/// flows through the program. At merge points (after match arms converge), we conservatively
 /// intersect the equivalence classes, keeping only equalities that hold on all paths.
 pub struct EqualityAnalysis<'a, 'db> {
+    db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
+    /// The `array_new` extern function id.
+    array_new: ExternFunctionId<'db>,
+    /// The `array_append` extern function id.
+    array_append: ExternFunctionId<'db>,
+    /// The `array_pop_front` extern function id.
+    array_pop_front: ExternFunctionId<'db>,
+    /// The `array_pop_front_consume` extern function id.
+    array_pop_front_consume: ExternFunctionId<'db>,
+    /// The `array_snapshot_pop_front` extern function id.
+    array_snapshot_pop_front: ExternFunctionId<'db>,
+    /// The `array_snapshot_pop_back` extern function id.
+    array_snapshot_pop_back: ExternFunctionId<'db>,
 }
 
 impl<'a, 'db> EqualityAnalysis<'a, 'db> {
     /// Creates a new equality analysis instance.
-    pub fn new(lowered: &'a Lowered<'db>) -> Self {
-        Self { lowered }
+    pub fn new(db: &'db dyn Database, lowered: &'a Lowered<'db>) -> Self {
+        let array_module = ModuleHelper::core(db).submodule("array");
+        Self {
+            db,
+            lowered,
+            array_new: array_module.extern_function_id("array_new"),
+            array_append: array_module.extern_function_id("array_append"),
+            array_pop_front: array_module.extern_function_id("array_pop_front"),
+            array_pop_front_consume: array_module.extern_function_id("array_pop_front_consume"),
+            array_snapshot_pop_front: array_module.extern_function_id("array_snapshot_pop_front"),
+            array_snapshot_pop_back: array_module.extern_function_id("array_snapshot_pop_back"),
+        }
     }
 
     /// Runs equality analysis on a lowered function.
     /// Returns the equality state at the exit of each block.
-    pub fn analyze(lowered: &'a Lowered<'db>) -> Vec<Option<EqualityState<'db>>> {
-        ForwardDataflowAnalysis::new(lowered, EqualityAnalysis::new(lowered)).run()
+    pub fn analyze(
+        db: &'db dyn Database,
+        lowered: &'a Lowered<'db>,
+    ) -> Vec<Option<EqualityState<'db>>> {
+        ForwardDataflowAnalysis::new(lowered, EqualityAnalysis::new(db, lowered)).run()
+    }
+
+    /// Handles extern match arms for array operations.
+    ///
+    /// Array pop operations act as "destructures" on the struct-hashcons representation:
+    /// - `array_pop_front` / `array_pop_front_consume`: On the Some arm, if the input array was
+    ///   tracked as `[e0, e1, ..., eN]`, the popped element (boxed) is `Box(e0)` and the remaining
+    ///   array is `[e1, ..., eN]`.
+    /// - `array_snapshot_pop_front`: Same as above but through snapshot/box-of-snapshot wrappers.
+    /// - `array_snapshot_pop_back`: Like pop_front but pops from the back: element is `Box(eN)`,
+    ///   remaining is `[e0, ..., eN-1]`.
+    fn transfer_extern_match_arm(
+        &self,
+        info: &mut EqualityState<'db>,
+        extern_info: &MatchExternInfo<'db>,
+        arm: &MatchArm<'db>,
+    ) {
+        let Some((id, _)) = extern_info.function.get_extern(self.db) else { return };
+        // TODO(eytan-starkware): Add support for multipop.
+        if id == self.array_pop_front || id == self.array_pop_front_consume {
+            // Some arm: var_ids = [remaining_arr, boxed_elem]
+            if arm.var_ids.len() == 2 {
+                let input_arr = extern_info.inputs[0].var_id;
+                let remaining_arr = arm.var_ids[0];
+                let boxed_elem = arm.var_ids[1];
+
+                let arr_rep = info.find(input_arr);
+                if let Some((ty, elems)) = info.struct_hashcons_rev.get(&arr_rep).cloned()
+                    && let Some((&first, rest)) = elems.split_first()
+                {
+                    // Popped element is boxed: boxed_elem = Box(first_element)
+                    info.set_box_relationship(first, boxed_elem);
+                    // Remaining array is the tail
+                    let rest_reps: Vec<_> = rest.iter().map(|&v| info.find(v)).collect();
+                    info.set_struct_construct(ty, rest_reps, remaining_arr);
+                }
+            } else {
+                // None arm for array_pop_front: var_ids = [original_arr]. Union with input.
+                // None arm for array_pop_front_consume: var_ids = [].
+                let old_array_var = extern_info.inputs[0].var_id;
+                let ty = self.lowered.variables[old_array_var].ty;
+                // TODO(eytan-starkware): This introduces a backedge to our hashcons updates,
+                //    so we might need to support updating the structures accordingly.
+                //    For example, if this is empty after a pop, then we know previous array was a
+                //    singleton.
+                info.set_struct_construct(ty, vec![], old_array_var);
+                if arm.var_ids.len() == 1 {
+                    let empty_array_var = arm.var_ids[0];
+                    info.union(old_array_var, empty_array_var);
+                }
+            }
+        } else if id == self.array_snapshot_pop_front || id == self.array_snapshot_pop_back {
+            // Some arm: var_ids = [remaining_snap_arr, boxed_snap_elem]
+            if arm.var_ids.len() == 2 {
+                let input_snap_arr = extern_info.inputs[0].var_id;
+                let remaining_snap_arr = arm.var_ids[0];
+                let boxed_snap_elem = arm.var_ids[1];
+
+                // The input is @Array<T>. Look up the tracked elements.
+                // Two paths: (1) the input snapshot was created via `snapshot(arr)` where `arr`
+                // has a struct-hashcons entry under `Array<T>`, or (2) the input is itself a
+                // remaining snapshot array from a prior snapshot pop, stored directly in the
+                // struct hashcons under its snapshot type `@Array<T>`.
+                let snap_rep = info.find(input_snap_arr);
+                let elems_opt = info
+                    .class_info
+                    .get(&snap_rep)
+                    .and_then(|ci| ci.original_class)
+                    .and_then(|orig| {
+                        let orig = info.find_immut(orig);
+                        info.struct_hashcons_rev.get(&orig).cloned()
+                    })
+                    .or_else(|| info.struct_hashcons_rev.get(&snap_rep).cloned());
+
+                if let Some((_orig_ty, elems)) = elems_opt {
+                    let pop_front = id == self.array_snapshot_pop_front;
+                    let (elem, rest) = if pop_front {
+                        let Some((&first, tail)) = elems.split_first() else { return };
+                        (first, tail.to_vec())
+                    } else {
+                        let Some((&last, init)) = elems.split_last() else { return };
+                        (last, init.to_vec())
+                    };
+
+                    // The popped element is `Box<@T>`. The box wraps the *snapshot* of the
+                    // original element. We can only record this relationship if a variable
+                    // for `@elem` already exists (i.e., elem has a snapshot class).
+                    // TODO(eytan-starkware): Support relationships even no variable to represent
+                    // `@elem` yet.
+                    let elem_rep = info.find(elem);
+                    if let Some(snap_of_elem) =
+                        info.class_info.get(&elem_rep).and_then(|ci| ci.snapshot_class)
+                    {
+                        info.set_box_relationship(snap_of_elem, boxed_snap_elem);
+                    }
+
+                    // Record the remaining snapshot array under its snapshot type
+                    // (`@Array<T>`). This is a hack: `@Array<T>` is not a struct, but we
+                    // reuse `struct_hashcons` to store element info for it. This also
+                    // requires the two-path lookup above (path 2).
+                    // TODO(eytan-starkware): Once placeholder vars are supported, store
+                    //    this as a proper `Array<T>` linked via `original_class` instead,
+                    //    since we may not have a var representing the non-snapshot array at the
+                    // moment.
+                    let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
+                    let rest_reps: Vec<_> = rest.iter().map(|&v| info.find(v)).collect();
+                    info.set_struct_construct(snap_ty, rest_reps, remaining_snap_arr);
+                }
+            } else {
+                // None arm: var_ids = [original_snap_arr]. Snapshot array was empty.
+                let old_snap_arr = extern_info.inputs[0].var_id;
+                let snap_ty = self.lowered.variables[old_snap_arr].ty;
+                info.set_struct_construct(snap_ty, vec![], old_snap_arr);
+                info.union(arm.var_ids[0], old_snap_arr);
+            }
+        }
     }
 }
 
@@ -600,7 +750,22 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                 info.set_struct_construct(ty, output_reps, struct_stmt.input.var_id);
             }
 
-            Statement::Const(_) | Statement::Call(_) => {}
+            Statement::Call(call_stmt) => {
+                let Some((id, _)) = call_stmt.function.get_extern(self.db) else { return };
+                if id == self.array_new {
+                    let ty = self.lowered.variables[call_stmt.outputs[0]].ty;
+                    info.set_struct_construct(ty, vec![], call_stmt.outputs[0]);
+                } else if id == self.array_append {
+                    let arr_rep = info.find(call_stmt.inputs[0].var_id);
+                    if let Some((ty, elems)) = info.struct_hashcons_rev.get(&arr_rep).cloned() {
+                        let mut new_elems = elems;
+                        new_elems.push(info.find(call_stmt.inputs[1].var_id));
+                        info.set_struct_construct(ty, new_elems, call_stmt.outputs[0]);
+                    }
+                }
+            }
+
+            Statement::Const(_) => {}
         }
     }
 
@@ -634,6 +799,11 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
 
                     // Record the relationship: matched_var = Variant(arm_var)
                     new_info.set_enum_construct(variant, arm_var, matched_var);
+                }
+
+                // For extern matches on array operations, track pop/destructure relationships.
+                if let MatchInfo::Extern(extern_info) = match_info {
+                    self.transfer_extern_match_arm(&mut new_info, extern_info, arm);
                 }
             }
             Edge::Return { .. } | Edge::Panic { .. } => {}
