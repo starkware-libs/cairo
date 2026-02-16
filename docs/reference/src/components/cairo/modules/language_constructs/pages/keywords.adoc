@@ -23,11 +23,13 @@ enum
 extern
 false
 fn
+for
 if
 impl
 implicits
 let
 loop
+macro
 match
 mod
 mut
@@ -58,10 +60,7 @@ Self
 assert
 do
 dyn
-for
 hint
-in
-macro
 move
 self
 static
@@ -83,6 +82,13 @@ Such keywords have special meaning only in these certain contexts.
 Outside these places, these character sequences are treated as regular xref:identifiers.adoc[identifiers], thus
 it is
 possible to declare a function or variable with such names.
+
+[source]
+----
+in
+----
+
+Used in `for` loop syntax: `for <pattern> in <expression>`.
 
 [NOTE]
 ====
