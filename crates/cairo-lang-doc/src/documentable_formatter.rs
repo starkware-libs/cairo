@@ -1,6 +1,5 @@
 use std::fmt;
 use std::fmt::Write;
-use std::option::Option;
 
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId,
