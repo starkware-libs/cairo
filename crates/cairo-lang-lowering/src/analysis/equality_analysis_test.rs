@@ -9,6 +9,7 @@ use super::equality_analysis::EqualityAnalysis;
 use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::optimizations::strategy::OptimizationPhase;
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
@@ -33,9 +34,18 @@ fn test_equality_analysis(
     // Use an earlier stage to see the snapshot/box operations before they're optimized away.
     let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline);
 
-    let (lowering_str, analysis_state_str) = if let Ok(lowered) = lowered {
-        let lowering_str = formatted_lowered(db, Some(lowered));
-        let block_states = EqualityAnalysis::analyze(lowered);
+    let (lowering_str, analysis_state_str) = if let Ok(mut lowered) = lowered.cloned() {
+        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::ApplyInlining { enable_const_folding: true }
+            .apply(db, function_id, &mut lowered)
+            .unwrap();
+        OptimizationPhase::ReturnOptimization.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::ReorderStatements.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::BranchInversion.apply(db, function_id, &mut lowered).unwrap();
+
+        let lowering_str = formatted_lowered(db, Some(&lowered));
+        let block_states = EqualityAnalysis::analyze(db, &lowered);
 
         // Format each block's state
         let analysis_state_str = block_states
