@@ -83,10 +83,10 @@ jobs:
           output-file-path: benchmark-output.txt
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: dev/bench
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
-          fail-on-alert: false
+          fail-on-alert: true
           alert-threshold: '150%'
-          summary-always: true
 
       - name: Push results to gh-pages
         run: git push origin gh-pages
