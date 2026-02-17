@@ -1,4 +1,4 @@
-use core::dict::{Felt252Dict, Felt252DictEntryTrait};
+use core::dict::{Felt252Dict, Felt252DictEntryTrait, SquashedFelt252Dict, SquashedFelt252DictTrait};
 use core::num::traits::One;
 use starknet::storage::{StoragePathEntry, StoragePointerReadAccess, StoragePointerWriteAccess};
 
@@ -35,6 +35,7 @@ enum Libfuncs {
     Conversions: ConversionsLibfuncs,
     Ec: EcLibfuncs,
     Sha256: ByteArray,
+    Blake2s: (Box<[u32; 8]>, u32, Box<[u32; 16]>),
     ArrayU128: ArrayLibfuncs<u128>,
     ArrayU256: ArrayLibfuncs<u256>,
     DictU128: DictLibfuncs<u128>,
@@ -49,6 +50,7 @@ enum Libfuncs {
     Starknet: StarknetLibfuncs,
     Consts: ConstsLibfuncs,
     Snapshot: SnapshotLibfuncs,
+    BoxedAccess: Box<Option<u256>>,
     RangeIter: (u8, u8),
 }
 
@@ -153,6 +155,7 @@ enum ArrayLibfuncs<T> {
 enum DictLibfuncs<T> {
     Default,
     EntryGet: (Felt252Dict<T>, felt252),
+    Iterate: SquashedFelt252Dict<T>,
 }
 
 enum NullableLibfuncs<T> {
@@ -221,6 +224,14 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Conversions(libfuncs) => conversions_libfuncs(libfuncs),
         Libfuncs::Ec(libfuncs) => ec_libfuncs(libfuncs),
         Libfuncs::Sha256(input) => use_and_panic(core::sha256::compute_sha256_byte_array(@input)),
+        Libfuncs::Blake2s((
+            state, byte_count, msg,
+        )) => use_and_panic(
+            (
+                core::blake::blake2s_compress(state, byte_count, msg),
+                core::blake::blake2s_finalize(state, byte_count, msg),
+            ),
+        ),
         Libfuncs::ArrayU128(libfuncs) => array_libfuncs(libfuncs),
         Libfuncs::ArrayU256(libfuncs) => array_libfuncs(libfuncs),
         Libfuncs::DictU128(libfuncs) => dict_libfuncs(libfuncs),
@@ -237,6 +248,10 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Starknet(libfuncs) => starknet_libfuncs(libfuncs),
         Libfuncs::Consts(libfuncs) => consts_libfuncs(libfuncs),
         Libfuncs::Snapshot(libfuncs) => snapshot_libfuncs(libfuncs),
+        Libfuncs::BoxedAccess(access) => match access {
+            Some(access) => use_and_panic(BoxTrait::new(access.low)),
+            None => {},
+        },
         Libfuncs::RangeIter((s, e)) => { for _ in s..e {} },
     }
 }
@@ -384,7 +399,7 @@ fn ec_libfuncs(libfuncs: EcLibfuncs) {
             {
                 let mut state = EcStateTrait::init();
                 let p = p.try_into().unwrap();
-                state.add(p);
+                state.sub(p);
                 state.add_mul(5, p);
                 state.finalize()
             },
@@ -421,6 +436,7 @@ fn dict_libfuncs<T, +Drop<T>, +Felt252DictValue<T>, +Felt252DictEntryTrait<T>>(
             let (e, _v) = dict.entry(key);
             use_and_panic(e)
         },
+        DictLibfuncs::Iterate(dict) => use_and_panic(dict.into_entries()),
     }
 }
 
