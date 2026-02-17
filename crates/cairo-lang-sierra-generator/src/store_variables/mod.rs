@@ -360,7 +360,7 @@ impl<'db> AddStoreVariableStatements<'db> {
     ) -> VarState {
         // Check if this variable should be a local variable.
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var) {
-            self.store_local(var, &uninitialized_local_var_id.clone(), ty);
+            self.store_local(var, uninitialized_local_var_id.clone(), ty);
             VarState::LocalVar
         } else {
             self.store_temp(known_stack, var, var_on_stack, ty);
@@ -473,7 +473,7 @@ impl<'db> AddStoreVariableStatements<'db> {
         ty: &sierra::ids::ConcreteTypeId,
     ) -> bool {
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var) {
-            self.store_local(var, &uninitialized_local_var_id.clone(), ty);
+            self.store_local(var, uninitialized_local_var_id.clone(), ty);
             return true;
         }
         false
@@ -486,7 +486,7 @@ impl<'db> AddStoreVariableStatements<'db> {
                 match var_state {
                     VarState::Deferred { info: DeferredVariableInfo { ty, .. } }
                     | VarState::TempVar { ty } => {
-                        self.store_local(var, &uninitialized_local_var_id.clone(), ty);
+                        self.store_local(var, uninitialized_local_var_id.clone(), ty);
                         *var_state = VarState::LocalVar;
                     }
                     VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
@@ -531,12 +531,12 @@ impl<'db> AddStoreVariableStatements<'db> {
     fn store_local(
         &mut self,
         var: &sierra::ids::VarId,
-        uninitialized_local_var_id: &sierra::ids::VarId,
+        uninitialized_local_var_id: sierra::ids::VarId,
         ty: &sierra::ids::ConcreteTypeId,
     ) {
         self.result.push(simple_statement(
             store_local_libfunc_id(self.db, ty.clone()),
-            &[uninitialized_local_var_id.clone(), var.clone()],
+            &[uninitialized_local_var_id, var.clone()],
             std::slice::from_ref(var),
         ));
     }
