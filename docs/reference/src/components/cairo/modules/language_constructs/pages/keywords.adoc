@@ -89,8 +89,3 @@ in
 ----
 
 Used in `for` loop syntax: `for <pattern> in <expression>`.
-
-[NOTE]
-====
-No contextual keywords are in use for now.
-====
