@@ -22,8 +22,9 @@ pub fn init_logging(level: tracing::Level) {
         // Bridge log records to tracing so existing log macros still work via tracing-log
         tracing_log::LogTracer::init().ok();
 
-        let env_filter =
-            EnvFilter::try_from_default_env().or_else(|_| EnvFilter::try_new(level.as_str())).unwrap();
+        let env_filter = EnvFilter::try_from_default_env()
+            .or_else(|_| EnvFilter::try_new(level.as_str()))
+            .unwrap();
 
         // Custom filter: filter out all events from the "salsa" crate unless CAIRO_UNMUTE_SALSA is
         // set.
