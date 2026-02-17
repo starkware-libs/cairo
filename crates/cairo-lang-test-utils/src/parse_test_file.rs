@@ -400,6 +400,8 @@ pub fn run_test_file(
     let filter = std::env::var("CAIRO_TEST_FILTER").unwrap_or_default();
 
     let tests = parse_test_file(path)?;
+    let full_filename = std::fs::canonicalize(path)?;
+    let full_filename_str = full_filename.to_str().unwrap();
 
     let mut new_tests = OrderedHashMap::<String, Test>::default();
 
@@ -413,8 +415,6 @@ pub fn run_test_file(
         }
         let line_num = test.line_num;
         let test_path = format!(r#"{runner_name}::{filename}::"{test_name}" (line: {line_num})"#);
-        let full_filename = std::fs::canonicalize(path)?;
-        let full_filename_str = full_filename.to_str().unwrap();
 
         let missing_attribute_panic = |key: &str| {
             panic!(
