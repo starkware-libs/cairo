@@ -1,6 +1,6 @@
 [package]
 name = "core"
-version = "2.15.0"
+version = "2.16.0"
 edition = "2025_12"
 experimental-features = [
   "associated_item_constraints",
@@ -14,4 +14,4 @@ experimental-features = [
 no-core = true
 
 [dev-dependencies]
-cairo_test = "2.15.0"
+cairo_test = "2.16.0"
