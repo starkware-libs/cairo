@@ -467,9 +467,7 @@ impl<'db> InferenceEmbeddings<'db> for Inference<'db, '_> {
             stable_ptr,
             lookup_context,
         );
-        let x = self.db;
-
-        ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(x), x)
+        ImplImplId::new(impl_id, concrete_trait_impl.trait_impl(self.db), self.db)
     }
 }
 
