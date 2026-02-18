@@ -360,7 +360,7 @@ impl CasmBuilder {
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a: cell,
-                b: deref_or_immediate!(BigInt::from(offset) + 1),
+                b: deref_or_immediate!(i32::from(offset) + 1),
             },
         );
         self.add_var(CellExpression::DoubleDeref(cell, offset))
@@ -376,7 +376,7 @@ impl CasmBuilder {
             CellExpression::BinOp {
                 op: CellOperator::Add,
                 a: base,
-                b: deref_or_immediate!(offset + 1),
+                b: deref_or_immediate!(i32::from(offset) + 1),
             },
         );
         (base, offset)
@@ -564,7 +564,7 @@ impl CasmBuilder {
             label,
             InstructionBody::Call(CallInstruction {
                 relative: true,
-                target: deref_or_immediate!(0),
+                target: deref_or_immediate!(BigInt::ZERO),
             }),
             false,
         );
