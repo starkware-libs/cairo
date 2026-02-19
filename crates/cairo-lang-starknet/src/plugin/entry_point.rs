@@ -139,9 +139,8 @@ pub fn handle_entry_point<'db, 'a>(
 ) {
     let declaration = item_function.declaration(db);
     let name_node = declaration.name(db);
-    if entry_point_kind == EntryPointKind::Constructor
-        && name_node.text(db).long(db) != CONSTRUCTOR_NAME
-    {
+    let function_name = name_node.text(db).long(db);
+    if entry_point_kind == EntryPointKind::Constructor && function_name != CONSTRUCTOR_NAME {
         diagnostics.push(PluginDiagnostic::error(
             name_node.stable_ptr(db),
             format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
@@ -179,7 +178,6 @@ pub fn handle_entry_point<'db, 'a>(
                 }
                 EntryPointKind::External => &mut data.external_functions,
             };
-            let function_name = name_node.text(db).long(db);
             generated.push(
                 RewriteNode::text(&format!(
                     "\n    pub use super::{wrapper_function_name} as {function_name};",
