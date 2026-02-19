@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::HeapSize;
 use cairo_lang_utils::{Intern, define_short_id};
@@ -139,8 +140,23 @@ impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
+        let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
+        tracing::info!(
+            target: "optimization_dump",
+            "({})\nInitial:\n{:?}",
+            function.full_path(db),
+            lowered.debug(&fmt)
+        );
+
         for phase in self {
             phase.apply(db, function, lowered)?;
+            let fmt = crate::fmt::LoweredFormatter::new(db, &lowered.variables);
+            tracing::info!(
+                target: "optimization_dump",
+                "({})\nAfter {phase:?}:\n{:?}",
+                function.full_path(db),
+                lowered.debug(&fmt)
+            );
         }
         Ok(())
     }
