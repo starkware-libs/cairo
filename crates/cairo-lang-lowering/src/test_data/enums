@@ -42,3 +42,48 @@ Statements:
   (v5: test::MyEnum) <- MyEnum::B(v4)
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Multiple variants with the same name.
+
+//! > test_runner_name
+test_function_lowering(expect_diagnostics: true)
+
+//! > module_code
+enum MyEnum {
+    Dup: felt252,
+    Dup: felt252,
+}
+
+//! > function_code
+fn foo(v: MyEnum) -> felt252 {
+    match v {
+        MyEnum::Dup(x) => x,
+    }
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+error[E2051]: Redefinition of variant "Dup" on enum "MyEnum".
+ --> lib.cairo:3:5
+    Dup: felt252,
+    ^^^^^^^^^^^^
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::MyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    MyEnum::Dup(v1) => blk1,
+  })
+
+blk1:
+Statements:
+End:
+  Return(v1)
