@@ -1,34 +1,33 @@
 use anyhow::{Context, bail};
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    FreeFunctionId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    NamedLanguageElementId, SubmoduleId,
+    FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, NamedLanguageElementId, SubmoduleId,
+    TopLevelLanguageElementId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
-use cairo_lang_semantic::diagnostic::SemanticDiagnostics;
-use cairo_lang_semantic::expr::inference::InferenceId;
-use cairo_lang_semantic::expr::inference::canonic::ResultNoErrEx;
+use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_semantic::items::constant::ConstantSemantic;
+use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
 use cairo_lang_semantic::items::functions::{
-    ConcreteFunctionWithBodyId as SemanticConcreteFunctionWithBodyId, GenericFunctionId,
+    ConcreteFunctionWithBody, ConcreteFunctionWithBodyId as SemanticConcreteFunctionWithBodyId,
+    GenericFunctionId, GenericFunctionWithBodyId,
 };
 use cairo_lang_semantic::items::imp::ImplLongId;
 use cairo_lang_semantic::items::impl_alias::ImplAliasSemantic;
 use cairo_lang_semantic::items::module::ModuleSemantic;
 use cairo_lang_semantic::items::us::SemanticUseEx;
-use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
-use cairo_lang_semantic::substitution::SemanticRewriter;
+use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::{
     OrderedHashMap, deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec,
 };
+use cairo_lang_utils::{Intern, extract_matches};
 use itertools::chain;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
@@ -173,8 +172,12 @@ fn get_impl_aliases_abi_functions<'db>(
     module_prefix: SmolStrId<'db>,
 ) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId<'db>>>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
-    let mut diagnostics = SemanticDiagnostics::new(generated_module_id);
     let mut all_abi_functions = vec![];
+
+    // Find the generated impl in the contract module for the ContractState's Drop.
+    let drop_impl_name = SmolStrId::from(db, "ContractStateDrop");
+    let drop_impl_arg = find_impl_in_module_as_arg(db, generated_module_id, drop_impl_name)?;
+
     for (impl_alias_id, impl_alias) in generated_module_id
         .module_data(db)
         .to_option()
@@ -199,44 +202,84 @@ fn get_impl_aliases_abi_functions<'db>(
             impl_module,
             SmolStrId::from(db, format!("{}_{impl_name}", module_prefix.long(db))),
         )?;
-        let mut resolver = Resolver::new(
-            db,
-            impl_alias_id.parent_module(db),
-            InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
-                *impl_alias_id,
-            ))),
-        );
-        let Some(last_segment) = impl_alias.impl_path(db).segments(db).elements(db).last() else {
-            unreachable!("impl_path should have at least one segment");
-        };
-        let generic_args = last_segment.generic_args(db).unwrap_or_default();
+
+        // Get the concrete generic args from the resolved impl alias
+        let resolved_generic_args = &concrete.long(db).generic_args;
+
+        // Find the UnsafeNewContractState impl for this specific embeddable
+        let unsafe_impl_name = SmolStrId::from(db, format!("ContractState{impl_name}"));
+        let unsafe_impl_arg =
+            find_impl_in_module_as_arg(db, generated_module_id, unsafe_impl_name)?;
+
         for abi_function in get_module_aliased_functions(db, module_id)? {
-            all_abi_functions.extend(abi_function.try_map(|f| {
-                let concrete_wrapper = resolver
-                    .specialize_function(
-                        &mut diagnostics,
-                        impl_alias.stable_ptr(db).untyped(),
-                        GenericFunctionId::Free(f),
-                        &generic_args,
-                    )
-                    .to_option()?
-                    .get_concrete(db)
-                    .body(db)
-                    .to_option()??;
-                let inference = &mut resolver.inference();
-                assert_eq!(
-                    inference.finalize_without_reporting(),
-                    Ok(()),
-                    "All inferences should be solved at this point."
-                );
-                Some(inference.rewrite(concrete_wrapper).no_err())
-            }));
+            all_abi_functions.push(Aliased {
+                value: specialize_wrapper_function(
+                    db,
+                    abi_function.value,
+                    resolved_generic_args.clone(),
+                    unsafe_impl_arg,
+                    drop_impl_arg,
+                )?,
+                alias: abi_function.alias,
+            });
         }
     }
-    diagnostics
-        .build()
-        .expect_with_db(db, "Internal error: Inference for wrappers generics failed.");
+
     Ok(all_abi_functions)
+}
+
+/// Find an impl by name in a module, and return it as a GenericArgumentId.
+fn find_impl_in_module_as_arg<'db>(
+    db: &'db dyn Database,
+    module_id: ModuleId<'db>,
+    impl_name: SmolStrId<'db>,
+) -> anyhow::Result<GenericArgumentId<'db>> {
+    match db.module_item_by_name(module_id, impl_name).to_option().flatten().with_context(|| {
+        format!("Failed to find item named {} in {}.", impl_name.long(db), module_id.full_path(db))
+    })? {
+        ModuleItemId::Impl(impl_def_id) => {
+            let impl_id = ImplLongId::Concrete(
+                semantic::ConcreteImplLongId { impl_def_id, generic_args: vec![] }.intern(db),
+            )
+            .intern(db);
+            Ok(GenericArgumentId::Impl(impl_id))
+        }
+        _ => anyhow::bail!("{}::{} is not an impl.", module_id.full_path(db), impl_name.long(db)),
+    }
+}
+
+/// Specialize a wrapper function by directly using the resolved impl args
+/// and adding the UnsafeNewContractState and Drop impls as needed.
+fn specialize_wrapper_function<'db>(
+    db: &'db dyn Database,
+    wrapper_function: FreeFunctionId<'db>,
+    mut generic_args: Vec<GenericArgumentId<'db>>,
+    unsafe_impl_arg: GenericArgumentId<'db>,
+    drop_impl_arg: GenericArgumentId<'db>,
+) -> anyhow::Result<SemanticConcreteFunctionWithBodyId<'db>> {
+    let num_params = db
+        .free_function_generic_params(wrapper_function)
+        .to_option()
+        .with_context(|| "Failed getting number of params of function.")?
+        .len();
+    let extra_args = num_params.saturating_sub(generic_args.len());
+    match extra_args {
+        1 => generic_args.push(unsafe_impl_arg),
+        2 => generic_args.extend([unsafe_impl_arg, drop_impl_arg]),
+        _ => anyhow::bail!(
+            "Unexpected number of generic arguments for {}, got {}, expected {} or {}.",
+            wrapper_function.full_path(db),
+            generic_args.len(),
+            num_params - 1,
+            num_params - 2
+        ),
+    }
+
+    Ok(ConcreteFunctionWithBody {
+        generic_function: GenericFunctionWithBodyId::Free(wrapper_function),
+        generic_args,
+    }
+    .intern(db))
 }
 
 /// Returns the generated contract module.
