@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771459953845,
+  "lastUpdate": 1771546266336,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -55,6 +55,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1693123188,
             "range": "± 64214679",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "6646a4a9b115408ea6699226b4c531dd4ee23c02",
+          "message": "refactor(starknet): Creating an entry-point function name once. (#9698)",
+          "timestamp": "2026-02-19T11:46:39Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/6646a4a9b115408ea6699226b4c531dd4ee23c02"
+        },
+        "date": 1771546265317,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1505577199,
+            "range": "± 6427339",
             "unit": "ns/iter"
           }
         ]
