@@ -1198,8 +1198,23 @@ impl<'db, 'id> Inference<'db, 'id> {
             }
         }
 
+        let generic_args = concrete_trait_id.generic_args(self.db);
+        // Defer if the generic argument contains inference variables, with special handling for
+        // closures. Closures can only have one type even if not var-free, so they
+        // don't cause ambiguity.
+        if generic_args.iter().any(|garg| {
+            matches!(
+                garg,
+                GenericArgumentId::Type(ty)
+                if !matches!(ty.long(self.db), TypeLongId::Closure(_))
+                && !ty.is_var_free(self.db)
+            )
+        }) {
+            return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer(concrete_trait_id)));
+        }
+
         let mut neg_impl_generic_params = OrderedHashSet::default();
-        for garg in concrete_trait_id.generic_args(self.db) {
+        for garg in generic_args {
             if garg.extract_generic_params(self.db, &mut neg_impl_generic_params).is_err() {
                 return Ok(SolutionSet::Ambiguous(
                     Ambiguity::NegativeImplWithUnsupportedExtractedArgs(*garg),
