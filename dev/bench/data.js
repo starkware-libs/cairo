@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771632723619,
+  "lastUpdate": 1771719002952,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -111,6 +111,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1670445192,
             "range": "± 21635167",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "phrwlk",
+            "username": "phrwlk",
+            "email": "phrwlk7@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e56055c87a9db4e3dbb91c82ccb2ea751a8dc617",
+          "message": "refactor(syntax): remove duplicated width calculation in GreenId (#9701)",
+          "timestamp": "2026-02-20T10:13:27Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/e56055c87a9db4e3dbb91c82ccb2ea751a8dc617"
+        },
+        "date": 1771719002474,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1540172113,
+            "range": "± 16364376",
             "unit": "ns/iter"
           }
         ]
