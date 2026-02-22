@@ -112,11 +112,12 @@ pub fn find_reboxing_candidates<'db>(lowered: &Lowered<'db>) -> OrderedHashSet<R
                     match input_state {
                         ReboxingValue::Revoked => {}
                         ReboxingValue::MemberOfUnboxed { .. } | ReboxingValue::Unboxed(_) => {
+                            let input_state_rc = Rc::new(input_state);
                             for (member_idx, output_var) in
                                 destructure_stmt.outputs.iter().enumerate()
                             {
                                 let res = ReboxingValue::MemberOfUnboxed(MemberOfUnboxedData {
-                                    source: Rc::new(input_state.clone()),
+                                    source: Rc::clone(&input_state_rc),
                                     deconstruct_location: (block_id, stmt_idx),
                                     member: member_idx,
                                 });
