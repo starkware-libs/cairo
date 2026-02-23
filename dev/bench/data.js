@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771719002952,
+  "lastUpdate": 1771805455993,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -139,6 +139,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1540172113,
             "range": "± 16364376",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "TomerStarkware",
+            "username": "TomerStarkware",
+            "email": "144585788+TomerStarkware@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "3f7438f831b1bd68b0844379403a0fdd3afc24ec",
+          "message": "fixed negative impls to not solve when trait is not var free (#9668)",
+          "timestamp": "2026-02-22T10:51:36Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/3f7438f831b1bd68b0844379403a0fdd3afc24ec"
+        },
+        "date": 1771805455435,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1513253253,
+            "range": "± 15451538",
             "unit": "ns/iter"
           }
         ]
