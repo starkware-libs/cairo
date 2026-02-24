@@ -8,3 +8,116 @@ It is automatically used in every module.
 It is not possible to disable standard library prelude importing.
 This means that items from the prelude are always in scope without explicit imports,
 which is why you can use types like `Option`, `Result`, and common traits without importing them.
+
+== Items Included in the Prelude
+
+The prelude includes commonly used types, traits, and functions that are essential for Cairo programming.
+The following categories of items are automatically imported:
+
+=== Basic Types
+
+* `bool` — Boolean type
+* `felt252` — Field element type (252-bit)
+* `usize` — Unsigned size type
+* Integer types: `u8`, `u16`, `u32`, `u64`, `u128`, `u256`, `i8`, `i16`, `i32`, `i64`, `i128`
+
+=== Collection Types
+
+* `Array` and `ArrayTrait` — Dynamic array type and its methods
+* `Span` and `SpanTrait` — Immutable view into arrays
+* `ToSpanTrait` — Conversion to span
+* `ByteArray` and `ByteArrayTrait` — Byte array type for string handling
+* `Felt252DictTrait` — Dictionary with felt252 keys
+
+=== Option and Result Types
+
+* `Option`, `Some`, `None` — Optional value type and variants
+* `OptionTrait` — Methods for working with options
+* `Result`, `Ok`, `Err` — Result type for error handling and variants
+* `ResultTrait` — Methods for working with results
+
+=== Common Traits
+
+* `Copy` — Types that can be copied by copying bits
+* `Clone` — Types that can be explicitly cloned
+* `Drop` — Types that can be safely dropped
+* `Destruct` — Types that can be explicitly destructed
+* `PanicDestruct` — Types that can be destructed during panic
+* `Default` — Types with a default value
+* `PartialEq` — Types that support equality comparison
+* `PartialOrd` — Types that support ordering comparison
+* `Into` and `TryInto` — Type conversion traits
+* `Serde` — Serialization and deserialization
+
+=== Arithmetic Traits
+
+* `Add`, `Sub`, `Mul`, `Div`, `Rem` — Arithmetic operations
+* `Neg` — Negation operation
+* `Not` — Logical NOT operation
+* `DivRem` — Combined division and remainder
+
+=== Other Types and Traits
+
+* `Box` and `BoxTrait` — Heap-allocated pointer type
+* `Nullable` and `NullableTrait` — Nullable pointer type
+* `NonZero` — Non-zero wrapper type
+* `Iterator`, `IntoIterator`, `FromIterator` — Iterator traits
+* `Deref` — Dereference trait
+* `Felt252DictValue` — Values that can be stored in felt252 dictionaries
+
+=== Panic Functions
+
+* `panic` — Function to trigger a panic
+* `Panic` and `PanicResult` — Panic-related types
+* `assert` — Macro for assertions
+
+== Using Prelude Items
+
+Since prelude items are automatically imported, you can use them directly without explicit imports:
+
+[source,cairo]
+----
+fn example() {
+    // Option and Result are from the prelude
+    let some_value: Option<u32> = Some(42);
+    let result: Result<u32, felt252> = Ok(100);
+
+    // Array and common traits are available
+    let mut arr = array![1, 2, 3];
+
+    // Integer types are available
+    let x: u32 = 10;
+    let y: i64 = -5;
+
+    // assert is available
+    assert(x > 0, 'x must be positive');
+}
+----
+
+== Explicit Imports
+
+While prelude items are automatically available, you can still import them explicitly if desired:
+
+[source,cairo]
+----
+use core::option::Option::{Some, None};
+use core::array::ArrayTrait;
+
+fn explicit_example() {
+    let value = Some(42);
+    let arr = array![1, 2, 3];
+}
+----
+
+This is functionally identical to using them without explicit imports, but may improve code clarity in some cases.
+
+== Edition-Specific Preludes
+
+Cairo uses edition-based preludes (e.g., `v2023_01`, `v2023_10`, `v2024_07`).
+Different editions may include different items in the prelude.
+The compiler automatically selects the appropriate prelude based on your crate's edition.
+
+== Related
+
+- xref:use.adoc[Use declarations] — Importing items explicitly
+- xref:module.adoc[Modules] — Module system and namespaces
