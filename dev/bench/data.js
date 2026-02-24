@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771805455993,
+  "lastUpdate": 1771891901669,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -167,6 +167,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1513253253,
             "range": "± 15451538",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e19999a6ea0b80543e851879c0340e95e90275a2",
+          "message": "performance(starknet): Made contract functions fetching not require inference. (#9699)",
+          "timestamp": "2026-02-23T14:15:33Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/e19999a6ea0b80543e851879c0340e95e90275a2"
+        },
+        "date": 1771891900815,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1530447549,
+            "range": "± 15067879",
             "unit": "ns/iter"
           }
         ]
