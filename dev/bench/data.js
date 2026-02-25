@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771891901669,
+  "lastUpdate": 1771978352610,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -195,6 +195,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1530447549,
             "range": "± 15067879",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "phrwlk",
+            "username": "phrwlk",
+            "email": "phrwlk7@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "84ffe293689949ddccfcf2826db7e98d8bafa164",
+          "message": "fix: remove unreachable branch in Snapshot handling (#9702)",
+          "timestamp": "2026-02-24T12:48:58Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/84ffe293689949ddccfcf2826db7e98d8bafa164"
+        },
+        "date": 1771978352083,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1401016956,
+            "range": "± 7917048",
             "unit": "ns/iter"
           }
         ]
