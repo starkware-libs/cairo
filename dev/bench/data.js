@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772064681652,
+  "lastUpdate": 1772151134686,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -251,6 +251,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1554673620,
             "range": "± 16684541",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Princeton Mixtey",
+            "username": "Princetimix69",
+            "email": "princetonmixtey@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "73b9645415d0644b4e0659c683326824887ae4d6",
+          "message": "fix: avoid clone in lower_expr_desnap by matching LoweredExpr by value (#9712)",
+          "timestamp": "2026-02-26T15:29:02Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/73b9645415d0644b4e0659c683326824887ae4d6"
+        },
+        "date": 1772151133569,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1494295561,
+            "range": "± 12041154",
             "unit": "ns/iter"
           }
         ]
