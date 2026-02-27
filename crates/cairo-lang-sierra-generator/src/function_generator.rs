@@ -69,8 +69,7 @@ fn get_function_ap_change_and_code<'db>(
         analyze_ap_change_result;
 
     // Get lifetime information.
-    let local_variables = variables_info.local_variables.clone();
-    let lifetime = find_variable_lifetime(lowered_function, &local_variables)?;
+    let lifetime = find_variable_lifetime(lowered_function, &variables_info.local_variables)?;
 
     let mut context = ExprGeneratorContext::new(
         db,
