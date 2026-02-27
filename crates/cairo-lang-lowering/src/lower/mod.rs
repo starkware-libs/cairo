@@ -1224,8 +1224,8 @@ fn lower_expr_desnap<'db>(
     log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let expr = lower_expr(ctx, builder, expr.inner)?;
-    if let LoweredExpr::Snapshot { expr, .. } = &expr {
-        return Ok(expr.as_ref().clone());
+    if let LoweredExpr::Snapshot { expr, .. } = expr {
+        return Ok(*expr);
     }
     let input = expr.as_var_usage(ctx, builder)?;
 
