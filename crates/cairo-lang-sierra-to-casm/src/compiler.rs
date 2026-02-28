@@ -158,7 +158,7 @@ impl CairoProgram {
             if !instruction.hints.is_empty() {
                 hints.push((bytecode.len(), instruction.hints.clone()))
             }
-            bytecode.extend(instruction.assemble().encode().into_iter())
+            bytecode.extend(instruction.assemble().encode())
         }
         let [ref ret_bytecode] = Instruction::new(InstructionBody::Ret(RetInstruction {}), false)
             .assemble()
@@ -176,7 +176,7 @@ impl CairoProgram {
                 "All footer instructions must have no hints since these cannot be added to the \
                  hints dict."
             );
-            bytecode.extend(instruction.assemble().encode().into_iter())
+            bytecode.extend(instruction.assemble().encode())
         }
         AssembledCairoProgram { bytecode, hints }
     }
