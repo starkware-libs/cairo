@@ -146,11 +146,10 @@ impl<'db> AddStoreVariableStatements<'db> {
         let mut state_opt = state_opt;
         match &statement.statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let libfunc_id = invocation.libfunc_id.clone();
-                let signature = get_libfunc_signature(libfunc_id.clone());
+                let signature = get_libfunc_signature(invocation.libfunc_id.clone());
                 let mut state = state_opt.unwrap_or_default();
 
-                let libfunc_long_id = self.db.lookup_concrete_lib_func(&libfunc_id);
+                let libfunc_long_id = self.db.lookup_concrete_lib_func(&invocation.libfunc_id);
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
                     FunctionCallLibfunc::STR_ID | CouponCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.
