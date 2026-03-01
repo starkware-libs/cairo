@@ -783,7 +783,6 @@ fn add_node_enum_impl<'db>(
         builder.add_modified(RewriteNode::interpolate_patched(
             &storage_node_info.node_constructor_field_init_code(false, &variant),
             &[
-                ("object_name".to_string(), enum_name.clone()),
                 ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
                 ("field_index".to_string(), RewriteNode::text(&variant_selector.to_string())),
             ]
