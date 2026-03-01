@@ -1,7 +1,9 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs as defs;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::SmolStrId;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{
     CorelibSemantic, ErrorPropagationType, bounded_int_ty, get_enum_concrete_variant,
     try_get_ty_by_name, unwrap_error_propagation_type, validate_literal,
@@ -44,7 +46,6 @@ use semantic::{
     ExprFunctionCallArg, ExprId, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
     MatchArmSelector, SemanticDiagnostic, TypeLongId,
 };
-use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use self::block_builder::{BlockBuilder, SealedBlockBuilder, SealedGotoCallsite};
 use self::context::{

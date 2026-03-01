@@ -1,9 +1,11 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::{
     NamedLanguageElementId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::items::functions::{FunctionsSemantic, ImplGenericFunctionId};
 use cairo_lang_semantic::items::imp::ImplLongId;
@@ -20,7 +22,6 @@ use salsa::Database;
 use semantic::items::functions::GenericFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
-use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::Location;
 use crate::db::LoweringGroup;

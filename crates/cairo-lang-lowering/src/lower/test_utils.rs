@@ -1,4 +1,5 @@
-use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
+use cairo_lang_defs as defs;
+use cairo_lang_semantic as semantic;
 
 use super::context::{EncapsulatingLoweringContext, LoweringContext};
 use crate::ids::{EnrichedSemanticSignature, FunctionWithBodyLongId};
