@@ -717,17 +717,11 @@ fn add_node_enum_definition<'db>(
     ));
     for variant in enum_ast.variants(db).elements(db) {
         let concrete_node_members_type = storage_node_info.concrete_node_members_type(&variant);
-        let field_type = match variant.type_clause(db) {
-            ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
-            ast::OptionTypeClause::TypeClause(tc) => RewriteNode::from_ast_trimmed(&tc.ty(db)),
-        };
-
         builder.add_modified(RewriteNode::interpolate_patched(
             &format!("$attributes$    $field_name$: {concrete_node_members_type},\n",),
             &[
                 ("attributes".to_string(), RewriteNode::from_ast(&variant.attributes(db))),
                 ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
-                ("field_type".to_string(), field_type),
             ]
             .into(),
         ));
@@ -744,7 +738,6 @@ fn add_node_enum_impl<'db>(
     is_mutable: bool,
 ) {
     let storage_node_info = StorageInterfaceInfo::from_enum_ast(db, enum_ast, is_mutable).unwrap();
-    let enum_name = RewriteNode::from_ast_trimmed(&enum_ast.name(db));
     let node_type_name = storage_node_info.node_type_name();
     let node_impl_name = storage_node_info.node_impl_name();
     let node_trait_name = storage_node_info.node_trait_name();
@@ -761,7 +754,6 @@ fn add_node_enum_impl<'db>(
                     {node_constructor_prefix_code}
         ",},
         &[
-            ("object_name".to_string(), enum_name.clone()),
             ("generic_params".to_string(), params),
             ("generic_args".to_string(), args),
         ]
@@ -783,7 +775,6 @@ fn add_node_enum_impl<'db>(
         builder.add_modified(RewriteNode::interpolate_patched(
             &storage_node_info.node_constructor_field_init_code(false, &variant),
             &[
-                ("object_name".to_string(), enum_name.clone()),
                 ("field_name".to_string(), RewriteNode::from_ast_trimmed(&variant.name(db))),
                 ("field_index".to_string(), RewriteNode::text(&variant_selector.to_string())),
             ]
