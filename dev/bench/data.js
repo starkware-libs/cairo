@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772237394136,
+  "lastUpdate": 1772323838440,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -307,6 +307,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1546011267,
             "range": "± 16699920",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Luca Moretti",
+            "username": "lmorett1",
+            "email": "moretluck@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "08a5e380b4ba55b86f3d62e758f2988900217c4c",
+          "message": "perf: eliminate redundant clone in store_variables invocation handling (#9715)",
+          "timestamp": "2026-02-27T16:59:53Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/08a5e380b4ba55b86f3d62e758f2988900217c4c"
+        },
+        "date": 1772323837449,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1544887085,
+            "range": "± 25802996",
             "unit": "ns/iter"
           }
         ]
