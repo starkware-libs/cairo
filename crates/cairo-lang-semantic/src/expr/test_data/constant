@@ -650,3 +650,59 @@ const AND_SHORT_CIRCUIT: () = assert(!(false && boom()));
 const OR_SHORT_CIRCUIT: () = assert(true || boom());
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Evaluate const functions with const impls.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Foo {
+    const VALUE: felt252;
+}
+impl AFoo of Foo {
+    const VALUE: felt252 = 42;
+}
+impl AnotherFoo<impl F: Foo> of Foo {
+    const VALUE: felt252 = F::VALUE + 1;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:8:28
+    const VALUE: felt252 = F::VALUE + 1;
+                           ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Use const impls as other consts.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Foo {
+    const VALUE: felt252;
+}
+impl AFoo of Foo {
+    const VALUE: felt252 = 42;
+}
+impl AnotherFoo<impl F: Foo> of Foo {
+    const VALUE: felt252 = F::VALUE;
+}
+
+//! > expected_diagnostics

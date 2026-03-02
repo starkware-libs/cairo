@@ -518,7 +518,19 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     /// Validate the given expression can be used as constant.
     fn validate(&mut self, expr_id: ExprId) {
         match &self.arenas.exprs[expr_id] {
-            Expr::Var(_) | Expr::Constant(_) | Expr::Missing(_) => {}
+            Expr::Constant(expr) => {
+                // Check if the constant value can be evaluated at compile time.
+                // ImplConstant with a generic impl parameter cannot be evaluated.
+                if !expr.const_value_id.is_fully_concrete(self.db)
+                    && !matches!(expr.const_value_id.long(self.db), ConstValue::Missing(_))
+                {
+                    self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    );
+                }
+            }
+            Expr::Var(_) | Expr::Missing(_) => {}
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
                 for statement_id in statements {
                     match &self.arenas.statements[*statement_id] {
