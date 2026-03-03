@@ -146,31 +146,33 @@ impl<'db> ConstValueId<'db> {
     }
 
     /// A utility function for extracting the generic parameters arguments from a ConstValueId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
         generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
     ) -> Maybe<()> {
         match self.long(db) {
             ConstValue::Int(_, type_id) | ConstValue::Struct(_, type_id) => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+                type_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Enum(_, const_value_id) => {
-                const_value_id.ty(db)?.long(db).extract_generic_params(db, generic_parameters)?
+                const_value_id.ty(db)?.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::NonZero(const_value_id) => {
-                const_value_id.extract_generic_params(db, generic_parameters)?
+                const_value_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Generic(generic_param_id) => {
                 generic_parameters.insert(*generic_param_id);
             }
             ConstValue::ImplConstant(impl_constant_id) => {
                 for garg in impl_constant_id.impl_id().concrete_trait(db)?.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             ConstValue::Var(_, type_id) => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+                type_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Missing(diagnostic_added) => return Err(*diagnostic_added),
         }
