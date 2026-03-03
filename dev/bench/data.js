@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772410193972,
+  "lastUpdate": 1772496710665,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -363,6 +363,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1599095797,
             "range": "± 15352049",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "MozirDmitriy",
+            "username": "MozirDmitriy",
+            "email": "dmitriymozir@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "8d49f8303a68e7b610c2e5f03c5cbd08e9e00022",
+          "message": "refactor(compiler): remove unnecessary `Box<ProjectConfig>` in RootDatabaseBuilder (#9719)",
+          "timestamp": "2026-03-02T07:13:49Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/8d49f8303a68e7b610c2e5f03c5cbd08e9e00022"
+        },
+        "date": 1772496709616,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1532976771,
+            "range": "± 19482222",
             "unit": "ns/iter"
           }
         ]
