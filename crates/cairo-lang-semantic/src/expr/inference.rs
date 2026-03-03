@@ -1214,8 +1214,12 @@ impl<'db, 'id> Inference<'db, 'id> {
         }
 
         let mut neg_impl_generic_params = OrderedHashSet::default();
+        let mut visited_types = OrderedHashSet::default();
         for garg in generic_args {
-            if garg.extract_generic_params(self.db, &mut neg_impl_generic_params).is_err() {
+            if garg
+                .extract_generic_params(self.db, &mut neg_impl_generic_params, &mut visited_types)
+                .is_err()
+            {
                 return Ok(SolutionSet::Ambiguous(
                     Ambiguity::NegativeImplWithUnsupportedExtractedArgs(*garg),
                 ));

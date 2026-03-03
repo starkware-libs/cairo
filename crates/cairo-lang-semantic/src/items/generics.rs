@@ -102,26 +102,28 @@ impl<'db> GenericArgumentId<'db> {
     }
 
     /// A utility function for extracting the generic parameters arguments from a GenericArgumentId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
         generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
     ) -> Maybe<()> {
         match self {
             GenericArgumentId::Type(ty) => {
-                ty.long(db).extract_generic_params(db, generic_parameters)?
+                ty.extract_generic_params(db, generic_parameters, visited)?
             }
             GenericArgumentId::Constant(const_value_id) => {
-                const_value_id.extract_generic_params(db, generic_parameters)?;
+                const_value_id.extract_generic_params(db, generic_parameters, visited)?;
             }
             GenericArgumentId::Impl(impl_id) => {
                 for garg in impl_id.concrete_trait(db)?.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             GenericArgumentId::NegImpl(negative_impl_id) => {
                 for garg in negative_impl_id.concrete_trait(db)?.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
         }
