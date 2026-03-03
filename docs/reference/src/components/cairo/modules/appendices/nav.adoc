@@ -1,5 +1,5 @@
 // Appendices
 * Appendices
-** xref:pages/full-grammar.adoc[Full grammar 🚧]
+** xref:pages/full-grammar.adoc[Full grammar]
 ** xref:pages/contribution-guidelines.adoc[Contribution guidelines]
 ** xref:pages/security.adoc[Security]
