@@ -222,7 +222,10 @@ Did you mean to write `{identifier}!{left}...{right}'?",
             }
             ParserDiagnosticKind::ConsecutiveMathOperators { first_op, second_op } => {
                 format!(
-                    "Consecutive comparison operators are not allowed: {} followed by {}",
+                    "Consecutive comparison operators are not allowed: {} followed by {}. If this \
+                     was intended as a chained comparison, rewrite it with `&&` (for example, `a \
+                     < b && b < c`). If this appears in a generic path, you may be missing `::` \
+                     (for example, `foo::<T>(...)`).",
                     self.kind_to_string(*first_op),
                     self.kind_to_string(*second_op)
                 )
