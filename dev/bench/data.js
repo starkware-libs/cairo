@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772496710665,
+  "lastUpdate": 1772583076985,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -391,6 +391,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1532976771,
             "range": "± 19482222",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Luca Moretti",
+            "username": "lmorett1",
+            "email": "moretluck@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "69f0c6d7c4dc356ce57aee9d56497ddced0218fc",
+          "message": "docs: clarify associativity and chained comparisons in operator prece… (#9721)",
+          "timestamp": "2026-03-03T15:57:01Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/69f0c6d7c4dc356ce57aee9d56497ddced0218fc"
+        },
+        "date": 1772583075992,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1490964973,
+            "range": "± 6524873",
             "unit": "ns/iter"
           }
         ]
