@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772583076985,
+  "lastUpdate": 1772669487537,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -419,6 +419,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1490964973,
             "range": "± 6524873",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Carlos Mendes",
+            "username": "cmende",
+            "email": "carlosmendessssq@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "dbd742396341bee78e366871e4973d35233d92f6",
+          "message": "Remove stale semantics markers (#9726)",
+          "timestamp": "2026-03-04T16:03:01Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/dbd742396341bee78e366871e4973d35233d92f6"
+        },
+        "date": 1772669487093,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1458185029,
+            "range": "± 29543676",
             "unit": "ns/iter"
           }
         ]
