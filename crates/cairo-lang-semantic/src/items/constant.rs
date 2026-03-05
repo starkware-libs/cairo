@@ -518,7 +518,7 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
     /// Validate the given expression can be used as constant.
     fn validate(&mut self, expr_id: ExprId) {
         match &self.arenas.exprs[expr_id] {
-            Expr::Var(_) | Expr::Constant(_) | Expr::Missing(_) => {}
+            Expr::Constant(_) | Expr::Var(_) | Expr::Missing(_) => {}
             Expr::Block(ExprBlock { statements, tail: Some(inner), .. }) => {
                 for statement_id in statements {
                     match &self.arenas.statements[*statement_id] {
@@ -897,14 +897,28 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return bool_value(args[0] == self.false_const);
         }
 
+        let mut has_non_concrete_arg = false;
         let args = match args
             .into_iter()
-            .map(|arg| NumericArg::try_new(db, arg))
+            .map(|arg| {
+                // Track if any argument is not fully concrete (e.g., ImplConstant with a generic
+                // impl parameter) so we can report a diagnostic if NumericArg conversion fails.
+                if !arg.is_fully_concrete(db) && !matches!(arg.long(db), ConstValue::Missing(_)) {
+                    has_non_concrete_arg = true;
+                }
+                NumericArg::try_new(db, arg)
+            })
             .collect::<Option<Vec<_>>>()
         {
             Some(args) => args,
-            // Diagnostic can be skipped as we would either have a semantic error for a bad arg for
-            // the function, or the arg itself couldn't have been calculated.
+            None if has_non_concrete_arg => {
+                return to_missing(self.diagnostics.report(
+                    expr.stable_ptr.untyped(),
+                    SemanticDiagnosticKind::UnsupportedConstant,
+                ));
+            }
+            // Diagnostic can be skipped as there would be a semantic error for a bad arg, or the
+            // arg itself is Missing.
             None => return to_missing(skip_diagnostic()),
         };
         let value = match imp.function {
