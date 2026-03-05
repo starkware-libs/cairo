@@ -41,7 +41,7 @@ fn foo(a: u128, b: bool) implicits(RangeCheck) {
 foo
 
 //! > expected_diagnostics
-error[E1028]: Consecutive comparison operators are not allowed: '>' followed by '>'. If this was intended as a chained comparison, rewrite it with `&&` (for example, `a < b && b < c`). If this appears in a generic path, you may be missing `::` (for example, `foo::<T>(...)`).
+error[E1028]: Consecutive comparison operators are not allowed: '>' followed by '>'. If this was intended as a chained comparison, rewrite it with `&&` (for example, `a < b && b < c`).
  --> lib.cairo:6:11
     a > a > a;
           ^

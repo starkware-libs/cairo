@@ -221,14 +221,22 @@ Did you mean to write `{identifier}!{left}...{right}'?",
                 "A trailing `|` is not allowed in an or-pattern.".to_string()
             }
             ParserDiagnosticKind::ConsecutiveMathOperators { first_op, second_op } => {
-                format!(
-                    "Consecutive comparison operators are not allowed: {} followed by {}. If this \
-                     was intended as a chained comparison, rewrite it with `&&` (for example, `a \
-                     < b && b < c`). If this appears in a generic path, you may be missing `::` \
-                     (for example, `foo::<T>(...)`).",
+                let message = format!(
+                    "Consecutive comparison operators are not allowed: {} followed by {}.",
                     self.kind_to_string(*first_op),
                     self.kind_to_string(*second_op)
-                )
+                );
+                if *first_op == SyntaxKind::TerminalLT && *second_op == SyntaxKind::TerminalGT {
+                    format!(
+                        "{message} If this appears in a generic path, you may be missing `::` \
+                         (for example, `foo::<T>(...)`)."
+                    )
+                } else {
+                    format!(
+                        "{message} If this was intended as a chained comparison, rewrite it with \
+                         `&&` (for example, `a < b && b < c`)."
+                    )
+                }
             }
             ParserDiagnosticKind::ExpectedSemicolonOrBody => {
                 "Expected either ';' or '{' after module name. Use ';' for an external module \

@@ -78,7 +78,7 @@ StatementExpr
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error[E1028]: Consecutive comparison operators are not allowed: '<' followed by '>'. If this was intended as a chained comparison, rewrite it with `&&` (for example, `a < b && b < c`). If this appears in a generic path, you may be missing `::` (for example, `foo::<T>(...)`).
+error[E1028]: Consecutive comparison operators are not allowed: '<' followed by '>'. If this appears in a generic path, you may be missing `::` (for example, `foo::<T>(...)`).
  --> dummy_file.cairo:2:14
     3 < 1    > 5
              ^
@@ -113,7 +113,7 @@ StatementExpr
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error[E1028]: Consecutive comparison operators are not allowed: '==' followed by '=='. If this was intended as a chained comparison, rewrite it with `&&` (for example, `a < b && b < c`). If this appears in a generic path, you may be missing `::` (for example, `foo::<T>(...)`).
+error[E1028]: Consecutive comparison operators are not allowed: '==' followed by '=='. If this was intended as a chained comparison, rewrite it with `&&` (for example, `a < b && b < c`).
  --> dummy_file.cairo:2:12
     1 == 1 == 1
            ^
