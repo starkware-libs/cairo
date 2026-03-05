@@ -897,15 +897,32 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return bool_value(args[0] == self.false_const);
         }
 
+        let mut has_non_concrete_arg = false;
         let args = match args
             .into_iter()
-            .map(|arg| NumericArg::try_new(db, arg))
+            .map(|arg| {
+                // Track if any argument is not fully concrete (e.g., ImplConstant with a generic
+                // impl parameter) so we can report a diagnostic if NumericArg conversion fails.
+                if !arg.is_fully_concrete(db) && !matches!(arg.long(db), ConstValue::Missing(_)) {
+                    has_non_concrete_arg = true;
+                }
+                NumericArg::try_new(db, arg)
+            })
             .collect::<Option<Vec<_>>>()
         {
             Some(args) => args,
-            // Diagnostic can be skipped as we would either have a semantic error for a bad arg for
-            // the function, or the arg itself couldn't have been calculated.
-            None => return to_missing(skip_diagnostic()),
+            None => {
+                return if has_non_concrete_arg {
+                    to_missing(self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
+                } else {
+                    // Diagnostic can be skipped as there would be a semantic error for a bad arg,
+                    // or the arg itself is Missing.
+                    to_missing(skip_diagnostic())
+                };
+            }
         };
         let value = match imp.function {
             id if id == self.neg_fn => -&args[0].v,
