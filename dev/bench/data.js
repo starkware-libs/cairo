@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772669487537,
+  "lastUpdate": 1772756209049,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -447,6 +447,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1458185029,
             "range": "± 29543676",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Carlos Mendes",
+            "username": "cmende",
+            "email": "carlosmendessssq@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "525706d00c74b44e9d5b99369d63607477bdf106",
+          "message": " Remove stale nav markers (#9728)",
+          "timestamp": "2026-03-05T18:49:45Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/525706d00c74b44e9d5b99369d63607477bdf106"
+        },
+        "date": 1772756208042,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1574871234,
+            "range": "± 12581397",
             "unit": "ns/iter"
           }
         ]
