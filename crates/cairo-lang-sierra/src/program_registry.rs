@@ -35,7 +35,7 @@ pub enum ProgramRegistryError {
     #[error("Used concrete type id `{0}` twice")]
     TypeConcreteIdAlreadyExists(ConcreteTypeId),
     #[error("Declared concrete type `{0}` twice")]
-    TypeAlreadyDeclared(Box<TypeDeclaration>),
+    TypeAlreadyDeclared(TypeDeclaration),
     #[error("Could not find requested type `{0}`.")]
     MissingType(ConcreteTypeId),
     #[error("Error during libfunc specialization of {concrete_id}: {error}")]
@@ -330,9 +330,9 @@ fn get_concrete_types_maps<TType: GenericType>(
         match concrete_type_ids
             .entry((declaration.long_id.generic_id.clone(), &declaration.long_id.generic_args[..]))
         {
-            Entry::Occupied(_) => Err(Box::new(ProgramRegistryError::TypeAlreadyDeclared(
-                Box::new(declaration.clone()),
-            ))),
+            Entry::Occupied(_) => {
+                Err(Box::new(ProgramRegistryError::TypeAlreadyDeclared(declaration.clone())))
+            }
             Entry::Vacant(entry) => Ok(entry.insert(declaration.id.clone())),
         }?;
     }

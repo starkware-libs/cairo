@@ -77,11 +77,11 @@ fn concrete_type_double_declaration() {
                 .unwrap()
         )
         .map(|_| ()),
-        Err(Box::new(ProgramRegistryError::TypeAlreadyDeclared(Box::new(TypeDeclaration {
+        Err(Box::new(ProgramRegistryError::TypeAlreadyDeclared(TypeDeclaration {
             id: "int2".into(),
             long_id,
             declared_type_info: None
-        }))))
+        })))
     );
 }
 
