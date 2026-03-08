@@ -800,11 +800,11 @@ impl<'db> Inference<'db, '_> {
             }
             TypeLongId::Tuple(tys) => tys.iter().any(|ty| self.internal_ty_contains_var(*ty, var)),
             TypeLongId::Snapshot(ty) => self.internal_ty_contains_var(*ty, var),
-            TypeLongId::Var(new_var) => {
-                if InferenceVar::Type(new_var.id) == var {
+            TypeLongId::Var(ty_var) => {
+                if InferenceVar::Type(ty_var.id) == var {
                     return true;
                 }
-                if let Some(ty) = self.type_assignment.get(&new_var.id) {
+                if let Some(ty) = self.type_assignment.get(&ty_var.id) {
                     return self.internal_ty_contains_var(*ty, var);
                 }
                 false
