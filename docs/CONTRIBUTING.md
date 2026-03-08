@@ -43,7 +43,7 @@ cargo run --bin cairo-test -- <path-to-cairo-project>
 ```
 
 If you want to run a single test file, you can use the `--single-file` flag. For example, to run
-the `issue2147.cairo` file from `tests/bug_samples`, use the following command:
+the tests only from `tests/bug_samples/issue2147.cairo`, use the following command:
 
 ```sh
 cargo run --bin cairo-test -- --single-file tests/bug_samples/issue2147.cairo
