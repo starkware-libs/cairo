@@ -706,6 +706,7 @@ pub fn validate_metadata(
                     GasConcreteLibfunc::WithdrawGas(_)
                         | GasConcreteLibfunc::BuiltinWithdrawGas(_)
                         | GasConcreteLibfunc::RedepositGas(_)
+                        | GasConcreteLibfunc::GetUnspentGas(_)
                 )
         ) {
             return Err(CompilationError::StatementNotSupportingGasVariables(*idx));

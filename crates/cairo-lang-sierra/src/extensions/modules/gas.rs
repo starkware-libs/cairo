@@ -156,7 +156,7 @@ impl NoGenericArgsGenericLibfunc for GetUnspentGasLibfunc {
                 },
                 OutputVarInfo {
                     ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
             SierraApChange::Known { new_vars_only: false },

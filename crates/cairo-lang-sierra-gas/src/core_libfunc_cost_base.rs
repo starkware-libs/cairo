@@ -255,13 +255,7 @@ pub fn core_libfunc_cost(
             ],
             RedepositGas(_) => vec![BranchCost::RedepositGas],
             GetAvailableGas(_) => vec![ConstCost::default().into()],
-            GetUnspentGas(_) => vec![
-                ConstCost::steps(
-                    BuiltinCostsType::cost_computation_steps(false, |_| 2).into_or_panic::<i32>()
-                        + 1,
-                )
-                .into(),
-            ],
+            GetUnspentGas(_) => vec![BranchCost::GetUnspentGas],
             BuiltinWithdrawGas(_) => {
                 vec![
                     BranchCost::WithdrawGas(WithdrawGasBranchInfo {
@@ -743,6 +737,12 @@ impl BranchCost {
                     base
                 }
             }
+            BranchCost::GetUnspentGas => ops.const_cost(ConstCost::steps(
+                BuiltinCostsType::cost_computation_steps(false, |token_type| {
+                    info_provider.token_usages(token_type)
+                })
+                .into_or_panic(),
+            )),
         }
     }
 
@@ -780,6 +780,7 @@ impl BranchCost {
             BranchCost::BranchAlign | BranchCost::RedepositGas => {
                 precost_statement_vars_cost(ops).collect()
             }
+            BranchCost::GetUnspentGas => Default::default(),
             BranchCost::WithdrawGas(info) => {
                 if info.success {
                     precost_statement_vars_cost(ops).map(|(k, v)| (k, -v)).collect()
