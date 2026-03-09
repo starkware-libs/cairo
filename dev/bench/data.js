@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772928587321,
+  "lastUpdate": 1773015024543,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -531,6 +531,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1490305095,
             "range": "± 14199785",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Olivier Dupont",
+            "username": "odupontt",
+            "email": "olivierdupontvier@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "519ff103a4479903958fbfa4da6f6e8a569525de",
+          "message": "Fix cairo-test single-file example path (#9731)",
+          "timestamp": "2026-03-08T14:19:48Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/519ff103a4479903958fbfa4da6f6e8a569525de"
+        },
+        "date": 1773015023557,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1478858080,
+            "range": "± 8984955",
             "unit": "ns/iter"
           }
         ]
