@@ -149,6 +149,8 @@ impl CounterImpl of CounterTrait {
 
 Methods can be called using the dot notation:
 
+See xref:method-calls.adoc[Method calls] for the full method call syntax.
+
 [source,cairo]
 ----
 let mut counter = Counter { value: 0 };
