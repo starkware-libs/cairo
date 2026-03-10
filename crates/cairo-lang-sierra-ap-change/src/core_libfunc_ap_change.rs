@@ -206,7 +206,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             GasConcreteLibfunc::GetUnspentGas(_) => {
-                vec![ApChange::Known(BuiltinCostsType::cost_computation_steps(false, |_| 2) + 1)]
+                vec![ApChange::Known(BuiltinCostsType::cost_computation_steps(
+                    false,
+                    |token_type| info_provider.token_usages(token_type),
+                ))]
             }
             GasConcreteLibfunc::BuiltinWithdrawGas(_) => {
                 let cost_computation_ap_change: usize =
