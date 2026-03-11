@@ -10,7 +10,7 @@ use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{Entry, OrderedHashMap};
 use salsa::Database;
 
 use super::attribute::SemanticQueryAttrs;
@@ -171,7 +171,7 @@ fn enum_definition_data<'db>(
     // Variants.
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
-    for (variant_idx, variant) in enum_ast.variants(db).elements(db).enumerate() {
+    for variant in enum_ast.variants(db).elements(db) {
         let feature_restore =
             resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &variant);
         let id = VariantLongId(module_id, variant.stable_ptr(db)).intern(db);
@@ -182,11 +182,19 @@ fn enum_definition_data<'db>(
             }
         };
         let variant_name = variant.name(db).text(db);
-        if let Some(_other_variant) = variants.insert(variant_name, id) {
-            diagnostics
-                .report(variant.stable_ptr(db), EnumVariantRedefinition { enum_id, variant_name });
+        match variants.entry(variant_name) {
+            Entry::Vacant(e) => {
+                e.insert(id);
+                let idx = variant_semantic.len();
+                variant_semantic.insert(id, Variant { enum_id, id, ty, idx });
+            }
+            Entry::Occupied(_) => {
+                diagnostics.report(
+                    variant.stable_ptr(db),
+                    EnumVariantRedefinition { enum_id, variant_name },
+                );
+            }
         }
-        variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
         resolver.restore_feature_config(feature_restore);
     }
 

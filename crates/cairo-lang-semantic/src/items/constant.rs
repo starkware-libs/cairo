@@ -146,31 +146,33 @@ impl<'db> ConstValueId<'db> {
     }
 
     /// A utility function for extracting the generic parameters arguments from a ConstValueId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
         generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
     ) -> Maybe<()> {
         match self.long(db) {
             ConstValue::Int(_, type_id) | ConstValue::Struct(_, type_id) => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+                type_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Enum(_, const_value_id) => {
-                const_value_id.ty(db)?.long(db).extract_generic_params(db, generic_parameters)?
+                const_value_id.ty(db)?.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::NonZero(const_value_id) => {
-                const_value_id.extract_generic_params(db, generic_parameters)?
+                const_value_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Generic(generic_param_id) => {
                 generic_parameters.insert(*generic_param_id);
             }
             ConstValue::ImplConstant(impl_constant_id) => {
                 for garg in impl_constant_id.impl_id().concrete_trait(db)?.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             ConstValue::Var(_, type_id) => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+                type_id.extract_generic_params(db, generic_parameters, visited)?
             }
             ConstValue::Missing(diagnostic_added) => return Err(*diagnostic_added),
         }
@@ -897,15 +899,32 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return bool_value(args[0] == self.false_const);
         }
 
+        let mut all_args_concrete = true;
         let args = match args
             .into_iter()
-            .map(|arg| NumericArg::try_new(db, arg))
+            .map(|arg| {
+                // Track if any argument is not fully concrete (e.g., ImplConstant with a generic
+                // impl parameter) so we can report a diagnostic if NumericArg conversion fails.
+                if !arg.is_fully_concrete(db) && !matches!(arg.long(db), ConstValue::Missing(_)) {
+                    all_args_concrete = false;
+                }
+                NumericArg::try_new(db, arg)
+            })
             .collect::<Option<Vec<_>>>()
         {
             Some(args) => args,
-            // Diagnostic can be skipped as we would either have a semantic error for a bad arg for
-            // the function, or the arg itself couldn't have been calculated.
-            None => return to_missing(skip_diagnostic()),
+            None => {
+                return to_missing(if all_args_concrete {
+                    // Diagnostic can be skipped as there would be a semantic error for a bad arg,
+                    // or the arg itself is Missing.
+                    skip_diagnostic()
+                } else {
+                    self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    )
+                });
+            }
         };
         let value = match imp.function {
             id if id == self.neg_fn => -&args[0].v,
