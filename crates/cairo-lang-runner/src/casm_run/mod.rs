@@ -42,7 +42,7 @@ use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{Signed, ToPrimitive, Zero};
-use rand::Rng;
+use rand::RngExt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
 
 use self::contract_address::calculate_contract_address;
@@ -1808,7 +1808,7 @@ fn alloc_memory(
 }
 
 /// Sample a random point on the elliptic curve and insert into memory.
-pub fn random_ec_point<R: rand::RngCore>(
+pub fn random_ec_point<R: rand::Rng>(
     vm: &mut VirtualMachine,
     x: &CellRef,
     y: &CellRef,
