@@ -13,14 +13,16 @@ use clap::Parser;
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-/// Compiles the specified contract from a Cairo project, into a contract class file.
+/// Compiles a Starknet contract (from a crate project or a single Cairo file) into a contract
+/// class file.
 /// Exits with 0/1 if the compilation succeeds/fails.
 #[derive(Parser, Debug)]
 #[command(version, verbatim_doc_comment)]
 struct Args {
-    /// The path of the crate to compile.
+    /// Path to compile: crate/project path by default, or a single `.cairo` file with
+    /// `--single-file`.
     path: PathBuf,
-    /// Whether path is a single file.
+    /// Treats `path` as a single Cairo source file instead of a crate/project path.
     #[arg(short, long)]
     single_file: bool,
     /// Allows the compilation to succeed with warnings.
