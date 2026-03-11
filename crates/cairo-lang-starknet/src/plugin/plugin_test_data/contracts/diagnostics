@@ -18897,3 +18897,137 @@ impls:
 impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 #[doc(hidden)]
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
+
+//! > ==========================================================================
+
+//! > Test event with duplicate variants.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[derive(Drop, starknet::Event)]
+struct SomeCase {
+    value: felt252,
+}
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {
+    SomeCase: SomeCase,
+    SomeCase: SomeCase,
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[derive(Drop, starknet::Event)]
+struct SomeCase {
+    value: felt252,
+}
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {
+    SomeCase: SomeCase,
+    SomeCase: SomeCase,
+}
+
+lib.cairo:1:10
+#[derive(Drop, starknet::Event)]
+         ^^^^
+impls:
+
+impl SomeCaseDrop<> of core::traits::Drop::<SomeCase>;
+
+
+lib.cairo:1:16
+#[derive(Drop, starknet::Event)]
+               ^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl SomeCaseIsEvent of starknet::Event<SomeCase> {
+    fn append_keys_and_data(
+        self: @SomeCase, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+            core::serde::Serde::serialize(self.value, ref data);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<SomeCase> {
+        Option::Some(SomeCase {value: core::serde::Serde::deserialize(ref data)?, })
+    }
+}
+
+
+lib.cairo:7:10
+#[derive(Drop, starknet::Event)]
+         ^^^^
+impls:
+
+impl EventDrop<> of core::traits::Drop::<Event>;
+
+
+lib.cairo:7:16
+#[derive(Drop, starknet::Event)]
+               ^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::SomeCase(val) => {
+                core::array::ArrayTrait::append(ref keys, selector!("SomeCase"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::SomeCase(val) => {
+                core::array::ArrayTrait::append(ref keys, selector!("SomeCase"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        if __selector__ == selector!("SomeCase") {
+            return Option::Some(Event::SomeCase(starknet::Event::deserialize(ref keys, ref data)?));
+        }
+        if __selector__ == selector!("SomeCase") {
+            return Option::Some(Event::SomeCase(starknet::Event::deserialize(ref keys, ref data)?));
+        }
+        Option::None
+    }
+}
+impl EventSomeCaseIntoEvent of Into<SomeCase, Event> {
+    fn into(self: SomeCase) -> Event {
+        Event::SomeCase(self)
+    }
+}
+impl EventSomeCaseIntoEvent of Into<SomeCase, Event> {
+    fn into(self: SomeCase) -> Event {
+        Event::SomeCase(self)
+    }
+}
+
+//! > expected_diagnostics
+error[E2118]: The name `EventSomeCaseIntoEvent` is defined multiple times.
+ --> lib.cairo:7:16
+#[derive(Drop, starknet::Event)]
+               ^^^^^^^^^^^^^^^
+
+error[E2051]: Redefinition of variant "SomeCase" on enum "Event".
+ --> lib.cairo:10:5
+    SomeCase: SomeCase,
+    ^^^^^^^^^^^^^^^^^^
+
+warning[E3004]: Unreachable pattern arm.
+ --> lib.cairo:7:16
+#[derive(Drop, starknet::Event)]
+               ^^^^^^^^^^^^^^^

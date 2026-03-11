@@ -7,6 +7,7 @@ license-file.workspace = true
 description = "Helpers for creating cairo runnable artifact."
 
 [dependencies]
+<<<<<<< HEAD
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.17.0-rc.0" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "=2.17.0-rc.0" }
 cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "=2.17.0-rc.0" }
@@ -14,6 +15,23 @@ cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "=2.17.0-
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "=2.17.0-rc.0" }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "=2.17.0-rc.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.17.0-rc.0" }
+||||||| 6a43d7c94
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.16.0" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "=2.16.0" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "=2.16.0" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "=2.16.0" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "=2.16.0" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "=2.16.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.0" }
+=======
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.16.1" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "=2.16.1" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "=2.16.1" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "=2.16.1" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "=2.16.1" }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "=2.16.1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.1" }
+>>>>>>> dev-v2.16.1
 cairo-vm.workspace = true
 thiserror.workspace = true
 
