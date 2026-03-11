@@ -111,6 +111,7 @@ tail expression `x + N` whose value is the return value of the function.
 == Calling a function
 
 See xref:function-calls.adoc[Function calls].
+For method call syntax, see xref:method-calls.adoc[Method calls].
 
 == Methods and self
 
@@ -148,8 +149,6 @@ impl CounterImpl of CounterTrait {
 ----
 
 Methods can be called using the dot notation:
-
-See xref:method-calls.adoc[Method calls] for the full method call syntax.
 
 [source,cairo]
 ----
