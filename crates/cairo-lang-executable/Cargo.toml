@@ -8,16 +8,9 @@ description = "Cairo executable artifact."
 
 [dependencies]
 anyhow.workspace = true
-<<<<<<< HEAD
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.17.0-rc.0", default-features = true, features = [
-||||||| 6a43d7c94
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.16.0", default-features = true, features = [
-=======
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "=2.16.1", default-features = true, features = [
->>>>>>> dev-v2.16.1
   "serde",
 ] }
-<<<<<<< HEAD
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "=2.17.0-rc.0" }
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "=2.17.0-rc.0" }
 cairo-lang-executable-plugin = { path = "../cairo-lang-executable-plugin", version = "=2.17.0-rc.0" }
@@ -30,29 +23,6 @@ cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.17.0-rc.0", features = [
   "tracing",
 ] }
-||||||| 6a43d7c94
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "=2.16.0" }
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "=2.16.0" }
-cairo-lang-executable-plugin = { path = "../cairo-lang-executable-plugin", version = "=2.16.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.16.0" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "=2.16.0" }
-cairo-lang-runnable-utils = { path = "../cairo-lang-runnable-utils", version = "=2.16.0" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "=2.16.0" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "=2.16.0" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "=2.16.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.0", features = ["tracing"] }
-=======
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "=2.16.1" }
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "=2.16.1" }
-cairo-lang-executable-plugin = { path = "../cairo-lang-executable-plugin", version = "=2.16.1" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "=2.16.1" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "=2.16.1" }
-cairo-lang-runnable-utils = { path = "../cairo-lang-runnable-utils", version = "=2.16.1" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "=2.16.1" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "=2.16.1" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "=2.16.1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.1", features = ["tracing"] }
->>>>>>> dev-v2.16.1
 cairo-vm.workspace = true
 itertools = { workspace = true, default-features = true }
 salsa.workspace = true
@@ -64,12 +34,6 @@ cairo-lang-compiler = { path = "../cairo-lang-compiler" }
 cairo-lang-debug = { path = "../cairo-lang-debug" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
-<<<<<<< HEAD
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.17.0-rc.0", features = [
   "tracing",
 ] }
-||||||| 6a43d7c94
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.0", features = ["tracing"] }
-=======
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.1", features = ["tracing"] }
->>>>>>> dev-v2.16.1
