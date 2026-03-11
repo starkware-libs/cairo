@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773101380831,
+  "lastUpdate": 1773187739865,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -587,6 +587,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1503507688,
             "range": "± 16531006",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "73188d6daffbfb706676d3308415460492c1398c",
+          "message": "Refactored get_unspent_gas testing libfunc. (#9732)",
+          "timestamp": "2026-03-10T10:57:14Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/73188d6daffbfb706676d3308415460492c1398c"
+        },
+        "date": 1773187739448,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1515597797,
+            "range": "± 26334719",
             "unit": "ns/iter"
           }
         ]
