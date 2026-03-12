@@ -111,7 +111,6 @@ tail expression `x + N` whose value is the return value of the function.
 == Calling a function
 
 See xref:function-calls.adoc[Function calls].
-For method call syntax, see xref:method-calls.adoc[Method calls].
 
 == Methods and self
 
@@ -156,6 +155,8 @@ let mut counter = Counter { value: 0 };
 counter.increment();  // Calls increment with ref self
 let value = counter.get_value();  // Calls get_value with snapshot
 ----
+
+For the full method call syntax and method lookup behavior, see xref:method-calls.adoc[Method calls].
 
 == Function attributes
 
