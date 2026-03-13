@@ -88,7 +88,12 @@ cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/
 ```
 Use `--single-file` when `path` points to a `.cairo` file.
 
-Or compile from a crate/project path. If multiple contracts are defined, specify `--contract-path`:
+Or compile from a crate/project path:
+```bash
+cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json
+```
+
+If multiple contracts are defined in the same crate/project, specify `--contract-path`:
 ```bash
 cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json --contract-path path::to::contract
 ```
