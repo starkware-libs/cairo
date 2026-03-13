@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773274234417,
+  "lastUpdate": 1773360648558,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -643,6 +643,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1522900308,
             "range": "± 13939947",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Olivier Dupont",
+            "username": "odupontt",
+            "email": "olivierdupontvier@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "b828abaabb7448cdb8abb8157b3ec9c142c46b76",
+          "message": "docs: add method call reference to functions documentation (#9735)",
+          "timestamp": "2026-03-12T14:55:45Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/b828abaabb7448cdb8abb8157b3ec9c142c46b76"
+        },
+        "date": 1773360647989,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1517068270,
+            "range": "± 12993964",
             "unit": "ns/iter"
           }
         ]
