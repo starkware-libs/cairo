@@ -42,7 +42,10 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     for byte in bytes {
         if byte == 0 {
             as_string.push_str(r"\0");
-        } else if byte.is_ascii_graphic() || byte.is_ascii_whitespace() {
+        } else if byte.is_ascii_graphic()
+            || byte.is_ascii_whitespace()
+            || is_ascii_escape_sequence(byte)
+        {
             as_string.push(byte as char);
         } else {
             as_string.push_str(format!(r"\x{byte:02x}").as_str());
@@ -54,4 +57,10 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     as_string.insert_str(0, &r"\0".repeat(missing_nulls));
 
     Some(as_string)
+}
+
+/// Checks if given byte is a beginning of an ASCII escape sequence
+/// https://gist.github.com/ConnerWill/d4b6c776b509add763e17f9f113fd25b
+fn is_ascii_escape_sequence(byte: u8) -> bool {
+    byte == 0x1b
 }
