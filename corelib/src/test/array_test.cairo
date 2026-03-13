@@ -13,14 +13,14 @@ fn test_array() {
 #[should_panic]
 fn test_array_out_of_bound_1() {
     let arr = array![10, 11, 12];
-    arr[3];
+    arr[3_usize];
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_2() {
     let arr = array![10, 11, 12];
-    arr[11];
+    arr[11_usize];
 }
 
 #[test]
@@ -273,6 +273,7 @@ fn test_array_snap_into_span() {
 fn test_span_into_array_snap() {
     assert_eq!(@array![1, 2, 3], array![1, 2, 3].span().into());
 }
+
 #[test]
 fn nested_for_loop() {
     let mat = array![array![1, 2], array![3, 4], array![5, 6]];
@@ -283,4 +284,16 @@ fn nested_for_loop() {
         }
     }
     assert_eq!(result, 21);
+}
+
+#[test]
+fn test_array_slice_index() {
+    let arr = array![1, 2, 3, 4, 5];
+    assert!(arr[2_usize..4] == [3, 4].span());
+}
+
+#[test]
+fn test_span_slice_index() {
+    let span = [1, 2, 3, 4, 5].span();
+    assert!(span[2_usize..4] == [3, 4].span());
 }
