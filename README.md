@@ -82,14 +82,19 @@ For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-
 
 ### Compiling Starknet Contracts
 
-Compile a Starknet Contract to a Sierra ContractClass:
+Compile a Starknet contract from a crate/project path to a Sierra ContractClass:
 ```bash
-cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/output.json
+cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json
 ```
 
-Or specify the contract path if multiple contracts are defined in the same project:
+If multiple contracts are defined in the same crate/project, specify `--contract-path`:
 ```bash
 cargo run --bin starknet-compile -- /path/to/input/crate /path/to/output.json --contract-path path::to::contract
+```
+
+For a single-file `.cairo` input, use `--single-file`:
+```bash
+cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/output.json
 ```
 
 Compile a Sierra ContractClass to a CASM CompiledClass:
