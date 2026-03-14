@@ -78,7 +78,7 @@ StatementExpr
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error[E1028]: Consecutive comparison operators are not allowed: '<' followed by '>'
+error[E1028]: Consecutive comparison operators are not allowed: '<' followed by '>'. If this appears in a generic path, you may be missing `::` (for example, `foo::<T>(...)`).
  --> dummy_file.cairo:2:14
     3 < 1    > 5
              ^
@@ -93,4 +93,39 @@ error[E1028]: Consecutive comparison operators are not allowed: '<' followed by 
     │   │   └── rhs (kind: TokenLiteralNumber): '1'
     │   ├── op (kind: TokenGT): '>'
     │   └── rhs (kind: TokenLiteralNumber): '5'
+    └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+
+//! > ==========================================================================
+
+//! > Test consecutive equality operators
+
+//! > test_runner_name
+test_partial_parser_tree(expect_diagnostics: true)
+
+//! > cairo_code
+fn f() -> bool {
+    1 == 1 == 1
+}
+
+//! > top_level_kind
+StatementExpr
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error[E1028]: Consecutive comparison operators are not allowed: '==' followed by '=='. If this was intended as a chained comparison, rewrite it with `&&` (for example, `a < b && b < c`).
+ --> dummy_file.cairo:2:12
+    1 == 1 == 1
+           ^
+
+//! > expected_tree
+└── Top level kind: StatementExpr
+    ├── attributes (kind: AttributeList) []
+    ├── expr (kind: ExprBinary)
+    │   ├── lhs (kind: ExprBinary)
+    │   │   ├── lhs (kind: TokenLiteralNumber): '1'
+    │   │   ├── op (kind: TokenEqEq): '=='
+    │   │   └── rhs (kind: TokenLiteralNumber): '1'
+    │   ├── op (kind: TokenEqEq): '=='
+    │   └── rhs (kind: TokenLiteralNumber): '1'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
