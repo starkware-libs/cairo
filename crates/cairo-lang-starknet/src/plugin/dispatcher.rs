@@ -232,7 +232,7 @@ pub fn handle_trait<'db>(
                     "contract_address",
                     "syscalls::call_contract_syscall",
                     serialization_code.clone(),
-                    ret_decode.clone(),
+                    &ret_decode,
                     true,
                 ));
                 library_caller_method_impls.push(declaration_method_impl(
@@ -241,7 +241,7 @@ pub fn handle_trait<'db>(
                     "class_hash",
                     "syscalls::library_call_syscall",
                     serialization_code.clone(),
-                    ret_decode.clone(),
+                    &ret_decode,
                     true,
                 ));
                 safe_contract_caller_method_impls.push(declaration_method_impl(
@@ -250,7 +250,7 @@ pub fn handle_trait<'db>(
                     "contract_address",
                     "syscalls::call_contract_syscall",
                     serialization_code.clone(),
-                    ret_decode.clone(),
+                    &ret_decode,
                     false,
                 ));
                 safe_library_caller_method_impls.push(declaration_method_impl(
@@ -259,7 +259,7 @@ pub fn handle_trait<'db>(
                     "class_hash",
                     "syscalls::library_call_syscall",
                     serialization_code,
-                    ret_decode,
+                    &ret_decode,
                     false,
                 ));
             }
@@ -400,14 +400,15 @@ fn declaration_method_impl<'db>(
     member: &str,
     syscall: &str,
     serialization_code: Vec<RewriteNode<'db>>,
-    ret_decode: String,
+    ret_decode: &str,
     unwrap: bool,
 ) -> RewriteNode<'db> {
-    let deserialization_code = if ret_decode.is_empty() {
+    let ret_decode_is_empty = ret_decode.is_empty();
+    let deserialization_code = if ret_decode_is_empty {
         RewriteNode::text("()")
     } else {
         RewriteNode::Text(if unwrap {
-            ret_decode.clone()
+            ret_decode.to_string()
         } else {
             ret_decode.split('\n').map(|x| format!("    {x}")).join("\n")
         })
@@ -418,7 +419,7 @@ fn declaration_method_impl<'db>(
                 "let mut {RET_DATA} = starknet::SyscallResultTrait::unwrap_syscall({RET_DATA});
         $deserialization_code$"
             )
-        } else if ret_decode.is_empty() {
+        } else if ret_decode_is_empty {
             format!(
                 "let mut {RET_DATA} = {RET_DATA}?;
         Result::Ok($deserialization_code$)"
