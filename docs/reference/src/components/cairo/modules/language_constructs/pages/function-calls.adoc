@@ -3,7 +3,9 @@
 A call expression calls a xref:functions.adoc[function]. The syntax for a call expression is the
 xref:path.adoc[concrete path] of the function followed by a list of arguments.
 The list of arguments is a comma-separated list of expressions enclosed in parentheses.
+
 For method call syntax using dot notation, see xref:method-calls.adoc[Method calls].
+
 [source,cairo]
 ----
 <concrete_path>(<arg0>,<arg1>,...)
