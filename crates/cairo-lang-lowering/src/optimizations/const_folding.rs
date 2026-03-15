@@ -345,12 +345,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             Statement::IntoBox(StatementIntoBox { input, output }) => {
                 let var_info = self.var_info.get(&input.var_id);
-                let const_value = var_info.and_then(|var_info| {
-                    // Only extract const values directly, not from inside snapshots.
-                    // Extracting from VarInfo::Snapshot would produce a const with type T,
-                    // but the output expects Box<@T>, causing a Sierra type mismatch for
-                    // non-Copy types.
-                    try_extract_matches!(var_info.as_ref(), VarInfo::Const).copied()
+                let const_value = var_info.and_then(|var_info| match var_info.as_ref() {
+                    VarInfo::Const(val) => Some(*val),
+                    VarInfo::Snapshot(info) => {
+                        try_extract_matches!(info.as_ref(), VarInfo::Const).copied()
+                    }
+                    _ => None,
                 });
                 let var_info =
                     var_info.cloned().or_else(|| var_info_if_copy(self.variables, *input));
