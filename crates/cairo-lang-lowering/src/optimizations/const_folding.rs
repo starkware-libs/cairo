@@ -345,12 +345,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             Statement::IntoBox(StatementIntoBox { input, output }) => {
                 let var_info = self.var_info.get(&input.var_id);
-                let const_value = var_info.and_then(|var_info| match var_info.as_ref() {
-                    VarInfo::Const(val) => Some(*val),
-                    VarInfo::Snapshot(info) => {
-                        try_extract_matches!(info.as_ref(), VarInfo::Const).copied()
-                    }
-                    _ => None,
+                let const_value = var_info.and_then(|var_info| {
+                    // Only extract const values directly, not from inside snapshots.
+                    // Extracting from VarInfo::Snapshot would produce a const with type T,
+                    // but the output expects Box<@T>, causing a Sierra type mismatch for
+                    // non-Copy types.
+                    try_extract_matches!(var_info.as_ref(), VarInfo::Const).copied()
                 });
                 let var_info =
                     var_info.cloned().or_else(|| var_info_if_copy(self.variables, *input));
@@ -909,19 +909,31 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 .insert(output, Rc::new(VarInfo::Const(*value)).wrap_with_snapshots(n_snapshots));
             if self.variables[input].info.droppable.is_ok()
                 && self.variables[output].info.copyable.is_ok()
-                && let Ok(mut ty) = value.ty(db)
+                && let Ok(ty) = value.ty(db)
                 && let Some(mut stmt) = self.try_generate_const_statement(*value, output)
             {
-                // Adding snapshot taking statements for snapshots.
-                for _ in 0..n_snapshots {
-                    let non_snap_var = Variable::with_default_context(db, ty, location);
-                    ty = TypeLongId::Snapshot(ty).intern(db);
-                    let pre_snap = self.variables.alloc(non_snap_var);
-                    stmt.outputs_mut()[0] = pre_snap;
-                    let take_snap = snapshot_stmt(self.variables, pre_snap, output);
-                    statements.push(core::mem::replace(&mut stmt, take_snap));
+                if n_snapshots > 0 {
+                    // Redirect the const statement to a fresh variable, then chain
+                    // snapshot statements using distinct intermediate variables to
+                    // avoid an SSA violation (the old loop reused `output` in every
+                    // Snapshot, defining it more than once when n_snapshots >= 2).
+                    let const_var =
+                        self.variables.alloc(Variable::with_default_context(db, ty, location));
+                    stmt.outputs_mut()[0] = const_var;
+                    statements.push(stmt);
+                    let mut unwrapped = const_var;
+                    for _ in 1..n_snapshots {
+                        let snap_ty = TypeLongId::Snapshot(self.variables[unwrapped].ty).intern(db);
+                        let snapped = self
+                            .variables
+                            .alloc(Variable::with_default_context(self.db, snap_ty, location));
+                        statements.push(snapshot_stmt(self.variables, unwrapped, snapped));
+                        unwrapped = snapped;
+                    }
+                    statements.push(snapshot_stmt(self.variables, unwrapped, output));
+                } else {
+                    statements.push(stmt);
                 }
-                statements.push(stmt);
                 return Some(BlockEnd::Goto(arm.block_id, Default::default()));
             }
         } else if let VarInfo::Enum { variant, payload } = var_info.as_ref() {
@@ -1322,7 +1334,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             // TODO(orizi): Propagate success values as well.
             if element_var_infos.is_empty() {
                 let arm = &info.arms[1];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]).into());
+                // The output is a snapshot of an array, so wrap with VarInfo::Snapshot
+                // to allow subsequent snapshot pop operations to be optimized.
+                self.var_info.insert(
+                    arm.var_ids[0],
+                    VarInfo::Snapshot(VarInfo::Array(vec![]).into()).into(),
+                );
                 Some(BlockEnd::Goto(
                     arm.block_id,
                     VarRemapping {
