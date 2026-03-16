@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773533576723,
+  "lastUpdate": 1773619968592,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -727,6 +727,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1580249252,
             "range": "± 14768374",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Hash King",
+            "username": "BigTennEd223",
+            "email": "BigTennEd223@protonmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "d784fad581c32819c9069d88684ece4fafe84f61",
+          "message": "docs: clarify README starknet-compile usage (#9741)",
+          "timestamp": "2026-03-14T06:35:29Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/d784fad581c32819c9069d88684ece4fafe84f61"
+        },
+        "date": 1773619967598,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1538951180,
+            "range": "± 18379928",
             "unit": "ns/iter"
           }
         ]
