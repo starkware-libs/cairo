@@ -1,6 +1,7 @@
 = Enums
 
-An enum is a type that can hold one of the types from the list of its defined variants.
+An enum is a xref:enum-types.adoc[type] that can hold one of the types from the list of its
+defined variants.
 Each variant has its own type, and when such an enum variable holds a variant,
 it contains a value of the type of the variant.
 It is one of the ways to define custom user types.
