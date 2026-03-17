@@ -26,7 +26,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{Intern, extract_matches, require, try_extract_matches};
-use itertools::{chain, zip_eq};
+use itertools::{Itertools, chain, zip_eq};
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_traits::cast::ToPrimitive;
@@ -912,13 +912,20 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 && let Ok(mut ty) = value.ty(db)
                 && let Some(mut stmt) = self.try_generate_const_statement(*value, output)
             {
+                let mut snapshot_vars = (0..=n_snapshots)
+                    .map(|_| {
+                        let old_ty = ty;
+                        ty = TypeLongId::Snapshot(ty).intern(db);
+                        self.variables.alloc(Variable::with_default_context(db, old_ty, location))
+                    })
+                    .collect::<Vec<_>>();
+                // Last snapshot needs to equal to the expected output var.
+                *snapshot_vars.last_mut().unwrap() = output;
+                // First var is the input, and needs to equal to the output of the const statement.
+                stmt.outputs_mut()[0] = snapshot_vars[0];
                 // Adding snapshot taking statements for snapshots.
-                for _ in 0..n_snapshots {
-                    let non_snap_var = Variable::with_default_context(db, ty, location);
-                    ty = TypeLongId::Snapshot(ty).intern(db);
-                    let pre_snap = self.variables.alloc(non_snap_var);
-                    stmt.outputs_mut()[0] = pre_snap;
-                    let take_snap = snapshot_stmt(self.variables, pre_snap, output);
+                for (pre_snap, post_snap) in snapshot_vars.into_iter().tuple_windows() {
+                    let take_snap = snapshot_stmt(self.variables, pre_snap, post_snap);
                     statements.push(core::mem::replace(&mut stmt, take_snap));
                 }
                 statements.push(stmt);
