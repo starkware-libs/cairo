@@ -36,8 +36,8 @@ use starknet_types_core::felt::Felt as Felt252;
 
 use crate::db::LoweringGroup;
 use crate::ids::{
-    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionId, SemanticFunctionIdEx,
-    SpecializedFunction,
+    ConcreteFunctionWithBodyId, ConcreteFunctionWithBodyLongId, FunctionId, LocationId,
+    SemanticFunctionIdEx, SpecializedFunction,
 };
 use crate::specialization::SpecializationArg;
 use crate::utils::InliningStrategy;
@@ -880,6 +880,139 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
         }
     }
 
+    /// Materializes a tracked value into a variable and returns its id.
+    fn try_materialize_var_info(
+        &mut self,
+        var_info: Rc<VarInfo<'db>>,
+        ty: TypeId<'db>,
+        location: LocationId<'db>,
+        statements: &mut Vec<Statement<'db>>,
+    ) -> Option<VariableId> {
+        let db = self.db;
+        let as_usage = |var_id| VarUsage { var_id, location };
+        match var_info.as_ref() {
+            VarInfo::Const(value) => {
+                let output = self.variables.alloc(Variable::with_default_context(db, ty, location));
+                statements.push(self.try_generate_const_statement(*value, output)?);
+                self.var_info.insert(output, var_info);
+                Some(output)
+            }
+            VarInfo::Var(var) => Some(var.var_id),
+            VarInfo::Snapshot(inner) => {
+                let inner_ty = *extract_matches!(ty.long(db), TypeLongId::Snapshot);
+                let input =
+                    self.try_materialize_var_info(inner.clone(), inner_ty, location, statements)?;
+                let ignored = self.variables.alloc(self.variables[input].clone());
+                let output = self.variables.alloc(Variable::with_default_context(db, ty, location));
+                statements.push(Statement::Snapshot(StatementSnapshot::new(
+                    as_usage(input),
+                    ignored,
+                    output,
+                )));
+                self.var_info.insert(output, var_info);
+                Some(output)
+            }
+            VarInfo::Struct(infos) => {
+                let element_types: Vec<TypeId<'db>> = match ty.long(db) {
+                    TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => {
+                        let members = db.concrete_struct_members(*concrete_struct).unwrap();
+                        members.values().map(|member| member.ty).collect()
+                    }
+                    TypeLongId::Tuple(element_types) => element_types.clone(),
+                    TypeLongId::FixedSizeArray { type_id, .. } => vec![*type_id; infos.len()],
+                    _ => return None,
+                };
+
+                let inputs = zip_eq(element_types, infos)
+                    .map(|(elem_ty, info)| {
+                        let info = info.as_ref()?.clone();
+                        Some(as_usage(
+                            self.try_materialize_var_info(info, elem_ty, location, statements)?,
+                        ))
+                    })
+                    .collect::<Option<Vec<_>>>()?;
+                let output = self.variables.alloc(Variable::with_default_context(db, ty, location));
+                statements
+                    .push(Statement::StructConstruct(StatementStructConstruct { inputs, output }));
+                self.var_info.insert(output, var_info);
+                Some(output)
+            }
+            VarInfo::Enum { variant, payload } => {
+                let input = self.try_materialize_var_info(
+                    payload.clone(),
+                    variant.ty,
+                    location,
+                    statements,
+                )?;
+                let output = self.variables.alloc(Variable::with_default_context(db, ty, location));
+                statements.push(Statement::EnumConstruct(StatementEnumConstruct {
+                    variant: *variant,
+                    input: as_usage(input),
+                    output,
+                }));
+                self.var_info.insert(output, var_info);
+                Some(output)
+            }
+            VarInfo::Box(inner) => {
+                let TypeLongId::Concrete(concrete_ty) = ty.long(db) else {
+                    return None;
+                };
+                let [GenericArgumentId::Type(inner_ty)] = &concrete_ty.generic_args(db)[..] else {
+                    return None;
+                };
+                let input =
+                    self.try_materialize_var_info(inner.clone(), *inner_ty, location, statements)?;
+                let output = self.variables.alloc(Variable::with_default_context(db, ty, location));
+                statements
+                    .push(Statement::IntoBox(StatementIntoBox { input: as_usage(input), output }));
+                self.var_info.insert(output, var_info);
+                Some(output)
+            }
+            VarInfo::Array(infos) => {
+                let TypeLongId::Concrete(concrete_ty) = ty.long(db) else {
+                    return None;
+                };
+                let [GenericArgumentId::Type(inner_ty)] = &concrete_ty.generic_args(db)[..] else {
+                    return None;
+                };
+                let array_new = GenericFunctionId::Extern(self.array_new)
+                    .concretize(db, vec![GenericArgumentId::Type(*inner_ty)])
+                    .lowered(db);
+                let array_append = GenericFunctionId::Extern(self.array_append)
+                    .concretize(db, vec![GenericArgumentId::Type(*inner_ty)])
+                    .lowered(db);
+                let mut current =
+                    self.variables.alloc(Variable::with_default_context(db, ty, location));
+                statements.push(Statement::Call(StatementCall {
+                    function: array_new,
+                    inputs: vec![],
+                    with_coupon: false,
+                    outputs: vec![current],
+                    location,
+                    is_specialization_base_call: false,
+                }));
+                for info in infos {
+                    let info = info.as_ref()?.clone();
+                    let input =
+                        self.try_materialize_var_info(info, *inner_ty, location, statements)?;
+                    let next =
+                        self.variables.alloc(Variable::with_default_context(db, ty, location));
+                    statements.push(Statement::Call(StatementCall {
+                        function: array_append,
+                        inputs: vec![as_usage(current), as_usage(input)],
+                        with_coupon: false,
+                        outputs: vec![next],
+                        location,
+                        is_specialization_base_call: false,
+                    }));
+                    current = next;
+                }
+                self.var_info.insert(current, var_info);
+                Some(current)
+            }
+        }
+    }
+
     /// Handles the end of block matching on an enum.
     /// Possibly extends the blocks statements as well.
     /// Returns None if no additional changes are required.
@@ -1325,10 +1458,10 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let var_info = self.var_info.get(&info.inputs[0].var_id)?;
             let desnapped = try_extract_matches!(var_info.as_ref(), VarInfo::Snapshot)?;
             let element_var_infos = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?;
-            // TODO(orizi): Propagate success values as well.
             if element_var_infos.is_empty() {
                 let arm = &info.arms[1];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]).into());
+                self.var_info
+                    .insert(arm.var_ids[0], Rc::new(VarInfo::Array(vec![])).wrap_with_snapshots(1));
                 Some(BlockEnd::Goto(
                     arm.block_id,
                     VarRemapping {
@@ -1336,7 +1469,48 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     },
                 ))
             } else {
-                None
+                let arm = &info.arms[0];
+                let (remaining_elements, popped_element) = if id == self.array_snapshot_pop_front {
+                    (&element_var_infos[1..], &element_var_infos[0])
+                } else {
+                    (
+                        &element_var_infos[..element_var_infos.len() - 1],
+                        &element_var_infos[element_var_infos.len() - 1],
+                    )
+                };
+                let remaining_info =
+                    Rc::new(VarInfo::Array(remaining_elements.to_vec())).wrap_with_snapshots(1);
+                let popped_info = popped_element.as_ref()?.clone();
+                let boxed_popped = Rc::new(VarInfo::Box(VarInfo::Snapshot(popped_info).into()));
+                let remaining_var = self.try_materialize_var_info(
+                    remaining_info.clone(),
+                    self.variables[arm.var_ids[0]].ty,
+                    info.location,
+                    statements,
+                )?;
+                let boxed_popped_var = self.try_materialize_var_info(
+                    boxed_popped.clone(),
+                    self.variables[arm.var_ids[1]].ty,
+                    info.location,
+                    statements,
+                )?;
+                self.var_info.insert(arm.var_ids[0], remaining_info);
+                self.var_info.insert(arm.var_ids[1], boxed_popped);
+                Some(BlockEnd::Goto(
+                    arm.block_id,
+                    VarRemapping {
+                        remapping: FromIterator::from_iter([
+                            (
+                                arm.var_ids[0],
+                                VarUsage { var_id: remaining_var, location: info.location },
+                            ),
+                            (
+                                arm.var_ids[1],
+                                VarUsage { var_id: boxed_popped_var, location: info.location },
+                            ),
+                        ]),
+                    },
+                ))
             }
         } else {
             None
