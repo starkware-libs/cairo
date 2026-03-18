@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773706328659,
+  "lastUpdate": 1773792790439,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -783,6 +783,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1576017619,
             "range": "± 25773009",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Olivier Dupont",
+            "username": "odupontt",
+            "email": "olivierdupontvier@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c918d30e2a81d23ebe2cea518296746af043276d",
+          "message": "docs: link method calls from function calls documentation (#9742)",
+          "timestamp": "2026-03-17T15:30:09Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/c918d30e2a81d23ebe2cea518296746af043276d"
+        },
+        "date": 1773792789884,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1467705994,
+            "range": "± 9752031",
             "unit": "ns/iter"
           }
         ]
