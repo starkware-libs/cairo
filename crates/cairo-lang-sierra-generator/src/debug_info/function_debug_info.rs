@@ -85,8 +85,7 @@ impl<'db> FunctionDebugInfo<'db> {
         db: &'db dyn Database,
     ) -> Option<SerializableFunctionDebugInfo> {
         let (function_file_path, function_code_span) = self.extract_location(db)?;
-        let sierra_to_cairo_variable =
-            self.extract_variables_mapping(db, &function_file_path, &function_code_span);
+        let sierra_to_cairo_variable = self.extract_variables_mapping(db);
 
         Some(SerializableFunctionDebugInfo {
             function_file_path,
@@ -101,8 +100,6 @@ impl<'db> FunctionDebugInfo<'db> {
     fn extract_variables_mapping(
         &self,
         db: &'db dyn Database,
-        function_file_path: &SourceFileFullPath,
-        function_code_span: &SourceCodeSpan,
     ) -> HashMap<SierraVarId, (CairoVariableName, SourceCodeSpan)> {
         self.variables_locations
             .iter()
@@ -143,13 +140,7 @@ impl<'db> FunctionDebugInfo<'db> {
                     x => x.stable_location(db),
                 };
 
-                let (path, span, _) = maybe_code_location(db, location)?;
-
-                // Sanity check.
-                // TODO(pm): check if it occurs at all except for inlined function calls.
-                if !(function_file_path == &path && function_code_span.contains(&span)) {
-                    return None;
-                }
+                let (_, span, _) = maybe_code_location(db, location)?;
 
                 let user_location = location.span_in_file(db).user_location(db);
                 let var_name = user_location
