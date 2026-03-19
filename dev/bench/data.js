@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773792790439,
+  "lastUpdate": 1773879152161,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -811,6 +811,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1467705994,
             "range": "± 9752031",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "54a18009aba9f093785015704dbbe77aef41b0e5",
+          "message": "(bugfix): Matching on a constant value to retain ssa form (#9744)",
+          "timestamp": "2026-03-18T12:44:01Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/54a18009aba9f093785015704dbbe77aef41b0e5"
+        },
+        "date": 1773879151573,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1496279535,
+            "range": "± 17589175",
             "unit": "ns/iter"
           }
         ]
