@@ -865,3 +865,154 @@ impl<'db> Inference<'db, '_> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use cairo_lang_defs::diagnostic_utils::StableLocation;
+    use cairo_lang_diagnostics::skip_diagnostic;
+    use cairo_lang_filesystem::ids::{FileKind, FileLongId, SmolStrId, VirtualFile};
+    use cairo_lang_parser::db::ParserGroup;
+    use cairo_lang_utils::Intern;
+    use salsa::Database;
+
+    use super::InferenceConform;
+    use crate::corelib::CorelibSemantic;
+    use crate::expr::inference::{InferenceData, InferenceId, InferenceVar};
+    use crate::test_utils::SemanticDatabaseForTesting;
+    use crate::types::ClosureTypeLongId;
+    use crate::{GenericArgumentId, TypeLongId};
+
+    /// Helper to get a dummy StableLocation for test closure construction.
+    fn dummy_stable_location<'db>(db: &'db dyn Database) -> StableLocation<'db> {
+        let file_id = FileLongId::Virtual(VirtualFile {
+            parent: None,
+            name: SmolStrId::from(db, "test_dummy.cairo"),
+            content: SmolStrId::from(db, "fn dummy() {}"),
+            code_mappings: [].into(),
+            kind: FileKind::Module,
+            original_item_removed: false,
+        })
+        .intern(db);
+        let syntax_root = db.file_syntax(file_id).unwrap();
+        StableLocation::new(syntax_root.stable_ptr(db))
+    }
+
+    /// Bug 1: `internal_ty_contains_var` does not check `captured_types` in closures.
+    ///
+    /// When a type variable appears only in a closure's `captured_types` (not in `param_tys` or
+    /// `ret_ty`), the occurs-check in `assign_ty` fails to detect the cycle. This means
+    /// `ty_contains_var` incorrectly returns `false`, allowing a cyclic type assignment.
+    #[test]
+    fn test_closure_captured_types_missing_from_occurs_check() {
+        let db = SemanticDatabaseForTesting::default();
+        let db: &dyn Database = &db;
+
+        let mut inference_data = InferenceData::new(InferenceId::Canonical);
+        let mut inference = inference_data.inference(db);
+
+        // Create a type variable ?0.
+        let var_ty = inference.new_type_var(None);
+        let var = match var_ty.long(db) {
+            TypeLongId::Var(v) => *v,
+            _ => panic!("Expected a type variable"),
+        };
+
+        // Get a concrete type (felt252) for params/return that does NOT contain ?0.
+        let felt252_ty = db.core_info().felt252;
+
+        // Construct a closure type: params=[felt252], ret=felt252, captured=[?0].
+        // The type variable ?0 appears ONLY in captured_types.
+        let closure_ty = TypeLongId::Closure(ClosureTypeLongId {
+            param_tys: vec![felt252_ty],
+            ret_ty: felt252_ty,
+            captured_types: vec![var_ty],
+            parent_function: Err(skip_diagnostic()),
+            params_location: dummy_stable_location(db),
+        })
+        .intern(db);
+
+        // BUG: ty_contains_var should return true (var IS in the closure's captured_types),
+        // but it returns false because internal_ty_contains_var doesn't check captured_types.
+        let contains = inference.ty_contains_var(closure_ty, InferenceVar::Type(var.id));
+        assert!(
+            !contains,
+            "BUG CONFIRMED: ty_contains_var does NOT detect var in closure captured_types. \
+             This test should fail once the bug is fixed (change assert to assert!(contains))."
+        );
+    }
+
+    /// Bug 2: `generic_args_contain_var` always returns false for `Constant` generic args.
+    ///
+    /// Even when a `ConstValue::Var` is wrapped in `GenericArgumentId::Constant`, the
+    /// occurs-check returns false, failing to detect the variable's presence. This could allow
+    /// cyclic assignments through const generic arguments.
+    #[test]
+    fn test_const_generic_arg_ignored_in_occurs_check() {
+        let db = SemanticDatabaseForTesting::default();
+        let db: &dyn Database = &db;
+
+        let mut inference_data = InferenceData::new(InferenceId::Canonical);
+        let mut inference = inference_data.inference(db);
+
+        // Create a type variable ?0 and a const variable.
+        let var_ty = inference.new_type_var(None);
+        let var = match var_ty.long(db) {
+            TypeLongId::Var(v) => *v,
+            _ => panic!("Expected a type variable"),
+        };
+
+        // Create a const variable (the const var itself contains type info).
+        let const_var_id = inference.new_const_var(None, var_ty);
+
+        // Wrap it in a GenericArgumentId::Constant.
+        let gargs = vec![GenericArgumentId::Constant(const_var_id)];
+
+        // BUG: generic_args_contain_var always returns false for Constant args,
+        // even though the const var's type IS var_ty (?0).
+        let contains = inference.generic_args_contain_var(&gargs, InferenceVar::Type(var.id));
+        assert!(
+            !contains,
+            "BUG CONFIRMED: generic_args_contain_var ignores Constant args entirely. \
+             This test should fail once the bug is fixed (change assert to assert!(contains))."
+        );
+    }
+
+    /// Bug 2b: `internal_ty_contains_var` ignores `size` in `FixedSizeArray`.
+    ///
+    /// The `size` field of a `FixedSizeArray` is a `ConstValueId` that could contain inference
+    /// variables, but the occurs-check ignores it via `..` pattern destructuring.
+    #[test]
+    fn test_fixed_size_array_size_ignored_in_occurs_check() {
+        let db = SemanticDatabaseForTesting::default();
+        let db: &dyn Database = &db;
+
+        let mut inference_data = InferenceData::new(InferenceId::Canonical);
+        let mut inference = inference_data.inference(db);
+
+        // Create a type variable ?0.
+        let var_ty = inference.new_type_var(None);
+        let var = match var_ty.long(db) {
+            TypeLongId::Var(v) => *v,
+            _ => panic!("Expected a type variable"),
+        };
+
+        let felt252_ty = db.core_info().felt252;
+
+        // Create a const variable whose type is ?0 (the type variable).
+        let const_var_id = inference.new_const_var(None, var_ty);
+
+        // Construct FixedSizeArray { type_id: felt252, size: const_var(?0) }.
+        // The type variable ?0 appears only in the size's type, not in type_id.
+        let array_ty =
+            TypeLongId::FixedSizeArray { type_id: felt252_ty, size: const_var_id }.intern(db);
+
+        // BUG: internal_ty_contains_var only checks type_id, not size.
+        // Since type_id is felt252 (no vars), it returns false.
+        let contains = inference.ty_contains_var(array_ty, InferenceVar::Type(var.id));
+        assert!(
+            !contains,
+            "BUG CONFIRMED: ty_contains_var does NOT check the size field of FixedSizeArray. \
+             This test should fail once the bug is fixed (change assert to assert!(contains))."
+        );
+    }
+}
