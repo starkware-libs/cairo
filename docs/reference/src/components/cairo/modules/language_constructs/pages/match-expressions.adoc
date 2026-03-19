@@ -28,11 +28,11 @@ An arm breaks the control flow if it
 xref:return-expressions.adoc[returns] or xref:panic.adoc[panics].
 ====
 
-== Limitations
+== Supported match targets
 
-Currently two kinds of match expression are supported:
+Match expressions can match on several kinds of values:
 
-=== Match on an Enum.
+=== Match on an enum
 
 [source, cairo]
 ----
@@ -47,15 +47,90 @@ match enum_var {
 Where `enum_var` is an instance of some xref:enums.adoc[enum] and `variant_0`, `variant_1`, ...,
 `variant_k` are all the variants of the said enum, ordered in the way that they were declared.
 
-=== Match on a felt252.
+=== Match on numeric and boolean types
+
+Match expressions also work on `felt252`, integer types (`u8`, `u16`, `u32`, `u64`, `u128`,
+`i8`, `i16`, `i32`, `i64`, `i128`), `bool`, and short string literals (which are `felt252` values).
 
 [source, cairo]
 ----
+// Match on felt252
 match felt_var {
     0 => { /* code */ }
     _ => { /* code */ }
 }
+
+// Match on integers
+fn describe(x: u32) -> ByteArray {
+    match x {
+        0 => "zero",
+        1 => "one",
+        _ => "other",
+    }
+}
+
+// Match on bool
+match flag {
+    true => { /* code */ }
+    false => { /* code */ }
+}
 ----
 
-Where `felt_var` is a xref:felt252-type.adoc[felt252] and the match patterns are the
-xref:literal-expressions.adoc[literal] `0` and wildcard `_` (which matches any value).
+Numeric match patterns use xref:literal-expressions.adoc[literal] values
+and the wildcard `_` (which matches any value). The wildcard arm should be last.
+
+=== Match with struct and tuple destructuring
+
+Match arms can destructure structs and tuples:
+
+[source, cairo]
+----
+match point {
+    Point { x: 0, y } => { /* on y-axis */ }
+    Point { x, y: 0 } => { /* on x-axis */ }
+    Point { x, y } => { /* general case */ }
+}
+
+match pair {
+    (0, y) => { /* code */ }
+    (x, 0) => { /* code */ }
+    (x, y) => { /* code */ }
+}
+----
+
+=== Match with fixed-size arrays
+
+[source, cairo]
+----
+match arr {
+    [0, _, _] => { /* starts with zero */ }
+    [a, b, c] => { /* bind all elements */ }
+}
+----
+
+=== OR patterns
+
+Multiple patterns can share the same arm using `|`:
+
+[source, cairo]
+----
+match value {
+    MyEnum::A(x) | MyEnum::B(x) => { x },
+    MyEnum::C(_) => { 0 },
+}
+----
+
+Variables bound across alternatives must be consistent (same name and type in each branch).
+
+=== Match on string literals
+
+`ByteArray` values can be matched against string literals:
+
+[source, cairo]
+----
+match name {
+    "alice" => { /* code */ }
+    "bob" => { /* code */ }
+    _ => { /* code */ }
+}
+----
