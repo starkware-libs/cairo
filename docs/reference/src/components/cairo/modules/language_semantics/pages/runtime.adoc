@@ -29,6 +29,10 @@ Native execution runs Sierra code directly for testing and development
 (using `cairo-run`, `cairo-test`, and local devnets). This mode is fast
 but provides no proof of correctness.
 
+An alternative native execution path uses `cairo-native`, which compiles
+Sierra to LLVM IR and then to native machine code, providing significantly
+faster execution for testing and development.
+
 === Proving execution
 
 On Starknet, Cairo programs execute in proving mode: Sierra is lowered to CASM,
@@ -42,24 +46,34 @@ cryptographic proofs of correct execution.
 
 === Gas consumption
 
-Cairo programs executing on Starknet consume gas for computational work:
+Cairo programs executing on Starknet consume gas for computational work.
+Gas is tracked in several token types:
 
-- Execution steps (Sierra/CASM instructions)
-- Builtin usage (cryptographic and arithmetic operations)
-- Memory allocations
+- **Steps** — Sierra/CASM instruction execution
+- **Memory holes** — untouched memory addresses in the execution trace
+- **Builtin-specific tokens** — each builtin (range check, Pedersen, etc.) has its own gas cost
 
-The Sierra compiler includes gas metering that allows programs to check available
-gas before expensive operations. If a program exceeds its gas limit, execution
-reverts.
+The Sierra compiler uses an equation-solving approach to compute gas requirements:
+it generates gas equations for each function and solves them to determine the maximum
+gas that each code path can consume. This allows programs to check available
+gas before expensive operations using `withdraw_gas()`. If a program exceeds its
+gas limit, execution reverts.
 
 === Builtins
 
-Builtins provide optimized implementations of common operations:
+Builtins provide optimized implementations of common operations. Each builtin
+has a dedicated memory segment and is accessed through implicit arguments:
 
-- Range checking
-- Cryptographic hashing (Pedersen, Poseidon, Keccak)
-- Elliptic curve operations
-- Bitwise operations
+- **RangeCheck** — validates that values fall within a given range (used by integer operations)
+- **Pedersen** — Pedersen hash computation
+- **Poseidon** — Poseidon hash computation
+- **Bitwise** — bitwise AND, OR, XOR operations
+- **EcOp** — elliptic curve point operations
+- **ECDSA** — ECDSA signature verification
+- **Keccak** — Keccak-256 hash computation
+- **Blake** — Blake2s hash computation
+- **RangeCheck96** — 96-bit range checking (used by circuit operations)
+- **AddMod**, **MulMod** — modular arithmetic for circuit builtins
 
 Builtins are accessed through core library functions and passed between functions
 using implicit arguments.
