@@ -28,7 +28,6 @@
   - [Prerequisites](#prerequisites)
   - [Compiling and running Cairo files](#compiling-and-running-cairo-files)
   - [Compiling Starknet Contracts](#compiling-starknet-contracts)
-- [Roadmap](#roadmap)
 - [Support](#support)
 - [Project assistance](#project-assistance)
 - [Contributing](#contributing)
@@ -101,11 +100,6 @@ Compile a Sierra ContractClass to a CASM CompiledClass:
 ```bash
 cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
 ```
-
-## Roadmap
-
-The next milestone is to reach feature parity with the old Cairo version.
-You can track the exact progress [here](./docs/FEATURE_PARITY.md).
 
 ## Support
 
