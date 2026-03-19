@@ -1,8 +1,8 @@
 = Felt252dict
 
 Cairo currently supports a dictionary type called `Felt252Dict` that maps keys of type `felt252`
-to other simple types, namely `u8`, `u16`, `u32`, `u64`, `u128`, `felt252` and `nullable<T>`.
-The `nullable<T>` type enables the dictionary to contain more complex types.
+to other simple types, namely `bool`, `u8`, `u16`, `u32`, `u64`, `u128`, `felt252` and `Nullable<T>`.
+The `Nullable<T>` type enables the dictionary to contain more complex types.
 
 By default, the value `0`, or value logically equivalent to `0`, is returned for non-existing keys.
 
@@ -55,3 +55,9 @@ struct MyStruct {
     dict: Felt252Dict<felt252>,
 }
 ----
+
+== See also
+
+- xref:felt252-type.adoc[Felt252 type] — The key type for dictionaries
+- xref:../../language_semantics/pages/linear-types.adoc[Linear types] — `Destruct` trait and dictionary squashing
+- xref:generics.adoc[Generics] — Using `Nullable<T>` for complex dictionary values
