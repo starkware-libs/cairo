@@ -37,6 +37,9 @@ fn bar<T: impl TDisplay: Display<T>>(value: T) {
 }
 ----
 
+For more details on declaring methods and the supported forms of `self`, see
+xref:functions.adoc#_methods_and_self[Methods and self].
+
 == Search locations for methods
 When a method is called, the compiler will search for a trait containing a function with a matching
 name in the current scope.
