@@ -9,8 +9,6 @@ The differences between the two are:
   a reference `ref expr`, depending on the method's signature.
   See xref:../../language_semantics/pages/linear-types.adoc[Linear types] for more details.
 
-For how methods are declared with `self`, see xref:functions.adoc#_methods_and_self[Methods and self].
-
 == `self` and methods
 Methods can be defined only in traits and impls.
 The self parameter in Cairo trait and impl functions represents a value of a specified type,
@@ -38,6 +36,9 @@ fn bar<T: impl TDisplay: Display<T>>(value: T) {
     ...
 }
 ----
+
+For more details on declaring methods and the supported forms of `self`, see
+xref:functions.adoc#_methods_and_self[Methods and self].
 
 == Search locations for methods
 When a method is called, the compiler will search for a trait containing a function with a matching
