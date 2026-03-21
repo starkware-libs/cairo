@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773965505174,
+  "lastUpdate": 1774051876068,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -867,6 +867,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1483999731,
             "range": "± 8587115",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Piotr Magiera",
+            "username": "piotmag769",
+            "email": "56825108+piotmag769@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "bea8cd23d502c6abb6fa7ed7841f3f24458f6cca",
+          "message": "Fix function debug info (#9751)",
+          "timestamp": "2026-03-20T09:44:27Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/bea8cd23d502c6abb6fa7ed7841f3f24458f6cca"
+        },
+        "date": 1774051875136,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1512607752,
+            "range": "± 15323443",
             "unit": "ns/iter"
           }
         ]
