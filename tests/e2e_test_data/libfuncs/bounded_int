@@ -1089,3 +1089,44 @@ test::foo@F0([0]: u8) -> (core::internal::OptionRev::<test::BoundedInt::<0, 254>
 
 //! > function_costs
 test::foo: SmallOrderedMap({Const: 400})
+
+//! > ==========================================================================
+
+//! > bounded_int_guarantee_verify libfunc for u32.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_guarantee_verify<const MIN: felt252, const MAX: felt252>(
+    value: BoundedIntGuarantee<MIN, MAX>,
+) implicits(RangeCheck) nopanic;
+
+fn foo(value: BoundedIntGuarantee<0, 0xffffffff>) {
+    bounded_int_guarantee_verify(value)
+}
+
+//! > casm
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607427473244160, ap++;
+[ap + -1] = [[fp + -4] + 1];
+[ap + 0] = [fp + -4] + 2, ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 540})
+
+//! > sierra_code
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: true, zero_sized: false];
+
+libfunc bounded_int_guarantee_verify<0, 4294967295> = bounded_int_guarantee_verify<0, 4294967295>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+
+F0:
+bounded_int_guarantee_verify<0, 4294967295>([0], [1]) -> ([2]);
+store_temp<RangeCheck>([2]) -> ([2]);
+return([2]);
+
+test::foo@F0([0]: RangeCheck, [1]: BoundedIntGuarantee<0, 4294967295>) -> (RangeCheck);
