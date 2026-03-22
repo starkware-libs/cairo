@@ -433,6 +433,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoundedIntConcreteLibfunc::WrapNonZero(_) => {
                 vec![ApChange::Known(0)]
             }
+            BoundedIntConcreteLibfunc::GuaranteeVerify(_) => {
+                vec![ApChange::Known(1)]
+            }
         },
         Circuit(CircuitConcreteLibfunc::TryIntoCircuitModulus(_)) => {
             vec![ApChange::Known(1), ApChange::Known(1)]
