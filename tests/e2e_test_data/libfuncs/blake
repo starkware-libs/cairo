@@ -83,3 +83,93 @@ blake2s_finalize([0], [1], [2]) -> ([3]);
 return([3]);
 
 test::foo@F0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);
+
+//! > ==========================================================================
+
+//! > blake2s_compress_guarantees libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::blake::{Blake2sInputGuarantee, Blake2sState, blake2s_compress_guarantees};
+
+fn foo(s: Blake2sState, byte_count: u32, m: Blake2sInputGuarantee) -> Blake2sState {
+    blake2s_compress_guarantees(s, byte_count, m)
+}
+
+//! > casm
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 8
+%}
+blake2s[state=[fp + -5], message=[fp + -3], byte_count=[fp + -4], finalize=false] => [ap + 0], ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Blake: 1})
+
+//! > sierra_code
+type Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> = Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>> = Box<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>> [storable: true, drop: false, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32, u32, u32, u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32, u32, u32, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: true, zero_sized: false];
+type Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> = Struct<ut@Tuple, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> [storable: true, drop: false, dup: true, zero_sized: false];
+
+libfunc blake2s_compress_guarantees = blake2s_compress_guarantees;
+
+F0:
+blake2s_compress_guarantees([0], [1], [2]) -> ([3]);
+return([3]);
+
+test::foo@F0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);
+
+//! > ==========================================================================
+
+//! > blake2s_finalize_guarantees libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+use core::blake::{Blake2sInputGuarantee, Blake2sState, blake2s_finalize_guarantees};
+
+fn foo(s: Blake2sState, byte_count: u32, m: Blake2sInputGuarantee) -> Blake2sState {
+    blake2s_finalize_guarantees(s, byte_count, m)
+}
+
+//! > casm
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 0] = __boxed_segment
+__boxed_segment += 8
+%}
+blake2s[state=[fp + -5], message=[fp + -3], byte_count=[fp + -4], finalize=true] => [ap + 0], ap++;
+ret;
+
+//! > function_costs
+test::foo: SmallOrderedMap({Blake: 1})
+
+//! > sierra_code
+type Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> = Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>> = Box<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>> [storable: true, drop: false, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32, u32, u32, u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32, u32, u32, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: true, zero_sized: false];
+type Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> = Struct<ut@Tuple, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>> [storable: true, drop: false, dup: true, zero_sized: false];
+
+libfunc blake2s_finalize_guarantees = blake2s_finalize_guarantees;
+
+F0:
+blake2s_finalize_guarantees([0], [1], [2]) -> ([3]);
+return([3]);
+
+test::foo@F0([0]: Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>, [1]: u32, [2]: Box<Tuple<BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>, BoundedIntGuarantee<0, 4294967295>>>) -> (Box<Tuple<u32, u32, u32, u32, u32, u32, u32, u32>>);
