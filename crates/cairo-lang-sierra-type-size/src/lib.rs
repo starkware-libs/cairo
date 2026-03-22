@@ -90,6 +90,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::SegmentArena(_)
             | CoreTypeConcrete::Bytes31(_)
             | CoreTypeConcrete::BoundedInt(_)
+            | CoreTypeConcrete::BoundedIntGuarantee(_)
             | CoreTypeConcrete::QM31(_) => 1,
             // Size 2.
             CoreTypeConcrete::Array(_)
