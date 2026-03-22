@@ -649,7 +649,10 @@ pub fn core_libfunc_cost(
             }
         },
         Blake(
-            BlakeConcreteLibfunc::Blake2sCompress(_) | BlakeConcreteLibfunc::Blake2sFinalize(_),
+            BlakeConcreteLibfunc::Blake2sCompress(_)
+            | BlakeConcreteLibfunc::Blake2sFinalize(_)
+            | BlakeConcreteLibfunc::Blake2sCompressGuarantees(_)
+            | BlakeConcreteLibfunc::Blake2sFinalizeGuarantees(_),
         ) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(0),
             pre_cost: PreCost::builtin(CostTokenType::Blake),
