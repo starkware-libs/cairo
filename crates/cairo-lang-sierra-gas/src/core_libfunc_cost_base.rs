@@ -557,6 +557,9 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::GuaranteeVerify(_) => {
                 vec![ConstCost { steps: 3, holes: 0, range_checks: 2, range_checks96: 0 }.into()]
             }
+            BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
+                vec![ConstCost::steps(7).into()]
+            }
         },
         Circuit(libfunc) => match libfunc {
             CircuitConcreteLibfunc::AddInput(_) => {

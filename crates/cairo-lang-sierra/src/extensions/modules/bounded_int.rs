@@ -6,6 +6,7 @@ use num_bigint::{BigInt, ToBigInt};
 use num_traits::{One, Signed, ToPrimitive, Zero};
 use starknet_types_core::felt::Felt as Felt252;
 
+use super::int::unsigned128::Uint128Type;
 use super::non_zero::{NonZeroType, nonzero_ty};
 use super::range_check::RangeCheckType;
 use super::utils::{Range, reinterpret_cast_signature};
@@ -18,8 +19,8 @@ use crate::extensions::lib_func::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    ConcreteType, NamedLibfunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc,
-    SpecializationError, args_as_single_type, args_as_two_types,
+    ConcreteType, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibfunc, SpecializationError, args_as_single_type, args_as_two_types,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
@@ -88,6 +89,7 @@ define_libfunc_hierarchy! {
         IsZero(BoundedIntIsZeroLibfunc),
         WrapNonZero(BoundedIntWrapNonZeroLibfunc),
         GuaranteeVerify(BoundedIntGuaranteeVerifyLibfunc),
+        U128ToU32Guarantees(U128ToU32GuaranteesLibfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -625,6 +627,46 @@ pub fn bounded_int_guarantee_ty(
         BoundedIntGuaranteeType::ID,
         &[GenericArg::Value(min), GenericArg::Value(max)],
     )
+}
+
+/// Libfunc for splitting a u128 into 4 u32 guarantees.
+/// Returns 4 BoundedIntGuarantee<0, 2^32-1> values (from high to low).
+#[derive(Default)]
+pub struct U128ToU32GuaranteesLibfunc {}
+impl NoGenericArgsGenericLibfunc for U128ToU32GuaranteesLibfunc {
+    const STR_ID: &'static str = "u128_to_u32_guarantees";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let u32_guarantee_ty =
+            bounded_int_guarantee_ty(context, BigInt::ZERO, BigInt::from(u32::MAX))?;
+
+        Ok(LibfuncSignature::new_non_branch(
+            vec![u128_ty],
+            vec![
+                OutputVarInfo {
+                    ty: u32_guarantee_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+                OutputVarInfo {
+                    ty: u32_guarantee_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+                OutputVarInfo {
+                    ty: u32_guarantee_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+                OutputVarInfo {
+                    ty: u32_guarantee_ty,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
 }
 
 /// Extracts min and max values from generic args.
