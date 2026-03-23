@@ -175,6 +175,7 @@ enum StarknetLibfuncs {
     GetBlockHash: u64,
     GetExecutionInfo,
     GetExecutionInfoV2,
+    GetExecutionInfoV3,
     ReplaceClass: starknet::ClassHash,
     SendMessageToL1: (felt252, Span<felt252>),
     GetClassHashAt: starknet::ContractAddress,
@@ -523,6 +524,9 @@ fn starknet_libfuncs(libfuncs: StarknetLibfuncs) {
         StarknetLibfuncs::GetExecutionInfo => use_and_panic(syscalls::get_execution_info_syscall()),
         StarknetLibfuncs::GetExecutionInfoV2 => use_and_panic(
             syscalls::get_execution_info_v2_syscall(),
+        ),
+        StarknetLibfuncs::GetExecutionInfoV3 => use_and_panic(
+            syscalls::get_execution_info_v3_syscall(),
         ),
         StarknetLibfuncs::ReplaceClass(class_hash) => use_and_panic(
             syscalls::replace_class_syscall(class_hash),
