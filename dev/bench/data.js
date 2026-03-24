@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774224748877,
+  "lastUpdate": 1774311126120,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -951,6 +951,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1486745163,
             "range": "± 7384696",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "711d30769054e3728c3d73f92ec8d2524a0e5573",
+          "message": "doc: delete obsolete Cairo 0 feature parity roadmap (#9758)",
+          "timestamp": "2026-03-22T13:32:57Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/711d30769054e3728c3d73f92ec8d2524a0e5573"
+        },
+        "date": 1774311125189,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1672389964,
+            "range": "± 90514201",
             "unit": "ns/iter"
           }
         ]
