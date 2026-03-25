@@ -3,6 +3,8 @@
 A method call is an expression of the form `expr.method(arguments...)`.
 This expression is roughly equivalent to the xref:function-calls.adoc[function call]
 expression `method(expr, arguments...)`.
+For dot syntax that accesses a struct field instead of invoking a method, see
+xref:member-access-expressions.adoc[Member access expressions].
 The differences between the two are:
 
 * The expression can be coerced to either a xref:../../language_semantics/pages/linear-types.adoc#snapshot[snapshot] `@expr` or
