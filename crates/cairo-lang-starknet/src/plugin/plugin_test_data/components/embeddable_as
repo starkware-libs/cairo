@@ -886,7 +886,6 @@ fn __wrapper__MyImpl__do_nothing<TContractState, impl X: HasComponent<TContractS
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, _>::do_nothing(@contract_state, );

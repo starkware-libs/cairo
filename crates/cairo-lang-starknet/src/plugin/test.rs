@@ -86,6 +86,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         events: "events",
         embedded_impl: "embedded_impl",
         raw_output: "raw_output",
+        raw_input: "raw_input",
         storage: "storage",
         new_storage_interface: "new_storage_interface",
         dispatcher: "dispatcher",

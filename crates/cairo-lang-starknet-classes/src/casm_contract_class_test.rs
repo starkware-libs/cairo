@@ -47,6 +47,7 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
 #[test_case("with_erc20__erc20_contract")]
 #[test_case("with_ownable__ownable_balance")]
 #[test_case("ownable_erc20__ownable_erc20_contract")]
+#[test_case("proxy__proxy_contract")]
 #[test_case("upgradable_counter__counter_contract")]
 #[test_case("mintable__mintable_erc20_ownable")]
 #[test_case("multi_component__contract_with_4_components")]

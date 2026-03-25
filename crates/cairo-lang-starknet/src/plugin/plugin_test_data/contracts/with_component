@@ -320,7 +320,6 @@ fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = get_data(@contract_state, );
@@ -935,7 +934,6 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
@@ -1593,7 +1591,6 @@ fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
     let res = get_sum(@contract_state, );
