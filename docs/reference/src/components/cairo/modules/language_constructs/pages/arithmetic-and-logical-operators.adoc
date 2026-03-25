@@ -140,6 +140,8 @@ fn main() {
 
 Cairo also provides compound assignment operators (`+=`, `-=`, `*=`, `/=`, `%=`) via traits in
 `core::ops`. See `core::ops::{AddAssign, SubAssign, MulAssign, DivAssign, RemAssign}`.
+Bitwise and shift compound assignment operators (`&=`, `^=`, `|=`, `<<=`, `>>=`) are not
+supported; see xref:bitwise-operators.adoc[Bitwise operators].
 
 == References (source)
 

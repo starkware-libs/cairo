@@ -2,4 +2,3 @@
 * Introduction
 ** xref:pages/index.adoc[Welcome to Cairo]
 ** xref:pages/how-to-contribute.adoc[How to contribute]
-** xref:pages/roadmap.adoc[Cairo 0 feature parity]

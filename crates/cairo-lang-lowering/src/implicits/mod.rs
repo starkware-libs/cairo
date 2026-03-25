@@ -172,24 +172,18 @@ fn lower_function_blocks_implicits<'db>(
                 unreachable!("Panics should have been stripped in a previous phase.")
             }
             BlockEnd::Goto(block_id, remapping) => {
-                let target_implicits = ctx
-                    .implicit_vars_for_block
-                    .entry(*block_id)
-                    .or_insert_with(|| {
+                let target_implicits =
+                    ctx.implicit_vars_for_block.entry(*block_id).or_insert_with(|| {
                         alloc_implicits(
                             ctx.db,
                             &mut ctx.lowered.variables,
                             &ctx.implicits_tys,
                             ctx.location,
                         )
-                    })
-                    .clone();
+                    });
                 let old_remapping = std::mem::take(&mut remapping.remapping);
                 remapping.remapping = chain!(
-                    zip_eq(
-                        target_implicits.into_iter().map(|var_usage| var_usage.var_id),
-                        implicits
-                    ),
+                    zip_eq(target_implicits.iter().map(|var_usage| var_usage.var_id), implicits),
                     old_remapping
                 )
                 .collect();
