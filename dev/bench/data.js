@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774311126120,
+  "lastUpdate": 1774397557316,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -979,6 +979,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1672389964,
             "range": "± 90514201",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alejandro Torres",
+            "username": "atorrers",
+            "email": "Alejandrotorresndro@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "cea2157489d0a4409502b78f0d3cf0e017b05e63",
+          "message": "docs: move methods-and-self xref to method-calls overview (#9781)",
+          "timestamp": "2026-03-24T14:08:52Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/cea2157489d0a4409502b78f0d3cf0e017b05e63"
+        },
+        "date": 1774397556349,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1470426958,
+            "range": "± 10741944",
             "unit": "ns/iter"
           }
         ]
