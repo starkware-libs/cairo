@@ -273,7 +273,6 @@ fn __wrapper__OutsideImpl__ret_3<TContractState, impl UnsafeNewContractState: Un
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -1303,7 +1302,6 @@ fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState, impl DisallowedDest
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -1471,7 +1469,6 @@ fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState, impl Disallowe
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3013,7 +3010,6 @@ fn __wrapper__OutsideImplWithDrop__ret_8<TContractState, +Drop<TContractState>,i
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');

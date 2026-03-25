@@ -279,7 +279,6 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -301,7 +300,6 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -323,7 +321,6 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -345,7 +342,6 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -501,7 +497,6 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -2269,7 +2264,6 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -2291,7 +2285,6 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -2313,7 +2306,6 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -2335,7 +2327,6 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -2491,7 +2482,6 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');

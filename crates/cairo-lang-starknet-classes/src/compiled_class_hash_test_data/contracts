@@ -235,3 +235,19 @@ multi_component__contract_with_4_components
 
 //! > legacy_compiled_class_hash
 671a3f37217861f0b0033f92e8f32969c5487bb583522494e4d2616386e155a
+
+//! > ==========================================================================
+
+//! > Proxy contract
+
+//! > test_runner_name
+test_compiled_class_hash
+
+//! > compiled_class
+proxy__proxy_contract
+
+//! > compiled_class_hash
+7090b8eab257dfac2afe78ae324223c695b0dfbb8ac5e236a2ae975dba7cefc
+
+//! > legacy_compiled_class_hash
+7bf7f6ee4ddabf49a20b7c3c62f1428d0433cda950e74c39821f9e0d9e9fcdc

@@ -17,7 +17,7 @@ use salsa::Database;
 use super::consts::{
     CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
     IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
-    RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
+    RAW_INPUT_ATTR, RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
 use super::utils::{AstPathExtract, ParamEx, find_v0_attribute, maybe_strip_underscore};
 
@@ -205,8 +205,6 @@ fn generate_entry_point_wrapper<'db>(
     let sig_params = sig.parameters(db);
     let mut params = sig_params.elements(db).enumerate();
     let mut diagnostics = vec![];
-    let mut arg_names = Vec::new();
-    let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
 
     let Some((0, first_param)) = params.next() else {
@@ -228,38 +226,65 @@ fn generate_entry_point_wrapper<'db>(
     // TODO(spapini): Check modifiers and type.
 
     let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
-    for (param_idx, param) in params {
-        let arg_name = format!("__arg_{}", param.name(db).text(db).long(db));
-        let arg_type_ast =
-            extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause).ty(db);
-        let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db).long(db);
-
-        let is_ref = param.is_ref_param(db);
-        if raw_output && is_ref {
+    let (arg_processing, args_for_wrapped_function) = if let Some(raw_input_attr) =
+        function.find_attr(db, RAW_INPUT_ATTR)
+    {
+        if params.len() != 1 {
             diagnostics.push(PluginDiagnostic::error(
-                param.modifiers(db).stable_ptr(db),
-                format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),
+                sig.parameters(db).stable_ptr(db).untyped(),
+                format!(
+                    "`{RAW_INPUT_ATTR}` functions must have a single parameter for calldata of \
+                     type `Span::<felt252>`."
+                ),
             ));
         }
-        let ref_modifier = if is_ref { "ref " } else { "" };
-        arg_names.push(format!("{ref_modifier}{arg_name}"));
-        let mut_modifier = if is_ref { "mut " } else { "" };
-        let arg_definition = formatdoc!(
-            "
+        ("".to_string(), RewriteNode::mapped_text("data", db, &raw_input_attr))
+    } else {
+        let (definitions, arg_names): (Vec<_>, Vec<_>) = params
+            .map(|(param_idx, param)| {
+                let arg_name = format!("__arg_{}", param.name(db).text(db).long(db));
+                let arg_type_ast =
+                    extract_matches!(param.type_clause(db), OptionTypeClause::TypeClause).ty(db);
+                let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db).long(db);
+
+                let is_ref = param.is_ref_param(db);
+                if is_ref {
+                    ref_appends.push(RewriteNode::Text(format!(
+                        "\n            core::serde::Serde::<{type_name}>::serialize(@{arg_name}, \
+                         ref arr);"
+                    )));
+                    if raw_output {
+                        diagnostics.push(PluginDiagnostic::error(
+                            param.modifiers(db).stable_ptr(db),
+                            format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),
+                        ));
+                    }
+                }
+
+                let ref_modifier = if is_ref { "ref " } else { "" };
+                let mut_modifier = if is_ref { "mut " } else { "" };
+                (
+                    formatdoc!(
+                        "
             let {mut_modifier}{arg_name} = core::option::OptionTraitImpl::expect(
                     core::serde::Serde::<{type_name}>::deserialize(ref data),
                     'Failed to deserialize param #{param_idx}'
                 );"
-        );
-        arg_definitions.push(arg_definition);
-
-        if is_ref {
-            ref_appends.push(RewriteNode::Text(format!(
-                "\n            core::serde::Serde::<{type_name}>::serialize(@{arg_name}, ref arr);"
-            )));
-        }
-    }
-    let arg_names_str = arg_names.join(", ");
+                    ),
+                    format!("{ref_modifier}{arg_name}"),
+                )
+            })
+            .unzip();
+        (
+            definitions
+                .into_iter()
+                .chain(["assert(core::array::SpanTrait::is_empty(data), 'Input too long for \
+                         arguments');"
+                    .to_string()])
+                .join("\n    "),
+            RewriteNode::Text(arg_names.join(", ")),
+        )
+    };
 
     let ret_ty = sig.ret_ty(db);
     let (let_res, append_res, return_ty_is_felt252_span, ret_type_ptr) = match &ret_ty {
@@ -292,11 +317,11 @@ fn generate_entry_point_wrapper<'db>(
     }
 
     let contract_state_arg = if is_snapshot { "@contract_state" } else { "ref contract_state" };
-    let output_handling_string = if raw_output {
-        format!("$wrapped_function_path$({contract_state_arg}, {arg_names_str})")
+    let call_and_output_handling_string = if raw_output {
+        format!("$wrapped_function_path$({contract_state_arg}, $args_for_wrapped_function$)")
     } else {
         formatdoc! {"
-            {let_res}$wrapped_function_path$({contract_state_arg}, {arg_names_str});
+            {let_res}$wrapped_function_path$({contract_state_arg}, $args_for_wrapped_function$);
                 let mut arr = ArrayTrait::new();
                 // References.$ref_appends$
                 // Result.{append_res}
@@ -304,10 +329,11 @@ fn generate_entry_point_wrapper<'db>(
         }
     };
 
-    let output_handling = RewriteNode::interpolate_patched(
-        &output_handling_string,
+    let call_and_output_handling = RewriteNode::interpolate_patched(
+        &call_and_output_handling_string,
         &[
             ("wrapped_function_path".to_string(), wrapped_function_path),
+            ("args_for_wrapped_function".to_string(), args_for_wrapped_function),
             ("ref_appends".to_string(), RewriteNode::new_modified(ref_appends)),
         ]
         .into(),
@@ -317,7 +343,6 @@ fn generate_entry_point_wrapper<'db>(
         IMPLICIT_PRECEDENCE.iter().join(", ")
     }));
 
-    let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));
     Ok(RewriteNode::interpolate_patched(
         &formatdoc! {"
             #[doc(hidden)]
@@ -328,20 +353,18 @@ fn generate_entry_point_wrapper<'db>(
                 let Some(_) = core::gas::withdraw_gas() else {{
                     core::panic_with_felt252('Out of gas');
                 }};
-                $arg_definitions$
-                assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+                {arg_processing}
                 let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {{
                     core::panic_with_felt252('Out of gas');
                 }};
                 let mut contract_state = {unsafe_new_contract_state_prefix}unsafe_new_contract_state();
-                $output_handling$
+                $call_and_output_handling$
             }}
         "},
         &[
             ("wrapper_function_name".to_string(), wrapper_function_name),
             ("generic_params".to_string(), generic_params),
-            ("output_handling".to_string(), output_handling),
-            ("arg_definitions".to_string(), arg_definitions),
+            ("call_and_output_handling".to_string(), call_and_output_handling),
             ("implicit_precedence".to_string(), implicit_precedence),
         ]
         .into(),

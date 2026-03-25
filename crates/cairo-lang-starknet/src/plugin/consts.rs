@@ -38,6 +38,7 @@ pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const CONSTRUCTOR_NAME: &str = "constructor";
 pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
+pub(super) const RAW_INPUT_ATTR: &str = "raw_input";
 pub const EMBEDDABLE_AS_ATTR: &str = "embeddable_as";
 pub const COMPONENT_INLINE_MACRO: &str = "component";
 pub const HAS_COMPONENT_TRAIT: &str = "HasComponent";

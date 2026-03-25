@@ -335,7 +335,6 @@ fn __wrapper__invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -1055,7 +1054,6 @@ fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -1744,7 +1742,6 @@ fn __wrapper____validate__(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -1765,7 +1762,6 @@ fn __wrapper____validate_declare__(mut data: Span::<felt252>) -> Span::<felt252>
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -1786,7 +1782,6 @@ fn __wrapper____validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> 
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -1807,7 +1802,6 @@ fn __wrapper____execute__(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -2195,6 +2189,316 @@ error[E2200]: Plugin diagnostic: `raw_output` functions must return `Span::<felt
  --> lib.cairo:31:53
     fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
                                                     ^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test raw_inputs diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn foo(ref self: ContractState, ref data: Span<felt252>) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar1(ref self: ContractState, a: felt252) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar2(ref self: ContractState) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar3(ref self: ContractState, a: felt252, b: felt252) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar4(ref self: ContractState, data: Array<felt252>) {}
+}
+
+//! > expected_diagnostics
+error[E2200]: Plugin diagnostic: `raw_input` functions must have a single parameter for calldata of type `Span::<felt252>`.
+ --> lib.cairo:16:13
+    fn bar2(ref self: ContractState) {}
+            ^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2200]: Plugin diagnostic: `raw_input` functions must have a single parameter for calldata of type `Span::<felt252>`.
+ --> lib.cairo:20:13
+    fn bar3(ref self: ContractState, a: felt252, b: felt252) {}
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2081]: ref argument must be passed with a preceding 'ref'.
+ --> lib.cairo:7:5
+    #[raw_input]
+    ^^^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "core::felt252", found: "core::array::Span::<core::felt252>".
+ --> lib.cairo:11:5
+    #[raw_input]
+    ^^^^^^^^^^^^
+
+error[E2041]: Unexpected argument type. Expected: "core::array::Array::<core::felt252>", found: "core::array::Span::<core::felt252>".
+ --> lib.cairo:23:5
+    #[raw_input]
+    ^^^^^^^^^^^^
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn foo(ref self: ContractState, ref data: Span<felt252>) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar1(ref self: ContractState, a: felt252) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar2(ref self: ContractState) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar3(ref self: ContractState, a: felt252, b: felt252) {}
+
+    #[external(v0)]
+    #[raw_input]
+    fn bar4(ref self: ContractState, data: Array<felt252>) {}
+}
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
+
+
+#[phantom]
+pub struct Storage {
+}
+
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBase {
+}
+#[doc(hidden)]
+impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
+    type BaseType = StorageStorageBase;
+    fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
+        StorageStorageBase {
+        }
+    }
+}
+#[derive(Drop, Copy)]
+#[doc(hidden)]
+pub struct StorageStorageBaseMut {
+}
+#[doc(hidden)]
+impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
+    type BaseType = StorageStorageBaseMut;
+    fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
+        StorageStorageBaseMut {
+        }
+    }
+}
+
+pub struct ContractState {
+}
+
+impl ContractStateDrop of Drop<ContractState> {}
+
+impl ContractStateDeref of core::ops::Deref<@ContractState> {
+    type Target = starknet::storage::FlattenedStorage<Storage>;
+    fn deref(self: @ContractState) -> starknet::storage::FlattenedStorage<Storage> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
+    type Target = starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> ;
+    fn deref_mut(ref self: ContractState) -> starknet::storage::FlattenedStorage<starknet::storage::Mutable<Storage>> {
+        starknet::storage::FlattenedStorage {}
+    }
+}
+pub fn unsafe_new_contract_state() -> ContractState {
+    ContractState {
+    }
+}
+#[cfg(target: 'test')]
+#[inline(always)]
+pub fn contract_state_for_testing() -> ContractState {
+    unsafe_new_contract_state()
+}
+
+// TODO(Gil): This generates duplicate diagnostics because of the plugin system, squash the duplicates into one.
+#[deprecated(
+    feature: "deprecated_legacy_map",
+    note: "Use `starknet::storage::Map` instead."
+)]
+#[allow(unused_imports)]
+use starknet::storage::Map as LegacyMap;
+#[cfg(target: 'test')]
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x1371fbf72648a63b290c62a23cffe50e78bd8e68292181c1b808860395bdbf6.try_into().unwrap();
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let mut contract_state = unsafe_new_contract_state();
+    foo(ref contract_state, data);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__bar1(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let mut contract_state = unsafe_new_contract_state();
+    bar1(ref contract_state, data);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__bar4(mut data: Span::<felt252>) -> Span::<felt252> {
+    core::internal::require_implicit::<System>();
+    core::internal::revoke_ap_tracking();
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    
+    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
+        core::panic_with_felt252('Out of gas');
+    };
+    let mut contract_state = unsafe_new_contract_state();
+    bar4(ref contract_state, data);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
+}
+
+
+#[doc(hidden)]
+pub mod __external {
+    pub use super::__wrapper__foo as foo;
+    pub use super::__wrapper__bar1 as bar1;
+    pub use super::__wrapper__bar4 as bar4;
+}
+#[doc(hidden)]
+pub mod __l1_handler {
+}
+#[doc(hidden)]
+pub mod __constructor {
+}
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: core::traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = core::traits::Into::into(event);
+            let mut keys = Default::<core::array::Array>::default();
+            let mut data = Default::<core::array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    core::array::ArrayTrait::span(@keys),
+                    core::array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+impls:
+
+impl EventDrop<> of core::traits::Drop::<Event>;
+
+
+lib.cairo:1:1
+#[starknet::contract]
+^^^^^^^^^^^^^^^^^^^^^
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+lib.cairo:3:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseDrop<> of core::traits::Drop::<StorageStorageBase>;
+#[doc(hidden)]
+impl StorageStorageBaseCopy<> of core::traits::Copy::<StorageStorageBase>;
+
+
+lib.cairo:3:5
+    #[storage]
+    ^^^^^^^^^^
+impls:
+
+#[doc(hidden)]
+impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
+#[doc(hidden)]
+impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 
 //! > ==========================================================================
 
@@ -3718,7 +4022,6 @@ fn __wrapper__Impl2__foo_external1(mut data: Span::<felt252>) -> Span::<felt252>
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3739,7 +4042,6 @@ fn __wrapper__Impl2__foo_l1_handler1(mut data: Span::<felt252>) -> Span::<felt25
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3760,7 +4062,6 @@ fn __wrapper__Impl2__foo_constructor1(mut data: Span::<felt252>) -> Span::<felt2
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3781,7 +4082,6 @@ fn __wrapper__Impl1__foo_external2(mut data: Span::<felt252>) -> Span::<felt252>
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3802,7 +4102,6 @@ fn __wrapper__Impl1__foo_l1_handler2(mut data: Span::<felt252>) -> Span::<felt25
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3823,7 +4122,6 @@ fn __wrapper__Impl1__foo_constructor2(mut data: Span::<felt252>) -> Span::<felt2
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -8093,7 +8391,6 @@ fn __wrapper__EmbeddableImpl__foo1<TContractState, impl UnsafeNewContractState: 
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -8114,7 +8411,6 @@ fn __wrapper__EmbeddableImpl__foo2<TContractState, impl UnsafeNewContractState: 
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -8135,7 +8431,6 @@ fn __wrapper__EmbeddableImpl__foo3<TContractState, impl UnsafeNewContractState: 
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -9789,7 +10084,6 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -9811,7 +10105,6 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -9833,7 +10126,6 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -11703,7 +11995,6 @@ fn __wrapper__Comp3__foo3<TContractState,
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -11728,7 +12019,6 @@ fn __wrapper__Comp3__foo4<TContractState,
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -13085,7 +13375,6 @@ fn __wrapper__Comp3__foo3<TContractState,
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -13944,7 +14233,6 @@ fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<fe
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -15052,7 +15340,6 @@ fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<fe
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -16110,7 +16397,6 @@ fn __wrapper__ContractInterfaceImpl__foo(mut data: Span::<felt252>) -> Span::<fe
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -17142,7 +17428,6 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -17628,7 +17913,6 @@ fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');

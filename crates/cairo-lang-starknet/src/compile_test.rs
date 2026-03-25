@@ -22,6 +22,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("with_ownable_mini::ownable_mini_contract")]
 #[test_case("with_erc20_mini::erc20_mini_contract")]
 #[test_case("ownable_erc20::ownable_erc20_contract")]
+#[test_case("proxy::proxy_contract")]
 #[test_case("upgradable_counter::counter_contract")]
 #[test_case("mintable::mintable_erc20_ownable")]
 #[test_case("multi_component::contract_with_4_components")]

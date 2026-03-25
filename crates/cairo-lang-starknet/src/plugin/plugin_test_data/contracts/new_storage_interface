@@ -3350,7 +3350,6 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3507,7 +3506,6 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3529,7 +3527,6 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3575,7 +3572,6 @@ fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: Span::<fe
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3621,7 +3617,6 @@ fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>)
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
@@ -3692,7 +3687,6 @@ fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');

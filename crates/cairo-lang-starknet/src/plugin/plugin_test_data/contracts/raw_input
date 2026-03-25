@@ -10,15 +10,14 @@ mod test_contract {
     struct Storage {}
 
     #[external(v0)]
-    #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span<felt252> {
-        Default::<Array<felt252>>::default().span()
-    }
+    #[raw_input]
+    fn test_raw_input(ref self: ContractState, data: Span<felt252>) {}
 
     #[external(v0)]
+    #[raw_input]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span<felt252> {
-        Default::<Array<felt252>>::default().span()
+    fn test_raw_input_output(ref self: ContractState, data: Span<felt252>) -> Span<felt252> {
+        data
     }
 }
 
@@ -31,15 +30,14 @@ mod test_contract {
     struct Storage {}
 
     #[external(v0)]
-    #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span<felt252> {
-        Default::<Array<felt252>>::default().span()
-    }
+    #[raw_input]
+    fn test_raw_input(ref self: ContractState, data: Span<felt252>) {}
 
     #[external(v0)]
+    #[raw_input]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span<felt252> {
-        Default::<Array<felt252>>::default().span()
+    fn test_raw_input_output(ref self: ContractState, data: Span<felt252>) -> Span<felt252> {
+        data
     }
 }
 
@@ -117,45 +115,49 @@ pub fn contract_state_for_testing() -> ContractState {
 #[allow(unused_imports)]
 use starknet::storage::Map as LegacyMap;
 #[cfg(target: 'test')]
-pub const TEST_CLASS_HASH: starknet::ClassHash = 0xd3e4aedceb9023ffd093c5d4d4605354999ba4a10776d97d533a048d33898.try_into().unwrap();
+pub const TEST_CLASS_HASH: starknet::ClassHash = 0x764d3e3d2938e7d693d276f697f585e93223bb792f7ee09fb9d69b2041e3f2.try_into().unwrap();
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_raw_input(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
     };
     let mut contract_state = unsafe_new_contract_state();
-    test_raw_output(ref contract_state, )
+    test_raw_input(ref contract_state, data);
+    let mut arr = ArrayTrait::new();
+    // References.
+    // Result.
+    core::array::ArrayTrait::span(@arr)
 }
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_raw_input_output(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    
     let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
         core::panic_with_felt252('Out of gas');
     };
     let mut contract_state = unsafe_new_contract_state();
-    test_raw_output_with_spaces(ref contract_state, )
+    test_raw_input_output(ref contract_state, data)
 }
 
 
 #[doc(hidden)]
 pub mod __external {
-    pub use super::__wrapper__test_raw_output as test_raw_output;
-    pub use super::__wrapper__test_raw_output_with_spaces as test_raw_output_with_spaces;
+    pub use super::__wrapper__test_raw_input as test_raw_input;
+    pub use super::__wrapper__test_raw_input_output as test_raw_input_output;
 }
 #[doc(hidden)]
 pub mod __l1_handler {

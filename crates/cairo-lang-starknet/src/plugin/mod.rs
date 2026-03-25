@@ -88,6 +88,7 @@ impl MacroPlugin for StarknetPlugin {
             SmolStrId::from(db, L1_HANDLER_ATTR),
             SmolStrId::from(db, NESTED_ATTR),
             SmolStrId::from(db, RAW_OUTPUT_ATTR),
+            SmolStrId::from(db, RAW_INPUT_ATTR),
             SmolStrId::from(db, STORAGE_ATTR),
             SmolStrId::from(db, SUBSTORAGE_ATTR),
         ]
