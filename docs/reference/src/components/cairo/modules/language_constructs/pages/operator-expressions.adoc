@@ -81,8 +81,8 @@ Most binary operators in Cairo (arithmetics, comparison, bitwise, etc.) are
 trait-driven and can be overloaded for custom types by implementing the
 appropriate traits from `core::traits`.
 
-Note that some operators like indexing `[]` and compound assignment operator
-(`+=`, `-=`, `*=`, `/=`) are trait-driven but their traits are located
+Note that some operators like indexing `[]` and compound assignment operators
+(`+=`, `-=`, `*=`, `/=`, `%=`) are trait-driven but their traits are located
 outside of `core::traits`.
 
 To enable operators for custom type, implement the corresponding traits:
