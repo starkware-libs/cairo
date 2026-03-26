@@ -1,14 +1,14 @@
 = Operator expressions
 
-Operator expressions apply built-in or user-defined operations to one or more operand.
-Cairo support both unary operators (acting on a single operand) and binary operators
+Operator expressions apply built-in or user-defined operations to one or more operands.
+Cairo supports both unary operators (acting on a single operand) and binary operators
 (acting on two operands).
 
 == Overview
 
-Operator in Cairo are syntactic sugar for trait method calls. When you write an expression
-like `a + b`, the compiler translate it to a call to the `Add` trait's `add` method.
-This trait-driven design allow user-defined types to overload operators by implementing
+Operators in Cairo are syntactic sugar for trait method calls. When you write an expression
+like `a + b`, the compiler translates it to a call to the `Add` trait's `add` method.
+This trait-driven design allows user-defined types to overload operators by implementing
 the appropriate traits.
 
 == Categories of operators
@@ -29,21 +29,21 @@ See xref:comparison-operators.adoc[Comparison operators] for details.
 
 === Equality operators
 
-Test whether two values are equals or not equals: `==` (equal), `!=` (not equal).
+Test whether two values are equal or not equal: `==` (equal), `!=` (not equal).
 
 See xref:equality-operators.adoc[Equality operators] for details.
 
 === Boolean operators
 
-Combine or negate boolean values using logical operator `&&` (and), `||` (or),
-which short-circuit, or bitwise operator `&`, `|`, `^` on `bool` values,
+Combine or negate boolean values using logical operators `&&` (and), `||` (or),
+which short-circuit, or bitwise operators `&`, `|`, `^` on `bool` values,
 which do not short-circuit.
 
 See xref:boolean-operators.adoc[Boolean operators] for details.
 
 === Bitwise operators
 
-Perform bit-level operations on integer type: `&` (AND), `|` (OR), `^` (XOR),
+Perform bit-level operations on integer types: `&` (AND), `|` (OR), `^` (XOR),
 `~` (NOT).
 
 See xref:bitwise-operators.adoc[Bitwise operators] for details.
@@ -56,13 +56,13 @@ See xref:negation-operators.adoc[Negation operators] for details.
 
 === Error propagation operator
 
-The postfix `?` operator propagate errors in functions that return `Result` types.
+The postfix `?` operator propagates errors in functions that return `Result` types.
 
 See xref:error-propagation-operator.adoc[Error propagation operator] for details.
 
 == Operator precedence and associativity
 
-Operators have different precedence level that determine the order of evaluation
+Operators have different precedence levels that determine the order of evaluation
 in complex expressions. For example, multiplication binds tighter than addition,
 so `2 + 3 * 4` evaluates as `2 + (3 * 4)`.
 
@@ -81,11 +81,11 @@ Most binary operators in Cairo (arithmetics, comparison, bitwise, etc.) are
 trait-driven and can be overloaded for custom types by implementing the
 appropriate traits from `core::traits`.
 
-Note that some operators like indexing `[]` and compound assignment operator
+Note that some operators like indexing `[]` and compound assignment operators
 (`+=`, `-=`, `*=`, `/=`) are trait-driven but their traits are located
 outside of `core::traits`.
 
-To enable operators for custom type, implement the corresponding traits:
+To enable operators for custom types, implement the corresponding traits:
 
 [source,cairo]
 ----
