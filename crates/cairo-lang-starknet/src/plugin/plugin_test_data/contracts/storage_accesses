@@ -260,9 +260,6 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #5'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_name_, __arg_symbol_, __arg_decimals_, __arg_initial_supply, __arg_recipient);
     let mut arr = ArrayTrait::new();
@@ -281,9 +278,6 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_name(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -303,9 +297,6 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_symbol(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -325,9 +316,6 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_decimals(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -347,9 +335,6 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_total_supply(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -372,9 +357,6 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::balance_of(@contract_state, __arg_account);
     let mut arr = ArrayTrait::new();
@@ -401,9 +383,6 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::allowance(@contract_state, __arg_owner, __arg_spender);
     let mut arr = ArrayTrait::new();
@@ -430,9 +409,6 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::increase_allowance(ref contract_state, __arg_spender, __arg_added_value);
     let mut arr = ArrayTrait::new();
@@ -458,9 +434,6 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::decrease_allowance(ref contract_state, __arg_spender, __arg_subtracted_value);
     let mut arr = ArrayTrait::new();
@@ -482,9 +455,6 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::write_info(ref contract_state, __arg_user_info);
     let mut arr = ArrayTrait::new();
@@ -503,9 +473,6 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_info(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -2250,9 +2217,6 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #5'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_name_, __arg_symbol_, __arg_decimals_, __arg_initial_supply, __arg_recipient);
     let mut arr = ArrayTrait::new();
@@ -2271,9 +2235,6 @@ fn __wrapper__IERC20Impl__get_name(mut data: Span::<felt252>) -> Span::<felt252>
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_name(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -2293,9 +2254,6 @@ fn __wrapper__IERC20Impl__get_symbol(mut data: Span::<felt252>) -> Span::<felt25
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_symbol(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -2315,9 +2273,6 @@ fn __wrapper__IERC20Impl__get_decimals(mut data: Span::<felt252>) -> Span::<felt
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_decimals(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -2337,9 +2292,6 @@ fn __wrapper__IERC20Impl__get_total_supply(mut data: Span::<felt252>) -> Span::<
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_total_supply(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -2362,9 +2314,6 @@ fn __wrapper__IERC20Impl__balance_of(mut data: Span::<felt252>) -> Span::<felt25
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::balance_of(@contract_state, __arg_account);
     let mut arr = ArrayTrait::new();
@@ -2391,9 +2340,6 @@ fn __wrapper__IERC20Impl__allowance(mut data: Span::<felt252>) -> Span::<felt252
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::allowance(@contract_state, __arg_owner, __arg_spender);
     let mut arr = ArrayTrait::new();
@@ -2420,9 +2366,6 @@ fn __wrapper__IERC20Impl__increase_allowance(mut data: Span::<felt252>) -> Span:
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::increase_allowance(ref contract_state, __arg_spender, __arg_added_value);
     let mut arr = ArrayTrait::new();
@@ -2448,9 +2391,6 @@ fn __wrapper__IERC20Impl__decrease_allowance(mut data: Span::<felt252>) -> Span:
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::decrease_allowance(ref contract_state, __arg_spender, __arg_subtracted_value);
     let mut arr = ArrayTrait::new();
@@ -2472,9 +2412,6 @@ fn __wrapper__IERC20Impl__write_info(mut data: Span::<felt252>) -> Span::<felt25
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     IERC20Impl::write_info(ref contract_state, __arg_user_info);
     let mut arr = ArrayTrait::new();
@@ -2493,9 +2430,6 @@ fn __wrapper__IERC20Impl__get_info(mut data: Span::<felt252>) -> Span::<felt252>
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = IERC20Impl::get_info(@contract_state, );
     let mut arr = ArrayTrait::new();
