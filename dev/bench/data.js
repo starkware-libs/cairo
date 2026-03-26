@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774397557316,
+  "lastUpdate": 1774484048418,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1007,6 +1007,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1470426958,
             "range": "± 10741944",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "VolodymyrBg",
+            "username": "VolodymyrBg",
+            "email": "aqdrgg19@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "dcb951e5b84bf2aa39d7ebe339c9a2346a0841f2",
+          "message": "perf(lowering): remove redundant clone in implicits goto remapping (#9782)",
+          "timestamp": "2026-03-25T08:03:23Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/dcb951e5b84bf2aa39d7ebe339c9a2346a0841f2"
+        },
+        "date": 1774484048017,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1474543418,
+            "range": "± 10481810",
             "unit": "ns/iter"
           }
         ]
