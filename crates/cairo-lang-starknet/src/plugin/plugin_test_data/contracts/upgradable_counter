@@ -173,9 +173,6 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
     let mut arr = ArrayTrait::new();
@@ -194,9 +191,6 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -219,9 +213,6 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -243,9 +234,6 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -1268,9 +1256,6 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     constructor(ref contract_state, __arg_initial_counter);
     let mut arr = ArrayTrait::new();
@@ -1289,9 +1274,6 @@ fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = CounterContract::get_counter(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -1314,9 +1296,6 @@ fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Sp
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::increase_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -1338,9 +1317,6 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     CounterContract::decrease_counter(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();

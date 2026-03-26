@@ -3331,9 +3331,6 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -3352,9 +3349,6 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -3377,9 +3371,6 @@ fn __wrapper__HelloStarknetImpl__get_user_balance(mut data: Span::<felt252>) -> 
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_user_balance(@contract_state, __arg_user_id);
     let mut arr = ArrayTrait::new();
@@ -3402,9 +3393,6 @@ fn __wrapper__HelloStarknetImpl__get_legacy_user_balance(mut data: Span::<felt25
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_legacy_user_balance(@contract_state, __arg_user_id);
     let mut arr = ArrayTrait::new();
@@ -3431,9 +3419,6 @@ fn __wrapper__HelloStarknetImpl__set_user_balance(mut data: Span::<felt252>) -> 
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_user_balance(ref contract_state, __arg_user_id, __arg_balance);
     let mut arr = ArrayTrait::new();
@@ -3459,9 +3444,6 @@ fn __wrapper__HelloStarknetImpl__set_legacy_user_balance(mut data: Span::<felt25
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_legacy_user_balance(ref contract_state, __arg_user_id, __arg_balance);
     let mut arr = ArrayTrait::new();
@@ -3487,9 +3469,6 @@ fn __wrapper__HelloStarknetImpl__get_user_balance_subbalance(mut data: Span::<fe
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_user_balance_subbalance(@contract_state, __arg_user_id, __arg_subbalance_id);
     let mut arr = ArrayTrait::new();
@@ -3509,9 +3488,6 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance1(mut data: Span::<felt
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance_pair_balance1(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -3531,9 +3507,6 @@ fn __wrapper__HelloStarknetImpl__get_balance_pair_balance2(mut data: Span::<felt
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance_pair_balance2(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -3556,9 +3529,6 @@ fn __wrapper__HelloStarknetImpl__set_balance_pair_balance1(mut data: Span::<felt
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_balance_pair_balance1(ref contract_state, __arg_value);
     let mut arr = ArrayTrait::new();
@@ -3577,9 +3547,6 @@ fn __wrapper__HelloStarknetImpl__get_balance_trio_sub_member(mut data: Span::<fe
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance_trio_sub_member(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -3602,9 +3569,6 @@ fn __wrapper__HelloStarknetImpl__set_balance_trio_sub_member(mut data: Span::<fe
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::set_balance_trio_sub_member(ref contract_state, __arg_value);
     let mut arr = ArrayTrait::new();
@@ -3623,9 +3587,6 @@ fn __wrapper__HelloStarknetImpl__get_third_list_value(mut data: Span::<felt252>)
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_third_list_value(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -3648,9 +3609,6 @@ fn __wrapper__HelloStarknetImpl__get_arr_at(mut data: Span::<felt252>) -> Span::
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_arr_at(@contract_state, __arg_index);
     let mut arr = ArrayTrait::new();
@@ -3673,9 +3631,6 @@ fn __wrapper__HelloStarknetImpl__append_to_arr(mut data: Span::<felt252>) -> Spa
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::append_to_arr(ref contract_state, __arg_value);
     let mut arr = ArrayTrait::new();
@@ -3694,9 +3649,6 @@ fn __wrapper__HelloStarknetImpl__get_queryable_enum(mut data: Span::<felt252>) -
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_queryable_enum(@contract_state, );
     let mut arr = ArrayTrait::new();

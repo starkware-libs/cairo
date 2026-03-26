@@ -3,6 +3,7 @@ mod circuit_contract;
 pub mod erc20;
 mod hello_starknet;
 mod libfuncs_coverage;
+mod max_entrypoint;
 mod minimal_contract;
 mod mintable;
 pub mod multi_component;
