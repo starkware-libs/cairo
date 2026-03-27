@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774484048418,
+  "lastUpdate": 1774570399113,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1035,6 +1035,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1474543418,
             "range": "± 10481810",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "tn0vak",
+            "username": "tn0vak",
+            "email": "tomasnovakvakno@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "1bcd8ac441f66010203c5cfca76183db17cb3a0b",
+          "message": "docs: document compound assignment operators (#9795)",
+          "timestamp": "2026-03-26T15:44:01Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/1bcd8ac441f66010203c5cfca76183db17cb3a0b"
+        },
+        "date": 1774570398524,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1514926345,
+            "range": "± 18075061",
             "unit": "ns/iter"
           }
         ]
