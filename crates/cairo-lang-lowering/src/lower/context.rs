@@ -273,26 +273,22 @@ impl<'db> LoweredExpr<'db> {
             LoweredExpr::MemberPath(member_path, _location) => {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
-            LoweredExpr::Snapshot { expr, location } => match *expr {
-                LoweredExpr::MemberPath(member_path, _member_path_location) => {
-                    if let Some(var_usage) = builder.get_snap_ref(ctx, &member_path) {
-                        return Ok(VarUsage { var_id: var_usage.var_id, location });
-                    }
-
-                    let input = builder.get_ref(ctx, &member_path).unwrap();
-                    let (original, snapshot) =
-                        generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
-                    builder.update_ref(ctx, &member_path, original);
-
-                    Ok(VarUsage { var_id: snapshot, location })
+            LoweredExpr::Snapshot { expr, location } => {
+                if let LoweredExpr::MemberPath(member_path, _location) = &*expr
+                    && let Some(var_usage) = builder.get_snap_ref(ctx, member_path)
+                {
+                    return Ok(VarUsage { var_id: var_usage.var_id, location });
                 }
-                expr => {
-                    let input = expr.as_var_usage(ctx, builder)?;
-                    let (_original, snapshot) =
-                        generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
-                    Ok(VarUsage { var_id: snapshot, location })
+
+                let input = expr.clone().as_var_usage(ctx, builder)?;
+                let (original, snapshot) =
+                    generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
+                if let LoweredExpr::MemberPath(member_path, _location) = &*expr {
+                    builder.update_ref(ctx, member_path, original);
                 }
-            },
+
+                Ok(VarUsage { var_id: snapshot, location })
+            }
             LoweredExpr::FixedSizeArray { exprs, location, ty } => {
                 let inputs = exprs
                     .into_iter()
