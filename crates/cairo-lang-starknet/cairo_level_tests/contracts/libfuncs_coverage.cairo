@@ -50,6 +50,7 @@ enum Libfuncs {
     Consts: ConstsLibfuncs,
     Snapshot: SnapshotLibfuncs,
     RangeIter: (u8, u8),
+    Gas,
 }
 
 enum NumericLibfuncs<T> {
@@ -238,6 +239,7 @@ fn all_libfuncs(libfuncs: Libfuncs) {
         Libfuncs::Consts(libfuncs) => consts_libfuncs(libfuncs),
         Libfuncs::Snapshot(libfuncs) => snapshot_libfuncs(libfuncs),
         Libfuncs::RangeIter((s, e)) => { for _ in s..e {} },
+        Libfuncs::Gas => core::gas::withdraw_gas_all(core::gas::get_builtin_costs()).unwrap(),
     }
 }
 use core::num::traits::Sqrt;

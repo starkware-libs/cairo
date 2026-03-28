@@ -330,9 +330,6 @@ fn generate_entry_point_wrapper<'db>(
                 }};
                 $arg_definitions$
                 assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-                let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {{
-                    core::panic_with_felt252('Out of gas');
-                }};
                 let mut contract_state = {unsafe_new_contract_state_prefix}unsafe_new_contract_state();
                 $output_handling$
             }}
