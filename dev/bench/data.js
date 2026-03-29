@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774656755121,
+  "lastUpdate": 1774743190108,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1091,6 +1091,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1562404051,
             "range": "± 48703584",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alejandro Torres",
+            "username": "atorrers",
+            "email": "Alejandrotorresndro@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "4e919aa7da0a67459d3e784061d9d907d4ea0f15",
+          "message": "docs: clarify chained equality support in operator expressions (#9794)",
+          "timestamp": "2026-03-27T10:04:57Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/4e919aa7da0a67459d3e784061d9d907d4ea0f15"
+        },
+        "date": 1774743189592,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1503946221,
+            "range": "± 18547618",
             "unit": "ns/iter"
           }
         ]
