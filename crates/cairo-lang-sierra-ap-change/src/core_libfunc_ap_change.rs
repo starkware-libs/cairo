@@ -433,6 +433,11 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoundedIntConcreteLibfunc::WrapNonZero(_) => {
                 vec![ApChange::Known(0)]
             }
+            BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
+                let ap_change = if libfunc.range.lower.is_zero() { 0 } else { 1 }
+                    + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
+                vec![ApChange::Known(ap_change)]
+            }
         },
         Circuit(CircuitConcreteLibfunc::TryIntoCircuitModulus(_)) => {
             vec![ApChange::Known(1), ApChange::Known(1)]

@@ -554,6 +554,12 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::WrapNonZero(_) => {
                 vec![ConstCost::steps(0).into()]
             }
+            BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
+                let steps = 2
+                    + if libfunc.range.lower.is_zero() { 0 } else { 1 }
+                    + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
+                vec![ConstCost { steps, holes: 0, range_checks: 2, range_checks96: 0 }.into()]
+            }
         },
         Circuit(libfunc) => match libfunc {
             CircuitConcreteLibfunc::AddInput(_) => {
