@@ -11,6 +11,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("circuit_contract::circuit_contract")]
 #[test_case("test_contract::test_contract")]
 #[test_case("new_syntax_test_contract::counter_contract")]
+#[test_case("max_entrypoint::max_entrypoint_contract")]
 #[test_case("minimal_contract::minimal_contract")]
 #[test_case("hello_starknet::hello_starknet")]
 #[test_case("libfuncs_coverage::libfuncs_coverage")]

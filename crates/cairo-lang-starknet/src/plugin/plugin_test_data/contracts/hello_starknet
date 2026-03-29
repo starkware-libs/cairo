@@ -112,9 +112,6 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -133,9 +130,6 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
     let mut arr = ArrayTrait::new();
@@ -929,9 +923,6 @@ fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> 
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
     let mut arr = ArrayTrait::new();
@@ -950,9 +941,6 @@ fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span:
     };
     
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = unsafe_new_contract_state();
     let res = HelloStarknetImpl::get_balance(@contract_state, );
     let mut arr = ArrayTrait::new();

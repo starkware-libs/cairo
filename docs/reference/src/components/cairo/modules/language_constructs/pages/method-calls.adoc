@@ -1,6 +1,7 @@
 = Method calls
 
-A method call is an expression of the form `expr.method(arguments...)`.
+A method call is an expression of the form `expr.method(arguments...)`, where the method name is
+followed by a parenthesized argument list.
 This expression is roughly equivalent to the xref:function-calls.adoc[function call]
 expression `method(expr, arguments...)`.
 The differences between the two are:
