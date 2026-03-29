@@ -216,6 +216,7 @@
         "u128_safe_divmod",
         "u128_sqrt",
         "u128_to_felt252",
+        "u128_to_u32_guarantees",
         "u128s_from_felt252",
         "u16_bitwise",
         "u16_const",

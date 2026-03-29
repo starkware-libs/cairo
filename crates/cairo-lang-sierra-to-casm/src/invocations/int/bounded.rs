@@ -49,6 +49,7 @@ pub fn build(
         BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
             build_guarantee_verify(builder, libfunc)
         }
+        BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => build_u128_to_u32_guarantees(builder),
     }
 }
 
@@ -278,5 +279,50 @@ fn build_guarantee_verify(
             }],
             extra_costs: None,
         },
+    ))
+}
+
+/// Build u128 split into 4 u32 guarantees.
+/// Splits a u128 into 4 u32 values using iterative DivMod hints.
+fn build_u128_to_u32_guarantees(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::with_capacity(20, 12);
+    add_input_variables!(casm_builder, deref value;);
+
+    let pow2_32: BigInt = BigInt::one().shl(32);
+
+    casm_build_extend! {casm_builder,
+        const pow2_32 = pow2_32;
+        tempvar w1_w2_w3_shifted;
+        tempvar w2_w3_shifted;
+        tempvar w3_shifted;
+        tempvar w1_w2_w3;
+        tempvar w2_w3;
+        tempvar w0;
+        tempvar w1;
+        tempvar w2;
+        tempvar w3;
+
+        hint DivMod { lhs: value, rhs: pow2_32 } into { quotient: w1_w2_w3, remainder: w0 };
+        hint DivMod { lhs: w1_w2_w3, rhs: pow2_32 } into { quotient: w2_w3, remainder: w1 };
+        hint DivMod { lhs: w2_w3, rhs: pow2_32 } into { quotient: w3, remainder: w2 };
+        ap += 3;
+
+        // Verify reconstruction using Horner's method.
+        assert w1_w2_w3_shifted = w1_w2_w3 * pow2_32;
+        assert value = w1_w2_w3_shifted + w0;
+        assert w2_w3_shifted = w2_w3 * pow2_32;
+        assert w1_w2_w3 = w2_w3_shifted + w1;
+        assert w3_shifted = w3 * pow2_32;
+        assert w2_w3 = w3_shifted + w2;
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[w0], &[w1], &[w2], &[w3]], None)],
+        Default::default(),
     ))
 }
