@@ -466,7 +466,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             IntRangeConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         },
         Blake(libfunc) => match libfunc {
-            BlakeConcreteLibfunc::Blake2sCompress(_) | BlakeConcreteLibfunc::Blake2sFinalize(_) => {
+            BlakeConcreteLibfunc::Blake2sCompress(_)
+            | BlakeConcreteLibfunc::Blake2sFinalize(_)
+            | BlakeConcreteLibfunc::Blake2sCompressGuarantees(_)
+            | BlakeConcreteLibfunc::Blake2sFinalizeGuarantees(_) => {
                 vec![ApChange::Known(1)]
             }
         },
