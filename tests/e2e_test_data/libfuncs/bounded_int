@@ -1338,6 +1338,56 @@ test::foo: SmallOrderedMap({Const: 270})
 
 //! > ==========================================================================
 
+//! > bounded_int_guarantee_split libfunc.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+type U32Guarantee = BoundedIntGuarantee<0, 0xffffffff>;
+type U128Guarantee = BoundedIntGuarantee<0, 0xffffffffffffffffffffffffffffffff>;
+
+extern fn bounded_int_guarantee_split<const MIN: felt252, const MAX: felt252, const SPLIT: felt252>(
+    value: BoundedIntGuarantee<MIN, MAX>,
+) -> (BoundedIntGuarantee<0, 0xffffffffffffffffffffffff>, U32Guarantee) implicits() nopanic;
+
+fn foo(value: U128Guarantee) -> (BoundedIntGuarantee<0, 0xffffffffffffffffffffffff>, U32Guarantee) {
+    bounded_int_guarantee_split::<_, _, 0x100000000>(value)
+}
+
+//! > casm
+%{ (memory[ap + 1], memory[ap + 2]) = divmod(memory[fp + -3], 4294967296) %}
+ap += 1;
+[ap + -1] = [ap + 0] * 4294967296, ap++;
+[fp + -3] = [ap + -2] + [ap + 0], ap++;
+[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > sierra_code
+type BoundedIntGuarantee<0, 340282366920938463463374607431768211455> = BoundedIntGuarantee<0, 340282366920938463463374607431768211455> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<0, 79228162514264337593543950335> = BoundedIntGuarantee<0, 79228162514264337593543950335> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: false, zero_sized: false];
+type Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>> = Struct<ut@Tuple, BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc bounded_int_guarantee_split<0, 340282366920938463463374607431768211455, 4294967296> = bounded_int_guarantee_split<0, 340282366920938463463374607431768211455, 4294967296>;
+libfunc struct_construct<Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>>> = struct_construct<Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>>>;
+libfunc store_temp<Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>>> = store_temp<Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>>>;
+
+F0:
+bounded_int_guarantee_split<0, 340282366920938463463374607431768211455, 4294967296>([0]) -> ([1], [2]);
+struct_construct<Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>>>([1], [2]) -> ([3]);
+store_temp<Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>>>([3]) -> ([3]);
+return([3]);
+
+test::foo@F0([0]: BoundedIntGuarantee<0, 340282366920938463463374607431768211455>) -> (Tuple<BoundedIntGuarantee<0, 79228162514264337593543950335>, BoundedIntGuarantee<0, 4294967295>>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 500})
+
+//! > ==========================================================================
+
 //! > u128_to_u32_guarantees libfunc.
 
 //! > test_runner_name

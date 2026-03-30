@@ -562,6 +562,9 @@ pub fn core_libfunc_cost(
                     + if libfunc.range.upper == u128_bound { 0 } else { 1 };
                 vec![ConstCost { steps, holes: 0, range_checks, range_checks96: 0 }.into()]
             }
+            BoundedIntConcreteLibfunc::GuaranteeSplit(_) => {
+                vec![ConstCost::steps(3).into()]
+            }
             BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
                 vec![ConstCost::steps(7).into()]
             }
