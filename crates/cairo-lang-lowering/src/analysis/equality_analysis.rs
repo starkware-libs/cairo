@@ -4,7 +4,7 @@
 //! program. Two variables are equivalent if they hold the same value. Additionally, the analysis
 //! tracks `Box`/unbox, snapshot/desnap, and struct/array construct relationships between
 //! equivalence classes via unified forward/reverse maps. Arrays reuse the struct construct
-//! representation since both map `(TypeId, Vec<VariableId>)` — array pop operations act as
+//! representation since both map `(TypeId, Vec<FieldVar>)` — array pop operations act as
 //! destructures.
 
 use cairo_lang_debug::DebugWithDb;
@@ -21,6 +21,33 @@ use crate::{
     BlockEnd, BlockId, Lowered, MatchArm, MatchExternInfo, MatchInfo, Statement, VariableId,
 };
 
+/// A struct field variable: either a real variable or a unique placeholder for an unknown field.
+/// Placeholders are created during merge when a field has no intersection representative.
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+enum FieldVar {
+    Var(VariableId),
+    /// A globally unique placeholder representing an unknown field.
+    Placeholder(usize),
+}
+
+impl FieldVar {
+    /// Returns the real variable if this is a `Var`, or `None` if it's a `Placeholder`.
+    fn as_var(self) -> Option<VariableId> {
+        match self {
+            FieldVar::Var(v) => Some(v),
+            FieldVar::Placeholder(_) => None,
+        }
+    }
+
+    /// Resolves the variable inside a `Var` to its representative, leaves `Placeholder` unchanged.
+    fn find_rep(self, info: &mut EqualityState<'_>) -> Self {
+        match self {
+            FieldVar::Var(v) => FieldVar::Var(info.find(v)),
+            p @ FieldVar::Placeholder(_) => p,
+        }
+    }
+}
+
 /// A relationship between equivalence classes, carrying its payload data.
 /// Hashable so it can be used as a forward map key.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -28,19 +55,19 @@ enum Relation<'db> {
     Box(VariableId),
     Snapshot(VariableId),
     EnumConstruct(ConcreteVariant<'db>, VariableId),
-    StructConstruct(TypeId<'db>, Vec<VariableId>),
+    StructConstruct(TypeId<'db>, Vec<FieldVar>),
 }
 
 impl<'db> Relation<'db> {
-    /// Returns an iterator over all variables referenced by this relation.
+    /// Returns an iterator over all real variables referenced by this relation.
     fn referenced_vars(&self) -> impl Iterator<Item = VariableId> + '_ {
-        let (single, fields): (Option<VariableId>, &[VariableId]) = match self {
+        let (single, fields): (Option<VariableId>, &[FieldVar]) = match self {
             Relation::Box(v) | Relation::Snapshot(v) | Relation::EnumConstruct(_, v) => {
                 (Some(*v), &[])
             }
             Relation::StructConstruct(_, vs) => (None, vs),
         };
-        single.into_iter().chain(fields.iter().copied())
+        single.into_iter().chain(fields.iter().filter_map(|f| f.as_var()))
     }
 
     /// Returns a new Relation with all input variables resolved to their current representatives.
@@ -49,9 +76,10 @@ impl<'db> Relation<'db> {
             Relation::Box(v) => Relation::Box(state.find(v)),
             Relation::Snapshot(v) => Relation::Snapshot(state.find(v)),
             Relation::EnumConstruct(variant, v) => Relation::EnumConstruct(variant, state.find(v)),
-            Relation::StructConstruct(ty, fields) => {
-                Relation::StructConstruct(ty, fields.into_iter().map(|v| state.find(v)).collect())
-            }
+            Relation::StructConstruct(ty, fields) => Relation::StructConstruct(
+                ty,
+                fields.into_iter().map(|f| f.find_rep(state)).collect(),
+            ),
         }
     }
 
@@ -75,7 +103,17 @@ impl<'db> Relation<'db> {
             {
                 Relation::StructConstruct(
                     *t1,
-                    a.iter().zip(b).map(|(x1, x2)| uf.union(*x1, *x2)).collect(),
+                    a.iter()
+                        .zip(b)
+                        .map(|(sf, of)| match (sf, of) {
+                            (FieldVar::Var(a), FieldVar::Var(b)) if a != b => {
+                                FieldVar::Var(uf.union(*a, *b))
+                            }
+                            (FieldVar::Var(_), _) => *sf,
+                            (_, FieldVar::Var(_)) => *of,
+                            (FieldVar::Placeholder(_), FieldVar::Placeholder(_)) => *sf,
+                        })
+                        .collect(),
                 )
             }
             // Same values or different kinds: keep self.
@@ -223,10 +261,7 @@ impl<'db> EqualityState<'db> {
     }
 
     /// Looks up the struct construct info for a representative (immutable).
-    fn get_struct_construct_immut(
-        &self,
-        rep: VariableId,
-    ) -> Option<(TypeId<'db>, Vec<VariableId>)> {
+    fn get_struct_construct_immut(&self, rep: VariableId) -> Option<(TypeId<'db>, Vec<FieldVar>)> {
         match self.reverse.get(&rep)? {
             Relation::StructConstruct(ty, fields) => Some((*ty, fields.clone())),
             _ => None,
@@ -234,7 +269,7 @@ impl<'db> EqualityState<'db> {
     }
 
     /// Looks up the struct construct info for a variable (mutable, uses find for path compression).
-    fn get_struct_construct(&mut self, var: VariableId) -> Option<(TypeId<'db>, Vec<VariableId>)> {
+    fn get_struct_construct(&mut self, var: VariableId) -> Option<(TypeId<'db>, Vec<FieldVar>)> {
         let rep = self.find(var);
         self.get_struct_construct_immut(rep)
     }
@@ -271,7 +306,14 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
                 }
                 Relation::StructConstruct(ty, inputs) => {
                     let type_name = ty.format(db);
-                    let fields = inputs.iter().map(|&id| v(id)).collect::<Vec<_>>().join(", ");
+                    let fields = inputs
+                        .iter()
+                        .map(|f| match f {
+                            FieldVar::Var(id) => v(*id),
+                            FieldVar::Placeholder(_) => "?".to_string(),
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
                     lines.push(format!("{type_name}({fields}) = {}", v(output)));
                 }
             }
@@ -295,6 +337,8 @@ impl<'db> DebugWithDb<'db> for EqualityState<'db> {
 pub struct EqualityAnalysis<'a, 'db> {
     db: &'db dyn Database,
     lowered: &'a Lowered<'db>,
+    /// Counter for allocating globally unique placeholder IDs.
+    next_placeholder: usize,
     /// The `array_new` extern function id.
     array_new: ExternFunctionId<'db>,
     /// The `array_append` extern function id.
@@ -316,6 +360,7 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
         Self {
             db,
             lowered,
+            next_placeholder: 0,
             array_new: array_module.extern_function_id("array_new"),
             array_append: array_module.extern_function_id("array_append"),
             array_pop_front: array_module.extern_function_id("array_pop_front"),
@@ -388,11 +433,16 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                 let remaining_arr = arm.var_ids[0];
                 let boxed_elem = arm.var_ids[1];
                 if let Some((ty, elems)) = info.get_struct_construct(input_arr)
-                    && let Some((&first, rest)) = elems.split_first()
+                    && let Some((first, rest)) = elems.split_first()
                 {
-                    info.set_relation(Relation::Box(first), boxed_elem);
-                    let rest_reps: Vec<_> = rest.iter().map(|&v| info.find(v)).collect();
-                    info.set_relation(Relation::StructConstruct(ty, rest_reps), remaining_arr);
+                    // TODO(eytan-starkware): Add support for placeholders in boxes and reverse box
+                    // relation to unify placeholder.
+                    if let FieldVar::Var(first_var) = first {
+                        info.set_relation(Relation::Box(*first_var), boxed_elem);
+                    }
+                    let rest_fields: Vec<FieldVar> =
+                        rest.iter().map(|f| f.find_rep(info)).collect();
+                    info.set_relation(Relation::StructConstruct(ty, rest_fields), remaining_arr);
                 }
             } else {
                 // None arm for array_pop_front: var_ids = [original_arr]. Union with input.
@@ -428,40 +478,47 @@ impl<'a, 'db> EqualityAnalysis<'a, 'db> {
                     })
                     .or_else(|| info.get_struct_construct_immut(snap_rep));
 
-                if let Some((_orig_ty, elems)) = elems_opt {
-                    let pop_front = id == self.array_snapshot_pop_front;
-                    let (elem, rest) = if pop_front {
-                        let Some((&first, tail)) = elems.split_first() else { return };
-                        (first, tail)
-                    } else {
-                        let Some((&last, init)) = elems.split_last() else { return };
-                        (last, init)
+                let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
+                let Some((_orig_ty, elems)) = elems_opt else {
+                    return;
+                };
+                let pop_front = id == self.array_snapshot_pop_front;
+                let (elem, rest) = if pop_front {
+                    let Some((first, tail)) = elems.split_first() else {
+                        info.set_relation(
+                            Relation::StructConstruct(snap_ty, vec![]),
+                            remaining_snap_arr,
+                        );
+                        return;
                     };
+                    (*first, tail)
+                } else {
+                    let Some((last, init)) = elems.split_last() else {
+                        info.set_relation(
+                            Relation::StructConstruct(snap_ty, vec![]),
+                            remaining_snap_arr,
+                        );
+                        return;
+                    };
+                    (*last, init)
+                };
 
-                    // The popped element is `Box<@T>`. Record the box relationship against
-                    // the snapshot class of `elem` if it exists.
-                    // TODO(eytan-starkware): Support relationships even when no variable
-                    // represents `@elem` yet.
-                    let elem_rep = info.find(elem);
+                // The popped element is `Box<@T>`. Record the box relationship against
+                // the snapshot class of `elem` if it exists.
+                // TODO(eytan-starkware): Support relationships even when no variable
+                // represents `@elem` yet (elem is a Placeholder).
+                if let FieldVar::Var(elem_var) = elem {
+                    let elem_rep = info.find(elem_var);
                     if let Some(&snap_of_elem) = info.forward.get(&Relation::Snapshot(elem_rep)) {
                         info.set_relation(Relation::Box(snap_of_elem), boxed_snap_elem);
                     }
-
-                    // Record the remaining snapshot array under its snapshot type
-                    // (`@Array<T>`). This is a hack: `@Array<T>` is not a struct, but we
-                    // reuse struct construct tracking to store element info for it. This
-                    // also requires the two-path lookup above (path 2).
-                    // TODO(eytan-starkware): Once placeholder vars are supported, store
-                    //    this as a proper `Array<T>` linked via the reverse map instead,
-                    //    since we may not have a var representing the non-snapshot array
-                    //    at the moment.
-                    let snap_ty = self.lowered.variables[remaining_snap_arr].ty;
-                    let rest_reps: Vec<_> = rest.iter().map(|&v| info.find(v)).collect();
-                    info.set_relation(
-                        Relation::StructConstruct(snap_ty, rest_reps),
-                        remaining_snap_arr,
-                    );
                 }
+
+                let rest_fields: Vec<FieldVar> = rest.iter().map(|f| f.find_rep(info)).collect();
+                info.set_relation(
+                    Relation::StructConstruct(snap_ty, rest_fields),
+                    remaining_snap_arr,
+                );
             } else {
                 // None arm: record empty snapshot array and union output with input.
                 let old_snap_arr = extern_info.inputs[0].var_id;
@@ -516,7 +573,18 @@ fn merge_relations<'db>(
     info2: &EqualityState<'db>,
     intersections: &OrderedHashMap<VariableId, Vec<(VariableId, VariableId)>>,
     result: &mut EqualityState<'db>,
+    next_placeholder: &mut usize,
 ) {
+    // Index info2's StructConstruct entries by output representative for lookup in the merge loop.
+    let info2_structs_by_output: OrderedHashMap<VariableId, (TypeId<'db>, Vec<FieldVar>)> = info2
+        .forward
+        .iter()
+        .filter_map(|(relation, &output2)| {
+            let Relation::StructConstruct(ty, fields) = relation else { return None };
+            Some((info2.find_immut(output2), (*ty, fields.clone())))
+        })
+        .collect();
+
     // Iterate all forward entries from info1 and find matching entries in info2.
     // We use forward (not reverse) because reverse holds only the latest relation per output,
     // while forward retains all entries and is the authoritative source.
@@ -565,25 +633,39 @@ fn merge_relations<'db>(
                 }
             }
             Relation::StructConstruct(ty, fields1) => {
-                let fields2: Vec<_> = fields1.iter().map(|&v| info2.find_immut(v)).collect();
-                let Some(&output2) =
-                    info2.forward.get(&Relation::StructConstruct(*ty, fields2.clone()))
-                else {
+                let output1_rep = info1.find_immut(output1);
+                let Some(output_pairs) = intersections.get(&output1_rep) else {
                     continue;
                 };
-                let result_fields: Option<Vec<_>> = fields1
-                    .iter()
-                    .zip(&fields2)
-                    .map(|(&v1, &v2)| {
-                        find_intersection_rep(intersections, info1.find_immut(v1), v2)
-                    })
-                    .collect();
-                let Some(result_fields) = result_fields else { continue };
-                if let Some(output_intersection) = find_intersection_rep(
-                    intersections,
-                    info1.find_immut(output1),
-                    info2.find_immut(output2),
-                ) {
+                for &(output2_rep, output_intersection) in output_pairs {
+                    let Some((ty2, fields2)) = info2_structs_by_output.get(&output2_rep) else {
+                        continue;
+                    };
+                    if ty2 != ty || fields2.len() != fields1.len() {
+                        continue;
+                    }
+                    // Intersect fields pairwise; use placeholders for unresolvable fields.
+                    let mut any_data = false;
+                    let result_fields: Vec<FieldVar> = fields1
+                        .iter()
+                        .zip(fields2)
+                        .map(|(f1, f2)| {
+                            if let Some(v1) = f1.as_var()
+                                && let Some(v2) = f2.as_var()
+                                && let Some(v) = find_intersection_rep(
+                                    intersections,
+                                    info1.find_immut(v1),
+                                    info2.find_immut(v2),
+                                )
+                            {
+                                any_data = true;
+                                FieldVar::Var(v)
+                            } else {
+                                *next_placeholder += 1;
+                                FieldVar::Placeholder(*next_placeholder - 1)
+                            }
+                        })
+                        .collect();
                     result.set_relation(
                         Relation::StructConstruct(*ty, result_fields),
                         output_intersection,
@@ -646,7 +728,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
             intersections.entry(rep1).or_default().push((rep2, result.find(vars[0])));
         }
 
-        merge_relations(&info1, &info2, &intersections, &mut result);
+        merge_relations(&info1, &info2, &intersections, &mut result, &mut self.next_placeholder);
 
         result
     }
@@ -693,25 +775,27 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                 // If we've already seen the same struct type with equivalent inputs, the outputs
                 // are equal.
                 let ty = self.lowered.variables[struct_stmt.output].ty;
-                let input_reps = struct_stmt.inputs.iter().map(|i| info.find(i.var_id)).collect();
-                info.set_relation(Relation::StructConstruct(ty, input_reps), struct_stmt.output);
+                let fields =
+                    struct_stmt.inputs.iter().map(|i| FieldVar::Var(info.find(i.var_id))).collect();
+                info.set_relation(Relation::StructConstruct(ty, fields), struct_stmt.output);
             }
 
             Statement::StructDestructure(struct_stmt) => {
                 // (outputs...) = struct_destructure(input)
-                // 1. If input was previously constructed, union outputs with original fields.
+                // 1. If input was previously constructed, union outputs with original fields. Skip
+                //    placeholder fields (unknown after merge).
                 if let Some((_, field_reps)) = info.get_struct_construct(struct_stmt.input.var_id) {
-                    for (&output, &field_rep) in struct_stmt.outputs.iter().zip(field_reps.iter()) {
-                        info.union(output, field_rep);
+                    for (&output, field) in struct_stmt.outputs.iter().zip(field_reps.iter()) {
+                        if let FieldVar::Var(field_rep) = field {
+                            info.union(output, *field_rep);
+                        }
                     }
                 }
                 // 2. Record: struct_construct(outputs) == input (for future constructs).
                 let ty = self.lowered.variables[struct_stmt.input.var_id].ty;
-                let output_reps = struct_stmt.outputs.iter().map(|&v| info.find(v)).collect();
-                info.set_relation(
-                    Relation::StructConstruct(ty, output_reps),
-                    struct_stmt.input.var_id,
-                );
+                let fields =
+                    struct_stmt.outputs.iter().map(|&v| FieldVar::Var(info.find(v))).collect();
+                info.set_relation(Relation::StructConstruct(ty, fields), struct_stmt.input.var_id);
             }
 
             Statement::Call(call_stmt) => {
@@ -725,7 +809,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for EqualityAnalysis<'a, 'db> {
                     // Only track append if the input array is already tracked. Arrays from
                     // function parameters or external calls are conservatively ignored.
                     let mut new_elems = elems;
-                    new_elems.push(info.find(call_stmt.inputs[1].var_id));
+                    new_elems.push(FieldVar::Var(info.find(call_stmt.inputs[1].var_id)));
                     info.set_relation(
                         Relation::StructConstruct(ty, new_elems),
                         call_stmt.outputs[0],
