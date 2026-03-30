@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774743190108,
+  "lastUpdate": 1774829619801,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1119,6 +1119,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1503946221,
             "range": "± 18547618",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "b5c6d867f2378e17922bee242cbf0e81752821ab",
+          "message": "Added e2e tests of blake improvement. (#9780)",
+          "timestamp": "2026-03-29T08:15:11Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/b5c6d867f2378e17922bee242cbf0e81752821ab"
+        },
+        "date": 1774829619401,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1508244568,
+            "range": "± 9413124",
             "unit": "ns/iter"
           }
         ]
