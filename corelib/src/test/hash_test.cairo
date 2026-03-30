@@ -173,19 +173,20 @@ fn to_u256(value: Box<[u32; 8]>) -> u256 {
 
 mod msg {
     #[feature("bounded-int-utils")]
-    type U32Guarantee =
-        core::internal::bounded_int::BoundedIntGuarantee<0, 0xffffffff>;
-    pub extern fn u128_to_u32_guarantees(
-        value: u128,
+    use core::internal::bounded_int::{BoundedIntGuarantee, to_guarantee, upcast};
+    type U32Guarantee = BoundedIntGuarantee<0, 0xffffffff>;
+    type U128Guarantee = BoundedIntGuarantee<0, 0xffffffffffffffffffffffffffffffff>;
+    extern fn u128_to_u32_guarantees(
+        value: U128Guarantee,
     ) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) nopanic;
 
     pub fn from_felt252s(a: felt252, b: felt252) -> Box<[U32Guarantee; 16]> {
         let a: u256 = a.into();
         let b: u256 = b.into();
-        let (a_w0, a_w1, a_w2, a_w3) = u128_to_u32_guarantees(a.low);
-        let (a_w4, a_w5, a_w6, a_w7) = u128_to_u32_guarantees(a.high);
-        let (b_w0, b_w1, b_w2, b_w3) = u128_to_u32_guarantees(b.low);
-        let (b_w4, b_w5, b_w6, b_w7) = u128_to_u32_guarantees(b.high);
+        let (a_w0, a_w1, a_w2, a_w3) = u128_to_u32_guarantees(to_guarantee(upcast(a.low)));
+        let (a_w4, a_w5, a_w6, a_w7) = u128_to_u32_guarantees(to_guarantee(upcast(a.high)));
+        let (b_w0, b_w1, b_w2, b_w3) = u128_to_u32_guarantees(to_guarantee(upcast(b.low)));
+        let (b_w4, b_w5, b_w6, b_w7) = u128_to_u32_guarantees(to_guarantee(upcast(b.high)));
         BoxTrait::new(
             [
                 a_w0, a_w1, a_w2, a_w3, a_w4, a_w5, a_w6, a_w7, b_w0, b_w1, b_w2, b_w3, b_w4, b_w5,
