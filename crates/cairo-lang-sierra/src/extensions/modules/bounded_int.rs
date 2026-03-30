@@ -89,6 +89,8 @@ define_libfunc_hierarchy! {
         TrimMax(BoundedIntTrimLibfunc<true>),
         IsZero(BoundedIntIsZeroLibfunc),
         WrapNonZero(BoundedIntWrapNonZeroLibfunc),
+        ToGuarantee(BoundedIntToGuaranteeLibfunc),
+        GuaranteeContent(BoundedIntGuaranteeContentLibfunc),
         GuaranteeVerify(BoundedIntGuaranteeVerifyLibfunc),
         U128ToU32Guarantees(U128ToU32GuaranteesLibfunc),
     }, BoundedIntConcreteLibfunc
@@ -549,6 +551,72 @@ impl SignatureOnlyGenericLibfunc for BoundedIntWrapNonZeroLibfunc {
             .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let nz_ty = nonzero_ty(context, ty)?;
         Ok(reinterpret_cast_signature(ty.clone(), nz_ty))
+    }
+}
+
+/// Libfunc for converting a bounded int into a guarantee - used for converting into interfaces
+/// expecting guarantees.
+#[derive(Default)]
+pub struct BoundedIntToGuaranteeLibfunc {}
+impl SignatureOnlyGenericLibfunc for BoundedIntToGuaranteeLibfunc {
+    const STR_ID: &'static str = "bounded_int_to_guarantee";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (min, max) = extract_bounds(args)?;
+        // Currently only u32 guarantees are supported.
+        require(is_valid_guarantee_range(min, max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(bounded_int_ty(context, min.clone(), max.clone())?)
+                    .with_allow_all(),
+            ],
+            vec![OutputVarInfo {
+                ty: bounded_int_guarantee_ty(context, min.clone(), max.clone())?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Libfunc for extracting a bounded int from its corresponding guarantee - used to read its
+/// internal value, while deferring the validation into further down the Sierra program.
+#[derive(Default)]
+pub struct BoundedIntGuaranteeContentLibfunc {}
+impl SignatureOnlyGenericLibfunc for BoundedIntGuaranteeContentLibfunc {
+    const STR_ID: &'static str = "bounded_int_guarantee_content";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (min, max) = extract_bounds(args)?;
+        // Currently only u32 guarantees are supported.
+        require(is_valid_guarantee_range(min, max))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
+        let guarantee_ty = bounded_int_guarantee_ty(context, min.clone(), max.clone())?;
+
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature::new(guarantee_ty.clone()).with_allow_all()],
+            vec![
+                OutputVarInfo {
+                    ty: guarantee_ty,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: bounded_int_ty(context, min.clone(), max.clone())?,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }
 

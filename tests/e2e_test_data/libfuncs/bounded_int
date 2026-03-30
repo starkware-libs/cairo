@@ -1092,6 +1092,172 @@ test::foo: SmallOrderedMap({Const: 400})
 
 //! > ==========================================================================
 
+//! > bounded_int_to_guarantee libfunc for u32.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_to_guarantee<const MIN: felt252, const MAX: felt252>(
+    value: BoundedInt<MIN, MAX>,
+) -> BoundedIntGuarantee<MIN, MAX> implicits() nopanic;
+
+fn foo(value: BoundedInt<0, 0xffffffff>) -> BoundedIntGuarantee<0, 0xffffffff> {
+    bounded_int_to_guarantee(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedInt<0, 4294967295> = BoundedInt<0, 4294967295> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc bounded_int_to_guarantee<0, 4294967295> = bounded_int_to_guarantee<0, 4294967295>;
+libfunc store_temp<BoundedIntGuarantee<0, 4294967295>> = store_temp<BoundedIntGuarantee<0, 4294967295>>;
+
+F0:
+bounded_int_to_guarantee<0, 4294967295>([0]) -> ([1]);
+store_temp<BoundedIntGuarantee<0, 4294967295>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: BoundedInt<0, 4294967295>) -> (BoundedIntGuarantee<0, 4294967295>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 100})
+
+//! > ==========================================================================
+
+//! > bounded_int_to_guarantee libfunc for u128.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_to_guarantee<const MIN: felt252, const MAX: felt252>(
+    value: BoundedInt<MIN, MAX>,
+) -> BoundedIntGuarantee<MIN, MAX> implicits() nopanic;
+
+fn foo(
+    value: BoundedInt<0, 0xffffffffffffffffffffffffffffffff>,
+) -> BoundedIntGuarantee<0, 0xffffffffffffffffffffffffffffffff> {
+    bounded_int_to_guarantee(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedInt<0, 340282366920938463463374607431768211455> = BoundedInt<0, 340282366920938463463374607431768211455> [storable: true, drop: true, dup: true, zero_sized: false];
+type BoundedIntGuarantee<0, 340282366920938463463374607431768211455> = BoundedIntGuarantee<0, 340282366920938463463374607431768211455> [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc bounded_int_to_guarantee<0, 340282366920938463463374607431768211455> = bounded_int_to_guarantee<0, 340282366920938463463374607431768211455>;
+libfunc store_temp<BoundedIntGuarantee<0, 340282366920938463463374607431768211455>> = store_temp<BoundedIntGuarantee<0, 340282366920938463463374607431768211455>>;
+
+F0:
+bounded_int_to_guarantee<0, 340282366920938463463374607431768211455>([0]) -> ([1]);
+store_temp<BoundedIntGuarantee<0, 340282366920938463463374607431768211455>>([1]) -> ([1]);
+return([1]);
+
+test::foo@F0([0]: BoundedInt<0, 340282366920938463463374607431768211455>) -> (BoundedIntGuarantee<0, 340282366920938463463374607431768211455>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 100})
+
+//! > ==========================================================================
+
+//! > bounded_int_guarantee_content libfunc for u32.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_guarantee_content<const MIN: felt252, const MAX: felt252>(
+    ref value: BoundedIntGuarantee<MIN, MAX>,
+) -> BoundedInt<MIN, MAX> implicits() nopanic;
+
+fn foo(ref value: BoundedIntGuarantee<0, 0xffffffff>) -> BoundedInt<0, 0xffffffff> {
+    bounded_int_guarantee_content(ref value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedIntGuarantee<0, 4294967295> = BoundedIntGuarantee<0, 4294967295> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 4294967295> = BoundedInt<0, 4294967295> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_guarantee_content<0, 4294967295> = bounded_int_guarantee_content<0, 4294967295>;
+libfunc store_temp<BoundedIntGuarantee<0, 4294967295>> = store_temp<BoundedIntGuarantee<0, 4294967295>>;
+libfunc store_temp<BoundedInt<0, 4294967295>> = store_temp<BoundedInt<0, 4294967295>>;
+
+F0:
+bounded_int_guarantee_content<0, 4294967295>([0]) -> ([1], [2]);
+store_temp<BoundedIntGuarantee<0, 4294967295>>([1]) -> ([1]);
+store_temp<BoundedInt<0, 4294967295>>([2]) -> ([2]);
+return([1], [2]);
+
+test::foo@F0([0]: BoundedIntGuarantee<0, 4294967295>) -> (BoundedIntGuarantee<0, 4294967295>, BoundedInt<0, 4294967295>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 200})
+
+//! > ==========================================================================
+
+//! > bounded_int_guarantee_content libfunc for u128.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo_code
+extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
+extern fn bounded_int_guarantee_content<const MIN: felt252, const MAX: felt252>(
+    ref value: BoundedIntGuarantee<MIN, MAX>,
+) -> BoundedInt<MIN, MAX> implicits() nopanic;
+
+fn foo(
+    ref value: BoundedIntGuarantee<0, 0xffffffffffffffffffffffffffffffff>,
+) -> BoundedInt<0, 0xffffffffffffffffffffffffffffffff> {
+    bounded_int_guarantee_content(ref value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > sierra_code
+type BoundedIntGuarantee<0, 340282366920938463463374607431768211455> = BoundedIntGuarantee<0, 340282366920938463463374607431768211455> [storable: true, drop: false, dup: false, zero_sized: false];
+type BoundedInt<0, 340282366920938463463374607431768211455> = BoundedInt<0, 340282366920938463463374607431768211455> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc bounded_int_guarantee_content<0, 340282366920938463463374607431768211455> = bounded_int_guarantee_content<0, 340282366920938463463374607431768211455>;
+libfunc store_temp<BoundedIntGuarantee<0, 340282366920938463463374607431768211455>> = store_temp<BoundedIntGuarantee<0, 340282366920938463463374607431768211455>>;
+libfunc store_temp<BoundedInt<0, 340282366920938463463374607431768211455>> = store_temp<BoundedInt<0, 340282366920938463463374607431768211455>>;
+
+F0:
+bounded_int_guarantee_content<0, 340282366920938463463374607431768211455>([0]) -> ([1], [2]);
+store_temp<BoundedIntGuarantee<0, 340282366920938463463374607431768211455>>([1]) -> ([1]);
+store_temp<BoundedInt<0, 340282366920938463463374607431768211455>>([2]) -> ([2]);
+return([1], [2]);
+
+test::foo@F0([0]: BoundedIntGuarantee<0, 340282366920938463463374607431768211455>) -> (BoundedIntGuarantee<0, 340282366920938463463374607431768211455>, BoundedInt<0, 340282366920938463463374607431768211455>);
+
+//! > function_costs
+test::foo: SmallOrderedMap({Const: 200})
+
+//! > ==========================================================================
+
 //! > bounded_int_guarantee_verify libfunc for u32.
 
 //! > test_runner_name
