@@ -14,8 +14,10 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        BlakeConcreteLibfunc::Blake2sCompress(_) => build_compress(builder, false),
-        BlakeConcreteLibfunc::Blake2sFinalize(_) => build_compress(builder, true),
+        BlakeConcreteLibfunc::Blake2sCompress(_)
+        | BlakeConcreteLibfunc::Blake2sCompressGuarantees(_) => build_compress(builder, false),
+        BlakeConcreteLibfunc::Blake2sFinalize(_)
+        | BlakeConcreteLibfunc::Blake2sFinalizeGuarantees(_) => build_compress(builder, true),
     }
 }
 
