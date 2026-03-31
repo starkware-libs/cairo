@@ -216,3 +216,26 @@ fn unstable_function_with_note() -> felt252 {
 //! > function_body
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Type alias as statement inside a function body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    type MyAlias = felt252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2075]: Unsupported use item in statement.
+ --> lib.cairo:2:5
+    type MyAlias = felt252;
+    ^^^^^^^^^^^^^^^^^^^^^^^
