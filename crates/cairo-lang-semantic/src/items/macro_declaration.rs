@@ -295,10 +295,7 @@ fn is_macro_rule_match_ex<'db>(
                     if let ast::OptionParamKind::ParamKind(param_kind) = param.kind(db) {
                         param_kind.kind(db).into()
                     } else {
-                        unreachable!(
-                            "Missing macro rule param kind, should have been handled by the \
-                             parser."
-                        )
+                        return None;
                     };
                 let placeholder_name = param.name(db).as_syntax_node().get_text_without_trivia(db);
                 match placeholder_kind {
