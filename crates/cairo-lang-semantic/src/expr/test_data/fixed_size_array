@@ -299,3 +299,32 @@ fn foo() {
 foo
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Loop expression in fixed-size array size position.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+fn f() -> [felt252; for _ in 0..1_u32 {}] {
+    [0]
+}
+
+//! > expected_diagnostics
+error[E2302]: Type mismatch: `()` and `core::integer::u32`.
+ --> lib.cairo:1:21
+fn f() -> [felt252; for _ in 0..1_u32 {}] {
+                    ^^^^^^^^^^^^^^^^^^^^
+
+error[E2172]: Fixed size array type must have a positive integer size.
+ --> lib.cairo:1:11
+fn f() -> [felt252; for _ in 0..1_u32 {}] {
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

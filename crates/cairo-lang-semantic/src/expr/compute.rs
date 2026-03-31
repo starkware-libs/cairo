@@ -2328,7 +2328,12 @@ fn compute_loop_body_semantic<'db>(
 ) -> (ExprId, InnerContext<'db>) {
     let db: &dyn Database = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
-        let return_type = new_ctx.get_return_type().unwrap();
+        // `None` means we're outside a function/loop context (e.g. a loop in array size position).
+        // The invalid usage will be caught by the caller; use `missing` to suppress cascading
+        // errors.
+        let return_type = new_ctx
+            .get_return_type()
+            .unwrap_or_else(|| TypeId::missing(new_ctx.db, skip_diagnostic()));
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
         let (statements, tail) = statements_and_tail(ctx.db, syntax.statements(db));
         let mut statements_semantic = vec![];
