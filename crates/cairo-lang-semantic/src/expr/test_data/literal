@@ -16,3 +16,24 @@ error[E2008]: A numeric literal of type core::pedersen::Pedersen cannot be creat
  --> lib.cairo:2:14
     let _a = 'a'_Pedersen;
              ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Numeric literal with a non-type suffix.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let _x = 1_boolean;
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E2011]: Not a type.
+ --> lib.cairo:2:14
+    let _x = 1_boolean;
+             ^^^^^^^^^
