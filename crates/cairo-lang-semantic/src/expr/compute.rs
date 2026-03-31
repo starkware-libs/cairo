@@ -4195,8 +4195,10 @@ pub fn resolve_variable_by_name<'db>(
     let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
         ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
-    let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
+    if let Expr::Var(expr_var) = &res {
+        let item = ResolvedGenericItem::Variable(expr_var.var);
+        ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
+    }
     Ok(res)
 }
 
