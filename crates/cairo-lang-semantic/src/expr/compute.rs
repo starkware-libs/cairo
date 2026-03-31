@@ -4122,27 +4122,7 @@ fn resolve_expr_path<'db>(
             is_callsite_prefixed,
             path.stable_ptr(ctx.db).into(),
         ) {
-            match res.clone() {
-                Expr::Var(expr_var) => {
-                    let item = ResolvedGenericItem::Variable(expr_var.var);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .generic
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                Expr::Constant(expr_const) => {
-                    let item = ResolvedConcreteItem::Constant(expr_const.const_value_id);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .concrete
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                _ => unreachable!(
-                    "get_binded_expr_by_name should only return variables or constants"
-                ),
-            };
+            mark_binded_expr_in_resolved_items(ctx, &identifier, &res);
             return Ok(res);
         }
     }
@@ -4195,9 +4175,28 @@ pub fn resolve_variable_by_name<'db>(
     let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
         ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
-    let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
+    mark_binded_expr_in_resolved_items(ctx, identifier, &res);
     Ok(res)
+}
+
+/// Marks a resolved binding expression in the resolved items map for tooling (e.g.,
+/// go-to-definition).
+fn mark_binded_expr_in_resolved_items<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    identifier: &ast::TerminalIdentifier<'db>,
+    expr: &Expr<'db>,
+) {
+    let ptr = identifier.stable_ptr(ctx.db);
+    let resolved = &mut ctx.resolver.data.resolved_items;
+    match expr {
+        Expr::Var(expr) => {
+            resolved.generic.insert(ptr, ResolvedGenericItem::Variable(expr.var));
+        }
+        Expr::Constant(expr) => {
+            resolved.concrete.insert(ptr, ResolvedConcreteItem::Constant(expr.const_value_id));
+        }
+        _ => unreachable!("`get_binded_expr_by_name` should only return variables or constants"),
+    }
 }
 
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
