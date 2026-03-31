@@ -4758,28 +4758,25 @@ pub fn compute_and_append_statement_semantic<'db>(
                         }
                     }
                 }
-                ast::ModuleItem::Module(_) => {
-                    unreachable!("Modules are not supported inside a function.")
+                ast::ModuleItem::Module(_)
+                | ast::ModuleItem::FreeFunction(_)
+                | ast::ModuleItem::ExternFunction(_)
+                | ast::ModuleItem::ExternType(_)
+                | ast::ModuleItem::Trait(_)
+                | ast::ModuleItem::Impl(_)
+                | ast::ModuleItem::ImplAlias(_)
+                | ast::ModuleItem::Struct(_)
+                | ast::ModuleItem::Enum(_)
+                | ast::ModuleItem::TypeAlias(_)
+                | ast::ModuleItem::InlineMacro(_)
+                | ast::ModuleItem::HeaderDoc(_)
+                | ast::ModuleItem::MacroDeclaration(_) => {
+                    return Err(ctx
+                        .diagnostics
+                        .report(stmt_item_syntax.stable_ptr(db), UnsupportedItemInStatement));
                 }
-                ast::ModuleItem::FreeFunction(_) => {
-                    unreachable!("FreeFunction type not supported.")
-                }
-                ast::ModuleItem::ExternFunction(_) => {
-                    unreachable!("ExternFunction type not supported.")
-                }
-                ast::ModuleItem::ExternType(_) => unreachable!("ExternType type not supported."),
-                ast::ModuleItem::Trait(_) => unreachable!("Trait type not supported."),
-                ast::ModuleItem::Impl(_) => unreachable!("Impl type not supported."),
-                ast::ModuleItem::ImplAlias(_) => unreachable!("ImplAlias type not supported."),
-                ast::ModuleItem::Struct(_) => unreachable!("Struct type not supported."),
-                ast::ModuleItem::Enum(_) => unreachable!("Enum type not supported."),
-                ast::ModuleItem::TypeAlias(_) => unreachable!("TypeAlias type not supported."),
-                ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
-                ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
-                ast::ModuleItem::MacroDeclaration(_) => {
-                    unreachable!("MacroDeclaration type not supported.")
-                }
-                ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
+                // Diagnostics reported on syntax level already.
+                ast::ModuleItem::Missing(_) => return Err(skip_diagnostic()),
             }
             statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
                 semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },

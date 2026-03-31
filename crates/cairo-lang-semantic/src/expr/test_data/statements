@@ -219,6 +219,29 @@ fn unstable_function_with_note() -> felt252 {
 
 //! > ==========================================================================
 
+//! > Type alias as statement inside a function body.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    type MyAlias = felt252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2197]: Item not supported as a statement.
+ --> lib.cairo:2:5
+    type MyAlias = felt252;
+    ^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
 //! > Declarative macro with parameter missing kind specifier.
 
 //! > test_runner_name
@@ -247,4 +270,3 @@ error[E2158]: No matching rule found in inline macro `m`.
  --> lib.cairo:5:5
     m!(1);
     ^^^^^
-
