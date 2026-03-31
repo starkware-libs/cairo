@@ -7,7 +7,6 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
@@ -3956,9 +3955,10 @@ fn member_access_expr<'db>(
         TypeLongId::Closure(_) => {
             Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
         }
-        TypeLongId::ImplType(impl_type_id) => {
-            unreachable!("Impl type should've been reduced {:?}.", impl_type_id.debug(ctx.db))
-        }
+        TypeLongId::ImplType(_) => Err(ctx.diagnostics.report(
+            rhs_syntax.stable_ptr(db),
+            TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
+        )),
         TypeLongId::Var(_) => Err(ctx.diagnostics.report(
             rhs_syntax.stable_ptr(db),
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
