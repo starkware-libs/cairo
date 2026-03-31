@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
+    NamedLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
@@ -1085,9 +1085,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     .intern(db),
                 );
             } else {
-                unreachable!(
-                    "Unexpected extern function in constant lowering: `{}`",
-                    extern_fn.full_path(db)
+                return Some(
+                    ConstValue::Missing(self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
+                    .intern(db),
                 );
             }
         }
