@@ -725,7 +725,8 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 .iter()
                                 .find(|(_, member_id)| m.id == *member_id)
                                 .map(|(expr_id, _)| self.evaluate(*expr_id))
-                                .expect("Should have been caught by semantic validation")
+                                // A missing field should have been caught by semantic validation.
+                                .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic()).intern(db))
                         })
                         .collect(),
                     *ty,
