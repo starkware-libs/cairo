@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774916056056,
+  "lastUpdate": 1775002494778,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1175,6 +1175,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1505165495,
             "range": "± 8789017",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Luca Moretti",
+            "username": "lmorett1",
+            "email": "moretluck@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e87ae95e117c2c7e11b022696a5ae8679e1e7d83",
+          "message": "docs: clarify ByteSpan slicing and safe range access (#9805)",
+          "timestamp": "2026-03-30T17:32:06Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/e87ae95e117c2c7e11b022696a5ae8679e1e7d83"
+        },
+        "date": 1775002494146,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1470561423,
+            "range": "± 9657758",
             "unit": "ns/iter"
           }
         ]
