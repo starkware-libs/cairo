@@ -31,3 +31,22 @@ error[E2019]: Can not create instances of phantom types.
  --> lib.cairo:10:5
     MyEnum::a(3);
     ^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Attribute argument with modifier keyword.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+#[cfg(ref x)]
+fn f() {}
+
+//! > expected_diagnostics
