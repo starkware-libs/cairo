@@ -24,9 +24,8 @@ Use parentheses to make evaluation order explicit when needed.
 | Comparison                            | `==` `!=` `<` `\<=` `>` `>=`   |
 .2+| Logical                            | `&&`                          |
                                         | `\|\|`                        |
-| Assignment                            | `=` `+=` `-=` `*=` `/=` `%=`
-
-                                          `<<=` `>>=` `&=` `^=` `\|=`    | Shift and bitwise compound assignment operators are not supported.
+.2+| Assignment                         | `=` `+=` `-=` `*=` `/=` `%=`          |
+                                        | `<<=` `>>=` `&=` `^=` `\|=`           | Shift and bitwise compound assignment operators are not supported.
 |===
 
 == Associativity
