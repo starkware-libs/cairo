@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
     ImplFunctionId, ImplImplDefId, LanguageElementId, LocalVarId, MemberId, ParamId, StructId,
     TraitConstantId, TraitFunctionId, TraitId, TraitImplId, TraitTypeId, VariantId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe, skip_diagnostic};
 use cairo_lang_utils::deque::Deque;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -514,7 +514,11 @@ impl<'db> SemanticRewriter<TypeLongId<'db>, DiagnosticAdded> for SubstitutionRew
         match value {
             TypeLongId::GenericParameter(generic_param) => {
                 if let Some(generic_arg) = self.substitution.get(generic_param) {
-                    let type_id = *extract_matches!(generic_arg, GenericArgumentId::Type);
+                    let GenericArgumentId::Type(type_id) = generic_arg else {
+                        // The generic arg kind doesn't match the type parameter; a diagnostic
+                        // (WrongGenericParamKindForImplFunction) was already reported.
+                        return Err(skip_diagnostic());
+                    };
                     // return self.rewrite(type_id.long(self.db));
                     *value = type_id.long(self.db).clone();
                     return Ok(RewriteResult::Modified);
