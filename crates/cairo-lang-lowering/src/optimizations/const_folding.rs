@@ -1325,10 +1325,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let var_info = self.var_info.get(&info.inputs[0].var_id)?;
             let desnapped = try_extract_matches!(var_info.as_ref(), VarInfo::Snapshot)?;
             let element_var_infos = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?;
-            // TODO(orizi): Propagate success values as well.
             if element_var_infos.is_empty() {
                 let arm = &info.arms[1];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]).into());
+                self.var_info.insert(
+                    arm.var_ids[0],
+                    VarInfo::Snapshot(VarInfo::Array(vec![]).into()).into(),
+                );
                 Some(BlockEnd::Goto(
                     arm.block_id,
                     VarRemapping {
@@ -1336,6 +1338,23 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     },
                 ))
             } else {
+                let (remaining, popped) = if id == self.array_snapshot_pop_front {
+                    (element_var_infos[1..].to_vec(), element_var_infos[0].clone())
+                } else {
+                    let split_idx = element_var_infos.len() - 1;
+                    (element_var_infos[..split_idx].to_vec(), element_var_infos[split_idx].clone())
+                };
+                let arm = &info.arms[0];
+                self.var_info.insert(
+                    arm.var_ids[0],
+                    VarInfo::Snapshot(VarInfo::Array(remaining).into()).into(),
+                );
+                if let Some(popped) = popped {
+                    self.var_info.insert(
+                        arm.var_ids[1],
+                        VarInfo::Box(VarInfo::Snapshot(popped).into()).into(),
+                    );
+                }
                 None
             }
         } else {
