@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775002494778,
+  "lastUpdate": 1775088793129,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1203,6 +1203,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1470561423,
             "range": "± 9657758",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Andrei Petrov",
+            "username": "apetro2",
+            "email": "andreipetrovqs@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "20ce92924bbc8fe4cf316fb1ba7645068a0d8f23",
+          "message": "docs: add missing cross-links (#9745)",
+          "timestamp": "2026-04-01T11:14:23Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/20ce92924bbc8fe4cf316fb1ba7645068a0d8f23"
+        },
+        "date": 1775088792235,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1563643312,
+            "range": "± 15163473",
             "unit": "ns/iter"
           }
         ]
