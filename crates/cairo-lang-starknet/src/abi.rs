@@ -229,19 +229,12 @@ impl<'db> AbiBuilder<'db> {
         // Add impls to ABI.
         for impl_def in impl_defs {
             let source = Source::Impl(impl_def);
-            let mut is_of_interface = None;
-            let check_is_of_interface = || -> Maybe<bool> {
-                if let Some(cached) = is_of_interface {
-                    return Ok(cached);
-                }
-                let result = self.db.impl_def_trait(impl_def)?.has_attr(self.db, INTERFACE_ATTR)?;
-                is_of_interface = Some(result);
-                Ok(result)
-            };
+            let is_of_interface =
+                self.db.impl_def_trait(impl_def)?.has_attr(self.db, INTERFACE_ATTR)?;
 
             // TODO(v3): deprecate the external attribute.
             if impl_def.has_attr(self.db, EXTERNAL_ATTR)? {
-                if check_is_of_interface()? {
+                if is_of_interface {
                     self.add_embedded_impl(source, impl_def, None)
                         .unwrap_or_else(|err| self.errors.push(err));
                 } else {
@@ -249,13 +242,13 @@ impl<'db> AbiBuilder<'db> {
                         .unwrap_or_else(|err| self.errors.push(err));
                 }
             } else if is_impl_abi_embed(self.db, impl_def)? {
-                if !check_is_of_interface()? {
+                if !is_of_interface {
                     self.errors.push(ABIError::EmbeddedImplMustBeInterface(source));
                 }
                 self.add_embedded_impl(source, impl_def, None)
                     .unwrap_or_else(|err| self.errors.push(err));
             } else if is_impl_abi_per_item(self.db, impl_def)? {
-                if check_is_of_interface()? {
+                if is_of_interface {
                     self.errors.push(ABIError::ContractInterfaceImplCannotBePerItem(source));
                 }
                 self.add_per_item_impl(impl_def, storage_type)
