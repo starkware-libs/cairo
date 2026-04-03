@@ -234,6 +234,10 @@ pub struct FilesGroupInput {
     /// Main input of the project. Lists all the crates configurations.
     #[returns(ref)]
     pub crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
+    /// Structural revision for databases that source crate configurations from a granular side
+    /// table instead of the aggregate `crate_configs` input. Queries like `crate_configs()` use
+    /// this to observe newly inserted handles.
+    pub granular_crate_configs_revision: u64,
     /// Structural revision for databases that source file content from granular per-file slots
     /// instead of only the raw-file path.
     pub granular_file_contents_revision: u64,
@@ -250,7 +254,7 @@ pub struct FilesGroupInput {
 
 #[salsa::tracked]
 pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
-    FilesGroupInput::new(db, None, 0, None, None, None)
+    FilesGroupInput::new(db, None, 0, 0, None, None, None)
 }
 
 /// Per-file content slots used by long-running tools that need granular invalidation.
@@ -262,9 +266,21 @@ pub struct GranularFileContents {
     pub generated_content: Option<ArcStr>,
 }
 
+/// Per-crate configuration input used by long-running tools that need granular invalidation.
+#[salsa::input]
+pub struct GranularCrateConfig {
+    #[returns(ref)]
+    pub config: Option<CrateConfigurationInput>,
+}
+
 pub type GranularFileContentStorage = Arc<RwLock<HashMap<FileInput, GranularFileContents>>>;
+pub type GranularCrateConfigStorage = Arc<RwLock<HashMap<CrateInput, GranularCrateConfig>>>;
 
 pub fn new_granular_file_content_storage() -> GranularFileContentStorage {
+    Default::default()
+}
+
+pub fn new_granular_crate_config_storage() -> GranularCrateConfigStorage {
     Default::default()
 }
 
@@ -336,6 +352,70 @@ where
     views(db).add::<Db, dyn GranularFileContentView>(cast_granular_file_content_view::<Db>);
 }
 
+/// Database view used by [crate_config] to retrieve crate configuration without depending on the
+/// aggregate `crate_configs` input for every lookup.
+pub trait GranularCrateConfigView: Database {
+    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
+        None
+    }
+
+    /// Returns a granular config handle for the given crate input, if one exists.
+    fn granular_crate_config_for_input(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<GranularCrateConfig> {
+        self.granular_crate_config_storage()?.read().unwrap().get(crate_input).copied()
+    }
+
+    /// Returns crate configuration input for the given crate id.
+    fn crate_config_input_for<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Option<&'db CrateConfigurationInput> {
+        let crate_input = self.crate_input(crate_id).clone();
+        self.crate_config_input_for_input(&crate_input)
+    }
+
+    /// Returns crate configuration input for the given crate input.
+    fn crate_config_input_for_input<'db>(
+        &'db self,
+        crate_input: &CrateInput,
+    ) -> Option<&'db CrateConfigurationInput> {
+        self.granular_crate_config_for_input(crate_input)
+            .and_then(|config| config.config(self).as_ref())
+    }
+}
+
+fn cast_granular_crate_config_view<Db: GranularCrateConfigView + 'static>(
+    db: NonNull<Db>,
+) -> NonNull<dyn GranularCrateConfigView> {
+    let db_ref = unsafe { db.as_ref() };
+    NonNull::from(db_ref as &dyn GranularCrateConfigView)
+}
+
+fn granular_crate_config_view<'db>(db: &'db dyn Database) -> &'db dyn GranularCrateConfigView {
+    let caster = catch_unwind(AssertUnwindSafe(|| {
+        *views(db).downcaster_for::<dyn GranularCrateConfigView>()
+    }))
+    .ok();
+
+    let caster = caster.expect("granular crate config view is not registered");
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+fn maybe_granular_crate_config_view<'db>(
+    db: &'db dyn Database,
+) -> Option<&'db dyn GranularCrateConfigView> {
+    catch_unwind(AssertUnwindSafe(|| granular_crate_config_view(db))).ok()
+}
+
+pub fn register_granular_crate_config_view<Db>(db: &Db)
+where
+    Db: Database + GranularCrateConfigView + 'static,
+{
+    views(db).add::<Db, dyn GranularCrateConfigView>(cast_granular_crate_config_view::<Db>);
+}
+
 /// Queries over the files group.
 pub trait FilesGroup: Database {
     /// Interned version of `crate_configs_input`.
@@ -400,6 +480,7 @@ pub fn init_files_group<'db>(db: &mut (dyn Database + 'db)) {
     // Initialize inputs.
     let inp = files_group_input(db);
     inp.set_crate_configs(db).to(Some(Default::default()));
+    inp.set_granular_crate_configs_revision(db).to(0);
     inp.set_granular_file_contents_revision(db).to(0);
     inp.set_flags(db).to(Some(Default::default()));
     inp.set_cfg_set(db).to(Some(Default::default()));
@@ -421,6 +502,24 @@ pub fn set_crate_configs_input(
 pub fn crate_configs<'db>(
     db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, CrateConfiguration<'db>> {
+    let _ = files_group_input(db).granular_crate_configs_revision(db);
+    if let Some(view) = maybe_granular_crate_config_view(db) {
+        if let Some(storage) = view.granular_crate_config_storage() {
+            return storage
+                .read()
+                .unwrap()
+                .iter()
+                .filter_map(|(crate_input, handle)| {
+                    let config = handle.config(db).as_ref()?.clone();
+                    Some((
+                        crate_input.clone().into_crate_long_id(db).intern(db),
+                        config.into_crate_configuration(db),
+                    ))
+                })
+                .collect();
+        }
+    }
+
     let inp = files_group_input(db).crate_configs(db).as_ref().expect("crate_configs is not set");
     inp.iter()
         .map(|(crate_input, config)| {
@@ -608,7 +707,14 @@ fn crate_config_helper<'db>(
     crt: CrateId<'db>,
 ) -> Option<CrateConfiguration<'db>> {
     match crt.long(db) {
-        CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
+        CrateLongId::Real { .. } => maybe_granular_crate_config_view(db)
+            .and_then(|view| view.crate_config_input_for(crt))
+            .or_else(|| {
+                let crate_input = db.crate_input(crt);
+                files_group_input(db).crate_configs(db).as_ref()?.get(crate_input)
+            })
+            .cloned()
+            .map(|config| config.into_crate_configuration(db)),
         CrateLongId::Virtual { name: _, file_id, settings, cache_file } => {
             Some(CrateConfiguration {
                 root: Directory::Virtual {
