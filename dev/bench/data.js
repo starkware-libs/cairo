@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775088793129,
+  "lastUpdate": 1775175230649,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1231,6 +1231,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1563643312,
             "range": "± 15163473",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Alejandro Torres",
+            "username": "atorrers",
+            "email": "Alejandrotorresndro@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "296c1c34a8b38fb58066281786dc5b9415893273",
+          "message": "docs: clarify unsupported operators in operator precedence (#9801)",
+          "timestamp": "2026-04-02T10:06:16Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/296c1c34a8b38fb58066281786dc5b9415893273"
+        },
+        "date": 1775175230180,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1456861527,
+            "range": "± 3439761",
             "unit": "ns/iter"
           }
         ]
