@@ -1,18 +1,31 @@
-use crate::db::init_files_group;
+use crate::db::{
+    GranularFileContentStorage, GranularFileContentView, init_files_group,
+    new_granular_file_content_storage, register_files_group_view,
+};
 
 // Test salsa database.
 #[salsa::db]
 #[derive(Clone)]
 pub struct FilesDatabaseForTesting {
     storage: salsa::Storage<FilesDatabaseForTesting>,
+    granular_file_contents: GranularFileContentStorage,
 }
 
 #[salsa::db]
 impl salsa::Database for FilesDatabaseForTesting {}
+impl GranularFileContentView for FilesDatabaseForTesting {
+    fn granular_file_content_storage(&self) -> Option<&GranularFileContentStorage> {
+        Some(&self.granular_file_contents)
+    }
+}
 
 impl Default for FilesDatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self {
+            storage: Default::default(),
+            granular_file_contents: new_granular_file_content_storage(),
+        };
+        register_files_group_view(&res);
         init_files_group(&mut res);
         res
     }
