@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
-    LanguageElementId, LookupItemId, MemberId, ModuleItemId, ModuleTypeAliasId,
+    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId,
+    ImplTypeDefId, LanguageElementId, LookupItemId, MemberId, ModuleItemId, ModuleTypeAliasId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
     TraitId, TraitItemId, TraitTypeId,
 };
@@ -98,6 +98,7 @@ implement_signature_data_retriever!(ImplDefId<'db>, get_impl_def_signature_data)
 implement_signature_data_retriever!(ImplAliasId<'db>, get_impl_alias_signature_data);
 implement_signature_data_retriever!(ExternFunctionId<'db>, get_extern_function_full_signature);
 implement_signature_data_retriever!(ImplConstantDefId<'db>, get_impl_constant_signature_data);
+implement_signature_data_retriever!(ImplImplDefId<'db>, get_impl_impl_def_signature_data);
 
 /// A utility function that retrieves [`ModuleItemInfo`] for [`ModuleItemId`].
 fn get_module_item_info<'db>(
@@ -449,6 +450,28 @@ fn get_impl_alias_signature_data<'db>(
         ))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
+        generic_args: None,
+        generic_params: None,
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+        full_path: item_id.full_path(db),
+    })
+}
+
+/// Retrieves data for impl impl def (associated impl alias) signature formatting.
+fn get_impl_impl_def_signature_data<'db>(
+    db: &'db dyn Database,
+    item_id: ImplImplDefId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
+    Ok(DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Impl(item_id))),
+        name: item_id.name(db),
+        visibility: Visibility::Private,
         generic_args: None,
         generic_params: None,
         variants: None,
