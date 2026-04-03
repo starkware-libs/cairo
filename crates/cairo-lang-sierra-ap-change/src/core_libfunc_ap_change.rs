@@ -206,7 +206,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             GasConcreteLibfunc::GetUnspentGas(_) => {
-                vec![ApChange::Known(BuiltinCostsType::cost_computation_steps(false, |_| 2) + 1)]
+                vec![ApChange::Known(BuiltinCostsType::cost_computation_steps(
+                    false,
+                    |token_type| info_provider.token_usages(token_type),
+                ))]
             }
             GasConcreteLibfunc::BuiltinWithdrawGas(_) => {
                 let cost_computation_ap_change: usize =
@@ -430,6 +433,14 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoundedIntConcreteLibfunc::WrapNonZero(_) => {
                 vec![ApChange::Known(0)]
             }
+            BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
+                let ap_change = if libfunc.range.lower.is_zero() { 0 } else { 1 }
+                    + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
+                vec![ApChange::Known(ap_change)]
+            }
+            BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
+                vec![ApChange::Known(9)]
+            }
         },
         Circuit(CircuitConcreteLibfunc::TryIntoCircuitModulus(_)) => {
             vec![ApChange::Known(1), ApChange::Known(1)]
@@ -455,7 +466,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             IntRangeConcreteLibfunc::PopFront(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         },
         Blake(libfunc) => match libfunc {
-            BlakeConcreteLibfunc::Blake2sCompress(_) | BlakeConcreteLibfunc::Blake2sFinalize(_) => {
+            BlakeConcreteLibfunc::Blake2sCompress(_)
+            | BlakeConcreteLibfunc::Blake2sFinalize(_)
+            | BlakeConcreteLibfunc::Blake2sCompressGuarantees(_)
+            | BlakeConcreteLibfunc::Blake2sFinalizeGuarantees(_) => {
                 vec![ApChange::Known(1)]
             }
         },

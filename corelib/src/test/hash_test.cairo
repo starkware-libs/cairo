@@ -1,4 +1,4 @@
-use crate::blake::{blake2s_compress, blake2s_finalize};
+use crate::blake::{blake2s_compress, blake2s_finalize, blake2s_finalize_guarantees};
 use crate::hash::{HashStateExTrait, HashStateTrait};
 use crate::poseidon::PoseidonTrait;
 use crate::test::test_utils::assert_eq;
@@ -94,18 +94,12 @@ fn test_blake2s() {
     let msg = BoxTrait::new([0_u32; 16]);
     let byte_count = 64_u32;
     assert_eq!(
-        blake2s_compress(state, byte_count, msg).unbox(),
-        [
-            0xe816e42a, 0x7d9875d8, 0xfda62c55, 0xa2c6f449, 0xca7af611, 0xdd2f7629, 0xbcd92323,
-            0x15c3ab3b,
-        ],
+        to_u256(blake2s_compress(state, byte_count, msg)),
+        0x2ae416e8d875987d552ca6fd49f4c6a211f67aca29762fdd2323d9bc3babc315,
     );
     assert_eq!(
-        blake2s_finalize(state, byte_count, msg).unbox(),
-        [
-            0x7a59305, 0x56b8b489, 0xbe3bb37e, 0x58ec6ba0, 0x2f53d5d3, 0x26cd7988, 0xde14c740,
-            0x3e3f372e,
-        ],
+        to_u256(blake2s_finalize(state, byte_count, msg)),
+        0x593a50789b4b8567eb33bbea06bec58d3d5532f8879cd2640c714de2e373f3e,
     );
 }
 
@@ -122,10 +116,67 @@ fn test_blake2s_with_abc() {
     // Message `abc` padded with zeros.
     let msg = BoxTrait::new(['cba', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     assert_eq!(
-        blake2s_finalize(state, 3, msg).unbox(),
+        to_u256(blake2s_finalize(state, 3, msg)),
+        0x508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982,
+    );
+}
+
+#[test]
+fn test_blake2s_split_and_guarantees() {
+    // hashing `abc` as it is done in RFC 7693 Appendix B.
+    // Initial state is the IV, with keylen 0 and output length 32.
+    let state = BoxTrait::new(
         [
-            0x8c5e8c50, 0xe2147c32, 0xa32ba7e1, 0x2f45eb4e, 0x208b4537, 0x293ad69e, 0x4c9b994d,
-            0x82596786,
+            0x6A09E667 ^ (0x01010000 ^ 0x20), 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F,
+            0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
         ],
     );
+    assert_eq!(
+        to_u256(blake2s_finalize_guarantees(state, 3, msg::from_felt252s('cba', 0))),
+        0x508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982,
+    );
+    assert_eq!(
+        to_u256(
+            blake2s_finalize_guarantees(
+                state, 32, msg::from_felt252s('\x0543210zyxwvutsrqponmlkjihgfedcba', 0),
+            ),
+        ),
+        0x39b7197928a66cd232d8c5b74d02215a21386228e772076eaf544395b5d32c03,
+    );
+}
+
+fn to_u256(value: Box<[u32; 8]>) -> u256 {
+    let mut result: u256 = 0;
+    for word in value.unbox().span() {
+        result *= 0x100000000;
+        result += (0x1000000 * (*word % 0x100)).into();
+        result += (0x10000 * (*word / 0x100 % 0x100)).into();
+        result += (0x100 * (*word / 0x10000 % 0x100)).into();
+        result += (*word / 0x1000000 % 0x100).into();
+    }
+    result
+}
+
+mod msg {
+    #[feature("bounded-int-utils")]
+    type U32Guarantee =
+        core::internal::bounded_int::BoundedIntGuarantee<0, 0xffffffff>;
+    pub extern fn u128_to_u32_guarantees(
+        value: u128,
+    ) -> (U32Guarantee, U32Guarantee, U32Guarantee, U32Guarantee) nopanic;
+
+    pub fn from_felt252s(a: felt252, b: felt252) -> Box<[U32Guarantee; 16]> {
+        let a: u256 = a.into();
+        let b: u256 = b.into();
+        let (a_w0, a_w1, a_w2, a_w3) = u128_to_u32_guarantees(a.low);
+        let (a_w4, a_w5, a_w6, a_w7) = u128_to_u32_guarantees(a.high);
+        let (b_w0, b_w1, b_w2, b_w3) = u128_to_u32_guarantees(b.low);
+        let (b_w4, b_w5, b_w6, b_w7) = u128_to_u32_guarantees(b.high);
+        BoxTrait::new(
+            [
+                a_w0, a_w1, a_w2, a_w3, a_w4, a_w5, a_w6, a_w7, b_w0, b_w1, b_w2, b_w3, b_w4, b_w5,
+                b_w6, b_w7,
+            ],
+        )
+    }
 }

@@ -45,7 +45,8 @@ struct ListNode {
 
 == Usage
 
-A struct is instantiated with the `StructName { member1: value1, member2: value2, ... }` syntax.
+A struct is instantiated with the xref:struct-expressions.adoc[struct expression] syntax
+`StructName { member1: value1, member2: value2, ... }`.
 For example:
 
 [source,cairo]
@@ -86,6 +87,7 @@ in the deconstruction. See xref:patterns.adoc[patterns] for more information.
 === The Dot (`.`) operator:
 
 Another way to access struct members is with the dot (`.`) operator.
+See xref:member-access-expressions.adoc[Member access expressions] for more details.
 
 [source,cairo]
 ----

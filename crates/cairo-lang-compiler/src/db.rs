@@ -120,7 +120,7 @@ pub struct RootDatabaseBuilder {
     auto_withdraw_gas: bool,
     panic_backtrace: bool,
     unsafe_panic: bool,
-    project_config: Option<Box<ProjectConfig>>,
+    project_config: Option<ProjectConfig>,
     cfg_set: Option<CfgSet>,
     optimizations: Optimizations,
 }
@@ -162,7 +162,7 @@ impl RootDatabaseBuilder {
     }
 
     pub fn with_project_config(&mut self, config: ProjectConfig) -> &mut Self {
-        self.project_config = Some(Box::new(config));
+        self.project_config = Some(config);
         self
     }
 
@@ -212,7 +212,7 @@ impl RootDatabaseBuilder {
         db.set_flag(unsafe_panic_flag_id, Some(Flag::UnsafePanic(self.unsafe_panic)));
 
         if let Some(config) = &self.project_config {
-            update_crate_roots_from_project_config(&mut db, config.as_ref());
+            update_crate_roots_from_project_config(&mut db, config);
         }
         validate_corelib(&db)?;
 

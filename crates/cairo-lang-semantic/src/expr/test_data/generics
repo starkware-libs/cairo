@@ -712,3 +712,35 @@ error[E2041]: Unexpected argument type. Expected: "test::MyStruct::<2>", found: 
  --> lib.cairo:11:10
     bar2(s);
          ^
+
+//! > ==========================================================================
+
+//! > Impl function with mismatched generic param kind (impl vs type).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Foo {
+    fn bar<T>(self: T);
+}
+impl FooImpl of Foo {
+    fn bar<+Drop<felt252>>(self: felt252) {}
+}
+
+//! > expected_diagnostics
+error[E2036]: Parameter name of impl function FooImpl::bar is incompatible with Foo::bar parameter `T`.
+ --> lib.cairo:5:12
+    fn bar<+Drop<felt252>>(self: felt252) {}
+           ^^^^^^^^^^^^^^
+
+error[E2038]: Generic parameter kind of impl function `FooImpl::bar` is incompatible with `Foo::bar`. Expected: `Type`, actual: `Impl`.
+ --> lib.cairo:5:12
+    fn bar<+Drop<felt252>>(self: felt252) {}
+           ^^^^^^^^^^^^^^

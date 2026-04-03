@@ -255,13 +255,7 @@ pub fn core_libfunc_cost(
             ],
             RedepositGas(_) => vec![BranchCost::RedepositGas],
             GetAvailableGas(_) => vec![ConstCost::default().into()],
-            GetUnspentGas(_) => vec![
-                ConstCost::steps(
-                    BuiltinCostsType::cost_computation_steps(false, |_| 2).into_or_panic::<i32>()
-                        + 1,
-                )
-                .into(),
-            ],
+            GetUnspentGas(_) => vec![BranchCost::GetUnspentGas],
             BuiltinWithdrawGas(_) => {
                 vec![
                     BranchCost::WithdrawGas(WithdrawGasBranchInfo {
@@ -560,6 +554,15 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::WrapNonZero(_) => {
                 vec![ConstCost::steps(0).into()]
             }
+            BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
+                let steps = 2
+                    + if libfunc.range.lower.is_zero() { 0 } else { 1 }
+                    + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
+                vec![ConstCost { steps, holes: 0, range_checks: 2, range_checks96: 0 }.into()]
+            }
+            BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
+                vec![ConstCost::steps(7).into()]
+            }
         },
         Circuit(libfunc) => match libfunc {
             CircuitConcreteLibfunc::AddInput(_) => {
@@ -646,7 +649,10 @@ pub fn core_libfunc_cost(
             }
         },
         Blake(
-            BlakeConcreteLibfunc::Blake2sCompress(_) | BlakeConcreteLibfunc::Blake2sFinalize(_),
+            BlakeConcreteLibfunc::Blake2sCompress(_)
+            | BlakeConcreteLibfunc::Blake2sFinalize(_)
+            | BlakeConcreteLibfunc::Blake2sCompressGuarantees(_)
+            | BlakeConcreteLibfunc::Blake2sFinalizeGuarantees(_),
         ) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(0),
             pre_cost: PreCost::builtin(CostTokenType::Blake),
@@ -743,6 +749,12 @@ impl BranchCost {
                     base
                 }
             }
+            BranchCost::GetUnspentGas => ops.const_cost(ConstCost::steps(
+                BuiltinCostsType::cost_computation_steps(false, |token_type| {
+                    info_provider.token_usages(token_type)
+                })
+                .into_or_panic(),
+            )),
         }
     }
 
@@ -780,6 +792,7 @@ impl BranchCost {
             BranchCost::BranchAlign | BranchCost::RedepositGas => {
                 precost_statement_vars_cost(ops).collect()
             }
+            BranchCost::GetUnspentGas => Default::default(),
             BranchCost::WithdrawGas(info) => {
                 if info.success {
                     precost_statement_vars_cost(ops).map(|(k, v)| (k, -v)).collect()

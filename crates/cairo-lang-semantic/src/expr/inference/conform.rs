@@ -120,16 +120,14 @@ impl<'db> InferenceConform<'db> for Inference<'db, '_> {
         match long_ty1 {
             TypeLongId::Var(var) => return Ok((self.assign_ty(*var, ty0)?, 0)),
             TypeLongId::Missing(_) => return Ok((ty1, 0)),
-            TypeLongId::Snapshot(inner_ty) => {
-                if ty0_is_self {
-                    if *inner_ty == ty0 {
-                        return Ok((ty1, 1));
-                    }
-                    if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_))
-                        && let TypeLongId::Var(var) = inner_ty.long(self.db)
-                    {
-                        return Ok((self.assign_ty(*var, ty0)?, 1));
-                    }
+            TypeLongId::Snapshot(inner_ty) if ty0_is_self => {
+                if *inner_ty == ty0 {
+                    return Ok((ty1, 1));
+                }
+                if !matches!(ty0.long(self.db), TypeLongId::Snapshot(_))
+                    && let TypeLongId::Var(var) = inner_ty.long(self.db)
+                {
+                    return Ok((self.assign_ty(*var, ty0)?, 1));
                 }
             }
             TypeLongId::ImplType(impl_type) => {
@@ -802,11 +800,11 @@ impl<'db> Inference<'db, '_> {
             }
             TypeLongId::Tuple(tys) => tys.iter().any(|ty| self.internal_ty_contains_var(*ty, var)),
             TypeLongId::Snapshot(ty) => self.internal_ty_contains_var(*ty, var),
-            TypeLongId::Var(new_var) => {
-                if InferenceVar::Type(new_var.id) == var {
+            TypeLongId::Var(ty_var) => {
+                if InferenceVar::Type(ty_var.id) == var {
                     return true;
                 }
-                if let Some(ty) = self.type_assignment.get(&new_var.id) {
+                if let Some(ty) = self.type_assignment.get(&ty_var.id) {
                     return self.internal_ty_contains_var(*ty, var);
                 }
                 false

@@ -8,12 +8,12 @@ description = "Sierra representation."
 build = "src/build.rs"                 # LALRPOP preprocessing
 
 [build-dependencies]
-lalrpop = "0.22.2"
+lalrpop = "0.23.1"
 regex = "1"
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.0", features = [
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "=2.16.1", features = [
   "schemars",
   "serde",
 ] }

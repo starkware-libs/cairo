@@ -24,6 +24,24 @@ let mut arr = array![1, 2, 3];
 arr = array![4, 5, 6];  // Assigns a new array to arr
 ----
 
+== Compound assignment
+
+Cairo also supports arithmetic compound assignment operators: `+=`, `-=`, `*=`, `/=`, and `%=`.
+These operators update the left-hand side in place and are trait-driven via
+`core::ops::{AddAssign, SubAssign, MulAssign, DivAssign, RemAssign}`.
+
+[source,cairo]
+----
+let mut x = 10;
+x += 3;
+x *= 2;
+assert!(x == 26);
+----
+
+Bitwise and shift compound assignment operators (`&=`, `^=`, `|=`, `<<=`, `>>=`) are not
+supported. See xref:arithmetic-and-logical-operators.adoc[Arithmetic operators] and
+xref:bitwise-operators.adoc[Bitwise operators] for details.
+
 == Assignment as an expression
 
 In Cairo, assignment is an expression, not just a statement.

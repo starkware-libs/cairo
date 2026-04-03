@@ -69,6 +69,6 @@ Invalid examples (illustrative):
 == Related
 
 - xref:expressions.adoc[Expressions]
-- xref:array-types.adoc[Array types] (🚧)
-- xref:slice-types.adoc[Slice types] (🚧)
+- xref:array-types.adoc[Array types]
+- xref:slice-types.adoc[Slice types]
 - xref:tuple-expressions.adoc[Tuple expressions]

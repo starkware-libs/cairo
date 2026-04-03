@@ -1,7 +1,10 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::NamedLanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::Tracked;
+use cairo_lang_lowering as lowering;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::items::constant::ConstValueId;
 use cairo_lang_sierra::extensions::const_type::{
     ConstAsBoxLibfunc, ConstAsImmediateLibfunc, ConstType,
@@ -20,7 +23,6 @@ use salsa::Database;
 use semantic::items::constant::ConstValue;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
-use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra;

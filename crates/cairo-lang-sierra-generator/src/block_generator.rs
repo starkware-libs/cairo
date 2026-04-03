@@ -4,16 +4,17 @@ mod test;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::flag::FlagsGroup;
+use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
+use cairo_lang_sierra as sierra;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use lowering::analysis::StatementLocation;
 use lowering::{MatchArm, VarUsage};
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;
-use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
 use crate::block_generator::sierra::ids::ConcreteLibfuncId;
 use crate::db::SierraGenGroup;

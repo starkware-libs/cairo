@@ -216,3 +216,35 @@ fn unstable_function_with_note() -> felt252 {
 //! > function_body
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Declarative macro with parameter missing kind specifier.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    m!(1);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($x) => { 0 };
+}
+
+//! > expected_diagnostics
+error[E1010]: Macro parameter must have a kind.
+ --> lib.cairo:2:7
+    ($x) => { 0 };
+      ^
+
+error[E2158]: No matching rule found in inline macro `m`.
+ --> lib.cairo:5:5
+    m!(1);
+    ^^^^^
+

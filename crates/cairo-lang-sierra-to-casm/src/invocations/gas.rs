@@ -1,6 +1,5 @@
 use cairo_lang_casm::builder::{CasmBuilder, Var};
-use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
-use cairo_lang_casm::operand::DerefOrImmediate;
+use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::{casm_build_extend, cell_ref};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra_gas::core_libfunc_cost::InvocationCostInfoProvider;
@@ -97,6 +96,22 @@ fn build_withdraw_gas(
 fn build_redeposit_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    build_calculate_unspent_gas(builder, true)
+}
+
+/// Handles the get_unspent_gas invocation.
+fn build_get_unspent_gas(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    build_calculate_unspent_gas(builder, false)
+}
+
+/// Common implementation for redeposit_gas and get_unspent_gas.
+/// If `is_redeposit` is true, the new gas value is returned as the gas builtin.
+fn build_calculate_unspent_gas(
+    builder: CompiledInvocationBuilder<'_>,
+    is_redeposit: bool,
+) -> Result<CompiledInvocation, InvocationError> {
     let [gas_counter] = builder.try_get_single_cells()?;
     builder.validate_token_vars_availability()?;
     let requested_count = builder.token_usages(CostTokenType::Const);
@@ -105,18 +120,21 @@ fn build_redeposit_gas(
         let gas_counter_value =
             gas_counter.to_deref().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
-        return Ok(builder.build_only_reference_changes(
-            [if requested_count == 0 {
-                ReferenceExpression::from_cell(CellExpression::Deref(gas_counter_value))
-            } else {
-                ReferenceExpression::from_cell(CellExpression::BinOp {
-                    op: CellOperator::Add,
-                    a: gas_counter_value,
-                    b: DerefOrImmediate::Immediate(requested_count.into()),
-                })
-            }]
-            .into_iter(),
+        let updated_gas = ReferenceExpression::from_cell(CellExpression::add_with_const(
+            gas_counter_value,
+            requested_count,
         ));
+        return Ok(if is_redeposit {
+            builder.build_only_reference_changes([updated_gas].into_iter())
+        } else {
+            builder.build_only_reference_changes(
+                [
+                    ReferenceExpression::from_cell(CellExpression::Deref(gas_counter_value)),
+                    updated_gas,
+                ]
+                .into_iter(),
+            )
+        });
     }
     let mut casm_builder = CasmBuilder::with_capacity(16, 0);
     add_input_variables! {casm_builder,
@@ -132,52 +150,15 @@ fn build_redeposit_gas(
     casm_build_extend! {casm_builder,
         let updated_gas = gas_counter + total_requested_count;
     };
+    let (outputs, extra_costs): (&[&[Var]], _) = if is_redeposit {
+        (&[&[updated_gas]], Some([requested_count as i32]))
+    } else {
+        (&[&[gas_counter], &[updated_gas]], None)
+    };
     Ok(builder.build_from_casm_builder_ex(
         casm_builder,
-        [("Fallthrough", &[&[updated_gas]], None)],
-        CostValidationInfo { builtin_infos: vec![], extra_costs: Some([requested_count as i32]) },
-        pre_instructions,
-    ))
-}
-
-/// Handles the get_unspent_gas invocation.
-fn build_get_unspent_gas(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [gas_counter] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::with_capacity(16, 0);
-    add_input_variables! {casm_builder,
-        deref gas_counter;
-    };
-    let (pre_instructions, cost_builtin_ptr) = add_cost_builtin_ptr_fetch_code(&mut casm_builder);
-
-    let get_token_count = |token: CostTokenType| {
-        if let GasWallet::Value(wallet) = &builder.environment.gas_wallet {
-            wallet.get(&token).copied().unwrap_or_default()
-        } else {
-            0
-        }
-    };
-    casm_build_extend! {casm_builder,
-        tempvar builtin_cost = cost_builtin_ptr;
-        const const_count = get_token_count(CostTokenType::Const);
-        tempvar total_unspent = gas_counter + const_count;
-    };
-    let mut total_unspent = total_unspent;
-    for token_type in CostTokenType::iter_precost() {
-        let index = token_type.offset_in_builtin_costs();
-        casm_build_extend! {casm_builder,
-            tempvar single_cost = builtin_cost[index];
-            const count = get_token_count(*token_type);
-            tempvar multi_cost = single_cost * count;
-            tempvar updated_total_unspent = total_unspent + multi_cost;
-        };
-        total_unspent = updated_total_unspent;
-    }
-    Ok(builder.build_from_casm_builder_ex(
-        casm_builder,
-        [("Fallthrough", &[&[gas_counter], &[total_unspent]], None)],
-        Default::default(),
+        [("Fallthrough", outputs, None)],
+        CostValidationInfo { builtin_infos: vec![], extra_costs },
         pre_instructions,
     ))
 }

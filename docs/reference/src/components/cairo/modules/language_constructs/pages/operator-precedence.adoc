@@ -1,8 +1,10 @@
 = Operator precedence
 
-Below is the table of operator precedence.
+Operator precedence defines how expressions with multiple operators are grouped
+when no parentheses are used.
+Operators listed higher in the table bind tighter (are evaluated first).
 
-The higher an operator is in the table, the earlier it is evaluated.
+Use parentheses to make evaluation order explicit when needed.
 
 [cols="1,1,1",options="header"]
 |===
@@ -22,7 +24,59 @@ The higher an operator is in the table, the earlier it is evaluated.
 | Comparison                            | `==` `!=` `<` `\<=` `>` `>=`   |
 .2+| Logical                            | `&&`                          |
                                         | `\|\|`                        |
-| Assignment                            | `=` `+=` `-=` `*=` `/=` `%=`
-
-                                          `<\<=` `>>=` `&=` `^=` `\|=`   | Second line not yet supported.
+.2+| Assignment                         | `=` `+=` `-=` `*=` `/=` `%=`          |
+                                        | `<<=` `>>=` `&=` `^=` `\|=`           | Shift and bitwise compound assignment operators are not supported.
 |===
+
+== Associativity
+
+When multiple binary operators from the same precedence group appear in one
+expression, they are parsed left to right.
+
+[source,cairo]
+----
+let x = 20 - 5 - 3; // Parsed as (20 - 5) - 3
+let y = 8 / 2 / 2;  // Parsed as (8 / 2) / 2
+----
+
+== Examples
+
+[source,cairo]
+----
+// Arithmetic binds tighter than comparison and logical operators.
+let a = 2 + 3 * 4 == 14 && true; // ((2 + (3 * 4)) == 14) && true
+
+// Prefix unary operators bind tighter than arithmetic operators.
+let b = -x * 2; // (-x) * 2
+
+// Postfix operators bind tighter than arithmetic operators.
+let c = arr[0] + 1; // (arr[0]) + 1
+
+// Use parentheses to override default precedence.
+let d = (2 + 3) * 4;
+----
+
+== Chained comparisons
+
+Chained comparisons such as `a < b < c` are not supported.
+Write them with logical conjunctions instead:
+
+[source,cairo]
+----
+let in_range = a < b && b < c;
+----
+
+== Chained equality
+
+Chained equality such as `a == b == c` is not supported.
+Write it with logical conjunctions instead:
+
+[source,cairo]
+----
+let all_equal = a == b && b == c;
+----
+
+== Related
+
+- xref:operator-expressions.adoc[Operator expressions]
+- xref:parentheses.adoc[Parenthesized expressions]

@@ -1188,7 +1188,7 @@ impl GenericArgumentCached {
 enum TypeCached {
     Concrete(ConcreteTypeCached),
     Tuple(Vec<TypeIdCached>),
-    Snapshot(Box<TypeIdCached>),
+    Snapshot(TypeIdCached),
     GenericParameter(GenericParamCached),
     ImplType(ImplTypeCached),
     FixedSizeArray(TypeIdCached, ConstValueCached),
@@ -1205,9 +1205,7 @@ impl TypeCached {
             TypeLongId::Tuple(vec) => {
                 TypeCached::Tuple(vec.into_iter().map(|ty| TypeIdCached::new(ty, ctx)).collect())
             }
-            TypeLongId::Snapshot(type_id) => {
-                TypeCached::Snapshot(Box::new(TypeIdCached::new(type_id, ctx)))
-            }
+            TypeLongId::Snapshot(type_id) => TypeCached::Snapshot(TypeIdCached::new(type_id, ctx)),
             TypeLongId::GenericParameter(generic_param_id) => TypeCached::GenericParameter(
                 GenericParamCached::new(generic_param_id, &mut ctx.defs_ctx),
             ),

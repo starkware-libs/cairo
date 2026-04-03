@@ -6,6 +6,8 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::{CrateId, SmolStrId};
+use cairo_lang_lowering as lowering;
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_semantic::items::constant::ConstantSemantic;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
@@ -32,7 +34,6 @@ use itertools::chain;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt as Felt252;
-use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
 use crate::compile::{SemanticEntryPoints, extract_semantic_entrypoints};

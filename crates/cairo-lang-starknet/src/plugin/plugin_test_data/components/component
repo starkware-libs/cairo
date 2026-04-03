@@ -1214,9 +1214,6 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     let res = MyImpl::<TContractState, X, TContractStateDrop>::get(@contract_state, __arg_addr);
     let mut arr = ArrayTrait::new();
@@ -1244,9 +1241,6 @@ impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: Unsa
         'Failed to deserialize param #2'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let Some(_) = core::gas::withdraw_gas_all(core::gas::get_builtin_costs()) else {
-        core::panic_with_felt252('Out of gas');
-    };
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
     MyImpl::<TContractState, X, TContractStateDrop>::set(ref contract_state, __arg_addr, __arg_value);
     let mut arr = ArrayTrait::new();

@@ -33,6 +33,16 @@
  
  This is defined in link:{cairo-repo}/crates/cairo-lang-parser/src/operators.rs[crates/cairo-lang-parser/src/operators.rs].
  
+ == Chained equality
+ 
+ Chained equality such as `a == b == c` is not supported.
+ Write it as explicit conjunctions:
+ 
+ [source,cairo]
+ ----
+ let all_equal = a == b && b == c;
+ ----
+ 
  == Examples
  
  === Primitives

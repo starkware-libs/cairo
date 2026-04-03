@@ -1,12 +1,15 @@
 use std::sync::{LazyLock, Mutex};
 
+use cairo_lang_defs as defs;
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
+use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
+use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
 use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
 use cairo_lang_semantic::test_utils::setup_test_crate;
@@ -18,7 +21,6 @@ use lowering::ids::ConcreteFunctionWithBodyLongId;
 use lowering::optimizations::config::Optimizations;
 use salsa::{Database, Setter};
 use semantic::inline_macros::get_default_plugin_suite;
-use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self, LabelLongId};

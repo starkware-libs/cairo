@@ -210,24 +210,26 @@ impl<'db> TypeLongId<'db> {
     }
 
     /// A utility function for extracting the generic parameters arguments from TypeLongId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
     pub fn extract_generic_params(
         &self,
         db: &'db dyn Database,
         generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
     ) -> Maybe<()> {
         match self {
             TypeLongId::Concrete(concrete_type_id) => {
                 for garg in concrete_type_id.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             TypeLongId::Tuple(tys) => {
                 for ty in tys {
-                    ty.long(db).extract_generic_params(db, generic_parameters)?
+                    ty.extract_generic_params(db, generic_parameters, visited)?
                 }
             }
             TypeLongId::Snapshot(ty) => {
-                ty.long(db).extract_generic_params(db, generic_parameters)?
+                ty.extract_generic_params(db, generic_parameters, visited)?
             }
             TypeLongId::GenericParameter(generic_param) => {
                 generic_parameters.insert(*generic_param);
@@ -235,12 +237,12 @@ impl<'db> TypeLongId<'db> {
             TypeLongId::Var(_) => {}
             TypeLongId::Coupon(_) => {}
             TypeLongId::FixedSizeArray { type_id, .. } => {
-                type_id.long(db).extract_generic_params(db, generic_parameters)?
+                type_id.extract_generic_params(db, generic_parameters, visited)?
             }
             TypeLongId::ImplType(impl_type_id) => {
                 let concrete_trait_id = impl_type_id.impl_id.concrete_trait(db)?;
                 for garg in concrete_trait_id.generic_args(db) {
-                    garg.extract_generic_params(db, generic_parameters)?;
+                    garg.extract_generic_params(db, generic_parameters, visited)?;
                 }
             }
             TypeLongId::Closure(closure_ty) => {
@@ -249,12 +251,28 @@ impl<'db> TypeLongId<'db> {
                     &closure_ty.captured_types,
                     std::iter::once(&closure_ty.ret_ty)
                 ) {
-                    ty.long(db).extract_generic_params(db, generic_parameters)?
+                    ty.extract_generic_params(db, generic_parameters, visited)?
                 }
             }
             TypeLongId::Missing(diag_added) => return Err(*diag_added),
         };
         Ok(())
+    }
+}
+
+impl<'db> TypeId<'db> {
+    /// A utility function for extracting the generic parameters arguments from TypeId.
+    /// Uses memoization via `visited` to avoid re-traversing shared subtypes in DAG structures.
+    pub fn extract_generic_params(
+        self,
+        db: &'db dyn Database,
+        generic_parameters: &mut OrderedHashSet<GenericParamId<'db>>,
+        visited: &mut OrderedHashSet<TypeId<'db>>,
+    ) -> Maybe<()> {
+        if !visited.insert(self) {
+            return Ok(());
+        }
+        self.long(db).extract_generic_params(db, generic_parameters, visited)
     }
 }
 impl<'db> DebugWithDb<'db> for TypeLongId<'db> {

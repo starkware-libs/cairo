@@ -6,6 +6,8 @@ use std::sync::Arc;
 use std::vec::IntoIter;
 
 use ark_ff::{BigInteger, PrimeField};
+use ark_secp256k1 as secp256k1;
+use ark_secp256r1 as secp256r1;
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, ExternalHint, Hint, StarknetHint};
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -40,9 +42,8 @@ use itertools::Itertools;
 use num_bigint::{BigInt, BigUint};
 use num_integer::{ExtendedGcd, Integer};
 use num_traits::{Signed, ToPrimitive, Zero};
-use rand::Rng;
+use rand::RngExt;
 use starknet_types_core::felt::{Felt as Felt252, NonZeroFelt};
-use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::contract_address::calculate_contract_address;
 use self::dict_manager::DictSquashExecScope;
@@ -1807,7 +1808,7 @@ fn alloc_memory(
 }
 
 /// Sample a random point on the elliptic curve and insert into memory.
-pub fn random_ec_point<R: rand::RngCore>(
+pub fn random_ec_point<R: rand::Rng>(
     vm: &mut VirtualMachine,
     x: &CellRef,
     y: &CellRef,

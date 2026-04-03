@@ -71,15 +71,25 @@ Use parentheses to override the default precedence: `(2 + 3) * 4`.
 See xref:operator-precedence.adoc[Operator precedence] for the complete
 precedence table and associativity rules.
 
+Chained comparisons such as `a < b < c` are not supported.
+Write them as separate comparisons combined with `&&`, for example:
+`a < b && b < c`.
+
+Chained equality such as `a == b == c` is also not supported.
+Write it as separate equality comparisons combined with `&&`, for example:
+`a == b && b == c`.
+
 == Implementing operators for custom types
 
 Most binary operators in Cairo (arithmetics, comparison, bitwise, etc.) are
 trait-driven and can be overloaded for custom types by implementing the
 appropriate traits from `core::traits`.
 
-Note that some operators like indexing `[]` and compound assignment operator
-(`+=`, `-=`, `*=`, `/=`) are trait-driven but their traits are located
+Note that some operators like indexing `[]` and arithmetic compound assignment operators
+(`+=`, `-=`, `*=`, `/=`, `%=`) are trait-driven but their traits are located
 outside of `core::traits`.
+Bitwise and shift compound assignment operators (`&=`, `^=`, `|=`, `<<=`, `>>=`)
+are not supported.
 
 To enable operators for custom type, implement the corresponding traits:
 

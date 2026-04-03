@@ -230,12 +230,11 @@ pub fn parse_documentation_comment(documentation_comment: &str) -> Vec<Documenta
                 TagEnd::List(_) => {
                     list_nesting.pop();
                 }
-                TagEnd::Item => {
+                TagEnd::Item
                     if !matches!(last_two_events[0], Some(Event::End(_)))
-                        | !matches!(last_two_events[1], Some(Event::End(_)))
-                    {
-                        tokens.push(DocumentationCommentToken::Content("\n".to_string()));
-                    }
+                        | !matches!(last_two_events[1], Some(Event::End(_))) =>
+                {
+                    tokens.push(DocumentationCommentToken::Content("\n".to_string()));
                 }
                 TagEnd::TableHead => {
                     tokens.push(DocumentationCommentToken::Content(format!(
