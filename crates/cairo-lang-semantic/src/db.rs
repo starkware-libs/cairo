@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::ptr::NonNull;
+use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
@@ -16,6 +19,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{Intern, require};
 use itertools::{Itertools, chain};
+use salsa::plumbing::views;
 use salsa::{Database, Setter};
 
 use crate::SemanticDiagnostic;
@@ -46,11 +50,74 @@ pub struct SemanticGroupInput {
     pub default_analyzer_plugins: Option<Vec<AnalyzerPluginLongId>>,
     #[returns(ref)]
     pub analyzer_plugin_overrides: Option<OrderedHashMap<CrateInput, Arc<[AnalyzerPluginLongId]>>>,
+    pub granular_analyzer_plugin_overrides_revision: u64,
 }
 
 #[salsa::tracked(returns(ref))]
 pub fn semantic_group_input(db: &dyn Database) -> SemanticGroupInput {
-    SemanticGroupInput::new(db, None, None)
+    SemanticGroupInput::new(db, None, None, 0)
+}
+
+#[salsa::input]
+pub struct GranularAnalyzerPluginOverride {
+    #[returns(ref)]
+    pub plugins: Option<Arc<[AnalyzerPluginLongId]>>,
+}
+
+pub type GranularAnalyzerPluginOverrideStorage =
+    Arc<RwLock<HashMap<CrateInput, GranularAnalyzerPluginOverride>>>;
+
+pub trait GranularAnalyzerPluginOverrideView: Database {
+    fn granular_analyzer_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularAnalyzerPluginOverrideStorage> {
+        None
+    }
+
+    fn analyzer_plugin_override_for_input(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<GranularAnalyzerPluginOverride> {
+        self.granular_analyzer_plugin_override_storage()?
+            .read()
+            .unwrap()
+            .get(crate_input)
+            .copied()
+    }
+}
+
+fn cast_granular_analyzer_plugin_override_view<Db: GranularAnalyzerPluginOverrideView + 'static>(
+    db: NonNull<Db>,
+) -> NonNull<dyn GranularAnalyzerPluginOverrideView> {
+    let db_ref = unsafe { db.as_ref() };
+    NonNull::from(db_ref as &dyn GranularAnalyzerPluginOverrideView)
+}
+
+fn granular_analyzer_plugin_override_view<'db>(
+    db: &'db dyn Database,
+) -> &'db dyn GranularAnalyzerPluginOverrideView {
+    let caster = catch_unwind(AssertUnwindSafe(|| {
+        *views(db).downcaster_for::<dyn GranularAnalyzerPluginOverrideView>()
+    }))
+    .ok();
+
+    let caster = caster.expect("granular analyzer plugin override view is not registered");
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+fn maybe_granular_analyzer_plugin_override_view<'db>(
+    db: &'db dyn Database,
+) -> Option<&'db dyn GranularAnalyzerPluginOverrideView> {
+    catch_unwind(AssertUnwindSafe(|| granular_analyzer_plugin_override_view(db))).ok()
+}
+
+pub fn register_granular_analyzer_plugin_override_view<Db>(db: &Db)
+where
+    Db: Database + GranularAnalyzerPluginOverrideView + 'static,
+{
+    views(db).add::<Db, dyn GranularAnalyzerPluginOverrideView>(
+        cast_granular_analyzer_plugin_override_view::<Db>,
+    );
 }
 
 fn default_analyzer_plugins_input(db: &dyn Database) -> &[AnalyzerPluginLongId] {
@@ -162,6 +229,7 @@ impl<T: Database + ?Sized> SemanticGroup for T {}
 /// Initializes the [`SemanticGroup`] database to a proper state.
 pub fn init_semantic_group(db: &mut dyn Database) {
     semantic_group_input(db).set_analyzer_plugin_overrides(db).to(Some(OrderedHashMap::default()));
+    semantic_group_input(db).set_granular_analyzer_plugin_overrides_revision(db).to(0);
 }
 
 #[salsa::tracked]
@@ -174,6 +242,28 @@ fn default_analyzer_plugins(db: &dyn Database) -> Arc<Vec<AnalyzerPluginId<'_>>>
 fn analyzer_plugin_overrides(
     db: &dyn Database,
 ) -> Arc<OrderedHashMap<CrateId<'_>, Arc<Vec<AnalyzerPluginId<'_>>>>> {
+    let _ = semantic_group_input(db).granular_analyzer_plugin_overrides_revision(db);
+    if let Some(view) = maybe_granular_analyzer_plugin_override_view(db)
+        && let Some(storage) = view.granular_analyzer_plugin_override_storage()
+    {
+        return Arc::new(
+            storage
+                .read()
+                .unwrap()
+                .iter()
+                .filter_map(|(crate_input, handle)| {
+                    let plugins = handle.plugins(db).as_ref()?;
+                    Some((
+                        crate_input.clone().into_crate_long_id(db).intern(db),
+                        Arc::new(
+                            plugins.iter().map(|plugin| plugin.clone().intern(db)).collect_vec(),
+                        ),
+                    ))
+                })
+                .collect(),
+        );
+    }
+
     let inp = db.analyzer_plugin_overrides_input();
     Arc::new(
         inp.iter()
