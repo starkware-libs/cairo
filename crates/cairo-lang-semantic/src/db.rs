@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use cairo_lang_defs::db::{DefsGroup, DefsGroupEx, defs_group_input};
 use cairo_lang_defs::ids::{
@@ -199,7 +200,40 @@ fn module_semantic_diagnostics<'db>(
     db: &'db dyn Database,
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, SemanticDiagnostic<'db>>> {
+    let trace_timing = std::env::var_os("CAIRO_LS_TRACE_DIAGNOSTICS_TIMING").is_some();
+    let trace_item_kinds = std::env::var_os("CAIRO_LS_TRACE_DIAGNOSTICS_ITEM_KINDS").is_some();
+    let total_started = trace_timing.then(Instant::now);
     let mut diagnostics = SemanticDiagnostics::new(module_id);
+    let mut plugin_elapsed = Duration::ZERO;
+    let mut module_data_elapsed = Duration::ZERO;
+    let mut items_elapsed = Duration::ZERO;
+    let mut global_uses_elapsed = Duration::ZERO;
+    let mut macro_calls_elapsed = Duration::ZERO;
+    let mut unused_items_elapsed = Duration::ZERO;
+    let mut duplicate_names_elapsed = Duration::ZERO;
+    let mut analyzer_plugins_elapsed = Duration::ZERO;
+    let mut item_count = 0usize;
+    let mut global_use_count = 0usize;
+    let mut macro_call_count = 0usize;
+    let mut use_elapsed = Duration::ZERO;
+    let mut constant_elapsed = Duration::ZERO;
+    let mut free_fn_decl_elapsed = Duration::ZERO;
+    let mut free_fn_body_elapsed = Duration::ZERO;
+    let mut struct_decl_elapsed = Duration::ZERO;
+    let mut struct_def_elapsed = Duration::ZERO;
+    let mut enum_decl_elapsed = Duration::ZERO;
+    let mut enum_def_elapsed = Duration::ZERO;
+    let mut trait_decl_elapsed = Duration::ZERO;
+    let mut trait_def_elapsed = Duration::ZERO;
+    let mut impl_decl_elapsed = Duration::ZERO;
+    let mut impl_def_elapsed = Duration::ZERO;
+    let mut submodule_elapsed = Duration::ZERO;
+    let mut extern_type_elapsed = Duration::ZERO;
+    let mut extern_function_elapsed = Duration::ZERO;
+    let mut type_alias_elapsed = Duration::ZERO;
+    let mut impl_alias_elapsed = Duration::ZERO;
+    let mut macro_declaration_elapsed = Duration::ZERO;
+    let plugin_started = trace_timing.then(Instant::now);
     for (_module_id, plugin_diag) in
         module_id.module_data(db)?.plugin_diagnostics(db).iter().cloned()
     {
@@ -215,40 +249,98 @@ fn module_semantic_diagnostics<'db>(
             ),
         };
     }
+    if let Some(plugin_started) = plugin_started {
+        plugin_elapsed = plugin_started.elapsed();
+    }
+    let module_data_started = trace_timing.then(Instant::now);
     let data = db.priv_module_semantic_data(module_id)?;
+    if let Some(module_data_started) = module_data_started {
+        module_data_elapsed = module_data_started.elapsed();
+    }
     diagnostics.extend(data.diagnostics.clone());
     // TODO(Gil): Aggregate diagnostics for subitems with semantic model (i.e. impl function, trait
     // functions and generic params) directly and not via the parent item.
+    let items_started = trace_timing.then(Instant::now);
     for item in module_id.module_data(db)?.items(db).iter() {
+        item_count += 1;
         match item {
             ModuleItemId::Constant(const_id) => {
+                let started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.constant_semantic_diagnostics(*const_id));
+                if let Some(started) = started {
+                    constant_elapsed += started.elapsed();
+                }
             }
             // Add signature diagnostics.
             ModuleItemId::Use(use_id) => {
+                let started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.use_semantic_diagnostics(*use_id));
+                if let Some(started) = started {
+                    use_elapsed += started.elapsed();
+                }
             }
             ModuleItemId::FreeFunction(free_function) => {
+                let decl_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.free_function_declaration_diagnostics(*free_function));
+                if let Some(decl_started) = decl_started {
+                    free_fn_decl_elapsed += decl_started.elapsed();
+                }
+                let body_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.free_function_body_diagnostics(*free_function));
+                if let Some(body_started) = body_started {
+                    free_fn_body_elapsed += body_started.elapsed();
+                }
             }
             ModuleItemId::Struct(struct_id) => {
+                let decl_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.struct_declaration_diagnostics(*struct_id));
+                if let Some(decl_started) = decl_started {
+                    struct_decl_elapsed += decl_started.elapsed();
+                }
+                let def_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.struct_definition_diagnostics(*struct_id));
+                if let Some(def_started) = def_started {
+                    struct_def_elapsed += def_started.elapsed();
+                }
             }
             ModuleItemId::Enum(enum_id) => {
+                let def_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.enum_definition_diagnostics(*enum_id));
+                if let Some(def_started) = def_started {
+                    enum_def_elapsed += def_started.elapsed();
+                }
+                let decl_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.enum_declaration_diagnostics(*enum_id));
+                if let Some(decl_started) = decl_started {
+                    enum_decl_elapsed += decl_started.elapsed();
+                }
             }
             ModuleItemId::Trait(trait_id) => {
+                let decl_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.trait_semantic_declaration_diagnostics(*trait_id));
+                if let Some(decl_started) = decl_started {
+                    trait_decl_elapsed += decl_started.elapsed();
+                }
+                let def_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.trait_semantic_definition_diagnostics(*trait_id));
+                if let Some(def_started) = def_started {
+                    trait_def_elapsed += def_started.elapsed();
+                }
             }
             ModuleItemId::Impl(impl_def_id) => {
+                let decl_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.impl_semantic_declaration_diagnostics(*impl_def_id));
+                if let Some(decl_started) = decl_started {
+                    impl_decl_elapsed += decl_started.elapsed();
+                }
+                let def_started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_def_id));
+                if let Some(def_started) = def_started {
+                    impl_def_elapsed += def_started.elapsed();
+                }
             }
             ModuleItemId::Submodule(submodule_id) => {
+                let started = trace_item_kinds.then(Instant::now);
                 // Note that the parent module does not report the diagnostics of its submodules.
                 if let Ok(file_id) = db.module_main_file(ModuleId::Submodule(*submodule_id))
                     && db.file_content(file_id).is_none()
@@ -268,28 +360,61 @@ fn module_semantic_diagnostics<'db>(
                         SemanticDiagnosticKind::ModuleFileNotFound(path),
                     );
                 }
+                if let Some(started) = started {
+                    submodule_elapsed += started.elapsed();
+                }
             }
             ModuleItemId::ExternType(extern_type) => {
+                let started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.extern_type_declaration_diagnostics(*extern_type));
+                if let Some(started) = started {
+                    extern_type_elapsed += started.elapsed();
+                }
             }
             ModuleItemId::ExternFunction(extern_function) => {
+                let started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.extern_function_declaration_diagnostics(*extern_function));
+                if let Some(started) = started {
+                    extern_function_elapsed += started.elapsed();
+                }
             }
             ModuleItemId::TypeAlias(type_alias) => {
+                let started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.module_type_alias_semantic_diagnostics(*type_alias));
+                if let Some(started) = started {
+                    type_alias_elapsed += started.elapsed();
+                }
             }
             ModuleItemId::ImplAlias(type_alias) => {
+                let started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
+                if let Some(started) = started {
+                    impl_alias_elapsed += started.elapsed();
+                }
             }
             ModuleItemId::MacroDeclaration(macro_declaration) => {
+                let started = trace_item_kinds.then(Instant::now);
                 diagnostics.extend(db.macro_declaration_diagnostics(*macro_declaration));
+                if let Some(started) = started {
+                    macro_declaration_elapsed += started.elapsed();
+                }
             }
         }
     }
+    if let Some(items_started) = items_started {
+        items_elapsed = items_started.elapsed();
+    }
+    let global_uses_started = trace_timing.then(Instant::now);
     for global_use in module_id.module_data(db)?.global_uses(db).keys() {
+        global_use_count += 1;
         diagnostics.extend(db.global_use_semantic_diagnostics(*global_use));
     }
+    if let Some(global_uses_started) = global_uses_started {
+        global_uses_elapsed = global_uses_started.elapsed();
+    }
+    let macro_calls_started = trace_timing.then(Instant::now);
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
+        macro_call_count += 1;
         diagnostics.extend(db.macro_call_diagnostics(*macro_call));
         if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call)
             && let Ok(semantic_diags) = db.module_semantic_diagnostics(macro_module_id)
@@ -297,14 +422,71 @@ fn module_semantic_diagnostics<'db>(
             diagnostics.extend(semantic_diags);
         }
     }
+    if let Some(macro_calls_started) = macro_calls_started {
+        macro_calls_elapsed = macro_calls_started.elapsed();
+    }
+    let unused_items_started = trace_timing.then(Instant::now);
     add_unused_item_diagnostics(db, module_id, data, &mut diagnostics);
+    if let Some(unused_items_started) = unused_items_started {
+        unused_items_elapsed = unused_items_started.elapsed();
+    }
+    let duplicate_names_started = trace_timing.then(Instant::now);
     add_duplicated_names_from_macro_expansions_diagnostics(db, module_id, &mut diagnostics);
+    if let Some(duplicate_names_started) = duplicate_names_started {
+        duplicate_names_elapsed = duplicate_names_started.elapsed();
+    }
+    let analyzer_plugins_started = trace_timing.then(Instant::now);
     for analyzer_plugin_id in db.crate_analyzer_plugins(module_id.owning_crate(db)).iter() {
         let analyzer_plugin = analyzer_plugin_id.long(db);
 
         for diag in analyzer_plugin.diagnostics(db, module_id) {
             diagnostics.report(diag.stable_ptr, SemanticDiagnosticKind::PluginDiagnostic(diag));
         }
+    }
+    if let Some(analyzer_plugins_started) = analyzer_plugins_started {
+        analyzer_plugins_elapsed = analyzer_plugins_started.elapsed();
+    }
+    if let Some(total_started) = total_started {
+        eprintln!(
+            "semantic_module_diagnostics module={} items={} global_uses={} macro_calls={} plugin_ms={} module_data_ms={} items_ms={} global_uses_ms={} macro_calls_ms={} unused_items_ms={} duplicate_names_ms={} analyzer_plugins_ms={} total_ms={}",
+            module_id.full_path(db),
+            item_count,
+            global_use_count,
+            macro_call_count,
+            plugin_elapsed.as_millis(),
+            module_data_elapsed.as_millis(),
+            items_elapsed.as_millis(),
+            global_uses_elapsed.as_millis(),
+            macro_calls_elapsed.as_millis(),
+            unused_items_elapsed.as_millis(),
+            duplicate_names_elapsed.as_millis(),
+            analyzer_plugins_elapsed.as_millis(),
+            total_started.elapsed().as_millis(),
+        );
+    }
+    if trace_item_kinds {
+        eprintln!(
+            "semantic_module_item_kinds module={} constant_ms={} use_ms={} free_fn_decl_ms={} free_fn_body_ms={} struct_decl_ms={} struct_def_ms={} enum_decl_ms={} enum_def_ms={} trait_decl_ms={} trait_def_ms={} impl_decl_ms={} impl_def_ms={} submodule_ms={} extern_type_ms={} extern_function_ms={} type_alias_ms={} impl_alias_ms={} macro_declaration_ms={}",
+            module_id.full_path(db),
+            constant_elapsed.as_millis(),
+            use_elapsed.as_millis(),
+            free_fn_decl_elapsed.as_millis(),
+            free_fn_body_elapsed.as_millis(),
+            struct_decl_elapsed.as_millis(),
+            struct_def_elapsed.as_millis(),
+            enum_decl_elapsed.as_millis(),
+            enum_def_elapsed.as_millis(),
+            trait_decl_elapsed.as_millis(),
+            trait_def_elapsed.as_millis(),
+            impl_decl_elapsed.as_millis(),
+            impl_def_elapsed.as_millis(),
+            submodule_elapsed.as_millis(),
+            extern_type_elapsed.as_millis(),
+            extern_function_elapsed.as_millis(),
+            type_alias_elapsed.as_millis(),
+            impl_alias_elapsed.as_millis(),
+            macro_declaration_elapsed.as_millis(),
+        );
     }
 
     Ok(diagnostics.build())

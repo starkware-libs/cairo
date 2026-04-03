@@ -1,5 +1,6 @@
 use std::iter::zip;
 use std::sync::Arc;
+use std::time::Instant;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
@@ -14,7 +15,7 @@ use cairo_lang_diagnostics::{
 use cairo_lang_proc_macros::{DebugWithDb, HeapSize, SemanticObject};
 use cairo_lang_syntax::node::ast::ItemConstant;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -358,6 +359,8 @@ pub fn constant_semantic_data_helper<'db>(
     parent_resolver_data: Option<Arc<ResolverData<'db>>>,
     element_id: &impl LanguageElementId<'db>,
 ) -> Maybe<ConstantData<'db>> {
+    let trace_body_timing = std::env::var_os("CAIRO_LS_TRACE_DIAGNOSTICS_BODY_TIMING").is_some();
+    let total_started = trace_body_timing.then(Instant::now);
     let module_id = element_id.parent_module(db);
     let mut diagnostics: SemanticDiagnostics<'_> = SemanticDiagnostics::new(module_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -387,7 +390,10 @@ pub fn constant_semantic_data_helper<'db>(
 
     let mut ctx = ComputationContext::new_global(db, &mut diagnostics, &mut resolver);
 
+    let compute_started = trace_body_timing.then(Instant::now);
     let value = compute_expr_semantic(&mut ctx, &constant_ast.value(db));
+    let compute_elapsed = compute_started.map(|started| started.elapsed());
+    let eval_started = trace_body_timing.then(Instant::now);
     let const_value = resolve_const_expr_and_evaluate(
         db,
         &mut ctx,
@@ -396,12 +402,25 @@ pub fn constant_semantic_data_helper<'db>(
         constant_type,
         true,
     );
+    let eval_elapsed = eval_started.map(|started| started.elapsed());
     let constant = Ok(Constant { value: value.id, arenas: Arc::new(ctx.arenas) });
     let const_value = resolver
         .inference()
         .rewrite(const_value)
         .unwrap_or_else(|_| ConstValue::Missing(skip_diagnostic()).intern(db));
     let resolver_data = Arc::new(resolver.data);
+    if let Some(total_started) = total_started {
+        eprintln!(
+            "semantic_constant_data module={} constant={:?} exprs={} patterns={} compute_ms={} eval_ms={} total_ms={}",
+            module_id.full_path(db),
+            constant_ast.name(db).text(db),
+            constant.as_ref().map_or(0, |constant| constant.arenas.exprs.len()),
+            constant.as_ref().map_or(0, |constant| constant.arenas.patterns.len()),
+            compute_elapsed.map_or(0, |elapsed| elapsed.as_millis()),
+            eval_elapsed.map_or(0, |elapsed| elapsed.as_millis()),
+            total_started.elapsed().as_millis(),
+        );
+    }
     Ok(ConstantData { diagnostics: diagnostics.build(), const_value, constant, resolver_data })
 }
 

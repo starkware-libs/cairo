@@ -1,8 +1,10 @@
 use std::sync::Arc;
+use std::time::Instant;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     FreeFunctionId, FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId,
+    TopLevelLanguageElementId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -129,6 +131,8 @@ fn priv_free_function_body_data<'db>(
     db: &'db dyn Database,
     free_function_id: FreeFunctionId<'db>,
 ) -> Maybe<FunctionBodyData<'db>> {
+    let trace_body_timing = std::env::var_os("CAIRO_LS_TRACE_DIAGNOSTICS_BODY_TIMING").is_some();
+    let total_started = trace_body_timing.then(Instant::now);
     let mut diagnostics = SemanticDiagnostics::new(free_function_id.parent_module(db));
     let free_function_syntax = db.module_free_function_by_id(free_function_id)?;
     // Compute declaration semantic.
@@ -159,14 +163,32 @@ fn priv_free_function_body_data<'db>(
     );
     let function_body = free_function_syntax.body(db);
     let return_type = declaration.signature.return_type;
+    let compute_started = trace_body_timing.then(Instant::now);
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
+    let compute_elapsed = compute_started.map(|started| started.elapsed());
     let ComputationContext { arenas, .. } = ctx;
 
+    let expr_lookup_started = trace_body_timing.then(Instant::now);
     let expr_lookup: UnorderedHashMap<_, _> =
         arenas.exprs.iter().map(|(id, expr)| (expr.stable_ptr(), id)).collect();
+    let expr_lookup_elapsed = expr_lookup_started.map(|started| started.elapsed());
+    let pattern_lookup_started = trace_body_timing.then(Instant::now);
     let pattern_lookup: UnorderedHashMap<_, _> =
         arenas.patterns.iter().map(|(id, pattern)| (pattern.stable_ptr(), id)).collect();
+    let pattern_lookup_elapsed = pattern_lookup_started.map(|started| started.elapsed());
     let resolver_data = Arc::new(resolver.data);
+    if let Some(total_started) = total_started {
+        eprintln!(
+            "semantic_free_function_body_data function={} exprs={} patterns={} compute_ms={} expr_lookup_ms={} pattern_lookup_ms={} total_ms={}",
+            free_function_id.full_path(db),
+            arenas.exprs.len(),
+            arenas.patterns.len(),
+            compute_elapsed.map_or(0, |elapsed| elapsed.as_millis()),
+            expr_lookup_elapsed.map_or(0, |elapsed| elapsed.as_millis()),
+            pattern_lookup_elapsed.map_or(0, |elapsed| elapsed.as_millis()),
+            total_started.elapsed().as_millis(),
+        );
+    }
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,

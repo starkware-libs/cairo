@@ -22,6 +22,7 @@ use defs::ids::NamedLanguageElementId;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use salsa::{Database, Setter};
+use std::time::{Duration, Instant};
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::{BorrowCheckResult, borrow_check, borrow_check_possible_withdraw_gas};
@@ -712,8 +713,16 @@ fn module_lowering_diagnostics<'db>(
     _tracked: Tracked,
     module_id: ModuleId<'db>,
 ) -> Maybe<Diagnostics<'db, LoweringDiagnostic<'db>>> {
+    let trace_timing = std::env::var_os("CAIRO_LS_TRACE_DIAGNOSTICS_TIMING").is_some();
+    let total_started = trace_timing.then(Instant::now);
     let mut diagnostics = DiagnosticsBuilder::default();
+    let mut item_count = 0usize;
+    let mut macro_call_count = 0usize;
+    let mut items_elapsed = Duration::ZERO;
+    let mut macro_calls_elapsed = Duration::ZERO;
+    let items_started = trace_timing.then(Instant::now);
     for item in module_id.module_data(db)?.items(db).iter() {
+        item_count += 1;
         match item {
             ModuleItemId::FreeFunction(free_function) => {
                 let function_id = defs::ids::FunctionWithBodyId::Free(*free_function);
@@ -749,12 +758,31 @@ fn module_lowering_diagnostics<'db>(
             ModuleItemId::MacroDeclaration(_) => {}
         }
     }
+    if let Some(items_started) = items_started {
+        items_elapsed = items_started.elapsed();
+    }
+    let macro_calls_started = trace_timing.then(Instant::now);
     for macro_call in db.module_macro_calls_ids(module_id)?.iter() {
+        macro_call_count += 1;
         if let Ok(macro_module_id) = db.macro_call_module_id(*macro_call)
             && let Ok(lowering_diags) = db.module_lowering_diagnostics(macro_module_id)
         {
             diagnostics.extend(lowering_diags);
         }
+    }
+    if let Some(macro_calls_started) = macro_calls_started {
+        macro_calls_elapsed = macro_calls_started.elapsed();
+    }
+    if let Some(total_started) = total_started {
+        eprintln!(
+            "lowering_module_diagnostics module={} items={} macro_calls={} items_ms={} macro_calls_ms={} total_ms={}",
+            module_id.full_path(db),
+            item_count,
+            macro_call_count,
+            items_elapsed.as_millis(),
+            macro_calls_elapsed.as_millis(),
+            total_started.elapsed().as_millis(),
+        );
     }
     Ok(diagnostics.build())
 }
