@@ -2,7 +2,11 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
-use cairo_lang_filesystem::db::{GranularFileContentView, init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{
+    GranularCrateConfigStorage, GranularCrateConfigView, GranularFileContentView,
+    init_dev_corelib, init_files_group, new_granular_crate_config_storage,
+    register_granular_crate_config_view,
+};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
@@ -20,14 +24,24 @@ use crate::utils::InliningStrategy;
 #[derive(Clone)]
 pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
+    granular_crate_configs: GranularCrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl GranularFileContentView for LoweringDatabaseForTesting {}
+impl GranularCrateConfigView for LoweringDatabaseForTesting {
+    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
+        Some(&self.granular_crate_configs)
+    }
+}
 
 impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
-        let mut res = LoweringDatabaseForTesting { storage: Default::default() };
+        let mut res = LoweringDatabaseForTesting {
+            storage: Default::default(),
+            granular_crate_configs: new_granular_crate_config_storage(),
+        };
+        register_granular_crate_config_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);

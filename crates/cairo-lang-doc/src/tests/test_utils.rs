@@ -2,9 +2,11 @@ use anyhow::{Result, anyhow};
 use cairo_lang_defs::db::{DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, FilesGroup, GranularFileContentStorage, GranularFileContentView,
-    init_dev_corelib, init_files_group, new_granular_file_content_storage,
-    register_files_group_view, set_editor_file_content_for_input,
+    CrateConfiguration, FilesGroup, GranularCrateConfigStorage, GranularCrateConfigView,
+    GranularFileContentStorage, GranularFileContentView, init_dev_corelib, init_files_group,
+    new_granular_crate_config_storage, new_granular_file_content_storage,
+    register_files_group_view, register_granular_crate_config_view,
+    set_editor_file_content_for_input,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
@@ -20,6 +22,7 @@ use salsa::Database;
 pub struct TestDatabase {
     storage: salsa::Storage<TestDatabase>,
     granular_file_contents: GranularFileContentStorage,
+    granular_crate_configs: GranularCrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
@@ -28,14 +31,21 @@ impl GranularFileContentView for TestDatabase {
         Some(&self.granular_file_contents)
     }
 }
+impl GranularCrateConfigView for TestDatabase {
+    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
+        Some(&self.granular_crate_configs)
+    }
+}
 
 impl Default for TestDatabase {
     fn default() -> Self {
         let mut res = Self {
             storage: Default::default(),
             granular_file_contents: new_granular_file_content_storage(),
+            granular_crate_configs: new_granular_crate_config_storage(),
         };
         register_files_group_view(&res);
+        register_granular_crate_config_view(&res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);

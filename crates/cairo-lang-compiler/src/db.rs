@@ -3,9 +3,10 @@ use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    CORELIB_VERSION, FilesGroup, GranularFileContentStorage, GranularFileContentView,
-    init_dev_corelib, init_files_group, new_granular_file_content_storage,
-    register_files_group_view,
+    CORELIB_VERSION, FilesGroup, GranularCrateConfigStorage, GranularCrateConfigView,
+    GranularFileContentStorage, GranularFileContentView, init_dev_corelib, init_files_group,
+    new_granular_crate_config_storage, new_granular_file_content_storage,
+    register_files_group_view, register_granular_crate_config_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -74,12 +75,18 @@ fn estimate_code_size(
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
     granular_file_contents: GranularFileContentStorage,
+    granular_crate_configs: GranularCrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
 impl GranularFileContentView for RootDatabase {
     fn granular_file_content_storage(&self) -> Option<&GranularFileContentStorage> {
         Some(&self.granular_file_contents)
+    }
+}
+impl GranularCrateConfigView for RootDatabase {
+    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
+        Some(&self.granular_crate_configs)
     }
 }
 impl CloneableDatabase for RootDatabase {
@@ -93,8 +100,10 @@ impl RootDatabase {
         let mut res = Self {
             storage: Default::default(),
             granular_file_contents: new_granular_file_content_storage(),
+            granular_crate_configs: new_granular_crate_config_storage(),
         };
         register_files_group_view(&res);
+        register_granular_crate_config_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_lowering_group(&mut res, optimizations, Some(estimate_code_size));
@@ -120,6 +129,7 @@ impl RootDatabase {
         RootDatabase {
             storage: self.storage.clone(),
             granular_file_contents: self.granular_file_contents.clone(),
+            granular_crate_configs: self.granular_crate_configs.clone(),
         }
     }
 }

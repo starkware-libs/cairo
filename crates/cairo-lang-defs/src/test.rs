@@ -3,9 +3,10 @@ use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, FilesGroup, GranularFileContentStorage, GranularFileContentView,
-    init_files_group, new_granular_file_content_storage, register_files_group_view,
-    set_editor_file_content_for_input,
+    CrateConfiguration, FilesGroup, GranularCrateConfigStorage, GranularCrateConfigView,
+    GranularFileContentStorage, GranularFileContentView, init_files_group,
+    new_granular_crate_config_storage, new_granular_file_content_storage,
+    register_files_group_view, register_granular_crate_config_view, set_editor_file_content_for_input,
 };
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::set_crate_config;
@@ -33,6 +34,7 @@ use crate::plugin::{
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
     granular_file_contents: GranularFileContentStorage,
+    granular_crate_configs: GranularCrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
@@ -41,14 +43,21 @@ impl GranularFileContentView for DatabaseForTesting {
         Some(&self.granular_file_contents)
     }
 }
+impl GranularCrateConfigView for DatabaseForTesting {
+    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
+        Some(&self.granular_crate_configs)
+    }
+}
 
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self {
             storage: Default::default(),
             granular_file_contents: new_granular_file_content_storage(),
+            granular_crate_configs: new_granular_crate_config_storage(),
         };
         register_files_group_view(&res);
+        register_granular_crate_config_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);

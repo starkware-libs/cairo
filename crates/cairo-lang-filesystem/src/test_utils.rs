@@ -1,6 +1,8 @@
 use crate::db::{
-    GranularFileContentStorage, GranularFileContentView, init_files_group,
+    GranularCrateConfigStorage, GranularCrateConfigView, GranularFileContentStorage,
+    GranularFileContentView, init_files_group, new_granular_crate_config_storage,
     new_granular_file_content_storage, register_files_group_view,
+    register_granular_crate_config_view,
 };
 
 // Test salsa database.
@@ -9,6 +11,7 @@ use crate::db::{
 pub struct FilesDatabaseForTesting {
     storage: salsa::Storage<FilesDatabaseForTesting>,
     granular_file_contents: GranularFileContentStorage,
+    granular_crate_configs: GranularCrateConfigStorage,
 }
 
 #[salsa::db]
@@ -18,14 +21,21 @@ impl GranularFileContentView for FilesDatabaseForTesting {
         Some(&self.granular_file_contents)
     }
 }
+impl GranularCrateConfigView for FilesDatabaseForTesting {
+    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
+        Some(&self.granular_crate_configs)
+    }
+}
 
 impl Default for FilesDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self {
             storage: Default::default(),
             granular_file_contents: new_granular_file_content_storage(),
+            granular_crate_configs: new_granular_crate_config_storage(),
         };
         register_files_group_view(&res);
+        register_granular_crate_config_view(&res);
         init_files_group(&mut res);
         res
     }
