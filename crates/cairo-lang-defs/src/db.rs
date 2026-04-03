@@ -1,5 +1,7 @@
-use std::collections::VecDeque;
-use std::sync::Arc;
+use std::collections::{HashMap, VecDeque};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::ptr::NonNull;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_diagnostics::{
     DiagnosticNote, Maybe, MaybeAsRef, PluginFileDiagnosticNotes, ToMaybe, skip_diagnostic,
@@ -23,6 +25,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain};
+use salsa::plumbing::views;
 use salsa::{Database, Setter};
 
 use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
@@ -36,19 +39,140 @@ pub struct DefsGroupInput {
     pub default_macro_plugins: Option<Vec<MacroPluginLongId>>,
     #[returns(ref)]
     pub macro_plugin_overrides: Option<OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>>,
+    pub granular_macro_plugin_overrides_revision: u64,
     #[returns(ref)]
     pub default_inline_macro_plugins: Option<OrderedHashMap<String, InlineMacroExprPluginLongId>>,
     #[returns(ref)]
     pub inline_macro_plugin_overrides: Option<
         OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>,
     >,
+    pub granular_inline_macro_plugin_overrides_revision: u64,
 }
 
 /// Returns a reference to the inputs of [DefsGroup].
 /// The reference is also used to set the inputs to new values.
 #[salsa::tracked(returns(ref))]
 pub fn defs_group_input(db: &dyn Database) -> DefsGroupInput {
-    DefsGroupInput::new(db, None, None, None, None)
+    DefsGroupInput::new(db, None, None, 0, None, None, 0)
+}
+
+#[salsa::input]
+pub struct GranularMacroPluginOverride {
+    #[returns(ref)]
+    pub plugins: Option<Arc<[MacroPluginLongId]>>,
+}
+
+#[salsa::input]
+pub struct GranularInlineMacroPluginOverride {
+    #[returns(ref)]
+    pub plugins: Option<Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>,
+}
+
+pub type GranularMacroPluginOverrideStorage =
+    Arc<RwLock<HashMap<CrateInput, GranularMacroPluginOverride>>>;
+pub type GranularInlineMacroPluginOverrideStorage =
+    Arc<RwLock<HashMap<CrateInput, GranularInlineMacroPluginOverride>>>;
+
+pub trait GranularMacroPluginOverrideView: Database {
+    fn granular_macro_plugin_override_storage(&self) -> Option<&GranularMacroPluginOverrideStorage> {
+        None
+    }
+
+    fn macro_plugin_override_for_input(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<GranularMacroPluginOverride> {
+        self.granular_macro_plugin_override_storage()?.read().unwrap().get(crate_input).copied()
+    }
+}
+
+pub trait GranularInlineMacroPluginOverrideView: Database {
+    fn granular_inline_macro_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularInlineMacroPluginOverrideStorage> {
+        None
+    }
+
+    fn inline_macro_plugin_override_for_input(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<GranularInlineMacroPluginOverride> {
+        self.granular_inline_macro_plugin_override_storage()?
+            .read()
+            .unwrap()
+            .get(crate_input)
+            .copied()
+    }
+}
+
+fn cast_granular_macro_plugin_override_view<Db: GranularMacroPluginOverrideView + 'static>(
+    db: NonNull<Db>,
+) -> NonNull<dyn GranularMacroPluginOverrideView> {
+    let db_ref = unsafe { db.as_ref() };
+    NonNull::from(db_ref as &dyn GranularMacroPluginOverrideView)
+}
+
+fn granular_macro_plugin_override_view<'db>(
+    db: &'db dyn Database,
+) -> &'db dyn GranularMacroPluginOverrideView {
+    let caster = catch_unwind(AssertUnwindSafe(|| {
+        *views(db).downcaster_for::<dyn GranularMacroPluginOverrideView>()
+    }))
+    .ok();
+
+    let caster = caster.expect("granular macro plugin override view is not registered");
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+fn maybe_granular_macro_plugin_override_view<'db>(
+    db: &'db dyn Database,
+) -> Option<&'db dyn GranularMacroPluginOverrideView> {
+    catch_unwind(AssertUnwindSafe(|| granular_macro_plugin_override_view(db))).ok()
+}
+
+pub fn register_granular_macro_plugin_override_view<Db>(db: &Db)
+where
+    Db: Database + GranularMacroPluginOverrideView + 'static,
+{
+    views(db).add::<Db, dyn GranularMacroPluginOverrideView>(
+        cast_granular_macro_plugin_override_view::<Db>,
+    );
+}
+
+fn cast_granular_inline_macro_plugin_override_view<
+    Db: GranularInlineMacroPluginOverrideView + 'static,
+>(
+    db: NonNull<Db>,
+) -> NonNull<dyn GranularInlineMacroPluginOverrideView> {
+    let db_ref = unsafe { db.as_ref() };
+    NonNull::from(db_ref as &dyn GranularInlineMacroPluginOverrideView)
+}
+
+fn granular_inline_macro_plugin_override_view<'db>(
+    db: &'db dyn Database,
+) -> &'db dyn GranularInlineMacroPluginOverrideView {
+    let caster = catch_unwind(AssertUnwindSafe(|| {
+        *views(db).downcaster_for::<dyn GranularInlineMacroPluginOverrideView>()
+    }))
+    .ok();
+
+    let caster = caster.expect("granular inline macro plugin override view is not registered");
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+fn maybe_granular_inline_macro_plugin_override_view<'db>(
+    db: &'db dyn Database,
+) -> Option<&'db dyn GranularInlineMacroPluginOverrideView> {
+    catch_unwind(AssertUnwindSafe(|| granular_inline_macro_plugin_override_view(db))).ok()
+}
+
+pub fn register_granular_inline_macro_plugin_override_view<Db>(db: &Db)
+where
+    Db: Database + GranularInlineMacroPluginOverrideView + 'static,
+{
+    views(db).add::<Db, dyn GranularInlineMacroPluginOverrideView>(
+        cast_granular_inline_macro_plugin_override_view::<Db>,
+    );
 }
 
 /// Salsa database interface.
@@ -375,7 +499,9 @@ impl<T: Database + ?Sized> DefsGroup for T {}
 /// Initializes the [`DefsGroup`] database to a proper state.
 pub fn init_defs_group(db: &mut dyn Database) {
     defs_group_input(db).set_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
+    defs_group_input(db).set_granular_macro_plugin_overrides_revision(db).to(0);
     defs_group_input(db).set_inline_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
+    defs_group_input(db).set_granular_inline_macro_plugin_overrides_revision(db).to(0);
 }
 
 #[salsa::tracked(returns(ref))]
@@ -394,6 +520,24 @@ pub fn default_macro_plugins<'db>(db: &'db dyn Database) -> &'db [MacroPluginId<
 pub fn macro_plugin_overrides<'db>(
     db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, Vec<MacroPluginId<'db>>> {
+    let _ = defs_group_input(db).granular_macro_plugin_overrides_revision(db);
+    if let Some(view) = maybe_granular_macro_plugin_override_view(db)
+        && let Some(storage) = view.granular_macro_plugin_override_storage()
+    {
+        return storage
+            .read()
+            .unwrap()
+            .iter()
+            .filter_map(|(crate_input, handle)| {
+                let plugins = handle.plugins(db).as_ref()?;
+                Some((
+                    crate_input.clone().into_crate_long_id(db).intern(db),
+                    plugins.iter().map(|plugin| plugin.clone().intern(db)).collect(),
+                ))
+            })
+            .collect();
+    }
+
     let inp = db.macro_plugin_overrides_input();
     inp.iter()
         .map(|(crate_id, plugins)| {
@@ -409,6 +553,27 @@ pub fn macro_plugin_overrides<'db>(
 pub fn inline_macro_plugin_overrides<'db>(
     db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, OrderedHashMap<String, InlineMacroExprPluginId<'db>>> {
+    let _ = defs_group_input(db).granular_inline_macro_plugin_overrides_revision(db);
+    if let Some(view) = maybe_granular_inline_macro_plugin_override_view(db)
+        && let Some(storage) = view.granular_inline_macro_plugin_override_storage()
+    {
+        return storage
+            .read()
+            .unwrap()
+            .iter()
+            .filter_map(|(crate_input, handle)| {
+                let plugins = handle.plugins(db).as_ref()?;
+                Some((
+                    crate_input.clone().into_crate_long_id(db).intern(db),
+                    plugins
+                        .iter()
+                        .map(|(name, plugin)| (name.clone(), plugin.clone().intern(db)))
+                        .collect(),
+                ))
+            })
+            .collect();
+    }
+
     let inp = db.inline_macro_plugin_overrides_input();
     inp.iter()
         .map(|(crate_id, plugins)| {
