@@ -1199,6 +1199,9 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => {
                 "Negative impls may only use type or const generic parameters.".into()
             }
+            SemanticDiagnosticKind::UnsupportedItemInStatement => {
+                "Item not supported as a statement.".into()
+            }
         }
     }
     fn location(&self, db: &'db dyn Database) -> SpanInFile<'db> {
@@ -1462,6 +1465,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => error_code!(E2194),
             SemanticDiagnosticKind::NonNeverLetElseType => error_code!(E2195),
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
+            SemanticDiagnosticKind::UnsupportedItemInStatement => error_code!(E2197),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1881,6 +1885,7 @@ pub enum SemanticDiagnosticKind<'db> {
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
+    UnsupportedItemInStatement,
 }
 
 /// The kind of an expression with multiple possible return types.
