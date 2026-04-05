@@ -1415,3 +1415,44 @@ Box(v4) = v2
 
 Block 2:
 ()() = v5, core::array::Array::<core::felt252>() = v0, v0 = v3, v0 = v6
+
+//! > ==========================================================================
+
+//! > Test boxed enum constructs with different variants do not spuriously union inputs
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: felt252, y: felt252) {
+    let a = Option::Some(x);
+    let b: Option<felt252> = Option::None;
+    let box_a = BoxTrait::new(a);
+    let box_b = BoxTrait::new(b);
+    use_boxes(box_a, box_b);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn use_boxes(a: Box<Option<felt252>>, b: Box<Option<felt252>>) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::option::Option::<core::felt252>) <- Option::Some(v0)
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<core::felt252>) <- Option::None(v3)
+  (v5: core::box::Box::<core::option::Option::<core::felt252>>) <- into_box(v2)
+  (v6: core::box::Box::<core::option::Option::<core::felt252>>) <- into_box(v4)
+  () <- test::use_boxes(v5, v6)
+End:
+  Return()
+
+//! > analysis_state
+Block 0:
+()() = v3, Box(v2) = v5, Box(v4) = v6, None(v3) = v4, Some(v0) = v2
