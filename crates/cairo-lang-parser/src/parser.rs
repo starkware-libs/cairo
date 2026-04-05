@@ -1544,80 +1544,240 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Parsing will be limited by:
     /// `parent_precedence` - parsing of binary operators limited to this.
     /// `lbrace_allowed` - See [LbraceAllowed].
+    ///
+    /// Uses an explicit heap-allocated frame stack instead of recursion to prevent stack overflows
+    /// for deeply nested expressions.
     fn try_parse_expr_limited(
         &mut self,
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
         and_let_behavior: AndLetBehavior,
     ) -> TryParseResult<ExprGreen<'a>> {
-        let mut expr = self.try_parse_atom_or_unary(lbrace_allowed)?;
-        let mut child_op: Option<SyntaxKind> = None;
+        let mut stack: Vec<ExprFrame<'a>> = Vec::new();
+        let mut ctx = ExprParserCtx::new(parent_precedence, lbrace_allowed, and_let_behavior);
+        let mut phase = ExprPhase::Atom;
         loop {
-            let peeked_kind = self.peek().kind;
-            let Some(precedence) = get_post_operator_precedence(peeked_kind) else {
-                return Ok(expr);
-            };
-            if precedence >= parent_precedence {
-                return Ok(expr);
-            }
-            expr = match peeked_kind {
-                // If the next two tokens are `&& let` (part of a let-chain), then they should be
-                // parsed by the caller. Return immediately.
-                SyntaxKind::TerminalAndAnd
-                    if and_let_behavior == AndLetBehavior::Stop
-                        && self.peek_next_next_kind() == SyntaxKind::TerminalLet =>
-                {
-                    return Ok(expr);
-                }
-                SyntaxKind::TerminalQuestionMark => ExprErrorPropagate::new_green(
-                    self.db,
-                    expr,
-                    self.take::<TerminalQuestionMark<'_>>(),
-                )
-                .into(),
-                SyntaxKind::TerminalLBrack => {
-                    let lbrack = self.take::<TerminalLBrack<'_>>();
-                    let index_expr = self.parse_expr();
-                    let rbrack = self.parse_token::<TerminalRBrack<'_>>();
-                    ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into()
-                }
-                current_op => {
-                    if let Some(child_op_kind) = child_op
-                        && self.is_comparison_operator(child_op_kind)
-                        && self.is_comparison_operator(current_op)
-                    {
-                        self.add_diagnostic(
-                            ParserDiagnosticKind::ConsecutiveMathOperators {
-                                first_op: child_op_kind,
-                                second_op: current_op,
-                            },
-                            TextSpan::cursor(self.offset.add_width(self.current_width)),
-                        );
+            phase = match phase {
+                ExprPhase::Atom => self.expr_atom_phase(&mut ctx, &mut stack)?,
+                ExprPhase::Reduce(expr) => {
+                    match self.expr_reduce_phase(expr, &mut ctx, &mut stack) {
+                        ExprReduceOutcome::Continue(next) => next,
+                        ExprReduceOutcome::Done(result) => return Ok(result),
                     }
-                    child_op = Some(current_op);
-                    let op = self.parse_binary_operator();
-                    let rhs = self.parse_expr_limited(precedence, lbrace_allowed, and_let_behavior);
-                    ExprBinary::new_green(self.db, expr, op, rhs).into()
                 }
             };
         }
     }
 
-    /// Returns a GreenId of a node with ExprPath, ExprFunctionCall, ExprStructCtorCall,
-    /// ExprParenthesized, ExprTuple or ExprUnary kind, or TryParseFailure if such an expression
-    /// can't be parsed.
-    ///
-    /// `lbrace_allowed` - See [LbraceAllowed].
-    fn try_parse_atom_or_unary(
+    /// Handles the atom phase of expression parsing.
+    /// Consumes unary operators and `(` onto the stack, then parses an atom.
+    fn expr_atom_phase(
         &mut self,
-        lbrace_allowed: LbraceAllowed,
-    ) -> TryParseResult<ExprGreen<'a>> {
-        let Some(precedence) = get_unary_operator_precedence(self.peek().kind) else {
-            return self.try_parse_atom(lbrace_allowed);
+        ctx: &mut ExprParserCtx,
+        stack: &mut Vec<ExprFrame<'a>>,
+    ) -> TryParseResult<ExprPhase<'a>> {
+        // Collect consecutive unary operators, pushing each onto the frame stack.
+        while let Some(unary_prec) = get_unary_operator_precedence(self.peek().kind) {
+            let op = self.expect_unary_operator();
+            stack.push(ExprFrame::Unary { op, outer: ctx.save() });
+            ctx.prec = unary_prec;
+            ctx.and_let = AndLetBehavior::Simple;
+            ctx.child_op = None;
+        }
+
+        if self.peek().kind == SyntaxKind::TerminalLParen {
+            let lparen = self.take::<TerminalLParen<'_>>();
+            stack.push(ExprFrame::Paren { lparen, elements: Vec::new(), outer: ctx.save() });
+            ctx.enter_subexpr();
+            return Ok(ExprPhase::Atom);
+        }
+
+        match self.try_parse_atom(ctx.lbrace) {
+            Ok(atom) => Ok(ExprPhase::Reduce(atom)),
+            Err(e) => {
+                if let Some(ExprFrame::Paren { .. }) = stack.last() {
+                    // A Paren frame can recover from a failed atom parse
+                    // (handles empty `()` and trailing comma `(a,)`).
+                    if is_of_kind!(rparen, block, rbrace, module_item_kw)(self.peek().kind) {
+                        // Stop token: finalize the paren group without adding an element.
+                        let ExprFrame::Paren { lparen, elements, outer } = stack.pop().unwrap()
+                        else {
+                            unreachable!()
+                        };
+                        let rparen = self.parse_token::<TerminalRParen<'_>>();
+                        let paren_expr = Self::build_paren_expr(self.db, lparen, elements, rparen);
+                        ctx.restore(outer);
+                        Ok(ExprPhase::Reduce(paren_expr))
+                    } else {
+                        // Not a stop token: skip and retry atom parsing.
+                        self.skip_token(ParserDiagnosticKind::SkippedElement {
+                            element_name: "expression".into(),
+                        });
+                        Ok(ExprPhase::Atom)
+                    }
+                } else if stack.is_empty() {
+                    Err(e)
+                } else {
+                    // For Unary/Binary/Index frames a missing atom produces a missing expression
+                    // node (same as parse_expr_limited does), so all pending frames can still be
+                    // reduced cleanly.
+                    let missing = self.create_and_report_missing::<Expr<'_>>(
+                        ParserDiagnosticKind::MissingExpression,
+                    );
+                    Ok(ExprPhase::Reduce(missing))
+                }
+            }
+        }
+    }
+
+    /// Handles the reduce phase of expression parsing.
+    /// Either consumes a binary/post operator (pushing a new frame) or reduces a pending frame.
+    fn expr_reduce_phase(
+        &mut self,
+        expr: ExprGreen<'a>,
+        ctx: &mut ExprParserCtx,
+        stack: &mut Vec<ExprFrame<'a>>,
+    ) -> ExprReduceOutcome<'a> {
+        let peeked_kind = self.peek().kind;
+        let maybe_prec = get_post_operator_precedence(peeked_kind);
+        // If the next two tokens are `&& let` (part of a let-chain), stop and let the caller
+        // handle it.
+        let and_let_stop = peeked_kind == SyntaxKind::TerminalAndAnd
+            && ctx.and_let == AndLetBehavior::Stop
+            && self.peek_next_next_kind() == SyntaxKind::TerminalLet;
+        let should_stop = maybe_prec.is_none_or(|prec| prec >= ctx.prec || and_let_stop);
+
+        if should_stop {
+            // Yield `expr` to the top frame, or return if the stack is empty.
+            return match stack.pop() {
+                None => ExprReduceOutcome::Done(expr),
+                Some(ExprFrame::Unary { op, outer }) => {
+                    ctx.restore(outer);
+                    ctx.child_op = None;
+                    ExprReduceOutcome::Continue(ExprPhase::Reduce(
+                        ExprUnary::new_green(self.db, op, expr).into(),
+                    ))
+                }
+                Some(ExprFrame::Binary { lhs, op, this_op, outer }) => {
+                    ctx.restore(outer);
+                    ctx.child_op = Some(this_op);
+                    ExprReduceOutcome::Continue(ExprPhase::Reduce(
+                        ExprBinary::new_green(self.db, lhs, op, expr).into(),
+                    ))
+                }
+                Some(ExprFrame::Index { outer_expr, lbrack, outer_child_op, outer }) => {
+                    let rbrack = self.parse_token::<TerminalRBrack<'_>>();
+                    ctx.restore(outer);
+                    ctx.child_op = outer_child_op;
+                    ExprReduceOutcome::Continue(ExprPhase::Reduce(
+                        ExprIndexed::new_green(self.db, outer_expr, lbrack, expr, rbrack).into(),
+                    ))
+                }
+                Some(ExprFrame::Paren { lparen, elements, outer }) => ExprReduceOutcome::Continue(
+                    self.expr_reduce_paren_frame(expr, lparen, elements, outer, ctx, stack),
+                ),
+            };
+        }
+
+        // A valid binary/post operator: process it.
+        ExprReduceOutcome::Continue(match peeked_kind {
+            SyntaxKind::TerminalQuestionMark => ExprPhase::Reduce(
+                ExprErrorPropagate::new_green(
+                    self.db,
+                    expr,
+                    self.take::<TerminalQuestionMark<'_>>(),
+                )
+                .into(),
+            ),
+            SyntaxKind::TerminalLBrack => {
+                let lbrack = self.take::<TerminalLBrack<'_>>();
+                stack.push(ExprFrame::Index {
+                    outer_expr: expr,
+                    lbrack,
+                    outer_child_op: ctx.child_op,
+                    outer: ctx.save(),
+                });
+                ctx.enter_subexpr();
+                ExprPhase::Atom
+            }
+            current_op => {
+                if let Some(child_op_kind) = ctx.child_op
+                    && self.is_comparison_operator(child_op_kind)
+                    && self.is_comparison_operator(current_op)
+                {
+                    self.add_diagnostic(
+                        ParserDiagnosticKind::ConsecutiveMathOperators {
+                            first_op: child_op_kind,
+                            second_op: current_op,
+                        },
+                        TextSpan::cursor(self.offset.add_width(self.current_width)),
+                    );
+                }
+                let op = self.parse_binary_operator();
+                let prec = maybe_prec.unwrap();
+                stack.push(ExprFrame::Binary {
+                    lhs: expr,
+                    op,
+                    this_op: current_op,
+                    outer: ctx.save(),
+                });
+                ctx.prec = prec;
+                ctx.child_op = None;
+                ExprPhase::Atom
+            }
+        })
+    }
+
+    /// Reduces a [ExprFrame::Paren] frame after an expression has been parsed inside it.
+    /// Either expects/synthesizes a comma and pushes the frame back for more elements, or
+    /// finalizes the parenthesized expression/tuple.
+    fn expr_reduce_paren_frame(
+        &mut self,
+        expr: ExprGreen<'a>,
+        lparen: TerminalLParenGreen<'a>,
+        mut elements: Vec<ExprListElementOrSeparatorGreen<'a>>,
+        outer: ExprParserOuter,
+        ctx: &mut ExprParserCtx,
+        stack: &mut Vec<ExprFrame<'a>>,
+    ) -> ExprPhase<'a> {
+        elements.push(ExprListElementOrSeparatorGreen::Element(expr));
+        let comma = match self.try_parse_token::<TerminalComma<'_>>() {
+            Ok(comma) => Some(comma),
+            Err(_) => {
+                if is_of_kind!(rparen, block, rbrace, module_item_kw)(self.peek().kind) {
+                    // Stop token: finalize the paren group.
+                    let rparen = self.parse_token::<TerminalRParen<'_>>();
+                    let paren_expr = Self::build_paren_expr(self.db, lparen, elements, rparen);
+                    ctx.restore(outer);
+                    ctx.child_op = None;
+                    return ExprPhase::Reduce(paren_expr);
+                }
+                // Missing comma but more tokens ahead: report and continue parsing.
+                Some(self.create_and_report_missing_terminal::<TerminalComma<'_>>())
+            }
         };
-        let op = self.expect_unary_operator();
-        let expr = self.parse_expr_limited(precedence, lbrace_allowed, AndLetBehavior::Simple);
-        Ok(ExprUnary::new_green(self.db, op, expr).into())
+        // More tuple elements to come: push the frame back.
+        elements.push(comma.unwrap().into());
+        stack.push(ExprFrame::Paren { lparen, elements, outer });
+        ctx.enter_subexpr();
+        ExprPhase::Atom
+    }
+
+    /// Finalizes a parenthesized expression or tuple.
+    /// A single element with no separator becomes [ExprParenthesized];
+    /// anything else (empty, tuple, trailing comma) becomes [ExprListParenthesized].
+    fn build_paren_expr(
+        db: &'a dyn Database,
+        lparen: TerminalLParenGreen<'a>,
+        elements: Vec<ExprListElementOrSeparatorGreen<'a>>,
+        rparen: TerminalRParenGreen<'a>,
+    ) -> ExprGreen<'a> {
+        if let [ExprListElementOrSeparatorGreen::Element(expr)] = &elements[..] {
+            ExprParenthesized::new_green(db, lparen, *expr, rparen).into()
+        } else {
+            ExprListParenthesized::new_green(db, lparen, ExprList::new_green(db, &elements), rparen)
+                .into()
+        }
     }
 
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]),
@@ -1663,11 +1823,7 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             SyntaxKind::TerminalLiteralNumber => Ok(self.take_terminal_literal_number().into()),
             SyntaxKind::TerminalShortString => Ok(self.take_terminal_short_string().into()),
             SyntaxKind::TerminalString => Ok(self.take_terminal_string().into()),
-            SyntaxKind::TerminalLParen => {
-                // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
-                // [LbraceAllowed::Forbid].
-                Ok(self.expect_parenthesized_expr())
-            }
+            // TerminalLParen is handled by try_parse_expr_limited via a Paren frame.
             SyntaxKind::TerminalLBrack => Ok(self.expect_fixed_size_array_expr().into()),
             SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.parse_block().into())
@@ -2148,30 +2304,6 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     /// Assumes the current token is LParen.
     /// Expected pattern: `\((<expr>,)*<expr>?\)`
     /// Returns a GreenId of a node with kind ExprParenthesized|ExprTuple.
-    fn expect_parenthesized_expr(&mut self) -> ExprGreen<'a> {
-        let lparen = self.take::<TerminalLParen<'_>>();
-        let exprs: Vec<ExprListElementOrSeparatorGreen<'_>> = self
-            .parse_separated_list::<Expr<'_>, TerminalComma<'_>, ExprListElementOrSeparatorGreen<'_>>(
-                Self::try_parse_expr,
-                is_of_kind!(rparen, block, rbrace, module_item_kw),
-                "expression",
-            );
-        let rparen = self.parse_token::<TerminalRParen<'_>>();
-
-        if let [ExprListElementOrSeparatorGreen::Element(expr)] = &exprs[..] {
-            // We have exactly one item and no separator --> This is not a tuple.
-            ExprParenthesized::new_green(self.db, lparen, *expr, rparen).into()
-        } else {
-            ExprListParenthesized::new_green(
-                self.db,
-                lparen,
-                ExprList::new_green(self.db, &exprs),
-                rparen,
-            )
-            .into()
-        }
-    }
-
     /// Assumes the current token is LParen.
     /// Expected pattern: `\((<type_expr>,)*<type_expr>?\)`
     /// Returns a GreenId of a node with kind ExprTuple.
@@ -3845,6 +3977,96 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                 }
             }
         }
+    }
+}
+
+// --- Expression parser frame stack types ---
+
+/// A pending computation on the expression parser stack, waiting for a sub-expression result.
+enum ExprFrame<'a> {
+    /// Waiting for the operand of a unary operator.
+    Unary { op: UnaryOperatorGreen<'a>, outer: ExprParserOuter },
+    /// Waiting for the RHS of a binary operator.
+    Binary {
+        lhs: ExprGreen<'a>,
+        op: BinaryOperatorGreen<'a>,
+        /// The operator kind, used to restore `child_op` when this frame is popped.
+        this_op: SyntaxKind,
+        outer: ExprParserOuter,
+    },
+    /// Waiting for an expression inside `(...)`. Handles both parenthesized expressions and
+    /// tuples.
+    Paren {
+        lparen: TerminalLParenGreen<'a>,
+        /// Elements and separators accumulated so far.
+        elements: Vec<ExprListElementOrSeparatorGreen<'a>>,
+        outer: ExprParserOuter,
+    },
+    /// Waiting for the index expression inside `expr[...]`.
+    Index {
+        outer_expr: ExprGreen<'a>,
+        lbrack: TerminalLBrackGreen<'a>,
+        /// The `child_op` state to restore when this frame is popped.
+        outer_child_op: Option<SyntaxKind>,
+        outer: ExprParserOuter,
+    },
+}
+
+/// Two-phase state of the expression parser loop.
+enum ExprPhase<'a> {
+    /// Need to parse the next atom (possibly preceded by unary ops or `(`).
+    Atom,
+    /// Have a parsed expression; look for binary operators or reduce frames.
+    Reduce(ExprGreen<'a>),
+}
+
+/// Return value of [Parser::expr_reduce_phase].
+enum ExprReduceOutcome<'a> {
+    /// Continue the loop with the given phase.
+    Continue(ExprPhase<'a>),
+    /// The parse is complete; return this expression.
+    Done(ExprGreen<'a>),
+}
+
+/// Saved outer context for restoring after a frame is popped.
+#[derive(Clone, Copy)]
+struct ExprParserOuter {
+    prec: usize,
+    lbrace: LbraceAllowed,
+    and_let: AndLetBehavior,
+}
+
+/// Mutable context carried through the expression parser loop.
+struct ExprParserCtx {
+    prec: usize,
+    lbrace: LbraceAllowed,
+    and_let: AndLetBehavior,
+    /// Tracks the previous binary operator for the consecutive comparison operator diagnostic.
+    child_op: Option<SyntaxKind>,
+}
+impl ExprParserCtx {
+    fn new(prec: usize, lbrace: LbraceAllowed, and_let: AndLetBehavior) -> Self {
+        Self { prec, lbrace, and_let, child_op: None }
+    }
+
+    /// Saves the current context to push onto a frame.
+    fn save(&self) -> ExprParserOuter {
+        ExprParserOuter { prec: self.prec, lbrace: self.lbrace, and_let: self.and_let }
+    }
+
+    /// Restores the context saved by [Self::save].
+    fn restore(&mut self, outer: ExprParserOuter) {
+        self.prec = outer.prec;
+        self.lbrace = outer.lbrace;
+        self.and_let = outer.and_let;
+    }
+
+    /// Resets to the context used when entering a sub-expression (paren/index body).
+    fn enter_subexpr(&mut self) {
+        self.prec = MAX_PRECEDENCE;
+        self.lbrace = LbraceAllowed::Allow;
+        self.and_let = AndLetBehavior::Simple;
+        self.child_op = None;
     }
 }
 
