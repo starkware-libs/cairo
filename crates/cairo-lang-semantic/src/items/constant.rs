@@ -725,7 +725,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 .iter()
                                 .find(|(_, member_id)| m.id == *member_id)
                                 .map(|(expr_id, _)| self.evaluate(*expr_id))
-                                .expect("Should have been caught by semantic validation")
+                                // Semantic validation already reported an error, suppress cascading
+                                // errors from const evaluation.
+                                .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic()).intern(db))
                         })
                         .collect(),
                     *ty,
