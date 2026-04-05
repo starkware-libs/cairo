@@ -1,7 +1,7 @@
 ---
 name: prepush
 description: Run pre-push checks and Orizi code review for Cairo repository
-allowed-tools: Bash(./scripts/pre_push.sh:*), Bash(./scripts/rust_fmt.sh:*), Bash(./scripts/clippy.sh:*), Bash(./scripts/docs.sh:*), Bash(typos:*), Bash(taplo:*), Bash(cargo machete:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(cargo fmt:*), Bash(cargo clippy:*), Read, Glob, Grep
+allowed-tools: Bash(.claude/skills/prepush/pre_push.sh:*), Bash(./scripts/rust_fmt.sh:*), Bash(./scripts/clippy.sh:*), Bash(./scripts/docs.sh:*), Bash(typos:*), Bash(taplo:*), Bash(cargo machete:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(cargo fmt:*), Bash(cargo clippy:*), Read, Glob, Grep
 ---
 
 ## Context
@@ -15,7 +15,7 @@ allowed-tools: Bash(./scripts/pre_push.sh:*), Bash(./scripts/rust_fmt.sh:*), Bas
 
 Perform the following pre-push checks:
 
-1. **Run pre_push.sh**: Execute `./scripts/pre_push.sh` and ensure no errors exist. If there are errors, fix them by running the appropriate fix commands (e.g., `./scripts/rust_fmt.sh` for formatting, `cargo clippy --fix --allow-dirty` for clippy warnings, `typos -w` for typos).
+1. **Run pre_push.sh**: Execute `.claude/skills/prepush/pre_push.sh` and ensure no errors exist. If there are errors, fix them by running the appropriate fix commands (e.g., `./scripts/rust_fmt.sh` for formatting, `cargo clippy --fix --allow-dirty` for clippy warnings, `typos -w` for typos).
 
 2. **Analyze changes**: Look at the changes in the last git commit and current diff to identify any missing documentation on public functions or non-trivial inner functions.
 
