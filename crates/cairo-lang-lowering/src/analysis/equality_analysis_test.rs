@@ -9,6 +9,7 @@ use super::equality_analysis::EqualityAnalysis;
 use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::optimizations::strategy::OptimizationPhase;
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
@@ -30,12 +31,23 @@ fn test_equality_analysis(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    // Use an earlier stage to see the snapshot/box operations before they're optimized away.
+    // Use an earlier stage to keep snapshot/box operations visible, then apply inlining so that
+    // trait methods (e.g. `ArrayTrait::new`, `.append`) resolve to extern calls (`array_new`,
+    // `array_append`). The remaining phases clean up the IR for readable test output.
     let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline);
 
-    let (lowering_str, analysis_state_str) = if let Ok(lowered) = lowered {
-        let lowering_str = formatted_lowered(db, Some(lowered));
-        let block_states = EqualityAnalysis::analyze(lowered);
+    let (lowering_str, analysis_state_str) = if let Ok(mut lowered) = lowered.cloned() {
+        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::ApplyInlining { enable_const_folding: true }
+            .apply(db, function_id, &mut lowered)
+            .unwrap();
+        OptimizationPhase::ReturnOptimization.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::ReorderStatements.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::BranchInversion.apply(db, function_id, &mut lowered).unwrap();
+
+        let lowering_str = formatted_lowered(db, Some(&lowered));
+        let block_states = EqualityAnalysis::analyze(db, &lowered);
 
         // Format each block's state
         let analysis_state_str = block_states
