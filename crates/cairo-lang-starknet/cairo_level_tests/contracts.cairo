@@ -9,6 +9,7 @@ mod mintable;
 pub mod multi_component;
 mod new_syntax_test_contract;
 mod ownable_erc20;
+mod proxy;
 mod storage_accesses;
 pub mod test_contract;
 mod token_bridge;
