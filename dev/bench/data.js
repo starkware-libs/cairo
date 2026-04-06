@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775347996406,
+  "lastUpdate": 1775434435047,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1315,6 +1315,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1520627176,
             "range": "± 21482501",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "b3d8efb3438a04e9be5d9035e4536408ae8a5cff",
+          "message": "doc: fix match-expressions.adoc to cover all supported match targets (#9759)",
+          "timestamp": "2026-04-05T17:29:38Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/b3d8efb3438a04e9be5d9035e4536408ae8a5cff"
+        },
+        "date": 1775434434651,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1523117058,
+            "range": "± 10153804",
             "unit": "ns/iter"
           }
         ]
