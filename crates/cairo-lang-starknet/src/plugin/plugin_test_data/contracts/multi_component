@@ -580,6 +580,41 @@ impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDi
     }
 
 }
+#[starknet::forward_impl]
+pub impl GetSupplyForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of GetSupply<TContractState> {
+    fn get_total_supply_plus_1(self: @TContractState) -> u256 {
+        GetSupplyDispatcherTrait::get_total_supply_plus_1(GetSupplyLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+pub trait UnsafeNewContractStateTraitForGetSupplyForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__GetSupplyForwardImpl__get_total_supply_plus_1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForGetSupplyForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_total_supply_plus_1"),
+            data,
+        )
+    )
+}
+
+pub mod __external_GetSupplyForwardImpl {
+    pub use super::__wrapper__GetSupplyForwardImpl__get_total_supply_plus_1 as get_total_supply_plus_1;
+}
+
+pub mod __l1_handler_GetSupplyForwardImpl {
+}
+
+pub mod __constructor_GetSupplyForwardImpl {
+}
 #[doc(group: "dispatchers")]
 impl GetSupplyDispatcherCopy<> of core::traits::Copy::<GetSupplyDispatcher>;
 #[doc(group: "dispatchers")]

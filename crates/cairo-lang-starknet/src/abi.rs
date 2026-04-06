@@ -39,8 +39,8 @@ use crate::plugin::aux_data::StarknetEventAuxData;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, ACCOUNT_CONTRACT_ENTRY_POINT_SELECTORS,
     CONSTRUCTOR_ATTR, CONTRACT_ATTR, CONTRACT_ATTR_ACCOUNT_ARG, CONTRACT_STATE_NAME,
-    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, INTERFACE_ATTR,
-    L1_HANDLER_ATTR, VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR,
+    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, FLAT_ATTR, FORWARD_IMPL_ATTR,
+    INTERFACE_ATTR, L1_HANDLER_ATTR, VALIDATE_DEPLOY_ENTRY_POINT_SELECTOR,
 };
 use crate::plugin::events::EventData;
 
@@ -390,8 +390,10 @@ impl<'db> AbiBuilder<'db> {
         let source = Source::ImplAlias(impl_alias_id);
         let impl_def = self.db.impl_alias_impl_def(impl_alias_id)?;
 
-        // Verify the impl definition has #[starknet::embeddable].
-        if !impl_def.has_attr(self.db, EMBEDDABLE_ATTR)? {
+        // Verify the impl definition has #[starknet::embeddable] or #[starknet::forward_impl].
+        if !impl_def.has_attr(self.db, EMBEDDABLE_ATTR)?
+            && !impl_def.has_attr(self.db, FORWARD_IMPL_ATTR)?
+        {
             return Err(ABIError::EmbeddedImplNotEmbeddable(source));
         }
 

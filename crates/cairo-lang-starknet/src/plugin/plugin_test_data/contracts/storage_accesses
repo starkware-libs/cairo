@@ -1235,6 +1235,205 @@ self: IERC20SafeDispatcher, spender: ContractAddress, subtracted_value: u256,
     }
 
 }
+#[starknet::forward_impl]
+impl IERC20ForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of IERC20<TContractState> {
+    fn get_name(self: @TContractState) -> felt252 {
+        IERC20DispatcherTrait::get_name(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn get_symbol(self: @TContractState) -> felt252 {
+        IERC20DispatcherTrait::get_symbol(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn get_decimals(self: @TContractState) -> u8 {
+        IERC20DispatcherTrait::get_decimals(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn get_total_supply(self: @TContractState) -> u256 {
+        IERC20DispatcherTrait::get_total_supply(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn balance_of(self: @TContractState, account: ContractAddress) -> u256 {
+        IERC20DispatcherTrait::balance_of(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) }, account)
+    }
+    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256 {
+        IERC20DispatcherTrait::allowance(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) }, owner, spender)
+    }
+    fn increase_allowance(ref self: TContractState, spender: ContractAddress, added_value: u256) {
+        IERC20DispatcherTrait::increase_allowance(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) }, spender, added_value)
+    }
+    fn decrease_allowance(
+ref self: TContractState, spender: ContractAddress, subtracted_value: u256,
+    ) {
+        IERC20DispatcherTrait::decrease_allowance(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) }, spender, subtracted_value)
+    }
+    fn write_info(ref self: TContractState, user_info: UserInfo) {
+        IERC20DispatcherTrait::write_info(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) }, user_info)
+    }
+    fn get_info(self: @TContractState) -> UserInfo {
+        IERC20DispatcherTrait::get_info(IERC20LibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_name<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_name"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_symbol<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_symbol"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_decimals<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_decimals"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_total_supply<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_total_supply"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__balance_of<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("balance_of"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__allowance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("allowance"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__increase_allowance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("increase_allowance"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__decrease_allowance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("decrease_allowance"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__write_info<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("write_info"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__IERC20ForwardImpl__get_info<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForIERC20ForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_info"),
+            data,
+        )
+    )
+}
+
+mod __external_IERC20ForwardImpl {
+    pub use super::__wrapper__IERC20ForwardImpl__get_name as get_name;
+    pub use super::__wrapper__IERC20ForwardImpl__get_symbol as get_symbol;
+    pub use super::__wrapper__IERC20ForwardImpl__get_decimals as get_decimals;
+    pub use super::__wrapper__IERC20ForwardImpl__get_total_supply as get_total_supply;
+    pub use super::__wrapper__IERC20ForwardImpl__balance_of as balance_of;
+    pub use super::__wrapper__IERC20ForwardImpl__allowance as allowance;
+    pub use super::__wrapper__IERC20ForwardImpl__increase_allowance as increase_allowance;
+    pub use super::__wrapper__IERC20ForwardImpl__decrease_allowance as decrease_allowance;
+    pub use super::__wrapper__IERC20ForwardImpl__write_info as write_info;
+    pub use super::__wrapper__IERC20ForwardImpl__get_info as get_info;
+}
+
+mod __l1_handler_IERC20ForwardImpl {
+}
+
+mod __constructor_IERC20ForwardImpl {
+}
 impl UserInfoSerde<> of core::serde::Serde::<UserInfo> {
     fn serialize(self: @UserInfo, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<felt252>::serialize(self.name, ref output);
