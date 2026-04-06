@@ -300,3 +300,26 @@ error[E2042]: Unexpected return type. Expected: "core::integer::u8", found: "cor
  --> lib.cairo:2:11
     || -> u8 {
           ^^
+
+//! > ==========================================================================
+
+//! > Statement-level const used in named argument shorthand.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() -> felt252 {
+    const x: felt252 = 42;
+    takes_val(:x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn takes_val(x: felt252) -> felt252 {
+    x
+}
+
+//! > expected_diagnostics
