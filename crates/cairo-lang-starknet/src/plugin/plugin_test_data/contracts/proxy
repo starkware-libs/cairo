@@ -1,134 +1,79 @@
-//! > Test expansion of a simple starknet contract with ownable component.
+//! > Test expansion of a proxy contract using forward impl.
 
 //! > test_runner_name
 ExpandContractFromCrateTestRunner(expect_diagnostics: false)
 
 //! > contract_file_name
-cairo_level_tests/contracts/upgradable_counter.cairo
+cairo_level_tests/contracts/proxy.cairo
 
 //! > generated_cairo_code
 #[starknet::interface]
-trait ICounterContract<TContractState> {
+pub trait ICounterContract<TContractState> {
     fn increase_counter(ref self: TContractState, amount: u128);
     fn decrease_counter(ref self: TContractState, amount: u128);
     fn get_counter(self: @TContractState) -> u128;
 }
 
 #[starknet::contract]
-mod counter_contract {
+pub mod proxy {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use crate::components::ownable::ownable as ownable_comp;
-    use crate::components::upgradable::upgradable as upgradable_comp;
 
     #[storage]
     struct Storage {
-        counter: u128,
-        #[substorage(v0)]
-        upgradable: upgradable_comp::Storage,
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage,
-    }
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        CounterIncreased: CounterIncreased,
-        CounterDecreased: CounterDecreased,
-        UpgradableEvent: upgradable_comp::Event,
-        OwnableEvent: ownable_comp::Event,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct CounterIncreased {
-        amount: u128,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct CounterDecreased {
-        amount: u128,
+        implementation: starknet::ClassHash,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, initial_counter: u128) {
-        self.counter.write(initial_counter);
+    fn constructor(ref self: ContractState, implementation: starknet::ClassHash) {
+        self.implementation.write(implementation);
     }
 
-    #[abi(embed_v0)]
-    impl CounterContract of super::ICounterContract<ContractState> {
-        fn get_counter(self: @ContractState) -> u128 {
-            self.counter.read()
-        }
-
-        fn increase_counter(ref self: ContractState, amount: u128) {
-            let current = self.counter.read();
-            self.counter.write(current + amount);
-            self.emit(CounterIncreased { amount });
-        }
-
-        fn decrease_counter(ref self: ContractState, amount: u128) {
-            let current = self.counter.read();
-            self.counter.write(current - amount);
-            self.emit(CounterDecreased { amount });
+    impl ForwardingClassHashImpl of starknet::ForwardingClassHash<ContractState> {
+        fn class_hash(self: @ContractState) -> starknet::ClassHash {
+            self.implementation.read()
         }
     }
 
     #[abi(embed_v0)]
-    impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
+    impl ForwardedImpl = super::ICounterContractForwardImpl<ContractState>;
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
 
 
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
-    counter: starknet::storage::StorageBase<u128>,
-        #[substorage(v0)]
-    upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
-        #[substorage(v0)]
-    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    implementation: starknet::storage::StorageBase<starknet::ClassHash>,
 }
 #[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let __counter_value__ = starknet::storage::StorageBase {__base_address__: selector!("counter")};
-        let __upgradable_value__ = starknet::storage::FlattenedStorage {};
-        let __ownable_value__ = starknet::storage::FlattenedStorage {};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBase {
-           counter: __counter_value__,
-           upgradable: __upgradable_value__,
-           ownable: __ownable_value__,
+           implementation: __implementation_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
-    counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
-        #[substorage(v0)]
-    upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
-        #[substorage(v0)]
-    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    implementation: starknet::storage::StorageBase<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let __counter_value__ = starknet::storage::StorageBase {__base_address__: selector!("counter")};
-        let __upgradable_value__ = starknet::storage::FlattenedStorage {};
-        let __ownable_value__ = starknet::storage::FlattenedStorage {};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBaseMut {
-           counter: __counter_value__,
-           upgradable: __upgradable_value__,
-           ownable: __ownable_value__,
+           implementation: __implementation_value__,
         }
     }
 }
 
 pub struct ContractState {
-        #[substorage(v0)]
-         upgradable: upgradable_comp::ComponentState<ContractState>,
-        #[substorage(v0)]
-         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
@@ -147,8 +92,6 @@ impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
 }
 pub fn unsafe_new_contract_state() -> ContractState {
     ContractState {
-            upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
-            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
     }
 }
 
@@ -168,82 +111,21 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    let __arg_initial_counter = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<u128>::deserialize(ref data),
+    let __arg_implementation = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<starknet::ClassHash>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
-    constructor(ref contract_state, __arg_initial_counter);
+    constructor(ref contract_state, __arg_implementation);
     let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    let res = CounterContract::get_counter(@contract_state, );
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::serde::Serde::<u128>::serialize(@res, ref arr);
-    core::array::ArrayTrait::span(@arr)
-}
-
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    let __arg_amount = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<u128>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    CounterContract::increase_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::array::ArrayTrait::span(@arr)
-}
-
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    let __arg_amount = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<u128>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    CounterContract::decrease_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::array::ArrayTrait::span(@arr)
-}
-
-impl ContractStateUpgradableImpl of
-    upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
+impl ContractStateICounterContractForwardImpl of
+    super::UnsafeNewContractStateTraitForICounterContractForwardImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
@@ -251,9 +133,6 @@ impl ContractStateUpgradableImpl of
 
 #[doc(hidden)]
 pub mod __external {
-    pub use super::__wrapper__CounterContract__get_counter as get_counter;
-    pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
-    pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
 }
 #[doc(hidden)]
 pub mod __l1_handler {
@@ -280,140 +159,19 @@ pub mod __constructor {
             )
         }
     }
-
-impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
-    fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
-                 @upgradable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
-        upgradable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_contract(self: @upgradable_comp::ComponentState<ContractState>) -> @ContractState {
-        @unsafe_new_contract_state()
-    }
-    fn get_contract_mut(ref self: upgradable_comp::ComponentState<ContractState>) -> ContractState {
-        unsafe_new_contract_state()
-    }
-    fn emit<S, impl IntoImp: core::traits::Into<S, upgradable_comp::Event>>(ref self: upgradable_comp::ComponentState<ContractState>, event: S) {
-        let event: upgradable_comp::Event = core::traits::Into::into(event);
-        let mut contract = upgradable_comp::HasComponent::get_contract_mut(ref self);
-        ContractStateEventEmitter::emit(ref contract, Event::UpgradableEvent(event));
-    }
-}
-impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
-    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-                 @ownable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
-        ownable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
-        @unsafe_new_contract_state()
-    }
-    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
-        unsafe_new_contract_state()
-    }
-    fn emit<S, impl IntoImp: core::traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
-        let event: ownable_comp::Event = core::traits::Into::into(event);
-        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
-        ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
-    }
-}
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
         match self {
-            Event::CounterIncreased(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("CounterIncreased"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-            Event::CounterDecreased(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("CounterDecreased"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-            Event::UpgradableEvent(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("UpgradableEvent"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-            Event::OwnableEvent(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("OwnableEvent"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
         }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        if __selector__ == selector!("CounterIncreased") {
-            return Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
-        }
-        if __selector__ == selector!("CounterDecreased") {
-            return Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
-        }
-        if __selector__ == selector!("UpgradableEvent") {
-            return Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
-        }
-        if __selector__ == selector!("OwnableEvent") {
-            return Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
-        }
         Option::None
-    }
-}
-impl EventCounterIncreasedIntoEvent of Into<CounterIncreased, Event> {
-    fn into(self: CounterIncreased) -> Event {
-        Event::CounterIncreased(self)
-    }
-}
-impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
-    fn into(self: CounterDecreased) -> Event {
-        Event::CounterDecreased(self)
-    }
-}
-impl EventUpgradableEventIntoEvent of Into<upgradable_comp::Event, Event> {
-    fn into(self: upgradable_comp::Event) -> Event {
-        Event::UpgradableEvent(self)
-    }
-}
-impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
-    fn into(self: ownable_comp::Event) -> Event {
-        Event::OwnableEvent(self)
-    }
-}
-impl CounterIncreasedDrop<> of core::traits::Drop::<CounterIncreased>;
-impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
-    fn append_keys_and_data(
-        self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-            core::serde::Serde::serialize(self.amount, ref data);
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterIncreased> {
-        Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
-    }
-}
-impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
-impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
-    fn append_keys_and_data(
-        self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-            core::serde::Serde::serialize(self.amount, ref data);
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterDecreased> {
-        Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 #[doc(hidden)]
@@ -426,7 +184,7 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 #[doc(group: "dispatchers")]
-trait ICounterContractDispatcherTrait<T> {
+pub trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);
     fn decrease_counter(self: T, amount: u128);
     fn get_counter(self: T) -> u128;
@@ -434,7 +192,7 @@ trait ICounterContractDispatcherTrait<T> {
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct ICounterContractDispatcher {
+pub struct ICounterContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
@@ -483,7 +241,7 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct ICounterContractLibraryDispatcher {
+pub struct ICounterContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
@@ -531,7 +289,7 @@ impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<IC
 }
 
 #[doc(group: "dispatchers")]
-trait ICounterContractSafeDispatcherTrait<T> {
+pub trait ICounterContractSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
     fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
     #[unstable(feature: "safe_dispatcher")]
@@ -542,7 +300,7 @@ trait ICounterContractSafeDispatcherTrait<T> {
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct ICounterContractSafeLibraryDispatcher {
+pub struct ICounterContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
@@ -594,7 +352,7 @@ impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcher
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct ICounterContractSafeDispatcher {
+pub struct ICounterContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
@@ -643,7 +401,7 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
 
 }
 #[starknet::forward_impl]
-impl ICounterContractForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ICounterContract<TContractState> {
+pub impl ICounterContractForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ICounterContract<TContractState> {
     fn increase_counter(ref self: TContractState, amount: u128) {
         ICounterContractDispatcherTrait::increase_counter(ICounterContractLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) }, amount)
     }
@@ -655,7 +413,7 @@ impl ICounterContractForwardImpl<TContractState, +starknet::ForwardingClassHash<
     }
 }
 
-trait UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState> {
+pub trait UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
@@ -702,16 +460,16 @@ fn __wrapper__ICounterContractForwardImpl__get_counter<TContractState, impl FCH:
     )
 }
 
-mod __external_ICounterContractForwardImpl {
+pub mod __external_ICounterContractForwardImpl {
     pub use super::__wrapper__ICounterContractForwardImpl__increase_counter as increase_counter;
     pub use super::__wrapper__ICounterContractForwardImpl__decrease_counter as decrease_counter;
     pub use super::__wrapper__ICounterContractForwardImpl__get_counter as get_counter;
 }
 
-mod __l1_handler_ICounterContractForwardImpl {
+pub mod __l1_handler_ICounterContractForwardImpl {
 }
 
-mod __constructor_ICounterContractForwardImpl {
+pub mod __constructor_ICounterContractForwardImpl {
 }
 #[doc(group: "dispatchers")]
 impl ICounterContractDispatcherCopy<> of core::traits::Copy::<ICounterContractDispatcher>;
@@ -781,7 +539,7 @@ impl ICounterContractDispatcherStore<> of starknet::Store::<ICounterContractDisp
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractDispatcherSubPointers {
+pub struct ICounterContractDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 #[doc(hidden)]
@@ -801,7 +559,7 @@ impl ICounterContractDispatcherSubPointersImpl of starknet::storage::SubPointers
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractDispatcherSubPointersMut {
+pub struct ICounterContractDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 #[doc(hidden)]
@@ -887,7 +645,7 @@ impl ICounterContractLibraryDispatcherStore<> of starknet::Store::<ICounterContr
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractLibraryDispatcherSubPointers {
+pub struct ICounterContractLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 #[doc(hidden)]
@@ -907,7 +665,7 @@ impl ICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::SubP
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractLibraryDispatcherSubPointersMut {
+pub struct ICounterContractLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
@@ -993,7 +751,7 @@ impl ICounterContractSafeLibraryDispatcherStore<> of starknet::Store::<ICounterC
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractSafeLibraryDispatcherSubPointers {
+pub struct ICounterContractSafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 #[doc(hidden)]
@@ -1013,7 +771,7 @@ impl ICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractSafeLibraryDispatcherSubPointersMut {
+pub struct ICounterContractSafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
@@ -1099,7 +857,7 @@ impl ICounterContractSafeDispatcherStore<> of starknet::Store::<ICounterContract
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractSafeDispatcherSubPointers {
+pub struct ICounterContractSafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 #[doc(hidden)]
@@ -1119,7 +877,7 @@ impl ICounterContractSafeDispatcherSubPointersImpl of starknet::storage::SubPoin
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct ICounterContractSafeDispatcherSubPointersMut {
+pub struct ICounterContractSafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 #[doc(hidden)]
@@ -1171,118 +929,63 @@ impl ICounterContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<
 impl ICounterContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use crate::components::ownable::ownable as ownable_comp;
-    use crate::components::upgradable::upgradable as upgradable_comp;
 
     #[storage]
     struct Storage {
-        counter: u128,
-        #[substorage(v0)]
-        upgradable: upgradable_comp::Storage,
-        #[substorage(v0)]
-        ownable: ownable_comp::Storage,
-    }
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        CounterIncreased: CounterIncreased,
-        CounterDecreased: CounterDecreased,
-        UpgradableEvent: upgradable_comp::Event,
-        OwnableEvent: ownable_comp::Event,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct CounterIncreased {
-        amount: u128,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct CounterDecreased {
-        amount: u128,
+        implementation: starknet::ClassHash,
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, initial_counter: u128) {
-        self.counter.write(initial_counter);
+    fn constructor(ref self: ContractState, implementation: starknet::ClassHash) {
+        self.implementation.write(implementation);
     }
 
-    #[abi(embed_v0)]
-    impl CounterContract of super::ICounterContract<ContractState> {
-        fn get_counter(self: @ContractState) -> u128 {
-            self.counter.read()
-        }
-
-        fn increase_counter(ref self: ContractState, amount: u128) {
-            let current = self.counter.read();
-            self.counter.write(current + amount);
-            self.emit(CounterIncreased { amount });
-        }
-
-        fn decrease_counter(ref self: ContractState, amount: u128) {
-            let current = self.counter.read();
-            self.counter.write(current - amount);
-            self.emit(CounterDecreased { amount });
+    impl ForwardingClassHashImpl of starknet::ForwardingClassHash<ContractState> {
+        fn class_hash(self: @ContractState) -> starknet::ClassHash {
+            self.implementation.read()
         }
     }
 
     #[abi(embed_v0)]
-    impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
+    impl ForwardedImpl = super::ICounterContractForwardImpl<ContractState>;
+#[event]
+#[derive(Drop, starknet::Event)]
+pub enum Event {}
 
 
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
-    counter: starknet::storage::StorageBase<u128>,
-        #[substorage(v0)]
-    upgradable: starknet::storage::FlattenedStorage<upgradable_comp::Storage>,
-        #[substorage(v0)]
-    ownable: starknet::storage::FlattenedStorage<ownable_comp::Storage>,
+    implementation: starknet::storage::StorageBase<starknet::ClassHash>,
 }
 #[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let __counter_value__ = starknet::storage::StorageBase {__base_address__: selector!("counter")};
-        let __upgradable_value__ = starknet::storage::FlattenedStorage {};
-        let __ownable_value__ = starknet::storage::FlattenedStorage {};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBase {
-           counter: __counter_value__,
-           upgradable: __upgradable_value__,
-           ownable: __ownable_value__,
+           implementation: __implementation_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
-    counter: starknet::storage::StorageBase<starknet::storage::Mutable::<u128>>,
-        #[substorage(v0)]
-    upgradable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<upgradable_comp::Storage>>,
-        #[substorage(v0)]
-    ownable: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<ownable_comp::Storage>>,
+    implementation: starknet::storage::StorageBase<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let __counter_value__ = starknet::storage::StorageBase {__base_address__: selector!("counter")};
-        let __upgradable_value__ = starknet::storage::FlattenedStorage {};
-        let __ownable_value__ = starknet::storage::FlattenedStorage {};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBaseMut {
-           counter: __counter_value__,
-           upgradable: __upgradable_value__,
-           ownable: __ownable_value__,
+           implementation: __implementation_value__,
         }
     }
 }
 
 pub struct ContractState {
-        #[substorage(v0)]
-         upgradable: upgradable_comp::ComponentState<ContractState>,
-        #[substorage(v0)]
-         ownable: ownable_comp::ComponentState<ContractState>,
 }
 
 impl ContractStateDrop of Drop<ContractState> {}
@@ -1301,8 +1004,6 @@ impl ContractStateDerefMut of core::ops::DerefMut<ContractState> {
 }
 pub fn unsafe_new_contract_state() -> ContractState {
     ContractState {
-            upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
-            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
     }
 }
 
@@ -1322,82 +1023,21 @@ fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    let __arg_initial_counter = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<u128>::deserialize(ref data),
+    let __arg_implementation = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<starknet::ClassHash>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
-    constructor(ref contract_state, __arg_initial_counter);
+    constructor(ref contract_state, __arg_implementation);
     let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    let res = CounterContract::get_counter(@contract_state, );
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::serde::Serde::<u128>::serialize(@res, ref arr);
-    core::array::ArrayTrait::span(@arr)
-}
-
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    let __arg_amount = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<u128>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    CounterContract::increase_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::array::ArrayTrait::span(@arr)
-}
-
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    let __arg_amount = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<u128>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    CounterContract::decrease_counter(ref contract_state, __arg_amount);
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::array::ArrayTrait::span(@arr)
-}
-
-impl ContractStateUpgradableImpl of
-    upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
+impl ContractStateICounterContractForwardImpl of
+    super::UnsafeNewContractStateTraitForICounterContractForwardImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
@@ -1405,9 +1045,6 @@ impl ContractStateUpgradableImpl of
 
 #[doc(hidden)]
 pub mod __external {
-    pub use super::__wrapper__CounterContract__get_counter as get_counter;
-    pub use super::__wrapper__CounterContract__increase_counter as increase_counter;
-    pub use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
 }
 #[doc(hidden)]
 pub mod __l1_handler {
@@ -1434,140 +1071,19 @@ pub mod __constructor {
             )
         }
     }
-
-impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
-    fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
-                 @upgradable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
-        upgradable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_contract(self: @upgradable_comp::ComponentState<ContractState>) -> @ContractState {
-        @unsafe_new_contract_state()
-    }
-    fn get_contract_mut(ref self: upgradable_comp::ComponentState<ContractState>) -> ContractState {
-        unsafe_new_contract_state()
-    }
-    fn emit<S, impl IntoImp: core::traits::Into<S, upgradable_comp::Event>>(ref self: upgradable_comp::ComponentState<ContractState>, event: S) {
-        let event: upgradable_comp::Event = core::traits::Into::into(event);
-        let mut contract = upgradable_comp::HasComponent::get_contract_mut(ref self);
-        ContractStateEventEmitter::emit(ref contract, Event::UpgradableEvent(event));
-    }
-}
-impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
-    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
-                 @ownable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
-        ownable_comp::unsafe_new_component_state::<ContractState>()
-    }
-    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
-        @unsafe_new_contract_state()
-    }
-    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
-        unsafe_new_contract_state()
-    }
-    fn emit<S, impl IntoImp: core::traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
-        let event: ownable_comp::Event = core::traits::Into::into(event);
-        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
-        ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
-    }
-}
 impl EventDrop<> of core::traits::Drop::<Event>;
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
         match self {
-            Event::CounterIncreased(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("CounterIncreased"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-            Event::CounterDecreased(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("CounterDecreased"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-            Event::UpgradableEvent(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("UpgradableEvent"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-            Event::OwnableEvent(val) => {
-                core::array::ArrayTrait::append(ref keys, selector!("OwnableEvent"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
         }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let __selector__ = *core::array::SpanTrait::pop_front(ref keys)?;
-        if __selector__ == selector!("CounterIncreased") {
-            return Option::Some(Event::CounterIncreased(starknet::Event::deserialize(ref keys, ref data)?));
-        }
-        if __selector__ == selector!("CounterDecreased") {
-            return Option::Some(Event::CounterDecreased(starknet::Event::deserialize(ref keys, ref data)?));
-        }
-        if __selector__ == selector!("UpgradableEvent") {
-            return Option::Some(Event::UpgradableEvent(starknet::Event::deserialize(ref keys, ref data)?));
-        }
-        if __selector__ == selector!("OwnableEvent") {
-            return Option::Some(Event::OwnableEvent(starknet::Event::deserialize(ref keys, ref data)?));
-        }
         Option::None
-    }
-}
-impl EventCounterIncreasedIntoEvent of Into<CounterIncreased, Event> {
-    fn into(self: CounterIncreased) -> Event {
-        Event::CounterIncreased(self)
-    }
-}
-impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
-    fn into(self: CounterDecreased) -> Event {
-        Event::CounterDecreased(self)
-    }
-}
-impl EventUpgradableEventIntoEvent of Into<upgradable_comp::Event, Event> {
-    fn into(self: upgradable_comp::Event) -> Event {
-        Event::UpgradableEvent(self)
-    }
-}
-impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
-    fn into(self: ownable_comp::Event) -> Event {
-        Event::OwnableEvent(self)
-    }
-}
-impl CounterIncreasedDrop<> of core::traits::Drop::<CounterIncreased>;
-impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
-    fn append_keys_and_data(
-        self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-            core::serde::Serde::serialize(self.amount, ref data);
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterIncreased> {
-        Option::Some(CounterIncreased {amount: core::serde::Serde::deserialize(ref data)?, })
-    }
-}
-impl CounterDecreasedDrop<> of core::traits::Drop::<CounterDecreased>;
-impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
-    fn append_keys_and_data(
-        self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-            core::serde::Serde::serialize(self.amount, ref data);
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CounterDecreased> {
-        Option::Some(CounterDecreased {amount: core::serde::Serde::deserialize(ref data)?, })
     }
 }
 #[doc(hidden)]

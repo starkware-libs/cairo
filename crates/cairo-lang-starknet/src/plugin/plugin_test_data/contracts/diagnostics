@@ -3028,6 +3028,77 @@ impl InterfaceTraitSafeDispatcherImpl of InterfaceTraitSafeDispatcherTrait<Inter
     }
 
 }
+#[starknet::forward_impl]
+impl InterfaceTraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of InterfaceTrait<TContractState> {
+    fn foo_external1(self: @TContractState) {
+        InterfaceTraitDispatcherTrait::foo_external1(InterfaceTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn foo_l1_handler1(self: @TContractState) {
+        InterfaceTraitDispatcherTrait::foo_l1_handler1(InterfaceTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn foo_constructor1(self: @TContractState) {
+        InterfaceTraitDispatcherTrait::foo_constructor1(InterfaceTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceTraitForwardImpl__foo_external1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo_external1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceTraitForwardImpl__foo_l1_handler1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo_l1_handler1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceTraitForwardImpl__foo_constructor1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo_constructor1"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceTraitForwardImpl {
+    pub use super::__wrapper__InterfaceTraitForwardImpl__foo_external1 as foo_external1;
+    pub use super::__wrapper__InterfaceTraitForwardImpl__foo_l1_handler1 as foo_l1_handler1;
+    pub use super::__wrapper__InterfaceTraitForwardImpl__foo_constructor1 as foo_constructor1;
+}
+
+mod __l1_handler_InterfaceTraitForwardImpl {
+}
+
+mod __constructor_InterfaceTraitForwardImpl {
+}
 
 
 lib.cairo:1:1
@@ -8018,6 +8089,77 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
     }
 
 }
+#[starknet::forward_impl]
+impl InterfaceForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn foo1(self: @TContractState) {
+        InterfaceDispatcherTrait::foo1(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn foo2(self: @TContractState) {
+        InterfaceDispatcherTrait::foo2(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn foo3(self: @TContractState) {
+        InterfaceDispatcherTrait::foo3(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo2<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo2"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__foo1 as foo1;
+    pub use super::__wrapper__InterfaceForwardImpl__foo2 as foo2;
+    pub use super::__wrapper__InterfaceForwardImpl__foo3 as foo3;
+}
+
+mod __l1_handler_InterfaceForwardImpl {
+}
+
+mod __constructor_InterfaceForwardImpl {
+}
 
 
 lib.cairo:7:1
@@ -8979,6 +9121,77 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
         Result::Ok(())
     }
 
+}
+#[starknet::forward_impl]
+impl InterfaceForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn foo1(self: @TContractState) {
+        InterfaceDispatcherTrait::foo1(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn foo2(self: @TContractState) {
+        InterfaceDispatcherTrait::foo2(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn foo3(self: @TContractState) {
+        InterfaceDispatcherTrait::foo3(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo1<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo1"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo2<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo2"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__foo1 as foo1;
+    pub use super::__wrapper__InterfaceForwardImpl__foo2 as foo2;
+    pub use super::__wrapper__InterfaceForwardImpl__foo3 as foo3;
+}
+
+mod __l1_handler_InterfaceForwardImpl {
+}
+
+mod __constructor_InterfaceForwardImpl {
 }
 
 
@@ -10581,6 +10794,59 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
     }
 
 }
+#[starknet::forward_impl]
+impl Comp3TraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState) {
+        Comp3TraitDispatcherTrait::foo3(Comp3TraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) })
+    }
+    fn foo4(self: @TContractState) {
+        Comp3TraitDispatcherTrait::foo4(Comp3TraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__Comp3TraitForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__Comp3TraitForwardImpl__foo4<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo4"),
+            data,
+        )
+    )
+}
+
+mod __external_Comp3TraitForwardImpl {
+    pub use super::__wrapper__Comp3TraitForwardImpl__foo3 as foo3;
+    pub use super::__wrapper__Comp3TraitForwardImpl__foo4 as foo4;
+}
+
+mod __l1_handler_Comp3TraitForwardImpl {
+}
+
+mod __constructor_Comp3TraitForwardImpl {
+}
 
 
 lib.cairo:30:1
@@ -11962,6 +12228,41 @@ impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSaf
     }
 
 }
+#[starknet::forward_impl]
+impl Comp3TraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState) {
+        Comp3TraitDispatcherTrait::foo3(Comp3TraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__Comp3TraitForwardImpl__foo3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3TraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo3"),
+            data,
+        )
+    )
+}
+
+mod __external_Comp3TraitForwardImpl {
+    pub use super::__wrapper__Comp3TraitForwardImpl__foo3 as foo3;
+}
+
+mod __l1_handler_Comp3TraitForwardImpl {
+}
+
+mod __constructor_Comp3TraitForwardImpl {
+}
 
 
 lib.cairo:27:1
@@ -13202,6 +13503,41 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
     }
 
 }
+#[starknet::forward_impl]
+impl ContractTraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ContractTrait<TContractState> {
+    fn foo(self: @TContractState) {
+        ContractTraitDispatcherTrait::foo(ContractTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ContractTraitForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+mod __external_ContractTraitForwardImpl {
+    pub use super::__wrapper__ContractTraitForwardImpl__foo as foo;
+}
+
+mod __l1_handler_ContractTraitForwardImpl {
+}
+
+mod __constructor_ContractTraitForwardImpl {
+}
 
 
 lib.cairo:1:1
@@ -14160,6 +14496,41 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
         Result::Ok(())
     }
 
+}
+#[starknet::forward_impl]
+impl ContractTraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ContractTrait<TContractState> {
+    fn foo(self: @TContractState) {
+        ContractTraitDispatcherTrait::foo(ContractTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ContractTraitForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+mod __external_ContractTraitForwardImpl {
+    pub use super::__wrapper__ContractTraitForwardImpl__foo as foo;
+}
+
+mod __l1_handler_ContractTraitForwardImpl {
+}
+
+mod __constructor_ContractTraitForwardImpl {
 }
 
 
@@ -15362,6 +15733,41 @@ impl ContractTraitSafeDispatcherImpl of ContractTraitSafeDispatcherTrait<Contrac
     }
 
 }
+#[starknet::forward_impl]
+impl ContractTraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ContractTrait<TContractState> {
+    fn foo(self: @TContractState) -> u256 {
+        ContractTraitDispatcherTrait::foo(ContractTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ContractTraitForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForContractTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+mod __external_ContractTraitForwardImpl {
+    pub use super::__wrapper__ContractTraitForwardImpl__foo as foo;
+}
+
+mod __l1_handler_ContractTraitForwardImpl {
+}
+
+mod __constructor_ContractTraitForwardImpl {
+}
 
 
 lib.cairo:43:1
@@ -16315,6 +16721,41 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
         Result::Ok(())
     }
 
+}
+#[starknet::forward_impl]
+impl InterfaceForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn func(self: @TContractState) {
+        InterfaceDispatcherTrait::func(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__func<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("func"),
+            data,
+        )
+    )
+}
+
+mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__func as func;
+}
+
+mod __l1_handler_InterfaceForwardImpl {
+}
+
+mod __constructor_InterfaceForwardImpl {
 }
 
 
@@ -18045,6 +18486,41 @@ impl InterfaceSafeDispatcherImpl of InterfaceSafeDispatcherTrait<InterfaceSafeDi
         Result::Ok(())
     }
 
+}
+#[starknet::forward_impl]
+pub impl InterfaceForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of Interface<TContractState> {
+    fn foo(ref self: TContractState, value: u256) {
+        InterfaceDispatcherTrait::foo(InterfaceLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) }, value)
+    }
+}
+
+pub trait UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__InterfaceForwardImpl__foo<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForInterfaceForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("foo"),
+            data,
+        )
+    )
+}
+
+pub mod __external_InterfaceForwardImpl {
+    pub use super::__wrapper__InterfaceForwardImpl__foo as foo;
+}
+
+pub mod __l1_handler_InterfaceForwardImpl {
+}
+
+pub mod __constructor_InterfaceForwardImpl {
 }
 
 

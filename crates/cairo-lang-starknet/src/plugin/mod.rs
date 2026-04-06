@@ -83,6 +83,7 @@ impl MacroPlugin for StarknetPlugin {
             SmolStrId::from(db, EVENT_ATTR),
             SmolStrId::from(db, EXTERNAL_ATTR),
             SmolStrId::from(db, FLAT_ATTR),
+            SmolStrId::from(db, FORWARD_IMPL_ATTR),
             SmolStrId::from(db, INTERFACE_ATTR),
             SmolStrId::from(db, KEY_ATTR),
             SmolStrId::from(db, L1_HANDLER_ATTR),
