@@ -252,6 +252,59 @@ impl OutsideTraitSafeDispatcherImpl of OutsideTraitSafeDispatcherTrait<OutsideTr
     }
 
 }
+#[starknet::forward_impl]
+impl OutsideTraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of OutsideTrait<TContractState> {
+    fn ret_3(self: @TContractState) -> felt252 {
+        OutsideTraitDispatcherTrait::ret_3(OutsideTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+    fn ret_identity(ref self: TContractState, from_address: felt252, value: felt252) -> felt252 {
+        OutsideTraitDispatcherTrait::ret_identity(OutsideTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) }, from_address, value)
+    }
+}
+
+trait UnsafeNewContractStateTraitForOutsideTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__OutsideTraitForwardImpl__ret_3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("ret_3"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__OutsideTraitForwardImpl__ret_identity<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("ret_identity"),
+            data,
+        )
+    )
+}
+
+mod __external_OutsideTraitForwardImpl {
+    pub use super::__wrapper__OutsideTraitForwardImpl__ret_3 as ret_3;
+    pub use super::__wrapper__OutsideTraitForwardImpl__ret_identity as ret_identity;
+}
+
+mod __l1_handler_OutsideTraitForwardImpl {
+}
+
+mod __constructor_OutsideTraitForwardImpl {
+}
 
 
 lib.cairo:7:1
@@ -1276,6 +1329,41 @@ impl OutsideTraitWithDestructSafeDispatcherImpl of OutsideTraitWithDestructSafeD
     }
 
 }
+#[starknet::forward_impl]
+impl OutsideTraitWithDestructForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of OutsideTraitWithDestruct<TContractState> {
+    fn ret_3(self: @TContractState) -> felt252 {
+        OutsideTraitWithDestructDispatcherTrait::ret_3(OutsideTraitWithDestructLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForOutsideTraitWithDestructForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__OutsideTraitWithDestructForwardImpl__ret_3<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideTraitWithDestructForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("ret_3"),
+            data,
+        )
+    )
+}
+
+mod __external_OutsideTraitWithDestructForwardImpl {
+    pub use super::__wrapper__OutsideTraitWithDestructForwardImpl__ret_3 as ret_3;
+}
+
+mod __l1_handler_OutsideTraitWithDestructForwardImpl {
+}
+
+mod __constructor_OutsideTraitWithDestructForwardImpl {
+}
 
 
 lib.cairo:6:1
@@ -1440,6 +1528,41 @@ impl OutsideTraitWithPanicDestructSafeDispatcherImpl of OutsideTraitWithPanicDes
         )
     }
 
+}
+#[starknet::forward_impl]
+impl OutsideTraitWithPanicDestructForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of OutsideTraitWithPanicDestruct<TContractState> {
+    fn ret_5(self: @TContractState) -> felt252 {
+        OutsideTraitWithPanicDestructDispatcherTrait::ret_5(OutsideTraitWithPanicDestructLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForOutsideTraitWithPanicDestructForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__OutsideTraitWithPanicDestructForwardImpl__ret_5<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideTraitWithPanicDestructForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("ret_5"),
+            data,
+        )
+    )
+}
+
+mod __external_OutsideTraitWithPanicDestructForwardImpl {
+    pub use super::__wrapper__OutsideTraitWithPanicDestructForwardImpl__ret_5 as ret_5;
+}
+
+mod __l1_handler_OutsideTraitWithPanicDestructForwardImpl {
+}
+
+mod __constructor_OutsideTraitWithPanicDestructForwardImpl {
 }
 
 
@@ -2979,6 +3102,41 @@ impl OutsideTraitWithDropSafeDispatcherImpl of OutsideTraitWithDropSafeDispatche
         )
     }
 
+}
+#[starknet::forward_impl]
+impl OutsideTraitWithDropForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of OutsideTraitWithDrop<TContractState> {
+    fn ret_8(self: @TContractState) -> felt252 {
+        OutsideTraitWithDropDispatcherTrait::ret_8(OutsideTraitWithDropLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) })
+    }
+}
+
+trait UnsafeNewContractStateTraitForOutsideTraitWithDropForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__OutsideTraitWithDropForwardImpl__ret_8<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideTraitWithDropForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("ret_8"),
+            data,
+        )
+    )
+}
+
+mod __external_OutsideTraitWithDropForwardImpl {
+    pub use super::__wrapper__OutsideTraitWithDropForwardImpl__ret_8 as ret_8;
+}
+
+mod __l1_handler_OutsideTraitWithDropForwardImpl {
+}
+
+mod __constructor_OutsideTraitWithDropForwardImpl {
 }
 
 

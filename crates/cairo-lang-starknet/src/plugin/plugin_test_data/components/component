@@ -385,6 +385,59 @@ impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatch
     }
 
 }
+#[starknet::forward_impl]
+impl MyTraitForwardImpl<TContractState, +starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of MyTrait<TContractState> {
+    fn get(self: @TContractState, addr: ContractAddress) -> u32 {
+        MyTraitDispatcherTrait::get(MyTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(self) }, addr)
+    }
+    fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
+        MyTraitDispatcherTrait::set(MyTraitLibraryDispatcher { class_hash: starknet::ForwardingClassHash::class_hash(@self) }, addr, value)
+    }
+}
+
+trait UnsafeNewContractStateTraitForMyTraitForwardImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__MyTraitForwardImpl__get<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__MyTraitForwardImpl__set<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("set"),
+            data,
+        )
+    )
+}
+
+mod __external_MyTraitForwardImpl {
+    pub use super::__wrapper__MyTraitForwardImpl__get as get;
+    pub use super::__wrapper__MyTraitForwardImpl__set as set;
+}
+
+mod __l1_handler_MyTraitForwardImpl {
+}
+
+mod __constructor_MyTraitForwardImpl {
+}
 
 
 lib.cairo:1:16

@@ -140,6 +140,24 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
     }
 }
 
+/// Trait for providing a class hash for forwarding interface calls via library calls.
+///
+/// Implement this trait to specify which `ClassHash` to use when forwarding calls.
+/// Used with the forward impl infrastructure generated from `#[starknet::interface]` traits.
+///
+/// # Examples
+///
+/// ```
+/// impl MyForwardingClassHash of starknet::ForwardingClassHash<ContractState> {
+///     fn class_hash(self: @ContractState) -> starknet::ClassHash {
+///         self.implementation.read()
+///     }
+/// }
+/// ```
+pub trait ForwardingClassHash<TContractState> {
+    fn class_hash(self: @TContractState) -> ClassHash;
+}
+
 /// The expected return value of the `__validate__` function in account contracts.
 ///
 /// This constant is used to indicate that a transaction validation was successful.
