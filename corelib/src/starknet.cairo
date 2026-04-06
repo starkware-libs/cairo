@@ -140,6 +140,46 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
     }
 }
 
+/// Trait for providing the class hash used to forward interface calls via library calls.
+///
+/// Each `#[starknet::interface]` trait `IFoo` generates a `IFooForwardImpl` that implements
+/// `IFoo<TContractState>` for any `TContractState` satisfying this trait. Every method in
+/// `IFooForwardImpl` forwards the call as a library call to the class hash returned by
+/// `class_hash`.
+///
+/// Implement this trait on a contract's `ContractState` to specify which `ClassHash` to use
+/// when forwarding — typically a stored implementation address, as in a proxy contract.
+///
+/// # Examples
+///
+/// ```
+/// #[starknet::interface]
+/// trait IFoo<TContractState> {
+///     fn foo(self: @TContractState) -> felt252;
+/// }
+///
+/// #[starknet::contract]
+/// mod my_proxy {
+///     #[storage]
+///     struct Storage {
+///         implementation: starknet::ClassHash,
+///     }
+///
+///     impl ForwardingClassHashImpl of starknet::ForwardingClassHash<ContractState> {
+///         fn class_hash(self: @ContractState) -> starknet::ClassHash {
+///             self.implementation.read()
+///         }
+///     }
+///
+///     #[abi(embed_v0)]
+///     impl FooImpl = super::IFooForwardImpl<ContractState>;
+/// }
+/// ```
+#[unstable(feature: "forward-impl")]
+pub trait ForwardingClassHash<TContractState> {
+    fn class_hash(self: @TContractState) -> ClassHash;
+}
+
 /// The expected return value of the `__validate__` function in account contracts.
 ///
 /// This constant is used to indicate that a transaction validation was successful.

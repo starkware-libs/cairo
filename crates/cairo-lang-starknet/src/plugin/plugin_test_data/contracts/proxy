@@ -1,37 +1,42 @@
-//! > Test expansion of a simple starknet contract with ownable component.
+//! > Test expansion of a proxy contract using forward impl.
 
 //! > test_runner_name
 ExpandContractFromCrateTestRunner(expect_diagnostics: false)
 
 //! > contract_file_name
-cairo_level_tests/contracts/hello_starknet.cairo
+cairo_level_tests/contracts/proxy.cairo
 
 //! > generated_cairo_code
 #[starknet::interface]
-trait HelloStarknetTrait<TContractState> {
-    // Increases the balance by the given amount.
-    fn increase_balance(ref self: TContractState, amount: usize);
-    // Returns the current balance.
-    fn get_balance(self: @TContractState) -> usize;
+pub trait ICounterContract<TContractState> {
+    fn increase_counter(ref self: TContractState, amount: u128);
+    fn decrease_counter(ref self: TContractState, amount: u128);
+    fn get_counter(self: @TContractState) -> u128;
 }
 
 #[starknet::contract]
-mod hello_starknet {
+#[feature("forward-impl")]
+pub mod proxy {
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
     struct Storage {
-        balance: usize,
+        implementation: starknet::ClassHash,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, implementation: starknet::ClassHash) {
+        self.implementation.write(implementation);
+    }
+
+    impl ForwardingClassHashImpl of starknet::ForwardingClassHash<ContractState> {
+        fn class_hash(self: @ContractState) -> starknet::ClassHash {
+            self.implementation.read()
+        }
     }
 
     #[abi(embed_v0)]
-    impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
-        fn increase_balance(ref self: ContractState, amount: usize) {
-            self.balance.write(self.balance.read() + amount);
-        }
-        fn get_balance(self: @ContractState) -> usize {
-            self.balance.read()
-        }
-    }
+    impl ForwardedImpl = super::ICounterContractForwardImpl<ContractState>;
 #[event]
 #[derive(Drop, starknet::Event)]
 pub enum Event {}
@@ -41,30 +46,30 @@ pub enum Event {}
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
-    balance: starknet::storage::StorageBase<usize>,
+    implementation: starknet::storage::StorageBase<starknet::ClassHash>,
 }
 #[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBase {
-           balance: __balance_value__,
+           implementation: __implementation_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
+    implementation: starknet::storage::StorageBase<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBaseMut {
-           balance: __balance_value__,
+           implementation: __implementation_value__,
         }
     }
 }
@@ -101,55 +106,41 @@ use starknet::storage::Map as LegacyMap;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    let __arg_amount = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<usize>::deserialize(ref data),
+    let __arg_implementation = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<starknet::ClassHash>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
-    HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
+    constructor(ref contract_state, __arg_implementation);
     let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    let res = HelloStarknetImpl::get_balance(@contract_state, );
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::serde::Serde::<usize>::serialize(@res, ref arr);
-    core::array::ArrayTrait::span(@arr)
+impl ContractStateICounterContractForwardImpl of
+    super::UnsafeNewContractStateTraitForICounterContractForwardImpl<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
 }
-
 
 #[doc(hidden)]
 pub mod __external {
-    pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
-    pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
 }
 #[doc(hidden)]
 pub mod __l1_handler {
 }
 #[doc(hidden)]
 pub mod __constructor {
+    pub use super::__wrapper__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
@@ -194,46 +185,55 @@ impl StorageStorageBaseMutDrop<> of core::traits::Drop::<StorageStorageBaseMut>;
 impl StorageStorageBaseMutCopy<> of core::traits::Copy::<StorageStorageBaseMut>;
 }
 #[doc(group: "dispatchers")]
-trait HelloStarknetTraitDispatcherTrait<T> {
-    // Increases the balance by the given amount.
-    fn increase_balance(self: T, amount: usize);
-    // Returns the current balance.
-    fn get_balance(self: T) -> usize;
+pub trait ICounterContractDispatcherTrait<T> {
+    fn increase_counter(self: T, amount: u128);
+    fn decrease_counter(self: T, amount: u128);
+    fn get_counter(self: T) -> u128;
 }
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct HelloStarknetTraitDispatcher {
+pub struct ICounterContractDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitDispatcher> {
-    // Increases the balance by the given amount.
-    fn increase_balance(self: HelloStarknetTraitDispatcher, amount: usize) {
+impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractDispatcher> {
+    fn increase_counter(self: ICounterContractDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
-        core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
-            selector!("increase_balance"),
+            selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
-    // Returns the current balance.
-    fn get_balance(self: HelloStarknetTraitDispatcher) -> usize {
+    fn decrease_counter(self: ICounterContractDispatcher, amount: u128) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("decrease_counter"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn get_counter(self: ICounterContractDispatcher) -> u128 {
         let mut __calldata__ = core::traits::Default::default();
 
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
-            selector!("get_balance"),
+            selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -242,37 +242,47 @@ impl HelloStarknetTraitDispatcherImpl of HelloStarknetTraitDispatcherTrait<Hello
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct HelloStarknetTraitLibraryDispatcher {
+pub struct ICounterContractLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrait<HelloStarknetTraitLibraryDispatcher> {
-    // Increases the balance by the given amount.
-    fn increase_balance(self: HelloStarknetTraitLibraryDispatcher, amount: usize) {
+impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractLibraryDispatcher> {
+    fn increase_counter(self: ICounterContractLibraryDispatcher, amount: u128) {
         let mut __calldata__ = core::traits::Default::default();
-        core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            selector!("increase_balance"),
+            selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         ()
     }
-    // Returns the current balance.
-    fn get_balance(self: HelloStarknetTraitLibraryDispatcher) -> usize {
+    fn decrease_counter(self: ICounterContractLibraryDispatcher, amount: u128) {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("decrease_counter"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
+        ()
+    }
+    fn get_counter(self: ICounterContractLibraryDispatcher) -> u128 {
         let mut __calldata__ = core::traits::Default::default();
 
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            selector!("get_balance"),
+            selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = starknet::SyscallResultTrait::unwrap_syscall(__dispatcher_return_data__);
         core::option::OptionTrait::expect(
-            core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+            core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
             'Returned data too short',
         )
     }
@@ -280,49 +290,59 @@ impl HelloStarknetTraitLibraryDispatcherImpl of HelloStarknetTraitDispatcherTrai
 }
 
 #[doc(group: "dispatchers")]
-trait HelloStarknetTraitSafeDispatcherTrait<T> {
+pub trait ICounterContractSafeDispatcherTrait<T> {
     #[unstable(feature: "safe_dispatcher")]
-    // Increases the balance by the given amount.
-    fn increase_balance(self: T, amount: usize) -> starknet::SyscallResult<()>;
+    fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
     #[unstable(feature: "safe_dispatcher")]
-    // Returns the current balance.
-    fn get_balance(self: T) -> starknet::SyscallResult<usize>;
+    fn decrease_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
+    #[unstable(feature: "safe_dispatcher")]
+    fn get_counter(self: T) -> starknet::SyscallResult<u128>;
 }
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct HelloStarknetTraitSafeLibraryDispatcher {
+pub struct ICounterContractSafeLibraryDispatcher {
     pub class_hash: starknet::ClassHash,
 }
 
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeLibraryDispatcher> {
-    // Increases the balance by the given amount.
-    fn increase_balance(self: HelloStarknetTraitSafeLibraryDispatcher, amount: usize) -> starknet::SyscallResult<()> {
+impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeLibraryDispatcher> {
+    fn increase_counter(self: ICounterContractSafeLibraryDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
-        core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            selector!("increase_balance"),
+            selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
-    // Returns the current balance.
-    fn get_balance(self: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<usize> {
+    fn decrease_counter(self: ICounterContractSafeLibraryDispatcher, amount: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("decrease_counter"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn get_counter(self: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<u128> {
         let mut __calldata__ = core::traits::Default::default();
 
         let mut __dispatcher_return_data__ = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            selector!("get_balance"),
+            selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -333,38 +353,48 @@ impl HelloStarknetTraitSafeLibraryDispatcherImpl of HelloStarknetTraitSafeDispat
 
 #[doc(group: "dispatchers")]
 #[derive(Copy, Drop, starknet::Store, Serde)]
-struct HelloStarknetTraitSafeDispatcher {
+pub struct ICounterContractSafeDispatcher {
     pub contract_address: starknet::ContractAddress,
 }
 
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTrait<HelloStarknetTraitSafeDispatcher> {
-    // Increases the balance by the given amount.
-    fn increase_balance(self: HelloStarknetTraitSafeDispatcher, amount: usize) -> starknet::SyscallResult<()> {
+impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeDispatcher> {
+    fn increase_counter(self: ICounterContractSafeDispatcher, amount: u128) -> starknet::SyscallResult<()> {
         let mut __calldata__ = core::traits::Default::default();
-        core::serde::Serde::<usize>::serialize(@amount, ref __calldata__);
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
 
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
-            selector!("increase_balance"),
+            selector!("increase_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(())
     }
-    // Returns the current balance.
-    fn get_balance(self: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<usize> {
+    fn decrease_counter(self: ICounterContractSafeDispatcher, amount: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = core::traits::Default::default();
+        core::serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
+            self.contract_address,
+            selector!("decrease_counter"),
+            core::array::ArrayTrait::span(@__calldata__),
+        );
+        let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
+        Result::Ok(())
+    }
+    fn get_counter(self: ICounterContractSafeDispatcher) -> starknet::SyscallResult<u128> {
         let mut __calldata__ = core::traits::Default::default();
 
         let mut __dispatcher_return_data__ = starknet::syscalls::call_contract_syscall(
             self.contract_address,
-            selector!("get_balance"),
+            selector!("get_counter"),
             core::array::ArrayTrait::span(@__calldata__),
         );
         let mut __dispatcher_return_data__ = __dispatcher_return_data__?;
         Result::Ok(
             core::option::OptionTrait::expect(
-                core::serde::Serde::<usize>::deserialize(ref __dispatcher_return_data__),
+                core::serde::Serde::<u128>::deserialize(ref __dispatcher_return_data__),
                 'Returned data too short',
             )
         )
@@ -374,32 +404,33 @@ impl HelloStarknetTraitSafeDispatcherImpl of HelloStarknetTraitSafeDispatcherTra
 #[feature("forward-impl")]
 #[unstable(feature: "forward-impl")]
 #[starknet::forward_impl]
-impl HelloStarknetTraitForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of HelloStarknetTrait<TContractState> {
-    // Increases the balance by the given amount.
-    fn increase_balance(ref self: TContractState, amount: usize) {
-        HelloStarknetTraitDispatcherTrait::increase_balance(HelloStarknetTraitLibraryDispatcher { class_hash: FCH::class_hash(@self) }, amount)
+pub impl ICounterContractForwardImpl<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>> of ICounterContract<TContractState> {
+    fn increase_counter(ref self: TContractState, amount: u128) {
+        ICounterContractDispatcherTrait::increase_counter(ICounterContractLibraryDispatcher { class_hash: FCH::class_hash(@self) }, amount)
     }
-    // Returns the current balance.
-    fn get_balance(self: @TContractState) -> usize {
-        HelloStarknetTraitDispatcherTrait::get_balance(HelloStarknetTraitLibraryDispatcher { class_hash: FCH::class_hash(self) })
+    fn decrease_counter(ref self: TContractState, amount: u128) {
+        ICounterContractDispatcherTrait::decrease_counter(ICounterContractLibraryDispatcher { class_hash: FCH::class_hash(@self) }, amount)
+    }
+    fn get_counter(self: @TContractState) -> u128 {
+        ICounterContractDispatcherTrait::get_counter(ICounterContractLibraryDispatcher { class_hash: FCH::class_hash(self) })
     }
 }
 
-trait UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState> {
+pub trait UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__increase_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ICounterContractForwardImpl__increase_counter<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
     starknet::SyscallResultTrait::unwrap_syscall(
         starknet::syscalls::library_call_syscall(
             FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
-            selector!("increase_balance"),
+            selector!("increase_counter"),
             data,
         )
     )
@@ -407,83 +438,99 @@ fn __wrapper__HelloStarknetTraitForwardImpl__increase_balance<TContractState, im
 #[doc(hidden)]
 #[feature("forward-impl")]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetTraitForwardImpl__get_balance<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForHelloStarknetTraitForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__ICounterContractForwardImpl__decrease_counter<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
     starknet::SyscallResultTrait::unwrap_syscall(
         starknet::syscalls::library_call_syscall(
             FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
-            selector!("get_balance"),
+            selector!("decrease_counter"),
+            data,
+        )
+    )
+}
+#[doc(hidden)]
+#[feature("forward-impl")]
+#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
+fn __wrapper__ICounterContractForwardImpl__get_counter<TContractState, impl FCH: starknet::ForwardingClassHash<TContractState>, +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForICounterContractForwardImpl<TContractState>>(data: Span::<felt252>) -> Span::<felt252> {
+    let Some(_) = core::gas::withdraw_gas() else {
+        core::panic_with_felt252('Out of gas');
+    };
+    starknet::SyscallResultTrait::unwrap_syscall(
+        starknet::syscalls::library_call_syscall(
+            FCH::class_hash(@UnsafeNewContractState::unsafe_new_contract_state()),
+            selector!("get_counter"),
             data,
         )
     )
 }
 
-mod __external_HelloStarknetTraitForwardImpl {
-    pub use super::__wrapper__HelloStarknetTraitForwardImpl__increase_balance as increase_balance;
-    pub use super::__wrapper__HelloStarknetTraitForwardImpl__get_balance as get_balance;
+pub mod __external_ICounterContractForwardImpl {
+    pub use super::__wrapper__ICounterContractForwardImpl__increase_counter as increase_counter;
+    pub use super::__wrapper__ICounterContractForwardImpl__decrease_counter as decrease_counter;
+    pub use super::__wrapper__ICounterContractForwardImpl__get_counter as get_counter;
 }
 
-mod __l1_handler_HelloStarknetTraitForwardImpl {
+pub mod __l1_handler_ICounterContractForwardImpl {
 }
 
-mod __constructor_HelloStarknetTraitForwardImpl {
+pub mod __constructor_ICounterContractForwardImpl {
 }
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcher>;
+impl ICounterContractDispatcherCopy<> of core::traits::Copy::<ICounterContractDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcher>;
+impl ICounterContractDispatcherDrop<> of core::traits::Drop::<ICounterContractDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitDispatcher> {
-    fn serialize(self: @HelloStarknetTraitDispatcher, ref output: core::array::Array<felt252>) {
+impl ICounterContractDispatcherSerde<> of core::serde::Serde::<ICounterContractDispatcher> {
+    fn serialize(self: @ICounterContractDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitDispatcher> {
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractDispatcher> {
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
-        core::option::Option::Some(HelloStarknetTraitDispatcher {
+        core::option::Option::Some(ICounterContractDispatcher {
             contract_address: contract_address.value,
         })
     }
 }
-impl HelloStarknetTraitDispatcherStore<> of starknet::Store::<HelloStarknetTraitDispatcher> {
-    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitDispatcher> {
+impl ICounterContractDispatcherStore<> of starknet::Store::<ICounterContractDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitDispatcher {
+            ICounterContractDispatcher {
                 contract_address: contract_address.value,
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let HelloStarknetTraitDispatcher {
+        let ICounterContractDispatcher {
             contract_address,
         } = value;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
         starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitDispatcher {
+            ICounterContractDispatcher {
                 contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let HelloStarknetTraitDispatcher {
+        let ICounterContractDispatcher {
             contract_address,
         } = value;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
@@ -498,98 +545,98 @@ impl HelloStarknetTraitDispatcherStore<> of starknet::Store::<HelloStarknetTrait
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitDispatcherSubPointers {
+pub struct ICounterContractDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitDispatcher> {
-    type SubPointersType = HelloStarknetTraitDispatcherSubPointers;
-    fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitDispatcher>) -> HelloStarknetTraitDispatcherSubPointers {
+impl ICounterContractDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractDispatcher> {
+    type SubPointersType = ICounterContractDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractDispatcher>) -> ICounterContractDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitDispatcherSubPointers {
+                ICounterContractDispatcherSubPointers {
            contract_address: __contract_address_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitDispatcherSubPointersMut {
+pub struct ICounterContractDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitDispatcher> {
-    type SubPointersType = HelloStarknetTraitDispatcherSubPointersMut;
-    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitDispatcher>>) -> HelloStarknetTraitDispatcherSubPointersMut {
+impl ICounterContractDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractDispatcher> {
+    type SubPointersType = ICounterContractDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractDispatcher>>) -> ICounterContractDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitDispatcherSubPointersMut {
+                ICounterContractDispatcherSubPointersMut {
            contract_address: __contract_address_value__,
         }
     }
 }
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitLibraryDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitLibraryDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitLibraryDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitLibraryDispatcher> {
-    fn serialize(self: @HelloStarknetTraitLibraryDispatcher, ref output: core::array::Array<felt252>) {
+impl ICounterContractLibraryDispatcherSerde<> of core::serde::Serde::<ICounterContractLibraryDispatcher> {
+    fn serialize(self: @ICounterContractLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitLibraryDispatcher> {
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractLibraryDispatcher> {
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
-        core::option::Option::Some(HelloStarknetTraitLibraryDispatcher {
+        core::option::Option::Some(ICounterContractLibraryDispatcher {
             class_hash: class_hash.value,
         })
     }
 }
-impl HelloStarknetTraitLibraryDispatcherStore<> of starknet::Store::<HelloStarknetTraitLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitLibraryDispatcher> {
+impl ICounterContractLibraryDispatcherStore<> of starknet::Store::<ICounterContractLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitLibraryDispatcher {
+            ICounterContractLibraryDispatcher {
                 class_hash: class_hash.value,
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractLibraryDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let HelloStarknetTraitLibraryDispatcher {
+        let ICounterContractLibraryDispatcher {
             class_hash,
         } = value;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
         starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitLibraryDispatcher {
+            ICounterContractLibraryDispatcher {
                 class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractLibraryDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let HelloStarknetTraitLibraryDispatcher {
+        let ICounterContractLibraryDispatcher {
             class_hash,
         } = value;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
@@ -604,98 +651,98 @@ impl HelloStarknetTraitLibraryDispatcherStore<> of starknet::Store::<HelloStarkn
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitLibraryDispatcherSubPointers {
+pub struct ICounterContractLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitLibraryDispatcher> {
-    type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointers;
-    fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitLibraryDispatcher>) -> HelloStarknetTraitLibraryDispatcherSubPointers {
+impl ICounterContractLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractLibraryDispatcher> {
+    type SubPointersType = ICounterContractLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractLibraryDispatcher>) -> ICounterContractLibraryDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitLibraryDispatcherSubPointers {
+                ICounterContractLibraryDispatcherSubPointers {
            class_hash: __class_hash_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitLibraryDispatcherSubPointersMut {
+pub struct ICounterContractLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitLibraryDispatcher> {
-    type SubPointersType = HelloStarknetTraitLibraryDispatcherSubPointersMut;
-    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitLibraryDispatcher>>) -> HelloStarknetTraitLibraryDispatcherSubPointersMut {
+impl ICounterContractLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractLibraryDispatcher> {
+    type SubPointersType = ICounterContractLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractLibraryDispatcher>>) -> ICounterContractLibraryDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitLibraryDispatcherSubPointersMut {
+                ICounterContractLibraryDispatcherSubPointersMut {
            class_hash: __class_hash_value__,
         }
     }
 }
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeLibraryDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeLibraryDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeLibraryDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitSafeLibraryDispatcher> {
-    fn serialize(self: @HelloStarknetTraitSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
+impl ICounterContractSafeLibraryDispatcherSerde<> of core::serde::Serde::<ICounterContractSafeLibraryDispatcher> {
+    fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ClassHash>::serialize(self.class_hash, ref output)
     }
-    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitSafeLibraryDispatcher> {
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeLibraryDispatcher> {
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: core::serde::Serde::<starknet::ClassHash>::deserialize(ref serialized)? };
-        core::option::Option::Some(HelloStarknetTraitSafeLibraryDispatcher {
+        core::option::Option::Some(ICounterContractSafeLibraryDispatcher {
             class_hash: class_hash.value,
         })
     }
 }
-impl HelloStarknetTraitSafeLibraryDispatcherStore<> of starknet::Store::<HelloStarknetTraitSafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeLibraryDispatcher> {
+impl ICounterContractSafeLibraryDispatcherStore<> of starknet::Store::<ICounterContractSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitSafeLibraryDispatcher {
+            ICounterContractSafeLibraryDispatcher {
                 class_hash: class_hash.value,
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let HelloStarknetTraitSafeLibraryDispatcher {
+        let ICounterContractSafeLibraryDispatcher {
             class_hash,
         } = value;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
         starknet::Store::<starknet::ClassHash>::write(__store_derive_address_domain__, __store_derive_base__, class_hash.value)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitSafeLibraryDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: starknet::Store::<starknet::ClassHash>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitSafeLibraryDispatcher {
+            ICounterContractSafeLibraryDispatcher {
                 class_hash: class_hash.value,
             }
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let HelloStarknetTraitSafeLibraryDispatcher {
+        let ICounterContractSafeLibraryDispatcher {
             class_hash,
         } = value;
         let class_hash = core::internal::InferDestruct::<starknet::ClassHash> { value: class_hash };
@@ -710,98 +757,98 @@ impl HelloStarknetTraitSafeLibraryDispatcherStore<> of starknet::Store::<HelloSt
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitSafeLibraryDispatcherSubPointers {
+pub struct ICounterContractSafeLibraryDispatcherSubPointers {
     pub class_hash: starknet::storage::StoragePointer<starknet::ClassHash>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeLibraryDispatcher> {
-    type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointers;
-    fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeLibraryDispatcher>) -> HelloStarknetTraitSafeLibraryDispatcherSubPointers {
+impl ICounterContractSafeLibraryDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeLibraryDispatcher> {
+    type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeLibraryDispatcher>) -> ICounterContractSafeLibraryDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitSafeLibraryDispatcherSubPointers {
+                ICounterContractSafeLibraryDispatcherSubPointers {
            class_hash: __class_hash_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
+pub struct ICounterContractSafeLibraryDispatcherSubPointersMut {
     pub class_hash: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitSafeLibraryDispatcher> {
-    type SubPointersType = HelloStarknetTraitSafeLibraryDispatcherSubPointersMut;
-    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeLibraryDispatcher>>) -> HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
+impl ICounterContractSafeLibraryDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractSafeLibraryDispatcher> {
+    type SubPointersType = ICounterContractSafeLibraryDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeLibraryDispatcher>>) -> ICounterContractSafeLibraryDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __class_hash_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitSafeLibraryDispatcherSubPointersMut {
+                ICounterContractSafeLibraryDispatcherSubPointersMut {
            class_hash: __class_hash_value__,
         }
     }
 }
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeDispatcherCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcher>;
+impl ICounterContractSafeDispatcherCopy<> of core::traits::Copy::<ICounterContractSafeDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeDispatcherDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcher>;
+impl ICounterContractSafeDispatcherDrop<> of core::traits::Drop::<ICounterContractSafeDispatcher>;
 #[doc(group: "dispatchers")]
-impl HelloStarknetTraitSafeDispatcherSerde<> of core::serde::Serde::<HelloStarknetTraitSafeDispatcher> {
-    fn serialize(self: @HelloStarknetTraitSafeDispatcher, ref output: core::array::Array<felt252>) {
+impl ICounterContractSafeDispatcherSerde<> of core::serde::Serde::<ICounterContractSafeDispatcher> {
+    fn serialize(self: @ICounterContractSafeDispatcher, ref output: core::array::Array<felt252>) {
         core::serde::Serde::<starknet::ContractAddress>::serialize(self.contract_address, ref output)
     }
-    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<HelloStarknetTraitSafeDispatcher> {
+    fn deserialize(ref serialized: core::array::Span<felt252>) -> core::option::Option<ICounterContractSafeDispatcher> {
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: core::serde::Serde::<starknet::ContractAddress>::deserialize(ref serialized)? };
-        core::option::Option::Some(HelloStarknetTraitSafeDispatcher {
+        core::option::Option::Some(ICounterContractSafeDispatcher {
             contract_address: contract_address.value,
         })
     }
 }
-impl HelloStarknetTraitSafeDispatcherStore<> of starknet::Store::<HelloStarknetTraitSafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<HelloStarknetTraitSafeDispatcher> {
+impl ICounterContractSafeDispatcherStore<> of starknet::Store::<ICounterContractSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::storage_access::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read(__store_derive_address_domain__, __store_derive_base__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitSafeDispatcher {
+            ICounterContractSafeDispatcher {
                 contract_address: contract_address.value,
             }
         )
     }
-    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, value: ICounterContractSafeDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
-        let HelloStarknetTraitSafeDispatcher {
+        let ICounterContractSafeDispatcher {
             contract_address,
         } = value;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
         starknet::Store::<starknet::ContractAddress>::write(__store_derive_address_domain__, __store_derive_base__, contract_address.value)?;
         starknet::SyscallResult::Ok(())
     }
-    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<HelloStarknetTraitSafeDispatcher> {
+    fn read_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: starknet::Store::<starknet::ContractAddress>::read_at_offset(__store_derive_address_domain__, __store_derive_base__, __store_derive_offset__)? };
         starknet::SyscallResult::Ok(
-            HelloStarknetTraitSafeDispatcher {
+            ICounterContractSafeDispatcher {
                 contract_address: contract_address.value,
             }
         )
     }
     #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: HelloStarknetTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset(address_domain: u32, base: starknet::storage_access::StorageBaseAddress, offset: u8, value: ICounterContractSafeDispatcher) -> starknet::SyscallResult<()> {
         let __store_derive_address_domain__ = address_domain;
         let __store_derive_base__ = base;
         let __store_derive_offset__ = offset;
-        let HelloStarknetTraitSafeDispatcher {
+        let ICounterContractSafeDispatcher {
             contract_address,
         } = value;
         let contract_address = core::internal::InferDestruct::<starknet::ContractAddress> { value: contract_address };
@@ -816,92 +863,97 @@ impl HelloStarknetTraitSafeDispatcherStore<> of starknet::Store::<HelloStarknetT
 
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitSafeDispatcherSubPointers {
+pub struct ICounterContractSafeDispatcherSubPointers {
     pub contract_address: starknet::storage::StoragePointer<starknet::ContractAddress>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<HelloStarknetTraitSafeDispatcher> {
-    type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointers;
-    fn sub_pointers(self: starknet::storage::StoragePointer<HelloStarknetTraitSafeDispatcher>) -> HelloStarknetTraitSafeDispatcherSubPointers {
+impl ICounterContractSafeDispatcherSubPointersImpl of starknet::storage::SubPointers<ICounterContractSafeDispatcher> {
+    type SubPointersType = ICounterContractSafeDispatcherSubPointers;
+    fn sub_pointers(self: starknet::storage::StoragePointer<ICounterContractSafeDispatcher>) -> ICounterContractSafeDispatcherSubPointers {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitSafeDispatcherSubPointers {
+                ICounterContractSafeDispatcherSubPointers {
            contract_address: __contract_address_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
-struct HelloStarknetTraitSafeDispatcherSubPointersMut {
+pub struct ICounterContractSafeDispatcherSubPointersMut {
     pub contract_address: starknet::storage::StoragePointer<starknet::storage::Mutable::<starknet::ContractAddress>>,
 }
 #[doc(hidden)]
-impl HelloStarknetTraitSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<HelloStarknetTraitSafeDispatcher> {
-    type SubPointersType = HelloStarknetTraitSafeDispatcherSubPointersMut;
-    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<HelloStarknetTraitSafeDispatcher>>) -> HelloStarknetTraitSafeDispatcherSubPointersMut {
+impl ICounterContractSafeDispatcherSubPointersMutImpl of starknet::storage::SubPointersMut<ICounterContractSafeDispatcher> {
+    type SubPointersType = ICounterContractSafeDispatcherSubPointersMut;
+    fn sub_pointers_mut(self: starknet::storage::StoragePointer<starknet::storage::Mutable::<ICounterContractSafeDispatcher>>) -> ICounterContractSafeDispatcherSubPointersMut {
         let base_address = self.__storage_pointer_address__;
         let mut current_offset = self.__storage_pointer_offset__;
         let __contract_address_value__ = starknet::storage::StoragePointer {
             __storage_pointer_address__: base_address,
             __storage_pointer_offset__: current_offset,
         };
-                HelloStarknetTraitSafeDispatcherSubPointersMut {
+                ICounterContractSafeDispatcherSubPointersMut {
            contract_address: __contract_address_value__,
         }
     }
 }
 #[doc(hidden)]
-impl HelloStarknetTraitDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointers>;
+impl ICounterContractDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointers>;
+impl ICounterContractDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitDispatcherSubPointersMut>;
+impl ICounterContractDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractDispatcherSubPointersMut>;
 #[doc(hidden)]
-impl HelloStarknetTraitDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitDispatcherSubPointersMut>;
+impl ICounterContractDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractDispatcherSubPointersMut>;
 #[doc(hidden)]
-impl HelloStarknetTraitLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointers>;
+impl ICounterContractLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointers>;
+impl ICounterContractLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitLibraryDispatcherSubPointersMut>;
+impl ICounterContractLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractLibraryDispatcherSubPointersMut>;
 #[doc(hidden)]
-impl HelloStarknetTraitLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitLibraryDispatcherSubPointersMut>;
+impl ICounterContractLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractLibraryDispatcherSubPointersMut>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+impl ICounterContractSafeLibraryDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointers>;
+impl ICounterContractSafeLibraryDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitSafeLibraryDispatcherSubPointersMut>;
+impl ICounterContractSafeLibraryDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeLibraryDispatcherSubPointersMut>;
+impl ICounterContractSafeLibraryDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractSafeLibraryDispatcherSubPointersMut>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeDispatcherSubPointersDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointers>;
+impl ICounterContractSafeDispatcherSubPointersDrop<> of core::traits::Drop::<ICounterContractSafeDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeDispatcherSubPointersCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointers>;
+impl ICounterContractSafeDispatcherSubPointersCopy<> of core::traits::Copy::<ICounterContractSafeDispatcherSubPointers>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
+impl ICounterContractSafeDispatcherSubPointersMutDrop<> of core::traits::Drop::<ICounterContractSafeDispatcherSubPointersMut>;
 #[doc(hidden)]
-impl HelloStarknetTraitSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<HelloStarknetTraitSafeDispatcherSubPointersMut>;
+impl ICounterContractSafeDispatcherSubPointersMutCopy<> of core::traits::Copy::<ICounterContractSafeDispatcherSubPointersMut>;
 
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
     struct Storage {
-        balance: usize,
+        implementation: starknet::ClassHash,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, implementation: starknet::ClassHash) {
+        self.implementation.write(implementation);
+    }
+
+    impl ForwardingClassHashImpl of starknet::ForwardingClassHash<ContractState> {
+        fn class_hash(self: @ContractState) -> starknet::ClassHash {
+            self.implementation.read()
+        }
     }
 
     #[abi(embed_v0)]
-    impl HelloStarknetImpl of super::HelloStarknetTrait<ContractState> {
-        fn increase_balance(ref self: ContractState, amount: usize) {
-            self.balance.write(self.balance.read() + amount);
-        }
-        fn get_balance(self: @ContractState) -> usize {
-            self.balance.read()
-        }
-    }
+    impl ForwardedImpl = super::ICounterContractForwardImpl<ContractState>;
 #[event]
 #[derive(Drop, starknet::Event)]
 pub enum Event {}
@@ -911,30 +963,30 @@ pub enum Event {}
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBase {
-    balance: starknet::storage::StorageBase<usize>,
+    implementation: starknet::storage::StorageBase<starknet::ClassHash>,
 }
 #[doc(hidden)]
 impl StorageStorageImpl of starknet::storage::StorageTrait<Storage> {
     type BaseType = StorageStorageBase;
     fn storage(self: starknet::storage::FlattenedStorage<Storage>) -> StorageStorageBase {
-        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBase {
-           balance: __balance_value__,
+           implementation: __implementation_value__,
         }
     }
 }
 #[derive(Drop, Copy)]
 #[doc(hidden)]
 struct StorageStorageBaseMut {
-    balance: starknet::storage::StorageBase<starknet::storage::Mutable::<usize>>,
+    implementation: starknet::storage::StorageBase<starknet::storage::Mutable::<starknet::ClassHash>>,
 }
 #[doc(hidden)]
 impl StorageStorageMutImpl of starknet::storage::StorageTraitMut<Storage> {
     type BaseType = StorageStorageBaseMut;
     fn storage_mut(self: starknet::storage::FlattenedStorage<starknet::storage::Mutable::<Storage>>) -> StorageStorageBaseMut {
-        let __balance_value__ = starknet::storage::StorageBase {__base_address__: selector!("balance")};
+        let __implementation_value__ = starknet::storage::StorageBase {__base_address__: selector!("implementation")};
         StorageStorageBaseMut {
-           balance: __balance_value__,
+           implementation: __implementation_value__,
         }
     }
 }
@@ -971,55 +1023,41 @@ use starknet::storage::Map as LegacyMap;
 
 #[doc(hidden)]
 #[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     core::internal::require_implicit::<System>();
     core::internal::revoke_ap_tracking();
     let Some(_) = core::gas::withdraw_gas() else {
         core::panic_with_felt252('Out of gas');
     };
-    let __arg_amount = core::option::OptionTraitImpl::expect(
-        core::serde::Serde::<usize>::deserialize(ref data),
+    let __arg_implementation = core::option::OptionTraitImpl::expect(
+        core::serde::Serde::<starknet::ClassHash>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
     assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
     let mut contract_state = unsafe_new_contract_state();
-    HelloStarknetImpl::increase_balance(ref contract_state, __arg_amount);
+    constructor(ref contract_state, __arg_implementation);
     let mut arr = ArrayTrait::new();
     // References.
     // Result.
     core::array::ArrayTrait::span(@arr)
 }
 
-#[doc(hidden)]
-#[implicit_precedence(core::pedersen::Pedersen, core::RangeCheck, core::integer::Bitwise, core::ec::EcOp, core::poseidon::Poseidon, core::SegmentArena, core::circuit::RangeCheck96, core::circuit::AddMod, core::circuit::MulMod, core::gas::GasBuiltin, System)]
-fn __wrapper__HelloStarknetImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
-    core::internal::require_implicit::<System>();
-    core::internal::revoke_ap_tracking();
-    let Some(_) = core::gas::withdraw_gas() else {
-        core::panic_with_felt252('Out of gas');
-    };
-    
-    assert(core::array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    let mut contract_state = unsafe_new_contract_state();
-    let res = HelloStarknetImpl::get_balance(@contract_state, );
-    let mut arr = ArrayTrait::new();
-    // References.
-    // Result.
-    core::serde::Serde::<usize>::serialize(@res, ref arr);
-    core::array::ArrayTrait::span(@arr)
+impl ContractStateICounterContractForwardImpl of
+    super::UnsafeNewContractStateTraitForICounterContractForwardImpl<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
 }
-
 
 #[doc(hidden)]
 pub mod __external {
-    pub use super::__wrapper__HelloStarknetImpl__increase_balance as increase_balance;
-    pub use super::__wrapper__HelloStarknetImpl__get_balance as get_balance;
 }
 #[doc(hidden)]
 pub mod __l1_handler {
 }
 #[doc(hidden)]
 pub mod __constructor {
+    pub use super::__wrapper__constructor as constructor;
 }
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
         ContractState, Event
