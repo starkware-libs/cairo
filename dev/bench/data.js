@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775434435047,
+  "lastUpdate": 1775520923903,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1343,6 +1343,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1523117058,
             "range": "± 10153804",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "f652dc4722eb549ebeddcba9f85fd5d213452649",
+          "message": "(feat): add array support to equality analysis (#9802)",
+          "timestamp": "2026-04-06T13:39:37Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/f652dc4722eb549ebeddcba9f85fd5d213452649"
+        },
+        "date": 1775520923486,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1531060095,
+            "range": "± 10618977",
             "unit": "ns/iter"
           }
         ]
