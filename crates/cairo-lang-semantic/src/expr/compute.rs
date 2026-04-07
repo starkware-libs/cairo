@@ -7,7 +7,6 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
@@ -3961,17 +3960,16 @@ fn member_access_expr<'db>(
         TypeLongId::Closure(_) => {
             Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
         }
-        TypeLongId::ImplType(impl_type_id) => {
-            unreachable!("Impl type should've been reduced {:?}.", impl_type_id.debug(ctx.db))
-        }
         TypeLongId::Var(_) => Err(ctx.diagnostics.report(
             rhs_syntax.stable_ptr(db),
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
-        TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
-            TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
-        )),
+        TypeLongId::ImplType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => {
+            Err(ctx.diagnostics.report(
+                rhs_syntax.stable_ptr(db),
+                TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
+            ))
+        }
         TypeLongId::Missing(diag_added) => Err(*diag_added),
     }
 }
@@ -4122,27 +4120,7 @@ fn resolve_expr_path<'db>(
             is_callsite_prefixed,
             path.stable_ptr(ctx.db).into(),
         ) {
-            match res.clone() {
-                Expr::Var(expr_var) => {
-                    let item = ResolvedGenericItem::Variable(expr_var.var);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .generic
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                Expr::Constant(expr_const) => {
-                    let item = ResolvedConcreteItem::Constant(expr_const.const_value_id);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .concrete
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                _ => unreachable!(
-                    "get_binded_expr_by_name should only return variables or constants"
-                ),
-            };
+            mark_binded_expr_in_resolved_items(ctx, &identifier, &res);
             return Ok(res);
         }
     }
@@ -4195,9 +4173,28 @@ pub fn resolve_variable_by_name<'db>(
     let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
         ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
-    let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
+    mark_binded_expr_in_resolved_items(ctx, identifier, &res);
     Ok(res)
+}
+
+/// Marks a resolved binding expression in the resolved items map for tooling (e.g.,
+/// go-to-definition).
+fn mark_binded_expr_in_resolved_items<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    identifier: &ast::TerminalIdentifier<'db>,
+    expr: &Expr<'db>,
+) {
+    let ptr = identifier.stable_ptr(ctx.db);
+    let resolved = &mut ctx.resolver.data.resolved_items;
+    match expr {
+        Expr::Var(expr) => {
+            resolved.generic.insert(ptr, ResolvedGenericItem::Variable(expr.var));
+        }
+        Expr::Constant(expr) => {
+            resolved.concrete.insert(ptr, ResolvedConcreteItem::Constant(expr.const_value_id));
+        }
+        _ => unreachable!("`get_binded_expr_by_name` should only return variables or constants"),
+    }
 }
 
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
@@ -4758,28 +4755,25 @@ pub fn compute_and_append_statement_semantic<'db>(
                         }
                     }
                 }
-                ast::ModuleItem::Module(_) => {
-                    unreachable!("Modules are not supported inside a function.")
+                ast::ModuleItem::Module(_)
+                | ast::ModuleItem::FreeFunction(_)
+                | ast::ModuleItem::ExternFunction(_)
+                | ast::ModuleItem::ExternType(_)
+                | ast::ModuleItem::Trait(_)
+                | ast::ModuleItem::Impl(_)
+                | ast::ModuleItem::ImplAlias(_)
+                | ast::ModuleItem::Struct(_)
+                | ast::ModuleItem::Enum(_)
+                | ast::ModuleItem::TypeAlias(_)
+                | ast::ModuleItem::InlineMacro(_)
+                | ast::ModuleItem::HeaderDoc(_)
+                | ast::ModuleItem::MacroDeclaration(_) => {
+                    return Err(ctx
+                        .diagnostics
+                        .report(stmt_item_syntax.stable_ptr(db), UnsupportedItemInStatement));
                 }
-                ast::ModuleItem::FreeFunction(_) => {
-                    unreachable!("FreeFunction type not supported.")
-                }
-                ast::ModuleItem::ExternFunction(_) => {
-                    unreachable!("ExternFunction type not supported.")
-                }
-                ast::ModuleItem::ExternType(_) => unreachable!("ExternType type not supported."),
-                ast::ModuleItem::Trait(_) => unreachable!("Trait type not supported."),
-                ast::ModuleItem::Impl(_) => unreachable!("Impl type not supported."),
-                ast::ModuleItem::ImplAlias(_) => unreachable!("ImplAlias type not supported."),
-                ast::ModuleItem::Struct(_) => unreachable!("Struct type not supported."),
-                ast::ModuleItem::Enum(_) => unreachable!("Enum type not supported."),
-                ast::ModuleItem::TypeAlias(_) => unreachable!("TypeAlias type not supported."),
-                ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
-                ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
-                ast::ModuleItem::MacroDeclaration(_) => {
-                    unreachable!("MacroDeclaration type not supported.")
-                }
-                ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
+                // Diagnostics reported on syntax level already.
+                ast::ModuleItem::Missing(_) => return Err(skip_diagnostic()),
             }
             statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
                 semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },

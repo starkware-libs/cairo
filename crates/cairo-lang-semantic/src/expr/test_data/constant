@@ -729,3 +729,35 @@ error[E2127]: This expression is not supported as constant.
  --> lib.cairo:2:20
 const X: felt252 = f();
                    ^^^
+
+//! > ==========================================================================
+
+//! > Statement-level const struct literal with missing field.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    const X: S = S { a: 1 };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct S {
+    a: felt252,
+    b: felt252,
+}
+
+//! > expected_diagnostics
+error[E0003]: Missing member "b".
+ --> lib.cairo:6:18
+    const X: S = S { a: 1 };
+                 ^^^^^^^^^^
+
+warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
+ --> lib.cairo:6:11
+    const X: S = S { a: 1 };
+          ^
