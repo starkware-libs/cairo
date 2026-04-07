@@ -15,6 +15,7 @@ use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::extern_type::ExternTypeSemantic;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::impl_alias::ImplAliasSemantic;
 use cairo_lang_semantic::items::module::{ModuleItemInfo, ModuleSemantic};
 use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -127,12 +128,15 @@ fn get_enum_signature_data<'db>(
         let variant_semantic = db.variant_semantic(item_id, *variant_id)?;
         variants.push((*name, variant_semantic.ty));
     }
+
+    let generic_params = db.enum_generic_params(item_id)?;
+
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
         generic_args: None,
-        generic_params: None,
+        generic_params: Some(generic_params.to_vec()),
         variants: Some(variants),
         members: None,
         return_type: None,
@@ -418,13 +422,14 @@ fn get_impl_def_signature_data<'db>(
     let module_item_info = get_module_item_info(db, module_item_id)?;
     let resolver_data = db.impl_def_resolver_data(item_id)?;
     let intern = db.impl_def_concrete_trait(item_id)?.long(db);
+    let generic_params = db.impl_def_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(item_id))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
         generic_args: Some(intern.generic_args.clone()),
-        generic_params: None,
+        generic_params: Some(generic_params.to_vec()),
         variants: None,
         members: None,
         return_type: None,
@@ -443,6 +448,9 @@ fn get_impl_alias_signature_data<'db>(
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ImplAlias(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
+    let resolved_impl = db.impl_alias_resolved_impl(item_id)?;
+    let intern = resolved_impl.concrete_trait(db)?.long(db);
+    let generic_params = db.impl_alias_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
@@ -450,8 +458,8 @@ fn get_impl_alias_signature_data<'db>(
         ))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
-        generic_args: None,
-        generic_params: None,
+        generic_args: Some(intern.generic_args.clone()),
+        generic_params: Some(generic_params),
         variants: None,
         members: None,
         return_type: None,
