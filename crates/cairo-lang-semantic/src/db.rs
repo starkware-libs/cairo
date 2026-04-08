@@ -368,16 +368,23 @@ fn add_unused_item_diagnostics<'db>(
     data: &ModuleSemanticData<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
+    let private_uses = data
+        .items
+        .values()
+        .filter(|info| info.visibility != Visibility::Public)
+        .filter_map(|info| match info.item_id {
+            ModuleItemId::Use(use_id) => Some(use_id),
+            _ => None,
+        })
+        .collect_vec();
+    if private_uses.is_empty() {
+        return;
+    }
     let Ok(all_used_uses) = db.module_all_used_uses(module_id) else {
         return;
     };
-    for info in data.items.values() {
-        if info.visibility == Visibility::Public {
-            continue;
-        }
-        if let ModuleItemId::Use(use_id) = info.item_id {
-            add_unused_import_diagnostics(db, all_used_uses, use_id, diagnostics);
-        };
+    for use_id in private_uses {
+        add_unused_import_diagnostics(db, all_used_uses, use_id, diagnostics);
     }
 }
 
