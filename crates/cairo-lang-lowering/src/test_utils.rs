@@ -2,7 +2,10 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
-use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{
+    CrateConfigStorage, CrateConfigView, init_dev_corelib, init_files_group,
+    new_crate_config_storage, register_crate_config_view,
+};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
@@ -20,13 +23,23 @@ use crate::utils::InliningStrategy;
 #[derive(Clone)]
 pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
+    crate_configs: CrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for LoweringDatabaseForTesting {}
+impl CrateConfigView for LoweringDatabaseForTesting {
+    fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
+        Some(&self.crate_configs)
+    }
+}
 
 impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
-        let mut res = LoweringDatabaseForTesting { storage: Default::default() };
+        let mut res = LoweringDatabaseForTesting {
+            storage: Default::default(),
+            crate_configs: new_crate_config_storage(),
+        };
+        register_crate_config_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);

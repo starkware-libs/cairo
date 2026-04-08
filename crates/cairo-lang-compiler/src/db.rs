@@ -5,8 +5,9 @@ use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    CORELIB_VERSION, FileContentStorage, FileContentView, FilesGroup, init_dev_corelib,
-    init_files_group, register_files_group_view,
+    CORELIB_VERSION, CrateConfigStorage, CrateConfigView, FileContentStorage, FileContentView,
+    FilesGroup, init_dev_corelib, init_files_group, new_crate_config_storage,
+    register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -75,12 +76,18 @@ fn estimate_code_size(
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
     file_contents: FileContentStorage,
+    crate_configs: CrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
 impl FileContentView for RootDatabase {
     fn file_content_storage(&self) -> &FileContentStorage {
         &self.file_contents
+    }
+}
+impl CrateConfigView for RootDatabase {
+    fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
+        Some(&self.crate_configs)
     }
 }
 impl CloneableDatabase for RootDatabase {
@@ -91,8 +98,14 @@ impl CloneableDatabase for RootDatabase {
 
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, optimizations: Optimizations) -> Self {
-        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
+        let mut res = Self {
+            storage: Default::default(),
+            file_contents: Default::default(),
+            crate_configs: new_crate_config_storage(),
+        };
+
         register_files_group_view(&res);
+        register_crate_config_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_lowering_group(&mut res, optimizations, Some(estimate_code_size));
@@ -116,7 +129,11 @@ impl RootDatabase {
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> RootDatabase {
         let file_contents = Arc::new(RwLock::new(self.file_contents.read().unwrap().clone()));
-        RootDatabase { storage: self.storage.clone(), file_contents }
+        RootDatabase {
+            storage: self.storage.clone(),
+            file_contents,
+            crate_configs: self.crate_configs.clone(),
+        }
     }
 }
 
