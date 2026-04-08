@@ -5,10 +5,9 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateConfiguration, CrateIdentifier, CrateSettings, FilesGroup,
-    set_generated_file_content_for_input,
+    set_crate_config_for_input, set_generated_file_content_for_input,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, CrateLongId, Directory, SmolStrId};
-use cairo_lang_filesystem::set_crate_config;
 pub use cairo_lang_project::*;
 use cairo_lang_utils::Intern;
 use salsa::Database;
@@ -45,24 +44,25 @@ pub fn setup_single_file_project(
     let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
     let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
     if file_stem == "lib" {
-        let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
-        let crate_id = CrateId::plain(db, SmolStrId::from(db, crate_name));
-        set_crate_config!(
-            db,
-            crate_id,
-            Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf())))
-        );
+        let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?.to_string();
+        let crate_input =
+            CrateInput::Real { name: crate_name.clone(), discriminator: Some(crate_name.clone()) };
+        let config = CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))
+            .into_crate_configuration_input(db);
+        set_crate_config_for_input(db, crate_input, Some(config));
         let crate_id = CrateId::plain(db, SmolStrId::from(db, crate_name));
         Ok(crate_id.long(db).clone().into_crate_input(db))
     } else {
         // If file_stem is not lib, create a fake lib file.
         {
-            let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
-            set_crate_config!(
-                db,
-                crate_id,
-                Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf())))
-            );
+            let crate_input = CrateInput::Real {
+                name: file_stem.to_string(),
+                discriminator: Some(file_stem.to_string()),
+            };
+            let config =
+                CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf()))
+                    .into_crate_configuration_input(db);
+            set_crate_config_for_input(db, crate_input, Some(config));
         }
         let file_input = {
             let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
@@ -98,11 +98,10 @@ pub fn update_crate_root(
     root: Directory<'_>,
 ) {
     let (crate_id, crate_settings) = get_crate_id_and_settings(db, crate_identifier, config);
-    set_crate_config!(
-        db,
-        crate_id,
-        Some(CrateConfiguration { root, settings: crate_settings.clone(), cache_file: None })
-    );
+    let crate_input = db.crate_input(crate_id).clone();
+    let config = CrateConfiguration { root, settings: crate_settings.clone(), cache_file: None }
+        .into_crate_configuration_input(db);
+    set_crate_config_for_input(db, crate_input, Some(config));
 }
 
 /// Sets up the DB to compile the project at the given path.

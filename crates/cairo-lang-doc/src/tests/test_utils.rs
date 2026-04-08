@@ -2,8 +2,9 @@ use anyhow::{Result, anyhow};
 use cairo_lang_defs::db::{DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, FileContentStorage, FileContentView, FilesGroup, init_dev_corelib,
-    init_files_group, override_file_content_for_input, register_files_group_view,
+    CrateConfigStorage, CrateConfigView, CrateConfiguration, FileContentStorage, FileContentView,
+    FilesGroup, init_dev_corelib, init_files_group, new_crate_config_storage,
+    override_file_content_for_input, register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
@@ -19,6 +20,7 @@ use salsa::Database;
 pub struct TestDatabase {
     storage: salsa::Storage<TestDatabase>,
     file_contents: FileContentStorage,
+    crate_configs: CrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
@@ -27,11 +29,22 @@ impl FileContentView for TestDatabase {
         Some(&self.file_contents)
     }
 }
+impl CrateConfigView for TestDatabase {
+    fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
+        Some(&self.crate_configs)
+    }
+}
 
 impl Default for TestDatabase {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
+        let mut res = Self {
+            storage: Default::default(),
+            file_contents: Default::default(),
+            crate_configs: new_crate_config_storage(),
+        };
+
         register_files_group_view(&res);
+        register_crate_config_view(&res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
