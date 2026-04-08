@@ -4,7 +4,8 @@ use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    CrateSettings, Edition, ExperimentalFeaturesConfig, init_dev_corelib, init_files_group,
+    CrateSettings, Edition, ExperimentalFeaturesConfig, FileContentStorage, FileContentView,
+    init_dev_corelib, init_files_group, new_file_content_storage, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
@@ -29,10 +30,16 @@ use crate::{ConcreteFunctionWithBodyId, SemanticDiagnostic, semantic};
 #[derive(Clone)]
 pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
+    file_contents: FileContentStorage,
 }
 
 #[salsa::db]
 impl Database for SemanticDatabaseForTesting {}
+impl FileContentView for SemanticDatabaseForTesting {
+    fn file_content_storage(&self) -> Option<&FileContentStorage> {
+        Some(&self.file_contents)
+    }
+}
 
 impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
@@ -41,7 +48,11 @@ impl SemanticDatabaseForTesting {
     }
 
     pub fn with_plugin_suite(suite: PluginSuite) -> Self {
-        let mut res = SemanticDatabaseForTesting { storage: Default::default() };
+        let mut res = SemanticDatabaseForTesting {
+            storage: Default::default(),
+            file_contents: new_file_content_storage(),
+        };
+        register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);

@@ -3,7 +3,10 @@ use std::sync::{LazyLock, Mutex};
 use cairo_lang_defs as defs;
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{
+    FileContentStorage, FileContentView, init_dev_corelib, init_files_group,
+    new_file_content_storage, register_files_group_view,
+};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
@@ -32,9 +35,17 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 #[derive(Clone)]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
+    file_contents: FileContentStorage,
 }
 #[salsa::db]
 impl Database for SierraGenDatabaseForTesting {}
+
+impl FileContentView for SierraGenDatabaseForTesting {
+    fn file_content_storage(&self) -> Option<&FileContentStorage> {
+        Some(&self.file_contents)
+    }
+}
+
 impl CloneableDatabase for SierraGenDatabaseForTesting {
     fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
         Box::new(self.clone())
@@ -60,7 +71,11 @@ pub static SHARED_DB_WITHOUT_ADD_WITHDRAW_GAS_FUTURE_SIERRA: LazyLock<
 });
 impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
-        let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
+        let mut res = SierraGenDatabaseForTesting {
+            storage: Default::default(),
+            file_contents: new_file_content_storage(),
+        };
+        register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
@@ -85,7 +100,10 @@ impl SierraGenDatabaseForTesting {
     }
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> SierraGenDatabaseForTesting {
-        SierraGenDatabaseForTesting { storage: self.storage.clone() }
+        SierraGenDatabaseForTesting {
+            storage: self.storage.clone(),
+            file_contents: self.file_contents.clone(),
+        }
     }
 }
 impl Default for SierraGenDatabaseForTesting {
