@@ -3,7 +3,7 @@ use std::sync::{LazyLock, Mutex};
 use cairo_lang_defs as defs;
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{FileContentView, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
@@ -35,6 +35,7 @@ pub struct SierraGenDatabaseForTesting {
 }
 #[salsa::db]
 impl Database for SierraGenDatabaseForTesting {}
+impl FileContentView for SierraGenDatabaseForTesting {}
 impl CloneableDatabase for SierraGenDatabaseForTesting {
     fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
         Box::new(self.clone())

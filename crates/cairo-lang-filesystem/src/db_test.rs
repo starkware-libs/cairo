@@ -3,11 +3,11 @@ use cairo_lang_utils::Intern;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
-use crate::db::CrateConfiguration;
+use crate::db::{CrateConfiguration, set_editor_file_content_for_input};
 use crate::flag::{Flag, FlagsGroup};
 use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId, SmolStrId};
 use crate::test_utils::FilesDatabaseForTesting;
-use crate::{override_file_content, set_crate_config};
+use crate::set_crate_config;
 
 #[test]
 fn test_filesystem() {
@@ -16,8 +16,11 @@ fn test_filesystem() {
     let directory = Directory::Real("src".into());
     let child_str = "child.cairo";
     let db_ref = &mut db;
-    let file_id = directory.file(db_ref, child_str);
-    override_file_content!(db_ref, file_id, Some("content\n".into()));
+    let file_input = {
+        let file_id = directory.file(db_ref, child_str);
+        db_ref.file_input(file_id).clone()
+    };
+    set_editor_file_content_for_input(db_ref, file_input, Some("content\n".into()));
 
     let config = CrateConfiguration::default_for_root(directory.clone());
     let crt = CrateLongId::plain(SmolStrId::from(db_ref, "my_crate")).intern(db_ref);

@@ -2,7 +2,7 @@ use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
-use cairo_lang_filesystem::db::{init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{FileContentView, init_dev_corelib, init_files_group};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
@@ -23,6 +23,7 @@ pub struct LoweringDatabaseForTesting {
 }
 #[salsa::db]
 impl salsa::Database for LoweringDatabaseForTesting {}
+impl FileContentView for LoweringDatabaseForTesting {}
 
 impl LoweringDatabaseForTesting {
     pub fn new() -> Self {

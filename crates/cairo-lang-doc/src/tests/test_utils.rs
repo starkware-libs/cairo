@@ -2,11 +2,13 @@ use anyhow::{Result, anyhow};
 use cairo_lang_defs::db::{DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, FilesGroup, init_dev_corelib, init_files_group,
+    CrateConfiguration, FileContentStorage, FileContentView, FilesGroup, init_dev_corelib,
+    init_files_group, new_file_content_storage, register_files_group_view,
+    set_editor_file_content_for_input,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
-use cairo_lang_filesystem::{override_file_content, set_crate_config};
+use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
 use cairo_lang_semantic::plugin::PluginSuite;
@@ -17,13 +19,21 @@ use salsa::Database;
 #[derive(Clone)]
 pub struct TestDatabase {
     storage: salsa::Storage<TestDatabase>,
+    file_contents: FileContentStorage,
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
+impl FileContentView for TestDatabase {
+    fn file_content_storage(&self) -> Option<&FileContentStorage> {
+        Some(&self.file_contents)
+    }
+}
 
 impl Default for TestDatabase {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res =
+            Self { storage: Default::default(), file_contents: new_file_content_storage() };
+        register_files_group_view(&res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
@@ -49,9 +59,12 @@ pub fn setup_test_module(db: &mut dyn Database, content: &str) {
     let crate_id = test_crate_id(db);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));
-    let crate_id = test_crate_id(db);
-    let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    override_file_content!(db, file, Some(content.into()));
+    let file_input = {
+        let crate_id = test_crate_id(db);
+        let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
+        db.file_input(file).clone()
+    };
+    set_editor_file_content_for_input(db, file_input, Some(content.into()));
     let crate_id = test_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
@@ -66,12 +79,18 @@ pub fn setup_test_module_without_syntax_diagnostics(db: &mut dyn Database, conte
     let crate_id = test_crate_id(db);
     let directory = Directory::Real("src".into());
     set_crate_config!(db, crate_id, Some(CrateConfiguration::default_for_root(directory)));
-    let crate_id = test_crate_id(db);
-    let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    override_file_content!(db, file, Some(content.into()));
+    let file_input = {
+        let crate_id = test_crate_id(db);
+        let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
+        db.file_input(file).clone()
+    };
+    set_editor_file_content_for_input(db, file_input, Some(content.into()));
 }
 
 pub fn set_file_content(db: &mut TestDatabase, path: &str, content: &str) {
-    let file_id = FileLongId::OnDisk(path.into()).intern(db);
-    override_file_content!(db, file_id, Some(content.into()));
+    let file_input = {
+        let file_id = FileLongId::OnDisk(path.into()).intern(db);
+        db.file_input(file_id).clone()
+    };
+    set_editor_file_content_for_input(db, file_input, Some(content.into()));
 }
