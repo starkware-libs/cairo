@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775520923903,
+  "lastUpdate": 1775607384736,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1371,6 +1371,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1531060095,
             "range": "± 10618977",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "cc62f382fef1b04d77063813efc0cbd17f5d9bc5",
+          "message": "doc: add implicit inference and #[implicit_precedence] to implicit-arguments.adoc (#9767)",
+          "timestamp": "2026-04-07T15:24:15Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/cc62f382fef1b04d77063813efc0cbd17f5d9bc5"
+        },
+        "date": 1775607383811,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1532500708,
+            "range": "± 20201484",
             "unit": "ns/iter"
           }
         ]
