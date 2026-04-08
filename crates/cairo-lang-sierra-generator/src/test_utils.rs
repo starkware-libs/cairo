@@ -4,7 +4,8 @@ use cairo_lang_defs as defs;
 use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
-    FileContentStorage, FileContentView, init_dev_corelib, init_files_group,
+    CrateConfigStorage, CrateConfigView, FileContentStorage, FileContentView, init_dev_corelib,
+    init_files_group, new_crate_config_storage, register_crate_config_view,
     register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
@@ -36,6 +37,7 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
     file_contents: FileContentStorage,
+    crate_configs: CrateConfigStorage,
 }
 #[salsa::db]
 impl Database for SierraGenDatabaseForTesting {}
@@ -43,6 +45,11 @@ impl Database for SierraGenDatabaseForTesting {}
 impl FileContentView for SierraGenDatabaseForTesting {
     fn file_content_storage(&self) -> Option<&FileContentStorage> {
         Some(&self.file_contents)
+    }
+}
+impl CrateConfigView for SierraGenDatabaseForTesting {
+    fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
+        Some(&self.crate_configs)
     }
 }
 
@@ -74,8 +81,10 @@ impl SierraGenDatabaseForTesting {
         let mut res = SierraGenDatabaseForTesting {
             storage: Default::default(),
             file_contents: Default::default(),
+            crate_configs: new_crate_config_storage(),
         };
         register_files_group_view(&res);
+        register_crate_config_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
@@ -103,6 +112,7 @@ impl SierraGenDatabaseForTesting {
         SierraGenDatabaseForTesting {
             storage: self.storage.clone(),
             file_contents: self.file_contents.clone(),
+            crate_configs: self.crate_configs.clone(),
         }
     }
 }

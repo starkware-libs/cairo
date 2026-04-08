@@ -231,9 +231,9 @@ pub type ExtAsVirtual =
 // TODO(eytan-starkware): Change this mechanism to hold input handles on the db struct outside
 // salsa mechanism, and invalidate manually.
 pub struct FilesGroupInput {
-    /// Main input of the project. Lists all the crates configurations.
-    #[returns(ref)]
-    pub crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
+    /// Structural revision for databases that source crate configurations from a granular side
+    /// table. Queries like `crate_configs()` use this to observe newly inserted handles.
+    pub crate_configs_revision: u64,
     /// Structural revision bumped each time a new [`FileContentOverride`] handle is first created
     /// for a previously-unregistered file.
     ///
@@ -257,7 +257,7 @@ pub struct FilesGroupInput {
 
 #[salsa::tracked]
 pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
-    FilesGroupInput::new(db, None, 0, None, None, None)
+    FilesGroupInput::new(db, 0, 0, None, None, None)
 }
 
 /// Input used for overriding the content of a single file.
@@ -279,6 +279,19 @@ pub struct FileContentOverride {
 /// created with `&mut dyn Database` while existing ones are read from within tracked functions
 /// via [`FileContentView`].
 pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContentOverride>>>;
+
+/// Per-crate configuration input used by long-running tools that need granular invalidation.
+#[salsa::input]
+pub struct CrateConfig {
+    #[returns(ref)]
+    pub config: Option<CrateConfigurationInput>,
+}
+
+pub type CrateConfigStorage = Arc<RwLock<HashMap<CrateInput, CrateConfig>>>;
+
+pub fn new_crate_config_storage() -> CrateConfigStorage {
+    Default::default()
+}
 
 /// View trait for accessing the [`FileContentStorage`] side-table from within tracked functions.
 /// Implement this on the concrete DB struct and register it with [`register_files_group_view`].
@@ -332,6 +345,63 @@ where
         // SAFETY: `db` points to a live `Db` of the registered concrete database type.
         NonNull::from(unsafe { db.as_ref() } as &dyn FileContentView)
     });
+}
+
+/// Database view used by [`FilesGroup::crate_config`] to retrieve crate configuration.
+pub trait CrateConfigView: Database {
+    fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
+        None
+    }
+
+    /// Returns a granular config handle for the given crate input, if one exists.
+    fn crate_config_for_input(&self, crate_input: &CrateInput) -> Option<CrateConfig> {
+        self.crate_config_storage()?.read().unwrap().get(crate_input).copied()
+    }
+
+    /// Returns crate configuration input for the given crate id.
+    fn crate_config_input_for<'db>(
+        &'db self,
+        crate_id: CrateId<'db>,
+    ) -> Option<&'db CrateConfigurationInput> {
+        let crate_input = self.crate_input(crate_id).clone();
+        self.crate_config_input_for_input(&crate_input)
+    }
+
+    /// Returns crate configuration input for the given crate input.
+    fn crate_config_input_for_input<'db>(
+        &'db self,
+        crate_input: &CrateInput,
+    ) -> Option<&'db CrateConfigurationInput> {
+        self.crate_config_for_input(crate_input).and_then(|config| config.config(self).as_ref())
+    }
+}
+
+fn cast_crate_config_view<Db: CrateConfigView + 'static>(
+    db: NonNull<Db>,
+) -> NonNull<dyn CrateConfigView> {
+    let db_ref = unsafe { db.as_ref() };
+    NonNull::from(db_ref as &dyn CrateConfigView)
+}
+
+fn crate_config_view(db: &dyn Database) -> &dyn CrateConfigView {
+    let caster =
+        catch_unwind(AssertUnwindSafe(|| *views(db).downcaster_for::<dyn CrateConfigView>())).ok();
+
+    let caster = caster.expect("granular crate config view is not registered");
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+fn crate_config_storage(db: &dyn Database) -> &CrateConfigStorage {
+    crate_config_view(db)
+        .crate_config_storage()
+        .expect("granular crate config storage is not registered")
+}
+
+pub fn register_crate_config_view<Db>(db: &Db)
+where
+    Db: Database + CrateConfigView + 'static,
+{
+    views(db).add::<Db, dyn CrateConfigView>(cast_crate_config_view::<Db>);
 }
 
 /// Queries over the files group.
@@ -397,7 +467,7 @@ impl<T: Database + ?Sized> FilesGroup for T {}
 pub fn init_files_group<'db>(db: &mut (dyn Database + 'db)) {
     // Initialize inputs.
     let inp = files_group_input(db);
-    inp.set_crate_configs(db).to(Some(Default::default()));
+    inp.set_crate_configs_revision(db).to(0);
     inp.set_file_contents_revision(db).to(0);
     inp.set_flags(db).to(Some(Default::default()));
     inp.set_cfg_set(db).to(Some(Default::default()));
@@ -410,23 +480,53 @@ fn bump_file_contents_revision(db: &mut dyn Database) {
     files_group_input(db).set_file_contents_revision(db).to(next);
 }
 
-pub fn set_crate_configs_input(
+fn bump_crate_configs_revision(db: &mut dyn Database) {
+    let next = files_group_input(db).crate_configs_revision(db).saturating_add(1);
+    files_group_input(db).set_crate_configs_revision(db).to(next);
+}
+
+fn ensure_crate_config_handle_for_input(
     db: &mut dyn Database,
-    crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
+    crate_input: CrateInput,
+) -> CrateConfig {
+    if let Some(handle) = crate_config_view(db).crate_config_for_input(&crate_input) {
+        return handle;
+    }
+
+    let storage = crate_config_storage(db);
+    let handle = CrateConfig::new(db, None);
+    storage.write().unwrap().insert(crate_input, handle);
+    bump_crate_configs_revision(db);
+    handle
+}
+
+pub fn set_crate_config_for_input(
+    db: &mut dyn Database,
+    crate_input: CrateInput,
+    config: Option<CrateConfigurationInput>,
 ) {
-    files_group_input(db).set_crate_configs(db).to(crate_configs);
+    let handle = ensure_crate_config_handle_for_input(db, crate_input);
+    handle.set_config(db).with_durability(Durability::HIGH).to(config);
 }
 
 #[salsa::tracked(returns(ref))]
 pub fn crate_configs<'db>(
     db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, CrateConfiguration<'db>> {
-    let inp = files_group_input(db).crate_configs(db).as_ref().expect("crate_configs is not set");
-    inp.iter()
+    let _ = files_group_input(db).crate_configs_revision(db);
+    crate_config_storage(db)
+        .read()
+        .unwrap()
+        .iter()
         .map(|(crate_input, config)| {
             (
                 crate_input.clone().into_crate_long_id(db).intern(db),
-                config.clone().into_crate_configuration(db),
+                config
+                    .config(db)
+                    .as_ref()
+                    .expect("granular crate config handle should always contain a config")
+                    .clone()
+                    .into_crate_configuration(db),
             )
         })
         .collect()
@@ -459,7 +559,6 @@ fn crate_configuration_input<'db>(
 }
 
 pub fn init_dev_corelib(db: &mut dyn salsa::Database, core_lib_dir: PathBuf) {
-    let core = CrateLongId::core(db).intern(db);
     let root = CrateConfiguration {
         root: Directory::Real(core_lib_dir),
         settings: CrateSettings {
@@ -478,33 +577,39 @@ pub fn init_dev_corelib(db: &mut dyn salsa::Database, core_lib_dir: PathBuf) {
         },
         cache_file: None,
     };
-    let crate_configs = update_crate_configuration_input_helper(db, core, Some(root));
-    set_crate_configs_input(db, Some(crate_configs));
+    let core_input = {
+        let core = CrateLongId::core(db).intern(db);
+        db.crate_input(core).clone()
+    };
+    let config = db.crate_configuration_input(root).clone();
+    set_crate_config_for_input(db, core_input, Some(config));
 }
 
-/// Updates crate configuration input for standalone use.
-pub fn update_crate_configuration_input_helper(
-    db: &dyn Database,
+/// Sets the root directory of the crate. None value removes the crate.
+pub fn set_crate_config(
+    db: &mut dyn Database,
     crt: CrateId<'_>,
     root: Option<CrateConfiguration<'_>>,
-) -> OrderedHashMap<CrateInput, CrateConfigurationInput> {
-    let crt = db.crate_input(crt);
-    let db_ref: &dyn Database = db;
-    let mut crate_configs = files_group_input(db_ref).crate_configs(db_ref).clone().unwrap();
-    match root {
-        Some(root) => crate_configs.insert(crt.clone(), db.crate_configuration_input(root).clone()),
-        None => crate_configs.swap_remove(crt),
-    };
-    crate_configs
+) {
+    let crate_input = db.crate_input(crt).clone();
+    let config = root.map(|root| db.crate_configuration_input(root).clone());
+    set_crate_config_for_input(db, crate_input, config);
 }
 
 /// Sets the root directory of the crate. None value removes the crate.
 #[macro_export]
 macro_rules! set_crate_config {
-    ($self:expr, $crt:expr, $root:expr) => {
-        let crate_configs = $crate::db::update_crate_configuration_input_helper($self, $crt, $root);
-        $crate::db::set_crate_configs_input($self, Some(crate_configs));
-    };
+    ($self:expr, $crt:expr, $root:expr) => {{
+        let crate_input = {
+            let db_ref: &dyn salsa::Database = &*$self;
+            $crate::db::FilesGroup::crate_input(db_ref, $crt).clone()
+        };
+        let config = {
+            let db_ref: &dyn salsa::Database = &*$self;
+            ($root).map(|root| root.into_crate_configuration_input(db_ref))
+        };
+        $crate::db::set_crate_config_for_input($self, crate_input, config);
+    }};
 }
 
 fn ensure_file_contents_handle_for_input(
@@ -574,6 +679,20 @@ pub fn snapshot_file_contents(db: &dyn Database) -> FileContentSnapshot {
         .collect()
 }
 
+pub fn snapshot_crate_configs(
+    db: &dyn Database,
+) -> OrderedHashMap<CrateInput, CrateConfigurationInput> {
+    crate_config_storage(db)
+        .read()
+        .unwrap()
+        .iter()
+        .filter_map(|(crate_input, handle)| {
+            let config = handle.config(db).as_ref()?.clone();
+            Some((crate_input.clone(), config))
+        })
+        .collect()
+}
+
 fn cfg_set_helper(db: &dyn Database) -> &CfgSet {
     files_group_input(db).cfg_set(db).as_ref().expect("cfg_set is not set")
 }
@@ -590,8 +709,12 @@ fn crate_config_helper<'db>(
     db: &'db dyn Database,
     crt: CrateId<'db>,
 ) -> Option<CrateConfiguration<'db>> {
+    let _ = files_group_input(db).crate_configs_revision(db);
     match crt.long(db) {
-        CrateLongId::Real { .. } => db.crate_configs().get(&crt).cloned(),
+        CrateLongId::Real { .. } => crate_config_view(db)
+            .crate_config_input_for(crt)
+            .cloned()
+            .map(|config| config.into_crate_configuration(db)),
         CrateLongId::Virtual { name: _, file_id, settings, cache_file } => {
             Some(CrateConfiguration {
                 root: Directory::Virtual {
