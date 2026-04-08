@@ -86,10 +86,9 @@ trait-driven and can be overloaded for custom types by implementing the
 appropriate traits from `core::traits`.
 
 Note that some operators like indexing `[]` and arithmetic compound assignment operators
-are trait-driven but their traits are located outside of `core::traits`.
-Arithmetic compound assignment operators use `core::ops::AddAssign` for `+=`,
-`core::ops::SubAssign` for `-=`, `core::ops::MulAssign` for `*=`,
-`core::ops::DivAssign` for `/=`, and `core::ops::RemAssign` for `%=`.
+(`+=`, `-=`, `*=`, `/=`, `%=`) are trait-driven but their traits are located
+outside of `core::traits`, in `core::ops::{AddAssign, SubAssign, MulAssign, DivAssign,
+RemAssign}`.
 Bitwise and shift compound assignment operators (`&=`, `^=`, `|=`, `<<=`, `>>=`)
 are not supported.
 
