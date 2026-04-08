@@ -1,5 +1,11 @@
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{init_defs_group, init_external_files};
+use cairo_lang_defs::db::{
+    GranularInlineMacroPluginOverrideStorage, GranularInlineMacroPluginOverrideView,
+    GranularMacroPluginOverrideStorage, GranularMacroPluginOverrideView, init_defs_group,
+    init_external_files, new_granular_inline_macro_plugin_override_storage,
+    new_granular_macro_plugin_override_storage, register_granular_inline_macro_plugin_override_view,
+    register_granular_macro_plugin_override_view,
+};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
@@ -17,7 +23,11 @@ use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
-use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
+use cairo_lang_semantic::db::{
+    GranularAnalyzerPluginOverrideStorage, GranularAnalyzerPluginOverrideView, PluginSuiteInput,
+    init_semantic_group, new_granular_analyzer_plugin_override_storage,
+    register_granular_analyzer_plugin_override_view,
+};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::init_sierra_gen_group;
@@ -76,6 +86,9 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
     granular_file_contents: GranularFileContentStorage,
     granular_crate_configs: GranularCrateConfigStorage,
+    granular_macro_plugin_overrides: GranularMacroPluginOverrideStorage,
+    granular_inline_macro_plugin_overrides: GranularInlineMacroPluginOverrideStorage,
+    granular_analyzer_plugin_overrides: GranularAnalyzerPluginOverrideStorage,
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
@@ -87,6 +100,25 @@ impl GranularFileContentView for RootDatabase {
 impl GranularCrateConfigView for RootDatabase {
     fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
         Some(&self.granular_crate_configs)
+    }
+}
+impl GranularMacroPluginOverrideView for RootDatabase {
+    fn granular_macro_plugin_override_storage(&self) -> Option<&GranularMacroPluginOverrideStorage> {
+        Some(&self.granular_macro_plugin_overrides)
+    }
+}
+impl GranularInlineMacroPluginOverrideView for RootDatabase {
+    fn granular_inline_macro_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularInlineMacroPluginOverrideStorage> {
+        Some(&self.granular_inline_macro_plugin_overrides)
+    }
+}
+impl GranularAnalyzerPluginOverrideView for RootDatabase {
+    fn granular_analyzer_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularAnalyzerPluginOverrideStorage> {
+        Some(&self.granular_analyzer_plugin_overrides)
     }
 }
 impl CloneableDatabase for RootDatabase {
@@ -101,9 +133,16 @@ impl RootDatabase {
             storage: Default::default(),
             granular_file_contents: new_granular_file_content_storage(),
             granular_crate_configs: new_granular_crate_config_storage(),
+            granular_macro_plugin_overrides: new_granular_macro_plugin_override_storage(),
+            granular_inline_macro_plugin_overrides:
+                new_granular_inline_macro_plugin_override_storage(),
+            granular_analyzer_plugin_overrides: new_granular_analyzer_plugin_override_storage(),
         };
         register_files_group_view(&res);
         register_granular_crate_config_view(&res);
+        register_granular_macro_plugin_override_view(&res);
+        register_granular_inline_macro_plugin_override_view(&res);
+        register_granular_analyzer_plugin_override_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_lowering_group(&mut res, optimizations, Some(estimate_code_size));
@@ -130,6 +169,9 @@ impl RootDatabase {
             storage: self.storage.clone(),
             granular_file_contents: self.granular_file_contents.clone(),
             granular_crate_configs: self.granular_crate_configs.clone(),
+            granular_macro_plugin_overrides: self.granular_macro_plugin_overrides.clone(),
+            granular_inline_macro_plugin_overrides: self.granular_inline_macro_plugin_overrides.clone(),
+            granular_analyzer_plugin_overrides: self.granular_analyzer_plugin_overrides.clone(),
         }
     }
 }

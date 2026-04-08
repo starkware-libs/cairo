@@ -1,9 +1,19 @@
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs as defs;
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{
+    DefsGroup, GranularInlineMacroPluginOverrideStorage, GranularInlineMacroPluginOverrideView,
+    GranularMacroPluginOverrideStorage, GranularMacroPluginOverrideView, init_defs_group,
+    init_external_files, new_granular_inline_macro_plugin_override_storage,
+    new_granular_macro_plugin_override_storage, register_granular_inline_macro_plugin_override_view,
+    register_granular_macro_plugin_override_view,
+};
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_filesystem::db::{GranularFileContentView, init_dev_corelib, init_files_group};
+use cairo_lang_filesystem::db::{
+    GranularCrateConfigStorage, GranularCrateConfigView, GranularFileContentView,
+    init_dev_corelib, init_files_group, new_granular_crate_config_storage,
+    register_files_group_view, register_granular_crate_config_view,
+};
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
@@ -11,7 +21,11 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
-use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{
+    GranularAnalyzerPluginOverrideStorage, GranularAnalyzerPluginOverrideView, PluginSuiteInput,
+    SemanticGroup, init_semantic_group, new_granular_analyzer_plugin_override_storage,
+    register_granular_analyzer_plugin_override_view,
+};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
@@ -32,10 +46,38 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 #[derive(Clone)]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
+    granular_crate_configs: GranularCrateConfigStorage,
+    granular_macro_plugin_overrides: GranularMacroPluginOverrideStorage,
+    granular_inline_macro_plugin_overrides: GranularInlineMacroPluginOverrideStorage,
+    granular_analyzer_plugin_overrides: GranularAnalyzerPluginOverrideStorage,
 }
 #[salsa::db]
 impl Database for SierraGenDatabaseForTesting {}
 impl GranularFileContentView for SierraGenDatabaseForTesting {}
+impl GranularCrateConfigView for SierraGenDatabaseForTesting {
+    fn granular_crate_config_storage(&self) -> Option<&GranularCrateConfigStorage> {
+        Some(&self.granular_crate_configs)
+    }
+}
+impl GranularMacroPluginOverrideView for SierraGenDatabaseForTesting {
+    fn granular_macro_plugin_override_storage(&self) -> Option<&GranularMacroPluginOverrideStorage> {
+        Some(&self.granular_macro_plugin_overrides)
+    }
+}
+impl GranularInlineMacroPluginOverrideView for SierraGenDatabaseForTesting {
+    fn granular_inline_macro_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularInlineMacroPluginOverrideStorage> {
+        Some(&self.granular_inline_macro_plugin_overrides)
+    }
+}
+impl GranularAnalyzerPluginOverrideView for SierraGenDatabaseForTesting {
+    fn granular_analyzer_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularAnalyzerPluginOverrideStorage> {
+        Some(&self.granular_analyzer_plugin_overrides)
+    }
+}
 impl CloneableDatabase for SierraGenDatabaseForTesting {
     fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
         Box::new(self.clone())
@@ -61,7 +103,19 @@ pub static SHARED_DB_WITHOUT_ADD_WITHDRAW_GAS_FUTURE_SIERRA: LazyLock<
 });
 impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
-        let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
+        let mut res = SierraGenDatabaseForTesting {
+            storage: Default::default(),
+            granular_crate_configs: new_granular_crate_config_storage(),
+            granular_macro_plugin_overrides: new_granular_macro_plugin_override_storage(),
+            granular_inline_macro_plugin_overrides:
+                new_granular_inline_macro_plugin_override_storage(),
+            granular_analyzer_plugin_overrides: new_granular_analyzer_plugin_override_storage(),
+        };
+        register_files_group_view(&res);
+        register_granular_crate_config_view(&res);
+        register_granular_macro_plugin_override_view(&res);
+        register_granular_inline_macro_plugin_override_view(&res);
+        register_granular_analyzer_plugin_override_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
@@ -86,7 +140,13 @@ impl SierraGenDatabaseForTesting {
     }
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> SierraGenDatabaseForTesting {
-        SierraGenDatabaseForTesting { storage: self.storage.clone() }
+        SierraGenDatabaseForTesting {
+            storage: self.storage.clone(),
+            granular_crate_configs: self.granular_crate_configs.clone(),
+            granular_macro_plugin_overrides: self.granular_macro_plugin_overrides.clone(),
+            granular_inline_macro_plugin_overrides: self.granular_inline_macro_plugin_overrides.clone(),
+            granular_analyzer_plugin_overrides: self.granular_analyzer_plugin_overrides.clone(),
+        }
     }
 }
 impl Default for SierraGenDatabaseForTesting {

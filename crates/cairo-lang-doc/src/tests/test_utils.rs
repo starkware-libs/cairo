@@ -1,5 +1,11 @@
 use anyhow::{Result, anyhow};
-use cairo_lang_defs::db::{DefsGroup, init_defs_group};
+use cairo_lang_defs::db::{
+    DefsGroup, GranularInlineMacroPluginOverrideStorage, GranularInlineMacroPluginOverrideView,
+    GranularMacroPluginOverrideStorage, GranularMacroPluginOverrideView, init_defs_group,
+    new_granular_inline_macro_plugin_override_storage, new_granular_macro_plugin_override_storage,
+    register_granular_inline_macro_plugin_override_view,
+    register_granular_macro_plugin_override_view,
+};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CrateConfiguration, FilesGroup, GranularCrateConfigStorage, GranularCrateConfigView,
@@ -12,7 +18,11 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
+use cairo_lang_semantic::db::{
+    GranularAnalyzerPluginOverrideStorage, GranularAnalyzerPluginOverrideView, PluginSuiteInput,
+    init_semantic_group, new_granular_analyzer_plugin_override_storage,
+    register_granular_analyzer_plugin_override_view,
+};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
 use salsa::Database;
@@ -23,6 +33,9 @@ pub struct TestDatabase {
     storage: salsa::Storage<TestDatabase>,
     granular_file_contents: GranularFileContentStorage,
     granular_crate_configs: GranularCrateConfigStorage,
+    granular_macro_plugin_overrides: GranularMacroPluginOverrideStorage,
+    granular_inline_macro_plugin_overrides: GranularInlineMacroPluginOverrideStorage,
+    granular_analyzer_plugin_overrides: GranularAnalyzerPluginOverrideStorage,
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
@@ -36,6 +49,25 @@ impl GranularCrateConfigView for TestDatabase {
         Some(&self.granular_crate_configs)
     }
 }
+impl GranularMacroPluginOverrideView for TestDatabase {
+    fn granular_macro_plugin_override_storage(&self) -> Option<&GranularMacroPluginOverrideStorage> {
+        Some(&self.granular_macro_plugin_overrides)
+    }
+}
+impl GranularInlineMacroPluginOverrideView for TestDatabase {
+    fn granular_inline_macro_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularInlineMacroPluginOverrideStorage> {
+        Some(&self.granular_inline_macro_plugin_overrides)
+    }
+}
+impl GranularAnalyzerPluginOverrideView for TestDatabase {
+    fn granular_analyzer_plugin_override_storage(
+        &self,
+    ) -> Option<&GranularAnalyzerPluginOverrideStorage> {
+        Some(&self.granular_analyzer_plugin_overrides)
+    }
+}
 
 impl Default for TestDatabase {
     fn default() -> Self {
@@ -43,9 +75,16 @@ impl Default for TestDatabase {
             storage: Default::default(),
             granular_file_contents: new_granular_file_content_storage(),
             granular_crate_configs: new_granular_crate_config_storage(),
+            granular_macro_plugin_overrides: new_granular_macro_plugin_override_storage(),
+            granular_inline_macro_plugin_overrides:
+                new_granular_inline_macro_plugin_override_storage(),
+            granular_analyzer_plugin_overrides: new_granular_analyzer_plugin_override_storage(),
         };
         register_files_group_view(&res);
         register_granular_crate_config_view(&res);
+        register_granular_macro_plugin_override_view(&res);
+        register_granular_inline_macro_plugin_override_view(&res);
+        register_granular_analyzer_plugin_override_view(&res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
