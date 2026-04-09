@@ -165,13 +165,15 @@ Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
   (v2: test::MyStruct) <- struct_construct(v0, v1)
-  (v3: (test::MyStruct, core::felt252, core::felt252)) <- struct_construct(v2, v0, v1)
+  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v2)
+  (v5: test::MyStruct) <- struct_construct(v3, v4)
+  (v6: (test::MyStruct, core::felt252, core::felt252)) <- struct_construct(v5, v3, v4)
 End:
-  Return(v3)
+  Return(v6)
 
 //! > analysis_state
 Block 0:
-(test::MyStruct, core::felt252, core::felt252)(v2, v0, v1) = v3, test::MyStruct(v0, v1) = v2
+(test::MyStruct, core::felt252, core::felt252)(v2, v0, v1) = v6, test::MyStruct(v0, v1) = v2, v0 = v3, v1 = v4, v2 = v5
 
 //! > ==========================================================================
 
@@ -241,33 +243,34 @@ warning[E0001]: Unused variable. Consider ignoring by prefixing with `_`.
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
 End:
-  Match(match core::felt252_is_zero(v0) {
+  Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+    IsZeroResult::NonZero(v3) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1
+  (v4: core::felt252) <- 1
 End:
-  Return(v2)
+  Return(v4)
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 2
+  (v5: core::felt252) <- 2
 End:
-  Return(v3)
+  Return(v5)
 
 //! > analysis_state
 Block 0:
-(empty)
+@v0 = v2, v0 = v1
 
 Block 1:
-(empty)
+@v0 = v2, v0 = v1
 
 Block 2:
-(empty)
+@v0 = v2, v0 = v1
 
 //! > ==========================================================================
 
@@ -365,32 +368,25 @@ End:
 
 blk1:
 Statements:
-End:
-  Goto(blk3, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v6: core::array::Array::<core::felt252>, v7: @core::array::Array::<core::felt252>) <- snapshot(v1)
 End:
   Return(v7)
+
+blk2:
+Statements:
+  (v8: core::array::Array::<core::felt252>, v9: @core::array::Array::<core::felt252>) <- snapshot(v1)
+End:
+  Return(v9)
 
 //! > analysis_state
 Block 0:
 @v0 = v2, v0 = v1
 
 Block 1:
-@v0 = v2, v0 = v1
+@v0 = v2, v0 = v1, v0 = v6, v2 = v7
 
 Block 2:
-@v0 = v2, v0 = v1
-
-Block 3:
-@v0 = v2, v0 = v1, v0 = v6, v2 = v7
+@v0 = v2, v0 = v1, v0 = v8, v2 = v9
 
 //! > ==========================================================================
 
@@ -422,13 +418,15 @@ blk0 (root):
 Statements:
   (v1: core::box::Box::<core::felt252>) <- into_box(v0)
   (v2: core::box::Box::<core::box::Box::<core::felt252>>) <- into_box(v1)
-  (v3: (core::box::Box::<core::box::Box::<core::felt252>>, core::felt252)) <- struct_construct(v2, v0)
+  (v3: core::box::Box::<core::felt252>) <- unbox(v2)
+  (v4: core::felt252) <- unbox(v3)
+  (v5: (core::box::Box::<core::box::Box::<core::felt252>>, core::felt252)) <- struct_construct(v2, v4)
 End:
-  Return(v3)
+  Return(v5)
 
 //! > analysis_state
 Block 0:
-(core::box::Box::<core::box::Box::<core::felt252>>, core::felt252)(v2, v0) = v3, Box(v0) = v1, Box(v1) = v2
+(core::box::Box::<core::box::Box::<core::felt252>>, core::felt252)(v2, v0) = v5, Box(v0) = v1, Box(v1) = v2, v0 = v4, v1 = v3
 
 //! > ==========================================================================
 
@@ -690,15 +688,16 @@ Parameters: v0: core::box::Box::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::box::Box::<core::felt252>, v2: @core::box::Box::<core::felt252>) <- snapshot(v0)
-  (v3: core::felt252) <- unbox(v0)
-  (v4: core::box::Box::<core::felt252>) <- into_box(v3)
-  (v5: (@core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)) <- struct_construct(v2, v4)
+  (v3: core::box::Box::<core::felt252>) <- desnap(v2)
+  (v4: core::felt252) <- unbox(v3)
+  (v5: core::box::Box::<core::felt252>) <- into_box(v4)
+  (v6: (@core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)) <- struct_construct(v2, v5)
 End:
-  Return(v5)
+  Return(v6)
 
 //! > analysis_state
 Block 0:
-(@core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)(v2, v0) = v5, @v0 = v2, Box(v3) = v0, v0 = v1, v0 = v4
+(@core::box::Box::<core::felt252>, core::box::Box::<core::felt252>)(v2, v0) = v6, @v0 = v2, Box(v4) = v0, v0 = v1, v0 = v3, v0 = v5
 
 //! > ==========================================================================
 
@@ -732,13 +731,13 @@ Statements:
   (v1: core::felt252) <- unbox(v0)
   (v2: core::felt252, v3: @core::felt252) <- snapshot(v1)
   () <- test::use_snap(v3)
-  (v4: core::box::Box::<core::felt252>) <- into_box(v2)
+  (v5: core::box::Box::<core::felt252>) <- into_box(v2)
 End:
-  Return(v4)
+  Return(v5)
 
 //! > analysis_state
 Block 0:
-@v1 = v3, Box(v1) = v0, v0 = v4, v1 = v2
+@v1 = v3, Box(v1) = v0, v0 = v5, v1 = v2
 
 //! > ==========================================================================
 
@@ -804,13 +803,14 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: test::EmptyStruct) <- struct_construct()
-  (v1: (test::EmptyStruct, test::EmptyStruct)) <- struct_construct(v0, v0)
+  (v1: test::EmptyStruct) <- struct_construct()
+  (v2: (test::EmptyStruct, test::EmptyStruct)) <- struct_construct(v0, v1)
 End:
-  Return(v1)
+  Return(v2)
 
 //! > analysis_state
 Block 0:
-(test::EmptyStruct, test::EmptyStruct)(v0, v0) = v1, test::EmptyStruct() = v0
+(test::EmptyStruct, test::EmptyStruct)(v0, v0) = v2, test::EmptyStruct() = v0, v0 = v1
 
 //! > ==========================================================================
 
@@ -907,21 +907,21 @@ Statements:
   (v7: test::MyStruct, v8: @test::MyStruct) <- snapshot(v6)
   () <- test::use_struct(v8)
 End:
-  Goto(blk3, {v7 -> v9})
+  Goto(blk3, {v7 -> v10})
 
 blk2:
 Statements:
-  (v10: test::MyStruct) <- struct_construct(v3)
-  (v11: test::MyStruct, v12: @test::MyStruct) <- snapshot(v10)
-  () <- test::use_struct(v12)
+  (v11: test::MyStruct) <- struct_construct(v3)
+  (v12: test::MyStruct, v13: @test::MyStruct) <- snapshot(v11)
+  () <- test::use_struct(v13)
 End:
-  Goto(blk3, {v11 -> v9})
+  Goto(blk3, {v12 -> v10})
 
 blk3:
 Statements:
-  (v13: test::MyStruct, v14: @test::MyStruct) <- snapshot(v9)
+  (v15: test::MyStruct, v16: @test::MyStruct) <- snapshot(v10)
 End:
-  Return(v14)
+  Return(v16)
 
 //! > analysis_state
 Block 0:
@@ -931,10 +931,10 @@ Block 1:
 @v0 = v3, @v6 = v8, False(v4) = v1, test::MyStruct(v3) = v6, v0 = v2, v6 = v7
 
 Block 2:
-@v0 = v3, @v10 = v12, True(v5) = v1, test::MyStruct(v3) = v10, v0 = v2, v10 = v11
+@v0 = v3, @v11 = v13, True(v5) = v1, test::MyStruct(v3) = v11, v0 = v2, v11 = v12
 
 Block 3:
-@v0 = v3, @v9 = v14, test::MyStruct(v3) = v9, v0 = v2, v9 = v13
+@v0 = v3, @v10 = v16, test::MyStruct(v3) = v10, v0 = v2, v10 = v15
 
 //! > ==========================================================================
 
@@ -964,13 +964,13 @@ blk0 (root):
 Statements:
   (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
-  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
 End:
-  Return(v4)
+  Return(v5)
 
 //! > analysis_state
 Block 0:
-core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5
 
 //! > ==========================================================================
 
@@ -1010,44 +1010,75 @@ blk0 (root):
 Statements:
   (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
-  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
 End:
-  Match(match core::array::array_pop_front::<core::felt252>(v4) {
-    Option::Some(v5, v6) => blk1,
-    Option::None(v7) => blk2,
+  Match(match core::array::array_pop_front::<core::felt252>(v5) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk2,
   })
 
 blk1:
 Statements:
-  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v0)
+  (v10: core::felt252) <- unbox(v8)
+  (v11: core::option::Option::<core::felt252>) <- Option::Some(v10)
 End:
-  Goto(blk3, {v9 -> v10})
+  Goto(blk3, {v7 -> v12, v11 -> v13})
 
 blk2:
 Statements:
+  (v14: ()) <- struct_construct()
+  (v15: core::option::Option::<core::felt252>) <- Option::None(v14)
 End:
-  Goto(blk3, {v7 -> v10})
+  Goto(blk3, {v9 -> v12, v15 -> v13})
 
 blk3:
 Statements:
-  (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v10)
-  () <- test::use_arr(v12)
 End:
-  Return(v11)
+  Match(match_enum(v13) {
+    Option::Some(v16) => blk4,
+    Option::None(v17) => blk5,
+  })
+
+blk4:
+Statements:
+  (v18: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v18, v16)
+End:
+  Goto(blk6, {v19 -> v21})
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {v12 -> v21})
+
+blk6:
+Statements:
+  (v22: core::array::Array::<core::felt252>, v23: @core::array::Array::<core::felt252>) <- snapshot(v21)
+  () <- test::use_arr(v23)
+End:
+  Return(v22)
 
 //! > analysis_state
 Block 0:
-core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4
+core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5
 
 Block 1:
-Box(v0) = v6, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, core::array::Array::<core::felt252>(v1) = v5, v2 = v8, v3 = v9
+Box(v0) = v8, Some(v0) = v11, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Array::<core::felt252>(v1) = v7, v0 = v10
 
 Block 2:
-core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v2, v2 = v4, v2 = v7
+()() = v14, None(v14) = v15, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v2, v2 = v5, v2 = v9
 
 Block 3:
-@v10 = v12, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v4, v10 = v11
+core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5
+
+Block 4:
+Some(v16) = v13, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Array::<core::felt252>(v16) = v19, v2 = v18
+
+Block 5:
+None(v17) = v13, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5
+
+Block 6:
+@v21 = v23, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, v21 = v22
 
 //! > ==========================================================================
 
@@ -1092,62 +1123,127 @@ extern fn use_snap_felt(x: @felt252) nopanic;
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt252, v3: @core::felt252) <- snapshot(v0)
-  () <- test::use_snap_felt(v3)
-  (v4: core::felt252, v5: @core::felt252) <- snapshot(v1)
-  () <- test::use_snap_felt(v5)
-  (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v7: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v0)
-  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v1)
-  (v9: core::array::Array::<core::felt252>, v10: @core::array::Array::<core::felt252>) <- snapshot(v8)
+  (v7: core::felt252, v8: @core::felt252) <- snapshot(v0)
+  () <- test::use_snap_felt(v8)
+  (v9: core::felt252, v10: @core::felt252) <- snapshot(v1)
+  () <- test::use_snap_felt(v10)
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+  (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v5)
+  (v13: core::array::Span::<core::felt252>) <- struct_construct(v12)
+  (v14: @core::array::Array::<core::felt252>) <- struct_destructure(v13)
 End:
-  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v10) {
-    Option::Some(v11, v12) => blk1,
-    Option::None(v13) => blk4,
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v14) {
+    Option::Some(v15, v16) => blk1,
+    Option::None(v17) => blk2,
   })
 
 blk1:
 Statements:
-  (v14: @core::felt252) <- unbox(v12)
-  () <- test::use_snap_felt(v14)
+  (v18: @core::felt252) <- unbox(v16)
+  (v19: core::array::Span::<core::felt252>) <- struct_construct(v15)
+  (v20: core::option::Option::<@core::felt252>) <- Option::Some(v18)
 End:
-  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v11) {
-    Option::Some(v15, v16) => blk2,
-    Option::None(v17) => blk3,
-  })
+  Goto(blk3, {v19 -> v21, v20 -> v22})
 
 blk2:
 Statements:
-  (v18: @core::felt252) <- unbox(v16)
-  () <- test::use_snap_felt(v18)
+  (v23: ()) <- struct_construct()
+  (v24: core::option::Option::<@core::felt252>) <- Option::None(v23)
+  (v25: core::array::Span::<core::felt252>) <- struct_construct(v17)
 End:
-  Return()
+  Goto(blk3, {v25 -> v21, v24 -> v22})
 
 blk3:
 Statements:
 End:
-  Return()
+  Match(match_enum(v22) {
+    Option::Some(v26) => blk4,
+    Option::None(v27) => blk10,
+  })
 
 blk4:
+Statements:
+  () <- test::use_snap_felt(v26)
+  (v28: @core::array::Array::<core::felt252>) <- struct_destructure(v21)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v28) {
+    Option::Some(v29, v30) => blk5,
+    Option::None(v31) => blk6,
+  })
+
+blk5:
+Statements:
+  (v32: @core::felt252) <- unbox(v30)
+  (v34: core::option::Option::<@core::felt252>) <- Option::Some(v32)
+End:
+  Goto(blk7, {v34 -> v35})
+
+blk6:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<@core::felt252>) <- Option::None(v36)
+End:
+  Goto(blk7, {v37 -> v35})
+
+blk7:
+Statements:
+End:
+  Match(match_enum(v35) {
+    Option::Some(v39) => blk8,
+    Option::None(v40) => blk9,
+  })
+
+blk8:
+Statements:
+  () <- test::use_snap_felt(v39)
+End:
+  Return()
+
+blk9:
+Statements:
+End:
+  Return()
+
+blk10:
 Statements:
 End:
   Return()
 
 //! > analysis_state
 Block 0:
-@v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v8 = v9
+@v0 = v8, @v1 = v10, @v5 = v12, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v5 = v11
 
 Block 1:
-@core::array::Array::<core::felt252>(v1) = v11, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v12, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v3 = v14, v8 = v9
+@core::array::Array::<core::felt252>(v1) = v15, @v0 = v8, @v1 = v10, @v5 = v12, Box(v8) = v16, Some(v8) = v20, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v15) = v19, v0 = v7, v1 = v9, v12 = v14, v5 = v11, v8 = v18
 
 Block 2:
-@core::array::Array::<core::felt252>() = v15, @core::array::Array::<core::felt252>(v1) = v11, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v12, Box(v5) = v16, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v3 = v14, v5 = v18, v8 = v9
+()() = v23, @core::array::Array::<core::felt252>() = v12, @v0 = v8, @v1 = v10, @v5 = v12, None(v23) = v24, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v12 = v17, v13 = v25, v5 = v11
 
 Block 3:
-@core::array::Array::<core::felt252>() = v11, @core::array::Array::<core::felt252>(v1) = v11, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v12, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v11 = v17, v3 = v14, v8 = v9
+@v0 = v8, @v1 = v10, @v5 = v12, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v5 = v11
 
 Block 4:
-@core::array::Array::<core::felt252>() = v10, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v10 = v13, v8 = v9
+@v0 = v8, @v1 = v10, @v5 = v12, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 5:
+@v0 = v8, @v1 = v10, @v5 = v12, Box(v32) = v30, Some(v26) = v22, Some(v32) = v34, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 6:
+()() = v36, @core::array::Array::<core::felt252>() = v28, @v0 = v8, @v1 = v10, @v5 = v12, None(v36) = v37, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v28 = v31, v5 = v11
+
+Block 7:
+@v0 = v8, @v1 = v10, @v5 = v12, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 8:
+@v0 = v8, @v1 = v10, @v5 = v12, Some(v26) = v22, Some(v39) = v35, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 9:
+@v0 = v8, @v1 = v10, @v5 = v12, None(v40) = v35, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 10:
+@v0 = v8, @v1 = v10, @v5 = v12, None(v27) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v5 = v11
 
 //! > ==========================================================================
 
@@ -1192,62 +1288,127 @@ extern fn use_snap_felt(x: @felt252) nopanic;
 Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt252, v3: @core::felt252) <- snapshot(v0)
-  () <- test::use_snap_felt(v3)
-  (v4: core::felt252, v5: @core::felt252) <- snapshot(v1)
-  () <- test::use_snap_felt(v5)
-  (v6: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v7: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v6, v0)
-  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v1)
-  (v9: core::array::Array::<core::felt252>, v10: @core::array::Array::<core::felt252>) <- snapshot(v8)
+  (v7: core::felt252, v8: @core::felt252) <- snapshot(v0)
+  () <- test::use_snap_felt(v8)
+  (v9: core::felt252, v10: @core::felt252) <- snapshot(v1)
+  () <- test::use_snap_felt(v10)
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v3: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v0)
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v3, v1)
+  (v11: core::array::Array::<core::felt252>, v12: @core::array::Array::<core::felt252>) <- snapshot(v5)
+  (v13: core::array::Span::<core::felt252>) <- struct_construct(v12)
+  (v14: @core::array::Array::<core::felt252>) <- struct_destructure(v13)
 End:
-  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v10) {
-    Option::Some(v11, v12) => blk1,
-    Option::None(v13) => blk4,
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v14) {
+    Option::Some(v15, v16) => blk1,
+    Option::None(v17) => blk2,
   })
 
 blk1:
 Statements:
-  (v14: @core::felt252) <- unbox(v12)
-  () <- test::use_snap_felt(v14)
+  (v18: @core::felt252) <- unbox(v16)
+  (v19: core::array::Span::<core::felt252>) <- struct_construct(v15)
+  (v20: core::option::Option::<@core::felt252>) <- Option::Some(v18)
 End:
-  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v11) {
-    Option::Some(v15, v16) => blk2,
-    Option::None(v17) => blk3,
-  })
+  Goto(blk3, {v19 -> v21, v20 -> v22})
 
 blk2:
 Statements:
-  (v18: @core::felt252) <- unbox(v16)
-  () <- test::use_snap_felt(v18)
+  (v23: ()) <- struct_construct()
+  (v24: core::option::Option::<@core::felt252>) <- Option::None(v23)
+  (v25: core::array::Span::<core::felt252>) <- struct_construct(v17)
 End:
-  Return()
+  Goto(blk3, {v25 -> v21, v24 -> v22})
 
 blk3:
 Statements:
 End:
-  Return()
+  Match(match_enum(v22) {
+    Option::Some(v26) => blk4,
+    Option::None(v27) => blk10,
+  })
 
 blk4:
+Statements:
+  () <- test::use_snap_felt(v26)
+  (v28: @core::array::Array::<core::felt252>) <- struct_destructure(v21)
+End:
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v28) {
+    Option::Some(v29, v30) => blk5,
+    Option::None(v31) => blk6,
+  })
+
+blk5:
+Statements:
+  (v32: @core::felt252) <- unbox(v30)
+  (v34: core::option::Option::<@core::felt252>) <- Option::Some(v32)
+End:
+  Goto(blk7, {v34 -> v35})
+
+blk6:
+Statements:
+  (v36: ()) <- struct_construct()
+  (v37: core::option::Option::<@core::felt252>) <- Option::None(v36)
+End:
+  Goto(blk7, {v37 -> v35})
+
+blk7:
+Statements:
+End:
+  Match(match_enum(v35) {
+    Option::Some(v39) => blk8,
+    Option::None(v40) => blk9,
+  })
+
+blk8:
+Statements:
+  () <- test::use_snap_felt(v39)
+End:
+  Return()
+
+blk9:
+Statements:
+End:
+  Return()
+
+blk10:
 Statements:
 End:
   Return()
 
 //! > analysis_state
 Block 0:
-@v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v8 = v9
+@v0 = v8, @v1 = v10, @v5 = v12, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v5 = v11
 
 Block 1:
-@core::array::Array::<core::felt252>(v0) = v11, @v0 = v3, @v1 = v5, @v8 = v10, Box(v5) = v12, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v5 = v14, v8 = v9
+@core::array::Array::<core::felt252>(v0) = v15, @v0 = v8, @v1 = v10, @v5 = v12, Box(v10) = v16, Some(v10) = v20, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v15) = v19, v0 = v7, v1 = v9, v10 = v18, v12 = v14, v5 = v11
 
 Block 2:
-@core::array::Array::<core::felt252>() = v15, @core::array::Array::<core::felt252>(v0) = v11, @v0 = v3, @v1 = v5, @v8 = v10, Box(v3) = v16, Box(v5) = v12, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v3 = v18, v5 = v14, v8 = v9
+()() = v23, @core::array::Array::<core::felt252>() = v12, @v0 = v8, @v1 = v10, @v5 = v12, None(v23) = v24, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v12 = v17, v13 = v25, v5 = v11
 
 Block 3:
-@core::array::Array::<core::felt252>() = v11, @core::array::Array::<core::felt252>(v0) = v11, @v0 = v3, @v1 = v5, @v8 = v10, Box(v5) = v12, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v11 = v17, v5 = v14, v8 = v9
+@v0 = v8, @v1 = v10, @v5 = v12, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v5 = v11
 
 Block 4:
-@core::array::Array::<core::felt252>() = v10, @v0 = v3, @v1 = v5, @v8 = v10, core::array::Array::<core::felt252>() = v6, core::array::Array::<core::felt252>(v0) = v7, core::array::Array::<core::felt252>(v0, v1) = v8, v0 = v2, v1 = v4, v10 = v13, v8 = v9
+@v0 = v8, @v1 = v10, @v5 = v12, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 5:
+@v0 = v8, @v1 = v10, @v5 = v12, Box(v32) = v30, Some(v26) = v22, Some(v32) = v34, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 6:
+()() = v36, @core::array::Array::<core::felt252>() = v28, @v0 = v8, @v1 = v10, @v5 = v12, None(v36) = v37, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v28 = v31, v5 = v11
+
+Block 7:
+@v0 = v8, @v1 = v10, @v5 = v12, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 8:
+@v0 = v8, @v1 = v10, @v5 = v12, Some(v26) = v22, Some(v39) = v35, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 9:
+@v0 = v8, @v1 = v10, @v5 = v12, None(v40) = v35, Some(v26) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, core::array::Span::<core::felt252>(v28) = v21, v0 = v7, v1 = v9, v12 = v14, v5 = v11
+
+Block 10:
+@v0 = v8, @v1 = v10, @v5 = v12, None(v27) = v22, core::array::Array::<core::felt252>() = v2, core::array::Array::<core::felt252>(v0) = v3, core::array::Array::<core::felt252>(v0, v1) = v5, core::array::Span::<core::felt252>(v12) = v13, v0 = v7, v1 = v9, v12 = v14, v5 = v11
 
 //! > ==========================================================================
 
@@ -1282,34 +1443,66 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- 3
   (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
-  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v6: core::array::Span::<core::felt252>) <- struct_construct(v5)
+  (v7: @core::array::Array::<core::felt252>) <- struct_destructure(v6)
 End:
-  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v4) {
-    Option::Some(v5, v6) => blk1,
-    Option::None(v7) => blk2,
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v7) {
+    Option::Some(v8, v9) => blk1,
+    Option::None(v10) => blk2,
   })
 
 blk1:
 Statements:
-  (v8: @core::felt252) <- unbox(v6)
-  () <- test::use_snap_felt(v8)
+  (v11: @core::felt252) <- unbox(v9)
+  (v13: core::option::Option::<@core::felt252>) <- Option::Some(v11)
+End:
+  Goto(blk3, {v13 -> v14})
+
+blk2:
+Statements:
+  (v15: ()) <- struct_construct()
+  (v16: core::option::Option::<@core::felt252>) <- Option::None(v15)
+End:
+  Goto(blk3, {v16 -> v14})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v14) {
+    Option::Some(v18) => blk4,
+    Option::None(v19) => blk5,
+  })
+
+blk4:
+Statements:
+  () <- test::use_snap_felt(v18)
 End:
   Return()
 
-blk2:
+blk5:
 Statements:
 End:
   Return()
 
 //! > analysis_state
 Block 0:
-@v2 = v4, v2 = v3
+@v2 = v5, core::array::Span::<core::felt252>(v5) = v6, v2 = v4, v5 = v7
 
 Block 1:
-@v2 = v4, Box(v8) = v6, v2 = v3
+@v2 = v5, Box(v11) = v9, Some(v11) = v13, core::array::Span::<core::felt252>(v5) = v6, v2 = v4, v5 = v7
 
 Block 2:
-@core::array::Array::<core::felt252>() = v4, @v2 = v4, v2 = v3, v4 = v7
+()() = v15, @core::array::Array::<core::felt252>() = v5, @v2 = v5, None(v15) = v16, core::array::Span::<core::felt252>(v5) = v6, v2 = v4, v5 = v10, v5 = v7
+
+Block 3:
+@v2 = v5, core::array::Span::<core::felt252>(v5) = v6, v2 = v4, v5 = v7
+
+Block 4:
+@v2 = v5, Some(v18) = v14, core::array::Span::<core::felt252>(v5) = v6, v2 = v4, v5 = v7
+
+Block 5:
+@v2 = v5, None(v19) = v14, core::array::Span::<core::felt252>(v5) = v6, v2 = v4, v5 = v7
 
 //! > ==========================================================================
 
@@ -1348,21 +1541,52 @@ End:
 
 blk1:
 Statements:
+  (v4: core::felt252) <- unbox(v2)
+  (v5: core::option::Option::<core::felt252>) <- Option::Some(v4)
 End:
-  Return(v1)
+  Goto(blk3, {v1 -> v6, v5 -> v7})
 
 blk2:
 Statements:
-  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: ()) <- struct_construct()
+  (v9: core::option::Option::<core::felt252>) <- Option::None(v8)
 End:
-  Return(v4)
+  Goto(blk3, {v3 -> v6, v9 -> v7})
+
+blk3:
+Statements:
+End:
+  Match(match_enum(v7) {
+    Option::Some(v10) => blk4,
+    Option::None(v11) => blk5,
+  })
+
+blk4:
+Statements:
+End:
+  Return(v6)
+
+blk5:
+Statements:
+  (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Return(v12)
 
 //! > analysis_state
 Block 0:
 (empty)
 
 Block 1:
-(empty)
+Box(v4) = v2, Some(v4) = v5
 
 Block 2:
-core::array::Array::<core::felt252>() = v0, v0 = v3, v0 = v4
+()() = v8, None(v8) = v9, core::array::Array::<core::felt252>() = v0, v0 = v3
+
+Block 3:
+(empty)
+
+Block 4:
+Some(v10) = v7
+
+Block 5:
+None(v11) = v7, core::array::Array::<core::felt252>() = v12
