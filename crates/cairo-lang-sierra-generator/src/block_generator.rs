@@ -3,13 +3,7 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
-<<<<<<< HEAD
-use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_lowering as lowering;
-||||||| e702c1815
-use cairo_lang_filesystem::flag::FlagsGroup;
-=======
->>>>>>> origin/dev-v2.17.0
 use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::LocationId;
