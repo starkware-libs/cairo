@@ -73,11 +73,6 @@ pub fn check_ecdsa_signature(
         return false;
     };
 
-    // Retrieve the generator point.
-    let Some(gen_point) = generator_point() else {
-        return false;
-    };
-
     // Initialize an EC state.
     let init_ec = EcStateTrait::init();
 
@@ -99,7 +94,7 @@ pub fn check_ecdsa_signature(
 
     // Calculate a state with `z * G`.
     let mut zG_state = init_ec.clone();
-    zG_state.add_mul(message_hash, gen_point);
+    zG_state.add_mul(message_hash, generator::value());
 
     // Calculate the point `r * Q`.
     let mut rQ_state = init_ec;
@@ -163,7 +158,6 @@ pub fn recover_public_key(
     }
 
     let r_point = EcPointTrait::new_nz_from_x(signature_r)?;
-    let gen_point = generator_point()?;
 
     // a Valid signature should satisfy:
     // zG + rQ = sR.
@@ -187,7 +181,7 @@ pub fn recover_public_key(
     let z_div_r: felt252 = math::u256_mul_mod_n(message_hash.into(), r_inv, ORD_NZ).try_into()?;
     let mut state = EcStateTrait::init();
     let ord = ORD;
-    state.add_mul(ord - z_div_r, gen_point);
+    state.add_mul(ord - z_div_r, generator::value());
     // Checking if the actual parity of the point's y is different from the requested, and if so,
     // flipping the multiplier instead of negating the point to match the requested parity.
     let y: u256 = r_point.y().into();
@@ -206,25 +200,6 @@ fn is_equivalent_to_zero(value: felt252) -> bool {
     value == 0 || value == ec::stark_curve::ORDER
 }
 
-// TODO(orizi): Remove this function on next Sierra release.
-/// Returns the generator point of the elliptic curve.
-///
-/// Note: Cannot actually fail, as the generator point is always valid.
-#[cfg(not(sierra: "future"))]
-fn generator_point() -> Option<ec::NonZeroEcPoint> {
-    EcPointTrait::new_nz(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)
-}
-
-// TODO(orizi): Remove this function and use `generator::value()` directly on next Sierra release.
-/// Returns the generator point of the elliptic curve.
-///
-/// Note: Cannot actually fail, as the generator point is always valid.
-#[cfg(sierra: "future")]
-fn generator_point() -> Option<ec::NonZeroEcPoint> {
-    Some(generator::value())
-}
-
-#[cfg(sierra: "future")]
 mod generator {
     use crate::ec;
 
