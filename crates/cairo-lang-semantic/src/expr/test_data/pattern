@@ -203,7 +203,7 @@ fn foo(s: (felt252, felt252, felt252)) {
 foo
 
 //! > expected_diagnostics
-error[E2106]: Unexpected type for fixed size array pattern. "(core::felt252, core::felt252, core::felt252)" is not a fixed size array.
+error[E2103]: pattern cannot match with input type "(core::felt252, core::felt252, core::felt252)".
  --> lib.cairo:2:9
     let [_a, _b, _c] = s;
         ^^^^^^^^^^^^
@@ -224,7 +224,7 @@ fn foo(s: [felt252; 3]) {
 foo
 
 //! > expected_diagnostics
-error[E2105]: Unexpected type for tuple pattern. "[core::felt252; 3]" is not a tuple.
+error[E2103]: pattern cannot match with input type "[core::felt252; 3]".
  --> lib.cairo:2:9
     let (_a, _b, _c) = s;
         ^^^^^^^^^^^^
