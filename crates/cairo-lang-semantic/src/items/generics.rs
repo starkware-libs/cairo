@@ -695,9 +695,7 @@ fn impl_generic_param_semantic<'db>(
         });
     let type_constraints = concrete_trait
         .ok()
-        .and_then(|concrete_trait| {
-            item_constraints.map(|type_constraints| (concrete_trait, type_constraints))
-        })
+        .zip(item_constraints)
         .map(|(concrete_trait_id, constraints)| {
             let mut map = OrderedHashMap::default();
 
