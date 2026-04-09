@@ -88,7 +88,7 @@ use class_hash::{
 
 // Not `pub` on purpose, only used for direct reexport by the next line.
 mod info;
-pub use info::v2::{ExecutionInfo, ResourceBounds as ResourcesBounds, TxInfo};
+pub use info::v3::{ExecutionInfo, ResourceBounds as ResourcesBounds, TxInfo};
 pub use info::{
     BlockInfo, get_block_info, get_block_number, get_block_timestamp, get_caller_address,
     get_contract_address, get_execution_info, get_tx_info,
@@ -125,7 +125,7 @@ pub trait SyscallResultTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let result = starknet::syscalls::get_execution_info_v2_syscall();
+    /// let result = starknet::syscalls::get_execution_info_v3_syscall();
     /// let info = result.unwrap_syscall();
     /// ```
     fn unwrap_syscall(self: SyscallResult<T>) -> T;
