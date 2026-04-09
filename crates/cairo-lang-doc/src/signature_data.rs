@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use cairo_lang_defs::ids::TraitItemId::Function;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplItemId, ImplTypeDefId,
-    LanguageElementId, LookupItemId, MemberId, ModuleItemId, ModuleTypeAliasId,
+    ImplAliasId, ImplConstantDefId, ImplDefId, ImplFunctionId, ImplImplDefId, ImplItemId,
+    ImplTypeDefId, LanguageElementId, LookupItemId, MemberId, ModuleItemId, ModuleTypeAliasId,
     NamedLanguageElementId, StructId, TopLevelLanguageElementId, TraitConstantId, TraitFunctionId,
     TraitId, TraitItemId, TraitTypeId,
 };
@@ -15,6 +15,7 @@ use cairo_lang_semantic::items::extern_function::ExternFunctionSemantic;
 use cairo_lang_semantic::items::extern_type::ExternTypeSemantic;
 use cairo_lang_semantic::items::free_function::FreeFunctionSemantic;
 use cairo_lang_semantic::items::imp::ImplSemantic;
+use cairo_lang_semantic::items::impl_alias::ImplAliasSemantic;
 use cairo_lang_semantic::items::module::{ModuleItemInfo, ModuleSemantic};
 use cairo_lang_semantic::items::module_type_alias::ModuleTypeAliasSemantic;
 use cairo_lang_semantic::items::structure::StructSemantic;
@@ -98,6 +99,7 @@ implement_signature_data_retriever!(ImplDefId<'db>, get_impl_def_signature_data)
 implement_signature_data_retriever!(ImplAliasId<'db>, get_impl_alias_signature_data);
 implement_signature_data_retriever!(ExternFunctionId<'db>, get_extern_function_full_signature);
 implement_signature_data_retriever!(ImplConstantDefId<'db>, get_impl_constant_signature_data);
+implement_signature_data_retriever!(ImplImplDefId<'db>, get_impl_impl_def_signature_data);
 
 /// A utility function that retrieves [`ModuleItemInfo`] for [`ModuleItemId`].
 fn get_module_item_info<'db>(
@@ -126,12 +128,15 @@ fn get_enum_signature_data<'db>(
         let variant_semantic = db.variant_semantic(item_id, *variant_id)?;
         variants.push((*name, variant_semantic.ty));
     }
+
+    let generic_params = db.enum_generic_params(item_id)?;
+
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Enum(item_id))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
         generic_args: None,
-        generic_params: None,
+        generic_params: Some(generic_params.to_vec()),
         variants: Some(variants),
         members: None,
         return_type: None,
@@ -417,13 +422,14 @@ fn get_impl_def_signature_data<'db>(
     let module_item_info = get_module_item_info(db, module_item_id)?;
     let resolver_data = db.impl_def_resolver_data(item_id)?;
     let intern = db.impl_def_concrete_trait(item_id)?.long(db);
+    let generic_params = db.impl_def_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::Impl(item_id))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
         generic_args: Some(intern.generic_args.clone()),
-        generic_params: None,
+        generic_params: Some(generic_params.to_vec()),
         variants: None,
         members: None,
         return_type: None,
@@ -442,6 +448,9 @@ fn get_impl_alias_signature_data<'db>(
 ) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
     let module_item_id = ModuleItemId::ImplAlias(item_id);
     let module_item_info = get_module_item_info(db, module_item_id)?;
+    let resolved_impl = db.impl_alias_resolved_impl(item_id)?;
+    let intern = resolved_impl.concrete_trait(db)?.long(db);
+    let generic_params = db.impl_alias_generic_params(item_id)?;
 
     Ok(DocumentableItemSignatureData {
         item_id: DocumentableItemId::from(LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
@@ -449,6 +458,28 @@ fn get_impl_alias_signature_data<'db>(
         ))),
         name: item_id.name(db),
         visibility: module_item_info.visibility,
+        generic_args: Some(intern.generic_args.clone()),
+        generic_params: Some(generic_params),
+        variants: None,
+        members: None,
+        return_type: None,
+        attributes: None,
+        params: None,
+        resolver_generic_params: None,
+        return_value_expr: None,
+        full_path: item_id.full_path(db),
+    })
+}
+
+/// Retrieves data for impl impl def (associated impl alias) signature formatting.
+fn get_impl_impl_def_signature_data<'db>(
+    db: &'db dyn Database,
+    item_id: ImplImplDefId<'db>,
+) -> Result<DocumentableItemSignatureData<'db>, SignatureError> {
+    Ok(DocumentableItemSignatureData {
+        item_id: DocumentableItemId::from(LookupItemId::ImplItem(ImplItemId::Impl(item_id))),
+        name: item_id.name(db),
+        visibility: Visibility::Private,
         generic_args: None,
         generic_params: None,
         variants: None,
