@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775693597687,
+  "lastUpdate": 1775780145330,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1427,6 +1427,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1585018670,
             "range": "± 20070044",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "24c4a5f37511d4260f3a8c6b3be58243831e4dcc",
+          "message": "Bumped nightly version. (#9834)",
+          "timestamp": "2026-04-10T00:06:48Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/24c4a5f37511d4260f3a8c6b3be58243831e4dcc"
+        },
+        "date": 1775780144420,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1429611127,
+            "range": "± 7568606",
             "unit": "ns/iter"
           }
         ]
