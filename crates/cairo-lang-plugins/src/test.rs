@@ -1,7 +1,13 @@
 use std::default::Default;
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, defs_group_input, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{
+    DefsGroup, InlineMacroPluginOverrideStorage, InlineMacroPluginOverrideView,
+    MacroPluginOverrideStorage, MacroPluginOverrideView, defs_group_input, init_defs_group,
+    init_external_files, new_inline_macro_plugin_override_storage,
+    new_macro_plugin_override_storage, register_inline_macro_plugin_override_view,
+    register_macro_plugin_override_view,
+};
 use cairo_lang_defs::ids::{MacroPluginLongId, ModuleId};
 use cairo_lang_defs::plugin::{
     MacroPlugin, MacroPluginMetadata, PluginDiagnostic, PluginGeneratedFile, PluginResult,
@@ -59,6 +65,8 @@ pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
     file_contents: FileContentStorage,
     crate_configs: CrateConfigStorage,
+    macro_plugin_overrides: MacroPluginOverrideStorage,
+    inline_macro_plugin_overrides: InlineMacroPluginOverrideStorage,
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
@@ -72,6 +80,16 @@ impl CrateConfigView for DatabaseForTesting {
         Some(&self.crate_configs)
     }
 }
+impl MacroPluginOverrideView for DatabaseForTesting {
+    fn macro_plugin_override_storage(&self) -> Option<&MacroPluginOverrideStorage> {
+        Some(&self.macro_plugin_overrides)
+    }
+}
+impl InlineMacroPluginOverrideView for DatabaseForTesting {
+    fn inline_macro_plugin_override_storage(&self) -> Option<&InlineMacroPluginOverrideStorage> {
+        Some(&self.inline_macro_plugin_overrides)
+    }
+}
 
 impl Default for DatabaseForTesting {
     fn default() -> Self {
@@ -79,10 +97,14 @@ impl Default for DatabaseForTesting {
             storage: Default::default(),
             file_contents: Default::default(),
             crate_configs: Default::default(),
+            macro_plugin_overrides: new_macro_plugin_override_storage(),
+            inline_macro_plugin_overrides: new_inline_macro_plugin_override_storage(),
         };
 
         register_files_group_view(&res);
         register_crate_config_view(&res);
+        register_macro_plugin_override_view(&res);
+        register_inline_macro_plugin_override_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);

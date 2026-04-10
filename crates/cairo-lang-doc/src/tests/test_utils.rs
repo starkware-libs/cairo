@@ -1,5 +1,10 @@
 use anyhow::{Result, anyhow};
-use cairo_lang_defs::db::{DefsGroup, init_defs_group};
+use cairo_lang_defs::db::{
+    DefsGroup, InlineMacroPluginOverrideStorage, InlineMacroPluginOverrideView,
+    MacroPluginOverrideStorage, MacroPluginOverrideView, init_defs_group,
+    new_inline_macro_plugin_override_storage, new_macro_plugin_override_storage,
+    register_inline_macro_plugin_override_view, register_macro_plugin_override_view,
+};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, CrateConfiguration, FileContentStorage, FileContentView,
@@ -10,7 +15,11 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_parser::db::ParserGroup;
-use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
+use cairo_lang_semantic::db::{
+    AnalyzerPluginOverrideStorage, AnalyzerPluginOverrideView, PluginSuiteInput,
+    init_semantic_group, new_analyzer_plugin_override_storage,
+    register_analyzer_plugin_override_view,
+};
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_utils::Intern;
 use salsa::Database;
@@ -21,6 +30,9 @@ pub struct TestDatabase {
     storage: salsa::Storage<TestDatabase>,
     file_contents: FileContentStorage,
     crate_configs: CrateConfigStorage,
+    macro_plugin_overrides: MacroPluginOverrideStorage,
+    inline_macro_plugin_overrides: InlineMacroPluginOverrideStorage,
+    analyzer_plugin_overrides: AnalyzerPluginOverrideStorage,
 }
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
@@ -34,6 +46,21 @@ impl CrateConfigView for TestDatabase {
         Some(&self.crate_configs)
     }
 }
+impl MacroPluginOverrideView for TestDatabase {
+    fn macro_plugin_override_storage(&self) -> Option<&MacroPluginOverrideStorage> {
+        Some(&self.macro_plugin_overrides)
+    }
+}
+impl InlineMacroPluginOverrideView for TestDatabase {
+    fn inline_macro_plugin_override_storage(&self) -> Option<&InlineMacroPluginOverrideStorage> {
+        Some(&self.inline_macro_plugin_overrides)
+    }
+}
+impl AnalyzerPluginOverrideView for TestDatabase {
+    fn analyzer_plugin_override_storage(&self) -> Option<&AnalyzerPluginOverrideStorage> {
+        Some(&self.analyzer_plugin_overrides)
+    }
+}
 
 impl Default for TestDatabase {
     fn default() -> Self {
@@ -41,10 +68,16 @@ impl Default for TestDatabase {
             storage: Default::default(),
             file_contents: Default::default(),
             crate_configs: Default::default(),
+            macro_plugin_overrides: new_macro_plugin_override_storage(),
+            inline_macro_plugin_overrides: new_inline_macro_plugin_override_storage(),
+            analyzer_plugin_overrides: new_analyzer_plugin_override_storage(),
         };
 
         register_files_group_view(&res);
         register_crate_config_view(&res);
+        register_macro_plugin_override_view(&res);
+        register_inline_macro_plugin_override_view(&res);
+        register_analyzer_plugin_override_view(&res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
         init_semantic_group(&mut res);
