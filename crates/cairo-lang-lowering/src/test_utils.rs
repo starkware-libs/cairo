@@ -1,15 +1,24 @@
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::db::{init_defs_group, init_external_files};
+use cairo_lang_defs::db::{
+    InlineMacroPluginOverrideStorage, InlineMacroPluginOverrideView, MacroPluginOverrideStorage,
+    MacroPluginOverrideView, init_defs_group, init_external_files,
+    new_inline_macro_plugin_override_storage, new_macro_plugin_override_storage,
+    register_inline_macro_plugin_override_view, register_macro_plugin_override_view,
+};
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, FileContentView, init_dev_corelib, init_files_group,
-    register_crate_config_view,
+    register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
 use cairo_lang_filesystem::ids::FlagLongId;
-use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
+use cairo_lang_semantic::db::{
+    AnalyzerPluginOverrideStorage, AnalyzerPluginOverrideView, PluginSuiteInput,
+    init_semantic_group, new_analyzer_plugin_override_storage,
+    register_analyzer_plugin_override_view,
+};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use salsa::Database;
 
@@ -24,6 +33,9 @@ use crate::utils::InliningStrategy;
 pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
     crate_configs: CrateConfigStorage,
+    macro_plugin_overrides: MacroPluginOverrideStorage,
+    inline_macro_plugin_overrides: InlineMacroPluginOverrideStorage,
+    analyzer_plugin_overrides: AnalyzerPluginOverrideStorage,
 }
 #[salsa::db]
 impl salsa::Database for LoweringDatabaseForTesting {}
@@ -33,14 +45,36 @@ impl CrateConfigView for LoweringDatabaseForTesting {
         Some(&self.crate_configs)
     }
 }
+impl MacroPluginOverrideView for LoweringDatabaseForTesting {
+    fn macro_plugin_override_storage(&self) -> Option<&MacroPluginOverrideStorage> {
+        Some(&self.macro_plugin_overrides)
+    }
+}
+impl InlineMacroPluginOverrideView for LoweringDatabaseForTesting {
+    fn inline_macro_plugin_override_storage(&self) -> Option<&InlineMacroPluginOverrideStorage> {
+        Some(&self.inline_macro_plugin_overrides)
+    }
+}
+impl AnalyzerPluginOverrideView for LoweringDatabaseForTesting {
+    fn analyzer_plugin_override_storage(&self) -> Option<&AnalyzerPluginOverrideStorage> {
+        Some(&self.analyzer_plugin_overrides)
+    }
+}
 
 impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
         let mut res = LoweringDatabaseForTesting {
             storage: Default::default(),
             crate_configs: Default::default(),
+            macro_plugin_overrides: new_macro_plugin_override_storage(),
+            inline_macro_plugin_overrides: new_inline_macro_plugin_override_storage(),
+            analyzer_plugin_overrides: new_analyzer_plugin_override_storage(),
         };
+        register_files_group_view(&res);
         register_crate_config_view(&res);
+        register_macro_plugin_override_view(&res);
+        register_inline_macro_plugin_override_view(&res);
+        register_analyzer_plugin_override_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);

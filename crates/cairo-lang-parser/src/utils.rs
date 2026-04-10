@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{FileContentView, FilesGroup, init_files_group};
+use cairo_lang_filesystem::db::{
+    FileContentView, FilesGroup, init_files_group, register_files_group_view,
+};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
@@ -25,6 +27,7 @@ impl FileContentView for SimpleParserDatabase {}
 impl Default for SimpleParserDatabase {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
+        register_files_group_view(&res);
         init_files_group(&mut res);
         res
     }
