@@ -1,7 +1,12 @@
 use std::sync::{LazyLock, Mutex};
 
 use cairo_lang_defs as defs;
-use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
+use cairo_lang_defs::db::{
+    DefsGroup, InlineMacroPluginOverrideStorage, InlineMacroPluginOverrideView,
+    MacroPluginOverrideStorage, MacroPluginOverrideView, init_defs_group, init_external_files,
+    new_inline_macro_plugin_override_storage, new_macro_plugin_override_storage,
+    register_inline_macro_plugin_override_view, register_macro_plugin_override_view,
+};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, FileContentStorage, FileContentView, init_dev_corelib,
@@ -15,7 +20,11 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::{LoweringGroup, lowering_group_input};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::CorelibSemantic;
-use cairo_lang_semantic::db::{PluginSuiteInput, SemanticGroup, init_semantic_group};
+use cairo_lang_semantic::db::{
+    AnalyzerPluginOverrideStorage, AnalyzerPluginOverrideView, PluginSuiteInput, SemanticGroup,
+    init_semantic_group, new_analyzer_plugin_override_storage,
+    register_analyzer_plugin_override_view,
+};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
@@ -38,10 +47,12 @@ pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
     file_contents: FileContentStorage,
     crate_configs: CrateConfigStorage,
+    macro_plugin_overrides: MacroPluginOverrideStorage,
+    inline_macro_plugin_overrides: InlineMacroPluginOverrideStorage,
+    analyzer_plugin_overrides: AnalyzerPluginOverrideStorage,
 }
 #[salsa::db]
 impl Database for SierraGenDatabaseForTesting {}
-
 impl FileContentView for SierraGenDatabaseForTesting {
     fn file_content_storage(&self) -> Option<&FileContentStorage> {
         Some(&self.file_contents)
@@ -52,7 +63,21 @@ impl CrateConfigView for SierraGenDatabaseForTesting {
         Some(&self.crate_configs)
     }
 }
-
+impl MacroPluginOverrideView for SierraGenDatabaseForTesting {
+    fn macro_plugin_override_storage(&self) -> Option<&MacroPluginOverrideStorage> {
+        Some(&self.macro_plugin_overrides)
+    }
+}
+impl InlineMacroPluginOverrideView for SierraGenDatabaseForTesting {
+    fn inline_macro_plugin_override_storage(&self) -> Option<&InlineMacroPluginOverrideStorage> {
+        Some(&self.inline_macro_plugin_overrides)
+    }
+}
+impl AnalyzerPluginOverrideView for SierraGenDatabaseForTesting {
+    fn analyzer_plugin_override_storage(&self) -> Option<&AnalyzerPluginOverrideStorage> {
+        Some(&self.analyzer_plugin_overrides)
+    }
+}
 impl CloneableDatabase for SierraGenDatabaseForTesting {
     fn dyn_clone(&self) -> Box<dyn CloneableDatabase> {
         Box::new(self.clone())
@@ -82,9 +107,15 @@ impl SierraGenDatabaseForTesting {
             storage: Default::default(),
             file_contents: new_file_content_storage(),
             crate_configs: new_crate_config_storage(),
+            macro_plugin_overrides: new_macro_plugin_override_storage(),
+            inline_macro_plugin_overrides: new_inline_macro_plugin_override_storage(),
+            analyzer_plugin_overrides: new_analyzer_plugin_override_storage(),
         };
         register_files_group_view(&res);
         register_crate_config_view(&res);
+        register_macro_plugin_override_view(&res);
+        register_inline_macro_plugin_override_view(&res);
+        register_analyzer_plugin_override_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
@@ -113,6 +144,9 @@ impl SierraGenDatabaseForTesting {
             storage: self.storage.clone(),
             file_contents: self.file_contents.clone(),
             crate_configs: self.crate_configs.clone(),
+            macro_plugin_overrides: self.macro_plugin_overrides.clone(),
+            inline_macro_plugin_overrides: self.inline_macro_plugin_overrides.clone(),
+            analyzer_plugin_overrides: self.analyzer_plugin_overrides.clone(),
         }
     }
 }

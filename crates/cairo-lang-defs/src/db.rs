@@ -1,5 +1,7 @@
-use std::collections::VecDeque;
-use std::sync::Arc;
+use std::collections::{HashMap, VecDeque};
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::ptr::NonNull;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_diagnostics::{
     DiagnosticNote, Maybe, MaybeAsRef, PluginFileDiagnosticNotes, ToMaybe, skip_diagnostic,
@@ -23,6 +25,7 @@ use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{Itertools, chain};
+use salsa::plumbing::views;
 use salsa::{Database, Setter};
 
 use crate::cache::{DefCacheLoadingData, load_cached_crate_modules};
@@ -34,21 +37,128 @@ use crate::plugin_utils::try_extract_unnamed_arg;
 pub struct DefsGroupInput {
     #[returns(ref)]
     pub default_macro_plugins: Option<Vec<MacroPluginLongId>>,
-    #[returns(ref)]
-    pub macro_plugin_overrides: Option<OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>>>,
+    pub macro_plugin_overrides_revision: u64,
     #[returns(ref)]
     pub default_inline_macro_plugins: Option<OrderedHashMap<String, InlineMacroExprPluginLongId>>,
-    #[returns(ref)]
-    pub inline_macro_plugin_overrides: Option<
-        OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>,
-    >,
+    pub inline_macro_plugin_overrides_revision: u64,
 }
 
 /// Returns a reference to the inputs of [DefsGroup].
 /// The reference is also used to set the inputs to new values.
 #[salsa::tracked(returns(ref))]
 pub fn defs_group_input(db: &dyn Database) -> DefsGroupInput {
-    DefsGroupInput::new(db, None, None, None, None)
+    DefsGroupInput::new(db, None, 0, None, 0)
+}
+
+#[salsa::input]
+pub struct MacroPluginOverride {
+    #[returns(ref)]
+    pub plugins: Option<Arc<[MacroPluginLongId]>>,
+}
+
+#[salsa::input]
+pub struct InlineMacroPluginOverride {
+    #[returns(ref)]
+    pub plugins: Option<Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>,
+}
+
+pub type MacroPluginOverrideStorage = Arc<RwLock<HashMap<CrateInput, MacroPluginOverride>>>;
+pub type InlineMacroPluginOverrideStorage =
+    Arc<RwLock<HashMap<CrateInput, InlineMacroPluginOverride>>>;
+
+pub fn new_macro_plugin_override_storage() -> MacroPluginOverrideStorage {
+    Default::default()
+}
+
+pub fn new_inline_macro_plugin_override_storage() -> InlineMacroPluginOverrideStorage {
+    Default::default()
+}
+
+pub trait MacroPluginOverrideView: Database {
+    fn macro_plugin_override_storage(&self) -> Option<&MacroPluginOverrideStorage> {
+        None
+    }
+
+    fn macro_plugin_override_for_input(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<MacroPluginOverride> {
+        self.macro_plugin_override_storage()?.read().unwrap().get(crate_input).copied()
+    }
+}
+
+pub trait InlineMacroPluginOverrideView: Database {
+    fn inline_macro_plugin_override_storage(&self) -> Option<&InlineMacroPluginOverrideStorage> {
+        None
+    }
+
+    fn inline_macro_plugin_override_for_input(
+        &self,
+        crate_input: &CrateInput,
+    ) -> Option<InlineMacroPluginOverride> {
+        self.inline_macro_plugin_override_storage()?.read().unwrap().get(crate_input).copied()
+    }
+}
+
+fn cast_macro_plugin_override_view<Db: MacroPluginOverrideView + 'static>(
+    db: NonNull<Db>,
+) -> NonNull<dyn MacroPluginOverrideView> {
+    let db_ref = unsafe { db.as_ref() };
+    NonNull::from(db_ref as &dyn MacroPluginOverrideView)
+}
+
+fn macro_plugin_override_view(db: &dyn Database) -> &dyn MacroPluginOverrideView {
+    let caster = catch_unwind(AssertUnwindSafe(|| {
+        *views(db).downcaster_for::<dyn MacroPluginOverrideView>()
+    }))
+    .ok();
+
+    let caster = caster.expect("granular macro plugin override view is not registered");
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+pub fn register_macro_plugin_override_view<Db>(db: &Db)
+where
+    Db: Database + MacroPluginOverrideView + 'static,
+{
+    views(db).add::<Db, dyn MacroPluginOverrideView>(cast_macro_plugin_override_view::<Db>);
+}
+
+fn cast_inline_macro_plugin_override_view<Db: InlineMacroPluginOverrideView + 'static>(
+    db: NonNull<Db>,
+) -> NonNull<dyn InlineMacroPluginOverrideView> {
+    let db_ref = unsafe { db.as_ref() };
+    NonNull::from(db_ref as &dyn InlineMacroPluginOverrideView)
+}
+
+fn inline_macro_plugin_override_view(db: &dyn Database) -> &dyn InlineMacroPluginOverrideView {
+    let caster = catch_unwind(AssertUnwindSafe(|| {
+        *views(db).downcaster_for::<dyn InlineMacroPluginOverrideView>()
+    }))
+    .ok();
+
+    let caster = caster.expect("granular inline macro plugin override view is not registered");
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+pub fn register_inline_macro_plugin_override_view<Db>(db: &Db)
+where
+    Db: Database + InlineMacroPluginOverrideView + 'static,
+{
+    views(db)
+        .add::<Db, dyn InlineMacroPluginOverrideView>(cast_inline_macro_plugin_override_view::<Db>);
+}
+
+fn macro_plugin_override_storage(db: &dyn Database) -> &MacroPluginOverrideStorage {
+    macro_plugin_override_view(db)
+        .macro_plugin_override_storage()
+        .expect("granular macro plugin override storage is not available")
+}
+
+fn inline_macro_plugin_override_storage(db: &dyn Database) -> &InlineMacroPluginOverrideStorage {
+    inline_macro_plugin_override_view(db)
+        .inline_macro_plugin_override_storage()
+        .expect("granular inline macro plugin override storage is not available")
 }
 
 /// Salsa database interface.
@@ -56,21 +166,6 @@ pub fn defs_group_input(db: &dyn Database) -> DefsGroupInput {
 pub trait DefsGroup: Database {
     fn default_macro_plugins_input(&self) -> &[MacroPluginLongId] {
         defs_group_input(self.as_dyn_database()).default_macro_plugins(self).as_ref().unwrap()
-    }
-
-    fn macro_plugin_overrides_input(
-        &self,
-    ) -> &OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>> {
-        defs_group_input(self.as_dyn_database()).macro_plugin_overrides(self).as_ref().unwrap()
-    }
-
-    fn inline_macro_plugin_overrides_input(
-        &self,
-    ) -> &OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>> {
-        defs_group_input(self.as_dyn_database())
-            .inline_macro_plugin_overrides(self)
-            .as_ref()
-            .unwrap()
     }
 
     fn default_inline_macro_plugins_input(
@@ -374,8 +469,8 @@ impl<T: Database + ?Sized> DefsGroup for T {}
 
 /// Initializes the [`DefsGroup`] database to a proper state.
 pub fn init_defs_group(db: &mut dyn Database) {
-    defs_group_input(db).set_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
-    defs_group_input(db).set_inline_macro_plugin_overrides(db).to(Some(OrderedHashMap::default()));
+    defs_group_input(db).set_macro_plugin_overrides_revision(db).to(0);
+    defs_group_input(db).set_inline_macro_plugin_overrides_revision(db).to(0);
 }
 
 #[salsa::tracked(returns(ref))]
@@ -394,12 +489,21 @@ pub fn default_macro_plugins<'db>(db: &'db dyn Database) -> &'db [MacroPluginId<
 pub fn macro_plugin_overrides<'db>(
     db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, Vec<MacroPluginId<'db>>> {
-    let inp = db.macro_plugin_overrides_input();
-    inp.iter()
+    let _ = defs_group_input(db).macro_plugin_overrides_revision(db);
+    macro_plugin_override_storage(db)
+        .read()
+        .unwrap()
+        .iter()
         .map(|(crate_id, plugins)| {
             (
                 crate_id.clone().into_crate_long_id(db).intern(db),
-                plugins.iter().map(|plugin| plugin.clone().intern(db)).collect(),
+                plugins
+                    .plugins(db)
+                    .as_ref()
+                    .expect("granular macro plugin override handle should always contain plugins")
+                    .iter()
+                    .map(|plugin| plugin.clone().intern(db))
+                    .collect(),
             )
         })
         .collect()
@@ -409,12 +513,21 @@ pub fn macro_plugin_overrides<'db>(
 pub fn inline_macro_plugin_overrides<'db>(
     db: &'db dyn Database,
 ) -> OrderedHashMap<CrateId<'db>, OrderedHashMap<String, InlineMacroExprPluginId<'db>>> {
-    let inp = db.inline_macro_plugin_overrides_input();
-    inp.iter()
+    let _ = defs_group_input(db).inline_macro_plugin_overrides_revision(db);
+    inline_macro_plugin_override_storage(db)
+        .read()
+        .unwrap()
+        .iter()
         .map(|(crate_id, plugins)| {
             (
                 crate_id.clone().into_crate_long_id(db).intern(db),
                 plugins
+                    .plugins(db)
+                    .as_ref()
+                    .expect(
+                        "granular inline macro plugin override handle should always contain \
+                         plugins",
+                    )
                     .iter()
                     .map(|(name, plugin)| (name.clone(), plugin.clone().intern(db)))
                     .collect(),
@@ -445,6 +558,69 @@ fn crate_inline_macro_plugins<'db>(
     db.inline_macro_plugin_overrides()
         .get(&crate_id)
         .unwrap_or_else(|| db.default_inline_macro_plugins())
+}
+
+pub fn set_macro_plugin_overrides_for_input<Db: Database>(
+    db: &mut Db,
+    crate_input: CrateInput,
+    plugins: Option<Arc<[MacroPluginLongId]>>,
+) {
+    let storage = macro_plugin_override_storage(db);
+    let handle = if let Some(handle) = storage.read().unwrap().get(&crate_input).copied() {
+        handle
+    } else {
+        let handle = MacroPluginOverride::new(db, None);
+        storage.write().unwrap().insert(crate_input, handle);
+        let next = defs_group_input(db).macro_plugin_overrides_revision(db).saturating_add(1);
+        defs_group_input(db).set_macro_plugin_overrides_revision(db).to(next);
+        handle
+    };
+    handle.set_plugins(db).to(plugins);
+}
+
+pub fn set_inline_macro_plugin_overrides_for_input<Db: Database>(
+    db: &mut Db,
+    crate_input: CrateInput,
+    plugins: Option<Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>>,
+) {
+    let storage = inline_macro_plugin_override_storage(db);
+    let handle = if let Some(handle) = storage.read().unwrap().get(&crate_input).copied() {
+        handle
+    } else {
+        let handle = InlineMacroPluginOverride::new(db, None);
+        storage.write().unwrap().insert(crate_input, handle);
+        let next =
+            defs_group_input(db).inline_macro_plugin_overrides_revision(db).saturating_add(1);
+        defs_group_input(db).set_inline_macro_plugin_overrides_revision(db).to(next);
+        handle
+    };
+    handle.set_plugins(db).to(plugins);
+}
+
+pub fn snapshot_macro_plugin_overrides(
+    db: &dyn Database,
+) -> OrderedHashMap<CrateInput, Arc<[MacroPluginLongId]>> {
+    macro_plugin_override_storage(db)
+        .read()
+        .unwrap()
+        .iter()
+        .filter_map(|(crate_input, handle)| {
+            Some((crate_input.clone(), handle.plugins(db).as_ref()?.clone()))
+        })
+        .collect()
+}
+
+pub fn snapshot_inline_macro_plugin_overrides(
+    db: &dyn Database,
+) -> OrderedHashMap<CrateInput, Arc<OrderedHashMap<String, InlineMacroExprPluginLongId>>> {
+    inline_macro_plugin_override_storage(db)
+        .read()
+        .unwrap()
+        .iter()
+        .filter_map(|(crate_input, handle)| {
+            Some((crate_input.clone(), handle.plugins(db).as_ref()?.clone()))
+        })
+        .collect()
 }
 
 #[salsa::tracked(returns(ref))]
@@ -1876,14 +2052,14 @@ pub trait DefsGroupEx: DefsGroup {
         &'db mut self,
         crate_id: CrateId<'db>,
         plugins: Arc<Vec<MacroPluginId<'db>>>,
-    ) {
-        let crate_input = self.crate_input(crate_id);
-        let mut overrides = self.macro_plugin_overrides_input().clone();
-        let plugins = plugins.iter().map(|plugin| plugin.long(self).clone()).collect();
-        overrides.insert(crate_input.clone(), plugins);
-        defs_group_input(self.as_dyn_database())
-            .set_macro_plugin_overrides(self)
-            .to(Some(overrides));
+    ) where
+        Self: Sized,
+    {
+        let crate_input = self.crate_input(crate_id).clone();
+        let plugins = Arc::<[MacroPluginLongId]>::from(
+            plugins.iter().map(|plugin| plugin.long(self).clone()).collect::<Vec<_>>(),
+        );
+        set_macro_plugin_overrides_for_input(self, crate_input, Some(plugins));
     }
 
     /// Overrides the default inline macro plugins available for [`CrateId`] with `plugins`.
@@ -1893,19 +2069,17 @@ pub trait DefsGroupEx: DefsGroup {
         &'db mut self,
         crate_id: CrateId<'db>,
         plugins: Arc<OrderedHashMap<String, InlineMacroExprPluginId<'db>>>,
-    ) {
-        let crate_input = self.crate_input(crate_id);
-        let mut overrides = self.inline_macro_plugin_overrides_input().clone();
+    ) where
+        Self: Sized,
+    {
+        let crate_input = self.crate_input(crate_id).clone();
         let plugins = Arc::new(
             plugins
                 .iter()
                 .map(|(name, plugin)| (name.clone(), plugin.long(self).clone()))
                 .collect(),
         );
-        overrides.insert(crate_input.clone(), plugins);
-        defs_group_input(self.as_dyn_database())
-            .set_inline_macro_plugin_overrides(self)
-            .to(Some(overrides));
+        set_inline_macro_plugin_overrides_for_input(self, crate_input, Some(plugins));
     }
 }
 
