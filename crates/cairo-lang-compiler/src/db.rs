@@ -1,7 +1,12 @@
 use std::sync::{Arc, RwLock};
 
 use anyhow::{Result, anyhow, bail};
-use cairo_lang_defs::db::{init_defs_group, init_external_files};
+use cairo_lang_defs::db::{
+    InlineMacroPluginOverrideStorage, InlineMacroPluginOverrideView, MacroPluginOverrideStorage,
+    MacroPluginOverrideView, init_defs_group, init_external_files,
+    new_inline_macro_plugin_override_storage, new_macro_plugin_override_storage,
+    register_inline_macro_plugin_override_view, register_macro_plugin_override_view,
+};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
@@ -18,7 +23,11 @@ use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_runnable_utils::builder::RunnableBuilder;
-use cairo_lang_semantic::db::{PluginSuiteInput, init_semantic_group};
+use cairo_lang_semantic::db::{
+    AnalyzerPluginOverrideStorage, AnalyzerPluginOverrideView, PluginSuiteInput,
+    init_semantic_group, new_analyzer_plugin_override_storage,
+    register_analyzer_plugin_override_view,
+};
 use cairo_lang_semantic::inline_macros::get_default_plugin_suite;
 use cairo_lang_semantic::plugin::PluginSuite;
 use cairo_lang_sierra_generator::db::init_sierra_gen_group;
@@ -77,6 +86,9 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
     file_contents: FileContentStorage,
     crate_configs: CrateConfigStorage,
+    macro_plugin_overrides: MacroPluginOverrideStorage,
+    inline_macro_plugin_overrides: InlineMacroPluginOverrideStorage,
+    analyzer_plugin_overrides: AnalyzerPluginOverrideStorage,
 }
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
@@ -88,6 +100,21 @@ impl FileContentView for RootDatabase {
 impl CrateConfigView for RootDatabase {
     fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
         Some(&self.crate_configs)
+    }
+}
+impl MacroPluginOverrideView for RootDatabase {
+    fn macro_plugin_override_storage(&self) -> Option<&MacroPluginOverrideStorage> {
+        Some(&self.macro_plugin_overrides)
+    }
+}
+impl InlineMacroPluginOverrideView for RootDatabase {
+    fn inline_macro_plugin_override_storage(&self) -> Option<&InlineMacroPluginOverrideStorage> {
+        Some(&self.inline_macro_plugin_overrides)
+    }
+}
+impl AnalyzerPluginOverrideView for RootDatabase {
+    fn analyzer_plugin_override_storage(&self) -> Option<&AnalyzerPluginOverrideStorage> {
+        Some(&self.analyzer_plugin_overrides)
     }
 }
 impl CloneableDatabase for RootDatabase {
@@ -102,10 +129,16 @@ impl RootDatabase {
             storage: Default::default(),
             file_contents: Default::default(),
             crate_configs: Default::default(),
+            macro_plugin_overrides: new_macro_plugin_override_storage(),
+            inline_macro_plugin_overrides: new_inline_macro_plugin_override_storage(),
+            analyzer_plugin_overrides: new_analyzer_plugin_override_storage(),
         };
 
         register_files_group_view(&res);
         register_crate_config_view(&res);
+        register_macro_plugin_override_view(&res);
+        register_inline_macro_plugin_override_view(&res);
+        register_analyzer_plugin_override_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_lowering_group(&mut res, optimizations, Some(estimate_code_size));
@@ -133,6 +166,9 @@ impl RootDatabase {
             storage: self.storage.clone(),
             file_contents,
             crate_configs: self.crate_configs.clone(),
+            macro_plugin_overrides: self.macro_plugin_overrides.clone(),
+            inline_macro_plugin_overrides: self.inline_macro_plugin_overrides.clone(),
+            analyzer_plugin_overrides: self.analyzer_plugin_overrides.clone(),
         }
     }
 }

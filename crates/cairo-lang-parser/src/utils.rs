@@ -1,7 +1,9 @@
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
-use cairo_lang_filesystem::db::{FilesGroup, init_files_group};
+use cairo_lang_filesystem::db::{
+    FileContentStorage, FileContentView, FilesGroup, init_files_group, register_files_group_view,
+};
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, SmolStrId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use cairo_lang_primitive_token::{PrimitiveToken, ToPrimitiveTokenStream};
@@ -18,12 +20,19 @@ use crate::parser::Parser;
 #[derive(Clone)]
 pub struct SimpleParserDatabase {
     storage: salsa::Storage<SimpleParserDatabase>,
+    file_contents: FileContentStorage,
 }
 #[salsa::db]
 impl salsa::Database for SimpleParserDatabase {}
+impl FileContentView for SimpleParserDatabase {
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
+    }
+}
 impl Default for SimpleParserDatabase {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
+        register_files_group_view(&res);
         init_files_group(&mut res);
         res
     }
