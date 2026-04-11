@@ -34,17 +34,19 @@ fn test_equality_analysis(
     // Use an earlier stage to keep snapshot/box operations visible, then apply inlining so that
     // trait methods (e.g. `ArrayTrait::new`, `.append`) resolve to extern calls (`array_new`,
     // `array_append`). The remaining phases clean up the IR for readable test output.
-    let lowered = db.lowered_body(function_id, LoweringStage::PostBaseline);
+    let lowered = db.lowered_body(function_id, LoweringStage::PreOptimizations);
 
     let (lowering_str, analysis_state_str) = if let Ok(mut lowered) = lowered.cloned() {
         OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
-        OptimizationPhase::ApplyInlining { enable_const_folding: true }
+        OptimizationPhase::ApplyInlining { enable_const_folding: false }
             .apply(db, function_id, &mut lowered)
             .unwrap();
         OptimizationPhase::ReturnOptimization.apply(db, function_id, &mut lowered).unwrap();
         OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
         OptimizationPhase::ReorderStatements.apply(db, function_id, &mut lowered).unwrap();
         OptimizationPhase::BranchInversion.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::OptimizeMatches.apply(db, function_id, &mut lowered).unwrap();
+        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
 
         let lowering_str = formatted_lowered(db, Some(&lowered));
         let block_states = EqualityAnalysis::analyze(db, &lowered);
