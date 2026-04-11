@@ -35,7 +35,7 @@ use crate::inline::statements_weights::{ApproxCasmInlineWeight, InlineWeight};
 use crate::lower::{MultiLowering, lower_semantic_function};
 use crate::optimizations::config::Optimizations;
 use crate::optimizations::scrub_units::scrub_units;
-use crate::optimizations::strategy::OptimizationStrategyId;
+use crate::optimizations::strategy::{ApplyOptimization, OptimizationStrategyId};
 use crate::panic::lower_panics;
 use crate::specialization::specialized_function_lowered;
 use crate::{
@@ -487,12 +487,12 @@ fn lowered_body<'db>(
         }
         LoweringStage::PostBaseline => {
             let mut lowered = db.lowered_body(function, LoweringStage::PreOptimizations)?.clone();
-            db.baseline_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
+            db.baseline_optimization_strategy().apply(db, function, &mut lowered)?;
             lowered
         }
         LoweringStage::Final => {
             let mut lowered = db.lowered_body(function, LoweringStage::PostBaseline)?.clone();
-            db.final_optimization_strategy().apply_strategy(db, function, &mut lowered)?;
+            db.final_optimization_strategy().apply(db, function, &mut lowered)?;
             lowered
         }
     })

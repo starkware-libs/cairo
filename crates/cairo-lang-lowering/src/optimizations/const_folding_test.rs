@@ -8,7 +8,7 @@ use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::optimizations::strategy::OptimizationPhase;
+use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -46,12 +46,14 @@ fn test_match_optimizer(
             )
         })
         .clone();
-    OptimizationPhase::ApplyInlining { enable_const_folding: false }
-        .apply(db, function_id, &mut before)
-        .unwrap();
-    OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
-    OptimizationPhase::CancelOps.apply(db, function_id, &mut before).unwrap();
-    OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut before).unwrap();
+    [
+        OptimizationPhase::ApplyInlining { enable_const_folding: false },
+        OptimizationPhase::ReorganizeBlocks,
+        OptimizationPhase::CancelOps,
+        OptimizationPhase::ReorganizeBlocks,
+    ]
+    .apply(db, function_id, &mut before)
+    .unwrap();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
     let mut after = before.clone();
