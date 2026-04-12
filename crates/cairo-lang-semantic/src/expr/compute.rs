@@ -2937,7 +2937,7 @@ fn maybe_compute_pattern_semantic<'db>(
                     ty.check_not_missing(ctx.db)?;
                     Err(ctx
                         .diagnostics
-                        .report(pattern_struct.stable_ptr(db), UnexpectedStructPattern(ty)))
+                        .report(pattern_struct.stable_ptr(db), BadPatternForInputType(ty)))
                 })?;
             let params = pattern_struct.params(db);
             let pattern_param_asts = params.elements(db);
@@ -3024,7 +3024,6 @@ fn maybe_compute_pattern_semantic<'db>(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId<'db>| UnexpectedTuplePattern(ty),
             |expected, actual| WrongNumberOfTupleElements { expected, actual },
         ),
         ast::Pattern::FixedSizeArray(_) => compute_tuple_like_pattern_semantic(
@@ -3032,7 +3031,6 @@ fn maybe_compute_pattern_semantic<'db>(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId<'db>| UnexpectedFixedSizeArrayPattern(ty),
             |expected, actual| WrongNumberOfFixedSizeArrayElements { expected, actual },
         ),
         ast::Pattern::False(pattern_false) => {
@@ -3133,7 +3131,6 @@ fn compute_tuple_like_pattern_semantic<'db>(
     pattern_syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
     or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
-    unexpected_pattern: fn(TypeId<'db>) -> SemanticDiagnosticKind<'db>,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
 ) -> Pattern<'db> {
     let db = ctx.db;
@@ -3163,7 +3160,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
     )
     .unwrap_or_else(|| {
         TypeLongId::Missing(
-            ctx.diagnostics.report(pattern_syntax.stable_ptr(db), unexpected_pattern(ty)),
+            ctx.diagnostics.report(pattern_syntax.stable_ptr(db), BadPatternForInputType(ty)),
         )
     });
     let mut inner_tys = match long_ty {
@@ -3272,7 +3269,7 @@ fn extract_concrete_enum_from_pattern_and_validate<'db>(
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
-            Err(ctx.diagnostics.report(pattern.stable_ptr(ctx.db), UnexpectedEnumPattern(ty)))
+            Err(ctx.diagnostics.report(pattern.stable_ptr(ctx.db), BadPatternForInputType(ty)))
         })?;
     // Check that these are the same enums.
     let pattern_enum = concrete_enum_id.enum_id(ctx.db);

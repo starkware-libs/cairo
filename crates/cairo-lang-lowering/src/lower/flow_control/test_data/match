@@ -1448,17 +1448,17 @@ Root: 7
 0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
-error[E2105]: Unexpected type for tuple pattern. "core::felt252" is not a tuple.
+error[E2103]: Mismatched types: pattern cannot match against type "core::felt252".
  --> lib.cairo:3:13
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
             ^^
 
-error[E2105]: Unexpected type for tuple pattern. "core::option::Option::<(core::felt252, core::felt252)>" is not a tuple.
+error[E2103]: Mismatched types: pattern cannot match against type "core::option::Option::<(core::felt252, core::felt252)>".
  --> lib.cairo:3:20
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                    ^^
 
-error[E2103]: Unexpected type for enum pattern. "(core::felt252, core::felt252)" is not an enum.
+error[E2103]: Mismatched types: pattern cannot match against type "(core::felt252, core::felt252)".
  --> lib.cairo:3:35
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                                   ^^^^
