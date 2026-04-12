@@ -85,11 +85,31 @@ Most binary operators in Cairo (arithmetics, comparison, bitwise, etc.) are
 trait-driven and can be overloaded for custom types by implementing the
 appropriate traits from `core::traits`.
 
-Note that some operators like indexing `[]` and arithmetic compound assignment operators
-(`+=`, `-=`, `*=`, `/=`, `%=`) are trait-driven but their traits are located
-outside of `core::traits`.
-Indexing uses `core::ops::IndexView` for snapshot-based access and `core::ops::Index`
-for cases where indexing mutates the collection during reads.
+Note that some trait-driven operators use traits outside of `core::traits`:
+
+[cols="1,2",options="header"]
+|===
+| Operator | Trait
+
+| `[]`
+| `core::ops::IndexView` (snapshot-based access) or `core::ops::Index` (read access mutates the container)
+
+| `+=`
+| `core::ops::AddAssign`
+
+| `-=`
+| `core::ops::SubAssign`
+
+| `*=`
+| `core::ops::MulAssign`
+
+| `/=`
+| `core::ops::DivAssign`
+
+| `%=`
+| `core::ops::RemAssign`
+|===
+
 Bitwise and shift compound assignment operators (`&=`, `^=`, `|=`, `<<=`, `>>=`)
 are not supported.
 
