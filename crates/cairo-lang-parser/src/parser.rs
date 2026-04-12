@@ -795,7 +795,9 @@ impl<'a, 'mt> Parser<'a, 'mt> {
                             }
                             SyntaxKind::TerminalPlus => self.take::<TerminalPlus<'_>>().into(),
                             SyntaxKind::TerminalMul => self.take::<TerminalMul<'_>>().into(),
-                            _ => MacroRepetitionOperator::missing(self.db),
+                            _ => self.create_and_report_missing::<MacroRepetitionOperator<'_>>(
+                                ParserDiagnosticKind::MissingMacroRepetitionOperator,
+                            ),
                         };
                         Ok(MacroRepetition::new_green(
                             self.db, dollar, lparen, elements, rparen, separator, operator,
