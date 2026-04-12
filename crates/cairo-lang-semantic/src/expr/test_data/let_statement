@@ -153,7 +153,7 @@ error[E0006]: Function not found.
     let (a, b, c) = undefined();
                     ^^^^^^^^^
 
-error[E2106]: Unexpected type for fixed size array pattern. "(<missing>, <missing>, <missing>)" is not a fixed size array.
+error[E2106]: Unexpected type for fixed size array pattern. "(<missing>, <missing>, <missing>)" is not a fixed size array or a span.
  --> lib.cairo:3:9
     let [d, e, f] = (a, b, c);
         ^^^^^^^^^
