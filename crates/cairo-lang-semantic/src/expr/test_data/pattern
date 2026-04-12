@@ -439,3 +439,61 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test invalid patterns on Span value.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo(s: Span<u32>) -> u32 {
+    match s {
+        [a, b] => *a + *b,
+        5 => 0,
+        (a, b) => *a + *b,
+        Some(a) => *a,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error[E2103]: Mismatched types: pattern cannot match against type "core::array::Span::<core::integer::u32>".
+ --> lib.cairo:5:9
+        (a, b) => *a + *b,
+        ^^^^^^
+
+error[E2135]: Type `<missing>` cannot be dereferenced
+ --> lib.cairo:5:19
+        (a, b) => *a + *b,
+                  ^
+
+error[E2135]: Type `<missing>` cannot be dereferenced
+ --> lib.cairo:5:24
+        (a, b) => *a + *b,
+                       ^
+
+error[E2103]: Mismatched types: pattern cannot match against type "core::array::Span::<core::integer::u32>".
+ --> lib.cairo:6:9
+        Some(a) => *a,
+        ^^^^^^^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:6:21
+        Some(a) => *a,
+                    ^
+
+error[E2135]: Type `<missing>` cannot be dereferenced
+ --> lib.cairo:6:20
+        Some(a) => *a,
+                   ^
+
+error[E2311]: Mismatched types. The type `core::array::Span::<core::integer::u32>` cannot be created from a numeric literal.
+ --> lib.cairo:4:9
+        5 => 0,
+        ^
