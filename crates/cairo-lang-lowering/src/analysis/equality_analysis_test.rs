@@ -9,7 +9,7 @@ use super::equality_analysis::EqualityAnalysis;
 use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::optimizations::strategy::OptimizationPhase;
+use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
@@ -37,16 +37,18 @@ fn test_equality_analysis(
     let lowered = db.lowered_body(function_id, LoweringStage::PreOptimizations);
 
     let (lowering_str, analysis_state_str) = if let Ok(mut lowered) = lowered.cloned() {
-        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
-        OptimizationPhase::ApplyInlining { enable_const_folding: false }
-            .apply(db, function_id, &mut lowered)
-            .unwrap();
-        OptimizationPhase::ReturnOptimization.apply(db, function_id, &mut lowered).unwrap();
-        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
-        OptimizationPhase::ReorderStatements.apply(db, function_id, &mut lowered).unwrap();
-        OptimizationPhase::BranchInversion.apply(db, function_id, &mut lowered).unwrap();
-        OptimizationPhase::OptimizeMatches.apply(db, function_id, &mut lowered).unwrap();
-        OptimizationPhase::ReorganizeBlocks.apply(db, function_id, &mut lowered).unwrap();
+        [
+            OptimizationPhase::ReorganizeBlocks,
+            OptimizationPhase::ApplyInlining { enable_const_folding: false },
+            OptimizationPhase::ReturnOptimization,
+            OptimizationPhase::ReorganizeBlocks,
+            OptimizationPhase::ReorderStatements,
+            OptimizationPhase::BranchInversion,
+            OptimizationPhase::OptimizeMatches,
+            OptimizationPhase::ReorganizeBlocks,
+        ]
+        .apply(db, function_id, &mut lowered)
+        .unwrap();
 
         let lowering_str = formatted_lowered(db, Some(&lowered));
         let block_states = EqualityAnalysis::analyze(db, &lowered);

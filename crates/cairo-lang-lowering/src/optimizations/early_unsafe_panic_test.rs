@@ -9,7 +9,7 @@ use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::optimizations::strategy::OptimizationPhase;
+use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
