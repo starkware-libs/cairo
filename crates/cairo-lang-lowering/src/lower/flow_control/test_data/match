@@ -2131,7 +2131,7 @@ Root: 8
 //! > Boxed enum recursive match with snapshots
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, future_sierra: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: (@@Box<@@@Outer>, @@@Inner)) -> (@@Box<@@@Leaf>,) {
@@ -2217,7 +2217,7 @@ End:
 //! > Boxed enum Never type
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, future_sierra: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: Box<Never>) -> felt252 {
@@ -2249,7 +2249,7 @@ End:
 //! > Boxed struct deconstruct to enum match
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, future_sierra: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: Box<(MyEnum, MyEnum)>) -> Box<felt252> {

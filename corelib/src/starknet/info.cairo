@@ -92,8 +92,8 @@ pub struct TxInfo {
 /// let contract = execution_info.contract_address;
 /// let selector = execution_info.entry_point_selector;
 /// ```
-pub fn get_execution_info() -> Box<v2::ExecutionInfo> {
-    starknet::syscalls::get_execution_info_v2_syscall().unwrap_syscall()
+pub fn get_execution_info() -> Box<v3::ExecutionInfo> {
+    starknet::syscalls::get_execution_info_v3_syscall().unwrap_syscall()
 }
 
 /// Returns the address of the caller contract.
@@ -163,7 +163,7 @@ pub fn get_block_info() -> Box<BlockInfo> {
 /// let signature = tx_info.signature;
 /// let version = tx_info.version;
 /// ```
-pub fn get_tx_info() -> Box<v2::TxInfo> {
+pub fn get_tx_info() -> Box<v3::TxInfo> {
     get_execution_info().tx_info
 }
 
