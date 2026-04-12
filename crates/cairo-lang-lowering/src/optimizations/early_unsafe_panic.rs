@@ -12,9 +12,7 @@ use salsa::Database;
 use crate::analysis::core::StatementLocation;
 use crate::analysis::{DataflowAnalyzer, DataflowBackAnalysis, Direction, Edge};
 use crate::ids::{LocationId, SemanticFunctionIdEx};
-use crate::{
-    Block, BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement, StatementCall,
-};
+use crate::{Block, BlockEnd, BlockId, Lowered, MatchExternInfo, MatchInfo, Statement};
 
 /// Adds an early unsafe_panic when we detect that `return` is unreachable from a certain point in
 /// the code. This step is needed to avoid issues with undroppable references in Sierra to CASM.
@@ -49,12 +47,12 @@ pub fn early_unsafe_panic<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>
         block.statements.truncate(statement_idx);
 
         block.end = BlockEnd::Match {
-            info: MatchInfo::Extern(MatchExternInfo {
+            info: Box::new(MatchInfo::Extern(MatchExternInfo {
                 arms: vec![],
                 location,
                 function: panic_func_id,
                 inputs: vec![],
-            }),
+            })),
         }
     }
 }
@@ -72,8 +70,8 @@ pub struct UnsafePanicContext<'db> {
 impl<'db> UnsafePanicContext<'db> {
     /// Returns true if the statement has side effects.
     pub fn has_side_effects(&self, stmt: &Statement<'db>) -> bool {
-        if let Statement::Call(StatementCall { function, .. }) = stmt {
-            let Some((extern_fn, _gargs)) = function.get_extern(self.db) else {
+        if let Statement::Call(stmt) = stmt {
+            let Some((extern_fn, _gargs)) = stmt.function.get_extern(self.db) else {
                 return false;
             };
 

@@ -191,7 +191,7 @@ fn lower_function_blocks_implicits<'db>(
             }
             BlockEnd::Match { info } => {
                 blocks_to_visit.extend(info.arms().iter().rev().map(|a| a.block_id));
-                match info {
+                match &mut **info {
                     MatchInfo::Enum(_) | MatchInfo::Value(_) => {
                         for MatchArm { arm_selector: _, block_id, var_ids: _ } in info.arms() {
                             assert!(

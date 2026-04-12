@@ -331,7 +331,8 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                     }
                 }
             }
-            Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
+            Statement::EnumConstruct(stmt) => {
+                let StatementEnumConstruct { variant, input, output } = &**stmt;
                 let value = if let Some(info) = self.var_info.get(&input.var_id) {
                     if let VarInfo::Const(val) = info.as_ref() {
                         VarInfo::Const(ConstValue::Enum(*variant, *val).intern(self.db))
@@ -395,7 +396,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             }
             BlockEnd::Match { info } => {
                 self.maybe_replace_inputs(info.inputs_mut());
-                match info {
+                match &mut **info {
                     MatchInfo::Enum(info) => {
                         if let Some(updated_end) = self.handle_enum_block_end(info, statements) {
                             block.end = updated_end;
@@ -1019,7 +1020,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                 );
                 let unused_nz_var = self.variables.alloc(unused_nz_var);
                 return Some(BlockEnd::Match {
-                    info: MatchInfo::Extern(MatchExternInfo {
+                    info: Box::new(MatchInfo::Extern(MatchExternInfo {
                         function,
                         inputs: vec![nz_input],
                         arms: vec![
@@ -1039,7 +1040,7 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                             },
                         ],
                         location: info.location,
-                    }),
+                    })),
                 });
             }
             Some(BlockEnd::Goto(
@@ -1115,12 +1116,12 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
                         is_specialization_base_call: false,
                     }));
                     return Some(BlockEnd::Match {
-                        info: MatchInfo::Enum(MatchEnumInfo {
+                        info: Box::new(MatchInfo::Enum(MatchEnumInfo {
                             concrete_enum_id: *concrete_enum_id,
                             input: VarUsage { var_id: result, location: info.location },
                             arms: core::mem::take(&mut info.arms),
                             location: info.location,
-                        }),
+                        })),
                     });
                 }
             }

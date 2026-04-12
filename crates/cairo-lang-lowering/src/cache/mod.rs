@@ -545,7 +545,7 @@ struct VariableCached {
 }
 impl VariableCached {
     fn new<'db>(variable: Variable<'db>, ctx: &mut CacheSavingContext<'db>) -> Self {
-        let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } = variable.info;
+        let TypeInfo { droppable, copyable, destruct_impl, panic_destruct_impl } = *variable.info;
         Self {
             droppable: droppable
                 .map(|impl_id| ImplIdCached::new(impl_id, &mut ctx.semantic_ctx))
@@ -567,7 +567,7 @@ impl VariableCached {
         Variable {
             ty: self.ty.get_embedded(&ctx.semantic_loading_data),
             location: self.location.embed(ctx),
-            info: TypeInfo {
+            info: Box::new(TypeInfo {
                 droppable: self
                     .droppable
                     .map(|impl_id| impl_id.get_embedded(&ctx.semantic_loading_data))
@@ -584,7 +584,7 @@ impl VariableCached {
                     .panic_destruct_impl
                     .map(|impl_id| impl_id.get_embedded(&ctx.semantic_loading_data))
                     .ok_or(InferenceError::Reported(skip_diagnostic())),
-            },
+            }),
         }
     }
 }
@@ -665,7 +665,7 @@ impl BlockEndCached {
             }
             BlockEnd::NotSet => BlockEndCached::NotSet,
             BlockEnd::Match { info } => {
-                BlockEndCached::Match { info: MatchInfoCached::new(info, ctx) }
+                BlockEndCached::Match { info: MatchInfoCached::new(*info, ctx) }
             }
         }
     }
@@ -680,7 +680,7 @@ impl BlockEndCached {
                 BlockEnd::Goto(BlockId(block_id), remapping.embed(ctx))
             }
             BlockEndCached::NotSet => BlockEnd::NotSet,
-            BlockEndCached::Match { info } => BlockEnd::Match { info: info.embed(ctx) },
+            BlockEndCached::Match { info } => BlockEnd::Match { info: Box::new(info.embed(ctx)) },
         }
     }
 }
@@ -918,7 +918,7 @@ impl StatementCached {
                 StatementCached::StructDestructure(StatementStructDestructureCached::new(stmt, ctx))
             }
             Statement::EnumConstruct(stmt) => {
-                StatementCached::EnumConstruct(StatementEnumConstructCached::new(stmt, ctx))
+                StatementCached::EnumConstruct(StatementEnumConstructCached::new(*stmt, ctx))
             }
             Statement::Snapshot(stmt) => {
                 StatementCached::Snapshot(StatementSnapshotCached::new(stmt, ctx))
@@ -940,7 +940,9 @@ impl StatementCached {
             StatementCached::StructDestructure(stmt) => {
                 Statement::StructDestructure(stmt.embed(ctx))
             }
-            StatementCached::EnumConstruct(stmt) => Statement::EnumConstruct(stmt.embed(ctx)),
+            StatementCached::EnumConstruct(stmt) => {
+                Statement::EnumConstruct(Box::new(stmt.embed(ctx)))
+            }
             StatementCached::Snapshot(stmt) => Statement::Snapshot(stmt.embed(ctx)),
             StatementCached::Desnap(stmt) => Statement::Desnap(stmt.embed(ctx)),
             StatementCached::IntoBox(stmt) => Statement::IntoBox(stmt.embed(ctx)),

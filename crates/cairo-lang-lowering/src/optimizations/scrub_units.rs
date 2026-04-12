@@ -5,10 +5,7 @@ mod test;
 use cairo_lang_semantic::corelib;
 use salsa::Database;
 
-use crate::{
-    BlockEnd, Lowered, Statement, StatementCall, StatementStructConstruct,
-    StatementStructDestructure,
-};
+use crate::{BlockEnd, Lowered, Statement, StatementStructConstruct, StatementStructDestructure};
 
 /// Removes unit values from returns and call statements.
 pub fn scrub_units(db: &dyn Database, lowered: &mut Lowered<'_>) {
@@ -21,17 +18,17 @@ pub fn scrub_units(db: &dyn Database, lowered: &mut Lowered<'_>) {
     let mut fixes = vec![];
     for block in lowered.blocks.iter_mut() {
         for (idx, stmt) in block.statements.iter_mut().enumerate() {
-            let Statement::Call(StatementCall { function, outputs, .. }) = stmt else {
+            let Statement::Call(stmt_call) = stmt else {
                 continue;
             };
 
             // Unit scrubbing is only valid for user functions.
-            if function.body(db).unwrap().is_none() {
+            if stmt_call.function.body(db).unwrap().is_none() {
                 continue;
             }
 
-            if lowered.variables[*outputs.last().unwrap()].ty == unit_ty {
-                fixes.push((idx, outputs.pop().unwrap()));
+            if lowered.variables[*stmt_call.outputs.last().unwrap()].ty == unit_ty {
+                fixes.push((idx, stmt_call.outputs.pop().unwrap()));
             }
         }
 

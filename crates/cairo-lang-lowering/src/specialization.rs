@@ -282,11 +282,16 @@ pub fn specialized_function_lowered<'db>(
                     }));
                 }
                 SpecializationArgBuildingState::BuildEnum { variant, payload } => {
-                    statements.push(Statement::EnumConstruct(StatementEnumConstructObj {
-                        variant,
-                        input: VarUsage { var_id: payload, location: variables[payload].location },
-                        output: var_id,
-                    }));
+                    statements.push(Statement::EnumConstruct(Box::new(
+                        StatementEnumConstructObj {
+                            variant,
+                            input: VarUsage {
+                                var_id: payload,
+                                location: variables[payload].location,
+                            },
+                            output: var_id,
+                        },
+                    )));
                 }
             }
         }

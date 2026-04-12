@@ -8,7 +8,7 @@ use cairo_lang_utils::Intern;
 use salsa::Database;
 
 use crate::ids::FunctionLongId;
-use crate::{BlockEnd, Lowered, MatchInfo, Statement, StatementCall};
+use crate::{BlockEnd, Lowered, MatchInfo, Statement};
 
 /// Performs branch inversion optimization on a lowered function.
 ///
@@ -34,20 +34,19 @@ pub fn branch_inversion(db: &dyn Database, lowered: &mut Lowered<'_>) {
     .intern(db);
 
     for block in lowered.blocks.iter_mut() {
-        if let BlockEnd::Match { info: MatchInfo::Enum(info) } = &mut block.end
+        if let BlockEnd::Match { info } = &mut block.end
+            && let MatchInfo::Enum(info) = &mut **info
             && let Some(negated_condition) = block
                 .statements
                 .iter()
                 .rev()
                 .filter_map(|stmt| match stmt {
-                    Statement::Call(StatementCall {
-                        function,
-                        inputs,
-                        outputs,
-                        with_coupon: false,
-                        ..
-                    }) if function == &bool_not_func_id && outputs[..] == [info.input.var_id] => {
-                        Some(inputs[0])
+                    Statement::Call(stmt)
+                        if stmt.function == bool_not_func_id
+                            && !stmt.with_coupon
+                            && stmt.outputs[..] == [info.input.var_id] =>
+                    {
+                        Some(stmt.inputs[0])
                     }
                     _ => None,
                 })

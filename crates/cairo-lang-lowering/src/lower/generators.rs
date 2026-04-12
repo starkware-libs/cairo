@@ -127,11 +127,11 @@ impl<'db> EnumConstruct<'db> {
         ))
         .intern(ctx.db);
         let output = ctx.new_var(VarRequest { ty, location: self.location });
-        builder.push_statement(Statement::EnumConstruct(StatementEnumConstruct {
+        builder.push_statement(Statement::EnumConstruct(Box::new(StatementEnumConstruct {
             variant: self.variant,
             input: self.input,
             output,
-        }));
+        })));
         VarUsage { var_id: output, location: self.location }
     }
 }
