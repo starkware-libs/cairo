@@ -103,9 +103,9 @@ appropriate trait:
 [cols="1,2,2,2",options="header"]
 |===
 | Symbol | Operation   | Accepted types             | Overloading trait
-| `-`    | Arithmetic negation | `felt252`, `i*` family     | `core::ops::Neg`
-| `!`    | Logical NOT | `bool`                     | `core::ops::Not`
-| `~`    | Bitwise NOT | Integer types              | `core::ops::BitNot`
+| `-`    | Arithmetic negation | `felt252`, `i*` family     | `core::traits::Neg`
+| `!`    | Logical NOT | `bool`                     | `core::traits::Not`
+| `~`    | Bitwise NOT | Integer types              | `core::traits::BitNot`
 |===
 
 == Related
