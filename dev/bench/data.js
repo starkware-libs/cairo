@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1775952912292,
+  "lastUpdate": 1776039354978,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1511,6 +1511,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1575477532,
             "range": "± 20029087",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Irshad Kohl",
+            "username": "IrshadKohl51",
+            "email": "irshadkohlirko@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "230474448fae4774ed54032bc1bf8994d3aecf18",
+          "message": "docs: fix negation trait module paths (#9840)",
+          "timestamp": "2026-04-12T13:13:00Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/230474448fae4774ed54032bc1bf8994d3aecf18"
+        },
+        "date": 1776039353957,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1551752857,
+            "range": "± 15780527",
             "unit": "ns/iter"
           }
         ]
