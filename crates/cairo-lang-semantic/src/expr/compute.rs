@@ -794,6 +794,9 @@ fn expand_inline_macro<'db>(
                 InlineMacroNoMatchingRule(macro_path.identifier(db)),
             ));
         };
+        // If the rule has declaration-time errors, skip expansion to avoid panics on malformed
+        // rules.
+        rule.err?;
         let mut matcher_ctx =
             MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
         let expanded_code = expand_macro_rule(ctx.db, rule, &mut matcher_ctx)?;
