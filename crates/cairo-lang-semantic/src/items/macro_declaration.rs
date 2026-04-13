@@ -267,6 +267,9 @@ pub fn is_macro_rule_match<'db>(
 /// Helper function for [expand_macro_rule].
 /// Traverses the macro expansion and replaces the placeholders with the provided values,
 /// while collecting the result in `res_buffer`.
+/// Returns `Some(true)` if the match succeeded and some input was consumed,
+/// `Some(false)` if the match succeeded but no input was consumed (empty match),
+/// and `None` if the match failed.
 fn is_macro_rule_match_ex<'db>(
     db: &'db dyn Database,
     matcher_elements: ast::MacroElements<'db>,
@@ -275,10 +278,12 @@ fn is_macro_rule_match_ex<'db>(
     >,
     ctx: &mut MatcherContext<'db>,
     consume_all_input: bool,
-) -> Option<()> {
+) -> Option<bool> {
+    let mut advanced = false;
     for matcher_element in matcher_elements.elements(db) {
         match matcher_element {
             ast::MacroElement::Token(matcher_token) => {
+                advanced = true;
                 let input_token = input_iter.next()?;
                 match input_token {
                     ast::TokenTree::Token(token_tree_leaf) => {
@@ -296,6 +301,7 @@ fn is_macro_rule_match_ex<'db>(
                 }
             }
             ast::MacroElement::Param(param) => {
+                advanced = true;
                 let placeholder_kind: PlaceholderKind =
                     if let ast::OptionParamKind::ParamKind(param_kind) = param.kind(db) {
                         param_kind.kind(db).into()
@@ -370,6 +376,7 @@ fn is_macro_rule_match_ex<'db>(
                 }
             }
             ast::MacroElement::Subtree(matcher_subtree) => {
+                advanced = true;
                 let input_token = input_iter.next()?;
                 if let ast::TokenTree::Subtree(input_subtree) = input_token {
                     let inner_elements = get_macro_elements(db, matcher_subtree.subtree(db));
@@ -404,17 +411,16 @@ fn is_macro_rule_match_ex<'db>(
                 loop {
                     let mut inner_ctx = ctx.clone();
                     let mut temp_iter = input_iter.clone();
-                    if is_macro_rule_match_ex(
+                    let Some(true) = is_macro_rule_match_ex(
                         db,
                         elements.clone(),
                         &mut temp_iter,
                         &mut inner_ctx,
                         false,
-                    )
-                    .is_none()
-                    {
+                    ) else {
                         break;
-                    }
+                    };
+                    advanced = true;
                     *ctx = inner_ctx;
                     *input_iter = temp_iter;
                     match_count += 1;
@@ -449,7 +455,7 @@ fn is_macro_rule_match_ex<'db>(
     if consume_all_input && input_iter.next().is_some() {
         return None;
     }
-    Some(())
+    Some(advanced)
 }
 
 fn validate_repetition_operator_constraints(ctx: &MatcherContext<'_>) -> bool {
