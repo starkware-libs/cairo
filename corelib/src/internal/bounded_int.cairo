@@ -1,6 +1,7 @@
 use crate::RangeCheck;
 
 pub(crate) extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
+pub(crate) extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
 
 impl BoundedIntCopy<const MIN: felt252, const MAX: felt252> of Copy<BoundedInt<MIN, MAX>>;
 impl BoundedIntDrop<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;

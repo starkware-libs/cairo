@@ -7,7 +7,6 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 use ast::PathSegment;
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{DefsGroup, get_all_path_leaves, validate_attributes_flat};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
@@ -2329,7 +2328,12 @@ fn compute_loop_body_semantic<'db>(
 ) -> (ExprId, InnerContext<'db>) {
     let db: &dyn Database = ctx.db;
     ctx.run_in_subscope(|new_ctx| {
-        let return_type = new_ctx.get_return_type().unwrap();
+        // `None` means we're outside a function/loop context (e.g. a loop in array size position).
+        // The invalid usage will be caught by the caller; use `missing` to suppress cascading
+        // errors.
+        let return_type = new_ctx
+            .get_return_type()
+            .unwrap_or_else(|| TypeId::missing(new_ctx.db, skip_diagnostic()));
         let old_inner_ctx = new_ctx.inner_ctx.replace(InnerContext { return_type, kind });
         let (statements, tail) = statements_and_tail(ctx.db, syntax.statements(db));
         let mut statements_semantic = vec![];
@@ -2933,7 +2937,7 @@ fn maybe_compute_pattern_semantic<'db>(
                     ty.check_not_missing(ctx.db)?;
                     Err(ctx
                         .diagnostics
-                        .report(pattern_struct.stable_ptr(db), UnexpectedStructPattern(ty)))
+                        .report(pattern_struct.stable_ptr(db), BadPatternForInputType(ty)))
                 })?;
             let params = pattern_struct.params(db);
             let pattern_param_asts = params.elements(db);
@@ -3020,7 +3024,6 @@ fn maybe_compute_pattern_semantic<'db>(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId<'db>| UnexpectedTuplePattern(ty),
             |expected, actual| WrongNumberOfTupleElements { expected, actual },
         ),
         ast::Pattern::FixedSizeArray(_) => compute_tuple_like_pattern_semantic(
@@ -3028,7 +3031,6 @@ fn maybe_compute_pattern_semantic<'db>(
             pattern_syntax,
             ty,
             or_pattern_variables_map,
-            |ty: TypeId<'db>| UnexpectedFixedSizeArrayPattern(ty),
             |expected, actual| WrongNumberOfFixedSizeArrayElements { expected, actual },
         ),
         ast::Pattern::False(pattern_false) => {
@@ -3078,6 +3080,50 @@ fn maybe_compute_pattern_semantic<'db>(
     Ok(pattern)
 }
 
+/// Tries to get the long type of the matched expression for a tuple-like pattern.
+/// Returns `None` if the pattern and type are incompatible.
+fn try_get_match_expr_long_ty<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    pattern_syntax: &ast::Pattern<'db>,
+    long_ty: &TypeLongId<'db>,
+    ty: TypeId<'db>,
+    num_patterns: usize,
+) -> Option<TypeLongId<'db>> {
+    let db = ctx.db;
+    match (pattern_syntax, long_ty) {
+        (_, TypeLongId::Var(_) | TypeLongId::Missing(_))
+        | (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
+        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {
+            Some(long_ty.clone())
+        }
+        (
+            ast::Pattern::FixedSizeArray(_),
+            TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)),
+        ) => {
+            let [GenericArgumentId::Type(inner_ty)] = concrete_struct_id.long(db).generic_args[..]
+            else {
+                return None;
+            };
+            let span_ty = try_get_core_ty_by_name(
+                db,
+                SmolStrId::from(db, "Span"),
+                vec![GenericArgumentId::Type(inner_ty)],
+            )
+            .ok()?;
+            if let Err(err_set) = ctx.resolver.inference().conform_ty(ty, span_ty) {
+                // The caller is going to report a more accurate error message.
+                ctx.resolver.inference().consume_error_without_reporting(err_set);
+                return None;
+            }
+            Some(TypeLongId::FixedSizeArray {
+                type_id: wrap_in_snapshots(db, inner_ty, 1),
+                size: ConstValue::Int(num_patterns.into(), get_usize_ty(db)).intern(db),
+            })
+        }
+        _ => None,
+    }
+}
+
 /// Computes the semantic model of a pattern of a tuple or a fixed size array. Assumes that the
 /// pattern is one of these types.
 fn compute_tuple_like_pattern_semantic<'db>(
@@ -3085,11 +3131,10 @@ fn compute_tuple_like_pattern_semantic<'db>(
     pattern_syntax: &ast::Pattern<'db>,
     ty: TypeId<'db>,
     or_pattern_variables_map: &UnorderedHashMap<SmolStrId<'db>, LocalVariable<'db>>,
-    unexpected_pattern: fn(TypeId<'db>) -> SemanticDiagnosticKind<'db>,
     wrong_number_of_elements: fn(usize, usize) -> SemanticDiagnosticKind<'db>,
 ) -> Pattern<'db> {
     let db = ctx.db;
-    let (wrapping_info, mut long_ty) =
+    let (wrapping_info, long_ty) =
         match extract_tuple_like_from_pattern_and_validate(ctx, pattern_syntax, ty) {
             Ok(value) => value,
             Err(diag_added) => (
@@ -3097,24 +3142,27 @@ fn compute_tuple_like_pattern_semantic<'db>(
                 TypeLongId::Missing(diag_added),
             ),
         };
-    // Assert that the pattern is of the same type as the expr.
-    match (pattern_syntax, &long_ty) {
-        (_, TypeLongId::Var(_) | TypeLongId::Missing(_))
-        | (ast::Pattern::Tuple(_), TypeLongId::Tuple(_))
-        | (ast::Pattern::FixedSizeArray(_), TypeLongId::FixedSizeArray { .. }) => {}
-        _ => {
-            long_ty = TypeLongId::Missing(
-                ctx.diagnostics.report(pattern_syntax.stable_ptr(db), unexpected_pattern(ty)),
-            );
-        }
-    };
-    let patterns_syntax = match pattern_syntax {
+    let patterns_syntax_elements = match pattern_syntax {
         ast::Pattern::Tuple(pattern_tuple) => pattern_tuple.patterns(db).elements_vec(db),
         ast::Pattern::FixedSizeArray(pattern_fixed_size_array) => {
             pattern_fixed_size_array.patterns(db).elements_vec(db)
         }
         _ => unreachable!(),
     };
+
+    // Assert that the pattern is of the same type as the expr.
+    let long_ty = try_get_match_expr_long_ty(
+        ctx,
+        pattern_syntax,
+        &long_ty,
+        ty,
+        patterns_syntax_elements.len(),
+    )
+    .unwrap_or_else(|| {
+        TypeLongId::Missing(
+            ctx.diagnostics.report(pattern_syntax.stable_ptr(db), BadPatternForInputType(ty)),
+        )
+    });
     let mut inner_tys = match long_ty {
         TypeLongId::Tuple(inner_tys) => inner_tys,
         TypeLongId::FixedSizeArray { type_id: inner_ty, size } => {
@@ -3123,7 +3171,8 @@ fn compute_tuple_like_pattern_semantic<'db>(
             } else {
                 let inference = &mut ctx.resolver.inference();
                 let expected_size =
-                    ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db)).intern(db);
+                    ConstValue::Int(patterns_syntax_elements.len().into(), get_usize_ty(db))
+                        .intern(db);
                 if let Err(err) = inference.conform_const(size, expected_size) {
                     let _ = inference.report_on_pending_error(
                         err,
@@ -3131,7 +3180,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
                         pattern_syntax.stable_ptr(db).untyped(),
                     );
                 }
-                patterns_syntax.len()
+                patterns_syntax_elements.len()
             };
 
             [inner_ty].repeat(size)
@@ -3139,7 +3188,7 @@ fn compute_tuple_like_pattern_semantic<'db>(
         TypeLongId::Var(_) => {
             let inference = &mut ctx.resolver.inference();
             let (inner_tys, tuple_like_ty) = if matches!(pattern_syntax, ast::Pattern::Tuple(_)) {
-                let inner_tys: Vec<_> = patterns_syntax
+                let inner_tys: Vec<_> = patterns_syntax_elements
                     .iter()
                     .map(|e| inference.new_type_var(Some(e.stable_ptr(db).untyped())))
                     .collect();
@@ -3147,11 +3196,14 @@ fn compute_tuple_like_pattern_semantic<'db>(
             } else {
                 let var = inference.new_type_var(Some(pattern_syntax.stable_ptr(db).untyped()));
                 (
-                    vec![var; patterns_syntax.len()],
+                    vec![var; patterns_syntax_elements.len()],
                     TypeLongId::FixedSizeArray {
                         type_id: var,
-                        size: ConstValue::Int(patterns_syntax.len().into(), get_usize_ty(db))
-                            .intern(db),
+                        size: ConstValue::Int(
+                            patterns_syntax_elements.len().into(),
+                            get_usize_ty(db),
+                        )
+                        .intern(db),
                     },
                 )
             };
@@ -3163,21 +3215,21 @@ fn compute_tuple_like_pattern_semantic<'db>(
         }
         TypeLongId::Missing(diag_added) => {
             let missing = TypeId::missing(db, diag_added);
-            vec![missing; patterns_syntax.len()]
+            vec![missing; patterns_syntax_elements.len()]
         }
         _ => unreachable!(),
     };
     let size = inner_tys.len();
-    if size != patterns_syntax.len() {
+    if size != patterns_syntax_elements.len() {
         let diag_added = ctx.diagnostics.report(
             pattern_syntax.stable_ptr(db),
-            wrong_number_of_elements(size, patterns_syntax.len()),
+            wrong_number_of_elements(size, patterns_syntax_elements.len()),
         );
         let missing = TypeId::missing(db, diag_added);
 
-        inner_tys = vec![missing; patterns_syntax.len()];
+        inner_tys = vec![missing; patterns_syntax_elements.len()];
     }
-    let subpatterns = zip_eq(patterns_syntax, inner_tys)
+    let subpatterns = zip_eq(patterns_syntax_elements, inner_tys)
         .map(|(pattern_ast, ty)| {
             let ty = wrapping_info.wrap(db, ty);
             compute_pattern_semantic(ctx, &pattern_ast, ty, or_pattern_variables_map).id
@@ -3217,7 +3269,7 @@ fn extract_concrete_enum_from_pattern_and_validate<'db>(
             // Don't add a diagnostic if the type is missing.
             // A diagnostic should've already been added.
             ty.check_not_missing(ctx.db)?;
-            Err(ctx.diagnostics.report(pattern.stable_ptr(ctx.db), UnexpectedEnumPattern(ty)))
+            Err(ctx.diagnostics.report(pattern.stable_ptr(ctx.db), BadPatternForInputType(ty)))
         })?;
     // Check that these are the same enums.
     let pattern_enum = concrete_enum_id.enum_id(ctx.db);
@@ -3956,17 +4008,16 @@ fn member_access_expr<'db>(
         TypeLongId::Closure(_) => {
             Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
         }
-        TypeLongId::ImplType(impl_type_id) => {
-            unreachable!("Impl type should've been reduced {:?}.", impl_type_id.debug(ctx.db))
-        }
         TypeLongId::Var(_) => Err(ctx.diagnostics.report(
             rhs_syntax.stable_ptr(db),
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
-        TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
-            TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
-        )),
+        TypeLongId::ImplType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => {
+            Err(ctx.diagnostics.report(
+                rhs_syntax.stable_ptr(db),
+                TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
+            ))
+        }
         TypeLongId::Missing(diag_added) => Err(*diag_added),
     }
 }
@@ -4117,27 +4168,7 @@ fn resolve_expr_path<'db>(
             is_callsite_prefixed,
             path.stable_ptr(ctx.db).into(),
         ) {
-            match res.clone() {
-                Expr::Var(expr_var) => {
-                    let item = ResolvedGenericItem::Variable(expr_var.var);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .generic
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                Expr::Constant(expr_const) => {
-                    let item = ResolvedConcreteItem::Constant(expr_const.const_value_id);
-                    ctx.resolver
-                        .data
-                        .resolved_items
-                        .concrete
-                        .insert(identifier.stable_ptr(db), item);
-                }
-                _ => unreachable!(
-                    "get_binded_expr_by_name should only return variables or constants"
-                ),
-            };
+            mark_binded_expr_in_resolved_items(ctx, &identifier, &res);
             return Ok(res);
         }
     }
@@ -4190,9 +4221,28 @@ pub fn resolve_variable_by_name<'db>(
     let res = get_binded_expr_by_name(ctx, variable_name, false, stable_ptr).ok_or_else(|| {
         ctx.diagnostics.report(identifier.stable_ptr(ctx.db), VariableNotFound(variable_name))
     })?;
-    let item = ResolvedGenericItem::Variable(extract_matches!(&res, Expr::Var).var);
-    ctx.resolver.data.resolved_items.generic.insert(identifier.stable_ptr(ctx.db), item);
+    mark_binded_expr_in_resolved_items(ctx, identifier, &res);
     Ok(res)
+}
+
+/// Marks a resolved binding expression in the resolved items map for tooling (e.g.,
+/// go-to-definition).
+fn mark_binded_expr_in_resolved_items<'db>(
+    ctx: &mut ComputationContext<'db, '_>,
+    identifier: &ast::TerminalIdentifier<'db>,
+    expr: &Expr<'db>,
+) {
+    let ptr = identifier.stable_ptr(ctx.db);
+    let resolved = &mut ctx.resolver.data.resolved_items;
+    match expr {
+        Expr::Var(expr) => {
+            resolved.generic.insert(ptr, ResolvedGenericItem::Variable(expr.var));
+        }
+        Expr::Constant(expr) => {
+            resolved.concrete.insert(ptr, ResolvedConcreteItem::Constant(expr.const_value_id));
+        }
+        _ => unreachable!("`get_binded_expr_by_name` should only return variables or constants"),
+    }
 }
 
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.
@@ -4753,28 +4803,25 @@ pub fn compute_and_append_statement_semantic<'db>(
                         }
                     }
                 }
-                ast::ModuleItem::Module(_) => {
-                    unreachable!("Modules are not supported inside a function.")
+                ast::ModuleItem::Module(_)
+                | ast::ModuleItem::FreeFunction(_)
+                | ast::ModuleItem::ExternFunction(_)
+                | ast::ModuleItem::ExternType(_)
+                | ast::ModuleItem::Trait(_)
+                | ast::ModuleItem::Impl(_)
+                | ast::ModuleItem::ImplAlias(_)
+                | ast::ModuleItem::Struct(_)
+                | ast::ModuleItem::Enum(_)
+                | ast::ModuleItem::TypeAlias(_)
+                | ast::ModuleItem::InlineMacro(_)
+                | ast::ModuleItem::HeaderDoc(_)
+                | ast::ModuleItem::MacroDeclaration(_) => {
+                    return Err(ctx
+                        .diagnostics
+                        .report(stmt_item_syntax.stable_ptr(db), UnsupportedItemInStatement));
                 }
-                ast::ModuleItem::FreeFunction(_) => {
-                    unreachable!("FreeFunction type not supported.")
-                }
-                ast::ModuleItem::ExternFunction(_) => {
-                    unreachable!("ExternFunction type not supported.")
-                }
-                ast::ModuleItem::ExternType(_) => unreachable!("ExternType type not supported."),
-                ast::ModuleItem::Trait(_) => unreachable!("Trait type not supported."),
-                ast::ModuleItem::Impl(_) => unreachable!("Impl type not supported."),
-                ast::ModuleItem::ImplAlias(_) => unreachable!("ImplAlias type not supported."),
-                ast::ModuleItem::Struct(_) => unreachable!("Struct type not supported."),
-                ast::ModuleItem::Enum(_) => unreachable!("Enum type not supported."),
-                ast::ModuleItem::TypeAlias(_) => unreachable!("TypeAlias type not supported."),
-                ast::ModuleItem::InlineMacro(_) => unreachable!("InlineMacro type not supported."),
-                ast::ModuleItem::HeaderDoc(_) => unreachable!("HeaderDoc type not supported."),
-                ast::ModuleItem::MacroDeclaration(_) => {
-                    unreachable!("MacroDeclaration type not supported.")
-                }
-                ast::ModuleItem::Missing(_) => unreachable!("Missing type not supported."),
+                // Diagnostics reported on syntax level already.
+                ast::ModuleItem::Missing(_) => return Err(skip_diagnostic()),
             }
             statements.push(ctx.arenas.statements.alloc(semantic::Statement::Item(
                 semantic::StatementItem { stable_ptr: syntax.stable_ptr(db) },

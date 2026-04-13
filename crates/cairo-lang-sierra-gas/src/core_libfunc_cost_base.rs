@@ -554,6 +554,15 @@ pub fn core_libfunc_cost(
             BoundedIntConcreteLibfunc::WrapNonZero(_) => {
                 vec![ConstCost::steps(0).into()]
             }
+            BoundedIntConcreteLibfunc::GuaranteeVerify(libfunc) => {
+                let steps = 2
+                    + if libfunc.range.lower.is_zero() { 0 } else { 1 }
+                    + if &libfunc.range.upper - 1 == u128::MAX.into() { 0 } else { 1 };
+                vec![ConstCost { steps, holes: 0, range_checks: 2, range_checks96: 0 }.into()]
+            }
+            BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => {
+                vec![ConstCost::steps(7).into()]
+            }
         },
         Circuit(libfunc) => match libfunc {
             CircuitConcreteLibfunc::AddInput(_) => {
@@ -640,7 +649,10 @@ pub fn core_libfunc_cost(
             }
         },
         Blake(
-            BlakeConcreteLibfunc::Blake2sCompress(_) | BlakeConcreteLibfunc::Blake2sFinalize(_),
+            BlakeConcreteLibfunc::Blake2sCompress(_)
+            | BlakeConcreteLibfunc::Blake2sFinalize(_)
+            | BlakeConcreteLibfunc::Blake2sCompressGuarantees(_)
+            | BlakeConcreteLibfunc::Blake2sFinalizeGuarantees(_),
         ) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(0),
             pre_cost: PreCost::builtin(CostTokenType::Blake),

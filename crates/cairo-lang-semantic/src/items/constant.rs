@@ -5,7 +5,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantId, ExternFunctionId, GenericParamId, LanguageElementId, LookupItemId, ModuleItemId,
-    NamedLanguageElementId, TopLevelLanguageElementId, TraitConstantId, TraitId, VarId,
+    NamedLanguageElementId, TraitConstantId, TraitId, VarId,
 };
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticNote, Diagnostics, Maybe, MaybeAsRef,
@@ -725,7 +725,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                                 .iter()
                                 .find(|(_, member_id)| m.id == *member_id)
                                 .map(|(expr_id, _)| self.evaluate(*expr_id))
-                                .expect("Should have been caught by semantic validation")
+                                // Semantic validation already reported an error, suppress cascading
+                                // errors from const evaluation.
+                                .unwrap_or_else(|| ConstValue::Missing(skip_diagnostic()).intern(db))
                         })
                         .collect(),
                     *ty,
@@ -1085,9 +1087,12 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     .intern(db),
                 );
             } else {
-                unreachable!(
-                    "Unexpected extern function in constant lowering: `{}`",
-                    extern_fn.full_path(db)
+                return Some(
+                    ConstValue::Missing(self.diagnostics.report(
+                        expr.stable_ptr.untyped(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
+                    .intern(db),
                 );
             }
         }

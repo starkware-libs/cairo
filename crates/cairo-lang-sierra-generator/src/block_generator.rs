@@ -3,7 +3,6 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_lowering::db::LoweringGroup;
@@ -574,8 +573,7 @@ fn generate_statement_into_box<'db>(
     let ty = context.get_variable_sierra_type(var_id)?;
     let db = context.get_db();
 
-    let use_local_into_box = db.flag_future_sierra()
-        && context.is_fp_relative(var_id)
+    let use_local_into_box = context.is_fp_relative(var_id)
         && db.type_size(context.get_lowered_variable(var_id).ty) >= MIN_SIZE_FOR_LOCAL_INTO_BOX;
     let libfunc_id = if use_local_into_box {
         local_into_box_libfunc_id(db, ty)

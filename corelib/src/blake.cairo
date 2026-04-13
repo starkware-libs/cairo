@@ -1,8 +1,14 @@
+#[feature("bounded-int-utils")]
+use crate::internal::bounded_int::BoundedIntGuarantee;
+
 /// State for Blake2s hash.
 type Blake2sState = Box<[u32; 8]>;
 
 /// The input to the Blake2s compress function.
 type Blake2sInput = Box<[u32; 16]>;
+
+/// The input to the Blake2s compress function with guarantees.
+type Blake2sInputGuarantee = Box<[BoundedIntGuarantee<0, 0xffffffff>; 16]>;
 
 
 /// The blake2s compress function, which takes a state, a byte count, and a message, and returns a
@@ -29,4 +35,16 @@ pub extern fn blake2s_compress(
 /// The returned `Blake2sState` words are the encoded state in little endian representation.
 pub extern fn blake2s_finalize(
     state: Blake2sState, byte_count: u32, msg: Blake2sInput,
+) -> Blake2sState nopanic;
+
+/// Variant of `blake2s_compress` that accepts a message as guarantees.
+/// The guarantees are consumed by this function.
+pub extern fn blake2s_compress_guarantees(
+    state: Blake2sState, byte_count: u32, msg: Blake2sInputGuarantee,
+) -> Blake2sState nopanic;
+
+/// Variant of `blake2s_finalize` that accepts a message as guarantees.
+/// The guarantees are consumed by this function.
+pub extern fn blake2s_finalize_guarantees(
+    state: Blake2sState, byte_count: u32, msg: Blake2sInputGuarantee,
 ) -> Blake2sState nopanic;

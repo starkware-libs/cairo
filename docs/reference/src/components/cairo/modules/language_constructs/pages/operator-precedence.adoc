@@ -24,9 +24,8 @@ Use parentheses to make evaluation order explicit when needed.
 | Comparison                            | `==` `!=` `<` `\<=` `>` `>=`   |
 .2+| Logical                            | `&&`                          |
                                         | `\|\|`                        |
-| Assignment                            | `=` `+=` `-=` `*=` `/=` `%=`
-
-                                          `<\<=` `>>=` `&=` `^=` `\|=`   | Second line not yet supported.
+.2+| Assignment                         | `=` `+=` `-=` `*=` `/=` `%=`          |
+                                        | `<<=` `>>=` `&=` `^=` `\|=`           | Shift and bitwise compound assignment operators are not supported.
 |===
 
 == Associativity
@@ -65,6 +64,16 @@ Write them with logical conjunctions instead:
 [source,cairo]
 ----
 let in_range = a < b && b < c;
+----
+
+== Chained equality
+
+Chained equality such as `a == b == c` is not supported.
+Write it with logical conjunctions instead:
+
+[source,cairo]
+----
+let all_equal = a == b && b == c;
 ----
 
 == Related

@@ -150,6 +150,21 @@ pub fn create_node_for_patterns<'db>(
             create_node_for_enum(params, input_var, concrete_enum_id, wrapping_info)
         }
         TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
+            // Check if any non-any pattern is a FixedSizeArray (i.e. Span destructure).
+            // Span destructuring in match/if-let is not yet supported in lowering.
+            let has_fixed_size_array_pattern = patterns
+                .iter()
+                .flatten()
+                .any(|p| matches!(p, semantic::Pattern::FixedSizeArray(..)));
+            if has_fixed_size_array_pattern {
+                return graph.report_with_missing_node(
+                    first_non_any_pattern.stable_ptr(),
+                    LoweringDiagnosticKind::MatchError(MatchError {
+                        kind: graph.kind(),
+                        error: MatchDiagnostic::UnsupportedMatchedType(long_ty.format(ctx.db)),
+                    }),
+                );
+            }
             create_node_for_struct(params, input_var, concrete_struct_id, wrapping_info)
         }
         TypeLongId::Tuple(types) => create_node_for_tuple(params, input_var, &types, wrapping_info),

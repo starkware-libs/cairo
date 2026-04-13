@@ -7,10 +7,10 @@ test_compiled_class_hash
 account__account
 
 //! > compiled_class_hash
-1aa1b223582a7880de8b9bf34948b2b08317c10fd84c11f4f6cd78ce1f6c434
+157b171a4b32501500368cd24fa28c23cd5489ea88cb8190a81ba28aa7c319a
 
 //! > legacy_compiled_class_hash
-2d23c74fcc0c2624c7bad0069fafb39eb2bea140b53771c2c79dddf3ce9a83b
+fd82d15135051e1ac83ad3a695ed312254af902b36bfee0fb4ddaa9a84d0ff
 
 //! > ==========================================================================
 
@@ -103,10 +103,10 @@ test_compiled_class_hash
 libfuncs_coverage__libfuncs_coverage
 
 //! > compiled_class_hash
-188fcf2340160a0a2502a3ba2293e5ea196292c4064e5001b3cd09fed4c6736
+572a8f8844c699a43673a1baf92b168c820520241fa73ff234e42c886f0305c
 
 //! > legacy_compiled_class_hash
-340bb8d66d10957ff5257198b4b9d18c4c67a3daa8e6f52d41ad8ef6906754d
+6c10c6d327e23907417691997d5b6accb010d2006113c86ee0469a73e332b0f
 
 //! > ==========================================================================
 

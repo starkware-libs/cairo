@@ -181,7 +181,7 @@ pub fn try_get_ty_by_name<'db>(
         }
         _ => GenericTypeId::option_from(module_item_id),
     }
-    .unwrap_or_else(|| panic!("{} is not a type.", name.long(db)));
+    .ok_or(SemanticDiagnosticKind::NotAType)?;
 
     Ok(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,

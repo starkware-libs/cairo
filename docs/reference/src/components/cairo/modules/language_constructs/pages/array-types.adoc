@@ -26,6 +26,9 @@ You can also initialize with literal values using the `array![]` macro:
 let arr = array![1, 2, 3, 4]; // Implicitly Array<felt252>
 ----
 
+For fixed-size array literals such as `[1, 2, 3]` and repeat syntax such as `[0; 4]`, see
+xref:array-expressions.adoc[Array expressions].
+
 == Common Operations
 
 - **Append** — adds an element to the end:

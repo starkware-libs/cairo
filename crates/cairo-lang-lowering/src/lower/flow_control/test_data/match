@@ -1448,17 +1448,17 @@ Root: 7
 0 ArmExpr { expr: ExprId(1) }
 
 //! > semantic_diagnostics
-error[E2105]: Unexpected type for tuple pattern. "core::felt252" is not a tuple.
+error[E2103]: Mismatched types: pattern cannot match against type "core::felt252".
  --> lib.cairo:3:13
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
             ^^
 
-error[E2105]: Unexpected type for tuple pattern. "core::option::Option::<(core::felt252, core::felt252)>" is not a tuple.
+error[E2103]: Mismatched types: pattern cannot match against type "core::option::Option::<(core::felt252, core::felt252)>".
  --> lib.cairo:3:20
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                    ^^
 
-error[E2103]: Unexpected type for enum pattern. "(core::felt252, core::felt252)" is not an enum.
+error[E2103]: Mismatched types: pattern cannot match against type "(core::felt252, core::felt252)".
  --> lib.cairo:3:35
         (_, ()) | ((), _) | (Some(None), _) | _ => 0,
                                   ^^^^
@@ -2131,7 +2131,7 @@ Root: 8
 //! > Boxed enum recursive match with snapshots
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, future_sierra: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: (@@Box<@@@Outer>, @@@Inner)) -> (@@Box<@@@Leaf>,) {
@@ -2217,7 +2217,7 @@ End:
 //! > Boxed enum Never type
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, future_sierra: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: Box<Never>) -> felt252 {
@@ -2249,7 +2249,7 @@ End:
 //! > Boxed struct deconstruct to enum match
 
 //! > test_runner_name
-test_create_graph(expect_diagnostics: false, future_sierra: true)
+test_create_graph(expect_diagnostics: false)
 
 //! > function_code
 fn foo(x: Box<(MyEnum, MyEnum)>) -> Box<felt252> {
