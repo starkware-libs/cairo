@@ -1175,6 +1175,22 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(name) => {
                 format!("Undefined macro placeholder: '{}'.", name.long(db))
             }
+            SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch { name, required, actual } => {
+                format!(
+                    "Macro placeholder '{}' requires {} repetition level(s) in the expansion, but \
+                     is used at level {}.",
+                    name.long(db),
+                    required,
+                    actual
+                )
+            }
+            SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch(name) => {
+                format!(
+                    "Macro placeholder '{}' is from a different repetition than the one driving \
+                     this expansion block.",
+                    name.long(db)
+                )
+            }
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => {
                 "User defined inline macros are disabled in the current crate.".into()
             }
@@ -1446,6 +1462,8 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::TypeConstraintsSyntaxNotEnabled => error_code!(E2191),
             SemanticDiagnosticKind::PatternMissingArgs(_) => error_code!(E2192),
             SemanticDiagnosticKind::UndefinedMacroPlaceholder(_) => error_code!(E2193),
+            SemanticDiagnosticKind::MacroPlaceholderRepDepthMismatch { .. } => error_code!(E2198),
+            SemanticDiagnosticKind::MacroPlaceholderRepDriverMismatch(_) => error_code!(E2199),
             SemanticDiagnosticKind::UserDefinedInlineMacrosDisabled => error_code!(E2194),
             SemanticDiagnosticKind::NonNeverLetElseType => error_code!(E2195),
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
@@ -1863,6 +1881,12 @@ pub enum SemanticDiagnosticKind<'db> {
     TypeConstraintsSyntaxNotEnabled,
     PatternMissingArgs(ast::ExprPath<'db>),
     UndefinedMacroPlaceholder(SmolStrId<'db>),
+    MacroPlaceholderRepDepthMismatch {
+        name: SmolStrId<'db>,
+        required: usize,
+        actual: usize,
+    },
+    MacroPlaceholderRepDriverMismatch(SmolStrId<'db>),
     UserDefinedInlineMacrosDisabled,
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
