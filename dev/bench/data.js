@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776039354978,
+  "lastUpdate": 1776125948424,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1539,6 +1539,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1551752857,
             "range": "± 15780527",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "ilyalesokhin-starkware",
+            "username": "ilyalesokhin-starkware",
+            "email": "ilya@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "e2c8f337a5a2ddf5d089be8be5dec4d1aad12aa3",
+          "message": "test(semantic): add test for invalid patterns on Span value (#9839)\n\nCo-authored-by: Claude Sonnet 4.6 <noreply@anthropic.com>",
+          "timestamp": "2026-04-13T07:43:17Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/e2c8f337a5a2ddf5d089be8be5dec4d1aad12aa3"
+        },
+        "date": 1776125947940,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1549447269,
+            "range": "± 12885358",
             "unit": "ns/iter"
           }
         ]
