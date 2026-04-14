@@ -2360,3 +2360,63 @@ error[E2156]: Inline macro `not::a::path::format` not found.
  --> lib.cairo:2:5
     not::a::path::format!("");
     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test macro with empty inner repetition body (would loop infinitely without no-progress guard).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($()*) => { 1 };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro with repetition over empty subtrees (would fail to match without the subtree progress fix).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {
+    test_macro!(() ());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($(())*) => { 1 };
+}
+
+//! > expected_diagnostics
