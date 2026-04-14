@@ -139,6 +139,17 @@ fn priv_macro_call_data<'db>(
             parent_macro_call_data,
         });
     };
+    // If the rule has declaration-time errors, skip expansion to avoid panics on malformed rules.
+    if let Err(diag_added) = rule.err {
+        return Ok(MacroCallData {
+            macro_call_module: Err(diag_added),
+            diagnostics: diagnostics.build(),
+            defsite_module_id,
+            callsite_module_id,
+            expansion_mappings: Arc::new([]),
+            parent_macro_call_data,
+        });
+    }
     let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
     let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
     let generated_file_id = FileLongId::Virtual(VirtualFile {

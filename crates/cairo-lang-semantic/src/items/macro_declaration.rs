@@ -76,6 +76,9 @@ pub struct MacroDeclarationData<'db> {
 pub struct MacroRuleData<'db> {
     pub pattern: ast::WrappedMacro<'db>,
     pub expansion: ast::MacroElements<'db>,
+    /// Set to `Err` when this rule has semantic errors (e.g., undefined placeholders).
+    /// Callers must skip expansion when this is `Err`.
+    pub err: Maybe<()>,
 }
 
 /// The possible kinds of placeholders in a macro rule.
@@ -157,16 +160,18 @@ fn priv_macro_declaration_data<'db>(
             }));
 
         let used_placeholders = collect_expansion_placeholders(db, expansion.as_syntax_node());
-        // Verify all used placeholders are defined
+        // Verify all used placeholders are defined. Track whether any error was reported so
+        // callers can skip expansion of broken rules.
+        let mut rule_err: Maybe<()> = Ok(());
         for (placeholder_ptr, used_placeholder) in used_placeholders {
             if !defined_placeholders.contains(&used_placeholder) {
-                diagnostics.report(
+                rule_err = Err(diagnostics.report(
                     placeholder_ptr,
                     SemanticDiagnosticKind::UndefinedMacroPlaceholder(used_placeholder),
-                );
+                ));
             }
         }
-        rules.push(MacroRuleData { pattern, expansion });
+        rules.push(MacroRuleData { pattern, expansion, err: rule_err });
     }
     let resolver_data = Arc::new(resolver.data);
     Ok(MacroDeclarationData { diagnostics: diagnostics.build(), attributes, resolver_data, rules })
