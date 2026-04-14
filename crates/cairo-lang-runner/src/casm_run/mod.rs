@@ -1439,12 +1439,13 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         fail_syscall!(b"Invalid keccak input size");
     }
     let mut state = [0u64; 25];
+    let keccak = keccak::Keccak::new();
     for chunk in data.chunks(17) {
         deduct_gas!(gas_counter, KECCAK_ROUND_COST);
         for (i, val) in chunk.iter().enumerate() {
             state[i] ^= val.to_u64().unwrap();
         }
-        keccak::f1600(&mut state)
+        keccak.with_f1600(|f1600| f1600(&mut state));
     }
     Ok(SyscallResult::Success(vec![
         ((Felt252::from((state[1] as u128) << 64u32)) + Felt252::from(state[0])).into(),
@@ -1461,16 +1462,11 @@ fn sha_256_process_block(
     vm: &mut dyn VMWrapper,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SHA256_PROCESS_BLOCK);
-    let data_as_bytes = FromIterator::from_iter(
-        data.iter().flat_map(|felt| felt.to_bigint().to_u32().unwrap().to_be_bytes()),
-    );
-    let mut state_as_words: [u32; 8] = prev_state
-        .iter()
-        .map(|felt| felt.to_bigint().to_u32().unwrap())
-        .collect_vec()
-        .try_into()
-        .unwrap();
-    sha2::compress256(&mut state_as_words, &[data_as_bytes]);
+    let data_as_bytes =
+        data.iter().flat_map(|v| v.to_u32().unwrap().to_be_bytes()).collect_array().unwrap();
+    let mut state_as_words =
+        prev_state.iter().map(|v| v.to_u32().unwrap()).collect_array().unwrap();
+    sha2::block_api::compress256(&mut state_as_words, &[data_as_bytes]);
     let next_state_ptr = alloc_memory(exec_scopes, vm.vm(), 8)?;
     let mut buff: MemBuffer<'_> = MemBuffer::new(vm, next_state_ptr);
     buff.write_data(state_as_words.into_iter().map(Felt252::from))?;
