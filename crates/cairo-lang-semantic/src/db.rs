@@ -13,7 +13,7 @@ use cairo_lang_syntax::node::{TypedStablePtr, ast};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{Intern, require};
+use cairo_lang_utils::{Intern, require, try_extract_matches};
 use itertools::{Itertools, chain};
 use salsa::{Database, Setter};
 
@@ -368,16 +368,20 @@ fn add_unused_item_diagnostics<'db>(
     data: &ModuleSemanticData<'db>,
     diagnostics: &mut SemanticDiagnostics<'db>,
 ) {
+    let mut private_uses = data
+        .items
+        .values()
+        .filter(|info| info.visibility != Visibility::Public)
+        .filter_map(|info| try_extract_matches!(info.item_id, ModuleItemId::Use))
+        .peekable();
+    if private_uses.peek().is_none() {
+        return;
+    }
     let Ok(all_used_uses) = db.module_all_used_uses(module_id) else {
         return;
     };
-    for info in data.items.values() {
-        if info.visibility == Visibility::Public {
-            continue;
-        }
-        if let ModuleItemId::Use(use_id) = info.item_id {
-            add_unused_import_diagnostics(db, all_used_uses, use_id, diagnostics);
-        };
+    for use_id in private_uses {
+        add_unused_import_diagnostics(db, all_used_uses, use_id, diagnostics);
     }
 }
 
