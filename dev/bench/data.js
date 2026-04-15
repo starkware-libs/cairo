@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776125948424,
+  "lastUpdate": 1776212375977,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1567,6 +1567,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1549447269,
             "range": "± 12885358",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "eytan-starkware",
+            "username": "eytan-starkware",
+            "email": "eytan.s@starkware.co"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "a8dd540f7528bb1a4e946b6012ba8ee45c5f4b0a",
+          "message": "refactor: unify hashcons reverse maps and class_info into a single ClassInfo struct (#9848)",
+          "timestamp": "2026-04-14T13:02:39Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/a8dd540f7528bb1a4e946b6012ba8ee45c5f4b0a"
+        },
+        "date": 1776212375043,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1485439363,
+            "range": "± 12127467",
             "unit": "ns/iter"
           }
         ]
