@@ -2420,3 +2420,121 @@ macro test_macro {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test repetition placeholder used outside repetition in expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    m!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),*) => { $x };
+}
+
+//! > expected_diagnostics
+error[E2198]: Macro placeholder 'x' requires 1 repetition level(s) in the expansion, but is used at level 0.
+ --> lib.cairo:2:25
+    ($($x:expr),*) => { $x };
+                        ^^
+
+//! > ==========================================================================
+
+//! > Test rep placeholder used inside a nested repetition in expansion (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    m!(1, 2, 3);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),*) => { $($x)* };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test depth-0 placeholder used inside a repetition driven by a depth-1 var (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    m!(1 + 2, 3, 4);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($x:expr, $($y:expr),*) => { $($x + $y),* };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing in expansion (E2199).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:47
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+                                              ^^
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing with mismatched outer context (prefix check).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:54
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+                                                     ^^
