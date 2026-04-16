@@ -89,8 +89,7 @@ impl CloneableDatabase for RootDatabase {
 
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, optimizations: Optimizations) -> Self {
-        let mut res =
-            Self { storage: Default::default(), file_contents: Default::default() };
+        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
         register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);

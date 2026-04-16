@@ -43,8 +43,7 @@ impl FileContentView for DatabaseForTesting {
 
 impl Default for DatabaseForTesting {
     fn default() -> Self {
-        let mut res =
-            Self { storage: Default::default(), file_contents: Default::default() };
+        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
         register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);

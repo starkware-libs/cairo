@@ -18,8 +18,7 @@ impl FileContentView for FilesDatabaseForTesting {
 
 impl Default for FilesDatabaseForTesting {
     fn default() -> Self {
-        let mut res =
-            Self { storage: Default::default(), file_contents: Default::default() };
+        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
         register_files_group_view(&res);
         init_files_group(&mut res);
         res

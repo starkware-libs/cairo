@@ -30,8 +30,7 @@ impl FileContentView for TestDatabase {
 
 impl Default for TestDatabase {
     fn default() -> Self {
-        let mut res =
-            Self { storage: Default::default(), file_contents: Default::default() };
+        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
         register_files_group_view(&res);
         init_files_group(&mut res);
         init_defs_group(&mut res);

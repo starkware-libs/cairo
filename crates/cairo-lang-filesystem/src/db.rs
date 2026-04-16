@@ -620,11 +620,10 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
 /// # Invalidation
 ///
 /// - **First edit** (when a [`FileContents`] handle is first created for this file):
-///   [`FilesGroupInput::file_contents_revision`] is bumped, causing this query to re-execute.
-///   It then reads content from the new [`FileContents`] handle and records the per-field
-///   dependency.
-/// - **Subsequent edits**: only the [`FileContents::content`] field changes, so Salsa
-///   re-executes this query directly without needing to bump the revision.
+///   [`FilesGroupInput::file_contents_revision`] is bumped, causing this query to re-execute. It
+///   then reads content from the new [`FileContents`] handle and records the per-field dependency.
+/// - **Subsequent edits**: only the [`FileContents::content`] field changes, so Salsa re-executes
+///   this query directly without needing to bump the revision.
 #[salsa::tracked(returns(ref))]
 fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<str>> {
     let _ = files_group_input(db).file_contents_revision(db);
