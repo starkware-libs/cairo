@@ -4,7 +4,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CORELIB_VERSION, FileContentStorage, FileContentView, FilesGroup, init_dev_corelib,
-    init_files_group, new_file_content_storage, register_files_group_view,
+    init_files_group, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -90,7 +90,7 @@ impl CloneableDatabase for RootDatabase {
 impl RootDatabase {
     fn new(default_plugin_suite: PluginSuite, optimizations: Optimizations) -> Self {
         let mut res =
-            Self { storage: Default::default(), file_contents: new_file_content_storage() };
+            Self { storage: Default::default(), file_contents: Default::default() };
         register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);

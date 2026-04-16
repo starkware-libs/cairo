@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
     CrateConfiguration, FileContentStorage, FileContentView, FilesGroup, init_files_group,
-    new_file_content_storage, register_files_group_view, set_on_disk_file_content_for_input,
+    override_file_content_for_input, register_files_group_view,
 };
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::set_crate_config;
@@ -44,7 +44,7 @@ impl FileContentView for DatabaseForTesting {
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res =
-            Self { storage: Default::default(), file_contents: new_file_content_storage() };
+            Self { storage: Default::default(), file_contents: Default::default() };
         register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
@@ -125,7 +125,7 @@ pub fn setup_test_module(db: &mut dyn Database, content: &str) {
         let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
         db.file_input(file).clone()
     };
-    set_on_disk_file_content_for_input(db, file_input, Some(content.into()));
+    override_file_content_for_input(db, file_input, Some(content.into()));
     let crate_id = get_crate_id(db);
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db);
@@ -166,7 +166,7 @@ macro_rules! set_file_content {
             let file_id = FileLongId::OnDisk($path.into()).intern($db);
             $db.file_input(file_id).clone()
         };
-        set_on_disk_file_content_for_input($db, file_input, Some($content.into()));
+        override_file_content_for_input($db, file_input, Some($content.into()));
     };
 }
 

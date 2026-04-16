@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     CrateSettings, Edition, ExperimentalFeaturesConfig, FileContentStorage, FileContentView,
-    init_dev_corelib, init_files_group, new_file_content_storage, register_files_group_view,
+    init_dev_corelib, init_files_group, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
@@ -50,7 +50,7 @@ impl SemanticDatabaseForTesting {
     pub fn with_plugin_suite(suite: PluginSuite) -> Self {
         let mut res = SemanticDatabaseForTesting {
             storage: Default::default(),
-            file_contents: new_file_content_storage(),
+            file_contents: Default::default(),
         };
         register_files_group_view(&res);
         init_external_files(&mut res);

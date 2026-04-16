@@ -3,7 +3,7 @@ use cairo_lang_utils::Intern;
 
 use super::FilesGroup;
 use crate::cfg::{Cfg, CfgSet};
-use crate::db::{CrateConfiguration, set_on_disk_file_content_for_input};
+use crate::db::{CrateConfiguration, override_file_content_for_input};
 use crate::flag::{Flag, FlagsGroup};
 use crate::ids::{CrateLongId, Directory, FlagId, FlagLongId, SmolStrId};
 use crate::set_crate_config;
@@ -20,7 +20,7 @@ fn test_filesystem() {
         let file_id = directory.file(db_ref, child_str);
         db_ref.file_input(file_id).clone()
     };
-    set_on_disk_file_content_for_input(db_ref, file_input, Some("content\n".into()));
+    override_file_content_for_input(db_ref, file_input, Some("content\n".into()));
 
     let config = CrateConfiguration::default_for_root(directory.clone());
     let crt = CrateLongId::plain(SmolStrId::from(db_ref, "my_crate")).intern(db_ref);

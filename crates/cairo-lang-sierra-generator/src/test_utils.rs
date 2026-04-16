@@ -5,7 +5,7 @@ use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     FileContentStorage, FileContentView, init_dev_corelib, init_files_group,
-    new_file_content_storage, register_files_group_view,
+    register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -73,7 +73,7 @@ impl SierraGenDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SierraGenDatabaseForTesting {
             storage: Default::default(),
-            file_contents: new_file_content_storage(),
+            file_contents: Default::default(),
         };
         register_files_group_view(&res);
         init_external_files(&mut res);

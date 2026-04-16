@@ -1,9 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::{
-    CrateConfiguration, FilesGroup, set_on_disk_file_content_for_input,
-};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, override_file_content_for_input};
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
 use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_test_utils::test;
@@ -59,7 +57,7 @@ fn set_file_content(db: &mut dyn Database, path: &str, content: &str) {
         let file_id = FileLongId::OnDisk(path.into()).intern(db);
         db.file_input(file_id).clone()
     };
-    set_on_disk_file_content_for_input(db, file_input, Some(content.into()));
+    override_file_content_for_input(db, file_input, Some(content.into()));
 }
 
 #[test]

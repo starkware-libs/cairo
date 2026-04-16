@@ -234,8 +234,10 @@ pub struct FilesGroupInput {
     /// Main input of the project. Lists all the crates configurations.
     #[returns(ref)]
     pub crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
-    /// Structural revision for databases that source file content from granular per-file slots
-    /// instead of only the raw-file path.
+    /// Structural revision bumped each time a new [`FileContents`] handle is first created for a
+    /// file. The [`file_content`] tracked function reads this field so that it re-executes when a
+    /// previously-unregistered file gets a handle — at which point it records the per-file
+    /// dependency for future fine-grained incremental updates.
     pub file_contents_revision: u64,
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
@@ -253,21 +255,16 @@ pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
     FilesGroupInput::new(db, None, 0, None, None, None)
 }
 
-/// Per-file content slots used by long-running tools (like CairoLS) that need granular
-/// invalidation.
+/// Per-file content slot used by long-running tools (like CairoLS) that need granular
+/// invalidation. A file is either an on-disk override or a generated file — never both — so a
+/// single field is sufficient.
 #[salsa::input]
 pub struct FileContents {
     #[returns(ref)]
-    pub on_disk_content: Option<ArcStr>,
-    #[returns(ref)]
-    pub generated_content: Option<ArcStr>,
+    pub content: Option<ArcStr>,
 }
 
 pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContents>>>;
-
-pub fn new_file_content_storage() -> FileContentStorage {
-    Default::default()
-}
 
 /// Database view used by [`FilesGroup::file_content`] to retrieve per-file editor/generated
 /// content.
@@ -280,29 +277,11 @@ pub trait FileContentView: Database {
         self.file_content_storage()?.read().unwrap().get(file_input).copied()
     }
 
-    /// Returns a content handle for the given file, if one exists.
-    fn file_contents<'db>(&'db self, file_id: FileId<'db>) -> Option<FileContents> {
+    /// Returns the overridden content for the given file, if one exists.
+    fn file_content_override<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
         let file_input = self.file_input(file_id).clone();
-        self.file_contents_for_input(&file_input)
+        self.file_contents_for_input(&file_input)?.content(self).as_ref()
     }
-
-    /// Returns on-disk file content, if one exists.
-    fn on_disk_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
-        self.file_contents(file_id).and_then(|contents| contents.on_disk_content(self).as_ref())
-    }
-
-    /// Returns generated file content, if one exists.
-    fn generated_file_content<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
-        self.file_contents(file_id).and_then(|contents| contents.generated_content(self).as_ref())
-    }
-}
-
-fn cast_file_content_view<Db: FileContentView + 'static>(
-    db: NonNull<Db>,
-) -> NonNull<dyn FileContentView> {
-    // SAFETY: `db` points to a live `Db` of the registered concrete database type.
-    let db_ref = unsafe { db.as_ref() };
-    NonNull::from(db_ref as &dyn FileContentView)
 }
 
 fn file_content_view(db: &dyn Database) -> &dyn FileContentView {
@@ -322,7 +301,10 @@ pub fn register_files_group_view<Db>(db: &Db)
 where
     Db: Database + FileContentView + 'static,
 {
-    views(db).add::<Db, dyn FileContentView>(cast_file_content_view::<Db>);
+    views(db).add::<Db, dyn FileContentView>(|db: NonNull<Db>| {
+        // SAFETY: `db` points to a live `Db` of the registered concrete database type.
+        NonNull::from(unsafe { db.as_ref() } as &dyn FileContentView)
+    });
 }
 
 /// Queries over the files group.
@@ -496,10 +478,6 @@ macro_rules! set_crate_config {
     };
 }
 
-fn file_contents_storage(db: &dyn Database) -> &FileContentStorage {
-    file_content_view(db).file_content_storage().expect("file content storage is not registered")
-}
-
 fn ensure_file_contents_handle_for_input(
     db: &mut dyn Database,
     file_input: FileInput,
@@ -508,37 +486,27 @@ fn ensure_file_contents_handle_for_input(
         return handle;
     }
 
-    let handle = FileContents::new(db, None, None);
-    file_contents_storage(db).write().unwrap().insert(file_input, handle);
+    let handle = FileContents::new(db, None);
+    file_content_view(db)
+        .file_content_storage()
+        .expect("file content storage is not registered")
+        .write()
+        .unwrap()
+        .insert(file_input, handle);
     bump_file_contents_revision(db);
     handle
 }
 
-pub fn set_on_disk_file_content(
-    db: &mut dyn Database,
-    file_id: FileId<'_>,
-    content: Option<Arc<str>>,
-) {
-    let file_input = db.file_input(file_id).clone();
-    set_on_disk_file_content_for_input(db, file_input, content);
-}
-
-pub fn set_on_disk_file_content_for_input(
+/// Overrides the on-disk content of a file as seen by the compiler. Used by editors to show
+/// unsaved buffer contents without touching the filesystem.
+pub fn override_file_content_for_input(
     db: &mut dyn Database,
     file_input: FileInput,
     content: Option<Arc<str>>,
 ) {
     let handle = ensure_file_contents_handle_for_input(db, file_input);
-    handle.set_on_disk_content(db).with_durability(Durability::LOW).to(content.map(ArcStr::new));
-}
-
-pub fn set_generated_file_content(
-    db: &mut dyn Database,
-    file_id: FileId<'_>,
-    content: Option<Arc<str>>,
-) {
-    let file_input = db.file_input(file_id).clone();
-    set_generated_file_content_for_input(db, file_input, content);
+    // LOW durability: on-disk overrides change on any even minor file changes.
+    handle.set_content(db).with_durability(Durability::LOW).to(content.map(ArcStr::new));
 }
 
 pub fn set_generated_file_content_for_input(
@@ -547,10 +515,13 @@ pub fn set_generated_file_content_for_input(
     content: Option<Arc<str>>,
 ) {
     let handle = ensure_file_contents_handle_for_input(db, file_input);
-    handle.set_generated_content(db).with_durability(Durability::HIGH).to(content.map(ArcStr::new));
+    // HIGH durability: generated files change rarely — only when macros are re-run — so Salsa
+    // can skip revalidating their dependents most of the time.
+    handle.set_content(db).with_durability(Durability::HIGH).to(content.map(ArcStr::new));
 }
 
-pub type FileContentSnapshot = OrderedHashMap<FileInput, (Option<Arc<str>>, Option<Arc<str>>)>;
+/// Snapshot of all per-file content overrides currently registered in the database.
+pub type FileContentSnapshot = OrderedHashMap<FileInput, Option<Arc<str>>>;
 
 pub fn snapshot_file_contents(db: &dyn Database) -> FileContentSnapshot {
     let Some(view) = maybe_file_content_view(db) else {
@@ -559,19 +530,12 @@ pub fn snapshot_file_contents(db: &dyn Database) -> FileContentSnapshot {
     let Some(storage) = view.file_content_storage() else {
         return Default::default();
     };
-
     storage
         .read()
         .unwrap()
         .iter()
         .map(|(file_input, handle)| {
-            (
-                file_input.clone(),
-                (
-                    handle.on_disk_content(db).as_ref().map(|content| (**content).clone()),
-                    handle.generated_content(db).as_ref().map(|content| (**content).clone()),
-                ),
-            )
+            (file_input.clone(), handle.content(db).as_ref().map(|c| (**c).clone()))
         })
         .collect()
 }
@@ -652,13 +616,20 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
 }
 
 /// Query implementation of [FilesGroup::file_content].
+///
+/// # Invalidation
+///
+/// - **First edit** (when a [`FileContents`] handle is first created for this file):
+///   [`FilesGroupInput::file_contents_revision`] is bumped, causing this query to re-execute.
+///   It then reads content from the new [`FileContents`] handle and records the per-field
+///   dependency.
+/// - **Subsequent edits**: only the [`FileContents::content`] field changes, so Salsa
+///   re-executes this query directly without needing to bump the revision.
 #[salsa::tracked(returns(ref))]
 fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<str>> {
     let _ = files_group_input(db).file_contents_revision(db);
     maybe_file_content_view(db)
-        .and_then(|view| {
-            view.on_disk_file_content(file_id).or_else(|| view.generated_file_content(file_id))
-        })
+        .and_then(|view| view.file_content_override(file_id))
         .map(|content| (**content).clone())
         .or_else(|| {
             priv_raw_file_content(db, file_id).map(|content| content.long(db).clone().into())

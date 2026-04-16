@@ -9,8 +9,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CrateConfiguration, FileContentStorage, FileContentView, FilesGroup, files_group_input,
-    init_files_group, new_file_content_storage, register_files_group_view,
-    set_on_disk_file_content_for_input,
+    init_files_group, override_file_content_for_input, register_files_group_view,
 };
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, SmolStrId,
@@ -70,7 +69,7 @@ impl FileContentView for DatabaseForTesting {
 impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res =
-            Self { storage: Default::default(), file_contents: new_file_content_storage() };
+            Self { storage: Default::default(), file_contents: Default::default() };
         register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
@@ -134,7 +133,7 @@ pub fn test_expand_plugin_inner(
         let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db_ref);
         db_ref.file_input(file_id).clone()
     };
-    set_on_disk_file_content_for_input(db_ref, file_input, Some(format!("{cairo_code}\n").into()));
+    override_file_content_for_input(db_ref, file_input, Some(format!("{cairo_code}\n").into()));
 
     let crate_id = CrateId::plain(&db, SmolStrId::from(&db, "test"));
     let mut diagnostic_items = vec![];
