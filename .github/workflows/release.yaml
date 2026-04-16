@@ -5,8 +5,20 @@ on:
       - "v*"
 
 jobs:
+  publish_crates:
+    name: Publish crates to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Publish crates
+        run: ./scripts/release_crates.sh
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
   release:
     name: Publish for ${{ matrix.os }}
+    needs: publish_crates
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
