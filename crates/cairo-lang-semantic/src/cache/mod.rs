@@ -1238,10 +1238,9 @@ impl TypeCached {
                 generic_param.get_embedded(&ctx.defs_loading_data, ctx.db),
             ),
             TypeCached::ImplType(impl_type) => TypeLongId::ImplType(impl_type.embed(ctx)),
-            TypeCached::FixedSizeArray(type_id, size) => TypeLongId::FixedSizeArray {
-                type_id: type_id.embed(ctx),
-                size: size.embed(ctx),
-            },
+            TypeCached::FixedSizeArray(type_id, size) => {
+                TypeLongId::FixedSizeArray { type_id: type_id.embed(ctx), size: size.embed(ctx) }
+            }
             TypeCached::ClosureType(closure_ty) => TypeLongId::Closure(closure_ty.embed(ctx)),
             TypeCached::Coupon(coupon) => TypeLongId::Coupon(coupon.embed(ctx)),
         }
