@@ -1147,7 +1147,7 @@ enum TypeCached {
     Snapshot(TypeIdCached),
     GenericParameter(GenericParamCached),
     ImplType(ImplTypeCached),
-    FixedSizeArray(TypeIdCached, ConstValueCached),
+    FixedSizeArray(TypeIdCached, ConstValueIdCached),
     ClosureType(ClosureTypeCached),
     Coupon(SemanticFunctionIdCached),
 }
@@ -1170,7 +1170,7 @@ impl TypeCached {
             }
             TypeLongId::FixedSizeArray { type_id, size } => TypeCached::FixedSizeArray(
                 TypeIdCached::new(type_id, ctx),
-                ConstValueCached::new(size.long(ctx.db).clone(), ctx),
+                ConstValueIdCached::new(size, ctx),
             ),
             TypeLongId::Closure(closure_ty) => {
                 TypeCached::ClosureType(ClosureTypeCached::new(closure_ty, ctx))
@@ -1194,10 +1194,9 @@ impl TypeCached {
                 generic_param.get_embedded(&ctx.defs_loading_data, ctx.db),
             ),
             TypeCached::ImplType(impl_type) => TypeLongId::ImplType(impl_type.embed(ctx)),
-            TypeCached::FixedSizeArray(type_id, size) => TypeLongId::FixedSizeArray {
-                type_id: type_id.embed(ctx),
-                size: size.embed(ctx).intern(ctx.db),
-            },
+            TypeCached::FixedSizeArray(type_id, size) => {
+                TypeLongId::FixedSizeArray { type_id: type_id.embed(ctx), size: size.embed(ctx) }
+            }
             TypeCached::ClosureType(closure_ty) => TypeLongId::Closure(closure_ty.embed(ctx)),
             TypeCached::Coupon(coupon) => TypeLongId::Coupon(coupon.embed(ctx)),
         }
