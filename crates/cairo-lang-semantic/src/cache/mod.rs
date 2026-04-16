@@ -763,29 +763,6 @@ impl ConstValueCached {
             }
         }
     }
-    pub fn get_embedded<'db>(
-        self,
-        data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
-    ) -> ConstValue<'db> {
-        match self {
-            ConstValueCached::Int(value, ty) => ConstValue::Int(value, ty.get_embedded(data)),
-            ConstValueCached::Struct(values, ty) => ConstValue::Struct(
-                values.into_iter().map(|v| v.get_embedded(data)).collect(),
-                ty.get_embedded(data),
-            ),
-            ConstValueCached::Enum(variant, value) => {
-                ConstValue::Enum(variant.get_embedded(data, db), value.get_embedded(data))
-            }
-            ConstValueCached::NonZero(value) => ConstValue::NonZero(value.get_embedded(data)),
-            ConstValueCached::Generic(generic_param) => {
-                ConstValue::Generic(generic_param.get_embedded(&data.defs_loading_data, db))
-            }
-            ConstValueCached::ImplConstant(impl_constant_id) => {
-                ConstValue::ImplConstant(impl_constant_id.get_embedded(data, db))
-            }
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq, Eq, Hash, salsa::Update)]
@@ -838,17 +815,6 @@ impl ImplConstantCached {
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> ImplConstantId<'db> {
         ImplConstantId::new(self.impl_id.embed(ctx), self.trait_constant.embed(ctx), ctx.db)
     }
-    pub fn get_embedded<'db>(
-        self,
-        data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
-    ) -> ImplConstantId<'db> {
-        ImplConstantId::new(
-            self.impl_id.get_embedded(data),
-            self.trait_constant.get_embedded(data, db),
-            db,
-        )
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -865,14 +831,6 @@ impl TraitConstantCached {
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> TraitConstantId<'db> {
         let (module_id, stable_ptr) = self.language_element.get_embedded(&ctx.defs_loading_data);
         TraitConstantLongId(module_id, TraitItemConstantPtr(stable_ptr)).intern(ctx.db)
-    }
-    pub fn get_embedded<'db>(
-        self,
-        data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
-    ) -> TraitConstantId<'db> {
-        let (module_id, stable_ptr) = self.language_element.get_embedded(&data.defs_loading_data);
-        TraitConstantLongId(module_id, TraitItemConstantPtr(stable_ptr)).intern(db)
     }
 }
 
@@ -1129,7 +1087,7 @@ impl ImplFunctionBodyCached {
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq)]
 enum GenericArgumentCached {
     Type(TypeIdCached),
-    Value(ConstValueCached),
+    Value(ConstValueIdCached),
     Impl(ImplIdCached),
     NegImpl(NegativeImplIdCached),
 }
@@ -1143,9 +1101,9 @@ impl GenericArgumentCached {
             GenericArgumentId::Type(type_id) => {
                 GenericArgumentCached::Type(TypeIdCached::new(type_id, ctx))
             }
-            GenericArgumentId::Constant(const_value_id) => GenericArgumentCached::Value(
-                ConstValueCached::new(const_value_id.long(ctx.db).clone(), ctx),
-            ),
+            GenericArgumentId::Constant(const_value_id) => {
+                GenericArgumentCached::Value(ConstValueIdCached::new(const_value_id, ctx))
+            }
             GenericArgumentId::Impl(impl_id) => {
                 GenericArgumentCached::Impl(ImplIdCached::new(impl_id, ctx))
             }
@@ -1157,9 +1115,7 @@ impl GenericArgumentCached {
     fn embed<'db>(self, ctx: &mut SemanticCacheLoadingContext<'db>) -> GenericArgumentId<'db> {
         match self {
             GenericArgumentCached::Type(ty) => GenericArgumentId::Type(ty.embed(ctx)),
-            GenericArgumentCached::Value(value) => {
-                GenericArgumentId::Constant(value.embed(ctx).intern(ctx.db))
-            }
+            GenericArgumentCached::Value(value) => GenericArgumentId::Constant(value.embed(ctx)),
             GenericArgumentCached::Impl(imp) => GenericArgumentId::Impl(imp.embed(ctx)),
             GenericArgumentCached::NegImpl(negative_impl) => {
                 GenericArgumentId::NegImpl(negative_impl.embed(ctx))
@@ -1169,12 +1125,12 @@ impl GenericArgumentCached {
     pub fn get_embedded<'db>(
         self,
         data: &Arc<SemanticCacheLoadingData<'db>>,
-        db: &'db dyn Database,
+        _db: &'db dyn Database,
     ) -> GenericArgumentId<'db> {
         match self {
             GenericArgumentCached::Type(ty) => GenericArgumentId::Type(ty.get_embedded(data)),
             GenericArgumentCached::Value(value) => {
-                GenericArgumentId::Constant(value.get_embedded(data, db).intern(db))
+                GenericArgumentId::Constant(value.get_embedded(data))
             }
             GenericArgumentCached::Impl(imp) => GenericArgumentId::Impl(imp.get_embedded(data)),
             GenericArgumentCached::NegImpl(negative_impl) => {
