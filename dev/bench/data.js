@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776212375977,
+  "lastUpdate": 1776298796312,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1595,6 +1595,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1485439363,
             "range": "± 12127467",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "cb089a7bb71870d359a7af8c058f8089bdfca068",
+          "message": "Added forwarding option for starknet interfaces. (#9847)",
+          "timestamp": "2026-04-15T13:35:35Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/cb089a7bb71870d359a7af8c058f8089bdfca068"
+        },
+        "date": 1776298795411,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1594972554,
+            "range": "± 30540481",
             "unit": "ns/iter"
           }
         ]
