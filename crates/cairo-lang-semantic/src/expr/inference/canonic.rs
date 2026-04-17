@@ -535,6 +535,9 @@ impl<'db> SemanticRewriter<TypeLongId<'db>, MapperError> for Mapper<'db, '_> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
         };
+        if var.inference_id != self.mapping.source_inference_id {
+            return value.default_rewrite(self);
+        }
         let id = self
             .mapping
             .type_var_mapping
@@ -553,6 +556,9 @@ impl<'db> SemanticRewriter<ConstValue<'db>, MapperError> for Mapper<'db, '_> {
         let ConstValue::Var(var, ty) = value else {
             return value.default_rewrite(self);
         };
+        if var.inference_id != self.mapping.source_inference_id {
+            return value.default_rewrite(self);
+        }
         let id = self
             .mapping
             .const_var_mapping
@@ -582,6 +588,9 @@ impl<'db> SemanticRewriter<ImplLongId<'db>, MapperError> for Mapper<'db, '_> {
             return value.default_rewrite(self);
         };
         let var = var_id.long(self.get_db());
+        if var.inference_id != self.mapping.source_inference_id {
+            return value.default_rewrite(self);
+        }
         let id = self
             .mapping
             .impl_var_mapping
@@ -614,6 +623,9 @@ impl<'db> SemanticRewriter<NegativeImplLongId<'db>, MapperError> for Mapper<'db,
             return value.default_rewrite(self);
         };
         let var = var_id.long(self.get_db());
+        if var.inference_id != self.mapping.source_inference_id {
+            return value.default_rewrite(self);
+        }
         let id = self
             .mapping
             .negative_impl_var_mapping
