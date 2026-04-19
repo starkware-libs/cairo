@@ -6,12 +6,14 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::{
     CompilerConfig, compile_cairo_project_at_path, compile_prepared_db_program, ensure_diagnostics,
 };
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{files_group_input, set_crate_configs_input};
 use cairo_lang_filesystem::ids::{BlobLongId, CrateInput};
 use cairo_lang_lowering::cache::generate_crate_cache;
 use cairo_lang_lowering::optimizations::config::Optimizations;
 use cairo_lang_lowering::utils::InliningStrategy;
-use cairo_lang_test_runner::{TestRunConfig, TestRunner};
+use cairo_lang_test_plugin::{TestsCompilationConfig, test_plugin_suite};
+use cairo_lang_test_runner::{TestCompiler, TestRunConfig, TestRunner, run_tests};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn bench_compile(c: &mut Criterion) {
@@ -117,6 +119,60 @@ fn bench_compile(c: &mut Criterion) {
             set_crate_configs_input(&mut db, Some(crate_configs));
             let crate_ids = CrateInput::into_crate_ids(&db, inputs);
             compile_prepared_db_program(&db, crate_ids, CompilerConfig::default()).unwrap()
+        })
+    });
+
+    // Phase: cached lowering → test results (compile tests + execute with pre-compiled lowering).
+    group.bench_function("fib: cache-to-testing", |b| {
+        let path = examples.join("fib.cairo");
+        // Cache must be generated with the same DB configuration as the test compiler uses
+        // (test plugin + cfg(test)), so that test functions are included in the cache.
+        let cache_bytes = {
+            let mut db = RootDatabase::builder()
+                .with_optimizations(Optimizations::enabled_with_default_movable_functions(
+                    InliningStrategy::Default,
+                ))
+                .detect_corelib()
+                .with_cfg(CfgSet::from_iter([Cfg::name("test"), Cfg::kv("target", "test")]))
+                .with_default_plugin_suite(test_plugin_suite())
+                .build()
+                .unwrap();
+            let inputs = setup_project(&mut db, &path).unwrap();
+            let crate_ids = CrateInput::into_crate_ids(&db, inputs);
+            generate_crate_cache(&db, crate_ids[0]).unwrap()
+        };
+        let run_config = TestRunConfig {
+            filter: String::new(),
+            include_ignored: false,
+            ignored: false,
+            profiler_config: None,
+            gas_enabled: true,
+            print_resource_usage: false,
+        };
+        b.iter(|| {
+            let mut compiler = TestCompiler::try_new(
+                &path,
+                false,
+                true,
+                TestsCompilationConfig {
+                    starknet: false,
+                    contract_declarations: None,
+                    contract_crate_ids: None,
+                    executable_crate_ids: None,
+                    add_statements_functions: false,
+                    add_statements_code_locations: false,
+                    add_functions_debug_info: false,
+                    replace_ids: false,
+                },
+            )
+            .unwrap();
+            let mut crate_configs =
+                files_group_input(&compiler.db).crate_configs(&compiler.db).clone().unwrap();
+            crate_configs.get_mut(&compiler.main_crate_ids[0]).unwrap().cache_file =
+                Some(BlobLongId::Virtual(cache_bytes.clone()));
+            set_crate_configs_input(&mut compiler.db, Some(crate_configs));
+            let compiled = compiler.build().unwrap();
+            run_tests(None, compiled, &run_config, None).unwrap()
         })
     });
 
