@@ -639,3 +639,68 @@ impl<'db> SemanticRewriter<NegativeImplLongId<'db>, MapperError> for Mapper<'db,
         Ok(RewriteResult::Modified)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use cairo_lang_utils::Intern;
+    use salsa::Database;
+
+    use super::{Mapper, VarMapping};
+    use crate::expr::inference::{
+        ConstVar, InferenceId, LocalConstVarId, LocalTypeVarId, TypeVar,
+    };
+    use crate::items::constant::ConstValue;
+    use crate::test_utils::SemanticDatabaseForTesting;
+    use crate::types::TypeLongId;
+
+    #[test]
+    fn mapper_maps_type_var_from_source_inference_context() {
+        let db = SemanticDatabaseForTesting::default();
+        let db: &dyn Database = &db;
+        let mut mapping = VarMapping::new_to_canonic(InferenceId::NoContext);
+        mapping.type_var_mapping.insert(LocalTypeVarId(0), LocalTypeVarId(7));
+
+        let original = TypeLongId::Var(TypeVar {
+            inference_id: InferenceId::NoContext,
+            id: LocalTypeVarId(0),
+        });
+
+        let mapped = Mapper::map(db, original, &mapping).unwrap();
+        assert_eq!(
+            mapped,
+            TypeLongId::Var(TypeVar { inference_id: InferenceId::Canonical, id: LocalTypeVarId(7) })
+        );
+    }
+
+    #[test]
+    fn mapper_ignores_type_var_from_other_inference_context() {
+        let db = SemanticDatabaseForTesting::default();
+        let db: &dyn Database = &db;
+        let mut mapping = VarMapping::new_to_canonic(InferenceId::NoContext);
+        mapping.type_var_mapping.insert(LocalTypeVarId(0), LocalTypeVarId(7));
+
+        let original = TypeLongId::Var(TypeVar {
+            inference_id: InferenceId::Canonical,
+            id: LocalTypeVarId(0),
+        });
+
+        let mapped = Mapper::map(db, original.clone(), &mapping).unwrap();
+        assert_eq!(mapped, original);
+    }
+
+    #[test]
+    fn mapper_ignores_const_var_from_other_inference_context() {
+        let db = SemanticDatabaseForTesting::default();
+        let db: &dyn Database = &db;
+        let mut mapping = VarMapping::new_to_canonic(InferenceId::NoContext);
+        mapping.const_var_mapping.insert(LocalConstVarId(0), LocalConstVarId(3));
+        let ty = TypeLongId::Tuple(vec![]).intern(db);
+        let original = ConstValue::Var(
+            ConstVar { inference_id: InferenceId::Canonical, id: LocalConstVarId(0) },
+            ty,
+        );
+
+        let mapped = Mapper::map(db, original.clone(), &mapping).unwrap();
+        assert_eq!(mapped, original);
+    }
+}
