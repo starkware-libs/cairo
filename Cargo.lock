@@ -4414,6 +4414,8 @@ dependencies = [
  "cairo-lang-sierra-to-casm",
  "cairo-lang-sierra-type-size",
  "cairo-lang-syntax",
+ "cairo-lang-test-plugin",
+ "cairo-lang-test-runner",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "criterion",
