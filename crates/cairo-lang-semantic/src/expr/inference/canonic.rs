@@ -647,59 +647,74 @@ mod tests {
 
     use super::{Mapper, VarMapping};
     use crate::expr::inference::{
-        ConstVar, InferenceId, LocalConstVarId, LocalTypeVarId, TypeVar,
+        InferenceData, InferenceId, LocalConstVarId, LocalTypeVarId, TypeVar,
     };
     use crate::items::constant::ConstValue;
     use crate::test_utils::SemanticDatabaseForTesting;
-    use crate::types::TypeLongId;
+    use crate::TypeLongId;
 
-    #[test]
-    fn mapper_maps_type_var_from_source_inference_context() {
-        let db = SemanticDatabaseForTesting::default();
-        let db: &dyn Database = &db;
-        let mut mapping = VarMapping::new_to_canonic(InferenceId::NoContext);
-        mapping.type_var_mapping.insert(LocalTypeVarId(0), LocalTypeVarId(7));
+    fn overlapping_type_vars_from_inference<'db>(
+        db: &'db dyn Database,
+    ) -> (TypeVar<'db>, TypeVar<'db>) {
+        let mut source_inference_data = InferenceData::new(InferenceId::NoContext);
+        let mut source_inference = source_inference_data.inference(db);
+        let source_var = source_inference.new_type_var_raw(None);
 
-        let original = TypeLongId::Var(TypeVar {
-            inference_id: InferenceId::NoContext,
-            id: LocalTypeVarId(0),
-        });
+        let mut foreign_inference_data = InferenceData::new(InferenceId::Canonical);
+        let mut foreign_inference = foreign_inference_data.inference(db);
+        let foreign_var = foreign_inference.new_type_var_raw(None);
 
-        let mapped = Mapper::map(db, original, &mapping).unwrap();
-        assert_eq!(
-            mapped,
-            TypeLongId::Var(TypeVar { inference_id: InferenceId::Canonical, id: LocalTypeVarId(7) })
-        );
+        assert_eq!(source_var.id, foreign_var.id);
+        (source_var, foreign_var)
     }
 
     #[test]
-    fn mapper_ignores_type_var_from_other_inference_context() {
+    fn mapper_maps_source_type_var_created_by_inference() {
         let db = SemanticDatabaseForTesting::default();
         let db: &dyn Database = &db;
-        let mut mapping = VarMapping::new_to_canonic(InferenceId::NoContext);
-        mapping.type_var_mapping.insert(LocalTypeVarId(0), LocalTypeVarId(7));
+        let (source_var, _) = overlapping_type_vars_from_inference(db);
+        let mapped_var_id = LocalTypeVarId(source_var.id.0 + 7);
+        let original = TypeLongId::Var(source_var);
+        let mut mapping = VarMapping::new_to_canonic(source_var.inference_id);
+        mapping.type_var_mapping.insert(source_var.id, mapped_var_id);
 
-        let original = TypeLongId::Var(TypeVar {
-            inference_id: InferenceId::Canonical,
-            id: LocalTypeVarId(0),
-        });
+        let mapped = Mapper::map(db, original, &mapping).unwrap();
+        let TypeLongId::Var(mapped_var) = mapped else { panic!("expected type var after map") };
+        assert_eq!(mapped_var.inference_id, InferenceId::Canonical);
+        assert_eq!(mapped_var.id, mapped_var_id);
+    }
 
+    #[test]
+    fn mapper_ignores_foreign_type_var_with_overlapping_local_id() {
+        let db = SemanticDatabaseForTesting::default();
+        let db: &dyn Database = &db;
+        let (source_var, foreign_var) = overlapping_type_vars_from_inference(db);
+        let mut mapping = VarMapping::new_to_canonic(source_var.inference_id);
+        mapping.type_var_mapping.insert(source_var.id, LocalTypeVarId(source_var.id.0 + 7));
+
+        let original = TypeLongId::Var(foreign_var);
         let mapped = Mapper::map(db, original.clone(), &mapping).unwrap();
         assert_eq!(mapped, original);
     }
 
     #[test]
-    fn mapper_ignores_const_var_from_other_inference_context() {
+    fn mapper_ignores_foreign_const_var_with_overlapping_local_id() {
         let db = SemanticDatabaseForTesting::default();
         let db: &dyn Database = &db;
-        let mut mapping = VarMapping::new_to_canonic(InferenceId::NoContext);
-        mapping.const_var_mapping.insert(LocalConstVarId(0), LocalConstVarId(3));
-        let ty = TypeLongId::Tuple(vec![]).intern(db);
-        let original = ConstValue::Var(
-            ConstVar { inference_id: InferenceId::Canonical, id: LocalConstVarId(0) },
-            ty,
-        );
+        let mut source_inference_data = InferenceData::new(InferenceId::NoContext);
+        let mut source_inference = source_inference_data.inference(db);
+        let source_var = source_inference.new_const_var_raw(None);
 
+        let mut foreign_inference_data = InferenceData::new(InferenceId::Canonical);
+        let mut foreign_inference = foreign_inference_data.inference(db);
+        let foreign_var = foreign_inference.new_const_var_raw(None);
+        assert_eq!(source_var.id, foreign_var.id);
+
+        let mut mapping = VarMapping::new_to_canonic(source_var.inference_id);
+        mapping.const_var_mapping.insert(source_var.id, LocalConstVarId(source_var.id.0 + 3));
+
+        let ty = TypeLongId::Tuple(vec![]).intern(db);
+        let original = ConstValue::Var(foreign_var, ty);
         let mapped = Mapper::map(db, original.clone(), &mapping).unwrap();
         assert_eq!(mapped, original);
     }
