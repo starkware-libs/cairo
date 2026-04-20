@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776557698556,
+  "lastUpdate": 1776644205219,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1707,6 +1707,34 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1238901754,
             "range": "± 23462788",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Keemo Styler",
+            "username": "Keemosty12",
+            "email": "keemostyler@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "aa85e35eab65ea428c914704f1fb7cddff8ab2e2",
+          "message": "semantic/cache: dedupe FixedSizeArray const size id (#9851)\n\nCo-authored-by: Ori Ziv <oriz@starkware.co>",
+          "timestamp": "2026-04-16T12:28:07Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/aa85e35eab65ea428c914704f1fb7cddff8ab2e2"
+        },
+        "date": 1776644204763,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib",
+            "value": 1521423329,
+            "range": "± 9760109",
             "unit": "ns/iter"
           }
         ]
