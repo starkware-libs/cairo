@@ -11,7 +11,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionLongId, ImplFunctionLongId,
-    LocalVarId, LocalVarLongId, MemberLongId, ParamId, ParamLongId, StatementConstLongId,
+    LocalVarId, LocalVarLongId, MemberLongId, ModuleId, ParamId, ParamLongId, StatementConstLongId,
     StatementItemId, StatementUseLongId, StructLongId, TraitConstantId, TraitConstantLongId,
     TraitFunctionLongId, TraitImplId, TraitImplLongId, TraitLongId, TraitTypeId, TraitTypeLongId,
     VarId, VariantLongId,
@@ -29,7 +29,6 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::smol_str::SmolStr;
-use itertools::chain;
 use num_bigint::BigInt;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
@@ -47,7 +46,7 @@ use crate::items::imp::{
     NegativeImplId, NegativeImplLongId,
 };
 use crate::items::impl_alias::ImplAliasSemantic;
-use crate::items::macro_call::module_macro_modules;
+use crate::items::macro_call::MacroCallSemantic;
 use crate::items::module::{ModuleItemInfo, ModuleSemantic, ModuleSemanticData};
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::visibility::Visibility;
@@ -125,19 +124,17 @@ pub fn generate_crate_def_cache<'db>(
     crate_id: cairo_lang_filesystem::ids::CrateId<'db>,
     ctx: &mut DefCacheSavingContext<'db>,
 ) -> Maybe<CrateDefCache<'db>> {
-    let modules = db.crate_modules(crate_id);
-
-    let mut modules_data = Vec::new();
-    for module_id in modules.iter() {
-        for module_id in chain!([module_id], module_macro_modules(db, true, *module_id)) {
-            let module_data = module_id.module_data(db)?;
-            modules_data.push((
-                ModuleIdCached::new(*module_id, ctx),
-                ModuleDataCached::new(db, module_data, ctx),
-            ));
-        }
-    }
-    Ok(CrateDefCache::new(modules_data))
+    Ok(CrateDefCache::new(
+        all_crate_modules_for_cache(db, crate_id)
+            .into_iter()
+            .map(|module_id| {
+                Ok((
+                    ModuleIdCached::new(module_id, ctx),
+                    ModuleDataCached::new(db, module_id.module_data(db)?, ctx),
+                ))
+            })
+            .collect::<Maybe<_>>()?,
+    ))
 }
 
 /// Semantic items in the semantic cache.
@@ -154,22 +151,24 @@ pub fn generate_crate_semantic_cache<'db>(
     crate_id: CrateId<'db>,
     ctx: &mut SemanticCacheSavingContext<'db>,
 ) -> Maybe<CrateSemanticCache> {
-    let modules = ctx.db.crate_modules(crate_id);
+    let all_modules = all_crate_modules_for_cache(ctx.db, crate_id);
 
-    let mut modules_data = Vec::new();
-    for module_id in modules.iter() {
-        for module_id in chain!([module_id], module_macro_modules(ctx.db, true, *module_id)) {
-            let module_data = ctx.db.priv_module_semantic_data(*module_id)?.clone();
-            modules_data.push((
+    let modules_data = all_modules
+        .iter()
+        .map(|module_id| {
+            Ok((
                 ModuleIdCached::new(*module_id, &mut ctx.defs_ctx),
-                ModuleSemanticDataCached::new(module_data, ctx),
-            ));
-        }
-    }
+                ModuleSemanticDataCached::new(
+                    ctx.db.priv_module_semantic_data(*module_id)?.clone(),
+                    ctx,
+                ),
+            ))
+        })
+        .collect::<Maybe<_>>()?;
 
     Ok(CrateSemanticCache {
         modules: modules_data,
-        impl_aliases: modules
+        impl_aliases: all_modules
             .iter()
             .flat_map(|id| match ctx.db.module_impl_aliases_ids(*id) {
                 Err(err) => vec![Err(err)],
@@ -2004,4 +2003,24 @@ impl ConcreteTraitCached {
         };
         long_id.intern(db)
     }
+}
+
+/// Returns all modules reachable from the crate root, following both submodule and macro call
+/// edges. This ensures that submodules nested inside MacroCall modules are included.
+pub fn all_crate_modules_for_cache<'db>(
+    db: &'db dyn Database,
+    crate_id: CrateId<'db>,
+) -> Vec<ModuleId<'db>> {
+    let mut result = vec![ModuleId::CrateRoot(crate_id)];
+    let mut unprocessed = 0;
+    while let Some(module_id) = result.get(unprocessed).copied() {
+        unprocessed += 1;
+        if let Ok(submodule_ids) = db.module_submodules_ids(module_id) {
+            result.extend(submodule_ids.iter().map(|id| ModuleId::Submodule(*id)));
+        }
+        if let Ok(macro_calls) = db.module_macro_calls_ids(module_id) {
+            result.extend(macro_calls.iter().flat_map(|id| db.macro_call_module_id(*id)));
+        }
+    }
+    result
 }
