@@ -878,31 +878,34 @@ fn compute_expr_inline_macro_semantic<'db>(
     syntax: &ast::ExprInlineMacro<'db>,
 ) -> Maybe<Expr<'db>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
-        name: SmolStrId::from(ctx.db, name),
-        content: SmolStrId::from(ctx.db, content),
-        code_mappings: info.mappings.clone(),
-        kind: FileKind::Expr,
-        original_item_removed: true,
-    })
-    .intern(ctx.db);
-    ctx.resolver.files.push(new_file_id);
-    let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
-    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
-    if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
-            ctx.diagnostics.report(
-                syntax.stable_ptr(ctx.db),
-                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
-            );
+    let result = (|| -> Maybe<Expr<'db>> {
+        let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
+        let new_file_id = FileLongId::Virtual(VirtualFile {
+            parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
+            name: SmolStrId::from(ctx.db, name),
+            content: SmolStrId::from(ctx.db, content),
+            code_mappings: info.mappings.clone(),
+            kind: FileKind::Expr,
+            original_item_removed: true,
+        })
+        .intern(ctx.db);
+        ctx.resolver.files.push(new_file_id);
+        let expr_syntax = ctx.db.file_expr_syntax(new_file_id)?;
+        let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+        if let Err(diag_added) = parser_diagnostics.check_error_free() {
+            for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
+                ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+                );
+            }
+            return Err(diag_added);
         }
-        return Err(diag_added);
-    }
-    let expr = ctx.run_in_macro_subscope(|ctx| compute_expr_semantic(ctx, &expr_syntax), info);
+        let expr = ctx.run_in_macro_subscope(|ctx| compute_expr_semantic(ctx, &expr_syntax), info);
+        Ok(expr.expr)
+    })();
     ctx.resolver.macro_call_data = prev_macro_call_data;
-    Ok(expr.expr)
+    result
 }
 
 /// Computes the semantic model of a tail expression, handling inline macros recursively and
@@ -949,53 +952,55 @@ fn expand_macro_for_statement<'db>(
     statements_ids: &mut Vec<StatementId>,
 ) -> Maybe<Option<ExprAndId<'db>>> {
     let prev_macro_call_data = ctx.resolver.macro_call_data.clone();
-    let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
-    let new_file_id = FileLongId::Virtual(VirtualFile {
-        parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
-        name: SmolStrId::from(ctx.db, name),
-        content: SmolStrId::from_arcstr(ctx.db, &content),
-        code_mappings: info.mappings.clone(),
-        kind: FileKind::StatementList,
-        original_item_removed: true,
-    })
-    .intern(ctx.db);
-    ctx.resolver.files.push(new_file_id);
-    let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
-    if let Err(diag_added) = parser_diagnostics.check_error_free() {
-        for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
-            ctx.diagnostics.report(
-                syntax.stable_ptr(ctx.db),
-                SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
-            );
-        }
-        return Err(diag_added);
-    }
-    let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
-    let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
-    let result = ctx.run_in_macro_subscope(
-        |ctx| {
-            compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
-            if is_tail {
-                if let Some(tail_expr) = tail {
-                    Ok(Some(compute_tail_semantic(ctx, &tail_expr, statements_ids)))
-                } else {
-                    Err(ctx.diagnostics.report_after(syntax.stable_ptr(ctx.db), MissingSemicolon))
-                }
-            } else {
-                if let Some(tail_expr) = tail {
-                    let expr = compute_expr_semantic(ctx, &tail_expr.expr(ctx.db));
-                    statements_ids.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
-                        semantic::StatementExpr {
-                            expr: expr.id,
-                            stable_ptr: tail_expr.stable_ptr(ctx.db).into(),
-                        },
-                    )));
-                }
-                Ok(None)
+    let result = (|| -> Maybe<Option<ExprAndId<'db>>> {
+        let InlineMacroExpansion { content, name, info } = expand_inline_macro(ctx, syntax)?;
+        let new_file_id = FileLongId::Virtual(VirtualFile {
+            parent: Some(syntax.stable_ptr(ctx.db).untyped().span_in_file(ctx.db)),
+            name: SmolStrId::from(ctx.db, name),
+            content: SmolStrId::from_arcstr(ctx.db, &content),
+            code_mappings: info.mappings.clone(),
+            kind: FileKind::StatementList,
+            original_item_removed: true,
+        })
+        .intern(ctx.db);
+        ctx.resolver.files.push(new_file_id);
+        let parser_diagnostics = ctx.db.file_syntax_diagnostics(new_file_id);
+        if let Err(diag_added) = parser_diagnostics.check_error_free() {
+            for diag in parser_diagnostics.get_diagnostics_without_duplicates(ctx.db) {
+                ctx.diagnostics.report(
+                    syntax.stable_ptr(ctx.db),
+                    SemanticDiagnosticKind::MacroGeneratedCodeParserDiagnostic(diag),
+                );
             }
-        },
-        info,
-    );
+            return Err(diag_added);
+        }
+        let statement_list = ctx.db.file_statement_list_syntax(new_file_id)?;
+        let (parsed_statements, tail) = statements_and_tail(ctx.db, statement_list);
+        ctx.run_in_macro_subscope(
+            |ctx| {
+                compute_statements_semantic_and_extend(ctx, parsed_statements, statements_ids);
+                if is_tail {
+                    if let Some(tail_expr) = tail {
+                        Ok(Some(compute_tail_semantic(ctx, &tail_expr, statements_ids)))
+                    } else {
+                        Err(ctx.diagnostics.report_after(syntax.stable_ptr(ctx.db), MissingSemicolon))
+                    }
+                } else {
+                    if let Some(tail_expr) = tail {
+                        let expr = compute_expr_semantic(ctx, &tail_expr.expr(ctx.db));
+                        statements_ids.push(ctx.arenas.statements.alloc(semantic::Statement::Expr(
+                            semantic::StatementExpr {
+                                expr: expr.id,
+                                stable_ptr: tail_expr.stable_ptr(ctx.db).into(),
+                            },
+                        )));
+                    }
+                    Ok(None)
+                }
+            },
+            info,
+        )
+    })();
     ctx.resolver.macro_call_data = prev_macro_call_data;
     result
 }
