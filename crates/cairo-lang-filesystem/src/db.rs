@@ -531,9 +531,7 @@ pub fn set_generated_file_content_for_input(
     content: Option<Arc<str>>,
 ) {
     let handle = ensure_file_contents_handle_for_input(db, file_input);
-    // HIGH durability: those type of files change only when the build tool re-runs.
-    // For regular compiling use cases the durability does not matter, as the inputs do not change
-    // during compilation.
+    // HIGH durability: set rarely.
     handle.set_content(db).with_durability(Durability::HIGH).to(content.map(ArcStr::new));
 }
 
@@ -638,15 +636,25 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
 ///
 /// # Invalidation
 ///
-/// Reads [`FilesGroupInput::file_contents_revision`] as a structural dependency so that this
-/// query re-executes when a [`FileContentOverride`] handle is first created for a
-/// previously-unregistered file.
+/// For files that already have a [`FileContentOverride`] handle, depends directly on
+/// [`FileContentOverride::content`] — only that file's query is invalidated when its content
+/// changes.
+///
+/// For files without a handle, reads [`FilesGroupInput::file_contents_revision`] so the query
+/// re-executes when a handle is first created for that file, switching to the per-file dependency
+/// from that point on.
 #[salsa::tracked(returns(ref))]
 fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<str>> {
-    let _ = files_group_input(db).file_contents_revision(db);
     maybe_file_content_view(db)
-        .and_then(|view| view.file_content_override(file_id))
-        .map(|content| (**content).clone())
+        .and_then(|view| {
+            let file_input = view.file_input(file_id);
+            if let Some(file_contents) = view.file_contents_for_input(file_input) {
+                file_contents.content(view).as_ref().map(|content| (**content).clone())
+            } else {
+                let _ = files_group_input(db).file_contents_revision(db);
+                None
+            }
+        })
         .or_else(|| {
             priv_raw_file_content(db, file_id).map(|content| content.long(db).clone().into())
         })
