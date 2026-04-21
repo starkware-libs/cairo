@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776644205219,
+  "lastUpdate": 1776730836294,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1735,6 +1735,52 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib",
             "value": 1521423329,
             "range": "± 9760109",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "orizi",
+            "username": "orizi",
+            "email": "104711814+orizi@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "fb7d0bc35140dc096d436f87e9d4b61419766443",
+          "message": "Merge dev v2.18.0 into main (#9861)",
+          "timestamp": "2026-04-20T15:50:23Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/fb7d0bc35140dc096d436f87e9d4b61419766443"
+        },
+        "date": 1776730835638,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib: cairo-to-sierra",
+            "value": 1518880831,
+            "range": "± 22332124",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "compile/fib: cairo-to-diagnostics",
+            "value": 923915652,
+            "range": "± 25267991",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "compile/fib: cairo-to-cache",
+            "value": 294598533,
+            "range": "± 2961089",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "compile/fib: cache-to-sierra",
+            "value": 1526522195,
+            "range": "± 16271090",
             "unit": "ns/iter"
           }
         ]
