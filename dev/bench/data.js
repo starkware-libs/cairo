@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776730836294,
+  "lastUpdate": 1776817052544,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -1781,6 +1781,52 @@ window.BENCHMARK_DATA = {
             "name": "compile/fib: cache-to-sierra",
             "value": 1526522195,
             "range": "± 16271090",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Elena343-ai",
+            "username": "Elena343-ai",
+            "email": "elenasmithth@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "9de65e878c4e24b9cfee1efe283c6d62485cd30a",
+          "message": "docs: clarify mixed comparison/equality operators (#9862)",
+          "timestamp": "2026-04-21T08:43:53Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/9de65e878c4e24b9cfee1efe283c6d62485cd30a"
+        },
+        "date": 1776817051490,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "compile/fib: cairo-to-sierra",
+            "value": 1590473108,
+            "range": "± 12393938",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "compile/fib: cairo-to-diagnostics",
+            "value": 946023859,
+            "range": "± 17007780",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "compile/fib: cairo-to-cache",
+            "value": 291788993,
+            "range": "± 2011545",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "compile/fib: cache-to-sierra",
+            "value": 1581894746,
+            "range": "± 18493997",
             "unit": "ns/iter"
           }
         ]
