@@ -269,7 +269,13 @@ pub struct ComputationContext<'ctx, 'mt> {
     /// Whether variables defined in the current macro scope should be injected into the parent
     /// scope.
     macro_defined_var_unhygienic: bool,
+    /// Current nesting depth of expression semantic computation; used to bail out with a clean
+    /// diagnostic before recursion overflows the native stack.
+    expr_depth: usize,
 }
+
+/// Cap on expression nesting depth, to avoid stack overflow in the recursive walker.
+pub const MAX_EXPR_NESTING_DEPTH: usize = 256;
 impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
     /// Creates a new computation context.
     pub fn new(
@@ -297,6 +303,7 @@ impl<'ctx, 'mt> ComputationContext<'ctx, 'mt> {
             cfg_set,
             are_closures_in_context: false,
             macro_defined_var_unhygienic: false,
+            expr_depth: 0,
         }
     }
 
@@ -692,7 +699,13 @@ pub fn compute_expr_semantic<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     syntax: &ast::Expr<'db>,
 ) -> ExprAndId<'db> {
-    let expr = maybe_compute_expr_semantic(ctx, syntax);
+    ctx.expr_depth += 1;
+    let expr = if ctx.expr_depth > MAX_EXPR_NESTING_DEPTH {
+        Err(ctx.diagnostics.report(syntax.stable_ptr(ctx.db), ExpressionNestingTooDeep))
+    } else {
+        maybe_compute_expr_semantic(ctx, syntax)
+    };
+    ctx.expr_depth -= 1;
     let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr(ctx.db));
     let id = ctx.arenas.exprs.alloc(expr.clone());
     ExprAndId { expr, id }

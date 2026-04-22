@@ -1205,6 +1205,12 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::UnsupportedItemInStatement => {
                 "Item not supported as a statement.".into()
             }
+            SemanticDiagnosticKind::ExpressionNestingTooDeep => {
+                format!(
+                    "Expression nesting exceeds maximum depth of {}.",
+                    crate::expr::compute::MAX_EXPR_NESTING_DEPTH
+                )
+            }
         }
     }
     fn location(&self, db: &'db dyn Database) -> SpanInFile<'db> {
@@ -1468,6 +1474,7 @@ impl<'db> DiagnosticEntry<'db> for SemanticDiagnostic<'db> {
             SemanticDiagnosticKind::NonNeverLetElseType => error_code!(E2195),
             SemanticDiagnosticKind::OnlyTypeOrConstParamsInNegImpl => error_code!(E2196),
             SemanticDiagnosticKind::UnsupportedItemInStatement => error_code!(E2197),
+            SemanticDiagnosticKind::ExpressionNestingTooDeep => error_code!(E2198),
             SemanticDiagnosticKind::PluginDiagnostic(diag) => {
                 diag.error_code.unwrap_or(error_code!(E2200))
             }
@@ -1891,6 +1898,7 @@ pub enum SemanticDiagnosticKind<'db> {
     NonNeverLetElseType,
     OnlyTypeOrConstParamsInNegImpl,
     UnsupportedItemInStatement,
+    ExpressionNestingTooDeep,
 }
 
 /// The kind of an expression with multiple possible return types.
