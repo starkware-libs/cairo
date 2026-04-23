@@ -236,6 +236,13 @@ pub struct FilesGroupInput {
     pub crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
     /// Structural revision bumped each time a new [`FileContentOverride`] handle is first created
     /// for a previously-unregistered file.
+    ///
+    /// Salsa only invalidates tracked functions based on dependencies they recorded during their
+    /// last execution. A [`file_content`] call for a file with no handle records no dependency on
+    /// that file's future [`FileContentOverride`] — so if a handle is later created, Salsa has no
+    /// recorded dependency to invalidate. This field provides the missing signal: [`file_content`]
+    /// reads it for handleless files, ensuring it re-executes when any new handle is created and
+    /// can then record the fine-grained per-file dependency going forward.
     pub file_contents_revision: u64,
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
@@ -276,10 +283,14 @@ pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContentOverride>
 /// View trait for accessing the [`FileContentStorage`] side-table from within tracked functions.
 /// Implement this on the concrete DB struct and register it with [`register_files_group_view`].
 pub trait FileContentView: Database {
+    /// Returns the [`FileContentStorage`] side-table, or `None` if this database does not hold
+    /// file content overrides.
     fn file_content_storage(&self) -> Option<&FileContentStorage> {
         None
     }
 
+    /// Returns the [`FileContentOverride`] handle for the given file input, if one has been
+    /// registered.
     fn file_contents_for_input(&self, file_input: &FileInput) -> Option<FileContentOverride> {
         self.file_content_storage()?.read().unwrap().get(file_input).copied()
     }
@@ -291,6 +302,8 @@ pub trait FileContentView: Database {
     }
 }
 
+/// Downcasts `db` to `&dyn FileContentView` through the registered Salsa view.
+/// Panics if [`register_files_group_view`] was not called for this database type.
 fn file_content_view(db: &dyn Database) -> &dyn FileContentView {
     let caster =
         catch_unwind(AssertUnwindSafe(|| *views(db).downcaster_for::<dyn FileContentView>())).ok();
@@ -300,6 +313,8 @@ fn file_content_view(db: &dyn Database) -> &dyn FileContentView {
     unsafe { caster.downcast_unchecked(db.into()) }
 }
 
+/// Downcasts `db` to `&dyn FileContentView`, or returns `None` if
+/// [`register_files_group_view`] was not called for this database type.
 fn maybe_file_content_view(db: &dyn Database) -> Option<&dyn FileContentView> {
     catch_unwind(AssertUnwindSafe(|| file_content_view(db))).ok()
 }
@@ -388,6 +403,8 @@ pub fn init_files_group<'db>(db: &mut (dyn Database + 'db)) {
     inp.set_cfg_set(db).to(Some(Default::default()));
 }
 
+/// Increments [`FilesGroupInput::file_contents_revision`] to signal that a new
+/// [`FileContentOverride`] handle has been created for a previously-unregistered file.
 fn bump_file_contents_revision(db: &mut dyn Database) {
     let next = files_group_input(db).file_contents_revision(db).saturating_add(1);
     files_group_input(db).set_file_contents_revision(db).to(next);
