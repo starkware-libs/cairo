@@ -95,7 +95,7 @@ impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
             OptimizationPhase::Cse => cse(lowered),
             OptimizationPhase::EarlyUnsafePanic => early_unsafe_panic(db, lowered),
             OptimizationPhase::DedupBlocks => dedup_blocks(lowered),
-            OptimizationPhase::OptimizeMatches => optimize_matches(lowered),
+            OptimizationPhase::OptimizeMatches => optimize_matches(db, lowered),
             OptimizationPhase::OptimizeRemappings => optimize_remappings(lowered),
             OptimizationPhase::Reboxing => apply_reboxing(db, lowered)?,
             OptimizationPhase::ReorderStatements => reorder_statements(db, lowered),

@@ -1372,86 +1372,35 @@ End:
   Match(match_enum(v0) {
     A::One(v2) => blk1,
     A::Two(v3) => blk2,
-    A::Three(v4) => blk11,
-    A::Four(v5) => blk12,
+    A::Three(v4) => blk3,
+    A::Four(v5) => blk4,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk13, {})
+  Goto(blk5, {})
 
 blk2:
 Statements:
 End:
-  Match(match_enum(v0) {
-    A::One(v6) => blk3,
-    A::Two(v7) => blk8,
-    A::Three(v8) => blk9,
-    A::Four(v9) => blk10,
-  })
+  Goto(blk5, {})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v1) {
-    A::One(v10) => blk4,
-    A::Two(v11) => blk5,
-    A::Three(v12) => blk6,
-    A::Four(v13) => blk7,
-  })
+  Goto(blk5, {})
 
 blk4:
 Statements:
-  (v14: core::felt252) <- 8
 End:
-  Return(v14)
+  Goto(blk5, {})
 
 blk5:
 Statements:
+  (v6: core::felt252) <- 4
 End:
-  Goto(blk13, {})
-
-blk6:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk7:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk8:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk9:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk10:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk11:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk12:
-Statements:
-End:
-  Goto(blk13, {})
-
-blk13:
-Statements:
-  (v15: core::felt252) <- 4
-End:
-  Return(v15)
+  Return(v6)
 
 //! > ==========================================================================
 
