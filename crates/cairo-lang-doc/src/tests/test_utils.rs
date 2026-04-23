@@ -3,8 +3,8 @@ use cairo_lang_defs::db::{DefsGroup, init_defs_group};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, CrateConfiguration, FileContentStorage, FileContentView,
-    FilesGroup, init_dev_corelib, init_files_group, new_crate_config_storage,
-    override_file_content_for_input, register_crate_config_view, register_files_group_view,
+    FilesGroup, init_dev_corelib, init_files_group, override_file_content_for_input,
+    register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
@@ -40,7 +40,7 @@ impl Default for TestDatabase {
         let mut res = Self {
             storage: Default::default(),
             file_contents: Default::default(),
-            crate_configs: new_crate_config_storage(),
+            crate_configs: Default::default(),
         };
 
         register_files_group_view(&res);

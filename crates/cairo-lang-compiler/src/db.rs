@@ -4,8 +4,8 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CORELIB_VERSION, CrateConfigStorage, CrateConfigView, FileContentStorage, FileContentView,
-    FilesGroup, init_dev_corelib, init_files_group, new_crate_config_storage,
-    register_crate_config_view, register_files_group_view,
+    FilesGroup, init_dev_corelib, init_files_group, register_crate_config_view,
+    register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -99,7 +99,7 @@ impl RootDatabase {
         let mut res = Self {
             storage: Default::default(),
             file_contents: Default::default(),
-            crate_configs: new_crate_config_storage(),
+            crate_configs: Default::default(),
         };
 
         register_files_group_view(&res);
