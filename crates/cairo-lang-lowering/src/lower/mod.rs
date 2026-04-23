@@ -1565,19 +1565,16 @@ fn lower_expr_loop<'db>(
     .intern(db);
 
     // Generate the function.
-    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
-    let loop_ctx = LoopContext { loop_expr_id, early_return_info: early_return_info.clone() };
+    let encapsulating_ctx = ctx.encapsulating_ctx.as_mut().unwrap();
     let lowered = lower_loop_function(
         encapsulating_ctx,
         function,
         loop_signature.clone(),
-        loop_ctx,
+        LoopContext { loop_expr_id, early_return_info: early_return_info.clone() },
         ctx.return_type,
     )
     .map_err(LoweringFlowError::Failed)?;
-    // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(GeneratedFunctionKey::Loop(stable_ptr), lowered);
-    ctx.encapsulating_ctx = Some(encapsulating_ctx);
     let call_loop_expr = call_loop_func_ex(
         ctx,
         loop_signature,
@@ -1949,16 +1946,14 @@ fn add_capture_destruct_impl<'db>(
 
     let location_id = LocationId::from_stable_location(db, location);
 
-    let encapsulating_ctx = ctx.encapsulating_ctx.take().unwrap();
+    let encapsulating_ctx = ctx.encapsulating_ctx.as_mut().unwrap();
     let return_type = signature.return_type;
     let lowered_impl_res = get_destruct_lowering(
         LoweringContext::new(encapsulating_ctx, function_id, signature, return_type)?,
         location_id,
         closure_info,
-    );
-    // Restore the encapsulating context before unwrapping the result.
-    ctx.encapsulating_ctx = Some(encapsulating_ctx);
-    ctx.lowerings.insert(func_key, lowered_impl_res?);
+    )?;
+    ctx.lowerings.insert(func_key, lowered_impl_res);
     Ok(())
 }
 
