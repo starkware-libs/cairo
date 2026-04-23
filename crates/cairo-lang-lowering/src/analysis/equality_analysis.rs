@@ -186,6 +186,15 @@ impl<'db> EqualityState<'db> {
         self.get_struct_construct_immut(rep)
     }
 
+    /// Looks up the enum construct info for a variable (mutable, uses find for path compression).
+    pub(crate) fn get_enum_construct(
+        &mut self,
+        var: VariableId,
+    ) -> Option<(ConcreteVariant<'db>, VariableId)> {
+        let rep = self.find(var);
+        self.get_enum_construct_immut(rep)
+    }
+
     /// Looks up the enum construct info for a representative (immutable).
     fn get_enum_construct_immut(
         &self,
