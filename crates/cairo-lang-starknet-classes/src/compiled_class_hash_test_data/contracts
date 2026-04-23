@@ -7,10 +7,10 @@ test_compiled_class_hash
 account__account
 
 //! > compiled_class_hash
-157b171a4b32501500368cd24fa28c23cd5489ea88cb8190a81ba28aa7c319a
+f91e45c24db051ab079d2d8a193d5da923e301003979dc52675a98f8e8d1af
 
 //! > legacy_compiled_class_hash
-fd82d15135051e1ac83ad3a695ed312254af902b36bfee0fb4ddaa9a84d0ff
+bf07c76a01bb40de929c23d638fa4f8c7e5d6d3e6d025406970da575a0e336
 
 //! > ==========================================================================
 
@@ -39,10 +39,10 @@ test_compiled_class_hash
 test_contract__test_contract
 
 //! > compiled_class_hash
-2e3ad85380cbeb20f09e4671ab791369a527d6ed941b4f2ec51b593291684bf
+148be50c28d387a297a32baaa8773bda81d821f993a66c132bd8a914761588a
 
 //! > legacy_compiled_class_hash
-3deb04754bccda833bd8c86c23e0e110e6ec1aa446acc98833f4f78420120d5
+4a4c40d4032c5a176196401a6bdcd59a63475aa61af64e0c0c298d1e9efbff6
 
 //! > ==========================================================================
 
@@ -103,10 +103,10 @@ test_compiled_class_hash
 libfuncs_coverage__libfuncs_coverage
 
 //! > compiled_class_hash
-572a8f8844c699a43673a1baf92b168c820520241fa73ff234e42c886f0305c
+a2ca99d5759eb2be8c45798403b6d1b128dc29a52d108b15a0fde54b7aecb3
 
 //! > legacy_compiled_class_hash
-6c10c6d327e23907417691997d5b6accb010d2006113c86ee0469a73e332b0f
+4a11c4f02b85f8caa6ac0eea5247f6df6ce17363f10aa04acbb48ad31b9ea2f
 
 //! > ==========================================================================
 
@@ -119,10 +119,10 @@ test_compiled_class_hash
 erc20__erc_20
 
 //! > compiled_class_hash
-1d287b9cffe1e8a876f86045ed7dc20f2a3247dc5a09becaf753190247fc4a0
+536dbf9ad9e4e54e398508e1c15b3bb55f551fe71de619088e6b83f0ee34a7b
 
 //! > legacy_compiled_class_hash
-884514363ea97dace7bd156b86f28a0d44c89b62db9cce312f2ec5c8e8ef0a
+2ea33b25df7a20b48bdb0ba391d583d8c6cbe023fea315131fed380bb3c2bba
 
 //! > ==========================================================================
 
@@ -135,10 +135,10 @@ test_compiled_class_hash
 token_bridge__token_bridge
 
 //! > compiled_class_hash
-43a29589f6a12b1235efd5e37c6e065b2d65577bde84efe297b95d711302f5b
+7be2cc3002817ce8ff33f5db0840c1265f684eaba436c6bc5d06f42fe0fa6b8
 
 //! > legacy_compiled_class_hash
-2e071a6e639e1e02f42af488514d488730380bce56b35a1a0243ac5d45bb755
+10b941b28f594aa3b5f54c347c2a7689316d518435752c304db41aad0a3c3d4
 
 //! > ==========================================================================
 
@@ -151,10 +151,10 @@ test_compiled_class_hash
 with_erc20__erc20_contract
 
 //! > compiled_class_hash
-37c0f651e751e9e32821c2306e9ff87ab7581324f6f46af3e712d2a7a8eb763
+7c6268329910ceb9b7d14c71f7465d3edadba4bbef9a2940a5accd5c1b80796
 
 //! > legacy_compiled_class_hash
-119c0d1645de7626c25d9688230618976509b6698fc67e9a242ff243c28d244
+5fe72ed30730aeb2603c211cf78a65de536db57fbd9fe1b05c5c7f0a916b2e5
 
 //! > ==========================================================================
 
@@ -183,10 +183,10 @@ test_compiled_class_hash
 ownable_erc20__ownable_erc20_contract
 
 //! > compiled_class_hash
-64780c13e740aa8437c0eddce2f7e46485e3124f62df1904fffb36f8308fcfd
+561de978de9b7e51ef865aff38c51998b10f61501cfbbfe324d6ba4bd518f7c
 
 //! > legacy_compiled_class_hash
-7193af086f8a6d0e37cc5af44c03fb205ca32cc262e90a77f9a1c2c949b1ecb
+6bd309c4095ec9a45278d6243483a7b04684d4bc221c08eb512e2b70bd561af
 
 //! > ==========================================================================
 
@@ -215,10 +215,10 @@ test_compiled_class_hash
 mintable__mintable_erc20_ownable
 
 //! > compiled_class_hash
-1cc45f8fde264f81ccf9b8ed02d4978397b5c3f7cf978105aacba5c20f42859
+33e03b8869535f461644bc48d877fb4a1d14ebf8378b975e3187d882e66dca0
 
 //! > legacy_compiled_class_hash
-763f11ec9edd597a20556ef91b18782ea51d95e1bb9ab8376d7417f95e84785
+7964b78c00971270441a1f39f5cfc3660bacabb2ef6a84e11b0565860ed5ac4
 
 //! > ==========================================================================
 
@@ -231,7 +231,7 @@ test_compiled_class_hash
 multi_component__contract_with_4_components
 
 //! > compiled_class_hash
-3f04f4fb63dd179aedb5c44e98103c2115c2b1896a3517387cbf62395d19706
+7f142c63f0aaacfacd44b7645e6b0a40d5d1a8e63183c16fdc990a7d853cdb8
 
 //! > legacy_compiled_class_hash
-306f70bf3f871862a792911025f07ba196d8ebe44515354476415381f2a3d8f
+484de1101e33fe668dfc727d6ea12c6429ed94db869ba82568bc3dccb00776b

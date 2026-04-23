@@ -222,7 +222,7 @@ Statements:
   (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
   () <- test::bar(v3)
 End:
-  Return(v2)
+  Return(v1)
 
 //! > ==========================================================================
 

@@ -14,6 +14,7 @@ pub mod dom;
 pub mod equality_analysis;
 pub mod forward;
 pub use forward::ForwardDataflowAnalysis;
+pub mod use_sites;
 
 #[cfg(test)]
 mod equality_analysis_test;

@@ -264,4 +264,4 @@ Statements:
   (v3: core::felt252) <- test::MyStructMyTrait::<9>::bar(v2)
   (v4: core::felt252) <- test::MyStructMyTrait::<9>::bar(v2)
 End:
-  Return(v1)
+  Return(v0)
