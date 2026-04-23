@@ -4,6 +4,8 @@
 //! dataflow framework. A block A dominates block B if every path from the
 //! entry block to B passes through A.
 
+use std::fmt;
+
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use crate::analysis::core::{DataflowAnalyzer, Direction, StatementLocation};
@@ -33,6 +35,25 @@ impl Dominators {
     /// Returns the set of dominators for the given block, if reachable.
     pub fn dominators_of(&self, block: BlockId) -> Option<&OrderedHashSet<BlockId>> {
         self.dom_sets[block.0].as_ref()
+    }
+}
+
+impl fmt::Display for Dominators {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (i, dom_set) in self.dom_sets.iter().enumerate() {
+            if i > 0 {
+                writeln!(f)?;
+            }
+            if let Some(doms) = dom_set {
+                let mut dom_list: Vec<usize> = doms.iter().map(|d| d.0).collect();
+                dom_list.sort();
+                let dom_strs: Vec<String> = dom_list.iter().map(|d| format!("blk{d}")).collect();
+                write!(f, "blk{i}: {{{}}}", dom_strs.join(", "))?;
+            } else {
+                write!(f, "blk{i}: unreachable")?;
+            }
+        }
+        Ok(())
     }
 }
 

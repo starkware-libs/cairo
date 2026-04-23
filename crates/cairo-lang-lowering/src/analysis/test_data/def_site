@@ -1,7 +1,7 @@
 //! > Test simple linear function with parameters and statement outputs
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(x: felt252, y: felt252) -> felt252 {
@@ -33,7 +33,7 @@ v2: stmt(blk0, 0)
 //! > Test match with arm variables
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(x: bool) -> felt252 {
@@ -85,7 +85,7 @@ v4: stmt(blk2, 0)
 //! > Test branch and merge with goto remapping
 
 //! > test_runner_name
-test_def_site_analysis
+test_analysis(analysis: def_site)
 
 //! > function_code
 fn foo(x: bool) -> felt252 {
