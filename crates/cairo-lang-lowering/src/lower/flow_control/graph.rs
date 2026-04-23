@@ -224,6 +224,36 @@ pub struct Downcast {
     pub out_of_range: NodeId,
 }
 
+/// Destructures a `@Array<T>` into a fixed-size array `[T; N]` via `TryInto<Span<T>, @Box<[T;
+/// N]>>`.
+///
+/// On success, the array has exactly `N` elements and the output variables are bound to them.
+/// On failure (wrong number of elements), execution continues to the `failure` node.
+pub struct SliceDestructure<'db> {
+    /// The input `@Array<T>` variable (already extracted from the Span).
+    pub input: FlowControlVar,
+    /// The element type `T`. The array size `N` is `outputs.len()`.
+    pub element_ty: semantic::TypeId<'db>,
+    /// The output element variables (if the slice has the right size).
+    pub outputs: Vec<FlowControlVar>,
+    /// The next node if the slice has the right number of elements.
+    pub success: NodeId,
+    /// The next node if the slice doesn't have the right number of elements.
+    pub failure: NodeId,
+}
+
+impl<'db> std::fmt::Debug for SliceDestructure<'db> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Ignore the element type for the debug output, it requires the db for formatting and is
+        // not interesting enough.
+        let SliceDestructure { input, element_ty: _, outputs, success, failure } = self;
+        write!(
+            f,
+            "SliceDestructure {{ input: {:?}, outputs: {:?}, success: {:?}, failure: {:?}}}",
+            input, outputs, success, failure,
+        )
+    }
+}
 /// An arm (final node) that returns a tuple of bound variables for the let-else success arm.
 ///
 /// See [crate::lower::lower_let_else::lower_let_else] for more details.
@@ -257,6 +287,9 @@ pub enum FlowControlNode<'db> {
     Upcast(Upcast),
     /// Downcasts a value to a smaller type.
     Downcast(Downcast),
+    /// Unpacks an `@Array<T>` (already extracted from a `Span<T>`) into a fixed-size array
+    /// `[T; N]`.
+    SliceDestructure(SliceDestructure<'db>),
     /// An arm (final node) that returns a tuple of bound variables for the let-else success arm.
     LetElseSuccess(LetElseSuccess<'db>),
     /// An arm (final node) that returns a unit value - `()`.
@@ -285,6 +318,7 @@ impl<'db> FlowControlNode<'db> {
             FlowControlNode::BindVar(node) => Some(node.input),
             FlowControlNode::Upcast(node) => Some(node.input),
             FlowControlNode::Downcast(node) => Some(node.input),
+            FlowControlNode::SliceDestructure(node) => Some(node.input),
             FlowControlNode::LetElseSuccess(..) => None,
             FlowControlNode::UnitResult => None,
             FlowControlNode::Missing(_) => None,
@@ -306,6 +340,7 @@ impl<'db> Debug for FlowControlNode<'db> {
             FlowControlNode::BindVar(node) => node.fmt(f),
             FlowControlNode::Upcast(node) => node.fmt(f),
             FlowControlNode::Downcast(node) => node.fmt(f),
+            FlowControlNode::SliceDestructure(node) => node.fmt(f),
             FlowControlNode::LetElseSuccess(node) => node.fmt(f),
             FlowControlNode::UnitResult => write!(f, "UnitResult"),
             FlowControlNode::Missing(_) => write!(f, "Missing"),
