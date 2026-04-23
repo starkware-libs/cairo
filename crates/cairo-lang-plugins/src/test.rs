@@ -9,8 +9,8 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, CrateConfiguration, FileContentStorage, FileContentView,
-    FilesGroup, files_group_input, init_files_group, new_crate_config_storage,
-    override_file_content_for_input, register_crate_config_view, register_files_group_view,
+    FilesGroup, files_group_input, init_files_group, override_file_content_for_input,
+    register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, SmolStrId,
@@ -78,7 +78,7 @@ impl Default for DatabaseForTesting {
         let mut res = Self {
             storage: Default::default(),
             file_contents: Default::default(),
-            crate_configs: new_crate_config_storage(),
+            crate_configs: Default::default(),
         };
 
         register_files_group_view(&res);
