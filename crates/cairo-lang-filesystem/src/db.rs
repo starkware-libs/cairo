@@ -229,8 +229,8 @@ pub type ExtAsVirtual =
 
 #[salsa::input]
 pub struct FilesGroupInput {
-    /// Structural revision for databases that source crate configurations from a granular side
-    /// table. Queries like `crate_configs()` use this to observe newly inserted handles.
+    /// Structural revision bumped each time a new [`CrateConfig`] handle is first created for a
+    /// previously-unregistered crate.
     pub crate_configs_revision: u64,
     /// Structural revision bumped each time a new [`FileContentOverride`] handle is first created
     /// for a previously-unregistered file.
@@ -284,18 +284,23 @@ pub struct FileContent {
 /// `Arc<RwLock<...>>`, so the snapshot is fully isolated from subsequent changes to the original.
 pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContent>>>;
 
-/// Per-crate configuration input used by long-running tools that need granular invalidation.
+/// Input used for overriding the configuration of a single crate.
+///
+/// Notice that this structure holds a configuration override for a single crate only — not the
+/// whole map of configurations for all crates. This is done to ensure granular invalidation —
+/// so that we don't invalidate everything when a single crate's configuration changes.
 #[salsa::input]
 pub struct CrateConfig {
     #[returns(ref)]
     pub config: Option<CrateConfigurationInput>,
 }
 
+/// Side-table mapping each crate to its [`CrateConfig`] Salsa input.
+///
+/// Lives on the concrete database struct (outside Salsa storage) so that new handles can be
+/// created with `&mut dyn Database` while existing ones are read from within tracked functions
+/// via [`CrateConfigView`].
 pub type CrateConfigStorage = Arc<RwLock<HashMap<CrateInput, CrateConfig>>>;
-
-pub fn new_crate_config_storage() -> CrateConfigStorage {
-    Default::default()
-}
 
 /// View trait for accessing the [`FileContentStorage`] side-table from within tracked functions.
 /// Implement this on the concrete DB struct and register it with [`register_files_group_view`].
@@ -345,7 +350,8 @@ where
     });
 }
 
-/// Database view used by [`FilesGroup::crate_config`] to retrieve crate configuration.
+/// View trait for accessing the [`CrateConfigStorage`] side-table from within tracked functions.
+/// Implement this on the concrete DB struct and register it with [`register_crate_config_view`].
 pub trait CrateConfigView: Database {
     fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
         None
@@ -395,6 +401,10 @@ fn crate_config_storage(db: &dyn Database) -> &CrateConfigStorage {
         .expect("granular crate config storage is not registered")
 }
 
+/// Registers the concrete database type `Db` as a [`CrateConfigView`].
+///
+/// Must be called once during database initialization for any database struct that holds a
+/// [`CrateConfigStorage`].
 pub fn register_crate_config_view<Db>(db: &Db)
 where
     Db: Database + CrateConfigView + 'static,
@@ -498,15 +508,24 @@ fn ensure_crate_config_handle_for_input(
     handle
 }
 
+/// Sets the configuration for a crate.
+/// Used by build tools to configure crates in the compilation unit.
 pub fn set_crate_config_for_input(
     db: &mut dyn Database,
     crate_input: CrateInput,
     config: Option<CrateConfigurationInput>,
 ) {
     let handle = ensure_crate_config_handle_for_input(db, crate_input);
+    // HIGH durability: crate configurations change rarely.
     handle.set_config(db).with_durability(Durability::HIGH).to(config);
 }
 
+/// Returns the map of all crate configurations.
+///
+/// # Invalidation
+///
+/// Reads [`FilesGroupInput::crate_configs_revision`] so the query re-executes when a
+/// [`CrateConfig`] handle is first created for a previously-unregistered crate.
 #[salsa::tracked(returns(ref))]
 pub fn crate_configs<'db>(
     db: &'db dyn Database,
@@ -666,6 +685,8 @@ pub fn snapshot_file_contents(db: &dyn Database) -> FileContentSnapshot {
         .collect()
 }
 
+/// Returns a snapshot of all per-crate configurations registered in this database.
+/// Useful for copying configurations from one database to another.
 pub fn snapshot_crate_configs(
     db: &dyn Database,
 ) -> OrderedHashMap<CrateInput, CrateConfigurationInput> {
@@ -691,6 +712,11 @@ fn crates<'db>(db: &'db dyn Database) -> Vec<CrateId<'db>> {
 }
 
 /// Tracked function to return the configuration of a crate.
+///
+/// # Invalidation
+///
+/// Reads [`FilesGroupInput::crate_configs_revision`] so the query re-executes when a
+/// [`CrateConfig`] handle is first created for a previously-unregistered crate.
 #[salsa::tracked(returns(ref))]
 fn crate_config_helper<'db>(
     db: &'db dyn Database,

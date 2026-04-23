@@ -1,6 +1,6 @@
 use crate::db::{
     CrateConfigStorage, CrateConfigView, FileContentStorage, FileContentView, init_files_group,
-    new_crate_config_storage, register_crate_config_view, register_files_group_view,
+    register_crate_config_view, register_files_group_view,
 };
 
 // Test salsa database.
@@ -30,7 +30,7 @@ impl Default for FilesDatabaseForTesting {
         let mut res = Self {
             storage: Default::default(),
             file_contents: Default::default(),
-            crate_configs: new_crate_config_storage(),
+            crate_configs: Default::default(),
         };
 
         register_files_group_view(&res);

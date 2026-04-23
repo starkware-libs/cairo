@@ -6,7 +6,7 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, CrateSettings, Edition, ExperimentalFeaturesConfig,
     FileContentStorage, FileContentView, init_dev_corelib, init_files_group,
-    new_crate_config_storage, register_crate_config_view, register_files_group_view,
+    register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{
@@ -58,7 +58,7 @@ impl SemanticDatabaseForTesting {
         let mut res = SemanticDatabaseForTesting {
             storage: Default::default(),
             file_contents: Default::default(),
-            crate_configs: new_crate_config_storage(),
+            crate_configs: Default::default(),
         };
         register_files_group_view(&res);
         register_crate_config_view(&res);

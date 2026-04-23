@@ -4,7 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, init_dev_corelib, init_files_group,
-    new_crate_config_storage, register_crate_config_view,
+    register_crate_config_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -37,7 +37,7 @@ impl LoweringDatabaseForTesting {
     pub fn new() -> Self {
         let mut res = LoweringDatabaseForTesting {
             storage: Default::default(),
-            crate_configs: new_crate_config_storage(),
+            crate_configs: Default::default(),
         };
         register_crate_config_view(&res);
         init_external_files(&mut res);
