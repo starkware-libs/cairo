@@ -5,8 +5,7 @@ use cairo_lang_defs::db::{DefsGroup, init_defs_group, init_external_files};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CrateConfigStorage, CrateConfigView, FileContentStorage, FileContentView, init_dev_corelib,
-    init_files_group, new_crate_config_storage, register_crate_config_view,
-    register_files_group_view,
+    init_files_group, register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::flag::{Flag, FlagsGroup};
@@ -81,7 +80,7 @@ impl SierraGenDatabaseForTesting {
         let mut res = SierraGenDatabaseForTesting {
             storage: Default::default(),
             file_contents: Default::default(),
-            crate_configs: new_crate_config_storage(),
+            crate_configs: Default::default(),
         };
         register_files_group_view(&res);
         register_crate_config_view(&res);
