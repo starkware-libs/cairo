@@ -13,10 +13,10 @@ use crate::analysis::forward::ForwardDataflowAnalysis;
 use crate::{BlockEnd, BlockId, Lowered, Statement};
 
 /// Result of def-site analysis: the def location for each variable, indexed by arena index.
-pub struct DefSites(pub Vec<DefLocation>);
+pub struct DefSites(pub Vec<Option<DefLocation>>);
 
 impl std::ops::Deref for DefSites {
-    type Target = [DefLocation];
+    type Target = [Option<DefLocation>];
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -26,7 +26,10 @@ impl fmt::Debug for DefSites {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut list = f.debug_list();
         for (idx, def) in self.0.iter().enumerate() {
-            list.entry(&format_args!("v{idx}: {def:?}"));
+            match def {
+                Some(loc) => list.entry(&format_args!("v{idx}: {loc:?}")),
+                None => list.entry(&format_args!("v{idx}: undefined")),
+            };
         }
         list.finish()
     }
@@ -36,14 +39,10 @@ impl fmt::Debug for DefSites {
 pub struct DefSiteAnalysis<'db, 'a> {
     lowered: &'a Lowered<'db>,
     /// First-available location for each variable, indexed by variable arena index.
-    /// Slots hold [`UNRESOLVED`] until the traversal reaches them; `analyze` asserts the
-    /// placeholder is gone before returning.
-    def_sites: Vec<DefLocation>,
+    /// Slots stay `None` until the traversal reaches them; slots that remain `None` correspond
+    /// to variables in unreachable blocks.
+    def_sites: Vec<Option<DefLocation>>,
 }
-
-/// Sentinel placeholder for `def_sites` slots before the traversal reaches them. Uses an
-/// out-of-range `BlockId` so it cannot collide with any real def location.
-const UNRESOLVED: DefLocation = DefLocation::Statement((BlockId(usize::MAX), usize::MAX));
 
 impl DefSiteAnalysis<'_, '_> {
     /// Runs def-site analysis on a lowered function.
@@ -53,15 +52,11 @@ impl DefSiteAnalysis<'_, '_> {
     /// - `BlockEntry(block)`: available at block entry (parameters, goto remappings, match arm
     ///   bindings).
     /// - `Statement((block, i))`: available after statement `i` in `block`.
+    /// - `None`: the variable's defining block is unreachable from the function entry.
     pub fn analyze(lowered: &Lowered<'_>) -> DefSites {
-        let analyzer =
-            DefSiteAnalysis { lowered, def_sites: vec![UNRESOLVED; lowered.variables.len()] };
+        let analyzer = DefSiteAnalysis { lowered, def_sites: vec![None; lowered.variables.len()] };
         let mut fwd = ForwardDataflowAnalysis::new(lowered, analyzer);
         fwd.run();
-        assert!(
-            fwd.analyzer.def_sites.iter().all(|d| *d != UNRESOLVED),
-            "DefSiteAnalysis left variables unresolved"
-        );
         DefSites(fwd.analyzer.def_sites)
     }
 }
@@ -72,7 +67,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for DefSiteAnalysis<'db, 'a> {
 
     fn initial_info(&mut self, _block_id: BlockId, _block_end: &'a BlockEnd<'db>) -> Self::Info {
         for &param in &self.lowered.parameters {
-            self.def_sites[param.index()] = DefLocation::BlockEntry(BlockId::root());
+            self.def_sites[param.index()] = Some(DefLocation::BlockEntry(BlockId::root()));
         }
     }
 
@@ -92,7 +87,7 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for DefSiteAnalysis<'db, 'a> {
         stmt: &'a Statement<'db>,
     ) {
         for &output in stmt.outputs() {
-            self.def_sites[output.index()] = DefLocation::Statement(statement_location);
+            self.def_sites[output.index()] = Some(DefLocation::Statement(statement_location));
         }
     }
 
@@ -100,12 +95,12 @@ impl<'db, 'a> DataflowAnalyzer<'db, 'a> for DefSiteAnalysis<'db, 'a> {
         match edge {
             Edge::Goto { target, remapping } => {
                 for (&dst, _) in remapping.iter() {
-                    self.def_sites[dst.index()] = DefLocation::BlockEntry(*target);
+                    self.def_sites[dst.index()] = Some(DefLocation::BlockEntry(*target));
                 }
             }
             Edge::MatchArm { arm, .. } => {
                 for &var in &arm.var_ids {
-                    self.def_sites[var.index()] = DefLocation::BlockEntry(arm.block_id);
+                    self.def_sites[var.index()] = Some(DefLocation::BlockEntry(arm.block_id));
                 }
             }
             Edge::Return { .. } | Edge::Panic { .. } => {}

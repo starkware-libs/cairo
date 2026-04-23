@@ -242,24 +242,3 @@ fn test_forward_with_branching() {
         assert!(exit_info[block_id.0].is_some(), "Block {:?} should have exit info", block_id);
     }
 }
-
-/// Verifies the `UNRESOLVED` assert fires when an arena slot is left unreached by the traversal
-/// (a regression guard for future passes that drop defs without compacting `lowered.variables`).
-#[test]
-#[should_panic(expected = "DefSiteAnalysis left variables unresolved")]
-fn unresolved_assert_fires() {
-    let db = &mut LoweringDatabaseForTesting::default();
-    let inputs = OrderedHashMap::from([
-        ("function_code".to_string(), "fn foo(x: felt252) -> felt252 { x }".to_string()),
-        ("function_name".to_string(), "foo".to_string()),
-    ]);
-    let test_function = setup_test_function(db, &inputs).split().0;
-    let function_id =
-        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
-    let mut lowered = db.lowered_body(function_id, LoweringStage::PostBaseline).cloned().unwrap();
-    // Here we allocate an extra variable to test that `UNRESOLVED` slots are detected. Causes
-    // panic.
-    let extra = lowered.variables.iter().next().unwrap().1.clone();
-    lowered.variables.alloc(extra);
-    DefSiteAnalysis::analyze(&lowered);
-}
