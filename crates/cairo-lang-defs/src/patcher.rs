@@ -309,13 +309,27 @@ impl<'db> PatchBuilder<'db> {
     }
 
     pub fn add_node(&mut self, node: SyntaxNode<'db>) {
-        let start = TextOffset::from_str(&self.code);
-        let orig_span = node.span(self.db);
+        // Emit one CodeOrigin::Start mapping per terminal (token) for precise IDE source positions
+        // (hover, go-to-def). A whole-node fallback mapping is added after all per-token mappings
+        // so that multi-token spans (e.g. diagnostic ranges) still translate correctly via
+        // relative-offset arithmetic instead of falling through to the coarse CodeOrigin::Span
+        // added by build().
+        let node_start_in_code = TextOffset::from_str(&self.code);
+        let orig_start = node.span(self.db).start;
+        for terminal in node.tokens(self.db) {
+            let start = TextOffset::from_str(&self.code);
+            let orig_span = terminal.span(self.db);
+            self.code_mappings.push(CodeMapping {
+                span: TextSpan::new_with_width(start, orig_span.width()),
+                origin: CodeOrigin::Start(orig_span.start),
+            });
+            self.code += terminal.get_text(self.db);
+        }
+        let node_end_in_code = TextOffset::from_str(&self.code);
         self.code_mappings.push(CodeMapping {
-            span: TextSpan::new_with_width(start, orig_span.width()),
-            origin: CodeOrigin::Start(orig_span.start),
+            span: TextSpan::new(node_start_in_code, node_end_in_code),
+            origin: CodeOrigin::Start(orig_start),
         });
-        self.code += node.get_text(self.db);
     }
 
     fn add_mapped(&mut self, node: RewriteNode<'db>, origin: TextSpan) {
