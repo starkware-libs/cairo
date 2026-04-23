@@ -151,6 +151,18 @@ macro_rules! define_short_id {
     };
 }
 
+/// Performs the given `action` and then calls `finally`, returning the action's result.
+/// Useful for restoring states post running of an action.
+pub fn with_finally<Ctx, R>(
+    ctx: &mut Ctx,
+    action: impl FnOnce(&mut Ctx) -> R,
+    finally: impl FnOnce(&mut Ctx),
+) -> R {
+    let result = action(ctx);
+    finally(ctx);
+    result
+}
+
 /// Returns `Some(())` if the condition is true, otherwise `None`.
 ///
 /// Useful in functions returning `None` on some condition:
