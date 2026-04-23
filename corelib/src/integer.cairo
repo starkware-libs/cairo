@@ -306,6 +306,39 @@ pub(crate) extern const fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits
 
 pub extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
+/// Reverses the byte order of a `u16` value.
+///
+/// # Examples
+///
+/// ```
+/// assert!(u16_byte_reverse(0x0102) == 0x0201);
+/// ```
+pub fn u16_byte_reverse(input: u16) -> u16 {
+    (u128_byte_reverse(input.into()) / 0x10000000000000000000000000000_u128).try_into().unwrap()
+}
+
+/// Reverses the byte order of a `u32` value.
+///
+/// # Examples
+///
+/// ```
+/// assert!(u32_byte_reverse(0x01020304) == 0x04030201);
+/// ```
+pub fn u32_byte_reverse(input: u32) -> u32 {
+    (u128_byte_reverse(input.into()) / 0x1000000000000000000000000_u128).try_into().unwrap()
+}
+
+/// Reverses the byte order of a `u64` value.
+///
+/// # Examples
+///
+/// ```
+/// assert!(u64_byte_reverse(0x0102030405060708) == 0x0807060504030201);
+/// ```
+pub fn u64_byte_reverse(input: u64) -> u64 {
+    (u128_byte_reverse(input.into()) / 0x10000000000000000_u128).try_into().unwrap()
+}
+
 /// The 8-bit unsigned integer type.
 pub extern type u8;
 

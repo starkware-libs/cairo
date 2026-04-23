@@ -1254,6 +1254,33 @@ fn test_u128_byte_reverse() {
 }
 
 #[test]
+fn test_u16_byte_reverse() {
+    assert_eq(@integer::u16_byte_reverse(0x0102), @0x0201, 'Wrong byte reverse');
+    assert_eq(@integer::u16_byte_reverse(0x0000), @0x0000, 'Wrong byte reverse');
+    assert_eq(@integer::u16_byte_reverse(0xffff), @0xffff, 'Wrong byte reverse');
+}
+
+#[test]
+fn test_u32_byte_reverse() {
+    assert_eq(@integer::u32_byte_reverse(0x01020304), @0x04030201, 'Wrong byte reverse');
+    assert_eq(@integer::u32_byte_reverse(0x00000000), @0x00000000, 'Wrong byte reverse');
+    assert_eq(@integer::u32_byte_reverse(0xffffffff), @0xffffffff, 'Wrong byte reverse');
+}
+
+#[test]
+fn test_u64_byte_reverse() {
+    assert_eq(
+        @integer::u64_byte_reverse(0x0102030405060708), @0x0807060504030201, 'Wrong byte reverse',
+    );
+    assert_eq(
+        @integer::u64_byte_reverse(0x0000000000000000), @0x0000000000000000, 'Wrong byte reverse',
+    );
+    assert_eq(
+        @integer::u64_byte_reverse(0xffffffffffffffff), @0xffffffffffffffff, 'Wrong byte reverse',
+    );
+}
+
+#[test]
 fn test_i8_operators() {
     assert_eq(@1_i8, @1_i8, '1 == 1');
     assert_ne(@1_i8, @2_i8, '1 != 2');
