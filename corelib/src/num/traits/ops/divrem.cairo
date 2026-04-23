@@ -4,7 +4,7 @@ use crate::zeroable::NonZero;
 ///
 /// `T` – dividend type (left-hand operand)
 /// `U` – divisor  type (right-hand operand, must be wrapped in
-///       [`NonZero<U>`](core::num::non_zero::NonZero) at call-site)
+///       [`NonZero<U>`](core::zeroable::NonZero) at call-site)
 ///
 /// The division truncates toward zero, like Cairo’s `/` and `%`.
 ///
@@ -16,7 +16,8 @@ use crate::zeroable::NonZero;
 ///
 /// Identical operand types:
 /// ```cairo
-/// use core::traits::{DivRem, NonZero};
+/// use core::num::traits::DivRem;
+/// use core::zeroable::NonZero;
 ///
 /// let lhs: u32 = 7;
 /// let rhs: NonZero<u32> = 3.try_into().unwrap();
@@ -25,7 +26,7 @@ use crate::zeroable::NonZero;
 ///
 /// Heterogeneous division (`u256` by `u128`):
 /// ```cairo
-/// use core::traits::DivRem;
+/// use core::num::traits::DivRem;
 /// use integer::u256_as_non_zero;
 ///
 /// let big: u256 = 1_000_000;                    // dividend
