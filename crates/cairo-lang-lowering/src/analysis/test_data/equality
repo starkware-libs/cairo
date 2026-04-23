@@ -1456,3 +1456,80 @@ End:
 //! > analysis_state
 Block 0:
 ()() = v3, Box(v2) = v5, Box(v4) = v6, None(v3) = v4, Some(v0) = v2
+
+//! > ==========================================================================
+
+//! > Test struct construct with shared first field but different second field across branches
+
+//! > test_runner_name
+test_equality_analysis
+
+//! > function_code
+fn foo(x: @Array<felt252>, cond: bool) {
+    let s = if cond {
+        MyStruct { a: x, b: 1 }
+    } else {
+        MyStruct { a: x, b: 2 }
+    };
+    use_struct(@s);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct MyStruct {
+    a: @Array<felt252>,
+    b: felt252,
+}
+
+#[inline(never)]
+fn use_struct(s: @MyStruct) {}
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: @core::array::Array::<core::felt252>, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v1) {
+    bool::False(v2) => blk1,
+    bool::True(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252) <- 2
+  (v5: test::MyStruct) <- struct_construct(v0, v4)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk2:
+Statements:
+  (v7: core::felt252) <- 1
+  (v8: test::MyStruct) <- struct_construct(v0, v7)
+End:
+  Goto(blk3, {v8 -> v6})
+
+blk3:
+Statements:
+  (v9: test::MyStruct, v10: @test::MyStruct) <- snapshot(v6)
+  () <- test::use_struct(v10)
+End:
+  Return()
+
+//! > analysis_state
+Block 0:
+(empty)
+
+Block 1:
+False(v2) = v1, test::MyStruct(v0, v4) = v5
+
+Block 2:
+True(v3) = v1, test::MyStruct(v0, v7) = v8
+
+Block 3:
+@v6 = v10, test::MyStruct(v0, ?) = v6, v6 = v9
+
