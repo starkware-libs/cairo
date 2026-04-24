@@ -709,6 +709,36 @@ impl AnotherFoo<impl F: Foo> of Foo {
 
 //! > ==========================================================================
 
+//! > Const not with generic impl constants is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait FlagTrait {
+    const FLAG: bool;
+}
+impl AFlag of FlagTrait {
+    const FLAG: bool = true;
+}
+impl AnotherFlag<impl F: FlagTrait> of FlagTrait {
+    const FLAG: bool = !F::FLAG;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:8:24
+    const FLAG: bool = !F::FLAG;
+                       ^^^^^^^^
+
+//! > ==========================================================================
+
 //! > User-defined extern const fn in constant expression.
 
 //! > test_runner_name
