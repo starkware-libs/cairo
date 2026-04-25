@@ -20,7 +20,7 @@ pub use crate::items::functions::{
 };
 pub use crate::items::generics::{GenericArgumentId, GenericParam};
 pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
-pub use crate::items::structure::Member;
+pub use crate::items::structure::{Member, TypeMember, TypeMemberKind};
 pub use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 pub use crate::types::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId, ConcreteTypeId, TypeId, TypeLongId,
