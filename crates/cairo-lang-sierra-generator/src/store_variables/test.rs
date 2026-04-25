@@ -430,11 +430,11 @@ fn store_local_result_of_if() {
     let statements: Vec<pre_sierra::StatementWithLocation<'_>> = vec![
         dummy_simple_branch(&db, "branch", &[], 0),
         // If part.
-        dummy_simple_statement(&db, "store_temp<felt252>", &["100"], &["100"]),
+        dummy_push_values(&db, &[("100", "200")]),
         dummy_jump_statement(&db, 1),
         // Else part.
         dummy_label(&db, 0),
-        dummy_push_values(&db, &[("0", "100")]),
+        dummy_push_values(&db, &[("0", "200")]),
         // Post-if.
         dummy_label(&db, 1),
         dummy_simple_statement(&db, "nope", &[], &[]),
@@ -446,18 +446,17 @@ fn store_local_result_of_if() {
         test_add_store_statements(
             &db,
             statements,
-            OrderedHashMap::from_iter(vec![("100".into(), "200".into()),],),
+            OrderedHashMap::from_iter(vec![("200".into(), "300".into()),],),
             &["0", "100"],
         ),
         vec![
             "branch() { label_test::test::0() fallthrough() }",
-            "store_temp<felt252>(100) -> (100)",
+            "store_local<felt252>(300, 100) -> (200)",
             "jump() { label_test::test::1() }",
             "label_test::test::0:",
-            "store_temp<felt252>(0) -> (100)",
+            "store_local<felt252>(300, 0) -> (200)",
             "label_test::test::1:",
             "nope() -> ()",
-            "store_local<felt252>(200, 100) -> (100)",
             "revoke_ap() -> ()",
             "return()",
         ],
