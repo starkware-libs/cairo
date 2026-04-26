@@ -761,3 +761,92 @@ warning[E2070]: Unused constant. Consider ignoring by prefixing with `_`.
  --> lib.cairo:6:11
     const X: S = S { a: 1 };
           ^
+
+//! > ==========================================================================
+
+//! > Equality comparison with non-concrete impl const arg is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Foo {
+    const VALUE: felt252;
+}
+impl AnotherFoo<impl F: Foo> of Foo {
+    const VALUE: felt252 = if F::VALUE == 42 {
+        1
+    } else {
+        0
+    };
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:31
+    const VALUE: felt252 = if F::VALUE == 42 {
+                              ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Non-equality comparison with non-concrete impl const arg is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait Foo {
+    const VALUE: felt252;
+}
+impl AnotherFoo<impl F: Foo> of Foo {
+    const VALUE: felt252 = if F::VALUE != 42 {
+        1
+    } else {
+        0
+    };
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:31
+    const VALUE: felt252 = if F::VALUE != 42 {
+                              ^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Boolean not with non-concrete impl const arg is unsupported.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait BoolConst {
+    const VALUE: bool;
+}
+impl AnotherBoolConst<impl F: BoolConst> of BoolConst {
+    const VALUE: bool = !F::VALUE;
+}
+
+//! > expected_diagnostics
+error[E2127]: This expression is not supported as constant.
+ --> lib.cairo:5:25
+    const VALUE: bool = !F::VALUE;
+                        ^^^^^^^^^
