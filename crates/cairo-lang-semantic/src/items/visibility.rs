@@ -6,7 +6,7 @@ use salsa::Database;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics, SemanticDiagnosticsBuilder};
 
 /// Visibility of an item.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, salsa::Update)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, salsa::Update)]
 pub enum Visibility {
     Public,
     PublicInCrate,

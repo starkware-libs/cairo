@@ -15,8 +15,9 @@ use cairo_lang_semantic::items::functions::{
     FunctionsSemantic, GenericFunctionId, ImplGenericFunctionId,
 };
 use cairo_lang_semantic::items::imp::ImplLongId;
-use cairo_lang_semantic::items::structure::StructSemantic;
+use cairo_lang_semantic::items::structure::{StructSemantic, TypeMemberKind};
 use cairo_lang_semantic::items::trt::TraitSemantic;
+use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::usage::MemberPath;
 use cairo_lang_semantic::{
     ConcreteFunction, ConcreteTraitLongId, ExprVar, LocalVariable, VarId, corelib,
@@ -1808,23 +1809,42 @@ fn lower_expr_member_access<'db>(
         ));
     }
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let members = ctx
-        .db
-        .concrete_struct_members(expr.concrete_struct_id)
-        .map_err(LoweringFlowError::Failed)?;
-    let member_idx =
-        members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
-            LoweringFlowError::Failed(
-                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
-            )
-        })?;
+    let container_ty = ctx.function_body.arenas.exprs[expr.expr].ty();
+    let (_, container_long_ty) = peel_snapshots(ctx.db, container_ty);
+    let (member_tys, member_idx) = match &expr.type_member.kind {
+        TypeMemberKind::StructMember(member_id) => {
+            let semantic::ConcreteTypeId::Struct(concrete_struct_id) =
+                extract_matches!(container_long_ty, TypeLongId::Concrete)
+            else {
+                unreachable!("Container must be a struct for StructMember access")
+            };
+            let members = ctx
+                .db
+                .concrete_struct_members(concrete_struct_id)
+                .map_err(LoweringFlowError::Failed)?;
+            let member_idx =
+                members.iter().position(|(_, m)| m.id == *member_id).ok_or_else(|| {
+                    LoweringFlowError::Failed(
+                        ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
+                    )
+                })?;
+            let member_tys = members
+                .iter()
+                .map(|(_, m)| wrap_in_snapshots(ctx.db, m.ty, expr.n_snapshots))
+                .collect();
+            (member_tys, member_idx)
+        }
+        TypeMemberKind::TupleElement(idx) => {
+            let tys = extract_matches!(container_long_ty, TypeLongId::Tuple);
+            let member_tys =
+                tys.iter().map(|&ty| wrap_in_snapshots(ctx.db, ty, expr.n_snapshots)).collect();
+            (member_tys, *idx)
+        }
+    };
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
-            member_tys: members
-                .iter()
-                .map(|(_, member)| wrap_in_snapshots(ctx.db, member.ty, expr.n_snapshots))
-                .collect(),
+            member_tys,
             member_idx,
             location,
         }

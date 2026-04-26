@@ -43,11 +43,11 @@ use crate::items::free_function::FreeFunctionSemantic;
 use crate::items::function_with_body::FunctionWithBodySemantic;
 use crate::items::generics::GenericParamSemantic;
 use crate::items::imp::ImplSemantic;
-use crate::items::structure::StructSemantic;
+use crate::items::structure::{StructSemantic, TypeMemberKind};
 use crate::items::trt::TraitSemantic;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter};
-use crate::types::resolve_type;
+use crate::types::{peel_snapshots, resolve_type};
 use crate::{
     Arenas, ConcreteFunction, ConcreteTypeId, ConcreteVariant, Condition, Expr, ExprBlock,
     ExprConstant, ExprFunctionCall, ExprFunctionCallArg, ExprId, ExprMemberAccess, ExprStructCtor,
@@ -1162,11 +1162,23 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             // A semantic diagnostic should have been reported.
             return Err(skip_diagnostic());
         };
-        let members = self.db.concrete_struct_members(expr.concrete_struct_id)?;
-        let Some(member_idx) = members.iter().position(|(_, member)| member.id == expr.member)
-        else {
-            // A semantic diagnostic should have been reported.
-            return Err(skip_diagnostic());
+        let member_idx = match &expr.type_member.kind {
+            TypeMemberKind::StructMember(member_id) => {
+                let container_ty = self.arenas.exprs[expr.expr].ty();
+                let (_, container_long_ty) = peel_snapshots(self.db, container_ty);
+                let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) =
+                    container_long_ty
+                else {
+                    return Err(skip_diagnostic());
+                };
+                let members = self.db.concrete_struct_members(concrete_struct_id)?;
+                let Some(idx) = members.iter().position(|(_, m)| m.id == *member_id) else {
+                    // A semantic diagnostic should have been reported.
+                    return Err(skip_diagnostic());
+                };
+                idx
+            }
+            TypeMemberKind::TupleElement(idx) => *idx,
         };
         Ok(values[member_idx])
     }

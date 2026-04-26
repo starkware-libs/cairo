@@ -462,6 +462,8 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, PatternMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, LocalVariable, $($exclude)*);
         $crate::prune_single!(__regular_helper, Member, $($exclude)*);
+        $crate::prune_single!(__regular_helper, TypeMember, $($exclude)*);
+        $crate::prune_single!(__regular_helper, TypeMemberKind, $($exclude)*);
     };
 }
 
