@@ -79,6 +79,16 @@ Chained equality such as `a == b == c` is also not supported.
 Write it as separate equality comparisons combined with `&&`, for example:
 `a == b && b == c`.
 
+Mixed consecutive comparison/equality operators are also not supported, for example
+`a < b == c` or `a == b < c`.
+Make the intent explicit with conjunctions or parentheses:
+
+[source,cairo]
+----
+let in_range_and_equal = a < b && b == c;
+let bool_comparison = (a < b) == expected;
+----
+
 == Implementing operators for custom types
 
 Most binary operators in Cairo (arithmetics, comparison, bitwise, etc.) are
