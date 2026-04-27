@@ -88,7 +88,7 @@ use class_hash::{
 
 // Not `pub` on purpose, only used for direct reexport by the next line.
 mod info;
-pub use info::v2::{ExecutionInfo, ResourceBounds as ResourcesBounds, TxInfo};
+pub use info::v3::{ExecutionInfo, ResourceBounds as ResourcesBounds, TxInfo};
 pub use info::{
     BlockInfo, get_block_info, get_block_number, get_block_timestamp, get_caller_address,
     get_contract_address, get_execution_info, get_tx_info,
@@ -125,7 +125,7 @@ pub trait SyscallResultTrait<T> {
     /// # Examples
     ///
     /// ```
-    /// let result = starknet::syscalls::get_execution_info_v2_syscall();
+    /// let result = starknet::syscalls::get_execution_info_v3_syscall();
     /// let info = result.unwrap_syscall();
     /// ```
     fn unwrap_syscall(self: SyscallResult<T>) -> T;
@@ -138,6 +138,46 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
             Err(revert_reason) => panic(revert_reason),
         }
     }
+}
+
+/// Trait for providing the class hash used to forward interface calls via library calls.
+///
+/// Each `#[starknet::interface]` trait `IFoo` generates a `IFooForwardImpl` that implements
+/// `IFoo<TContractState>` for any `TContractState` satisfying this trait. Every method in
+/// `IFooForwardImpl` forwards the call as a library call to the class hash returned by
+/// `class_hash`.
+///
+/// Implement this trait on a contract's `ContractState` to specify which `ClassHash` to use
+/// when forwarding — typically a stored implementation address, as in a proxy contract.
+///
+/// # Examples
+///
+/// ```
+/// #[starknet::interface]
+/// trait IFoo<TContractState> {
+///     fn foo(self: @TContractState) -> felt252;
+/// }
+///
+/// #[starknet::contract]
+/// mod my_proxy {
+///     #[storage]
+///     struct Storage {
+///         implementation: starknet::ClassHash,
+///     }
+///
+///     impl ForwardingClassHashImpl of starknet::ForwardingClassHash<ContractState> {
+///         fn class_hash(self: @ContractState) -> starknet::ClassHash {
+///             self.implementation.read()
+///         }
+///     }
+///
+///     #[abi(embed_v0)]
+///     impl FooImpl = super::IFooForwardImpl<ContractState>;
+/// }
+/// ```
+#[unstable(feature: "forward-impl")]
+pub trait ForwardingClassHash<TContractState> {
+    fn class_hash(self: @TContractState) -> ClassHash;
 }
 
 /// The expected return value of the `__validate__` function in account contracts.

@@ -153,12 +153,12 @@ error[E0006]: Function not found.
     let (a, b, c) = undefined();
                     ^^^^^^^^^
 
-error[E2106]: Unexpected type for fixed size array pattern. "(<missing>, <missing>, <missing>)" is not a fixed size array or a span.
+error[E2103]: Mismatched types: pattern cannot match against type "(<missing>, <missing>, <missing>)".
  --> lib.cairo:3:9
     let [d, e, f] = (a, b, c);
         ^^^^^^^^^
 
-error[E2105]: Unexpected type for tuple pattern. "[<missing>; 3]" is not a tuple.
+error[E2103]: Mismatched types: pattern cannot match against type "[<missing>; 3]".
  --> lib.cairo:4:9
     let (g, h, i) = [d, e, f];
         ^^^^^^^^^

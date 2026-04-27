@@ -31,7 +31,7 @@ return([3])
 //! > Test that boxing a member of a boxed struct does not do any copying.
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(a: Box<u256>) -> Box<u128> {
@@ -62,7 +62,7 @@ return([2])
 //! > Test reboxing if a member of a snaphosted boxed struct.
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(a: @Box<u256>) -> Box<u128> {
@@ -91,7 +91,7 @@ return([3])
 //! > Test reboxing of a non-copyable member of a snapshotted boxed struct.
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(box: Box<@A>) -> Box<@Array<felt252>> {
@@ -124,7 +124,7 @@ return([1])
 //! > Test reboxing of a boxed snapshotted struct.
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(box: Box<@A>) -> Box<@Array<felt252>> {
@@ -157,7 +157,7 @@ return([1])
 //! > Test reboxing of a boxed, repeatedly snapshotted struct.
 
 //! > test_runner_name
-test_function_generator(future_sierra: true)
+test_function_generator
 
 //! > function_code
 fn foo(box: Box<@@@A>) -> Box<@@@Array<felt252>> {

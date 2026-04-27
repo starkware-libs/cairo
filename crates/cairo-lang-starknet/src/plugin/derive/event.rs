@@ -358,7 +358,7 @@ fn append_field<'db>(member_kind: EventFieldKind, field: RewriteNode<'db>) -> Re
     }
 }
 
-/// Returns the the relevant deserialize code for a field.
+/// Returns the relevant deserialize code for a field.
 fn deserialize_member_code(member_kind: EventFieldKind) -> &'static str {
     match member_kind {
         EventFieldKind::Nested | EventFieldKind::Flat => {

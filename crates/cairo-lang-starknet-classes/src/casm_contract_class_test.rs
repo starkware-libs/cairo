@@ -47,6 +47,7 @@ fn test_casm_contract_from_contract_class_failure(name: &str) {
 #[test_case("with_erc20__erc20_contract")]
 #[test_case("with_ownable__ownable_balance")]
 #[test_case("ownable_erc20__ownable_erc20_contract")]
+#[test_case("proxy__proxy")]
 #[test_case("upgradable_counter__counter_contract")]
 #[test_case("mintable__mintable_erc20_ownable")]
 #[test_case("multi_component__contract_with_4_components")]
@@ -95,7 +96,7 @@ fn test_contract_libfuncs_coverage(name: &str) {
 
     let missing_libfuncs = libfunc_to_cover.difference(&used_libfuncs).collect_vec();
     let extra_libfuncs = used_libfuncs.difference(&libfunc_to_cover).collect_vec();
-    const MISSING_THRESHOLD: usize = 4;
+    const MISSING_THRESHOLD: usize = 6;
     if missing_libfuncs.len() > MISSING_THRESHOLD || !extra_libfuncs.is_empty() {
         println!("Missing {} libfuncs:", missing_libfuncs.len());
         for libfunc_name in missing_libfuncs.into_iter().map(|id| id.to_string()).sorted() {

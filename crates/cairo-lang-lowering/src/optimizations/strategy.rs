@@ -62,11 +62,21 @@ pub enum OptimizationPhase<'db> {
     },
 }
 
-impl<'db> OptimizationPhase<'db> {
-    /// Applies the optimization phase to the lowering.
+/// Trait for application of an optimization phase or strategy on a lowered function.
+pub trait ApplyOptimization<'db> {
+    /// Applies the optimization to the lowering.
     ///
     /// Assumes `lowered` is a lowering of `function`.
-    pub fn apply(
+    fn apply(
+        &self,
+        db: &'db dyn Database,
+        function: ConcreteFunctionWithBodyId<'db>,
+        lowered: &mut Lowered<'db>,
+    ) -> Maybe<()>;
+}
+
+impl<'db> ApplyOptimization<'db> for OptimizationPhase<'db> {
+    fn apply(
         &self,
         db: &'db dyn Database,
         function: ConcreteFunctionWithBodyId<'db>,
@@ -104,12 +114,12 @@ impl<'db> OptimizationPhase<'db> {
             OptimizationPhase::SubStrategy { strategy, iterations } => {
                 for _ in 1..*iterations {
                     let before = lowered.clone();
-                    strategy.apply_strategy(db, function, lowered)?;
+                    strategy.apply(db, function, lowered)?;
                     if *lowered == before {
                         return Ok(());
                     }
                 }
-                strategy.apply_strategy(db, function, lowered)?
+                strategy.apply(db, function, lowered)?
             }
         }
         Ok(())
@@ -122,21 +132,31 @@ define_short_id!(OptimizationStrategyId, OptimizationStrategy<'db>);
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update, HeapSize)]
 pub struct OptimizationStrategy<'db>(pub Vec<OptimizationPhase<'db>>);
 
-impl<'db> OptimizationStrategyId<'db> {
-    /// Applies the optimization strategy phase to the lowering.
-    ///
-    /// Assumes `lowered` is a lowering of `function`.
-    pub fn apply_strategy(
-        self,
+impl<'db> ApplyOptimization<'db> for [OptimizationPhase<'db>] {
+    fn apply(
+        &self,
         db: &'db dyn Database,
         function: ConcreteFunctionWithBodyId<'db>,
         lowered: &mut Lowered<'db>,
     ) -> Maybe<()> {
-        for phase in &self.long(db).0 {
+        for phase in self {
             phase.apply(db, function, lowered)?;
         }
-
         Ok(())
+    }
+}
+
+impl<'db> ApplyOptimization<'db> for OptimizationStrategyId<'db> {
+    /// Applies the optimization strategy phase to the lowering.
+    ///
+    /// Assumes `lowered` is a lowering of `function`.
+    fn apply(
+        &self,
+        db: &'db dyn Database,
+        function: ConcreteFunctionWithBodyId<'db>,
+        lowered: &mut Lowered<'db>,
+    ) -> Maybe<()> {
+        self.long(db).0.apply(db, function, lowered)
     }
 }
 

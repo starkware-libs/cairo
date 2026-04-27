@@ -54,7 +54,6 @@ fn priv_macro_call_data<'db>(
     {
         let (content, mapping) = expose_content_and_mapping(db, macro_call_syntax.arguments(db))?;
         let code_mappings: Arc<[CodeMapping]> = [mapping].into();
-        let parent_macro_call_data = resolver.macro_call_data;
         let generated_file_id = FileLongId::Virtual(VirtualFile {
             parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
             name: macro_name,
@@ -73,7 +72,7 @@ fn priv_macro_call_data<'db>(
             defsite_module_id: callsite_module_id,
             callsite_module_id,
             expansion_mappings: code_mappings,
-            parent_macro_call_data,
+            parent_macro_call_data: resolver.macro_call_data,
         });
     }
     let mut diagnostics = SemanticDiagnostics::new(callsite_module_id);
@@ -95,7 +94,7 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id: callsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
-                parent_macro_call_data: None,
+                parent_macro_call_data: resolver.macro_call_data,
             });
         }
         Err(diag_added) => {
@@ -105,11 +104,12 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id: callsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
-                parent_macro_call_data: None,
+                parent_macro_call_data: resolver.macro_call_data,
             });
         }
     };
     let defsite_module_id = macro_declaration_id.parent_module(db);
+    let parent_macro_call_data = resolver.macro_call_data;
     let macro_rules = match db.macro_declaration_rules(macro_declaration_id) {
         Ok(rules) => rules,
         Err(diag_added) => {
@@ -119,7 +119,7 @@ fn priv_macro_call_data<'db>(
                 defsite_module_id,
                 callsite_module_id,
                 expansion_mappings: Arc::new([]),
-                parent_macro_call_data: None,
+                parent_macro_call_data,
             });
         }
     };
@@ -136,12 +136,22 @@ fn priv_macro_call_data<'db>(
             defsite_module_id,
             callsite_module_id,
             expansion_mappings: Arc::new([]),
-            parent_macro_call_data: None,
+            parent_macro_call_data,
         });
     };
+    // If the rule has declaration-time errors, skip expansion to avoid panics on malformed rules.
+    if let Err(diag_added) = rule.err {
+        return Ok(MacroCallData {
+            macro_call_module: Err(diag_added),
+            diagnostics: diagnostics.build(),
+            defsite_module_id,
+            callsite_module_id,
+            expansion_mappings: Arc::new([]),
+            parent_macro_call_data,
+        });
+    }
     let mut matcher_ctx = MatcherContext { captures, placeholder_to_rep_id, ..Default::default() };
     let expanded_code = expand_macro_rule(db, rule, &mut matcher_ctx).unwrap();
-    let parent_macro_call_data = resolver.macro_call_data;
     let generated_file_id = FileLongId::Virtual(VirtualFile {
         parent: Some(macro_call_syntax.stable_ptr(db).untyped().span_in_file(db)),
         name: macro_name,

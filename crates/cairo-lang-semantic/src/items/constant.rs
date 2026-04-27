@@ -869,7 +869,17 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             .args
             .iter()
             .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
-            .map(|arg| self.evaluate(*arg))
+            .map(|arg| {
+                let value = self.evaluate(*arg);
+                if value.is_fully_concrete(db) || matches!(value.long(db), ConstValue::Missing(_)) {
+                    value
+                } else {
+                    to_missing(self.diagnostics.report(
+                        self.arenas.exprs[*arg].stable_ptr(),
+                        SemanticDiagnosticKind::UnsupportedConstant,
+                    ))
+                }
+            })
             .collect_vec();
         if expr.function == self.panic_with_felt252 {
             return to_missing(self.diagnostics.report(
@@ -901,32 +911,13 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return bool_value(args[0] == self.false_const);
         }
 
-        let mut all_args_concrete = true;
         let args = match args
             .into_iter()
-            .map(|arg| {
-                // Track if any argument is not fully concrete (e.g., ImplConstant with a generic
-                // impl parameter) so we can report a diagnostic if NumericArg conversion fails.
-                if !arg.is_fully_concrete(db) && !matches!(arg.long(db), ConstValue::Missing(_)) {
-                    all_args_concrete = false;
-                }
-                NumericArg::try_new(db, arg)
-            })
+            .map(|arg| NumericArg::try_new(db, arg))
             .collect::<Option<Vec<_>>>()
         {
             Some(args) => args,
-            None => {
-                return to_missing(if all_args_concrete {
-                    // Diagnostic can be skipped as there would be a semantic error for a bad arg,
-                    // or the arg itself is Missing.
-                    skip_diagnostic()
-                } else {
-                    self.diagnostics.report(
-                        expr.stable_ptr.untyped(),
-                        SemanticDiagnosticKind::UnsupportedConstant,
-                    )
-                });
-            }
+            None => return to_missing(skip_diagnostic()),
         };
         let value = match imp.function {
             id if id == self.neg_fn => -&args[0].v,
@@ -961,7 +952,10 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                 .intern(db);
             }
             _ => {
-                unreachable!("Unexpected function call in constant lowering: {:?}", expr)
+                unreachable!(
+                    "Unexpected function call in constant lowering: `{:?}`",
+                    expr.function.debug(db)
+                )
             }
         };
         if expr.ty == self.felt252 {

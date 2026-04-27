@@ -2360,3 +2360,181 @@ error[E2156]: Inline macro `not::a::path::format` not found.
  --> lib.cairo:2:5
     not::a::path::format!("");
     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test macro with empty inner repetition body (would loop infinitely without no-progress guard).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {
+    test_macro!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($()*) => { 1 };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test macro with repetition over empty subtrees (would fail to match without the subtree progress fix).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > crate_settings
+edition = "2024_07"
+[experimental_features]
+negative_impls = false
+associated_item_constraints = false
+coupons = false
+user_defined_inline_macros = true
+
+//! > function_code
+fn foo() {
+    test_macro!(() ());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro test_macro {
+    ($(())*) => { 1 };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test repetition placeholder used outside repetition in expansion.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    m!();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),*) => { $x };
+}
+
+//! > expected_diagnostics
+error[E2198]: Macro placeholder 'x' requires 1 repetition level(s) in the expansion, but is used at level 0.
+ --> lib.cairo:2:25
+    ($($x:expr),*) => { $x };
+                        ^^
+
+//! > ==========================================================================
+
+//! > Test rep placeholder used inside a nested repetition in expansion (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    m!(1, 2, 3);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),*) => { $($x)* };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test depth-0 placeholder used inside a repetition driven by a depth-1 var (valid).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    m!(1 + 2, 3, 4);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($x:expr, $($y:expr),*) => { $($x + $y),* };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing in expansion (E2199).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:47
+    ($($x:expr),* ; $($y:expr),*) => { $($x + $y),* };
+                                              ^^
+
+//! > ==========================================================================
+
+//! > Test cross-repetition placeholder mixing with mismatched outer context (prefix check).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+macro m {
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+}
+
+//! > expected_diagnostics
+error[E2199]: Macro placeholder 'y' is from a different repetition than the one driving this expansion block.
+ --> lib.cairo:2:54
+    ($($x:expr),* ; $($($y:expr),*),*) => { $($($x + $y),*),* };
+                                                     ^^

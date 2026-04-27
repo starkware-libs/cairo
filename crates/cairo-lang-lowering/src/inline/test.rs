@@ -5,7 +5,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use crate::LoweringStage;
 use crate::db::LoweringGroup;
 use crate::ids::ConcreteFunctionWithBodyId;
-use crate::optimizations::strategy::OptimizationPhase;
+use crate::optimizations::strategy::{ApplyOptimization, OptimizationPhase};
 use crate::test_utils::{LoweringDatabaseForTesting, formatted_lowered};
 
 cairo_lang_test_utils::test_file_test!(
