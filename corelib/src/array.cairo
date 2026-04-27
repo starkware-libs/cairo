@@ -302,6 +302,14 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     }
 }
 
+impl ArraySliceIndex<T> of core::ops::IndexView<Array<T>, core::ops::Range<usize>> {
+    type Target = Span<T>;
+
+    fn index(self: @Array<T>, index: core::ops::Range<usize>) -> Span<T> {
+        self.span()[index]
+    }
+}
+
 impl ArraySerde<T, +Serde<T>, +Drop<T>> of Serde<Array<T>> {
     /// Serializes an `Array<T>` into an `Array<felt252>`.
     ///
@@ -635,6 +643,15 @@ pub impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     #[inline]
     fn index(self: @Span<T>, index: usize) -> @T {
         array_at(self.snapshot, index).unbox()
+    }
+}
+
+impl SpanSliceIndex<T> of core::ops::IndexView<Span<T>, core::ops::Range<usize>> {
+    type Target = Span<T>;
+
+    #[inline]
+    fn index(self: @Span<T>, index: core::ops::Range<usize>) -> Span<T> {
+        (*self).slice(index.start, index.end - index.start)
     }
 }
 
