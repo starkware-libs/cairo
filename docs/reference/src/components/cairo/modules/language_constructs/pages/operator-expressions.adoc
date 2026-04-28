@@ -91,17 +91,77 @@ let bool_comparison = (a < b) == expected;
 
 == Implementing operators for custom types
 
-Most binary operators in Cairo (arithmetics, comparison, bitwise, etc.) are
-trait-driven and can be overloaded for custom types by implementing the
-appropriate traits from `core::traits`.
+Most operators in Cairo are trait-driven and can be overloaded for custom types by implementing
+the appropriate traits:
 
-Note that some operators like indexing `[]` and arithmetic compound assignment operators
-(`+=`, `-=`, `*=`, `/=`, `%=`) are trait-driven but their traits are located
-outside of `core::traits`.
+[cols="1,2",options="header"]
+|===
+| Operator | Trait
+
+| `+`
+| `core::traits::Add`
+
+| `-` (binary)
+| `core::traits::Sub`
+
+| `-` (unary)
+| `core::traits::Neg`
+
+| `*`
+| `core::traits::Mul`
+
+| `/`
+| `core::traits::Div`
+
+| `%`
+| `core::traits::Rem`
+
+| `&`
+| `core::traits::BitAnd`
+
+| `|`
+| `core::traits::BitOr`
+
+| `^`
+| `core::traits::BitXor`
+
+| `~`
+| `core::traits::BitNot`
+
+| `!`
+| `core::traits::Not`
+
+| `<` `>` `<=` `>=`
+| `core::traits::PartialOrd`
+
+| `==` `!=`
+| `core::traits::PartialEq`
+
+| `[]`
+| `core::ops::IndexView` (snapshot-based access) or `core::ops::Index` (read access mutates the container)
+
+| `+=`
+| `core::ops::AddAssign`
+
+| `-=`
+| `core::ops::SubAssign`
+
+| `*=`
+| `core::ops::MulAssign`
+
+| `/=`
+| `core::ops::DivAssign`
+
+| `%=`
+| `core::ops::RemAssign`
+|===
+
+Logical operators (`&&`, `||`) are built in (not trait-driven) and cannot be overloaded.
+
 Bitwise and shift compound assignment operators (`&=`, `^=`, `|=`, `<<=`, `>>=`)
 are not supported.
 
-To enable operators for custom type, implement the corresponding traits:
+To enable operators for custom types, implement the corresponding traits:
 
 [source,cairo]
 ----
