@@ -876,7 +876,7 @@ fn bar<T>(_a: T) {}
 //! > function_body
 
 //! > expected_diagnostics
-error[E1028]: Consecutive comparison operators are not allowed: '<' followed by '>'
+error[E1028]: Consecutive comparison operators are not allowed: '<' followed by '>'. If this appears in a generic path, you may be missing `::` (for example, `foo::<T>(...)`).
  --> lib.cairo:4:26
   let _fail = bar<felt252>(1);
                          ^
