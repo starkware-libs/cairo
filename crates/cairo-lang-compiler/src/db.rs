@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use anyhow::{Result, anyhow, bail};
 use cairo_lang_defs::db::{init_defs_group, init_external_files};
 use cairo_lang_diagnostics::Maybe;
@@ -77,8 +79,8 @@ pub struct RootDatabase {
 #[salsa::db]
 impl salsa::Database for RootDatabase {}
 impl FileContentView for RootDatabase {
-    fn file_content_storage(&self) -> Option<&FileContentStorage> {
-        Some(&self.file_contents)
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
     }
 }
 impl CloneableDatabase for RootDatabase {
@@ -113,7 +115,8 @@ impl RootDatabase {
 
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> RootDatabase {
-        RootDatabase { storage: self.storage.clone(), file_contents: self.file_contents.clone() }
+        let file_contents = Arc::new(RwLock::new(self.file_contents.read().unwrap().clone()));
+        RootDatabase { storage: self.storage.clone(), file_contents }
     }
 }
 

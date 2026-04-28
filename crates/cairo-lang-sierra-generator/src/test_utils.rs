@@ -41,8 +41,8 @@ pub struct SierraGenDatabaseForTesting {
 impl Database for SierraGenDatabaseForTesting {}
 
 impl FileContentView for SierraGenDatabaseForTesting {
-    fn file_content_storage(&self) -> Option<&FileContentStorage> {
-        Some(&self.file_contents)
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
     }
 }
 

@@ -283,16 +283,13 @@ pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContentOverride>
 /// View trait for accessing the [`FileContentStorage`] side-table from within tracked functions.
 /// Implement this on the concrete DB struct and register it with [`register_files_group_view`].
 pub trait FileContentView: Database {
-    /// Returns the [`FileContentStorage`] side-table, or `None` if this database does not hold
-    /// file content overrides.
-    fn file_content_storage(&self) -> Option<&FileContentStorage> {
-        None
-    }
+    /// Returns the [`FileContentStorage`] side-table.
+    fn file_content_storage(&self) -> &FileContentStorage;
 
     /// Returns the [`FileContentOverride`] handle for the given file input, if one has been
     /// registered.
     fn file_contents_for_input(&self, file_input: &FileInput) -> Option<FileContentOverride> {
-        self.file_content_storage()?.read().unwrap().get(file_input).copied()
+        self.file_content_storage().read().unwrap().get(file_input).copied()
     }
 
     /// Returns the overridden content for the given file, if one exists.
@@ -516,12 +513,7 @@ fn ensure_file_contents_handle_for_input(
     }
 
     let handle = FileContentOverride::new(db, None);
-    file_content_view(db)
-        .file_content_storage()
-        .expect("file content storage is not registered")
-        .write()
-        .unwrap()
-        .insert(file_input, handle);
+    file_content_view(db).file_content_storage().write().unwrap().insert(file_input, handle);
     bump_file_contents_revision(db);
     handle
 }
@@ -561,10 +553,7 @@ pub fn snapshot_file_contents(db: &dyn Database) -> FileContentSnapshot {
     let Some(view) = maybe_file_content_view(db) else {
         return Default::default();
     };
-    let Some(storage) = view.file_content_storage() else {
-        return Default::default();
-    };
-    storage
+    view.file_content_storage()
         .read()
         .unwrap()
         .iter()

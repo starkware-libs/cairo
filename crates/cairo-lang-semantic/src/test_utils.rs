@@ -36,8 +36,8 @@ pub struct SemanticDatabaseForTesting {
 #[salsa::db]
 impl Database for SemanticDatabaseForTesting {}
 impl FileContentView for SemanticDatabaseForTesting {
-    fn file_content_storage(&self) -> Option<&FileContentStorage> {
-        Some(&self.file_contents)
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
     }
 }
 

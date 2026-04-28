@@ -23,8 +23,8 @@ pub struct TestDatabase {
 #[salsa::db]
 impl salsa::Database for TestDatabase {}
 impl FileContentView for TestDatabase {
-    fn file_content_storage(&self) -> Option<&FileContentStorage> {
-        Some(&self.file_contents)
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
     }
 }
 

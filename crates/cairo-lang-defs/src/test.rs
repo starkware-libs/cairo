@@ -36,8 +36,8 @@ pub struct DatabaseForTesting {
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
 impl FileContentView for DatabaseForTesting {
-    fn file_content_storage(&self) -> Option<&FileContentStorage> {
-        Some(&self.file_contents)
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
     }
 }
 
