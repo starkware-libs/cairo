@@ -341,10 +341,8 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
     // TODO(spapini): This is temporary. Remove once the logic in language server doesn't use this.
     /// Get all diagnostics.
     pub fn get_all(&self) -> Vec<TEntry> {
-        let mut res = self.0.leaves.clone();
-        for subtree in &self.0.subtrees {
-            res.extend(subtree.get_all())
-        }
+        let mut res = Vec::with_capacity(self.all_count());
+        self.extend_all_into(&mut res);
         res
     }
 
@@ -353,7 +351,8 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
     /// Two diagnostics are considered duplicated if both point to
     /// the same location in the user code, and are of the same kind.
     pub fn get_diagnostics_without_duplicates(&self, db: &'db dyn Database) -> Vec<TEntry> {
-        let diagnostic_with_dup = self.get_all();
+        let mut diagnostic_with_dup = Vec::with_capacity(self.all_count());
+        self.extend_all_into(&mut diagnostic_with_dup);
         if diagnostic_with_dup.is_empty() {
             return diagnostic_with_dup;
         }
@@ -385,6 +384,19 @@ impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Diagnostics<'db, TEntry>
         builder.extend(self);
         builder.extend(other);
         builder.build()
+    }
+
+    /// Returns a total count of entries in the whole tree.
+    fn all_count(&self) -> usize {
+        self.0.leaves.len() + self.0.subtrees.iter().map(Self::all_count).sum::<usize>()
+    }
+
+    /// Appends all entries from the whole tree to the vector.
+    fn extend_all_into(&self, out: &mut Vec<TEntry>) {
+        out.extend(self.0.leaves.iter().cloned());
+        for subtree in &self.0.subtrees {
+            subtree.extend_all_into(out);
+        }
     }
 }
 impl<'db, TEntry: DiagnosticEntry<'db> + salsa::Update> Default for Diagnostics<'db, TEntry> {
