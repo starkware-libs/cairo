@@ -88,10 +88,10 @@ A u256 value is stored across two cells. For example, the value `500` is stored 
 - Cell 0 (low): `500`
 - Cell 1 (high): `0`
 
-For a full 256-bit value, you need a 64-digit hex number. The value
-`0x123456789ABCDEF0FEDCBA9876543210123456789ABCDEF0FEDCBA9876543210` is stored as:
-- Cell 0 (low): `0x123456789ABCDEF0FEDCBA9876543210` (lower 128 bits)
-- Cell 1 (high): `0x123456789ABCDEF0FEDCBA9876543210` (upper 128 bits)
+For a full 256-bit value like
+`0xAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD00000000111111112222222233333333`, it is stored as:
+- Cell 0 (low): `0x00000000111111112222222233333333` (lower 128 bits)
+- Cell 1 (high): `0xAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD` (upper 128 bits)
 
 == Enum Layout
 
@@ -117,7 +117,7 @@ For `Option<u256>`:
 === Variant Selector Encoding
 
 - **1-2 variants:** Selector is the variant index (0 or 1)
-- **3+ variants:** Selector uses a jump table encoding
+- **3+ variants:** Selector is a felt252-encoded jump offset used by the runtime
 
 Example with multiple variants:
 
@@ -182,7 +182,8 @@ let x: u256 = 100;
 let snap: @u256 = @x;  // Size: 2 (same as u256)
 ----
 
-Snapshots enable `Copy` semantics by storing the full value at a snapshot point in memory.
+A snapshot is a full copy of the value at the point it was taken, not a pointer or reference.
+This is what enables snapshots to be freely `Copy`-able regardless of whether `T` is `Copy`.
 
 === Nullable<T>
 
