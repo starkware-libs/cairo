@@ -8,8 +8,9 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, FileContentStorage, FileContentView, FilesGroup, files_group_input,
-    init_files_group, override_file_content_for_input, register_files_group_view,
+    CrateConfigStorage, CrateConfigView, CrateConfiguration, FileContentStorage, FileContentView,
+    FilesGroup, files_group_input, init_files_group, override_file_content_for_input,
+    register_crate_config_view, register_files_group_view,
 };
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, SmolStrId,
@@ -57,6 +58,7 @@ cairo_lang_test_utils::test_file_test!(
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
     file_contents: FileContentStorage,
+    crate_configs: CrateConfigStorage,
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
@@ -65,11 +67,22 @@ impl FileContentView for DatabaseForTesting {
         &self.file_contents
     }
 }
+impl CrateConfigView for DatabaseForTesting {
+    fn crate_config_storage(&self) -> Option<&CrateConfigStorage> {
+        Some(&self.crate_configs)
+    }
+}
 
 impl Default for DatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
+        let mut res = Self {
+            storage: Default::default(),
+            file_contents: Default::default(),
+            crate_configs: Default::default(),
+        };
+
         register_files_group_view(&res);
+        register_crate_config_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
