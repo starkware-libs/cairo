@@ -34,8 +34,7 @@ impl<TokenUsages: Fn(CostTokenType) -> usize> InvocationApChangeInfoProvider
 #[derive(Clone, Debug)]
 enum ApTrackingBase {
     FunctionStart(FunctionId),
-    #[expect(dead_code)]
-    EnableStatement(StatementIdx),
+    EnableStatement,
 }
 
 /// The information for ap tracking of a statement.
@@ -83,8 +82,8 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         program: &'a Program,
         program_info: &'a ProgramRegistryInfo,
         token_usages: TokenUsages,
-    ) -> Result<Self, ApChangeError> {
-        Ok(Self {
+    ) -> Self {
+        Self {
             program,
             program_info,
             token_usages,
@@ -92,7 +91,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
             infos: vec![StatementInfo::default(); program.statements.len()],
             variable_values: Default::default(),
             branches: vec![vec![]; program.statements.len()],
-        })
+         }
     }
 
     /// Calculates the locals size and function ap changes.
@@ -213,7 +212,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
         for (ap_change, target) in &self.branches[idx.0] {
             if matches!(ap_change, ApChange::EnableApTracking) {
                 self.infos[target.0].tracking_info = Some(ApTrackingInfo {
-                    base: ApTrackingBase::EnableStatement(idx),
+                    base: ApTrackingBase::EnableStatement,
                     ap_change: 0,
                 });
                 continue;
@@ -222,7 +221,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 continue;
             };
             if let Some(ap_change) =
-                self.branch_ap_change(idx, ap_change, |id| self.function_ap_change.get(id).cloned())
+               self.branch_ap_change(idx, ap_change, |id| self.function_ap_change.get(id).copied())
             {
                 base_info.ap_change += ap_change;
             } else {
@@ -259,7 +258,7 @@ impl<'a, TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>
                 continue;
             }
             let Some(change) = self
-                .branch_ap_change(idx, ap_change, |id| self.function_ap_change.get(id).cloned())
+                .branch_ap_change(idx, ap_change, |id| self.function_ap_change.get(id).copied())
             else {
                 source_ap_change = Some(base_info.ap_change);
                 continue;
@@ -337,7 +336,7 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
     program_info: &ProgramRegistryInfo,
     token_usages: TokenUsages,
 ) -> Result<ApChangeInfo, ApChangeError> {
-    let mut helper = ApChangeCalcHelper::new(program, program_info, token_usages)?;
+    let mut helper = ApChangeCalcHelper::new(program, program_info, token_usages);
     helper.calc_branches()?;
     helper.calc_locals_and_function_ap_changes()?;
     let ap_tracked_reverse_topological_ordering =
