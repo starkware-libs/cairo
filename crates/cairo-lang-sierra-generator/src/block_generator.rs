@@ -186,7 +186,7 @@ fn generate_block_code<'db>(
 
             context.maybe_set_cairo_location(Some(*statement_cairo_location));
 
-            match info {
+            match &**info {
                 lowering::MatchInfo::Extern(s) => {
                     generate_match_extern_code(context, block_gen_stack, s, &statement_location)
                 }

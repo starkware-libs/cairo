@@ -105,9 +105,9 @@ impl<'db, 'a> EarlyReturnContext<'db, 'a> {
                                 ty,
                                 self.location,
                             ));
-                            self.statements.push(Statement::EnumConstruct(
+                            self.statements.push(Statement::EnumConstruct(Box::new(
                                 StatementEnumConstruct { variant: *variant, input, output },
-                            ));
+                            )));
                             output
                         });
                     res.push(VarUsage { var_id: output, location: self.location });
@@ -511,7 +511,8 @@ impl<'db, 'a> Analyzer<'db, 'a> for ReturnOptimizerContext<'db, 'a> {
             }
 
             Statement::StructDestructure(stmt) => info.apply_deconstruct(self, stmt),
-            Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) => {
+            Statement::EnumConstruct(stmt) => {
+                let StatementEnumConstruct { variant, input, output } = &**stmt;
                 info.replace(
                     *output,
                     ValueInfo::EnumConstruct {

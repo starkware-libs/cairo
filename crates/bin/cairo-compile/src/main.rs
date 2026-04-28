@@ -7,9 +7,13 @@ use cairo_lang_compiler::{CompilerConfig, compile_cairo_project_at_path};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
 
-#[cfg(feature = "mimalloc")]
+#[cfg(all(feature = "mimalloc", not(feature = "dhat")))]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+#[cfg(feature = "dhat")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
 
 /// Options for the `inlining-strategy` arguments.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
@@ -51,6 +55,9 @@ struct Args {
 }
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(feature = "dhat")]
+    let _profiler = dhat::Profiler::new_heap();
+
     init_logging(tracing::Level::ERROR);
     log::info!("Starting Cairo compilation.");
 

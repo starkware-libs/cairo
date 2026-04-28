@@ -57,12 +57,12 @@ pub fn trim_unreachable<'db>(db: &'db dyn Database, lowered: &mut Lowered<'db>) 
 
         block.statements.truncate(0);
         block.end = BlockEnd::Match {
-            info: MatchInfo::Enum(MatchEnumInfo {
+            info: Box::new(MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: *concrete_enum_id,
                 input: VarUsage { var_id: output, location },
                 arms: vec![],
                 location,
-            }),
+            })),
         }
     }
 }

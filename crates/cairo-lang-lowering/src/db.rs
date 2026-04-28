@@ -539,7 +539,7 @@ pub(crate) fn get_direct_callees<'db>(
             BlockEnd::Goto(next, _) => stack.push(*next),
             BlockEnd::Match { info } => {
                 let mut arms = info.arms().iter();
-                if let MatchInfo::Extern(s) = info {
+                if let MatchInfo::Extern(s) = &**info {
                     direct_callees.push(s.function);
                     if DependencyType::Cost == dependency_type
                         && withdraw_gas_fns.contains(&s.function)

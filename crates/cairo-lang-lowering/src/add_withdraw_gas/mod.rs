@@ -49,7 +49,7 @@ fn add_withdraw_gas_to_function<'db>(
     let new_root_block = Block {
         statements: vec![],
         end: BlockEnd::Match {
-            info: MatchInfo::Extern(MatchExternInfo {
+            info: Box::new(MatchInfo::Extern(MatchExternInfo {
                 function: get_function_id(
                     db,
                     core_submodule(db, SmolStrId::from(db, "gas")),
@@ -77,7 +77,7 @@ fn add_withdraw_gas_to_function<'db>(
                     },
                 ],
                 location,
-            }),
+            })),
         },
     };
 
@@ -126,12 +126,12 @@ fn create_panic_block<'db>(
             is_specialization_base_call: false,
         })],
         end: BlockEnd::Match {
-            info: MatchInfo::Enum(MatchEnumInfo {
+            info: Box::new(MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: *never_enum_id,
                 input: VarUsage { var_id: never_var, location },
                 arms: vec![],
                 location,
-            }),
+            })),
         },
     })
 }
