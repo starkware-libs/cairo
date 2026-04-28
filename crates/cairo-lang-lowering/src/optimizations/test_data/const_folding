@@ -5996,6 +5996,94 @@ End:
 
 //! > ==========================================================================
 
+//! > Span pop_front known non-empty.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function_code
+fn foo() -> Option<@felt252> {
+    let mut span = array![1].span();
+    span.pop_front()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v4) {
+    Option::Some(v5, v6) => blk1,
+    Option::None(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: @core::felt252) <- unbox(v6)
+  (v9: core::option::Option::<@core::felt252>) <- Option::Some(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::option::Option::<@core::felt252>) <- Option::None(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::array::Array::<core::felt252>, v15: @core::array::Array::<core::felt252>) <- snapshot(v13)
+  (v16: core::felt252) <- 1
+  (v17: core::felt252, v18: @core::felt252) <- snapshot(v16)
+  (v19: core::box::Box::<@core::felt252>) <- into_box(v18)
+End:
+  Goto(blk1, {v15 -> v5, v19 -> v6})
+
+blk1:
+Statements:
+  (v8: @core::felt252) <- unbox(v6)
+  (v9: core::option::Option::<@core::felt252>) <- Option::Some(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::option::Option::<@core::felt252>) <- Option::None(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
 //! > Span pop_back known empty.
 
 //! > test_runner_name
@@ -6070,6 +6158,94 @@ blk3:
 Statements:
 End:
   Return(v8)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Span pop_back known non-empty.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function_code
+fn foo() -> Option<@felt252> {
+    let mut span = array![1].span();
+    span.pop_back()
+}
+
+//! > function_name
+foo
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+End:
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v4) {
+    Option::Some(v5, v6) => blk1,
+    Option::None(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: @core::felt252) <- unbox(v6)
+  (v9: core::option::Option::<@core::felt252>) <- Option::Some(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::option::Option::<@core::felt252>) <- Option::None(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v2)
+  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::array::Array::<core::felt252>, v15: @core::array::Array::<core::felt252>) <- snapshot(v13)
+  (v16: core::felt252) <- 1
+  (v17: core::felt252, v18: @core::felt252) <- snapshot(v16)
+  (v19: core::box::Box::<@core::felt252>) <- into_box(v18)
+End:
+  Goto(blk1, {v15 -> v5, v19 -> v6})
+
+blk1:
+Statements:
+  (v8: @core::felt252) <- unbox(v6)
+  (v9: core::option::Option::<@core::felt252>) <- Option::Some(v8)
+End:
+  Goto(blk3, {v9 -> v10})
+
+blk2:
+Statements:
+  (v11: ()) <- struct_construct()
+  (v12: core::option::Option::<@core::felt252>) <- Option::None(v11)
+End:
+  Goto(blk3, {v12 -> v10})
+
+blk3:
+Statements:
+End:
+  Return(v10)
 
 //! > lowering_diagnostics
 
