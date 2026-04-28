@@ -1,0 +1,144 @@
+//! > Test simple linear function with parameters and statement outputs
+
+//! > test_runner_name
+test_def_site_analysis
+
+//! > function_code
+fn foo(x: felt252, y: felt252) -> felt252 {
+    x + y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- core::felt252_add(v0, v1)
+End:
+  Return(v2)
+
+//! > result
+v0: entry(blk0)
+v1: entry(blk0)
+v2: stmt(blk0, 0)
+
+//! > ==========================================================================
+
+//! > Test match with arm variables
+
+//! > test_runner_name
+test_def_site_analysis
+
+//! > function_code
+fn foo(x: bool) -> felt252 {
+    if x {
+        1
+    } else {
+        2
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v1) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 2
+End:
+  Return(v3)
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 1
+End:
+  Return(v4)
+
+//! > result
+v0: entry(blk0)
+v1: entry(blk1)
+v2: entry(blk2)
+v3: stmt(blk1, 0)
+v4: stmt(blk2, 0)
+
+//! > ==========================================================================
+
+//! > Test branch and merge with goto remapping
+
+//! > test_runner_name
+test_def_site_analysis
+
+//! > function_code
+fn foo(x: bool) -> felt252 {
+    let y = if x {
+        1
+    } else {
+        2
+    };
+    y + 3
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v1) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::felt252) <- 2
+End:
+  Goto(blk3, {v3 -> v4})
+
+blk2:
+Statements:
+  (v5: core::felt252) <- 1
+End:
+  Goto(blk3, {v5 -> v4})
+
+blk3:
+Statements:
+  (v6: core::felt252) <- 3
+  (v7: core::felt252) <- core::felt252_add(v4, v6)
+End:
+  Return(v7)
+
+//! > result
+v0: entry(blk0)
+v1: entry(blk1)
+v2: entry(blk2)
+v3: stmt(blk1, 0)
+v4: entry(blk3)
+v5: stmt(blk2, 0)
+v6: stmt(blk3, 0)
+v7: stmt(blk3, 1)
