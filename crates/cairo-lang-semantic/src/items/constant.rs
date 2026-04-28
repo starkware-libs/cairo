@@ -903,6 +903,18 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             if condition { self.true_const } else { self.false_const }
         };
 
+        let has_non_concrete_arg = args.iter().any(|arg| {
+            !arg.is_fully_concrete(db) && !matches!(arg.long(db), ConstValue::Missing(_))
+        });
+        if (imp.function == self.eq_fn || imp.function == self.ne_fn || imp.function == self.not_fn)
+            && has_non_concrete_arg
+        {
+            return to_missing(
+                self.diagnostics
+                    .report(expr.stable_ptr.untyped(), SemanticDiagnosticKind::UnsupportedConstant),
+            );
+        }
+
         if imp.function == self.eq_fn {
             return bool_value(args[0] == args[1]);
         } else if imp.function == self.ne_fn {
