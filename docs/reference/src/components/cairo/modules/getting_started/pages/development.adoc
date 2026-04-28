@@ -1,5 +1,39 @@
-# Development
+= Development
 
-## Install the language server
+== Language Server
 
-Follow the instructions in link:https://marketplace.visualstudio.com/items?itemName=starkware.cairo1[vscode-cairo].
+Install the Cairo language server for IDE support.
+For VS Code, install the
+link:https://marketplace.visualstudio.com/items?itemName=starkware.cairo1[Cairo extension].
+It provides syntax highlighting, diagnostics, go-to-definition, and auto-completion.
+
+== Compiler Binaries
+
+The Cairo compiler suite provides several binaries:
+
+- `cairo-compile` — compiles a Cairo project to Sierra
+- `cairo-run` — compiles and executes a Cairo program
+- `cairo-test` — runs tests annotated with `#[test]`
+- `cairo-format` — formats Cairo source code
+- `starknet-compile` — compiles a Starknet contract to a Sierra ContractClass
+- `starknet-sierra-compile` — compiles a Sierra ContractClass to CASM
+
+== Running Tests
+
+Use `cairo-test` to run tests:
+
+[source,bash]
+----
+cargo run --bin cairo-test -- --single-file /path/to/file.cairo
+----
+
+Test functions are annotated with `#[test]` and use `assert!` or `assert_eq!` for assertions.
+
+== Build Tool
+
+link:https://docs.swmansion.com/scarb/[Scarb] is the standard build tool and package manager
+for Cairo projects. It handles dependency management, project configuration, and compilation.
+
+== See also
+
+- xref:compiling-starknet-contracts.adoc[Compiling Starknet Contracts] — Starknet-specific compilation
