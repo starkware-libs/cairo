@@ -10,6 +10,7 @@ use cairo_lang_defs::ids::{
     TraitItemId, TraitLongId, TraitTypeLongId, UseLongId,
 };
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::SpanInFile;
 use cairo_lang_lowering::Location;
 use cairo_lang_lowering::ids::LocationId;
 use cairo_lang_semantic::Expr;
@@ -143,10 +144,7 @@ impl<'db> FunctionDebugInfo<'db> {
                 };
                 let user_location = location.span_in_file(db).user_location(db);
 
-                let var_name = user_location
-                    .span
-                    .take(db.file_content(user_location.file_id).unwrap())
-                    .to_string();
+                let var_name = variable_name_from_user_location(db, user_location)?;
 
                 let position = user_location.span.position_in_file(db, user_location.file_id)?;
                 let source_location = SourceCodeSpan {
@@ -179,6 +177,13 @@ impl<'db> FunctionDebugInfo<'db> {
 
         Some((function_file_path, function_code_span))
     }
+}
+
+fn variable_name_from_user_location<'db>(
+    db: &'db dyn Database,
+    user_location: SpanInFile<'db>,
+) -> Option<String> {
+    Some(user_location.span.take(db.file_content(user_location.file_id)?).to_string())
 }
 
 /// This function gets a node that a sierra variable was mapped to.
@@ -521,4 +526,23 @@ fn lookup_variable_in_resolved_items<'db>(
     }
 
     None
+}
+
+#[cfg(test)]
+mod test {
+    use cairo_lang_filesystem::ids::{FileLongId, SpanInFile};
+    use cairo_lang_filesystem::span::{TextOffset, TextSpan};
+    use cairo_lang_utils::Intern;
+
+    use super::variable_name_from_user_location;
+    use crate::test_utils::SierraGenDatabaseForTesting;
+
+    #[test]
+    fn variable_name_from_user_location_returns_none_when_file_content_is_missing() {
+        let db = SierraGenDatabaseForTesting::new_empty();
+        let file_id = FileLongId::OnDisk("missing.cairo".into()).intern(&db);
+        let user_location = SpanInFile { file_id, span: TextSpan::cursor(TextOffset::START) };
+
+        assert_eq!(variable_name_from_user_location(&db, user_location), None);
+    }
 }
