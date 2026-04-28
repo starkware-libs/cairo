@@ -8,3 +8,78 @@ It is automatically used in every module.
 It is not possible to disable standard library prelude importing.
 This means that items from the prelude are always in scope without explicit imports,
 which is why you can use types like `Option`, `Result`, and common traits without importing them.
+
+== Edition-based Preludes
+
+Cairo has five compiler editions that map to three prelude definitions.
+The edition is selected via the `edition` field in your project's `Scarb.toml`.
+
+- `core::prelude::v2024_07` — the modern prelude, used by editions `v2024_07` and `v2025_12`
+- `core::prelude::v2023_10` — intermediate edition, used by editions `v2023_10` and `v2023_11`
+- `core::prelude::v2023_01` — the legacy prelude
+
+Each successive prelude is more conservative, exporting only the most commonly needed items.
+
+== Key Items in the Prelude
+
+The following items are available in both prelude editions (the modern `v2024_07` prelude
+exports exactly these):
+
+=== Types
+
+- `Array`, `Span` — dynamic arrays and their read-only views
+- `Box` — heap-allocated values
+- `ByteArray` — variable-length byte strings
+- `bytes31` — packed 31-byte value
+- `Nullable` — nullable pointer type
+- `Option` (with `Some`, `None`) — optional values
+- `Result` (with `Ok`, `Err`) — error handling
+- `NonZero` — wrapper guaranteeing a non-zero value
+- `felt252`, `bool`, `usize` — primitive types
+- `u8`, `u16`, `u32`, `u64`, `u128`, `u256` — unsigned integers
+- `i8`, `i16`, `i32`, `i64`, `i128` — signed integers
+
+=== Traits
+
+- `Add`, `Sub`, `Mul`, `Div`, `Rem`, `DivRem`, `Neg`, `Not` — arithmetic operations
+- `Copy`, `Drop`, `Clone` — value semantics
+- `Default` — default values
+- `Destruct`, `PanicDestruct` — destruction
+- `Felt252DictValue` — dictionary value support
+- `Into`, `TryInto` — type conversions
+- `PartialEq`, `PartialOrd` — comparison
+- `Serde` — serialization
+- `Deref` — dereference operator
+
+=== Other Items
+
+- `Felt252DictTrait` — dictionary operations
+- `ArrayTrait`, `SpanTrait`, `ToSpanTrait` — array operations
+- `BoxTrait`, `ByteArrayTrait`, `Bytes31Trait` — type-specific operations
+- `OptionTrait`, `ResultTrait`, `NullableTrait` — unwrapping and chaining
+- `Panic`, `PanicResult`, `panic` — panic handling
+- `FromIterator`, `IntoIterator`, `Iterator` — iteration
+- `assert` — assertion macro
+- `starknet`, `System` — Starknet access (under `corelib-internal-use` feature gate)
+
+== Additional Items in Older Editions
+
+The `v2023_10` and `v2023_01` preludes additionally export:
+
+- `BitAnd`, `BitOr`, `BitXor`, `BitNot` — bitwise operation traits
+- `Felt252Dict`, `SquashedFelt252Dict` — dictionary types
+- `Pedersen`, `Poseidon` — hash builtins
+- `GasBuiltin`, `Bitwise`, `RangeCheck`, `SegmentArena` — VM builtins
+- `StoragePointerReadAccess`, `StoragePointerWriteAccess`, `StorageMapReadAccess`,
+  `StorageMapWriteAccess` — Starknet storage access traits
+- Deprecated `AddEq`, `SubEq`, `MulEq`, `DivEq`, `RemEq` — replaced by `core::ops::*Assign`
+- Deprecated `Index`, `IndexView` — replaced by `core::ops::index::*`
+- `keccak`, `math`, `to_byte_array` — utility modules
+
+The `v2023_01` prelude further exports low-level conversion impls (e.g.,
+`Felt252TryIntoU128`, `U128IntoFelt252`), EC point types, and additional builtins.
+
+== See also
+
+- xref:../../language_semantics/pages/linear-types.adoc[Linear types] — `Copy`, `Drop`, and `Destruct` semantics
+- xref:felt252dict-type.adoc[Felt252Dict] — Dictionary usage and `Felt252DictValue`
