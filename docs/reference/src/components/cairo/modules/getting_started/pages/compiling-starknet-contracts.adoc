@@ -1,6 +1,11 @@
 = Compiling Starknet Contracts
 
-Compile a Starknet Contract to a Sierra ContractClass:
+Starknet contracts are compiled in two stages: first from Cairo to Sierra, then from Sierra to CASM.
+
+== Cairo to Sierra
+
+`starknet-compile` compiles a Cairo contract to a Sierra ContractClass (a JSON file containing
+the contract's Sierra code, ABI, and entry point information):
 
 [source,bash]
 ----
@@ -19,9 +24,22 @@ For a single-file `.cairo` input, use `--single-file`:
 cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/output.json
 ----
 
-Compile a Sierra ContractClass into a CompiledClass (CASM):
+== Sierra to CASM
+
+`starknet-sierra-compile` compiles a Sierra ContractClass into a CompiledClass (CASM),
+which is the executable bytecode format that runs on the Cairo VM:
 
 [source,bash]
 ----
 cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
 ----
+
+== Using Scarb
+
+For most projects, link:https://docs.swmansion.com/scarb/[Scarb] (the Cairo package manager)
+handles compilation automatically. Running `scarb build` compiles contracts and produces the
+Sierra ContractClass JSON files in the `target/` directory.
+
+== See also
+
+- xref:../../language_constructs/pages/contracts.adoc[Contracts] — Writing Starknet contracts in Cairo
