@@ -6075,6 +6075,248 @@ End:
 
 //! > ==========================================================================
 
+//! > Snapshot pop_front propagates success values.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function_code
+fn foo() -> felt252 {
+    let mut snapshot = array![1, 2].span().snapshot;
+    let Some(v) = array_snapshot_pop_front(ref snapshot) else {
+        return 0;
+    };
+    let Some(w) = array_snapshot_pop_front(ref snapshot) else {
+        return 100;
+    };
+    *v.unbox() + *w.unbox()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::array::array_snapshot_pop_front;
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::felt252) <- 2
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v5: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v4)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v6) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v7) {
+    Option::Some(v10, v11) => blk2,
+    Option::None(v12) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: @core::felt252) <- unbox(v8)
+  (v14: core::felt252) <- desnap(v13)
+  (v15: @core::felt252) <- unbox(v11)
+  (v16: core::felt252) <- desnap(v15)
+  (v17: core::felt252) <- core::felt252_add(v14, v16)
+End:
+  Return(v17)
+
+blk3:
+Statements:
+  (v18: core::felt252) <- 100
+End:
+  Return(v18)
+
+blk4:
+Statements:
+  (v19: core::felt252) <- 0
+End:
+  Return(v19)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::felt252) <- 2
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v5: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v4)
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v6) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_front::<core::felt252>(v7) {
+    Option::Some(v10, v11) => blk2,
+    Option::None(v12) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: @core::felt252) <- unbox(v8)
+  (v14: core::felt252) <- desnap(v13)
+  (v15: @core::felt252) <- unbox(v11)
+  (v16: core::felt252) <- desnap(v15)
+  (v17: core::felt252) <- 3
+End:
+  Return(v17)
+
+blk3:
+Statements:
+  (v18: core::felt252) <- 100
+End:
+  Return(v18)
+
+blk4:
+Statements:
+  (v19: core::felt252) <- 0
+End:
+  Return(v19)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Snapshot pop_back propagates success values.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function_code
+fn foo() -> felt252 {
+    let mut snapshot = array![1, 2].span().snapshot;
+    let Some(v) = array_snapshot_pop_back(ref snapshot) else {
+        return 0;
+    };
+    let Some(w) = array_snapshot_pop_back(ref snapshot) else {
+        return 100;
+    };
+    *v.unbox() + *w.unbox()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use core::array::array_snapshot_pop_back;
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::felt252) <- 2
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v5: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v4)
+End:
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v6) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v7) {
+    Option::Some(v10, v11) => blk2,
+    Option::None(v12) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: @core::felt252) <- unbox(v8)
+  (v14: core::felt252) <- desnap(v13)
+  (v15: @core::felt252) <- unbox(v11)
+  (v16: core::felt252) <- desnap(v15)
+  (v17: core::felt252) <- core::felt252_add(v14, v16)
+End:
+  Return(v17)
+
+blk3:
+Statements:
+  (v18: core::felt252) <- 100
+End:
+  Return(v18)
+
+blk4:
+Statements:
+  (v19: core::felt252) <- 0
+End:
+  Return(v19)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 1
+  (v2: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v3: core::felt252) <- 2
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v3)
+  (v5: core::array::Array::<core::felt252>, v6: @core::array::Array::<core::felt252>) <- snapshot(v4)
+End:
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v6) {
+    Option::Some(v7, v8) => blk1,
+    Option::None(v9) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match core::array::array_snapshot_pop_back::<core::felt252>(v7) {
+    Option::Some(v10, v11) => blk2,
+    Option::None(v12) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: @core::felt252) <- unbox(v8)
+  (v14: core::felt252) <- desnap(v13)
+  (v15: @core::felt252) <- unbox(v11)
+  (v16: core::felt252) <- desnap(v15)
+  (v17: core::felt252) <- 3
+End:
+  Return(v17)
+
+blk3:
+Statements:
+  (v18: core::felt252) <- 100
+End:
+  Return(v18)
+
+blk4:
+Statements:
+  (v19: core::felt252) <- 0
+End:
+  Return(v19)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
 //! > Panic with byte array value.
 
 //! > test_runner_name

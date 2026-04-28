@@ -1325,18 +1325,35 @@ impl<'db, 'mt> ConstFoldingContext<'db, 'mt> {
             let var_info = self.var_info.get(&info.inputs[0].var_id)?;
             let desnapped = try_extract_matches!(var_info.as_ref(), VarInfo::Snapshot)?;
             let element_var_infos = try_extract_matches!(desnapped.as_ref(), VarInfo::Array)?;
-            // TODO(orizi): Propagate success values as well.
-            if element_var_infos.is_empty() {
+            let wrap_snapshot_array = |var_infos: Vec<Option<Rc<VarInfo<'db>>>>| {
+                VarInfo::Snapshot(VarInfo::Array(var_infos).into())
+            };
+            if let Some((element_var_info, remaining_var_infos)) = if id
+                == self.array_snapshot_pop_front
+            {
+                element_var_infos.split_first().map(|(first, rest)| (first.clone(), rest.to_vec()))
+            } else {
+                element_var_infos.split_last().map(|(last, rest)| (last.clone(), rest.to_vec()))
+            } {
+                let arm = &info.arms[0];
+                self.var_info
+                    .insert(arm.var_ids[0], wrap_snapshot_array(remaining_var_infos).into());
+                if let Some(element_var_info) = element_var_info {
+                    self.var_info.insert(
+                        arm.var_ids[1],
+                        VarInfo::Box(VarInfo::Snapshot(element_var_info).into()).into(),
+                    );
+                }
+                None
+            } else {
                 let arm = &info.arms[1];
-                self.var_info.insert(arm.var_ids[0], VarInfo::Array(vec![]).into());
+                self.var_info.insert(arm.var_ids[0], wrap_snapshot_array(vec![]).into());
                 Some(BlockEnd::Goto(
                     arm.block_id,
                     VarRemapping {
                         remapping: FromIterator::from_iter([(arm.var_ids[0], info.inputs[0])]),
                     },
                 ))
-            } else {
-                None
             }
         } else {
             None
