@@ -1,9 +1,9 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
-use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup};
+use cairo_lang_filesystem::db::{CrateConfiguration, FilesGroup, override_file_content_for_input};
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileLongId, SmolStrId};
-use cairo_lang_filesystem::{override_file_content, set_crate_config};
+use cairo_lang_filesystem::set_crate_config;
 use cairo_lang_test_utils::test;
 use cairo_lang_utils::{Intern, extract_matches};
 use indoc::indoc;
@@ -53,8 +53,11 @@ fn test_resolve_path() {
 }
 
 fn set_file_content(db: &mut dyn Database, path: &str, content: &str) {
-    let file_id = FileLongId::OnDisk(path.into()).intern(db);
-    override_file_content!(db, file_id, Some(content.into()));
+    let file_input = {
+        let file_id = FileLongId::OnDisk(path.into()).intern(db);
+        db.file_input(file_id).clone()
+    };
+    override_file_content_for_input(db, file_input, Some(content.into()));
 }
 
 #[test]

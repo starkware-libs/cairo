@@ -1,11 +1,14 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::ptr::NonNull;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use salsa::{Database, Setter};
+use salsa::plumbing::views;
+use salsa::{Database, Durability, Setter};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -231,9 +234,16 @@ pub struct FilesGroupInput {
     /// Main input of the project. Lists all the crates configurations.
     #[returns(ref)]
     pub crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
-    /// Overrides for file content. Mostly used by language server and tests.
-    #[returns(ref)]
-    pub file_overrides: Option<OrderedHashMap<FileInput, Arc<str>>>,
+    /// Structural revision bumped each time a new [`FileContentOverride`] handle is first created
+    /// for a previously-unregistered file.
+    ///
+    /// Salsa only invalidates tracked functions based on dependencies they recorded during their
+    /// last execution. A [`file_content`] call for a file with no handle records no dependency on
+    /// that file's future [`FileContentOverride`] — so if a handle is later created, Salsa has no
+    /// recorded dependency to invalidate. This field provides the missing signal: [`file_content`]
+    /// reads it for handleless files, ensuring it re-executes when any new handle is created and
+    /// can then record the fine-grained per-file dependency going forward.
+    pub file_contents_revision: u64,
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
     #[returns(ref)]
@@ -247,7 +257,78 @@ pub struct FilesGroupInput {
 
 #[salsa::tracked]
 pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
-    FilesGroupInput::new(db, None, None, None, None, None)
+    FilesGroupInput::new(db, None, 0, None, None, None)
+}
+
+/// Input used for overriding the content of a single file.
+/// Useful for tools like CairoLS to manage contents of files that are opened in the editor.
+///
+/// Notice that this structure holds a content override for a single file only — not the whole
+/// hashmap of overrides for all overridden files. This is done to ensure granular invalidation of
+/// results of the [`file_content`] tracked function — so that we don't invalidate everything when
+/// a single override changes.
+#[salsa::input]
+pub struct FileContentOverride {
+    #[returns(ref)]
+    pub content: Option<ArcStr>,
+}
+
+/// Side-table mapping each file to its [`FileContentOverride`] Salsa input.
+///
+/// Lives on the concrete database struct (outside Salsa storage) so that new handles can be
+/// created with `&mut dyn Database` while existing ones are read from within tracked functions
+/// via [`FileContentView`].
+pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContentOverride>>>;
+
+/// View trait for accessing the [`FileContentStorage`] side-table from within tracked functions.
+/// Implement this on the concrete DB struct and register it with [`register_files_group_view`].
+pub trait FileContentView: Database {
+    /// Returns the [`FileContentStorage`] side-table.
+    fn file_content_storage(&self) -> &FileContentStorage;
+
+    /// Returns the [`FileContentOverride`] handle for the given file input, if one has been
+    /// registered.
+    fn file_contents_for_input(&self, file_input: &FileInput) -> Option<FileContentOverride> {
+        self.file_content_storage().read().unwrap().get(file_input).copied()
+    }
+
+    /// Returns the overridden content for the given file, if one exists.
+    fn file_content_override<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
+        let file_input = self.file_input(file_id).clone();
+        self.file_contents_for_input(&file_input)?.content(self).as_ref()
+    }
+}
+
+/// Downcasts `db` to `&dyn FileContentView` through the registered Salsa view.
+/// Panics if [`register_files_group_view`] was not called for this database type.
+fn file_content_view(db: &dyn Database) -> &dyn FileContentView {
+    let caster =
+        catch_unwind(AssertUnwindSafe(|| *views(db).downcaster_for::<dyn FileContentView>())).ok();
+
+    let caster = caster.expect("file content view is not registered");
+    // SAFETY: The downcaster was fetched for the concrete type backing `db`.
+    unsafe { caster.downcast_unchecked(db.into()) }
+}
+
+/// Downcasts `db` to `&dyn FileContentView`, or returns `None` if
+/// [`register_files_group_view`] was not called for this database type.
+fn maybe_file_content_view(db: &dyn Database) -> Option<&dyn FileContentView> {
+    catch_unwind(AssertUnwindSafe(|| file_content_view(db))).ok()
+}
+
+/// Registers the concrete database type `Db` as a [`FileContentView`].
+///
+/// Must be called once during database initialization for any database struct that holds a
+/// [`FileContentStorage`]. After registration, tracked functions can call
+/// `maybe_file_content_view(db)` to reach the side-table through the type-erased view.
+pub fn register_files_group_view<Db>(db: &Db)
+where
+    Db: Database + FileContentView + 'static,
+{
+    views(db).add::<Db, dyn FileContentView>(|db: NonNull<Db>| {
+        // SAFETY: `db` points to a live `Db` of the registered concrete database type.
+        NonNull::from(unsafe { db.as_ref() } as &dyn FileContentView)
+    });
 }
 
 /// Queries over the files group.
@@ -255,11 +336,6 @@ pub trait FilesGroup: Database {
     /// Interned version of `crate_configs_input`.
     fn crate_configs<'db>(&'db self) -> &'db OrderedHashMap<CrateId<'db>, CrateConfiguration<'db>> {
         crate_configs(self.as_dyn_database())
-    }
-
-    /// Interned version of `file_overrides_input`.
-    fn file_overrides<'db>(&'db self) -> &'db OrderedHashMap<FileId<'db>, ArcStr> {
-        file_overrides(self.as_dyn_database())
     }
 
     /// List of crates in the project.
@@ -318,10 +394,17 @@ impl<T: Database + ?Sized> FilesGroup for T {}
 pub fn init_files_group<'db>(db: &mut (dyn Database + 'db)) {
     // Initialize inputs.
     let inp = files_group_input(db);
-    inp.set_file_overrides(db).to(Some(Default::default()));
     inp.set_crate_configs(db).to(Some(Default::default()));
+    inp.set_file_contents_revision(db).to(0);
     inp.set_flags(db).to(Some(Default::default()));
     inp.set_cfg_set(db).to(Some(Default::default()));
+}
+
+/// Increments [`FilesGroupInput::file_contents_revision`] to signal that a new
+/// [`FileContentOverride`] handle has been created for a previously-unregistered file.
+fn bump_file_contents_revision(db: &mut dyn Database) {
+    let next = files_group_input(db).file_contents_revision(db).saturating_add(1);
+    files_group_input(db).set_file_contents_revision(db).to(next);
 }
 
 pub fn set_crate_configs_input(
@@ -329,16 +412,6 @@ pub fn set_crate_configs_input(
     crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
 ) {
     files_group_input(db).set_crate_configs(db).to(crate_configs);
-}
-
-#[salsa::tracked(returns(ref))]
-pub fn file_overrides<'db>(db: &'db dyn Database) -> OrderedHashMap<FileId<'db>, ArcStr> {
-    let inp = files_group_input(db).file_overrides(db).as_ref().expect("file_overrides is not set");
-    inp.iter()
-        .map(|(file_id, content)| {
-            (file_id.clone().into_file_long_id(db).intern(db), ArcStr::new(content.clone()))
-        })
-        .collect()
 }
 
 #[salsa::tracked(returns(ref))]
@@ -431,32 +504,63 @@ macro_rules! set_crate_config {
     };
 }
 
-/// Updates file overrides input for standalone use.
-pub fn update_file_overrides_input_helper(
-    db: &dyn Database,
-    file: FileInput,
-    content: Option<Arc<str>>,
-) -> OrderedHashMap<FileInput, Arc<str>> {
-    let db_ref: &dyn Database = db;
-    let mut overrides = files_group_input(db_ref).file_overrides(db_ref).clone().unwrap();
-    match content {
-        Some(content) => overrides.insert(file, content),
-        None => overrides.swap_remove(&file),
-    };
-    overrides
+fn ensure_file_contents_handle_for_input(
+    db: &mut dyn Database,
+    file_input: FileInput,
+) -> FileContentOverride {
+    if let Some(handle) = file_content_view(db).file_contents_for_input(&file_input) {
+        return handle;
+    }
+
+    let handle = FileContentOverride::new(db, None);
+    file_content_view(db).file_content_storage().write().unwrap().insert(file_input, handle);
+    bump_file_contents_revision(db);
+    handle
 }
 
-/// Overrides file content. None value removes the override.
-#[macro_export]
-macro_rules! override_file_content {
-    ($self:expr, $file:expr, $content:expr) => {
-        let file = $self.file_input($file).clone();
-        let overrides = $crate::db::update_file_overrides_input_helper($self, file, $content);
-        salsa::Setter::to(
-            $crate::db::files_group_input($self).set_file_overrides($self),
-            Some(overrides),
-        );
+/// Overrides the on-disk content of a file as seen by the compiler.
+/// Used by CairoLS to make the compiler aware of unsaved edits.
+pub fn override_file_content_for_input(
+    db: &mut dyn Database,
+    file_input: FileInput,
+    content: Option<Arc<str>>,
+) {
+    let handle = ensure_file_contents_handle_for_input(db, file_input);
+    // LOW durability: on-disk overrides change frequently for files opened in editor in CairoLS.
+    // For regular compiling use cases the durability does not matter, as the inputs do not change
+    // during compilation.
+    handle.set_content(db).with_durability(Durability::LOW).to(content.map(ArcStr::new));
+}
+
+/// Sets content for a virtual file that does not exist on disk (e.g. a `tests/lib.cairo`
+/// synthesized by Scarb when the file is absent and integration tests are defined).
+pub fn set_generated_file_content_for_input(
+    db: &mut dyn Database,
+    file_input: FileInput,
+    content: Option<Arc<str>>,
+) {
+    let handle = ensure_file_contents_handle_for_input(db, file_input);
+    // HIGH durability: set rarely.
+    handle.set_content(db).with_durability(Durability::HIGH).to(content.map(ArcStr::new));
+}
+
+/// Snapshot of all per-file content overrides currently registered in the database.
+pub type FileContentSnapshot = OrderedHashMap<FileInput, Option<Arc<str>>>;
+
+/// Returns a snapshot of all per-file content overrides registered in this database.
+/// Useful for copying overrides from one database to another.
+pub fn snapshot_file_contents(db: &dyn Database) -> FileContentSnapshot {
+    let Some(view) = maybe_file_content_view(db) else {
+        return Default::default();
     };
+    view.file_content_storage()
+        .read()
+        .unwrap()
+        .iter()
+        .map(|(file_input, handle)| {
+            (file_input.clone(), handle.content(db).as_ref().map(|c| (**c).clone()))
+        })
+        .collect()
 }
 
 fn cfg_set_helper(db: &dyn Database) -> &CfgSet {
@@ -535,12 +639,31 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
 }
 
 /// Query implementation of [FilesGroup::file_content].
+///
+/// # Invalidation
+///
+/// For files that already have a [`FileContentOverride`] handle, depends directly on
+/// [`FileContentOverride::content`] — only that file's query is invalidated when its content
+/// changes.
+///
+/// For files without a handle, reads [`FilesGroupInput::file_contents_revision`] so the query
+/// re-executes when a handle is first created for that file, switching to the per-file dependency
+/// from that point on.
 #[salsa::tracked(returns(ref))]
 fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<str>> {
-    let overrides = db.file_overrides();
-    overrides.get(&file_id).map(|content| (**content).clone()).or_else(|| {
-        priv_raw_file_content(db, file_id).map(|content| content.long(db).clone().into())
-    })
+    maybe_file_content_view(db)
+        .and_then(|view| {
+            let file_input = view.file_input(file_id);
+            if let Some(file_contents) = view.file_contents_for_input(file_input) {
+                file_contents.content(view).as_ref().map(|content| (**content).clone())
+            } else {
+                let _ = files_group_input(db).file_contents_revision(db);
+                None
+            }
+        })
+        .or_else(|| {
+            priv_raw_file_content(db, file_id).map(|content| content.long(db).clone().into())
+        })
 }
 
 /// Returns a reference to the content of a file as a string.

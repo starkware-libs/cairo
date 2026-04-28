@@ -5,9 +5,10 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::{
     CORELIB_CRATE_NAME, CrateConfiguration, CrateIdentifier, CrateSettings, FilesGroup,
+    set_generated_file_content_for_input,
 };
 use cairo_lang_filesystem::ids::{CrateId, CrateInput, CrateLongId, Directory, SmolStrId};
-use cairo_lang_filesystem::{override_file_content, set_crate_config};
+use cairo_lang_filesystem::set_crate_config;
 pub use cairo_lang_project::*;
 use cairo_lang_utils::Intern;
 use salsa::Database;
@@ -61,12 +62,20 @@ pub fn setup_single_file_project(
             crate_id,
             Some(CrateConfiguration::default_for_root(Directory::Real(file_dir.to_path_buf())))
         );
-        let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
-        let module_id = ModuleId::CrateRoot(crate_id);
-        let file_id = db.module_main_file(module_id).unwrap();
-        override_file_content!(db, file_id, Some(format!("mod {file_stem};").into()));
-        let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
-        Ok(crate_id.long(db).clone().into_crate_input(db))
+        let (file_input, crate_input) = {
+            let crate_id = CrateId::plain(db, SmolStrId::from(db, file_stem));
+            let module_id = ModuleId::CrateRoot(crate_id);
+            let file_id = db.module_main_file(module_id).unwrap();
+            let file_input = db.file_input(file_id).clone();
+            let crate_input = crate_id.long(db).clone().into_crate_input(db);
+            (file_input, crate_input)
+        };
+        set_generated_file_content_for_input(
+            db,
+            file_input,
+            Some(format!("mod {file_stem};").into()),
+        );
+        Ok(crate_input)
     }
 }
 

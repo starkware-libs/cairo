@@ -8,12 +8,12 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
-    CrateConfiguration, FilesGroup, files_group_input, init_files_group,
+    CrateConfiguration, FileContentStorage, FileContentView, FilesGroup, files_group_input,
+    init_files_group, override_file_content_for_input, register_files_group_view,
 };
 use cairo_lang_filesystem::ids::{
     CodeMapping, CodeOrigin, CrateId, Directory, FileLongId, SmolStrId,
 };
-use cairo_lang_filesystem::override_file_content;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{TypedSyntaxNode, ast};
@@ -56,13 +56,20 @@ cairo_lang_test_utils::test_file_test!(
 #[derive(Clone)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
+    file_contents: FileContentStorage,
 }
 #[salsa::db]
 impl salsa::Database for DatabaseForTesting {}
+impl FileContentView for DatabaseForTesting {
+    fn file_content_storage(&self) -> &FileContentStorage {
+        &self.file_contents
+    }
+}
 
 impl Default for DatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), file_contents: Default::default() };
+        register_files_group_view(&res);
         init_external_files(&mut res);
         init_files_group(&mut res);
         init_defs_group(&mut res);
@@ -121,8 +128,11 @@ pub fn test_expand_plugin_inner(
     );
 
     // Main module file.
-    let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db_ref);
-    override_file_content!(db_ref, file_id, Some(format!("{cairo_code}\n").into()));
+    let file_input = {
+        let file_id = FileLongId::OnDisk("test_src/lib.cairo".into()).intern(db_ref);
+        db_ref.file_input(file_id).clone()
+    };
+    override_file_content_for_input(db_ref, file_input, Some(format!("{cairo_code}\n").into()));
 
     let crate_id = CrateId::plain(&db, SmolStrId::from(&db, "test"));
     let mut diagnostic_items = vec![];
