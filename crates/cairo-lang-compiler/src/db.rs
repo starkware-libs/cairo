@@ -114,6 +114,13 @@ impl RootDatabase {
     }
 
     /// Snapshots the db for read only.
+    ///
+    /// [`FileContentStorage`] is deep-cloned into a fresh `Arc<RwLock<...>>` rather than
+    /// Arc-shared, so the snapshot is fully isolated from subsequent file-content changes to the
+    /// original. The `Arc` and `RwLock` wrappers are kept because [`FileContentStorage`] always
+    /// carries them: a live database may be shallow-cloned for parallel compilation workers (via
+    /// [`CloneableDatabase`]), and those clones share the same `Arc`; the `RwLock` provides the
+    /// thread-safe concurrent access required across those shared clones.
     pub fn snapshot(&self) -> RootDatabase {
         let file_contents = Arc::new(RwLock::new(self.file_contents.read().unwrap().clone()));
         RootDatabase { storage: self.storage.clone(), file_contents }

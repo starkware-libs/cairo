@@ -228,22 +228,10 @@ pub type ExtAsVirtual =
     Arc<dyn for<'a> Fn(&'a dyn Database, salsa::Id) -> &'a VirtualFile<'a> + Send + Sync>;
 
 #[salsa::input]
-// TODO(eytan-starkware): Change this mechanism to hold input handles on the db struct outside
-// salsa mechanism, and invalidate manually.
 pub struct FilesGroupInput {
     /// Main input of the project. Lists all the crates configurations.
     #[returns(ref)]
     pub crate_configs: Option<OrderedHashMap<CrateInput, CrateConfigurationInput>>,
-    /// Structural revision bumped each time a new [`FileContentOverride`] handle is first created
-    /// for a previously-unregistered file.
-    ///
-    /// Salsa only invalidates tracked functions based on dependencies they recorded during their
-    /// last execution. A [`file_content`] call for a file with no handle records no dependency on
-    /// that file's future [`FileContentOverride`] — so if a handle is later created, Salsa has no
-    /// recorded dependency to invalidate. This field provides the missing signal: [`file_content`]
-    /// reads it for handleless files, ensuring it re-executes when any new handle is created and
-    /// can then record the fine-grained per-file dependency going forward.
-    pub file_contents_revision: u64,
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
     #[returns(ref)]
@@ -257,28 +245,34 @@ pub struct FilesGroupInput {
 
 #[salsa::tracked]
 pub fn files_group_input(db: &dyn Database) -> FilesGroupInput {
-    FilesGroupInput::new(db, None, 0, None, None, None)
+    FilesGroupInput::new(db, None, None, None, None)
 }
 
-/// Input used for overriding the content of a single file.
-/// Useful for tools like CairoLS to manage contents of files that are opened in the editor.
+/// Salsa input holding the content of a single file as seen by the compiler.
 ///
-/// Notice that this structure holds a content override for a single file only — not the whole
-/// hashmap of overrides for all overridden files. This is done to ensure granular invalidation of
-/// results of the [`file_content`] tracked function — so that we don't invalidate everything when
-/// a single override changes.
+/// Notice that this structure holds content for a single file only — not the whole hashmap for
+/// all files. This is done to ensure granular invalidation of results of the [`file_content`]
+/// tracked function — so that we don't invalidate everything when a single file changes.
 #[salsa::input]
-pub struct FileContentOverride {
+pub struct FileContent {
     #[returns(ref)]
     pub content: Option<ArcStr>,
 }
 
-/// Side-table mapping each file to its [`FileContentOverride`] Salsa input.
+/// Side-table mapping each file to its [`FileContent`] Salsa input.
 ///
 /// Lives on the concrete database struct (outside Salsa storage) so that new handles can be
 /// created with `&mut dyn Database` while existing ones are read from within tracked functions
 /// via [`FileContentView`].
-pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContentOverride>>>;
+///
+/// Wrapped in `Arc<RwLock<...>>` so that:
+/// - `RootDatabase::clone()` (used for parallel compilation workers) can share the same map via a
+///   cheap Arc-clone, allowing all workers to see the same file contents.
+/// - The `RwLock` provides thread-safe concurrent access across those shared clones.
+///
+/// `RootDatabase::snapshot()` breaks sharing by deep-cloning the inner map into a fresh
+/// `Arc<RwLock<...>>`, so the snapshot is fully isolated from subsequent changes to the original.
+pub type FileContentStorage = Arc<RwLock<HashMap<FileInput, FileContent>>>;
 
 /// View trait for accessing the [`FileContentStorage`] side-table from within tracked functions.
 /// Implement this on the concrete DB struct and register it with [`register_files_group_view`].
@@ -286,34 +280,31 @@ pub trait FileContentView: Database {
     /// Returns the [`FileContentStorage`] side-table.
     fn file_content_storage(&self) -> &FileContentStorage;
 
-    /// Returns the [`FileContentOverride`] handle for the given file input, if one has been
-    /// registered.
-    fn file_contents_for_input(&self, file_input: &FileInput) -> Option<FileContentOverride> {
+    /// Returns the [`FileContent`] handle for the given file input, if one has been registered.
+    fn file_contents_for_input(&self, file_input: &FileInput) -> Option<FileContent> {
         self.file_content_storage().read().unwrap().get(file_input).copied()
     }
 
-    /// Returns the overridden content for the given file, if one exists.
-    fn file_content_override<'db>(&'db self, file_id: FileId<'db>) -> Option<&'db ArcStr> {
-        let file_input = self.file_input(file_id).clone();
-        self.file_contents_for_input(&file_input)?.content(self).as_ref()
+    /// Returns the content for the given file input, if a handle has been registered.
+    fn content_for_input(&self, file_input: &FileInput) -> Option<Arc<str>> {
+        self.file_contents_for_input(file_input)?.content(self).as_ref().map(|c| (**c).clone())
     }
-}
-
-/// Downcasts `db` to `&dyn FileContentView` through the registered Salsa view.
-/// Panics if [`register_files_group_view`] was not called for this database type.
-fn file_content_view(db: &dyn Database) -> &dyn FileContentView {
-    let caster =
-        catch_unwind(AssertUnwindSafe(|| *views(db).downcaster_for::<dyn FileContentView>())).ok();
-
-    let caster = caster.expect("file content view is not registered");
-    // SAFETY: The downcaster was fetched for the concrete type backing `db`.
-    unsafe { caster.downcast_unchecked(db.into()) }
 }
 
 /// Downcasts `db` to `&dyn FileContentView`, or returns `None` if
 /// [`register_files_group_view`] was not called for this database type.
 fn maybe_file_content_view(db: &dyn Database) -> Option<&dyn FileContentView> {
-    catch_unwind(AssertUnwindSafe(|| file_content_view(db))).ok()
+    let caster =
+        catch_unwind(AssertUnwindSafe(|| *views(db).downcaster_for::<dyn FileContentView>()))
+            .ok()?;
+    // SAFETY: The downcaster was fetched for the concrete type backing `db`.
+    Some(unsafe { caster.downcast_unchecked(db.into()) })
+}
+
+/// Downcasts `db` to `&dyn FileContentView` through the registered Salsa view.
+/// Panics if [`register_files_group_view`] was not called for this database type.
+fn file_content_view(db: &dyn Database) -> &dyn FileContentView {
+    maybe_file_content_view(db).expect("file content view is not registered")
 }
 
 /// Registers the concrete database type `Db` as a [`FileContentView`].
@@ -395,16 +386,8 @@ pub fn init_files_group<'db>(db: &mut (dyn Database + 'db)) {
     // Initialize inputs.
     let inp = files_group_input(db);
     inp.set_crate_configs(db).to(Some(Default::default()));
-    inp.set_file_contents_revision(db).to(0);
     inp.set_flags(db).to(Some(Default::default()));
     inp.set_cfg_set(db).to(Some(Default::default()));
-}
-
-/// Increments [`FilesGroupInput::file_contents_revision`] to signal that a new
-/// [`FileContentOverride`] handle has been created for a previously-unregistered file.
-fn bump_file_contents_revision(db: &mut dyn Database) {
-    let next = files_group_input(db).file_contents_revision(db).saturating_add(1);
-    files_group_input(db).set_file_contents_revision(db).to(next);
 }
 
 pub fn set_crate_configs_input(
@@ -504,17 +487,14 @@ macro_rules! set_crate_config {
     };
 }
 
-fn ensure_file_contents_handle_for_input(
-    db: &mut dyn Database,
-    file_input: FileInput,
-) -> FileContentOverride {
+/// Returns the [`FileContent`] handle for `file_input`, creating and registering one in the
+/// side-table if it does not yet exist.
+fn get_or_create_file_content_handle(db: &mut dyn Database, file_input: FileInput) -> FileContent {
     if let Some(handle) = file_content_view(db).file_contents_for_input(&file_input) {
         return handle;
     }
-
-    let handle = FileContentOverride::new(db, None);
+    let handle = FileContent::new(db, None);
     file_content_view(db).file_content_storage().write().unwrap().insert(file_input, handle);
-    bump_file_contents_revision(db);
     handle
 }
 
@@ -525,7 +505,7 @@ pub fn override_file_content_for_input(
     file_input: FileInput,
     content: Option<Arc<str>>,
 ) {
-    let handle = ensure_file_contents_handle_for_input(db, file_input);
+    let handle = get_or_create_file_content_handle(db, file_input);
     // LOW durability: on-disk overrides change frequently for files opened in editor in CairoLS.
     // For regular compiling use cases the durability does not matter, as the inputs do not change
     // during compilation.
@@ -539,7 +519,7 @@ pub fn set_generated_file_content_for_input(
     file_input: FileInput,
     content: Option<Arc<str>>,
 ) {
-    let handle = ensure_file_contents_handle_for_input(db, file_input);
+    let handle = get_or_create_file_content_handle(db, file_input);
     // HIGH durability: set rarely.
     handle.set_content(db).with_durability(Durability::HIGH).to(content.map(ArcStr::new));
 }
@@ -642,22 +622,25 @@ fn file_summary_helper<'db>(db: &'db dyn Database, file: FileId<'db>) -> Option<
 ///
 /// # Invalidation
 ///
-/// For files that already have a [`FileContentOverride`] handle, depends directly on
-/// [`FileContentOverride::content`] — only that file's query is invalidated when its content
-/// changes.
+/// For files that already have a [`FileContent`] handle, depends directly on
+/// [`FileContent::content`] — only that file's query is invalidated when its content changes.
 ///
-/// For files without a handle, reads [`FilesGroupInput::file_contents_revision`] so the query
-/// re-executes when a handle is first created for that file, switching to the per-file dependency
+/// For files without a handle, calls [`Database::report_untracked_read`] so the query
+/// re-executes on the next revision. Since creating a new handle bumps the global Salsa
+/// revision, the query will re-run, find the handle, and switch to the per-file dependency
 /// from that point on.
 #[salsa::tracked(returns(ref))]
 fn file_content<'db>(db: &'db dyn Database, file_id: FileId<'db>) -> Option<Arc<str>> {
     maybe_file_content_view(db)
         .and_then(|view| {
             let file_input = view.file_input(file_id);
-            if let Some(file_contents) = view.file_contents_for_input(file_input) {
-                file_contents.content(view).as_ref().map(|content| (**content).clone())
+            if view.file_contents_for_input(file_input).is_some() {
+                // Handle exists — proper Salsa dependency recorded, no need for
+                // report_untracked_read.
+                view.content_for_input(file_input)
             } else {
-                let _ = files_group_input(db).file_contents_revision(db);
+                // No handle yet — mark as untracked so the query re-runs when one is created.
+                db.report_untracked_read();
                 None
             }
         })
