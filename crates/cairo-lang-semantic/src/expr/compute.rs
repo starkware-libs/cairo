@@ -3760,23 +3760,6 @@ fn try_extract_identifier_from_path<'a>(
     }
 }
 
-/// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
-/// error.
-fn expr_as_identifier<'db>(
-    ctx: &mut ComputationContext<'db, '_>,
-    path: &ast::ExprPath<'db>,
-    db: &'db dyn Database,
-) -> Maybe<SmolStrId<'db>> {
-    let segments_var = path.segments(db);
-    let mut segments = segments_var.elements(db);
-    if segments.len() == 1 {
-        Ok(segments.next().unwrap().identifier(db))
-    } else {
-        Err(ctx.diagnostics.report(path.stable_ptr(db), InvalidMemberExpression))
-    }
-}
-
-// TODO(spapini): Consider moving some checks here to the responsibility of the parser.
 /// Computes the semantic expression for a dot expression.
 fn dot_expr<'db>(
     ctx: &mut ComputationContext<'db, '_>,
@@ -3784,11 +3767,41 @@ fn dot_expr<'db>(
     rhs_syntax: ast::Expr<'db>,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Maybe<Expr<'db>> {
-    // Find MemberId.
-    match rhs_syntax {
-        ast::Expr::Path(expr) => member_access_expr(ctx, lexpr, expr, stable_ptr),
-        ast::Expr::FunctionCall(expr) => method_call_expr(ctx, lexpr, expr, stable_ptr),
-        _ => Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(ctx.db), InvalidMemberExpression)),
+    if let Some(member_name) = match rhs_syntax {
+        ast::Expr::FunctionCall(expr) => return method_call_expr(ctx, lexpr, expr, stable_ptr),
+        ast::Expr::Path(ref expr) => path_as_identifier(ctx.db, &expr),
+        ast::Expr::Literal(ref literal) => literal_as_identifier(ctx.db, &literal),
+        _ => None,
+    } {
+        member_access_expr_by_name(
+            ctx,
+            lexpr,
+            member_name,
+            rhs_syntax.stable_ptr(ctx.db).untyped(),
+            stable_ptr,
+        )
+    } else {
+        Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(ctx.db), InvalidMemberExpression))
+    }
+}
+
+/// Given a path syntax, return it as an identifier if possible, otherwise, return None.
+fn path_as_identifier<'db>(
+    db: &'db dyn Database,
+    path: &ast::ExprPath<'db>,
+) -> Option<SmolStrId<'db>> {
+    Some(path.segments(db).elements(db).exactly_one().ok()?.identifier(db))
+}
+
+/// Given a literal syntax, return it as an identifier if possible, otherwise, return None.
+fn literal_as_identifier<'db>(
+    db: &'db dyn Database,
+    literal: &ast::TerminalLiteralNumber<'db>,
+) -> Option<SmolStrId<'db>> {
+    if let (value, None) = literal.numeric_value_and_suffix(db)? {
+        Some(SmolStrId::from(db, value.to_usize()?.to_string()))
+    } else {
+        None
     }
 }
 
@@ -3933,19 +3946,16 @@ fn method_call_expr<'db>(
     expr_function_call(ctx, function_id, named_args, expr.stable_ptr(db), stable_ptr)
 }
 
-/// Computes the semantic model of a member access expression (e.g. "expr.member").
-fn member_access_expr<'db>(
+/// Computes the semantic model of a member access expression for a given member name.
+fn member_access_expr_by_name<'db>(
     ctx: &mut ComputationContext<'db, '_>,
     lexpr: ExprAndId<'db>,
-    rhs_syntax: ast::ExprPath<'db>,
+    member_name: SmolStrId<'db>,
+    name_stable_ptr: SyntaxStablePtrId<'db>,
     stable_ptr: ast::ExprPtr<'db>,
 ) -> Maybe<Expr<'db>> {
     let db = ctx.db;
-
-    // Find MemberId.
-    let member_name = expr_as_identifier(ctx, &rhs_syntax, db)?;
-    let (n_snapshots, long_ty) =
-        finalized_snapshot_peeled_ty(ctx, lexpr.ty(), rhs_syntax.stable_ptr(db))?;
+    let (n_snapshots, long_ty) = finalized_snapshot_peeled_ty(ctx, lexpr.ty(), name_stable_ptr)?;
 
     match &long_ty {
         TypeLongId::Concrete(_) | TypeLongId::Tuple(_) | TypeLongId::FixedSizeArray { .. } => {
@@ -3953,35 +3963,29 @@ fn member_access_expr<'db>(
                 get_enriched_type_member_access(ctx, lexpr.clone(), stable_ptr, member_name)?
             else {
                 return Err(ctx.diagnostics.report(
-                    rhs_syntax.stable_ptr(db),
+                    name_stable_ptr,
                     NoSuchTypeMember { ty: long_ty.intern(ctx.db), member_name },
                 ));
             };
-            // TODO(#7608): handle TypeMemberKind::TupleElement here.
-            let TypeMemberKind::StructMember(member_id) = type_member.kind else {
-                return Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported));
-            };
-            let member = semantic::Member {
-                id: member_id,
-                ty: type_member.ty,
-                visibility: type_member.visibility,
-            };
-            check_struct_member_is_visible(
-                ctx,
-                &member,
-                rhs_syntax.stable_ptr(db).untyped(),
-                member_name,
-            );
-            let member_path = match &long_ty {
-                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))
-                    if n_snapshots == 0 && deref_functions.is_empty() =>
-                {
+            if let TypeMemberKind::StructMember(member_id) = type_member.kind {
+                let member = semantic::Member {
+                    id: member_id,
+                    ty: type_member.ty,
+                    visibility: type_member.visibility,
+                };
+                check_struct_member_is_visible(ctx, &member, name_stable_ptr, member_name);
+            }
+            let member_path = match (&type_member.kind, &long_ty) {
+                (
+                    TypeMemberKind::StructMember(member_id),
+                    TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)),
+                ) if n_snapshots == 0 && deref_functions.is_empty() => {
                     lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
                         parent: Box::new(parent),
-                        member_id: member.id,
+                        member_id: *member_id,
                         stable_ptr,
                         concrete_struct_id: *concrete_struct_id,
-                        ty: member.ty,
+                        ty: type_member.ty,
                     })
                 }
                 _ => None,
@@ -4000,19 +4004,12 @@ fn member_access_expr<'db>(
                 derefed_expr =
                     ExprAndId { expr: cur_expr.clone(), id: ctx.arenas.exprs.alloc(cur_expr) };
             }
-            let (n_snapshots, long_ty) =
-                finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), rhs_syntax.stable_ptr(db))?;
-            let derefed_expr_concrete_struct_id = match long_ty {
-                TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
-                    concrete_struct_id
-                }
-                _ => unreachable!(),
-            };
-            let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
+            let (n_snapshots, _) =
+                finalized_snapshot_peeled_ty(ctx, derefed_expr.ty(), name_stable_ptr)?;
+            let ty = wrap_in_snapshots(ctx.db, type_member.ty, n_snapshots);
             let mut final_expr = Expr::MemberAccess(ExprMemberAccess {
                 expr: derefed_expr.id,
-                concrete_struct_id: derefed_expr_concrete_struct_id,
-                member: member.id,
+                type_member,
                 ty,
                 member_path,
                 n_snapshots,
@@ -4031,20 +4028,15 @@ fn member_access_expr<'db>(
             Ok(final_expr)
         }
 
-        TypeLongId::Snapshot(_) => {
-            // TODO(spapini): Handle snapshot members.
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
-        }
-        TypeLongId::Closure(_) => {
-            Err(ctx.diagnostics.report(rhs_syntax.stable_ptr(db), Unsupported))
-        }
+        TypeLongId::Snapshot(_) => Err(ctx.diagnostics.report(name_stable_ptr, Unsupported)),
+        TypeLongId::Closure(_) => Err(ctx.diagnostics.report(name_stable_ptr, Unsupported)),
         TypeLongId::Var(_) => Err(ctx.diagnostics.report(
-            rhs_syntax.stable_ptr(db),
+            name_stable_ptr,
             InternalInferenceError(InferenceError::TypeNotInferred(long_ty.intern(ctx.db))),
         )),
         TypeLongId::ImplType(_) | TypeLongId::GenericParameter(_) | TypeLongId::Coupon(_) => {
             Err(ctx.diagnostics.report(
-                rhs_syntax.stable_ptr(db),
+                name_stable_ptr,
                 TypeHasNoMembers { ty: long_ty.intern(ctx.db), member_name },
             ))
         }
@@ -4090,18 +4082,19 @@ fn get_enriched_type_member_access<'db>(
         }
         Entry::Vacant(_) => {
             let (_, long_ty) = finalized_snapshot_peeled_ty(ctx, ty, stable_ptr)?;
-            let members = if let Some(type_members_map) = ctx.db.type_members(long_ty.intern(ctx.db))? {
-                if let Some(type_member) = type_members_map.get(&accessed_member_name) {
-                    // Found direct member access - so directly returning it.
-                    return Ok(Some(EnrichedTypeMemberAccess {
-                        type_member: type_member.clone(),
-                        deref_functions: vec![],
-                    }));
-                }
-                type_members_map.iter().map(|(k, v)| (*k, (v.clone(), 0))).collect()
-            } else {
-                Default::default()
-            };
+            let members =
+                if let Some(type_members_map) = ctx.db.type_members(long_ty.intern(ctx.db))? {
+                    if let Some(type_member) = type_members_map.get(&accessed_member_name) {
+                        // Found direct member access - so directly returning it.
+                        return Ok(Some(EnrichedTypeMemberAccess {
+                            type_member: type_member.clone(),
+                            deref_functions: vec![],
+                        }));
+                    }
+                    type_members_map.iter().map(|(k, v)| (*k, (v.clone(), 0))).collect()
+                } else {
+                    Default::default()
+                };
 
             EnrichedMembers {
                 members,

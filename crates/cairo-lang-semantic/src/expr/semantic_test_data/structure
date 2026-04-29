@@ -39,8 +39,13 @@ Block(
                             expr: Var(
                                 LocalVarId(test::a),
                             ),
-                            concrete_struct_id: test::A,
-                            member: MemberId(test::A::a),
+                            type_member: TypeMember {
+                                ty: (core::felt252,),
+                                visibility: Private,
+                                kind: StructMember(
+                                    MemberId(test::A::a),
+                                ),
+                            },
                             ty: (core::felt252,),
                         },
                     ),
@@ -53,8 +58,13 @@ Block(
                             expr: Var(
                                 LocalVarId(test::a),
                             ),
-                            concrete_struct_id: test::A,
-                            member: MemberId(test::A::b),
+                            type_member: TypeMember {
+                                ty: core::felt252,
+                                visibility: Private,
+                                kind: StructMember(
+                                    MemberId(test::A::b),
+                                ),
+                            },
                             ty: core::felt252,
                         },
                     ),
@@ -67,8 +77,13 @@ Block(
                             expr: Var(
                                 LocalVarId(test::a),
                             ),
-                            concrete_struct_id: test::A,
-                            member: MemberId(test::A::c),
+                            type_member: TypeMember {
+                                ty: test::B,
+                                visibility: Private,
+                                kind: StructMember(
+                                    MemberId(test::A::c),
+                                ),
+                            },
                             ty: test::B,
                         },
                     ),
@@ -83,13 +98,23 @@ Block(
                                     expr: Var(
                                         LocalVarId(test::a),
                                     ),
-                                    concrete_struct_id: test::A,
-                                    member: MemberId(test::A::c),
+                                    type_member: TypeMember {
+                                        ty: test::B,
+                                        visibility: Private,
+                                        kind: StructMember(
+                                            MemberId(test::A::c),
+                                        ),
+                                    },
                                     ty: test::B,
                                 },
                             ),
-                            concrete_struct_id: test::B,
-                            member: MemberId(test::B::a),
+                            type_member: TypeMember {
+                                ty: core::felt252,
+                                visibility: Private,
+                                kind: StructMember(
+                                    MemberId(test::B::a),
+                                ),
+                            },
                             ty: core::felt252,
                         },
                     ),

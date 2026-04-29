@@ -10,6 +10,7 @@ use salsa::Database;
 
 use super::fmt::ExprFormatter;
 use crate::items::constant::ConstValueId;
+use crate::items::structure::TypeMember;
 use crate::{ConcreteStructId, FunctionId, TypeId, semantic};
 
 /// Defines an arena id type and its behavior for usage in an arena.
@@ -526,8 +527,7 @@ pub struct ExprStringLiteral<'db> {
 #[debug_db(ExprFormatter<'db>)]
 pub struct ExprMemberAccess<'db> {
     pub expr: semantic::ExprId,
-    pub concrete_struct_id: ConcreteStructId<'db>,
-    pub member: MemberId<'db>,
+    pub type_member: TypeMember<'db>,
     pub ty: semantic::TypeId<'db>,
     #[hide_field_debug_with_db]
     pub member_path: Option<ExprVarMemberPath<'db>>,

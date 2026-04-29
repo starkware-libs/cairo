@@ -58,8 +58,8 @@ use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
     FunctionId, FunctionLongId, GenericArgumentId, GenericParam, LocalVariable, MatchArmSelector,
-    Member, Parameter, SemanticObject, Signature, TypeId, TypeLongId, ValueSelectorArm,
-    add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id,
+    Member, Parameter, SemanticObject, Signature, TypeId, TypeLongId, TypeMember, TypeMemberKind,
+    ValueSelectorArm, add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id,
 };
 
 pub mod canonic;

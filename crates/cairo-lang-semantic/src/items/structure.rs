@@ -123,7 +123,7 @@ pub struct Member<'db> {
 
 /// A member or element of a type, abstracting over named struct members and positional tuple
 /// elements, enabling unified member access across both.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
 #[debug_db(dyn Database)]
 pub struct TypeMember<'db> {
     pub ty: TypeId<'db>,
@@ -133,7 +133,7 @@ pub struct TypeMember<'db> {
 }
 
 /// Distinguishes between named struct members and positional tuple elements.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject, salsa::Update)]
 #[debug_db(dyn Database)]
 pub enum TypeMemberKind<'db> {
     /// A named struct member, identified by its `MemberId`.
