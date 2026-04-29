@@ -8,7 +8,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe, MaybeAsRef};
 use cairo_lang_filesystem::ids::SmolStrId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode};
+use cairo_lang_syntax::node::{Terminal, TypedStablePtr, TypedSyntaxNode, ast};
 use cairo_lang_utils::Intern;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use salsa::Database;
@@ -109,6 +109,7 @@ fn struct_generic_params_data<'db>(
 struct StructDefinitionData<'db> {
     diagnostics: Diagnostics<'db, SemanticDiagnostic<'db>>,
     members: OrderedHashMap<SmolStrId<'db>, Member<'db>>,
+    positional_tys: Option<Vec<(TypeId<'db>, Visibility)>>,
     resolver_data: Arc<ResolverData<'db>>,
 }
 
@@ -154,22 +155,44 @@ fn type_members_query<'db>(
 ) -> Maybe<Option<OrderedHashMap<SmolStrId<'db>, TypeMember<'db>>>> {
     match ty.long(db) {
         TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) => {
-            let members = db.concrete_struct_members(*concrete_struct_id)?;
-            Ok(Some(
-                members
-                    .iter()
-                    .map(|(name, member)| {
-                        (
-                            *name,
-                            TypeMember {
-                                ty: member.ty,
-                                visibility: member.visibility,
-                                kind: TypeMemberKind::StructMember(member.id),
-                            },
-                        )
-                    })
-                    .collect(),
-            ))
+            if let Some(positional_tys) =
+                db.concrete_struct_positional_types(*concrete_struct_id)?
+            {
+                Ok(Some(
+                    positional_tys
+                        .iter()
+                        .enumerate()
+                        .map(|(i, &(ty, visibility))| {
+                            let name = SmolStrId::from(db, i.to_string());
+                            (
+                                name,
+                                TypeMember {
+                                    ty,
+                                    visibility,
+                                    kind: TypeMemberKind::TupleElement(i),
+                                },
+                            )
+                        })
+                        .collect(),
+                ))
+            } else {
+                let members = db.concrete_struct_members(*concrete_struct_id)?;
+                Ok(Some(
+                    members
+                        .iter()
+                        .map(|(name, member)| {
+                            (
+                                *name,
+                                TypeMember {
+                                    ty: member.ty,
+                                    visibility: member.visibility,
+                                    kind: TypeMemberKind::StructMember(member.id),
+                                },
+                            )
+                        })
+                        .collect(),
+                ))
+            }
         }
         TypeLongId::Tuple(tys) => Ok(Some(
             tys.iter()
@@ -217,20 +240,52 @@ fn struct_definition_data<'db>(
     );
     diagnostics.extend(generic_params_data.diagnostics.clone());
 
-    // Members.
+    // Members (or positional types for tuple structs).
     let mut members = OrderedHashMap::default();
-    for member in struct_ast.members(db).elements(db) {
-        let feature_restore =
-            resolver.extend_feature_config_from_item(db, crate_id, &mut diagnostics, &member);
-        let id = MemberLongId(module_id, member.stable_ptr(db)).intern(db);
-        let ty = resolve_type(db, &mut diagnostics, &mut resolver, &member.type_clause(db).ty(db));
-        let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
-        let member_name = member.name(db).text(db);
-        if let Some(_other_member) = members.insert(member_name, Member { id, ty, visibility }) {
-            diagnostics
-                .report(member.stable_ptr(db), StructMemberRedefinition { struct_id, member_name });
+    let mut positional_tys: Option<Vec<(TypeId<'db>, Visibility)>> = None;
+    match struct_ast.body(db) {
+        ast::StructBody::Braces(body) => {
+            for member in body.members(db).elements(db) {
+                let feature_restore = resolver.extend_feature_config_from_item(
+                    db,
+                    crate_id,
+                    &mut diagnostics,
+                    &member,
+                );
+                let id = MemberLongId(module_id, member.stable_ptr(db)).intern(db);
+                let ty = resolve_type(
+                    db,
+                    &mut diagnostics,
+                    &mut resolver,
+                    &member.type_clause(db).ty(db),
+                );
+                let visibility = Visibility::from_ast(db, &mut diagnostics, &member.visibility(db));
+                let member_name = member.name(db).text(db);
+                if let Some(_other_member) =
+                    members.insert(member_name, Member { id, ty, visibility })
+                {
+                    diagnostics.report(
+                        member.stable_ptr(db),
+                        StructMemberRedefinition { struct_id, member_name },
+                    );
+                }
+                resolver.restore_feature_config(feature_restore);
+            }
         }
-        resolver.restore_feature_config(feature_restore);
+        ast::StructBody::Parens(body) => {
+            positional_tys = Some(
+                body.members(db)
+                    .elements(db)
+                    .map(|arg_member| {
+                        let ty =
+                            resolve_type(db, &mut diagnostics, &mut resolver, &arg_member.ty(db));
+                        let visibility =
+                            Visibility::from_ast(db, &mut diagnostics, &arg_member.visibility(db));
+                        (ty, visibility)
+                    })
+                    .collect(),
+            );
+        }
     }
 
     // Check fully resolved.
@@ -240,9 +295,19 @@ fn struct_definition_data<'db>(
     for (_, member) in members.iter_mut() {
         member.ty = inference.rewrite(member.ty).no_err();
     }
+    if let Some(ref mut tys) = positional_tys {
+        for (ty, _) in tys.iter_mut() {
+            *ty = inference.rewrite(*ty).no_err();
+        }
+    }
 
     let resolver_data = Arc::new(resolver.data);
-    Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolver_data })
+    Ok(StructDefinitionData {
+        diagnostics: diagnostics.build(),
+        members,
+        positional_tys,
+        resolver_data,
+    })
 }
 
 /// Query implementation of [StructSemantic::struct_definition_diagnostics].
@@ -277,6 +342,21 @@ fn struct_definition_diagnostics<'db>(
             diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);
         }
     }
+    if let Some(positional_tys) = data.positional_tys.as_ref() {
+        if let Ok(struct_ast) = db.module_struct_by_id(struct_id) {
+            if let ast::StructBody::Parens(body) = struct_ast.body(db) {
+                for (arg_member, &(ty, _)) in
+                    body.members(db).elements(db).zip(positional_tys.iter())
+                {
+                    let stable_ptr = arg_member.stable_ptr(db).untyped();
+                    add_type_based_diagnostics(db, &mut diagnostics, ty, stable_ptr);
+                    if ty.is_phantom(db) {
+                        diagnostics.report(stable_ptr, NonPhantomTypeContainingPhantomType);
+                    }
+                }
+            }
+        }
+    }
     diagnostics.build()
 }
 
@@ -300,6 +380,35 @@ fn concrete_struct_members<'db>(
             Ok((*name, semantic::Member { ty, ..member.clone() }))
         })
         .collect()
+}
+
+/// Returns the positional types of a tuple struct, or `None` for braced structs.
+#[salsa::tracked(returns(ref))]
+fn struct_positional_types<'db>(
+    db: &'db dyn Database,
+    struct_id: StructId<'db>,
+) -> Maybe<Option<Vec<(TypeId<'db>, Visibility)>>> {
+    Ok(struct_definition_data(db, struct_id).maybe_as_ref()?.positional_tys.clone())
+}
+
+/// Returns the substituted positional types of a concrete tuple struct, or `None` for braced
+/// structs.
+#[salsa::tracked(returns(ref))]
+fn concrete_struct_positional_types<'db>(
+    db: &'db dyn Database,
+    concrete_struct_id: ConcreteStructId<'db>,
+) -> Maybe<Option<Vec<(TypeId<'db>, Visibility)>>> {
+    let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
+    let generic_args = &concrete_struct_id.long(db).generic_args;
+    let substitution = GenericSubstitution::new(generic_params, generic_args);
+    let Some(positional_tys) = db.struct_positional_types(concrete_struct_id.struct_id(db))? else {
+        return Ok(None);
+    };
+    let substituted = positional_tys
+        .iter()
+        .map(|&(ty, visibility)| Ok((substitution.substitute(db, ty)?, visibility)))
+        .collect::<Maybe<Vec<_>>>()?;
+    Ok(Some(substituted))
 }
 
 /// Trait for struct-related semantic queries.
@@ -365,6 +474,25 @@ pub trait StructSemantic<'db>: Database {
         concrete_struct_id: ConcreteStructId<'db>,
     ) -> Maybe<&'db OrderedHashMap<SmolStrId<'db>, semantic::Member<'db>>> {
         concrete_struct_members(self.as_dyn_database(), concrete_struct_id).maybe_as_ref()
+    }
+    /// Returns the positional types of a tuple struct, or `None` for braced structs.
+    fn struct_positional_types(
+        &'db self,
+        struct_id: StructId<'db>,
+    ) -> Maybe<Option<&'db Vec<(TypeId<'db>, Visibility)>>> {
+        struct_positional_types(self.as_dyn_database(), struct_id)
+            .maybe_as_ref()
+            .map(Option::as_ref)
+    }
+    /// Returns the substituted positional types of a concrete tuple struct, or `None` for braced
+    /// structs.
+    fn concrete_struct_positional_types(
+        &'db self,
+        concrete_struct_id: ConcreteStructId<'db>,
+    ) -> Maybe<Option<&'db Vec<(TypeId<'db>, Visibility)>>> {
+        concrete_struct_positional_types(self.as_dyn_database(), concrete_struct_id)
+            .maybe_as_ref()
+            .map(Option::as_ref)
     }
     /// Returns the members of a type keyed by their access name, or `None` for types without
     /// members. Works for both struct types and tuples.

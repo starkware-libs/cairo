@@ -33,7 +33,10 @@ pub fn handle_storage_struct<'db, 'a>(
     let mut substorage_members_init_code = vec![];
     let mut storage_struct_members = vec![];
     let configs = struct_members_storage_configs(db, &struct_ast, diagnostics);
-    for (member, config) in zip_eq(struct_ast.members(db).elements(db), &configs) {
+    let ast::StructBody::Braces(body) = struct_ast.body(db) else {
+        return;
+    };
+    for (member, config) in zip_eq(body.members(db).elements(db), &configs) {
         if config.kind == StorageMemberKind::SubStorage {
             if let Some((struct_code, init_code)) =
                 get_substorage_member_code(db, &member, metadata)

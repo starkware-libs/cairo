@@ -137,3 +137,23 @@ error[E2053]: Cannot have array of type "((), ())" that is zero sized.
  --> lib.cairo:2:5
     member: Array<((), ())>,
     ^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test tuple struct member access.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn first(p: Point) -> u32 {
+    p.0
+}
+
+//! > function_name
+first
+
+//! > module_code
+struct Point (pub u32, u64)
+
+//! > expected_diagnostics

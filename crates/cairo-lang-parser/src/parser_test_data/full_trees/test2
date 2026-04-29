@@ -421,32 +421,33 @@ skipped tokens
     │           │       ├── struct_kw (kind: TokenStruct): 'struct'
     │           │       ├── name (kind: TokenIdentifier): 'A'
     │           │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    │           │       ├── lbrace (kind: TokenLBrace): '{'
-    │           │       ├── members (kind: MemberList)
-    │           │       │   ├── item #0 (kind: Member)
-    │           │       │   │   ├── attributes (kind: AttributeList) []
-    │           │       │   │   ├── visibility (kind: VisibilityDefault) []
-    │           │       │   │   ├── name (kind: TokenIdentifier): 'x'
-    │           │       │   │   └── type_clause (kind: TypeClause)
-    │           │       │   │       ├── colon (kind: TokenColon): ':'
-    │           │       │   │       └── ty (kind: ExprPath)
-    │           │       │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │           │       │   │           └── segments (kind: ExprPathInner)
-    │           │       │   │               └── item #0 (kind: PathSegmentSimple)
-    │           │       │   │                   └── ident (kind: TokenIdentifier): 'a'
-    │           │       │   ├── separator #0 (kind: TokenComma): ','
-    │           │       │   └── item #1 (kind: Member)
-    │           │       │       ├── attributes (kind: AttributeList) []
-    │           │       │       ├── visibility (kind: VisibilityDefault) []
-    │           │       │       ├── name (kind: TokenIdentifier): 'y'
-    │           │       │       └── type_clause (kind: TypeClause)
-    │           │       │           ├── colon (kind: TokenColon): ':'
-    │           │       │           └── ty (kind: ExprPath)
-    │           │       │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │           │       │               └── segments (kind: ExprPathInner)
-    │           │       │                   └── item #0 (kind: PathSegmentSimple)
-    │           │       │                       └── ident (kind: TokenIdentifier): 'int'
-    │           │       └── rbrace (kind: TokenRBrace): '}'
+    │           │       └── body (kind: StructBodyBraces)
+    │           │           ├── lbrace (kind: TokenLBrace): '{'
+    │           │           ├── members (kind: MemberList)
+    │           │           │   ├── item #0 (kind: Member)
+    │           │           │   │   ├── attributes (kind: AttributeList) []
+    │           │           │   │   ├── visibility (kind: VisibilityDefault) []
+    │           │           │   │   ├── name (kind: TokenIdentifier): 'x'
+    │           │           │   │   └── type_clause (kind: TypeClause)
+    │           │           │   │       ├── colon (kind: TokenColon): ':'
+    │           │           │   │       └── ty (kind: ExprPath)
+    │           │           │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │           │   │           └── segments (kind: ExprPathInner)
+    │           │           │   │               └── item #0 (kind: PathSegmentSimple)
+    │           │           │   │                   └── ident (kind: TokenIdentifier): 'a'
+    │           │           │   ├── separator #0 (kind: TokenComma): ','
+    │           │           │   └── item #1 (kind: Member)
+    │           │           │       ├── attributes (kind: AttributeList) []
+    │           │           │       ├── visibility (kind: VisibilityDefault) []
+    │           │           │       ├── name (kind: TokenIdentifier): 'y'
+    │           │           │       └── type_clause (kind: TypeClause)
+    │           │           │           ├── colon (kind: TokenColon): ':'
+    │           │           │           └── ty (kind: ExprPath)
+    │           │           │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │           │               └── segments (kind: ExprPathInner)
+    │           │           │                   └── item #0 (kind: PathSegmentSimple)
+    │           │           │                       └── ident (kind: TokenIdentifier): 'int'
+    │           │           └── rbrace (kind: TokenRBrace): '}'
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 
@@ -1356,70 +1357,71 @@ skipped tokens
     │           │       │   ├── token (kind: TokenIdentifier): 'A'
     │           │       │   └── trailing_trivia (kind: Trivia) []
     │           │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    │           │       ├── lbrace (kind: TerminalLBrace)
-    │           │       │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   ├── token (kind: TokenLBrace): '{'
-    │           │       │   └── trailing_trivia (kind: Trivia)
-    │           │       │       └── child #0 (kind: TokenNewline).
-    │           │       ├── members (kind: MemberList)
-    │           │       │   ├── item #0 (kind: Member)
-    │           │       │   │   ├── attributes (kind: AttributeList) []
-    │           │       │   │   ├── visibility (kind: VisibilityDefault) []
-    │           │       │   │   ├── name (kind: TerminalIdentifier)
-    │           │       │   │   │   ├── leading_trivia (kind: Trivia)
-    │           │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │           │       │   │   │   ├── token (kind: TokenIdentifier): 'x'
-    │           │       │   │   │   └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   └── type_clause (kind: TypeClause)
-    │           │       │   │       ├── colon (kind: TerminalColon)
-    │           │       │   │       │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   │       │   ├── token (kind: TokenColon): ':'
-    │           │       │   │       │   └── trailing_trivia (kind: Trivia)
-    │           │       │   │       │       └── child #0 (kind: TokenWhitespace).
-    │           │       │   │       └── ty (kind: ExprPath)
-    │           │       │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │           │       │   │           └── segments (kind: ExprPathInner)
-    │           │       │   │               └── item #0 (kind: PathSegmentSimple)
-    │           │       │   │                   └── ident (kind: TerminalIdentifier)
-    │           │       │   │                       ├── leading_trivia (kind: Trivia) []
-    │           │       │   │                       ├── token (kind: TokenIdentifier): 'a'
-    │           │       │   │                       └── trailing_trivia (kind: Trivia) []
-    │           │       │   ├── separator #0 (kind: TerminalComma)
-    │           │       │   │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   ├── token (kind: TokenComma): ','
-    │           │       │   │   └── trailing_trivia (kind: Trivia)
-    │           │       │   │       ├── child #0 (kind: TokenWhitespace).
-    │           │       │   │       ├── child #1 (kind: TokenSingleLineComment): '// Comment.'
-    │           │       │   │       └── child #2 (kind: TokenNewline).
-    │           │       │   └── item #1 (kind: Member)
-    │           │       │       ├── attributes (kind: AttributeList) []
-    │           │       │       ├── visibility (kind: VisibilityDefault) []
-    │           │       │       ├── name (kind: TerminalIdentifier)
-    │           │       │       │   ├── leading_trivia (kind: Trivia)
-    │           │       │       │   │   └── child #0 (kind: TokenWhitespace).
-    │           │       │       │   ├── token (kind: TokenIdentifier): 'y'
-    │           │       │       │   └── trailing_trivia (kind: Trivia) []
-    │           │       │       └── type_clause (kind: TypeClause)
-    │           │       │           ├── colon (kind: TerminalColon)
-    │           │       │           │   ├── leading_trivia (kind: Trivia) []
-    │           │       │           │   ├── token (kind: TokenColon): ':'
-    │           │       │           │   └── trailing_trivia (kind: Trivia)
-    │           │       │           │       └── child #0 (kind: TokenWhitespace).
-    │           │       │           └── ty (kind: ExprPath)
-    │           │       │               ├── dollar (kind: OptionTerminalDollarEmpty) []
-    │           │       │               └── segments (kind: ExprPathInner)
-    │           │       │                   └── item #0 (kind: PathSegmentSimple)
-    │           │       │                       └── ident (kind: TerminalIdentifier)
-    │           │       │                           ├── leading_trivia (kind: Trivia) []
-    │           │       │                           ├── token (kind: TokenIdentifier): 'int'
-    │           │       │                           └── trailing_trivia (kind: Trivia)
-    │           │       │                               └── child #0 (kind: TokenNewline).
-    │           │       └── rbrace (kind: TerminalRBrace)
-    │           │           ├── leading_trivia (kind: Trivia)
-    │           │           │   └── child #0 (kind: TokenWhitespace).
-    │           │           ├── token (kind: TokenRBrace): '}'
-    │           │           └── trailing_trivia (kind: Trivia)
-    │           │               └── child #0 (kind: TokenNewline).
+    │           │       └── body (kind: StructBodyBraces)
+    │           │           ├── lbrace (kind: TerminalLBrace)
+    │           │           │   ├── leading_trivia (kind: Trivia) []
+    │           │           │   ├── token (kind: TokenLBrace): '{'
+    │           │           │   └── trailing_trivia (kind: Trivia)
+    │           │           │       └── child #0 (kind: TokenNewline).
+    │           │           ├── members (kind: MemberList)
+    │           │           │   ├── item #0 (kind: Member)
+    │           │           │   │   ├── attributes (kind: AttributeList) []
+    │           │           │   │   ├── visibility (kind: VisibilityDefault) []
+    │           │           │   │   ├── name (kind: TerminalIdentifier)
+    │           │           │   │   │   ├── leading_trivia (kind: Trivia)
+    │           │           │   │   │   │   └── child #0 (kind: TokenWhitespace).
+    │           │           │   │   │   ├── token (kind: TokenIdentifier): 'x'
+    │           │           │   │   │   └── trailing_trivia (kind: Trivia) []
+    │           │           │   │   └── type_clause (kind: TypeClause)
+    │           │           │   │       ├── colon (kind: TerminalColon)
+    │           │           │   │       │   ├── leading_trivia (kind: Trivia) []
+    │           │           │   │       │   ├── token (kind: TokenColon): ':'
+    │           │           │   │       │   └── trailing_trivia (kind: Trivia)
+    │           │           │   │       │       └── child #0 (kind: TokenWhitespace).
+    │           │           │   │       └── ty (kind: ExprPath)
+    │           │           │   │           ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │           │   │           └── segments (kind: ExprPathInner)
+    │           │           │   │               └── item #0 (kind: PathSegmentSimple)
+    │           │           │   │                   └── ident (kind: TerminalIdentifier)
+    │           │           │   │                       ├── leading_trivia (kind: Trivia) []
+    │           │           │   │                       ├── token (kind: TokenIdentifier): 'a'
+    │           │           │   │                       └── trailing_trivia (kind: Trivia) []
+    │           │           │   ├── separator #0 (kind: TerminalComma)
+    │           │           │   │   ├── leading_trivia (kind: Trivia) []
+    │           │           │   │   ├── token (kind: TokenComma): ','
+    │           │           │   │   └── trailing_trivia (kind: Trivia)
+    │           │           │   │       ├── child #0 (kind: TokenWhitespace).
+    │           │           │   │       ├── child #1 (kind: TokenSingleLineComment): '// Comment.'
+    │           │           │   │       └── child #2 (kind: TokenNewline).
+    │           │           │   └── item #1 (kind: Member)
+    │           │           │       ├── attributes (kind: AttributeList) []
+    │           │           │       ├── visibility (kind: VisibilityDefault) []
+    │           │           │       ├── name (kind: TerminalIdentifier)
+    │           │           │       │   ├── leading_trivia (kind: Trivia)
+    │           │           │       │   │   └── child #0 (kind: TokenWhitespace).
+    │           │           │       │   ├── token (kind: TokenIdentifier): 'y'
+    │           │           │       │   └── trailing_trivia (kind: Trivia) []
+    │           │           │       └── type_clause (kind: TypeClause)
+    │           │           │           ├── colon (kind: TerminalColon)
+    │           │           │           │   ├── leading_trivia (kind: Trivia) []
+    │           │           │           │   ├── token (kind: TokenColon): ':'
+    │           │           │           │   └── trailing_trivia (kind: Trivia)
+    │           │           │           │       └── child #0 (kind: TokenWhitespace).
+    │           │           │           └── ty (kind: ExprPath)
+    │           │           │               ├── dollar (kind: OptionTerminalDollarEmpty) []
+    │           │           │               └── segments (kind: ExprPathInner)
+    │           │           │                   └── item #0 (kind: PathSegmentSimple)
+    │           │           │                       └── ident (kind: TerminalIdentifier)
+    │           │           │                           ├── leading_trivia (kind: Trivia) []
+    │           │           │                           ├── token (kind: TokenIdentifier): 'int'
+    │           │           │                           └── trailing_trivia (kind: Trivia)
+    │           │           │                               └── child #0 (kind: TokenNewline).
+    │           │           └── rbrace (kind: TerminalRBrace)
+    │           │               ├── leading_trivia (kind: Trivia)
+    │           │               │   └── child #0 (kind: TokenWhitespace).
+    │           │               ├── token (kind: TokenRBrace): '}'
+    │           │               └── trailing_trivia (kind: Trivia)
+    │           │                   └── child #0 (kind: TokenNewline).
     │           └── rbrace (kind: TerminalRBrace)
     │               ├── leading_trivia (kind: Trivia)
     │               │   └── child #0 (kind: TokenNewline).

@@ -992,7 +992,8 @@ define_named_language_element_id!(MemberId, MemberLongId, ast::Member<'db>);
 impl<'db> MemberId<'db> {
     pub fn struct_id(&self, db: &'db dyn Database) -> StructId<'db> {
         let MemberLongId(module_id, ptr) = self.long(db).clone();
-        let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db, 2));
+        // Member -> MemberList -> StructBodyBraces -> ItemStruct (3 levels up).
+        let struct_ptr = ast::ItemStructPtr(ptr.untyped().nth_parent(db, 3));
         StructLongId(module_id, struct_ptr).intern(db)
     }
 }

@@ -1834,12 +1834,30 @@ fn lower_expr_member_access<'db>(
                 .collect();
             (member_tys, member_idx)
         }
-        TypeMemberKind::TupleElement(idx) => {
-            let tys = extract_matches!(container_long_ty, TypeLongId::Tuple);
-            let member_tys =
-                tys.iter().map(|&ty| wrap_in_snapshots(ctx.db, ty, expr.n_snapshots)).collect();
-            (member_tys, *idx)
-        }
+        TypeMemberKind::TupleElement(idx) => match container_long_ty {
+            TypeLongId::Tuple(tys) => {
+                let member_tys =
+                    tys.iter().map(|&ty| wrap_in_snapshots(ctx.db, ty, expr.n_snapshots)).collect();
+                (member_tys, *idx)
+            }
+            TypeLongId::Concrete(semantic::ConcreteTypeId::Struct(concrete_struct_id)) => {
+                let positional_tys = ctx
+                    .db
+                    .concrete_struct_positional_types(concrete_struct_id)
+                    .map_err(LoweringFlowError::Failed)?
+                    .ok_or_else(|| {
+                        LoweringFlowError::Failed(
+                            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
+                        )
+                    })?;
+                let member_tys = positional_tys
+                    .iter()
+                    .map(|&(ty, _)| wrap_in_snapshots(ctx.db, ty, expr.n_snapshots))
+                    .collect();
+                (member_tys, *idx)
+            }
+            _ => unreachable!("TupleElement access on unexpected container type"),
+        },
     };
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
