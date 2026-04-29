@@ -46,7 +46,10 @@ fn handle_struct<'db>(
     let mut append_members = vec![];
     let mut ctor = vec![];
     let mut members = vec![];
-    for member in struct_ast.members(db).elements(db) {
+    let ast::StructBody::Braces(body) = struct_ast.body(db) else {
+        return None;
+    };
+    for member in body.members(db).elements(db) {
         let member_name = RewriteNode::from_ast_trimmed(&member.name(db));
         let member_kind =
             get_field_kind_for_member(db, diagnostics, &member, EventFieldKind::DataSerde);

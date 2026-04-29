@@ -486,7 +486,8 @@ impl<'a, 'mt> Parser<'a, 'mt> {
     }
 
     /// Assumes the current token is Struct.
-    /// Expected pattern: `struct<Identifier>{<ParamList>}`
+    /// Expected pattern: `struct<Identifier>{<MemberList>}` or
+    /// `struct<Identifier>(<StructArgMemberList>)`.
     fn expect_item_struct(
         &mut self,
         attributes: AttributeListGreen<'a>,
@@ -495,9 +496,17 @@ impl<'a, 'mt> Parser<'a, 'mt> {
         let struct_kw = self.take::<TerminalStruct<'_>>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
-        let lbrace = self.parse_token::<TerminalLBrace<'_>>();
-        let members = self.parse_member_list();
-        let rbrace = self.parse_token::<TerminalRBrace<'_>>();
+        let body = if self.peek().kind == SyntaxKind::TerminalLParen {
+            let lparen = self.take::<TerminalLParen<'_>>();
+            let members = self.parse_struct_arg_member_list();
+            let rparen = self.parse_token::<TerminalRParen<'_>>();
+            StructBodyParens::new_green(self.db, lparen, members, rparen).into()
+        } else {
+            let lbrace = self.parse_token::<TerminalLBrace<'_>>();
+            let members = self.parse_member_list();
+            let rbrace = self.parse_token::<TerminalRBrace<'_>>();
+            StructBodyBraces::new_green(self.db, lbrace, members, rbrace).into()
+        };
         ItemStruct::new_green(
             self.db,
             attributes,
@@ -505,10 +514,32 @@ impl<'a, 'mt> Parser<'a, 'mt> {
             struct_kw,
             name,
             generic_params,
-            lbrace,
-            members,
-            rbrace,
+            body,
         )
+    }
+
+    /// Returns a GreenId of a node with kind StructArgMemberList.
+    fn parse_struct_arg_member_list(&mut self) -> StructArgMemberListGreen<'a> {
+        StructArgMemberList::new_green(
+            self.db,
+            &self.parse_separated_list::<
+                StructArgMember<'_>,
+                TerminalComma<'_>,
+                StructArgMemberListElementOrSeparatorGreen<'_>,
+            >(
+                Self::try_parse_struct_arg_member,
+                is_of_kind!(rparen, block, lbrace, rbrace, module_item_kw),
+                "type",
+            ),
+        )
+    }
+
+    /// Returns a GreenId of a node with kind StructArgMember, or TryParseFailure if a positional
+    /// struct member can't be parsed.
+    fn try_parse_struct_arg_member(&mut self) -> TryParseResult<StructArgMemberGreen<'a>> {
+        let visibility = self.parse_visibility();
+        let ty = self.try_parse_type_expr()?;
+        Ok(StructArgMember::new_green(self.db, visibility, ty))
     }
 
     /// Assumes the current token is Enum.

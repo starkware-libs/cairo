@@ -104,6 +104,10 @@ pub fn key_fields_range(kind: SyntaxKind) -> core::ops::Range<usize> {
         // Key fields: name.
         SyntaxKind::Member => 2..3,
         SyntaxKind::MemberList => 0..0,
+        SyntaxKind::StructArgMember => 0..0,
+        SyntaxKind::StructArgMemberList => 0..0,
+        SyntaxKind::StructBodyBraces => 0..0,
+        SyntaxKind::StructBodyParens => 0..0,
         // Key fields: name.
         SyntaxKind::Variant => 1..2,
         SyntaxKind::VariantList => 0..0,

@@ -274,7 +274,10 @@ fn handle_contract_item<'db, 'a>(
                 &mut data.common,
                 metadata,
             );
-            for member in item_struct.members(db).elements(db) {
+            let ast::StructBody::Braces(body) = item_struct.body(db) else {
+                return;
+            };
+            for member in body.members(db).elements(db) {
                 // v0 is not validated here to not create multiple diagnostics. It's already
                 // verified in handle_storage_struct above.
                 if member.has_attr(db, SUBSTORAGE_ATTR) {

@@ -1395,13 +1395,15 @@ fn validate_attributes<'db>(
             }
         }
         ast::ModuleItem::Struct(item) => {
-            validate_attributes_element_list(
-                db,
-                allowed_attributes,
-                &extra_allowed_attributes,
-                item.members(db).elements(db),
-                plugin_diagnostics,
-            );
+            if let ast::StructBody::Braces(body) = item.body(db) {
+                validate_attributes_element_list(
+                    db,
+                    allowed_attributes,
+                    &extra_allowed_attributes,
+                    body.members(db).elements(db),
+                    plugin_diagnostics,
+                );
+            }
         }
         ast::ModuleItem::Enum(item) => {
             validate_attributes_element_list(

@@ -595,7 +595,10 @@ fn add_interface_struct_definition<'db>(
         .into(),
     ));
 
-    for field in struct_ast.members(db).elements(db) {
+    let ast::StructBody::Braces(body) = struct_ast.body(db) else {
+        return;
+    };
+    for field in body.members(db).elements(db) {
         let concrete_node_members_type = storage_node_info.concrete_node_members_type(&field);
         let field_visibility = if backwards_compatible_storage(metadata.edition) {
             RewriteNode::text("pub ")
@@ -661,8 +664,10 @@ fn add_interface_impl<'db>(
         .into(),
     ));
 
-    let members = struct_ast.members(db);
-    let fields = members.elements(db);
+    let ast::StructBody::Braces(braced_body) = struct_ast.body(db) else {
+        return;
+    };
+    let fields = braced_body.members(db).elements(db);
     let mut fields_iter = zip_eq(fields, configs).peekable();
     while let Some((field, config)) = fields_iter.next() {
         let field_name = RewriteNode::from_ast_trimmed(&field.name(db));
@@ -686,7 +691,7 @@ fn add_interface_impl<'db>(
         &[("object_name".to_string(), struct_name)].into(),
     ));
 
-    for field in struct_ast.members(db).elements(db) {
+    for field in braced_body.members(db).elements(db) {
         builder.add_modified(RewriteNode::interpolate_patched(
             "           $field_name$: __$field_name$_value__,\n",
             &[("field_name".to_string(), RewriteNode::from_ast_trimmed(&field.name(db)))].into(),
@@ -833,8 +838,10 @@ pub fn struct_members_storage_configs<'db>(
     struct_ast: &ast::ItemStruct<'db>,
     diagnostics: &mut Vec<PluginDiagnostic<'db>>,
 ) -> Vec<StorageMemberConfig> {
-    struct_ast
-        .members(db)
+    let ast::StructBody::Braces(body) = struct_ast.body(db) else {
+        return vec![];
+    };
+    body.members(db)
         .elements(db)
         .map(|member| get_member_storage_config(db, &member, diagnostics))
         .collect()

@@ -90,7 +90,10 @@ impl<'a> PluginTypeInfo<'a> {
                 let generics = GenericParamsInfo::new(db, struct_ast.generic_params(db));
                 let interned =
                     generics.param_names.iter().map(|s| SmolStrId::from(db, *s)).collect_vec();
-                let members_info = extract_members(db, struct_ast.members(db), &interned);
+                let ast::StructBody::Braces(body) = struct_ast.body(db) else {
+                    return None;
+                };
+                let members_info = extract_members(db, body.members(db), &interned);
                 Some(Self {
                     name: struct_ast.name(db).text(db).long(db).as_str(),
                     attributes: struct_ast.attributes(db),

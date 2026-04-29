@@ -158,9 +158,10 @@ VariantList
     │   ├── struct_kw (kind: TokenStruct): 'struct'
     │   ├── name (kind: TokenIdentifier): 'u256'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
-    │   ├── lbrace (kind: TokenLBrace): '{'
-    │   ├── members (kind: MemberList) <ignored>
-    │   └── rbrace (kind: TokenRBrace): '}'
+    │   └── body (kind: StructBodyBraces)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── members (kind: MemberList) <ignored>
+    │       └── rbrace (kind: TokenRBrace): '}'
     ├── child #3 (kind: FunctionWithBody)
     │   ├── attributes (kind: AttributeList)
     │   │   └── child #0 (kind: Attribute)

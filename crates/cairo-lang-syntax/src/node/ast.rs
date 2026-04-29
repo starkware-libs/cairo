@@ -12729,6 +12729,492 @@ impl<'db> TypedSyntaxNode<'db> for MemberList<'db> {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct StructArgMember<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> StructArgMember<'db> {
+    pub const INDEX_VISIBILITY: usize = 0;
+    pub const INDEX_TY: usize = 1;
+    pub fn new_green(
+        db: &'db dyn Database,
+        visibility: VisibilityGreen<'db>,
+        ty: ExprGreen<'db>,
+    ) -> StructArgMemberGreen<'db> {
+        let children = [visibility.0, ty.0];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        StructArgMemberGreen(
+            GreenNode {
+                kind: SyntaxKind::StructArgMember,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> StructArgMember<'db> {
+    pub fn visibility(&self, db: &'db dyn Database) -> Visibility<'db> {
+        Visibility::from_syntax_node(db, self.node.get_children(db)[0])
+    }
+    pub fn ty(&self, db: &'db dyn Database) -> Expr<'db> {
+        Expr::from_syntax_node(db, self.node.get_children(db)[1])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct StructArgMemberPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> StructArgMemberPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for StructArgMemberPtr<'db> {
+    type SyntaxNode = StructArgMember<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> StructArgMember<'db> {
+        StructArgMember::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<StructArgMemberPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: StructArgMemberPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct StructArgMemberGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for StructArgMember<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgMember);
+    type StablePtr = StructArgMemberPtr<'db>;
+    type Green = StructArgMemberGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        StructArgMemberGreen(
+            GreenNode {
+                kind: SyntaxKind::StructArgMember,
+                details: GreenNodeDetails::Node {
+                    children: [Visibility::missing(db).0, Expr::missing(db).0].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::StructArgMember,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::StructArgMember
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StructArgMember {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        StructArgMemberPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct StructArgMemberList<'db>(ElementList<'db, StructArgMember<'db>, 2>);
+impl<'db> Deref for StructArgMemberList<'db> {
+    type Target = ElementList<'db, StructArgMember<'db>, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl<'db> StructArgMemberList<'db> {
+    pub fn new_green(
+        db: &'db dyn Database,
+        children: &[StructArgMemberListElementOrSeparatorGreen<'db>],
+    ) -> StructArgMemberListGreen<'db> {
+        let width = children.iter().map(|id| id.id().long(db).width(db)).sum();
+        StructArgMemberListGreen(
+            GreenNode {
+                kind: SyntaxKind::StructArgMemberList,
+                details: GreenNodeDetails::Node {
+                    children: children.iter().map(|x| x.id()).collect(),
+                    width,
+                },
+            }
+            .intern(db),
+        )
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct StructArgMemberListPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TypedStablePtr<'db> for StructArgMemberListPtr<'db> {
+    type SyntaxNode = StructArgMemberList<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> StructArgMemberList<'db> {
+        StructArgMemberList::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<StructArgMemberListPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: StructArgMemberListPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub enum StructArgMemberListElementOrSeparatorGreen<'db> {
+    Separator(TerminalCommaGreen<'db>),
+    Element(StructArgMemberGreen<'db>),
+}
+impl<'db> From<TerminalCommaGreen<'db>> for StructArgMemberListElementOrSeparatorGreen<'db> {
+    fn from(value: TerminalCommaGreen<'db>) -> Self {
+        StructArgMemberListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl<'db> From<StructArgMemberGreen<'db>> for StructArgMemberListElementOrSeparatorGreen<'db> {
+    fn from(value: StructArgMemberGreen<'db>) -> Self {
+        StructArgMemberListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl<'db> StructArgMemberListElementOrSeparatorGreen<'db> {
+    fn id(&self) -> GreenId<'db> {
+        match self {
+            StructArgMemberListElementOrSeparatorGreen::Separator(green) => green.0,
+            StructArgMemberListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct StructArgMemberListGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for StructArgMemberList<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgMemberList);
+    type StablePtr = StructArgMemberListPtr<'db>;
+    type Green = StructArgMemberListGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        StructArgMemberListGreen(
+            GreenNode {
+                kind: SyntaxKind::StructArgMemberList,
+                details: GreenNodeDetails::Node {
+                    children: [].into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        if node.kind(db) == SyntaxKind::StructArgMemberList {
+            Some(Self(ElementList::new(node)))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        StructArgMemberListPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct StructBodyBraces<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> StructBodyBraces<'db> {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_MEMBERS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
+    pub fn new_green(
+        db: &'db dyn Database,
+        lbrace: TerminalLBraceGreen<'db>,
+        members: MemberListGreen<'db>,
+        rbrace: TerminalRBraceGreen<'db>,
+    ) -> StructBodyBracesGreen<'db> {
+        let children = [lbrace.0, members.0, rbrace.0];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        StructBodyBracesGreen(
+            GreenNode {
+                kind: SyntaxKind::StructBodyBraces,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> StructBodyBraces<'db> {
+    pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
+        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[0])
+    }
+    pub fn members(&self, db: &'db dyn Database) -> MemberList<'db> {
+        MemberList::from_syntax_node(db, self.node.get_children(db)[1])
+    }
+    pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
+        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[2])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct StructBodyBracesPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> StructBodyBracesPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for StructBodyBracesPtr<'db> {
+    type SyntaxNode = StructBodyBraces<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> StructBodyBraces<'db> {
+        StructBodyBraces::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<StructBodyBracesPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: StructBodyBracesPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct StructBodyBracesGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for StructBodyBraces<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructBodyBraces);
+    type StablePtr = StructBodyBracesPtr<'db>;
+    type Green = StructBodyBracesGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        StructBodyBracesGreen(
+            GreenNode {
+                kind: SyntaxKind::StructBodyBraces,
+                details: GreenNodeDetails::Node {
+                    children: [
+                        TerminalLBrace::missing(db).0,
+                        MemberList::missing(db).0,
+                        TerminalRBrace::missing(db).0,
+                    ]
+                    .into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::StructBodyBraces,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::StructBodyBraces
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StructBodyBraces {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        StructBodyBracesPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub struct StructBodyParens<'db> {
+    node: SyntaxNode<'db>,
+}
+impl<'db> StructBodyParens<'db> {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_MEMBERS: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
+    pub fn new_green(
+        db: &'db dyn Database,
+        lparen: TerminalLParenGreen<'db>,
+        members: StructArgMemberListGreen<'db>,
+        rparen: TerminalRParenGreen<'db>,
+    ) -> StructBodyParensGreen<'db> {
+        let children = [lparen.0, members.0, rparen.0];
+        let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
+        StructBodyParensGreen(
+            GreenNode {
+                kind: SyntaxKind::StructBodyParens,
+                details: GreenNodeDetails::Node { children: children.into(), width },
+            }
+            .intern(db),
+        )
+    }
+}
+impl<'db> StructBodyParens<'db> {
+    pub fn lparen(&self, db: &'db dyn Database) -> TerminalLParen<'db> {
+        TerminalLParen::from_syntax_node(db, self.node.get_children(db)[0])
+    }
+    pub fn members(&self, db: &'db dyn Database) -> StructArgMemberList<'db> {
+        StructArgMemberList::from_syntax_node(db, self.node.get_children(db)[1])
+    }
+    pub fn rparen(&self, db: &'db dyn Database) -> TerminalRParen<'db> {
+        TerminalRParen::from_syntax_node(db, self.node.get_children(db)[2])
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct StructBodyParensPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> StructBodyParensPtr<'db> {}
+impl<'db> TypedStablePtr<'db> for StructBodyParensPtr<'db> {
+    type SyntaxNode = StructBodyParens<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> StructBodyParens<'db> {
+        StructBodyParens::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<StructBodyParensPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: StructBodyParensPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct StructBodyParensGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for StructBodyParens<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructBodyParens);
+    type StablePtr = StructBodyParensPtr<'db>;
+    type Green = StructBodyParensGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        StructBodyParensGreen(
+            GreenNode {
+                kind: SyntaxKind::StructBodyParens,
+                details: GreenNodeDetails::Node {
+                    children: [
+                        TerminalLParen::missing(db).0,
+                        StructArgMemberList::missing(db).0,
+                        TerminalRParen::missing(db).0,
+                    ]
+                    .into(),
+                    width: TextWidth::default(),
+                },
+            }
+            .intern(db),
+        )
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::StructBodyParens,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::StructBodyParens
+        );
+        Self { node }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        if kind == SyntaxKind::StructBodyParens {
+            Some(Self::from_syntax_node(db, node))
+        } else {
+            None
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        self.node
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        StructBodyParensPtr(self.node.stable_ptr(db))
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
+pub enum StructBody<'db> {
+    Braces(StructBodyBraces<'db>),
+    Parens(StructBodyParens<'db>),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
+pub struct StructBodyPtr<'db>(pub SyntaxStablePtrId<'db>);
+impl<'db> TypedStablePtr<'db> for StructBodyPtr<'db> {
+    type SyntaxNode = StructBody<'db>;
+    fn untyped(self) -> SyntaxStablePtrId<'db> {
+        self.0
+    }
+    fn lookup(&self, db: &'db dyn Database) -> Self::SyntaxNode {
+        StructBody::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+impl<'db> From<StructBodyPtr<'db>> for SyntaxStablePtrId<'db> {
+    fn from(ptr: StructBodyPtr<'db>) -> Self {
+        ptr.untyped()
+    }
+}
+impl<'db> From<StructBodyBracesPtr<'db>> for StructBodyPtr<'db> {
+    fn from(value: StructBodyBracesPtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<StructBodyParensPtr<'db>> for StructBodyPtr<'db> {
+    fn from(value: StructBodyParensPtr<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<StructBodyBracesGreen<'db>> for StructBodyGreen<'db> {
+    fn from(value: StructBodyBracesGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
+impl<'db> From<StructBodyParensGreen<'db>> for StructBodyGreen<'db> {
+    fn from(value: StructBodyParensGreen<'db>) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update)]
+pub struct StructBodyGreen<'db>(pub GreenId<'db>);
+impl<'db> TypedSyntaxNode<'db> for StructBody<'db> {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = StructBodyPtr<'db>;
+    type Green = StructBodyGreen<'db>;
+    fn missing(db: &'db dyn Database) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::StructBodyBraces => {
+                StructBody::Braces(StructBodyBraces::from_syntax_node(db, node))
+            }
+            SyntaxKind::StructBodyParens => {
+                StructBody::Parens(StructBodyParens::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "StructBody"),
+        }
+    }
+    fn cast(db: &'db dyn Database, node: SyntaxNode<'db>) -> Option<Self> {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::StructBodyBraces => {
+                Some(StructBody::Braces(StructBodyBraces::from_syntax_node(db, node)))
+            }
+            SyntaxKind::StructBodyParens => {
+                Some(StructBody::Parens(StructBodyParens::from_syntax_node(db, node)))
+            }
+            _ => None,
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode<'db> {
+        match self {
+            StructBody::Braces(x) => x.as_syntax_node(),
+            StructBody::Parens(x) => x.as_syntax_node(),
+        }
+    }
+    fn stable_ptr(&self, db: &'db dyn Database) -> Self::StablePtr {
+        StructBodyPtr(self.as_syntax_node().stable_ptr(db))
+    }
+}
+impl<'db> StructBody<'db> {
+    /// Checks if a kind of a variant of [StructBody].
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        matches!(kind, SyntaxKind::StructBodyBraces | SyntaxKind::StructBodyParens)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq, salsa::Update)]
 pub struct Variant<'db> {
     node: SyntaxNode<'db>,
 }
@@ -17255,9 +17741,7 @@ impl<'db> ItemStruct<'db> {
     pub const INDEX_STRUCT_KW: usize = 2;
     pub const INDEX_NAME: usize = 3;
     pub const INDEX_GENERIC_PARAMS: usize = 4;
-    pub const INDEX_LBRACE: usize = 5;
-    pub const INDEX_MEMBERS: usize = 6;
-    pub const INDEX_RBRACE: usize = 7;
+    pub const INDEX_BODY: usize = 5;
     pub fn new_green(
         db: &'db dyn Database,
         attributes: AttributeListGreen<'db>,
@@ -17265,20 +17749,9 @@ impl<'db> ItemStruct<'db> {
         struct_kw: TerminalStructGreen<'db>,
         name: TerminalIdentifierGreen<'db>,
         generic_params: OptionWrappedGenericParamListGreen<'db>,
-        lbrace: TerminalLBraceGreen<'db>,
-        members: MemberListGreen<'db>,
-        rbrace: TerminalRBraceGreen<'db>,
+        body: StructBodyGreen<'db>,
     ) -> ItemStructGreen<'db> {
-        let children = [
-            attributes.0,
-            visibility.0,
-            struct_kw.0,
-            name.0,
-            generic_params.0,
-            lbrace.0,
-            members.0,
-            rbrace.0,
-        ];
+        let children = [attributes.0, visibility.0, struct_kw.0, name.0, generic_params.0, body.0];
         let width = children.into_iter().map(|id: GreenId<'_>| id.long(db).width(db)).sum();
         ItemStructGreen(
             GreenNode {
@@ -17305,14 +17778,8 @@ impl<'db> ItemStruct<'db> {
     pub fn generic_params(&self, db: &'db dyn Database) -> OptionWrappedGenericParamList<'db> {
         OptionWrappedGenericParamList::from_syntax_node(db, self.node.get_children(db)[4])
     }
-    pub fn lbrace(&self, db: &'db dyn Database) -> TerminalLBrace<'db> {
-        TerminalLBrace::from_syntax_node(db, self.node.get_children(db)[5])
-    }
-    pub fn members(&self, db: &'db dyn Database) -> MemberList<'db> {
-        MemberList::from_syntax_node(db, self.node.get_children(db)[6])
-    }
-    pub fn rbrace(&self, db: &'db dyn Database) -> TerminalRBrace<'db> {
-        TerminalRBrace::from_syntax_node(db, self.node.get_children(db)[7])
+    pub fn body(&self, db: &'db dyn Database) -> StructBody<'db> {
+        StructBody::from_syntax_node(db, self.node.get_children(db)[5])
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, salsa::Update, HeapSize)]
@@ -17353,9 +17820,7 @@ impl<'db> TypedSyntaxNode<'db> for ItemStruct<'db> {
                         TerminalStruct::missing(db).0,
                         TerminalIdentifier::missing(db).0,
                         OptionWrappedGenericParamList::missing(db).0,
-                        TerminalLBrace::missing(db).0,
-                        MemberList::missing(db).0,
-                        TerminalRBrace::missing(db).0,
+                        StructBody::missing(db).0,
                     ]
                     .into(),
                     width: TextWidth::default(),
