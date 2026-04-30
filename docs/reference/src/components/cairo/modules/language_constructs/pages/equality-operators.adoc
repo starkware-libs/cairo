@@ -42,6 +42,18 @@
  ----
  let all_equal = a == b && b == c;
  ----
+
+== Mixed consecutive comparison/equality operators
+
+Mixed consecutive comparison/equality operators are also not supported, for example
+`a == b < c` or `a < b == c`.
+Make the intent explicit with conjunctions or parentheses:
+
+[source,cairo]
+----
+let in_range_and_equal = a < b && b == c;
+let bool_comparison = (a < b) == expected;
+----
  
  == Examples
  
