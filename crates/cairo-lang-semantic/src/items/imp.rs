@@ -1001,7 +1001,7 @@ pub struct DerefInfo<'db> {
     pub target_ty: TypeId<'db>,
 }
 
-/// Cycle handling for  [ImplSemantic::deref_chain].
+/// Cycle handling for [ImplSemantic::deref_chain].
 fn deref_chain_cycle<'db>(
     _db: &dyn Database,
     _id: salsa::Id,

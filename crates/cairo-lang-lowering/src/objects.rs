@@ -131,7 +131,7 @@ pub type VariableArena<'db> = Arena<Variable<'db>, DefaultArenaBehavior<Variable
 ///        ^
 /// and it is different from the location in the VarUsage.
 ///
-/// The tail expression `1 + a`  is also going to be assigned a variable and a VarUsage.
+/// The tail expression `1 + a` is also going to be assigned a variable and a VarUsage.
 /// in that case, the location of both the variable and the usage will be the same.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct VarUsage<'db> {

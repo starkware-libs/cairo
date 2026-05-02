@@ -294,7 +294,7 @@ fn generic_impl_param_trait<'db>(
 
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
-    // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
+    // TODO(spapini): We should not create a new resolver - we are missing the other generic params
     // in the context.
     // Remove also GenericImplParamTrait.
     let mut resolver = Resolver::new(db, module_id, inference_id);
