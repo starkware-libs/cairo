@@ -10,6 +10,7 @@ use super::non_zero::{NonZeroType, nonzero_ty};
 use super::range_check::RangeCheckType;
 use super::utils::{Range, reinterpret_cast_signature};
 use crate::define_libfunc_hierarchy;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
@@ -93,6 +94,7 @@ define_libfunc_hierarchy! {
         GuaranteeVerify(BoundedIntGuaranteeVerifyLibfunc),
         GuaranteeSplit(BoundedIntGuaranteeSplitLibfunc),
         U128ToU32Guarantees(U128ToU32GuaranteesLibfunc),
+        U128GuaranteesFromFelt252(U128GuaranteesFromFelt252Libfunc),
     }, BoundedIntConcreteLibfunc
 }
 
@@ -811,6 +813,39 @@ impl NoGenericArgsGenericLibfunc for U128ToU32GuaranteesLibfunc {
                 },
                 OutputVarInfo {
                     ty: u32_guarantee_ty,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+/// Libfunc for converting a felt252 into u128s, as the high and low limbs of the felt252.
+#[derive(Default)]
+pub struct U128GuaranteesFromFelt252Libfunc {}
+impl NoGenericArgsGenericLibfunc for U128GuaranteesFromFelt252Libfunc {
+    const STR_ID: &'static str = "u128_guarantees_from_felt252";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let u128_guarantee = bounded_int_guarantee_ty(context, BigInt::ZERO, u128::MAX.into())?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
+            ],
+            vec![
+                OutputVarInfo::new_builtin(range_check_type),
+                OutputVarInfo {
+                    ty: u128_guarantee.clone(),
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
+                OutputVarInfo {
+                    ty: u128_guarantee,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
             ],

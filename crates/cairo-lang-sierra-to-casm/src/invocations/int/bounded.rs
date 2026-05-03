@@ -56,6 +56,9 @@ pub fn build(
             build_guarantee_split(builder, &libfunc.divisor)
         }
         BoundedIntConcreteLibfunc::U128ToU32Guarantees(_) => build_u128_to_u32_guarantees(builder),
+        BoundedIntConcreteLibfunc::U128GuaranteesFromFelt252(_) => {
+            build_u128_guarantees_from_felt252(builder)
+        }
     }
 }
 
@@ -362,5 +365,59 @@ fn build_u128_to_u32_guarantees(
         casm_builder,
         [("Fallthrough", &[&[w0], &[w1], &[w2], &[w3]], None)],
         Default::default(),
+    ))
+}
+
+fn build_u128_guarantees_from_felt252(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check_expression, expr_value] = builder.try_get_refs()?;
+    let range_check = range_check_expression.try_unpack_single()?;
+    let value = expr_value.try_unpack_single()?;
+
+    let u128_bound = u128_bound(); // = 2**128.
+    // Represent the maximal possible value (PRIME - 1) as 2**128 * max_x + max_y.
+    let max_x: i128 = 10633823966279327296825105735305134080;
+    let max_y: i128 = 0;
+    let mut casm_builder = CasmBuilder::with_capacity(14, 4);
+    add_input_variables! {casm_builder,
+        buffer(0) range_check;
+        deref value;
+    };
+    casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
+            tempvar x;
+            tempvar y;
+            const u128_limit = u128_bound.clone();
+            // Write value as 2**128 * x + y.
+            hint DivMod { lhs: value, rhs: u128_limit } into { quotient: x, remainder: y };
+            // Check that value = 2**128 * x + y (mod PRIME).
+            tempvar x_shifted = x * u128_limit;
+            assert value = x_shifted + y;
+    }
+    // Check that there is no overflow in the computation of 2**128 * x + y.
+    // Check that x <= max_x.
+    validate_lt(&mut casm_builder, range_check, x, &(max_x + 1).into());
+    casm_build_extend! {casm_builder,
+            // If x == max_x, check that y <= max_y == 0.
+            const max_y = max_y;
+            const minus_max_x = -max_x;
+            tempvar x_minus_max_x = x + minus_max_x;
+            jump XNotMaxX if x_minus_max_x != 0;
+            assert y = max_y;
+        XNotMaxX:
+
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[x], &[y]], None)],
+        CostValidationInfo {
+            builtin_infos: vec![BuiltinInfo {
+                cost_token_ty: CostTokenType::RangeCheck,
+                start: orig_range_check,
+                end: range_check,
+            }],
+            extra_costs: None,
+        },
     ))
 }

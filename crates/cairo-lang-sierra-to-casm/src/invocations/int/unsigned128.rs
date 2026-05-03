@@ -308,6 +308,7 @@ fn build_u128_from_felt252(
         },
     ))
 }
+
 /// Handles instruction for reversing the bytes of a u128.
 pub fn build_u128_byte_reverse(
     builder: CompiledInvocationBuilder<'_>,

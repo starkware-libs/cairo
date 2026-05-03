@@ -3,6 +3,15 @@ use crate::RangeCheck;
 pub extern type BoundedInt<const MIN: felt252, const MAX: felt252>;
 pub(crate) extern type BoundedIntGuarantee<const MIN: felt252, const MAX: felt252>;
 
+impl BoundedIntGuaranteeDestruct<const MIN: felt252, const MAX: felt252> of Destruct<BoundedIntGuarantee<MIN, MAX>> {
+    fn destruct(self: BoundedIntGuarantee<MIN, MAX>) nopanic {
+        bounded_int_guarantee_verify(self);
+    }
+}
+extern fn bounded_int_guarantee_verify<const MIN: felt252, const MAX: felt252>(
+    value: BoundedIntGuarantee<MIN, MAX>,
+) implicits(RangeCheck) nopanic;
+
 impl BoundedIntCopy<const MIN: felt252, const MAX: felt252> of Copy<BoundedInt<MIN, MAX>>;
 impl BoundedIntDrop<const MIN: felt252, const MAX: felt252> of Drop<BoundedInt<MIN, MAX>>;
 
@@ -258,6 +267,13 @@ extern fn bounded_int_to_guarantee<const MIN: felt252, const MAX: felt252>(
 extern fn bounded_int_guarantee_content<const MIN: felt252, const MAX: felt252>(
     ref value: BoundedIntGuarantee<MIN, MAX>,
 ) -> BoundedInt<MIN, MAX> implicits() nopanic;
+
+pub extern fn u128_guarantees_from_felt252(
+    value: felt252,
+) -> (
+    BoundedIntGuarantee<0, 0xffffffffffffffffffffffffffffffff>,
+    BoundedIntGuarantee<0, 0xffffffffffffffffffffffffffffffff>,
+) implicits(RangeCheck) nopanic;
 
 /// Returns the negation of the given `felt252` value.
 trait NegFelt252<const NUM: felt252> {
