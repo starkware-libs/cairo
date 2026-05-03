@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777683325723,
+  "lastUpdate": 1777769750847,
   "repoUrl": "https://github.com/starkware-libs/cairo",
   "entries": {
     "Cairo Compiler Benchmarks": [
@@ -953,6 +953,112 @@ window.BENCHMARK_DATA = {
             "name": "cache-to-sierra/cairo_level_tests",
             "value": 3569534152,
             "range": "± 26158444",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "mk0walsk",
+            "username": "mk0walsk",
+            "email": "mateuszkowalskiiiiiq@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "6d73663d1a4eeb5de04b84993cf70e3229552464",
+          "message": "docs: clarify mixed comparison/equality in equality operators (#9886)",
+          "timestamp": "2026-04-30T17:08:31Z",
+          "url": "https://github.com/starkware-libs/cairo/commit/6d73663d1a4eeb5de04b84993cf70e3229552464"
+        },
+        "date": 1777769749987,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "cairo-to-sierra/fib",
+            "value": 340688118,
+            "range": "± 6834159",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/corelib",
+            "value": 2032636916,
+            "range": "± 26273061",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-sierra/cairo_level_tests",
+            "value": 4131850188,
+            "range": "± 35895895",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/fib",
+            "value": 572163405,
+            "range": "± 43656970",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/corelib",
+            "value": 6229110662,
+            "range": "± 221699622",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/bug_samples",
+            "value": 962462411,
+            "range": "± 27786689",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-diagnostics/cairo_level_tests",
+            "value": 2907205147,
+            "range": "± 60070983",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/fib",
+            "value": 474223320,
+            "range": "± 7146261",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/corelib",
+            "value": 8793156091,
+            "range": "± 92215234",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/bug_samples",
+            "value": 1142425759,
+            "range": "± 13516583",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cairo-to-cache/cairo_level_tests",
+            "value": 4008198083,
+            "range": "± 48801133",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache-to-sierra/fib",
+            "value": 320437087,
+            "range": "± 6628177",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache-to-sierra/corelib",
+            "value": 1708757628,
+            "range": "± 44391322",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cache-to-sierra/cairo_level_tests",
+            "value": 3803379136,
+            "range": "± 59638944",
             "unit": "ns/iter"
           }
         ]
