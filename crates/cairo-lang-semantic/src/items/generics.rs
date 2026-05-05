@@ -787,21 +787,21 @@ struct DisplayableConcrete<'a, 'db, Name> {
 impl<Name: Display> Display for DisplayableConcrete<'_, '_, Name> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut f = CountingWriter::new(f);
-        write!(f, "{}", &self.name)?;
+        write!(f, "{}", self.name)?;
         let mut generic_args = self.generic_args.iter();
         if let Some(first) = generic_args.next() {
             // Soft limit for the number of chars in the formatted type.
             const CHARS_BOUND: usize = 500;
             write!(f, "::<")?;
-            write!(f, "{}", &first.format(self.db))?;
+            write!(f, "{}", first.format(self.db))?;
 
             for arg in generic_args {
                 write!(f, ", ")?;
                 if f.count() > CHARS_BOUND {
                     // If the formatted type is becoming too long, add short version of arguments.
-                    write!(f, "{}", &arg.short_name(self.db))?;
+                    write!(f, "{}", arg.short_name(self.db))?;
                 } else {
-                    write!(f, "{}", &arg.format(self.db))?;
+                    write!(f, "{}", arg.format(self.db))?;
                 }
             }
             write!(f, ">")?;
