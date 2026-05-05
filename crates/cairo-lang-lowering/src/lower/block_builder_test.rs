@@ -58,7 +58,7 @@ fn test_merge_block_builders(
     // semantic to lowering map.
     let test_function = setup_test_function_ex(
         &db,
-        &format!("fn foo ({}) {{ {} }}", &inputs["variables"], &inputs["block_definitions"]),
+        &format!("fn foo ({}) {{ {} }}", inputs["variables"], inputs["block_definitions"]),
         "foo",
         inputs.get("module_code").map_or("", String::as_str),
         None,

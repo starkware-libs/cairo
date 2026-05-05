@@ -2070,7 +2070,7 @@ pub fn execute_core_hint(
                     .or_insert_with(|| vec![Felt252::from(i)]);
             }
             // Reverse the accesses in order to pop them in order later.
-            for (_, accesses) in dict_squash_exec_scope.access_indices.iter_mut() {
+            for accesses in dict_squash_exec_scope.access_indices.values_mut() {
                 accesses.reverse();
             }
             dict_squash_exec_scope.keys =
