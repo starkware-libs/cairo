@@ -33,7 +33,7 @@ use num_bigint::BigInt;
 use salsa::Database;
 use serde::{Deserialize, Serialize};
 
-use crate::db::ModuleSemanticDataCacheAndLoadingData;
+use crate::db::{ModuleSemanticDataCacheAndLoadingData, SemanticGroup};
 use crate::items::constant::{ConstValue, ConstValueId, ImplConstantId};
 use crate::items::feature_kind::FeatureKind;
 use crate::items::functions::{
@@ -152,6 +152,13 @@ pub fn generate_crate_semantic_cache<'db>(
     ctx: &mut SemanticCacheSavingContext<'db>,
 ) -> Maybe<CrateSemanticCache> {
     let all_modules = all_crate_modules_for_cache(ctx.db, crate_id);
+
+    // Bail out before encoding if any module has semantic errors. Otherwise unresolved
+    // (`Missing`/`Var`) types or const values can reach the cache encoder and ICE on the
+    // `unreachable!` arms in `TypeCached::new` / `ConstValueCached::new`.
+    for module_id in &all_modules {
+        ctx.db.module_semantic_diagnostics(*module_id)?.check_error_free()?;
+    }
 
     let modules_data = all_modules
         .iter()
