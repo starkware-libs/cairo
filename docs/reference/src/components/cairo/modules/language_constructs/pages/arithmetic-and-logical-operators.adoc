@@ -117,7 +117,8 @@ Cairo provides `DivRem` trait for efficient combined division and remainder:
 
 [source,cairo]
 ----
-use core::traits::DivRem;
+use core::num::traits::DivRem;
+use core::zeroable::NonZero;
 
 fn main() {
     let divisor: NonZero<u32> = 5_u32.try_into().unwrap();
