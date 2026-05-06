@@ -139,9 +139,13 @@ pub fn get_concrete_long_type_id<'db>(
             user_type_long_id("Struct", "Tuple".into())?.into()
         }
         semantic::TypeLongId::Snapshot(ty) => {
-            let inner_ty = db.get_concrete_type_id(*ty).unwrap();
-            let ty =
-                snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty.clone()).unwrap();
+            let inner_ty = db.get_concrete_type_id(*ty)?;
+            // `snapshot_ty` consults the Sierra type info of the inner type. If that info
+            // was not produced (e.g. element type cannot be specialized — see the matching
+            // branch in `db::get_type_info`), surface as a clean `Maybe::Err` instead of
+            // unwrapping the Sierra-side `MissingTypeInfo` and panicking.
+            let ty = snapshot_ty(&SierraSignatureSpecializationContext(db), inner_ty.clone())
+                .map_err(|_| cairo_lang_diagnostics::skip_diagnostic())?;
             if ty == *inner_ty {
                 return sierra_concrete_long_id(db, ty);
             } else {

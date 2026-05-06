@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{Maybe, MaybeAsRef};
+use cairo_lang_diagnostics::{Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::flag::FlagsGroup;
 use cairo_lang_filesystem::ids::{CrateId, Tracked};
 use cairo_lang_lowering as lowering;
@@ -359,16 +359,22 @@ fn get_type_info(
             });
         }
     };
+    // Sierra type specialization can legitimately fail on user-reachable inputs
+    // (e.g. `Array<T>` where `T` is zero-sized). Convert the failure into a
+    // `Maybe::Err` so the compiler reports a compilation failure instead of
+    // panicking with a Rust ICE. The detailed reason is logged to stderr to aid
+    // debugging until a dedicated user-facing diagnostic lands.
     let concrete_ty = cairo_lang_sierra::extensions::core::CoreType::specialize_by_id(
         &SierraSignatureSpecializationContext(db),
         &long_id.generic_id,
         &long_id.generic_args,
     )
-    .unwrap_or_else(|err| {
+    .map_err(|err| {
         let mut long_id = long_id.as_ref().clone();
         replace_ids::DebugReplacer { db }.replace_generic_args(&mut long_id.generic_args);
-        panic!("Got failure while specializing type `{long_id}`: {err}")
-    });
+        eprintln!("error: failed to specialize Sierra type `{long_id}`: {err}");
+        skip_diagnostic()
+    })?;
     Ok(concrete_ty.info().clone())
 }
 
