@@ -886,7 +886,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             return calc_result;
         }
 
-        let imp = extract_matches!(concrete_function.generic_function, GenericFunctionId::Impl);
+        let GenericFunctionId::Impl(imp) = concrete_function.generic_function else {
+            return to_missing(skip_diagnostic());
+        };
         let bool_value = |condition: bool| {
             if condition { self.true_const } else { self.false_const }
         };
