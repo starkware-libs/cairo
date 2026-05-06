@@ -62,6 +62,11 @@ pub struct DestructAdder<'db, 'a> {
     /// does not consume `self` would otherwise cause the compiler to insert a destructor
     /// call to itself, leaving the inserted call's own `self` unconsumed, ad infinitum.
     self_destruct_impl: Option<ImplId<'db>>,
+    /// Symmetric counterpart to `self_destruct_impl` for the `PanicDestruct` trait.
+    /// `Some(impl_id)` iff this function is the `panic_destruct` method of
+    /// `impl <impl_id> of PanicDestruct<T>`. Arms the analogous guard in the
+    /// `panic_destruct` arm of `drop_aux`.
+    self_panic_destruct_impl: Option<ImplId<'db>>,
 }
 
 /// A destructor call that needs to be added.
@@ -177,6 +182,16 @@ impl<'db> DemandReporter<VariableId, PanicState> for DestructAdder<'db, '_> {
         if let Ok(impl_id) = var.info.panic_destruct_impl.clone()
             && let PanicState::EndsWithPanic(panic_locations) = panic_state
         {
+            // Symmetric self-recursion guard for `PanicDestruct::panic_destruct`. See the
+            // `Destruct` arm above for the rationale.
+            if Some(impl_id) == self.self_panic_destruct_impl {
+                panic!(
+                    "panic-destructor synthesis would self-recurse on `{}`: manual \
+                     `PanicDestruct` impl body does not consume `self`. Workaround: destructure \
+                     `self` explicitly in the body, e.g. `let T {{ }} = self;`",
+                    self.function_id.full_path(self.db)
+                );
+            }
             for panic_location in panic_locations {
                 self.destructions.push(DestructionEntry::Panic(PanicDeconstructionEntry {
                     panic_location,
@@ -305,13 +320,14 @@ fn panic_ty<'db>(db: &'db dyn Database) -> semantic::TypeId<'db> {
     get_ty_by_name(db, core_module(db), SmolStrId::from(db, "Panic"), vec![])
 }
 
-/// If `function_id` is itself the `destruct` method of some `impl X of Destruct<T>`,
+/// If `function_id` is the `trait_function` method of some `impl X of <Trait><T>`,
 /// returns X's `ImplId`. Otherwise returns `None`. Used by `add_destructs` to detect
-/// would-be self-recursive destructor synthesis.
-fn self_destruct_impl_of<'db>(
+/// would-be self-recursive destructor synthesis on either the `Destruct::destruct` or
+/// `PanicDestruct::panic_destruct` paths.
+fn self_impl_of_trait_function<'db>(
     db: &'db dyn Database,
     function_id: ConcreteFunctionWithBodyId<'db>,
-    plain_trait_function: TraitFunctionId<'db>,
+    trait_function: TraitFunctionId<'db>,
 ) -> Option<ImplId<'db>> {
     let semantic_concrete = match function_id.long(db) {
         ConcreteFunctionWithBodyLongId::Semantic(id) => *id,
@@ -320,7 +336,7 @@ fn self_destruct_impl_of<'db>(
     let semantic_fn = semantic_concrete.function_id(db).ok()?;
     if let GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }) =
         &semantic_fn.long(db).function.generic_function
-        && *function == plain_trait_function
+        && *function == trait_function
     {
         Some(*impl_id)
     } else {
@@ -352,7 +368,9 @@ pub fn add_destructs<'db>(
     let info = db.core_info();
     let plain_trait_function = info.destruct_fn;
     let panic_trait_function = info.panic_destruct_fn;
-    let self_destruct_impl = self_destruct_impl_of(db, function_id, plain_trait_function);
+    let self_destruct_impl = self_impl_of_trait_function(db, function_id, plain_trait_function);
+    let self_panic_destruct_impl =
+        self_impl_of_trait_function(db, function_id, panic_trait_function);
     let checker = DestructAdder {
         db,
         lowered,
@@ -362,6 +380,7 @@ pub fn add_destructs<'db>(
         is_panic_destruct_fn,
         function_id,
         self_destruct_impl,
+        self_panic_destruct_impl,
     };
     let mut analysis = BackAnalysis::new(lowered, checker);
     let mut root_demand = analysis.get_root_info();
