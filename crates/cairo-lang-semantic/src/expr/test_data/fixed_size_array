@@ -328,3 +328,47 @@ error[E2172]: Fixed size array type must have a positive integer size.
  --> lib.cairo:1:11
 fn f() -> [felt252; for _ in 0..1_u32 {}] {
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test span on fixed-size array of zero-sized element (regression for #9896).
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function_code
+fn foo() {
+    let arr: [U; 2] = [U {}, U {}];
+    let _s = arr.span();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop, Copy)]
+struct U {}
+
+//! > expected_diagnostics
+error[E2053]: Cannot have array of type "test::U" that is zero sized.
+ --> lib.cairo:5:14
+    let _s = arr.span();
+             ^^^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test span on fixed-size array of non-zero-sized element compiles cleanly.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: false)
+
+//! > function_code
+fn foo() {
+    let arr: [u32; 2] = [1, 2];
+    let _s = arr.span();
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics

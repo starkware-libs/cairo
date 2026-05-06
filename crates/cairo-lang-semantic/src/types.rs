@@ -908,14 +908,76 @@ pub fn add_type_based_diagnostics<'db>(
     if db.type_size_info(ty) == Ok(TypeSizeInformation::Infinite) {
         diagnostics.report(stable_ptr, InfiniteSizeType(ty));
     }
-    if let TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) = ty.long(db) {
-        let long_id = extrn.long(db);
-        if long_id.extern_type_id.name(db).long(db) == "Array"
-            && let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..]
-            && db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized)
-        {
-            diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(*arg_ty));
+    if let Some(arg_ty) = nested_zero_sized_array_element(db, ty, &mut OrderedHashSet::default()) {
+        diagnostics.report(stable_ptr, ArrayOfZeroSizedElements(arg_ty));
+    }
+}
+
+/// Returns `Some(T)` if `ty` is or structurally contains `Array<T>` where `T` is zero-sized.
+///
+/// `Span<T>` is `struct Span<T> { snapshot: @Array<T> }`, so when `T` is zero-sized the
+/// offending `Array<T>` is buried under struct/snapshot layers and the surface-level check
+/// on `ty` itself misses it. Without this walk, `arr.span()` on a fixed-size array of a
+/// zero-sized element type slips past the semantic layer and panics in
+/// `cairo-lang-sierra-generator::db::get_type_info` with `Could not specialize type` (#9896).
+fn nested_zero_sized_array_element<'db>(
+    db: &'db dyn Database,
+    ty: TypeId<'db>,
+    visited: &mut OrderedHashSet<TypeId<'db>>,
+) -> Option<TypeId<'db>> {
+    if !visited.insert(ty) {
+        return None;
+    }
+    match ty.long(db) {
+        TypeLongId::Concrete(ConcreteTypeId::Extern(extrn)) => {
+            let long_id = extrn.long(db);
+            if long_id.extern_type_id.name(db).long(db) == "Array"
+                && let [GenericArgumentId::Type(arg_ty)] = &long_id.generic_args[..]
+                && db.type_size_info(*arg_ty) == Ok(TypeSizeInformation::ZeroSized)
+            {
+                return Some(*arg_ty);
+            }
+            for arg in &long_id.generic_args {
+                if let GenericArgumentId::Type(arg_ty) = arg
+                    && let Some(found) = nested_zero_sized_array_element(db, *arg_ty, visited)
+                {
+                    return Some(found);
+                }
+            }
+            None
         }
+        TypeLongId::Concrete(ConcreteTypeId::Struct(id)) => {
+            for (_, member) in db.concrete_struct_members(*id).ok()?.iter() {
+                if let Some(found) = nested_zero_sized_array_element(db, member.ty, visited) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        TypeLongId::Concrete(ConcreteTypeId::Enum(id)) => {
+            for variant in db.concrete_enum_variants(*id).ok()?.iter() {
+                if let Some(found) = nested_zero_sized_array_element(db, variant.ty, visited) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        TypeLongId::Tuple(types) => {
+            types.iter().find_map(|inner| nested_zero_sized_array_element(db, *inner, visited))
+        }
+        TypeLongId::Snapshot(inner) => nested_zero_sized_array_element(db, *inner, visited),
+        TypeLongId::FixedSizeArray { type_id, .. } => {
+            nested_zero_sized_array_element(db, *type_id, visited)
+        }
+        TypeLongId::Closure(closure_ty) => closure_ty
+            .captured_types
+            .iter()
+            .find_map(|inner| nested_zero_sized_array_element(db, *inner, visited)),
+        TypeLongId::Coupon(_)
+        | TypeLongId::GenericParameter(_)
+        | TypeLongId::Var(_)
+        | TypeLongId::ImplType(_)
+        | TypeLongId::Missing(_) => None,
     }
 }
 
