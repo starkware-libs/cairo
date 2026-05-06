@@ -967,3 +967,61 @@ error[E2127]: This expression is not supported as constant.
  --> lib.cairo:5:26
     const VALUE: bool = !F::VALUE;
                          ^^^^^^^^
+
+//! > ==========================================================================
+
+//! > Test nested const fn inside const fn emits parser diagnostics without ICE.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > module_code
+const fn outer() -> felt252 {
+    const fn inner() -> felt252 { 7 }
+    inner()
+}
+const X: felt252 = outer();
+
+//! > function_code
+fn foo() -> felt252 {
+    X
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error[E1004]: Unexpected token, expected ':' followed by a type.
+ --> lib.cairo:2:13
+    const fn inner() -> felt252 { 7 }
+            ^
+
+error[E1001]: Missing token '='.
+ --> lib.cairo:4:2
+}
+ ^
+
+error[E1002]: Missing tokens. Expected an expression.
+ --> lib.cairo:4:2
+}
+ ^
+
+error[E1001]: Missing token ';'.
+ --> lib.cairo:4:2
+}
+ ^
+
+error[E1013]: 'fn' is a reserved identifier.
+ --> lib.cairo:2:11
+    const fn inner() -> felt252 { 7 }
+          ^^
+
+error[E1001]: Missing token '}'.
+ --> lib.cairo:5:28
+const X: felt252 = outer();
+                           ^
+
+error[E0006]: Identifier not found.
+ --> lib.cairo:7:5
+    X
+    ^
