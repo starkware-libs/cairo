@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs as defs;
 use cairo_lang_defs::ids::NamedLanguageElementId;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Maybe, MaybeAsRef, skip_diagnostic};
 use cairo_lang_filesystem::ids::Tracked;
 use cairo_lang_lowering as lowering;
 use cairo_lang_semantic as semantic;
@@ -337,11 +337,17 @@ pub fn finalize_locals_libfunc_id(db: &dyn Database) -> cairo_lang_sierra::ids::
 }
 
 /// Returns the [LibfuncSignature] of the given function.
+///
+/// Returns `Maybe::Err` when the libfunc cannot be specialized for the given generic
+/// arguments (e.g. an `Array<T>`-shaped libfunc instantiated with a zero-sized `T`).
+/// Callers should propagate the error so the compiler reports a compilation failure
+/// rather than panicking with a Rust ICE. The descriptive Sierra-side error is logged
+/// to stderr to aid debugging until a dedicated user-facing diagnostic lands.
 pub fn get_libfunc_signature<'db>(
     db: &'db dyn Database,
     concrete_lib_func_id: &ConcreteLibfuncId,
-) -> &'db LibfuncSignature {
-    get_libfunc_signature_tracked(db, (), concrete_lib_func_id.id)
+) -> Maybe<&'db LibfuncSignature> {
+    get_libfunc_signature_tracked(db, (), concrete_lib_func_id.id).maybe_as_ref()
 }
 
 /// Implementation of [get_libfunc_signature] that is tracked.
@@ -350,28 +356,29 @@ fn get_libfunc_signature_tracked(
     db: &dyn Database,
     _tracked: Tracked,
     concrete_lib_func_id: u64,
-) -> LibfuncSignature {
+) -> Maybe<LibfuncSignature> {
     let libfunc_long_id = db.lookup_concrete_lib_func(&concrete_lib_func_id.into());
     CoreLibfunc::specialize_signature_by_id(
         &SierraSignatureSpecializationContext(db),
         &libfunc_long_id.generic_id,
         &libfunc_long_id.generic_args,
     )
-    .unwrap_or_else(|err| {
+    .map_err(|err| {
         if let ExtensionError::LibfuncSpecialization {
             error: SpecializationError::MissingFunction(function),
             ..
-        } = err
+        } = &err
         {
-            let function = db.lookup_sierra_function(&function);
+            // A truly missing function is a compiler bug — keep the panic so it is
+            // not silently swallowed.
+            let function = db.lookup_sierra_function(function);
             panic!("Missing function {:?}", function.debug(db));
         }
-        // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
-        // the libfuncs in the [`CoreLibfunc`] structured enum.
-        panic!(
-            "Failed to specialize: `{}`. Error: {err}",
+        eprintln!(
+            "error: failed to specialize libfunc `{}`: {err}",
             DebugReplacer { db }.replace_libfunc_id(&concrete_lib_func_id.into())
-        )
+        );
+        skip_diagnostic()
     })
 }
 

@@ -320,20 +320,20 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
         concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
         input_vars: &[VarUsage<'db>],
         output_vars: &[VariableId],
-    ) -> BranchInfo {
-        let libfunc_signature = get_libfunc_signature(self.db, &concrete_function_id);
+    ) -> Maybe<BranchInfo> {
+        let libfunc_signature = get_libfunc_signature(self.db, &concrete_function_id)?;
         assert_eq!(
             libfunc_signature.branch_signatures.len(),
             1,
             "Unexpected branches in '{}'.",
             DebugReplacer { db: self.db }.replace_libfunc_id(&concrete_function_id)
         );
-        self.analyze_branch(
+        Ok(self.analyze_branch(
             &libfunc_signature.param_signatures,
             &libfunc_signature.branch_signatures[0],
             input_vars,
             output_vars,
-        )
+        ))
     }
 
     fn analyze_branch(
@@ -396,13 +396,17 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                     statement_call.with_coupon,
                 );
 
-                self.analyze_call(concrete_function_id, inputs, outputs)
+                self.analyze_call(concrete_function_id, inputs, outputs)?
             }
             lowering::Statement::StructConstruct(statement_struct_construct) => {
                 let ty = self.db.get_concrete_type_id(
                     self.lowered_function.variables[statement_struct_construct.output].ty,
                 )?;
-                self.analyze_call(struct_construct_libfunc_id(self.db, ty.clone()), inputs, outputs)
+                self.analyze_call(
+                    struct_construct_libfunc_id(self.db, ty.clone()),
+                    inputs,
+                    outputs,
+                )?
             }
             lowering::Statement::StructDestructure(statement_struct_destructure) => {
                 let ty = self.db.get_concrete_type_id(
@@ -412,7 +416,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                     struct_deconstruct_libfunc_id(self.db, ty.clone())?,
                     inputs,
                     outputs,
-                )
+                )?
             }
             lowering::Statement::EnumConstruct(statement_enum_construct) => {
                 let ty = self.db.get_concrete_type_id(
@@ -422,7 +426,7 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                     enum_init_libfunc_id(self.db, ty.clone(), statement_enum_construct.variant.idx),
                     inputs,
                     outputs,
-                )
+                )?
             }
             lowering::Statement::Snapshot(statement_snapshot) => {
                 self.aliases.insert(statement_snapshot.original(), statement_snapshot.input.var_id);
@@ -474,6 +478,6 @@ impl<'db, 'a> FindLocalsContext<'db, 'a> {
                 match_enum_libfunc_id(db, enum_ty.clone())?
             }
         };
-        Ok(get_libfunc_signature(db, &concrete_libfunc_id))
+        get_libfunc_signature(db, &concrete_libfunc_id)
     }
 }

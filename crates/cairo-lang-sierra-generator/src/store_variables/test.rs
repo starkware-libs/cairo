@@ -236,13 +236,14 @@ fn test_add_store_statements(
     add_store_statements(
         db,
         statements,
-        &(|libfunc| get_libfunc_signature(db, (), libfunc)),
+        &(|libfunc| Ok(get_libfunc_signature(db, (), libfunc))),
         local_variables,
         &as_var_id_vec(params)
             .into_iter()
             .map(|id| cairo_lang_sierra::program::Param { id, ty: felt252_ty.clone() })
             .collect_vec(),
     )
+    .expect("test fixture libfuncs should always specialize")
     .iter()
     .map(|statement| replace_sierra_ids(db, statement).statement.to_string(db))
     .collect()

@@ -130,7 +130,7 @@ fn get_function_ap_change_and_code<'db>(
         &|id: ConcreteLibfuncId| get_libfunc_signature(db, &id),
         sierra_local_variables,
         &parameters,
-    );
+    )?;
 
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.

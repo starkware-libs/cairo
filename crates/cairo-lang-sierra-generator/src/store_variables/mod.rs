@@ -6,6 +6,7 @@ mod state;
 #[cfg(test)]
 mod test;
 
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::extensions::duplicate::DupLibfunc;
 use cairo_lang_sierra::extensions::lib_func::{
@@ -49,9 +50,9 @@ pub fn add_store_statements<'db, GetLibfuncSignature>(
     get_libfunc_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
     params: &[sierra::program::Param],
-) -> Vec<pre_sierra::StatementWithLocation<'db>>
+) -> Maybe<Vec<pre_sierra::StatementWithLocation<'db>>>
 where
-    GetLibfuncSignature: Fn(ConcreteLibfuncId) -> &'db LibfuncSignature,
+    GetLibfuncSignature: Fn(ConcreteLibfuncId) -> Maybe<&'db LibfuncSignature>,
 {
     let mut duplicated_vars: OrderedHashSet<cairo_lang_sierra::ids::VarId> = Default::default();
     for stmt in &statements {
@@ -78,28 +79,31 @@ where
     }
     let mut handler = AddStoreVariableStatements::new(db, local_variables, duplicated_vars);
     let mut state_opt = Some(VariablesState {
-        variables: OrderedHashMap::from_iter(params.iter().map(|param| {
-            (
-                param.id.clone(),
-                if db.get_type_info(param.ty.clone()).unwrap().zero_sized {
-                    VarState::ZeroSizedVar
-                } else {
-                    VarState::LocalVar
-                },
-            )
-        })),
+        variables: params
+            .iter()
+            .map(|param| {
+                Ok((
+                    param.id.clone(),
+                    if db.get_type_info(param.ty.clone())?.zero_sized {
+                        VarState::ZeroSizedVar
+                    } else {
+                        VarState::LocalVar
+                    },
+                ))
+            })
+            .collect::<Maybe<OrderedHashMap<_, _>>>()?,
         known_stack: Default::default(),
     });
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements {
         let prev_len = handler.result.len();
         let location = statement.location;
-        state_opt = handler.handle_statement(state_opt, statement, get_libfunc_signature);
+        state_opt = handler.handle_statement(state_opt, statement, get_libfunc_signature)?;
         for statement in &mut handler.result[prev_len..] {
             statement.set_location(location)
         }
     }
-    handler.finalize(state_opt)
+    Ok(handler.finalize(state_opt))
 }
 
 struct AddStoreVariableStatements<'db> {
@@ -139,14 +143,14 @@ impl<'db> AddStoreVariableStatements<'db> {
         state_opt: Option<VariablesState>,
         statement: pre_sierra::StatementWithLocation<'db>,
         get_libfunc_signature: &GetLibfuncSignature,
-    ) -> Option<VariablesState>
+    ) -> Maybe<Option<VariablesState>>
     where
-        GetLibfuncSignature: Fn(ConcreteLibfuncId) -> &'db LibfuncSignature,
+        GetLibfuncSignature: Fn(ConcreteLibfuncId) -> Maybe<&'db LibfuncSignature>,
     {
         let mut state_opt = state_opt;
         match &statement.statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let signature = get_libfunc_signature(invocation.libfunc_id.clone());
+                let signature = get_libfunc_signature(invocation.libfunc_id.clone())?;
                 let mut state = state_opt.unwrap_or_default();
 
                 let libfunc_long_id = self.db.lookup_concrete_lib_func(&invocation.libfunc_id);
@@ -217,7 +221,7 @@ impl<'db> AddStoreVariableStatements<'db> {
                     }
                 }
                 self.result.push(statement);
-                state_opt
+                Ok(state_opt)
             }
             pre_sierra::Statement::Sierra(GenStatement::Return(_return_statement)) => {
                 self.result.push(statement);
@@ -226,7 +230,7 @@ impl<'db> AddStoreVariableStatements<'db> {
                 // needed.
 
                 // The next statement is not reachable from this one. Set `state` to `None`.
-                None
+                Ok(None)
             }
             pre_sierra::Statement::Label(pre_sierra::Label { id: label_id }) => {
                 // Merge self.known_stack with the future_stack that corresponds to the label, if
@@ -237,12 +241,12 @@ impl<'db> AddStoreVariableStatements<'db> {
                 );
 
                 self.result.push(statement);
-                state_opt
+                Ok(state_opt)
             }
             pre_sierra::Statement::PushValues(push_values) => {
                 let state = &mut state_opt.unwrap_or_default();
                 self.push_values(state, push_values);
-                Some(std::mem::take(state))
+                Ok(Some(std::mem::take(state)))
             }
         }
     }
