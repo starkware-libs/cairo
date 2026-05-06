@@ -17,6 +17,10 @@ const MY_CONST: felt252 = 0x1234;
 
 const FELT_TUPLE: (felt252, felt252) = (1, 2);
 
+mod my_module {
+    const CONST_IN_MODULE: felt252 = 1;
+}
+
 const FELT_FIXED_SIZE_ARRAY: [felt252; 3] = [1, 2, 3];
 
 const OTHER_CONST_REF: felt252 = my_module::CONST_IN_MODULE;
@@ -24,9 +28,106 @@ const OTHER_CONST_REF: felt252 = my_module::CONST_IN_MODULE;
 const FIVE: u32 = 5;
 const NON_ZERO_FIVE: NonZero<u32> = FIVE.try_into().unwrap();
 
-mod my_module {
-    const CONST_IN_MODULE: felt252 = 1;
-}
+const MATCH_WILDCARD: () = assert(match 3_u8 {
+    2 => 0,
+    _ => 5,
+} == 5, 'match_wildcard');
+
+const MATCH_LITERAL_PATTERN: () = assert(
+    match 3_u8 {
+        1 => 0,
+        3 => 5,
+        _ => 0,
+    } == 5, 'match_literal_pattern',
+);
+
+const MATCH_TUPLE_PATTERN: () = assert(
+    match (1_u8, 2_u8) {
+        (_, y) => y,
+    } == 2, 'match_tuple_pattern',
+);
+
+const MATCH_ARRAY_PATTERN: () = assert(
+    match [1_u8, 2_u8] {
+        [x, _] => x,
+    } == 1, 'match_array_pattern',
+);
+
+const LET_TUPLE_BIND: () = assert({
+    let (x, y) = (1_u8, 2_u8);
+    x + y
+} == 3, 'let_tuple_bind');
+
+const LET_ELSE_MATCH: () = assert(
+    {
+        let Some(x) = Option::<u8>::Some(3) else {
+            core::panic_with_felt252('impossible')
+        };
+        x
+    } == 3,
+    'let_else_match',
+);
+
+const IF_LET_MATCH: () = assert(
+    if let Some(x) = Option::<u8>::Some(4) {
+        x
+    } else {
+        0
+    } == 4, 'if_let_match',
+);
+
+const IF_LET_CHAIN_0: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && let Some(y) = Option::<u8>::Some(2) {
+        x + y
+    } else {
+        0
+    } == 5,
+    'if_let_chain',
+);
+
+const IF_LET_CHAIN_1: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && let Some(y) = Option::<u8>::None {
+        x + y
+    } else {
+        0
+    } == 0,
+    'if_let_chain',
+);
+
+const IF_LET_CHAIN_2: () = assert(
+    if let Some(x) = Option::<u8>::None && let Some(y) = Option::<u8>::Some(2) {
+        x + y
+    } else {
+        0
+    } == 0,
+    'if_let_chain',
+);
+
+const IF_LET_CHAIN_3: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && x == 3 {
+        1
+    } else {
+        0
+    } == 1, 'if_let_chain',
+);
+
+const IF_LET_CHAIN_4: () = assert(
+    if let Some(x) = Option::<u8>::Some(3) && x == 2 {
+        1
+    } else {
+        0
+    } == 0, 'if_let_chain',
+);
+
+const PARTIAL_STRUCT1: () = assert({
+    let u256 { low, .. } = 1337;
+    low
+} == 1337, 'partial_struct');
+
+const PARTIAL_STRUCT2: () = assert({
+    let u256 { high, .. } = 1337;
+    high
+} == 0, 'partial_struct');
 
 //! > expected_diagnostics
 
@@ -81,6 +182,10 @@ const VALID_LE: () = assert(1_usize <= 1);
 const VALID_GT: () = assert(2_usize > 1);
 const VALID_GE: () = assert(1_usize >= 1);
 const VALID_DIVREM: () = assert(DivRem::div_rem(5_u8, 2) == (2, 1));
+
+const MATCH_VALUE: () = assert(match 1_u8 {
+    _ => 1,
+} == 1);
 use core::num::traits::Pow;
 
 const VALID_POW_MIN2_0: () = assert((-2_i8).pow(0) == 1);
@@ -118,6 +223,13 @@ const fn my_unwrap<T>(v: Option<T>) -> T {
         None => core::panic_with_felt252('bad value'),
     }
 }
+
+const LET_ELSE_FAIL: u8 = {
+    let None = Option::<u8>::Some(5) else {
+        core::panic_with_felt252('should fail')
+    };
+    0
+};
 
 //! > expected_diagnostics
 error[E0006]: Type not found.
@@ -160,18 +272,23 @@ note: In `test::assert`:
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error[E2129]: Constant calculation depth exceeded.
- --> lib.cairo:59:43
+ --> lib.cairo:63:43
 const FUNC_CALC_STACK_EXCEEDED: felt252 = call_myself();
                                           ^^^^^^^^^^^^^
 
 error[E2130]: Failed to calculate constant.
- --> lib.cairo:66:37
+ --> lib.cairo:70:37
 const NON_ZERO_ZERO: NonZero<u64> = my_unwrap(ZERO.try_into());
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 note: In `test::my_unwrap::<core::zeroable::NonZero::<core::integer::u64>>`:
-  --> lib.cairo:72:17
+  --> lib.cairo:76:17
         None => core::panic_with_felt252('bad value'),
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E2128]: Failed to calculate constant.
+ --> lib.cairo:82:9
+        core::panic_with_felt252('should fail')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //! > ==========================================================================
 

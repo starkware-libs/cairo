@@ -386,7 +386,6 @@ pub fn constant_semantic_data_helper<'db>(
     }
 
     let mut ctx = ComputationContext::new_global(db, &mut diagnostics, &mut resolver);
-
     let value = compute_expr_semantic(&mut ctx, &constant_ast.value(db));
     let const_value = resolve_const_expr_and_evaluate(
         db,
@@ -526,6 +525,9 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     match &self.arenas.statements[*statement_id] {
                         Statement::Let(statement) => {
                             self.validate(statement.expr);
+                            if let Some(else_clause) = &statement.else_clause {
+                                self.validate(*else_clause);
+                            }
                         }
                         Statement::Expr(expr) => {
                             self.validate(expr.expr);
@@ -684,7 +686,18 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     match &self.arenas.statements[*statement_id] {
                         Statement::Let(statement) => {
                             let value = self.evaluate(statement.expr);
-                            self.destructure_pattern(statement.pattern, value);
+                            if self.destructure_pattern(statement.pattern, value).is_none() {
+                                if let Some(else_clause) = &statement.else_clause {
+                                    // Only exiting the block is possible - so this is a return of a
+                                    // panic.
+                                    return self.evaluate(*else_clause);
+                                } else {
+                                    // Either the pattern is refutable and we are missing an else
+                                    // clause, or the pattern is irrefutable and the pattern have
+                                    // failed for some reason. Both should already cause diagstics.
+                                    return to_missing(skip_diagnostic());
+                                }
+                            }
                         }
                         Statement::Expr(expr) => {
                             self.evaluate(expr.expr);
@@ -777,25 +790,11 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
             }
             Expr::Match(expr) => {
                 let value = self.evaluate(expr.matched_expr);
-                let ConstValue::Enum(variant, value) = value.long(db) else {
-                    return to_missing(skip_diagnostic());
-                };
                 for arm in &expr.arms {
                     for pattern_id in &arm.patterns {
-                        let pattern = &self.arenas.patterns[*pattern_id];
-                        if matches!(pattern, Pattern::Otherwise(_)) {
+                        if self.destructure_pattern(*pattern_id, value).is_some() {
                             return self.evaluate(arm.expression);
                         }
-                        let Pattern::EnumVariant(pattern) = pattern else {
-                            continue;
-                        };
-                        if pattern.variant.idx != variant.idx {
-                            continue;
-                        }
-                        if let Some(inner_pattern) = pattern.inner_pattern {
-                            self.destructure_pattern(inner_pattern, *value);
-                        }
-                        return self.evaluate(arm.expression);
                     }
                 }
                 to_missing(
@@ -811,35 +810,23 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
                     match condition {
                         crate::Condition::BoolExpr(id) => {
                             let condition = self.evaluate(*id);
-                            let ConstValue::Enum(variant, _) = condition.long(db) else {
-                                return to_missing(skip_diagnostic());
-                            };
-                            if *variant != true_variant(self.db) {
+                            if condition == self.true_const {
+                                continue;
+                            } else if condition == self.false_const {
                                 if_condition = false;
                                 break;
+                            } else {
+                                return to_missing(skip_diagnostic());
                             }
                         }
                         crate::Condition::Let(id, patterns) => {
                             let value = self.evaluate(*id);
-                            let ConstValue::Enum(variant, value) = value.long(db) else {
-                                return to_missing(skip_diagnostic());
-                            };
                             let mut found_pattern = false;
                             for pattern_id in patterns {
-                                let Pattern::EnumVariant(pattern) =
-                                    &self.arenas.patterns[*pattern_id]
-                                else {
-                                    continue;
-                                };
-                                if pattern.variant != *variant {
-                                    // Continue to the next option in the `|` list.
-                                    continue;
+                                if self.destructure_pattern(*pattern_id, value).is_some() {
+                                    found_pattern = true;
+                                    break;
                                 }
-                                if let Some(inner_pattern) = pattern.inner_pattern {
-                                    self.destructure_pattern(inner_pattern, *value);
-                                }
-                                found_pattern = true;
-                                break;
                             }
                             if !found_pattern {
                                 if_condition = false;
@@ -1165,56 +1152,64 @@ impl<'a, 'r, 'mt> ConstantEvaluateContext<'a, 'r, 'mt> {
         Ok(values[member_idx])
     }
 
-    /// Destructures the pattern into the const value of the variables in scope.
-    fn destructure_pattern(&mut self, pattern_id: PatternId, value: ConstValueId<'a>) {
-        let pattern = &self.arenas.patterns[pattern_id];
+    /// Destructures the pattern, binding variables to their values; returns `None` if the pattern
+    /// didn't match.
+    fn destructure_pattern(
+        &mut self,
+        pattern_id: PatternId,
+        value: ConstValueId<'a>,
+    ) -> Option<()> {
         let db = self.db;
+        let pattern = &self.arenas.patterns[pattern_id];
         match pattern {
-            Pattern::Literal(_)
-            | Pattern::StringLiteral(_)
-            | Pattern::Otherwise(_)
-            | Pattern::Missing(_) => {}
+            Pattern::Missing(_) | Pattern::StringLiteral(_) => None,
+            Pattern::Otherwise(_) => Some(()),
+            Pattern::Literal(v) => require(numeric_arg_value(db, value)? == v.literal.value),
             Pattern::Variable(pattern) => {
                 self.vars.insert(VarId::Local(pattern.var.id), value);
+                Some(())
             }
             Pattern::Struct(pattern) => {
-                if let ConstValue::Struct(inner_values, _) = value.long(db) {
-                    let member_order = match db.concrete_struct_members(pattern.concrete_struct_id)
+                let ConstValue::Struct(inner_values, _) = value.long(db) else {
+                    return None;
+                };
+                let member_order = db.concrete_struct_members(pattern.concrete_struct_id).ok()?;
+                for (member, inner_value) in zip(member_order.values(), inner_values) {
+                    if let Some((inner_pattern, _)) =
+                        pattern.field_patterns.iter().find(|(_, field)| member.id == field.id)
                     {
-                        Ok(member_order) => member_order,
-                        Err(_) => return,
-                    };
-                    for (member, inner_value) in zip(member_order.values(), inner_values) {
-                        if let Some((inner_pattern, _)) =
-                            pattern.field_patterns.iter().find(|(_, field)| member.id == field.id)
-                        {
-                            self.destructure_pattern(*inner_pattern, *inner_value);
-                        }
+                        self.destructure_pattern(*inner_pattern, *inner_value)?;
                     }
                 }
+                Some(())
             }
             Pattern::Tuple(pattern) => {
-                if let ConstValue::Struct(inner_values, _) = value.long(db) {
-                    for (inner_pattern, inner_value) in zip(&pattern.field_patterns, inner_values) {
-                        self.destructure_pattern(*inner_pattern, *inner_value);
-                    }
+                let ConstValue::Struct(inner_values, _) = value.long(db) else {
+                    return None;
+                };
+                for (inner_pattern, inner_value) in zip(&pattern.field_patterns, inner_values) {
+                    self.destructure_pattern(*inner_pattern, *inner_value)?;
                 }
+                Some(())
             }
             Pattern::FixedSizeArray(pattern) => {
-                if let ConstValue::Struct(inner_values, _) = value.long(db) {
-                    for (inner_pattern, inner_value) in
-                        zip(&pattern.elements_patterns, inner_values)
-                    {
-                        self.destructure_pattern(*inner_pattern, *inner_value);
-                    }
+                let ConstValue::Struct(inner_values, _) = value.long(db) else {
+                    return None;
+                };
+                for (inner_pattern, inner_value) in zip(&pattern.elements_patterns, inner_values) {
+                    self.destructure_pattern(*inner_pattern, *inner_value)?;
                 }
+                Some(())
             }
             Pattern::EnumVariant(pattern) => {
-                if let ConstValue::Enum(variant, inner_value) = value.long(db)
-                    && pattern.variant == *variant
-                    && let Some(inner_pattern) = pattern.inner_pattern
-                {
-                    self.destructure_pattern(inner_pattern, *inner_value);
+                let ConstValue::Enum(variant, inner_value) = value.long(db) else {
+                    return None;
+                };
+                require(pattern.variant.id == variant.id)?;
+                if let Some(inner_pattern) = pattern.inner_pattern {
+                    self.destructure_pattern(inner_pattern, *inner_value)
+                } else {
+                    Some(())
                 }
             }
         }
